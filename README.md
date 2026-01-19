@@ -92,7 +92,49 @@ Atom OS is built using the Redox OS build system, which is included as a submodu
     ```
 
 ### Customization
-
-- **Configuration**: Edit `atom_configuration/atom.toml` to add packages or change settings.
-- **Files**: Place custom files (wallpapers, configs) in `atom_configuration/files/` and reference them in `atom.toml`.
-- **Recipes**: Add custom recipes to `atom_configuration/recipes/` to patch or create new packages.
+ 
+Atom OS is designed to be easily customized. The build system pulls configuration from `config/atom.toml` and looks for additional resources in the `config/` directory.
+ 
+#### 1. Configuring Packages
+Edit `config/atom.toml` to add or remove packages from the image.
+```toml
+[packages]
+# Add a package from the cookbook
+vim = {}
+# Add a package from your custom recipes
+my-custom-app = {}
+```
+ 
+#### 2. Including Files
+You can inject files directly into the filesystem image using the `[[files]]` directive in `config/atom.toml`.
+ 
+**Option A: Inline Content**
+Useful for small scripts or configuration files.
+ 
+*Example: Multi-line Script*
+```toml
+[[files]]
+path = "/etc/motd"
+data = """
+Welcome to Atom OS!
+This IS the future of computing.
+"""
+```
+ 
+**Option B: External Files & Assets**
+For binary files (like images) or larger sets of files, it is recommended to create a custom **Recipe**.
+ 
+1. Create a folder `config/recipes/my-assets/`.
+2. Add your files there (e.g. `config/recipes/my-assets/background.png`).
+3. Create a `recipe.toml` that copies the files:
+   ```toml
+   [build]
+   template = "custom"
+   script = """
+   mkdir -p "${COOKBOOK_STAGE}/ui"
+   cp "${COOKBOOK_RECIPE}/background.png" "${COOKBOOK_STAGE}/ui/"
+   """
+   ```
+4. Add `my-assets = {}` to `[packages]` in `config/atom.toml`.
+ 
+The build system will automatically sync your recipes to the cookbook and build them.

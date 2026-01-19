@@ -1,0 +1,63 @@
+# Configuration file to install the recipe dependencies inside the Podman container
+
+FROM debian:bookworm-20240513-slim
+
+# _UID_ must be replaced with the user's uid on host
+# podman root is mapped to your user id on host during build,
+# poduser is mapped to your user id during podman run
+RUN useradd --create-home --no-log-init --uid _UID_ poduser \
+    && chown -R root:root /home \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        appstream \
+        autoconf \
+        automake \
+        autopoint \
+        bison \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        file \
+        flex \
+        fuse3 \
+        genisoimage \
+        git \
+        gperf \
+        libexpat-dev \
+        libfuse-dev \
+        libfuse3-dev \
+        libgmp-dev \
+        libmpc-dev \
+        libmpfr-dev \
+        libhtml-parser-perl \
+        libtool \
+        libfontconfig1-dev \
+        libpng-dev \
+        libjpeg-dev \
+        libsdl2-ttf-dev \
+        libsdl1.2-dev \
+        m4 \
+        nasm \
+        pkg-config \
+        po4a \
+        texinfo \
+        ninja-build \
+        meson \
+        python3-mako \
+        xxd \
+        rsync \
+        wget \
+        python3 \
+        make \
+        xdg-utils \
+        zip \
+        unzip \
+        lzip \
+        llvm \
+        clang \
+        perl \
+        doxygen \
+        ant \
+        protobuf-compiler \
+        intltool
