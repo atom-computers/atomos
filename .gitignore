@@ -1,2 +1,8 @@
 .agent/**
 redox-build/
+.dev/
+iso/**
+surrealdb/.dev/
+sync/.dev/**
+cosmic-ext-applet-ollama/.dev/**
+.DS_Store

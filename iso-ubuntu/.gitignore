@@ -1,0 +1,16 @@
+# Ignore build artifacts
+build/
+*.iso
+*.tar
+*.zsync
+SHA256SUMS*
+
+# Ignore editor files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Ignore temporary files
+*.tmp
+*.log

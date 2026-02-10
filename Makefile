@@ -3,7 +3,7 @@
 # from the root of the repository.
 
 # Configuration
-ARCH ?= aarch64
+ARCH ?= x86_64
 CONFIG_NAME ?= atom
 REDOX_DIR = redox
 REDOX_BUILD = redox-build
@@ -14,7 +14,6 @@ CONFIG_DEST = $(REDOX_BUILD)/config/$(ARCH)/$(CONFIG_NAME).toml
 
 # Default target
 all: setup-build sync
-	@echo "Building Atom OS for $(ARCH)..."
 	@echo "Building Atom OS for $(ARCH)..."
 	@if ! podman image exists redox-base; then \
 		echo "Building Podman image..."; \
