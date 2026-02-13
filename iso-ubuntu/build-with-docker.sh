@@ -66,6 +66,12 @@ if [ -d "$PROJECT_ROOT/cocoindex" ]; then
     tar --exclude='target' --exclude='node_modules' --exclude='.git' --exclude='uv.lock' -C "$PROJECT_ROOT" -cf - cocoindex | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
 fi
 
+if [ -d "$PROJECT_ROOT/atom-installer" ]; then
+    echo "Copying atom-installer and excluding target..."
+    docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/atom-installer
+    tar --exclude='target' --exclude='.git' -C "$PROJECT_ROOT" -cf - atom-installer | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
+fi
+
 echo -e "${BLUE}Building ISO inside container...${NC}"
 docker exec --user root -w /workspace/iso-ubuntu "$CONTAINER_ID" bash -c "
     set -e

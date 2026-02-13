@@ -42,6 +42,46 @@ $(BUILD)/iso_casper.tag: $(BUILD)/live.tag $(BUILD)/iso_create.tag
 	
 	touch "$@"
 
+$(BUILD)/iso_pool.tag: $(BUILD)/pool $(BUILD)/iso_create.tag $(BUILD)/iso-key.gpg
+	# Remove dists and pool directory
+	sudo rm -rf "$(BUILD)/iso/dists" "$(BUILD)/iso/pool"
+
+	# Copy package pool
+	sudo cp -r "$</pool" "$(BUILD)/iso/pool"
+	sudo chown -R "$(USER):$(USER)" "$(BUILD)/iso/pool"
+
+	# Fix pool paths
+	./scripts/pool.sh "$(BUILD)/iso/pool/"*
+
+	# Update pool package lists
+	cd "$(BUILD)/iso" && \
+	mkdir -p "dists/$(UBUNTU_CODE)" && \
+	for pool in $$(ls -1 pool); do \
+		mkdir -p "dists/$(UBUNTU_CODE)/$$pool/binary-$(DISTRO_ARCH)" && \
+		apt-ftparchive packages "pool/$$pool" > "dists/$(UBUNTU_CODE)/$$pool/binary-$(DISTRO_ARCH)/Packages" && \
+		gzip -k "dists/$(UBUNTU_CODE)/$$pool/binary-$(DISTRO_ARCH)/Packages" && \
+		sed "s|COMPONENT|$$pool|g; $(SED)" "$(CURDIR)/data/Release" > "dists/$(UBUNTU_CODE)/$$pool/binary-$(DISTRO_ARCH)/Release"; \
+	done; \
+	apt-ftparchive \
+		-o "APT::FTPArchive::Release::Acquire-By-Hash=yes" \
+		-o "APT::FTPArchive::Release::Architectures=$(DISTRO_ARCH)" \
+		-o "APT::FTPArchive::Release::Codename=$(UBUNTU_CODE)" \
+		-o "APT::FTPArchive::Release::Components=$$(ls -1 pool | tr $$'\n' ' ')" \
+		-o "APT::FTPArchive::Release::Description=$(DISTRO_CODE) $(DISTRO_VERSION)" \
+		-o "APT::FTPArchive::Release::Label=Ubuntu" \
+		-o "APT::FTPArchive::Release::Origin=Ubuntu" \
+		-o "APT::FTPArchive::Release::Suite=$(UBUNTU_CODE)" \
+		-o "APT::FTPArchive::Release::Version=$(DISTRO_VERSION)" \
+		release "dists/$(UBUNTU_CODE)" \
+		> "dists/$(UBUNTU_CODE)/Release" && \
+	gpg --batch --yes --import "$(CURDIR)/$(BUILD)/iso-key.gpg" && \
+	gpg --batch --yes --digest-algo sha512 --sign --detach-sign --armor --local-user "AtomOS Builder" -o "dists/$(UBUNTU_CODE)/Release.gpg" "dists/$(UBUNTU_CODE)/Release" && \
+	cd "dists" && \
+	ln -s "$(UBUNTU_CODE)" stable && \
+	ln -s "$(UBUNTU_CODE)" unstable
+
+	touch "$@"
+
 $(BUILD)/iso_grub.tag: $(BUILD)/iso_create.tag
 	# Create boot directory
 	mkdir -p "$(BUILD)/iso/boot/grub"
@@ -90,11 +130,11 @@ $(BUILD)/iso_data.tag: $(BUILD)/iso_create.tag
 	# Create .disk directory
 	mkdir -p "$(BUILD)/iso/.disk"
 	sed "$(SED)" "data/disk/info" > "$(BUILD)/iso/.disk/info"
-	echo "$(DISTRO_VOLUME_LABEL)" > "$(BUILD)/iso/.disk/info"
+
 	
 	touch "$@"
 
-$(BUILD)/iso_sum.tag: $(BUILD)/iso_casper.tag $(BUILD)/iso_grub.tag $(BUILD)/iso_data.tag
+$(BUILD)/iso_sum.tag: $(BUILD)/iso_casper.tag $(BUILD)/iso_grub.tag $(BUILD)/iso_data.tag $(BUILD)/iso_pool.tag $(BUILD)/iso_pool.tag
 	# Calculate md5sum
 	cd "$(BUILD)/iso" && \
 	rm -f md5sum.txt && \
@@ -105,6 +145,7 @@ $(BUILD)/iso_sum.tag: $(BUILD)/iso_casper.tag $(BUILD)/iso_grub.tag $(BUILD)/iso
 $(ISO): $(BUILD)/iso_sum.tag
 ifeq ($(DISTRO_ARCH),amd64)
 	xorriso -as mkisofs \
+		-iso-level 3 \
 		-J -l -R \
 		-V "$(DISTRO_VOLUME_LABEL)" \
 		-o "$@.partial" \
@@ -119,6 +160,7 @@ ifeq ($(DISTRO_ARCH),amd64)
 		"$(BUILD)/iso"
 else
 	xorriso -as mkisofs \
+		-iso-level 3 \
 		-J -l -R \
 		-V "$(DISTRO_VOLUME_LABEL)" \
 		-o "$@.partial" \

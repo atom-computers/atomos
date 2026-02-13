@@ -43,6 +43,9 @@ include mk/qemu.mk
 # Chroot targets for building the system
 include mk/chroot.mk
 
+# GPG targets
+include mk/gpg.mk
+
 # ISO targets for creating the final image
 include mk/iso.mk
 
