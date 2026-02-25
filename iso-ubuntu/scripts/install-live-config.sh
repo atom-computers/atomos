@@ -3,6 +3,12 @@ set -e
 
 echo "Configuring Live Environment..."
 
+# Force hostname to atom-os globally for the live session
+echo "atom-os" > /etc/hostname
+sed -i 's/127.0.1.1.*/127.0.1.1\tatom-os/' /etc/hosts || echo -e "127.0.1.1\tatom-os" >> /etc/hosts
+mkdir -p /etc/casper.conf.d
+echo 'export HOSTNAME="atom-os"' > /etc/casper.conf.d/10-hostname.conf
+
 # Create the check script
 cat > /usr/local/bin/atomos-live-check << 'EOF'
 #!/bin/bash

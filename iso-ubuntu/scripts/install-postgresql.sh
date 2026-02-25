@@ -23,8 +23,25 @@ apt-get install -y postgresql-18 postgresql-client-18 postgresql-contrib-18
 # Allow local connections without password for development
 sed -i 's/peer/trust/g' /etc/postgresql/18/main/pg_hba.conf
 sed -i 's/md5/trust/g' /etc/postgresql/18/main/pg_hba.conf
+sed -i 's/scram-sha-256/trust/g' /etc/postgresql/18/main/pg_hba.conf
 
 # Enable and start PostgreSQL service
 systemctl enable postgresql
+
+# Temporarily start PostgreSQL to create the cocoindex database
+echo "Initializing cocoindex database..."
+pg_ctlcluster 18 main start
+
+# Wait for PostgreSQL to be ready
+until su - postgres -c "psql -c '\q'"; do
+  echo "Waiting for PostgreSQL to start..."
+  sleep 1
+done
+
+# Create cocoindex database and user
+su - postgres -c "psql -c \"CREATE DATABASE cocoindex;\""
+
+# Stop PostgreSQL
+pg_ctlcluster 18 main stop
 
 echo "PostgreSQL 18 installed successfully"

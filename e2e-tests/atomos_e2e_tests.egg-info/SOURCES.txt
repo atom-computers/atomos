@@ -1,0 +1,6 @@
+pyproject.toml
+atomos_e2e_tests.egg-info/PKG-INFO
+atomos_e2e_tests.egg-info/SOURCES.txt
+atomos_e2e_tests.egg-info/dependency_links.txt
+atomos_e2e_tests.egg-info/requires.txt
+atomos_e2e_tests.egg-info/top_level.txt

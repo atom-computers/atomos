@@ -1,0 +1,19 @@
+[project]
+name = "atomos-e2e-tests"
+version = "0.1.0"
+description = "End-to-End tests for Atom OS core services"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.5",
+    "surrealdb>=0.3.2",
+    "httpx>=0.27.0",
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["."]
+python_files = "test_*.py"

@@ -3,10 +3,10 @@
 
 # Dependency source paths
 # Detect if running in container with /build-deps mounts (Podman/Docker)
-ifneq ($(wildcard /build-deps/sync),)
-	SYNC_SRC := /build-deps/sync
+ifneq ($(wildcard /build-deps/core),)
+	CORE_SRC := /build-deps/core
 else
-	SYNC_SRC := ../sync
+	CORE_SRC := ../core
 endif
 
 ifneq ($(wildcard /build-deps/cosmic-ext-applet-ollama),)
@@ -18,13 +18,13 @@ endif
 ifneq ($(wildcard /build-deps/cocoindex),)
 	COCOINDEX_SRC := /build-deps/cocoindex
 else
-	COCOINDEX_SRC := ../cocoindex
+	COCOINDEX_SRC := ../vendor/cocoindex
 endif
 
 ifneq ($(wildcard /build-deps/atom-installer),)
 	ATOM_INSTALLER_SRC := /build-deps/atom-installer
 else
-	ATOM_INSTALLER_SRC := ../atom-installer
+	ATOM_INSTALLER_SRC := atom-installer
 endif
 
 $(BUILD)/pool: $(BUILD)/chroot
@@ -125,6 +125,12 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	printf "Package: linux-firmware\nPin: release o=pop-os-release\nPin-Priority: -1\n" > "$(BUILD)/chroot/etc/apt/preferences.d/pin-pop-os"
 
 	
+	# Pre-populate kernelstub configuration before installing packages.
+	# This prevents the kernelstub initramfs hook from failing in the build chroot
+	# (it can't find block devices). Mirrors how atomos/iso handles this.
+	mkdir -p "$(BUILD)/chroot/etc/kernelstub"
+	cp "data/$(DISTRO_ARCH)/kernelstub" "$(BUILD)/chroot/etc/kernelstub/configuration"
+
 	# Install packages
 	chroot "$(BUILD)/chroot" apt-get install -y $(ALL_PKGS)
 	
@@ -134,11 +140,11 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	chmod +x "$(BUILD)/chroot/tmp/atomos-install/"*.sh
 	
 
-	# Copy sync service files
+	# Copy core service files
 	# Use rsync to exclude build artifacts (target, node_modules) which cause I/O errors on shared mounts
 	rsync -a --no-owner --no-group \
 		--exclude='target' --exclude='node_modules' --exclude='.git' --exclude='.venv' --exclude='__pycache__' \
-		"$(SYNC_SRC)/" "$(BUILD)/chroot/tmp/atomos-install/sync/"
+		"$(CORE_SRC)/" "$(BUILD)/chroot/tmp/atomos-install/core/"
 
 	# Copy cosmic-ext-applet-ollama
 	rsync -a --no-owner --no-group \
@@ -154,16 +160,29 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	rsync -a --no-owner --no-group \
 		--exclude='target' --exclude='.git' \
 		"$(ATOM_INSTALLER_SRC)/" "$(BUILD)/chroot/tmp/atomos-install/atom-installer/"
+
+	# Copy distinst-source
+	rsync -a --no-owner --no-group \
+		"distinst-source/" "$(BUILD)/chroot/tmp/atomos-install/distinst-source/"
+	
+	# Copy data directory for custom assets (wallpapers, etc.)
+	mkdir -p "$(BUILD)/chroot/tmp/atomos-install/data"
+	cp -r data/wallpapers "$(BUILD)/chroot/tmp/atomos-install/data/wallpapers"
 	
 	# Run custom installation scripts
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-postgresql.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-surrealdb.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-cocoindex.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-sync.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-context-manager.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atomos-agents.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-ollama-applet.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atom-installer.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-distinst-custom.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-live-config.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-netplan.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-network-manager.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-wallpapers.sh
 
 	# Clean up
 	chroot "$(BUILD)/chroot" apt-get clean

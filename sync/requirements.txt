@@ -1,4 +1,0 @@
-cocoindex
-surrealdb
-sentence-transformers
-watchdog

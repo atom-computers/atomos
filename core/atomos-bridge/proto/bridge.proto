@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package atomos.bridge;
+
+service AgentService {
+  rpc StreamAgentTurn(AgentRequest) returns (stream AgentResponse);
+}
+
+message AgentRequest {
+  string prompt = 1;
+  string model = 2;
+  repeated string images = 3;
+  repeated uint64 context = 4;
+}
+
+message AgentResponse {
+  string content = 1;
+  bool done = 2;
+  string tool_call = 3;
+  string status = 4;
+}

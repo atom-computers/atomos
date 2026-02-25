@@ -26,7 +26,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/local/bin/surreal start --log trace --user root --pass root file:/var/lib/surrealdb/data.db
+ExecStart=/usr/local/bin/surreal start --log trace --user root --pass root surrealkv:///var/lib/surrealdb/data.db
 Restart=on-failure
 RestartSec=5s
 
@@ -36,5 +36,23 @@ EOF
 
 # Enable SurrealDB service
 systemctl enable surrealdb
+
+# Temporarily start SurrealDB to apply the initial schema
+echo "Initializing SurrealDB schema..."
+/usr/local/bin/surreal start --user root --pass root surrealkv:///var/lib/surrealdb/data.db &
+SURREAL_PID=$!
+
+# Wait for SurrealDB to be ready
+until curl -s http://localhost:8000/health; do
+  echo "Waiting for SurrealDB to start..."
+  sleep 1
+done
+
+# Apply the initial schema
+/usr/local/bin/surreal import --endpoint http://localhost:8000 --user root --pass root --ns atomos --db filesystem /tmp/atomos-install/core/atomos-db/migrations/0001_initial_schema.surql
+
+# Kill the background SurrealDB process
+kill $SURREAL_PID
+wait $SURREAL_PID || true
 
 echo "SurrealDB installed successfully"

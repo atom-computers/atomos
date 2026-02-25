@@ -33,7 +33,17 @@ cd "$WORKDIR"
 # Clone distinst
 # We use a specific tag/commit if possible to match 24.04 version?
 # But latest master is usually fine for Pop!_OS.
-git clone https://github.com/pop-os/distinst.git .
+# Use local source instead of cloning
+# This allows us to apply patches to the local source tree before building
+SOURCE_DIR="/tmp/atomos-install/distinst-source"
+if [ -d "$SOURCE_DIR" ]; then
+    echo "Using local distinst source from $SOURCE_DIR"
+    cp -r "$SOURCE_DIR/." .
+else
+    echo "ERROR: Local distinst source not found at $SOURCE_DIR"
+    ls -R /tmp/atomos-install
+    exit 1
+fi
 
 # PATCH: Increase recovery partition size from 4GB (8388608 sectors) to 8GB (16777216 sectors)
 # The constant is DEFAULT_RECOVER_SECTORS in src/lib.rs

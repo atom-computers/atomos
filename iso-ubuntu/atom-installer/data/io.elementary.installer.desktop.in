@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Install AtomOS
+Comment=Install the system
+Exec=io.elementary.installer.wrapper
+Icon=system-os-installer
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=GNOME;GTK;System;

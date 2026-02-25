@@ -1,0 +1,15 @@
+[package]
+name = "context-manager"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.41", features = ["full"] }
+surrealdb = "2.0.4"
+atomos-db = { path = "../atomos-db" }
+rig-core = "0.31"
+rig-surrealdb = "0.1"
+reqwest = "0.13.2"

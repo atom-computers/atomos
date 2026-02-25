@@ -41,13 +41,32 @@ DISTRO_PKGS=\
 	logsave \
 	cryptsetup \
 	cryptsetup-bin \
-	lvm2
+	lvm2 \
+	snapd \
+	kernelstub \
+	udisks2 \
+	spice-vdagent \
+	qemu-guest-agent \
+	openssh-server \
+	isc-dhcp-client \
+	netplan.io \
+	avahi-autoipd \
+	avahi-daemon \
+	libnss-mdns \
+	libnss-myhostname \
+	net-tools \
+	iputils-ping \
+	iputils-tracepath \
+	curl \
+	ufw
 
 
 ifeq ($(DISTRO_ARCH),amd64)
 DISTRO_PKGS+=\
 	grub-pc-bin \
-	grub-efi-amd64-bin
+	grub-efi-amd64-bin \
+	virtualbox-guest-utils \
+	virtualbox-guest-x11
 else
 DISTRO_PKGS+=\
 	grub-efi-arm64-bin
@@ -65,6 +84,7 @@ COSMIC_PKGS=\
 	cosmic-files \
 	cosmic-term \
 	cosmic-edit \
+	firefox \
 	pop-fonts
 
 # Development tools for building custom packages
@@ -78,6 +98,7 @@ BUILD_PKGS=\
 	libpq-dev \
 	pkg-config \
 	libssl-dev \
+	protobuf-compiler \
 	just \
 	meson \
 	ninja-build \
@@ -101,7 +122,6 @@ LIVE_PKGS=\
 
 # Packages to remove from installed system
 RM_PKGS=\
-	snapd \
 	ubuntu-advantage-tools
 
 # All packages combined
@@ -144,6 +164,8 @@ MAIN_POOL=\
 	python3-evdev \
 	python3-systemd \
 	shim-signed \
+	systemd-boot \
+	systemd-boot-efi \
 	xbacklight \
 	xfsprogs
 else ifeq ($(DISTRO_ARCH),arm64)
@@ -179,6 +201,8 @@ MAIN_POOL=\
 	python3-evdev \
 	python3-systemd \
 	shim-signed \
+	systemd-boot \
+	systemd-boot-efi \
 	xbacklight \
 	xfsprogs
 endif

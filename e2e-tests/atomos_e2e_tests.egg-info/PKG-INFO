@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: atomos-e2e-tests
+Version: 0.1.0
+Summary: End-to-End tests for Atom OS core services
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pytest>=8.0.0
+Requires-Dist: pytest-asyncio>=0.23.5
+Requires-Dist: surrealdb>=0.3.2
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: grpcio>=1.60.0
+Requires-Dist: grpcio-tools>=1.60.0

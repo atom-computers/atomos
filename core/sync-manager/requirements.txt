@@ -1,0 +1,11 @@
+cocoindex
+surrealdb
+sentence-transformers
+pymupdf
+Pillow
+fastapi
+uvicorn
+python-dotenv
+watchdog
+mcp
+vobject

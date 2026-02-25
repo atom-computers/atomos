@@ -1,0 +1,11 @@
+grpcio>=1.62.0
+grpcio-tools>=1.62.0
+protobuf>=4.25.0
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-community>=0.0.10
+pydantic>=2.0.0
+
+[dev]
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

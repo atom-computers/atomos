@@ -1,0 +1,595 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-04-23 13:06-0700\n"
+"PO-Revision-Date: 2018-03-21 00:04+0000\n"
+"Last-Translator: Adolfo Jayme-Barrientos <fitojb@ubuntu.com>\n"
+"Language-Team: Spanish <https://weblate.elementary.io/projects/installer/"
+"installer/es/>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 2.18\n"
+"X-Launchpad-Export-Date: 2016-09-27 06:41+0000\n"
+
+#: src/MainWindow.vala:44 src/Views/TryInstallView.vala:93
+#, c-format
+msgid "Install %s"
+msgstr "Instalar %s"
+
+#: src/Utils.vala:31
+msgid "Operating System"
+msgstr "Sistema operativo"
+
+#: src/Helpers/LocaleHelper.vala:114 src/Views/KeyboardLayoutView.vala:172
+#, c-format
+msgid "%s…"
+msgstr "%s…"
+
+#: src/Helpers/LogHelper.vala:52
+msgid "Unable to set the Distinst log callback"
+msgstr "No se puede establecer el llamado a un registro distinto"
+
+#: src/Helpers/LogHelper.vala:54
+msgid "Starting installation"
+msgstr "Iniciando Instalación"
+
+#: src/Dialogs/EndSessionDialog.vala:43
+msgid "Are you sure you want to Shut Down?"
+msgstr "¿Confirma que quiere apagar?"
+
+#: src/Dialogs/EndSessionDialog.vala:50
+msgid "This will cancel installation and turn off this device."
+msgstr "Esto cancelará la instalación y apagará este dispositivo."
+
+#: src/Dialogs/EndSessionDialog.vala:66
+msgid "Restart"
+msgstr "Reiniciar"
+
+#: src/Dialogs/EndSessionDialog.vala:68
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: src/Dialogs/EndSessionDialog.vala:70 src/Views/TryInstallView.vala:97
+#: src/Views/SuccessView.vala:63
+msgid "Shut Down"
+msgstr "Apagar"
+
+#: src/Views/AbstractInstallerView.vala:49
+msgid "Cancel Installation"
+msgstr "Cancelar instalación"
+
+#: src/Views/AbstractInstallerView.vala:58
+msgid "Test Mode"
+msgstr "Modo de prueba"
+
+#: src/Views/CheckView.vala:66
+msgid "Ignore"
+msgstr "Ignorar"
+
+#: src/Views/CheckView.vala:203
+msgid "Not Enough Space"
+msgstr "No hay espacio suficiente"
+
+#: src/Views/CheckView.vala:204
+#, c-format
+msgid ""
+"There is not enough room on your device to install %s. We recommend a "
+"minimum of %s of storage."
+msgstr ""
+"No hay espacio suficiente en el dispositivo para instalar %s. Recomendamos "
+"%s de almacenamiento mínimo."
+
+#: src/Views/CheckView.vala:215
+msgid "Your Device May Be Too Slow"
+msgstr "El dispositivo puede ser demasiado lento"
+
+#: src/Views/CheckView.vala:216
+msgid ""
+"Your device doesn't meet the recommended hardware requirements. This may "
+"cause it to run slowly or freeze."
+msgstr ""
+"El dispositivo no cumple los requisitos de hardware recomendados. Esto puede "
+"hacer que funcione lentamente o se congele."
+
+#: src/Views/CheckView.vala:232
+msgid "Connect to a Power Source"
+msgstr "Conéctese a una fuente de alimentación"
+
+#: src/Views/CheckView.vala:233
+msgid ""
+"Your device is running on battery power. It's recommended to be plugged in "
+"while installing."
+msgstr ""
+"El dispositivo funciona con batería. Se recomienda enchufarlo durante la "
+"instalación."
+
+#: src/Views/CheckView.vala:291
+msgid "Recommended:"
+msgstr "Recomendado:"
+
+#: src/Views/CheckView.vala:295
+msgid "Your Device:"
+msgstr "Su dispositivo:"
+
+#: src/Views/CheckView.vala:299 src/Views/CheckView.vala:301
+msgid "Processor:"
+msgstr "Procesador:"
+
+#: src/Views/CheckView.vala:307 src/Views/CheckView.vala:309
+msgid "Memory:"
+msgstr "Memoria:"
+
+#: src/Views/DiskView.vala:52
+#, fuzzy
+msgid "Select a Drive"
+msgstr "Seleccione un idioma"
+
+#: src/Views/DiskView.vala:56
+msgid ""
+"This will erase all data on the selected drive. If you have not backed your "
+"data up, you can cancel the installation and use Demo Mode."
+msgstr ""
+"Se eliminarán todos los datos de la unidad seleccionada. Si no ha respaldado "
+"sus datos, puede cancelar la instalación y utilizar el modo de demostración."
+
+#: src/Views/DiskView.vala:66
+msgid "Getting the current configuration…"
+msgstr "Obteniendo la configuración actual…"
+
+#: src/Views/DiskView.vala:97
+msgid "Customize Partitions…"
+msgstr ""
+
+#: src/Views/DiskView.vala:103 src/Views/PartitioningView.vala:95
+msgid "Erase and Install"
+msgstr "Borrar e instalar"
+
+#: src/Views/EncryptView.vala:47
+msgid "Drive Encryption"
+msgstr ""
+
+#: src/Views/EncryptView.vala:53
+msgid ""
+"Encrypting this drive protects data from being read by others with physical "
+"access to this device."
+msgstr ""
+
+#: src/Views/EncryptView.vala:60
+msgid ""
+"Drive encryption may minimally impact read and write speed when performing "
+"intense tasks."
+msgstr ""
+
+#: src/Views/EncryptView.vala:67
+msgid ""
+"The encryption password will be required each time you turn on this device "
+"or restart."
+msgstr ""
+
+#: src/Views/EncryptView.vala:83
+msgid ""
+"If you forget the encryption password, <b>you will not be able to recover "
+"data.</b> This is a unique password for this device, not the password for "
+"your user account."
+msgstr ""
+
+#: src/Views/EncryptView.vala:90
+msgid "Choose Encryption Password"
+msgstr ""
+
+#: src/Views/EncryptView.vala:105
+msgid "Confirm Password"
+msgstr ""
+
+#: src/Views/EncryptView.vala:141
+msgid "Don't Encrypt"
+msgstr ""
+
+#: src/Views/EncryptView.vala:142 src/Views/KeyboardLayoutView.vala:54
+#: src/Views/TryInstallView.vala:89
+msgid "Back"
+msgstr "Volver"
+
+#: src/Views/EncryptView.vala:144 src/Views/EncryptView.vala:159
+msgid "Choose Password"
+msgstr ""
+
+#: src/Views/EncryptView.vala:168
+msgid "Set Password"
+msgstr ""
+
+#: src/Views/EncryptView.vala:231
+msgid "Passwords do not match"
+msgstr ""
+
+#: src/Views/ErrorView.vala:38
+#, fuzzy
+msgid "Could Not Install"
+msgstr "No se pudo instalar %s"
+
+#: src/Views/ErrorView.vala:46
+#, fuzzy, c-format
+msgid ""
+"Installing %s failed, possibly due to a hardware error. Your device may not "
+"restart properly. You can try the following:"
+msgstr ""
+"La instalación falló, por lo que es posible que el dispositivo no se "
+"reinicie correctamente. Puede probar lo siguiente:"
+
+#: src/Views/ErrorView.vala:52
+msgid "• Try the installation again"
+msgstr "• Intentar instalar de nuevo"
+
+#: src/Views/ErrorView.vala:58
+msgid "• Use Demo Mode and try to manually recover"
+msgstr "• Utilizar el modo de demostración y probar la recuperación manual"
+
+#: src/Views/ErrorView.vala:64
+msgid "• Restart your device to boot from another drive"
+msgstr "• Reiniciar el dispositivo para arrancar desde otra unidad"
+
+#: src/Views/ErrorView.vala:112 src/Views/SuccessView.vala:65
+msgid "Restart Device"
+msgstr "Reiniciar dispositivo"
+
+#: src/Views/ErrorView.vala:114 src/Views/TryInstallView.vala:91
+msgid "Try Demo Mode"
+msgstr "Probar modo de demostración"
+
+#: src/Views/ErrorView.vala:116
+msgid "Try Installing Again"
+msgstr "Intentar instalar nuevamente"
+
+#: src/Views/ErrorView.vala:134 src/Views/SuccessView.vala:95
+msgid "Test mode reboot"
+msgstr "Reinicio del modo de prueba"
+
+#: src/Views/ErrorView.vala:146
+#, fuzzy
+msgid "Test mode switch user"
+msgstr "Apagado del modo de prueba"
+
+#: src/Views/KeyboardLayoutView.vala:28
+msgid "Keyboard Layout"
+msgstr "Disposición de teclado"
+
+#: src/Views/KeyboardLayoutView.vala:36
+msgid "Type to test your layout"
+msgstr "Escriba para probar la disposición"
+
+#: src/Views/KeyboardLayoutView.vala:39
+msgid "Show keyboard layout"
+msgstr "Mostrar disposición del teclado"
+
+#: src/Views/KeyboardLayoutView.vala:56 src/Views/LanguageView.vala:109
+#: src/Views/LanguageView.vala:161
+msgid "Select"
+msgstr "Seleccionar"
+
+#: src/Views/KeyboardLayoutView.vala:101
+msgid "Default"
+msgstr "Predeterminado"
+
+#: src/Views/KeyboardLayoutView.vala:108
+msgid "Input Language"
+msgstr "Idioma de escritura"
+
+#: src/Views/LanguageView.vala:217
+msgid "Languages"
+msgstr "Idiomas"
+
+#: src/Views/LanguageView.vala:234
+msgid "Select a Language"
+msgstr "Seleccione un idioma"
+
+#: src/Views/LanguageView.vala:262 src/Views/LanguageView.vala:305
+msgid "Currently active language"
+msgstr "Idioma elegido actualmente"
+
+#: src/Views/PartitioningView.vala:46
+msgid ""
+"Select which partitions to use across all drives. <b>Selecting \"Format\" "
+"will erase ALL data on the selected partition.</b>"
+msgstr ""
+
+#: src/Views/PartitioningView.vala:52
+msgid "You must at least select a <b>Root (/)</b> partition."
+msgstr ""
+
+#: src/Views/PartitioningView.vala:56
+msgid ""
+"You must at least select a <b>Root (/)</b> partition and a <b>Boot (/boot/"
+"efi)</b> partition."
+msgstr ""
+
+#: src/Views/PartitioningView.vala:60
+msgid "It is also recommended to select a <b>Swap</b> partition."
+msgstr ""
+
+#: src/Views/PartitioningView.vala:89
+msgid "Modify Partitions…"
+msgstr ""
+
+#: src/Views/ProgressView.vala:448
+msgid "Partitioning Drive"
+msgstr "Particionando disco"
+
+#: src/Views/ProgressView.vala:452
+msgid "Extracting Files"
+msgstr "Extrayendo archivos"
+
+#: src/Views/ProgressView.vala:456
+msgid "Configuring the System"
+msgstr "Configurando el sistema"
+
+#: src/Views/ProgressView.vala:460
+msgid "Finishing the Installation"
+msgstr "Finalizando la instalación"
+
+#: src/Views/TryInstallView.vala:33
+msgid "Install or Try Demo Mode"
+msgstr "Instalar o probar el modo de demostración"
+
+#: src/Views/TryInstallView.vala:42
+#, c-format
+msgid ""
+"You can install %s on this device now, or try Demo Mode without installing."
+msgstr ""
+"Puede instalar %s en este dispositivo ahora o probar el modo de demostración "
+"sin instalarlo."
+
+#: src/Views/TryInstallView.vala:53
+#, fuzzy
+msgid ""
+"In Demo Mode, changes you make will not be saved and data from your previous "
+"operating system will be unchanged. Performance and features may not reflect "
+"the installed experience."
+msgstr ""
+"En el modo de demostración, los cambios que realice no se guardarán y los "
+"datos del sistema operativo anterior no se verán afectados."
+
+#: src/Views/TryInstallView.vala:64
+msgid ""
+"You can always return to the installer from Demo Mode by selecting the "
+"Install icon."
+msgstr ""
+"Siempre puede volver al instalador desde el modo de demostración al "
+"seleccionar el icono Instalar."
+
+#: src/Views/SuccessView.vala:34
+msgid "Continue Setting Up"
+msgstr ""
+
+#: src/Views/SuccessView.vala:42
+#, fuzzy, c-format
+msgid "Your device will automatically restart to %s in %i seconds."
+msgstr ""
+"El dispositivo se reiniciará automáticamente en %s en 30 segundos para "
+"configurar una cuenta de usuario nueva, o puede apagar ahora y configurar la "
+"cuenta más tarde."
+
+#: src/Views/SuccessView.vala:43
+#, fuzzy
+msgid ""
+"After restarting you can set up a new user, or you can shut down now and set "
+"up a new user later."
+msgstr ""
+"El dispositivo se reiniciará automáticamente en %s en 30 segundos para "
+"configurar una cuenta de usuario nueva, o puede apagar ahora y configurar la "
+"cuenta más tarde."
+
+#: src/Views/SuccessView.vala:75
+msgid "Test mode shutdown"
+msgstr "Apagado del modo de prueba"
+
+#: src/Widgets/DecryptMenu.vala:54
+msgid "Decrypt This Partition"
+msgstr ""
+
+#: src/Widgets/DecryptMenu.vala:58
+msgid "Enter the partition's encryption password and set a LUKS device name."
+msgstr ""
+
+#: src/Widgets/DecryptMenu.vala:71
+msgid "Password:"
+msgstr ""
+
+#: src/Widgets/DecryptMenu.vala:84
+msgid "Device name:"
+msgstr ""
+
+#: src/Widgets/DecryptMenu.vala:97
+msgid "Decrypt"
+msgstr ""
+
+#: src/Widgets/DecryptMenu.vala:125
+msgid "LUKS volume was decrypted"
+msgstr ""
+
+#: src/Widgets/DiskBar.vala:127
+#, c-format
+msgid "%s (%s)"
+msgstr ""
+
+#: src/Widgets/DiskBar.vala:128
+#, c-format
+msgid "%s (%s: <b>%s</b>)"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:60
+msgid "Use partition:"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:71
+msgid "Format:"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:81
+msgid "Use as:"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:87
+#, fuzzy
+msgid "Root (/)"
+msgstr "Raíz cuadrada"
+
+#: src/Widgets/PartitionMenu.vala:88
+msgid "Home (/home)"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:89
+#, c-format
+msgid "Boot (%s)"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:90
+msgid "Swap"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:91
+msgid "Custom"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:95
+msgid "Custom:"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:103
+msgid "Filesystem:"
+msgstr ""
+
+#: src/Widgets/PartitionMenu.vala:109
+#, fuzzy
+msgid "Default (ext4)"
+msgstr "Predeterminado"
+
+#~ msgid "Select a drive to use for installation"
+#~ msgstr "Seleccione la unidad que utilizar para la instalación"
+
+#~ msgid "Restart your device to continue setting up"
+#~ msgstr "Reinicie el dispositivo para continuar con la configuración"
+
+#~ msgid "Formating Drive"
+#~ msgstr "Formateando la Unidad"
+
+#~ msgid "Data from your previous operating system is unchanged in Demo Mode."
+#~ msgstr ""
+#~ "Los datos del sistema operativo anterior no se modificarán en el modo "
+#~ "Demo."
+
+#~ msgid "Any changes you make in Demo Mode will not be saved."
+#~ msgstr "Cualquier cambio que realice en el modo Demo no se guardará."
+
+#~ msgid "Installer"
+#~ msgstr "Instalador"
+
+#~ msgid "translator-credits"
+#~ msgstr ""
+#~ "Contribuciones a Launchpad:\n"
+#~ "  Adolfo Jayme https://launchpad.net/~fitojb\n"
+#~ "  Félix Brezo https://launchpad.net/~febrezo\n"
+#~ "  Jorge Chaclán https://launchpad.net/~kukugt\n"
+#~ "  Juan Mantilla https://launchpad.net/~judamalo77\n"
+#~ "  Luis Oropeza https://launchpad.net/~luis-oropeza-129\n"
+#~ "  Maxwell Barvian https://launchpad.net/~mbarvian-deactivatedaccount\n"
+#~ "  Miguel R P https://launchpad.net/~miguelonrp2001\n"
+#~ "  Oscar Miranda https://launchpad.net/~oscarmiranda3615\n"
+#~ "  Ricardo Canul https://launchpad.net/~ricardocanul7\n"
+#~ "  Rybun https://launchpad.net/~mail-rybun\n"
+#~ "  avijo https://launchpad.net/~oscarj-ms\n"
+#~ "  bitseater https://launchpad.net/~bitseater\n"
+#~ "  hector https://launchpad.net/~hector-aa"
+
+#~ msgid "Use English"
+#~ msgstr "Usar Inglés"
+
+#~ msgid "Calculator"
+#~ msgstr "Calculadora"
+
+#~ msgid "History"
+#~ msgstr "Historial"
+
+#~ msgid "Value to add:"
+#~ msgstr "Valor que sumar:"
+
+#~ msgid "Result"
+#~ msgstr "Resultado"
+
+#~ msgid "Expression"
+#~ msgstr "Expresión"
+
+#~ msgid "Close"
+#~ msgstr "Cerrar"
+
+#~ msgid "Add"
+#~ msgstr "Sumar"
+
+#~ msgid "Show extended functionality"
+#~ msgstr "Mostrar más funciones"
+
+#~ msgid "Calculate Result"
+#~ msgstr "Calcular resultado"
+
+#~ msgid "Add last result"
+#~ msgstr "Sumar el último resultado"
+
+#~ msgid "Clear entry"
+#~ msgstr "Borrar entrada"
+
+#~ msgid "Subtract"
+#~ msgstr "Restar"
+
+#~ msgid "Multiply"
+#~ msgstr "Multiplicar"
+
+#~ msgid "Divide"
+#~ msgstr "Dividir"
+
+#~ msgid "Percentage"
+#~ msgstr "Porcentaje"
+
+#~ msgid "Start Group"
+#~ msgstr "Abrir grupo"
+
+#~ msgid "End Group"
+#~ msgstr "Cerrar grupo"
+
+#~ msgid "Exponent"
+#~ msgstr "Exponencial"
+
+#~ msgid "Sine"
+#~ msgstr "Seno"
+
+#~ msgid "Hyperbolic Sine"
+#~ msgstr "Seno hiperbólico"
+
+#~ msgid "Cosine"
+#~ msgstr "Coseno"
+
+#~ msgid "Hyperbolic Cosine"
+#~ msgstr "Coseno hiperbólico"
+
+#~ msgid "Tangent"
+#~ msgstr "Tangente"
+
+#~ msgid "Hyperbolic Tangent"
+#~ msgstr "Tangente hiperbólica"
+
+#~ msgid "Pi"
+#~ msgstr "Pi"
+
+#~ msgid "Euler's Number"
+#~ msgstr "Número de Euler"
+
+#~ msgid "Hide extended functionality"
+#~ msgstr "Ocultar funciones adicionales"
+
+#~ msgid "'%s' is invalid."
+#~ msgstr "«%s» no es válido."
+
+#~ msgid "'%s' is unknown."
+#~ msgstr "«%s» es desconocido."

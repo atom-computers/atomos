@@ -6,3 +6,12 @@ surrealdb/.dev/
 sync/.dev/**
 cosmic-ext-applet-ollama/.dev/**
 .DS_Store
+
+# Cargo
+target/
+__pycache__/
+.venv/
+venv/
+.pytest_cache/
+
+TASKLIST.md

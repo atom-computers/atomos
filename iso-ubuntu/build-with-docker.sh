@@ -48,10 +48,10 @@ echo -e "${BLUE}Copying source files into container...${NC}"
 # Use --warning=no-unknown-keyword to suppress macOS extended attribute warnings
 tar --exclude='build' --exclude='.git' --exclude='*.iso' -C "$SCRIPT_DIR" -cf - . | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/iso-ubuntu/
 
-if [ -d "$PROJECT_ROOT/sync" ]; then
-    echo "Copying sync and excluding target/node_modules..."
-    docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/sync
-    tar --exclude='target' --exclude='node_modules' --exclude='.git' --exclude='__pycache__' -C "$PROJECT_ROOT" -cf - sync | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
+if [ -d "$PROJECT_ROOT/core" ]; then
+    echo "Copying core and excluding target/node_modules..."
+    docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/core
+    tar --exclude='target' --exclude='node_modules' --exclude='.git' --exclude='__pycache__' -C "$PROJECT_ROOT" -cf - core | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
 fi
 
 if [ -d "$PROJECT_ROOT/cosmic-ext-applet-ollama" ]; then
@@ -60,16 +60,16 @@ if [ -d "$PROJECT_ROOT/cosmic-ext-applet-ollama" ]; then
     tar --exclude='target' --exclude='node_modules' --exclude='.git' -C "$PROJECT_ROOT" -cf - cosmic-ext-applet-ollama | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
 fi
 
-if [ -d "$PROJECT_ROOT/cocoindex" ]; then
-    echo "Copying cocoindex and excluding target/uv.lock..."
-    docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/cocoindex
-    tar --exclude='target' --exclude='node_modules' --exclude='.git' --exclude='uv.lock' -C "$PROJECT_ROOT" -cf - cocoindex | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
+if [ -d "$PROJECT_ROOT/vendor/cocoindex" ]; then
+    echo "Copying cocoindex from vendor and excluding target/uv.lock..."
+    docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/vendor/cocoindex
+    tar --exclude='target' --exclude='node_modules' --exclude='.git' --exclude='uv.lock' -C "$PROJECT_ROOT/vendor" -cf - cocoindex | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/vendor/
 fi
 
-if [ -d "$PROJECT_ROOT/atom-installer" ]; then
+if [ -d "$SCRIPT_DIR/atom-installer" ]; then
     echo "Copying atom-installer and excluding target..."
     docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/atom-installer
-    tar --exclude='target' --exclude='.git' -C "$PROJECT_ROOT" -cf - atom-installer | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
+    tar --exclude='target' --exclude='.git' -C "$SCRIPT_DIR" -cf - atom-installer | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
 fi
 
 echo -e "${BLUE}Building ISO inside container...${NC}"
