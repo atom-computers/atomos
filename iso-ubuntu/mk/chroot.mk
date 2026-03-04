@@ -2,27 +2,35 @@
 # Note: These targets assume running as root (required for debootstrap and chroot)
 
 # Dependency source paths
-# Detect if running in container with /build-deps mounts (Podman/Docker)
+# Detect if running in container with /build-deps mounts (Podman) or /workspace mounts (Docker)
 ifneq ($(wildcard /build-deps/core),)
 	CORE_SRC := /build-deps/core
+else ifneq ($(wildcard /workspace/core),)
+	CORE_SRC := /workspace/core
 else
 	CORE_SRC := ../core
 endif
 
 ifneq ($(wildcard /build-deps/cosmic-ext-applet-ollama),)
 	APPLET_SRC := /build-deps/cosmic-ext-applet-ollama
+else ifneq ($(wildcard /workspace/cosmic-ext-applet-ollama),)
+	APPLET_SRC := /workspace/cosmic-ext-applet-ollama
 else
 	APPLET_SRC := ../cosmic-ext-applet-ollama
 endif
 
 ifneq ($(wildcard /build-deps/cocoindex),)
 	COCOINDEX_SRC := /build-deps/cocoindex
+else ifneq ($(wildcard /workspace/vendor/cocoindex),)
+	COCOINDEX_SRC := /workspace/vendor/cocoindex
 else
 	COCOINDEX_SRC := ../vendor/cocoindex
 endif
 
 ifneq ($(wildcard /build-deps/atom-installer),)
 	ATOM_INSTALLER_SRC := /build-deps/atom-installer
+else ifneq ($(wildcard /workspace/atom-installer),)
+	ATOM_INSTALLER_SRC := /workspace/atom-installer
 else
 	ATOM_INSTALLER_SRC := atom-installer
 endif
@@ -177,6 +185,8 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-context-manager.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atomos-agents.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-ollama-applet.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-seed-tools.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-zed.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atom-installer.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-distinst-custom.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-live-config.sh

@@ -5,7 +5,7 @@ import warnings
 
 import bridge_pb2 as bridge__pb2
 
-GRPC_GENERATED_VERSION = '1.78.1'
+GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -39,12 +39,34 @@ class AgentServiceStub(object):
                 request_serializer=bridge__pb2.AgentRequest.SerializeToString,
                 response_deserializer=bridge__pb2.AgentResponse.FromString,
                 _registered_method=True)
+        self.StoreSecret = channel.unary_unary(
+                '/atomos.bridge.AgentService/StoreSecret',
+                request_serializer=bridge__pb2.StoreSecretRequest.SerializeToString,
+                response_deserializer=bridge__pb2.StoreSecretResponse.FromString,
+                _registered_method=True)
+        self.HasSecret = channel.unary_unary(
+                '/atomos.bridge.AgentService/HasSecret',
+                request_serializer=bridge__pb2.HasSecretRequest.SerializeToString,
+                response_deserializer=bridge__pb2.HasSecretResponse.FromString,
+                _registered_method=True)
 
 
 class AgentServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def StreamAgentTurn(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StoreSecret(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def HasSecret(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +79,16 @@ def add_AgentServiceServicer_to_server(servicer, server):
                     servicer.StreamAgentTurn,
                     request_deserializer=bridge__pb2.AgentRequest.FromString,
                     response_serializer=bridge__pb2.AgentResponse.SerializeToString,
+            ),
+            'StoreSecret': grpc.unary_unary_rpc_method_handler(
+                    servicer.StoreSecret,
+                    request_deserializer=bridge__pb2.StoreSecretRequest.FromString,
+                    response_serializer=bridge__pb2.StoreSecretResponse.SerializeToString,
+            ),
+            'HasSecret': grpc.unary_unary_rpc_method_handler(
+                    servicer.HasSecret,
+                    request_deserializer=bridge__pb2.HasSecretRequest.FromString,
+                    response_serializer=bridge__pb2.HasSecretResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +118,60 @@ class AgentService(object):
             '/atomos.bridge.AgentService/StreamAgentTurn',
             bridge__pb2.AgentRequest.SerializeToString,
             bridge__pb2.AgentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StoreSecret(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/atomos.bridge.AgentService/StoreSecret',
+            bridge__pb2.StoreSecretRequest.SerializeToString,
+            bridge__pb2.StoreSecretResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def HasSecret(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/atomos.bridge.AgentService/HasSecret',
+            bridge__pb2.HasSecretRequest.SerializeToString,
+            bridge__pb2.HasSecretResponse.FromString,
             options,
             channel_credentials,
             insecure,

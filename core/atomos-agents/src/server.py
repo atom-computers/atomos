@@ -1,52 +1,166 @@
 import asyncio
 import logging
-from concurrent import futures
+
 import grpc
+import grpc.aio
 
 import bridge_pb2
 import bridge_pb2_grpc
-from agent_factory import create_deep_agent
+from agent_factory import create_agent_for_query
+from tool_registry import retrieve_tools, ensure_registry
 from langchain_core.messages import HumanMessage
+from secret_store import CredentialRequiredError, store_secret, has_secret
+
 
 class AgentServiceServicer(bridge_pb2_grpc.AgentServiceServicer):
-    
-    def StreamAgentTurn(self, request, context):
-        llm = create_deep_agent(request.model, request.context)
-        
-        # We process this synchronously for now because grpcio's basic servicer is sync unless we use grpc.aio
-        # LangChain provides `stream`
+
+    async def StreamAgentTurn(self, request, context):
+        model_name = (request.model or "").strip() or "default"
+        thread_id = f"default:{model_name}"
+        logging.info(
+            "StreamAgentTurn received: model=%r  thread_id=%r  prompt_len=%d",
+            model_name,
+            thread_id,
+            len(request.prompt),
+        )
+
         try:
-            chunks = llm.stream([HumanMessage(content=request.prompt)])
-            for chunk in chunks:
-                yield bridge_pb2.AgentResponse(
-                    content=str(chunk.content),
-                    done=False,
-                    status="Thinking..."
-                )
-            
+            tools = retrieve_tools(request.prompt)
+        except Exception as exc:
+            logging.warning("Tool retrieval failed: %s — proceeding without tools", exc)
+            tools = []
+
+        agent = create_agent_for_query(request.model, tools, thread_id)
+        config = {"configurable": {"thread_id": thread_id, "session_id": thread_id}}
+
+        try:
+            current_tool_call = ""
+
+            async for chunk, metadata in agent.astream(
+                {"messages": [HumanMessage(content=request.prompt)]},
+                config=config,
+                stream_mode="messages",
+            ):
+                node = metadata.get("langgraph_node", "")
+
+                if node == "agent":
+                    # ChatOllama: tool calls arrive in tool_call_chunks
+                    tc_chunks = getattr(chunk, "tool_call_chunks", None) or []
+                    for tc in tc_chunks:
+                        name = tc.get("name", "") or ""
+                        if name:
+                            current_tool_call = name
+                        if current_tool_call:
+                            yield bridge_pb2.AgentResponse(
+                                content="",
+                                done=False,
+                                tool_call=current_tool_call,
+                                status="Using tool...",
+                            )
+
+                    # Anthropic/deepagents: structured content_blocks
+                    blocks = getattr(chunk, "content_blocks", None) or []
+                    for block in blocks:
+                        block_type = block.get("type", "")
+                        if block_type == "tool_call_chunk":
+                            if block.get("name"):
+                                current_tool_call = block["name"]
+                            yield bridge_pb2.AgentResponse(
+                                content="",
+                                done=False,
+                                tool_call=current_tool_call or "Tool",
+                                status="Using tool...",
+                            )
+                        elif block_type == "text":
+                            text = block.get("text", "")
+                            if text:
+                                current_tool_call = ""
+                                yield bridge_pb2.AgentResponse(
+                                    content=text,
+                                    done=False,
+                                    tool_call="",
+                                    status="Thinking...",
+                                )
+
+                    # Fallback: plain content string (most common for Ollama)
+                    if not tc_chunks and not blocks:
+                        content = getattr(chunk, "content", "")
+                        if isinstance(content, str) and content and not current_tool_call:
+                            yield bridge_pb2.AgentResponse(
+                                content=content,
+                                done=False,
+                                tool_call="",
+                                status="Thinking...",
+                            )
+
+                elif node == "tools":
+                    current_tool_call = ""
+                    yield bridge_pb2.AgentResponse(
+                        content="",
+                        done=False,
+                        tool_call="",
+                        status="Thinking...",
+                    )
+
             yield bridge_pb2.AgentResponse(
                 content="",
                 done=True,
-                status="Done"
+                tool_call="",
+                status="Done",
             )
+
+        except CredentialRequiredError as cred_err:
+            logging.warning("Credential required: %s", cred_err.key)
+            yield bridge_pb2.AgentResponse(
+                content="A cloud API key is required to complete this browser task.",
+                done=True,
+                tool_call="",
+                status="credential_required",
+                credential_required=cred_err.key,
+            )
+
         except Exception as e:
-            logging.error(f"Error during streaming: {e}")
+            logging.error("Error during streaming: %s", e, exc_info=True)
             yield bridge_pb2.AgentResponse(
                 content=str(e),
                 done=True,
-                status="Error"
+                tool_call="",
+                status="Error",
             )
 
-def serve():
+    async def StoreSecret(self, request, context):
+        """Store a credential in OS keyring (gnome-keyring / encrypted file fallback)."""
+        try:
+            store_secret(request.key, request.value)
+            return bridge_pb2.StoreSecretResponse(success=True)
+        except Exception as exc:
+            logging.error("StoreSecret failed for key=%s: %s", request.key, exc)
+            return bridge_pb2.StoreSecretResponse(success=False, error=str(exc))
+
+    async def HasSecret(self, request, context):
+        """Check whether a credential is already stored."""
+        return bridge_pb2.HasSecretResponse(exists=has_secret(request.key))
+
+
+async def serve():
     import os
+
+    logging.info("Initializing tool registry...")
+    try:
+        ensure_registry()
+    except Exception as exc:
+        logging.error("Tool registry initialization failed: %s — tools may be unavailable", exc)
+
     port = os.environ.get("PORT", "50051")
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.aio.server()
     bridge_pb2_grpc.add_AgentServiceServicer_to_server(AgentServiceServicer(), server)
     server.add_insecure_port(f'[::]:{port}')
-    logging.info(f"Agent Server starting on port {port}...")
-    server.start()
-    server.wait_for_termination()
+    await server.start()
+    logging.info("Agent Server starting on port %s...", port)
+    await server.wait_for_termination()
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    serve()
+    asyncio.run(serve())

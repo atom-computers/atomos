@@ -34,7 +34,7 @@ Environment="SURREAL_URL=ws://localhost:8000"
 Environment="SURREAL_USER=root"
 Environment="SURREAL_PASS=root"
 Environment="SURREAL_NS=atomos"
-Environment="SURREAL_DB=filesystem"
+Environment="SURREAL_DB=atomos"
 ExecStart=/usr/local/bin/atomos-context-manager
 Restart=on-failure
 RestartSec=10s

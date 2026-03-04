@@ -142,7 +142,7 @@ $(BUILD)/iso_sum.tag: $(BUILD)/iso_casper.tag $(BUILD)/iso_grub.tag $(BUILD)/iso
 	
 	touch "$@"
 
-$(ISO): $(BUILD)/iso_sum.tag
+$(ISO): $(BUILD)/iso_sum.tag FORCE
 ifeq ($(DISTRO_ARCH),amd64)
 	xorriso -as mkisofs \
 		-iso-level 3 \

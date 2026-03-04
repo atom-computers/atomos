@@ -48,8 +48,17 @@ until curl -s http://localhost:8000/health; do
   sleep 1
 done
 
-# Apply the initial schema
-/usr/local/bin/surreal import --endpoint http://localhost:8000 --user root --pass root --ns atomos --db filesystem /tmp/atomos-install/core/atomos-db/migrations/0001_initial_schema.surql
+# Ensure the atomos database exists (SurrealDB v3 import does not always auto-create it)
+curl -sf -X POST http://localhost:8000/sql \
+  -H 'Authorization: Basic cm9vdDpyb290' \
+  -H 'Accept: application/json' \
+  -H 'surreal-ns: atomos' \
+  -d 'DEFINE DATABASE IF NOT EXISTS atomos;'
+echo ""
+
+# All tables live in a single database: atomos/atomos
+/usr/local/bin/surreal import --endpoint http://localhost:8000 --user root --pass root --ns atomos --db atomos /tmp/atomos-install/core/atomos-db/migrations/0001_initial_schema.surql
+/usr/local/bin/surreal import --endpoint http://localhost:8000 --user root --pass root --ns atomos --db atomos /tmp/atomos-install/core/atomos-db/migrations/0002_tool_registry.surql
 
 # Kill the background SurrealDB process
 kill $SURREAL_PID

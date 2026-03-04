@@ -4,6 +4,8 @@ package atomos.bridge;
 
 service AgentService {
   rpc StreamAgentTurn(AgentRequest) returns (stream AgentResponse);
+  rpc StoreSecret(StoreSecretRequest) returns (StoreSecretResponse);
+  rpc HasSecret(HasSecretRequest) returns (HasSecretResponse);
 }
 
 message AgentRequest {
@@ -18,4 +20,25 @@ message AgentResponse {
   bool done = 2;
   string tool_call = 3;
   string status = 4;
+  string credential_required = 5;
+}
+
+message StoreSecretRequest {
+  string service = 1;
+  string key = 2;
+  string value = 3;
+}
+
+message StoreSecretResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message HasSecretRequest {
+  string service = 1;
+  string key = 2;
+}
+
+message HasSecretResponse {
+  bool exists = 1;
 }

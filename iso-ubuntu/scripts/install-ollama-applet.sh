@@ -10,7 +10,8 @@ systemctl enable ollama
 
 # We need to pull the default model now so it gets baked into the ISO.
 # Since systemd is not running inside this chroot, we run the server in the bg.
-echo "Starting Ollama to pull gemma3:270m model..."
+echo "Starting Ollama to pull smollm2:135m model..."
+export OLLAMA_MODELS="/usr/share/ollama/.ollama/models"
 ollama serve &
 OLLAMA_PID=$!
 
@@ -18,12 +19,46 @@ OLLAMA_PID=$!
 echo "Waiting for Ollama service to start..."
 timeout 30 bash -c 'until curl -s http://localhost:11434 > /dev/null; do sleep 1; done' || { echo "Failed to start Ollama daemon"; kill $OLLAMA_PID; exit 1; }
 
-echo "Pulling gemma3:270m..."
-ollama pull gemma3:270m
+echo "Pulling smollm2:135m..."
+ollama pull smollm2:135m
+
+echo "Pulling nomic-embed-text (embedding model for tool registry)..."
+ollama pull nomic-embed-text
 
 echo "Stopping Ollama daemon..."
 kill $OLLAMA_PID
 wait $OLLAMA_PID || true
+
+# Fix ownership so the ollama systemd service can access the downloaded models
+echo "Fixing permissions for Ollama models..."
+chown -R ollama:ollama /usr/share/ollama/.ollama
+
+# Autoload model on boot so it's immediately ready for the API
+cat > /usr/local/bin/ollama-preload.sh << 'OLLAMAEOF'
+#!/bin/bash
+curl -X POST http://localhost:11434/api/generate \
+     -H "Content-Type: application/json" \
+     -d '{"model": "smollm2:135m", "keep_alive": -1}' \
+     --max-time 10 || true
+OLLAMAEOF
+chmod +x /usr/local/bin/ollama-preload.sh
+
+cat > /etc/systemd/system/ollama-preload.service << 'EOF'
+[Unit]
+Description=Preload Ollama Model
+After=ollama.service
+Requires=ollama.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ollama-preload.sh
+RemainAfterExit=yes
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable ollama-preload.service
 
 # Install build dependencies
 apt-get install -y just pkg-config libxkbcommon-dev libwayland-dev

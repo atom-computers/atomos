@@ -48,7 +48,6 @@ DISTRO_PKGS=\
 	spice-vdagent \
 	qemu-guest-agent \
 	openssh-server \
-	isc-dhcp-client \
 	netplan.io \
 	avahi-autoipd \
 	avahi-daemon \
@@ -58,7 +57,232 @@ DISTRO_PKGS=\
 	iputils-ping \
 	iputils-tracepath \
 	curl \
-	ufw
+	ufw \
+	dkms \
+	gvfs \
+	gvfs-backends \
+	gvfs-fuse \
+	ubuntu-standard \
+	adduser \
+	adwaita-icon-theme-full \
+	alsa-base \
+	apt \
+	apt-transport-https \
+	baobab \
+	base-files \
+	base-passwd \
+	bash \
+	bash-completion \
+	bluez \
+	bluez-cups \
+	brltty \
+	bsdutils \
+	busybox-static \
+	chrome-gnome-shell \
+	command-not-found \
+	coreutils \
+	cups \
+	cups-bsd \
+	dash \
+	dbus-broker \
+	dbus-user-session \
+	debconf \
+	debianutils \
+	diffutils \
+	dpkg \
+	eog \
+	evince \
+	file-roller \
+	findutils \
+	flatpak \
+	fonts-dejavu-core \
+	fonts-freefont-ttf \
+	fonts-liberation \
+	fonts-noto-color-emoji \
+	friendly-recovery \
+	ftp \
+	fwupd \
+	fwupdate \
+	gcc-12-base \
+	gdm3 \
+	geary \
+	gedit \
+	ghostscript-x \
+	glib-networking \
+	gnome-bluetooth \
+	gnome-calculator \
+	gnome-calendar \
+	gnome-contacts \
+	gnome-control-center \
+	gnome-disk-utility \
+	gnome-font-viewer \
+	gnome-menus \
+	gnome-power-manager \
+	gnome-remote-desktop \
+	gnome-shell \
+	gnome-shell-extension-prefs \
+	gnome-system-monitor \
+	gnome-terminal \
+	gnome-video-effects \
+	gnome-weather \
+	gpgv \
+	grep \
+	gstreamer1.0-alsa \
+	gstreamer1.0-plugins-base-apps \
+	gstreamer1.0-vaapi \
+	gucharmap \
+	gzip \
+	hidpi-daemon \
+	hostname \
+	ibus-table \
+	ibus-table-emoji \
+	ifupdown \
+	info \
+	init-system-helpers \
+	inputattach \
+	language-selector-gnome \
+	libacl1 \
+	libapt-pkg6.0 \
+	libasound2-plugins \
+	libatk-adaptor \
+	libattr1 \
+	libaudit-common \
+	libaudit1 \
+	libblkid1 \
+	libbz2-1.0 \
+	libc-bin \
+	libc6 \
+	libcanberra-gtk-module \
+	libcap-ng0 \
+	libcap2 \
+	libcrypt1 \
+	libdb5.3 \
+	libdebconfclient0 \
+	libegl-mesa0 \
+	libext2fs2 \
+	libffi8 \
+	libfreeaptx0 \
+	libfuse2 \
+	libgcc-s1 \
+	libgcrypt20 \
+	libglib2.0-bin \
+	libgmp10 \
+	libgnutls30 \
+	libgpg-error0 \
+	libgssapi-krb5-2 \
+	libhogweed6 \
+	libidn2-0 \
+	libk5crypto3 \
+	libkeyutils1 \
+	libkrb5-3 \
+	libkrb5support0 \
+	libldacbt-abr2 \
+	libldacbt-enc2 \
+	liblz4-1 \
+	liblzma5 \
+	libmount1 \
+	libncurses6 \
+	libncursesw6 \
+	libnettle8 \
+	libnsl2 \
+	libp11-kit0 \
+	libpam-gnome-keyring \
+	libpam-modules \
+	libpam-modules-bin \
+	libpam-runtime \
+	libpam0g \
+	libpcre2-8-0 \
+	libpcre3 \
+	libproxy1-plugin-gsettings \
+	libproxy1-plugin-networkmanager \
+	libreoffice-calc \
+	libreoffice-gnome \
+	libreoffice-impress \
+	libreoffice-ogltrans \
+	libreoffice-writer \
+	libseccomp2 \
+	libselinux1 \
+	libsemanage-common \
+	libsemanage2 \
+	libsepol2 \
+	libsmartcols1 \
+	libspa-0.2-bluetooth \
+	libspa-0.2-jack \
+	libssl3 \
+	libstdc++6 \
+	libsystemd0 \
+	libtasn1-6 \
+	libtinfo6 \
+	libtirpc-common \
+	libtirpc3 \
+	libudev1 \
+	libuuid1 \
+	libvdpau-va-gl1 \
+	libxxhash0 \
+	libzstd1 \
+	linux-system76 \
+	login \
+	lsb-base \
+	lshw \
+	man-db \
+	mawk \
+	mesa-va-drivers \
+	mesa-vulkan-drivers \
+	mount \
+	mtr-tiny \
+	nano \
+	nautilus \
+	nautilus-sendto \
+	ncurses-base \
+	ncurses-bin \
+	network-manager-config-connectivity-pop \
+	network-manager-openvpn-gnome \
+	network-manager-pptp-gnome \
+	openprinting-ppds \
+	passwd \
+	pcmciautils \
+	perl-base \
+	pipewire \
+	pipewire-alsa \
+	pipewire-jack \
+	pipewire-pulse \
+	policykit-desktop-privileges \
+	pop-keyring \
+	popsicle \
+	popsicle-gtk \
+	printer-driver-all \
+	procps \
+	rfkill \
+	seahorse \
+	sed \
+	sensible-utils \
+	sessioninstaller \
+	simple-scan \
+	sound-theme-freedesktop \
+	strace \
+	system76-scheduler \
+	systemd-resolvconf \
+	systemd-sysv \
+	sysvinit-utils \
+	tar \
+	tcpdump \
+	telnet \
+	time \
+	tnftp \
+	totem \
+	touchegg \
+	ubuntu-drivers-common \
+	ubuntu-keyring \
+	util-linux \
+	vdpau-driver-all \
+	wireless-tools \
+	wireplumber \
+	xdg-desktop-portal-gnome \
+	xdg-user-dirs-gtk \
+	xdg-utils \
+	xorg \
+	yelp \
+	zlib1g
 
 
 ifeq ($(DISTRO_ARCH),amd64)
@@ -124,8 +348,8 @@ LIVE_PKGS=\
 RM_PKGS=\
 	ubuntu-advantage-tools
 
-# All packages combined
 ALL_PKGS=$(DISTRO_PKGS) $(COSMIC_PKGS) $(BUILD_PKGS) $(LIVE_PKGS)
+
 
 # Packages not installed, but that may need to be discovered by the installer
 ifeq ($(DISTRO_ARCH),amd64)
