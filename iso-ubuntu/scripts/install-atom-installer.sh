@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 echo "Installing Atom Installer (fork of Pop!_Installer)..."
 

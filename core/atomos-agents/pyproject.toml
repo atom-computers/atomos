@@ -15,6 +15,8 @@ dependencies = [
     "langchain>=0.1.0",
     "langchain-core>=0.1.0",
     "langchain-ollama>=0.1.0",
+    "langchain-groq>=0.1.0",
+    "langchain-openai>=0.1.0",
     "langgraph>=0.2.0",
     "pydantic>=2.0.0",
     "requests>=2.31.0",
@@ -29,7 +31,9 @@ dependencies = [
     "keyring>=25.0.0",
     "secretstorage>=3.3.0",
     # Fernet-encrypted file fallback for when D-Bus/gnome-keyring is unavailable
-    "cryptography>=42.0.0"
+    "cryptography>=42.0.0",
+    # ACP — Agent Client Protocol for Zed and other editor integrations
+    "agent-client-protocol>=0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -45,8 +49,9 @@ local-browser = [
     "browser-use>=0.12.0",
 ]
 cloud-browser = [
-    # Cloud SDK — installed separately; only needed when local browser is blocked
-    "browser-use-sdk>=0.1.0"
+    # Browser Use Cloud — primary browser backend when ~/.browser_use key exists.
+    # v3.x is the current stable; v2 default import path is used.
+    "browser-use-sdk>=3.0.0"
 ]
 
 [tool.pytest.ini_options]

@@ -1,11 +1,16 @@
 #!/bin/bash
 # Install cosmic-ext-applet-ollama in chroot environment
-set -e
+set -euo pipefail
 
 echo "Installing cosmic-ext-applet-ollama..."
 
 # Install Ollama first
 curl -fsSL https://ollama.com/install.sh | sh
+
+if ! command -v ollama &> /dev/null; then
+    echo "FATAL: Ollama binary not found after install"
+    exit 1
+fi
 systemctl enable ollama
 
 # We need to pull the default model now so it gets baked into the ISO.

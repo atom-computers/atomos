@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install AtomOS Python deep agents in chroot environment
-set -e
+set -euo pipefail
 
 echo "Installing AtomOS agents service..."
 

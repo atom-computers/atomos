@@ -19,14 +19,6 @@ else
 	APPLET_SRC := ../cosmic-ext-applet-ollama
 endif
 
-ifneq ($(wildcard /build-deps/cocoindex),)
-	COCOINDEX_SRC := /build-deps/cocoindex
-else ifneq ($(wildcard /workspace/vendor/cocoindex),)
-	COCOINDEX_SRC := /workspace/vendor/cocoindex
-else
-	COCOINDEX_SRC := ../vendor/cocoindex
-endif
-
 ifneq ($(wildcard /build-deps/atom-installer),)
 	ATOM_INSTALLER_SRC := /build-deps/atom-installer
 else ifneq ($(wildcard /workspace/atom-installer),)
@@ -159,11 +151,6 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 		--exclude='target' --exclude='node_modules' --exclude='.git' \
 		"$(APPLET_SRC)/" "$(BUILD)/chroot/tmp/atomos-install/cosmic-ext-applet-ollama/"
 	
-	# Copy cocoindex
-	rsync -a --no-owner --no-group \
-		--exclude='target' --exclude='node_modules' --exclude='.git' --exclude='uv.lock' \
-		"$(COCOINDEX_SRC)/" "$(BUILD)/chroot/tmp/atomos-install/cocoindex/"
-	
 	# Copy atom-installer
 	rsync -a --no-owner --no-group \
 		--exclude='target' --exclude='.git' \
@@ -177,6 +164,15 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	mkdir -p "$(BUILD)/chroot/tmp/atomos-install/data"
 	cp -r data/wallpapers "$(BUILD)/chroot/tmp/atomos-install/data/wallpapers"
 	
+	# Pre-download Zed tarball OUTSIDE the chroot so a network failure is
+	# caught here (make aborts) rather than inside install-zed.sh where
+	# broken symlinks can slip through silently.
+	@echo "Downloading Zed editor tarball..."
+	$(eval ZED_DL_ARCH := $(if $(filter amd64,$(DISTRO_ARCH)),x86_64,$(if $(filter arm64,$(DISTRO_ARCH)),aarch64,$(error Unsupported arch for Zed: $(DISTRO_ARCH)))))
+	curl -fsSL "https://cloud.zed.dev/releases/stable/latest/download?asset=zed&arch=$(ZED_DL_ARCH)&os=linux&source=docs" \
+		-o "$(BUILD)/chroot/tmp/atomos-install/zed.tar.gz"
+	@echo "Zed tarball downloaded ($$(du -h "$(BUILD)/chroot/tmp/atomos-install/zed.tar.gz" | cut -f1))"
+
 	# Run custom installation scripts
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-postgresql.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-surrealdb.sh

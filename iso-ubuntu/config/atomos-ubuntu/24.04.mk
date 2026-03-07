@@ -15,6 +15,7 @@ COSMIC_REPO_URL:=http://apt.pop-os.org/release
 
 # Base packages to install
 DISTRO_PKGS=\
+	ripgrep \
 	systemd \
 	linux-generic \
 	ubuntu-minimal \

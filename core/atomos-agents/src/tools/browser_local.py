@@ -30,6 +30,76 @@ except ImportError:
     ChatOllama = None  # type: ignore[assignment,misc]
     _BROWSER_USE_AVAILABLE = False
 
+try:
+    from browser_use import ChatBrowserUse as _ChatBrowserUse
+except ImportError:
+    _ChatBrowserUse = None  # type: ignore[assignment,misc]
+
+try:
+    from browser_use.llm import ChatGroq as BrowserChatGroq
+except ImportError:
+    try:
+        from langchain_groq import ChatGroq as BrowserChatGroq
+    except ImportError:
+        BrowserChatGroq = None  # type: ignore[assignment,misc]
+
+try:
+    from langchain_openai import ChatOpenAI as _RawChatOpenAI
+except ImportError:
+    _RawChatOpenAI = None  # type: ignore[assignment,misc]
+
+
+# ---------------------------------------------------------------------------
+# browser-use compatibility shims
+#
+# browser-use's Agent.__init__ does two things that break Pydantic v2 models:
+#   1. Reads llm.provider   — Pydantic __getattr__ raises AttributeError
+#   2. token_cost_service.register_llm() does setattr(llm, 'ainvoke', ...)
+#      — Pydantic __setattr__ raises ValueError for non-field attributes
+#
+# We subclass each langchain LLM to override __setattr__: Pydantic-declared
+# fields still go through validation; anything else falls back to
+# object.__setattr__ so browser-use's monkey-patching succeeds.
+# ---------------------------------------------------------------------------
+
+def _browser_safe_cls(base):
+    """Create a Pydantic-model subclass that tolerates arbitrary setattr."""
+    if base is None:
+        return None
+
+    class _Safe(base):  # type: ignore[valid-type]
+        def __setattr__(self, name: str, value):
+            try:
+                super().__setattr__(name, value)
+            except (ValueError, AttributeError):
+                object.__setattr__(self, name, value)
+
+    _Safe.__name__ = base.__name__
+    _Safe.__qualname__ = base.__qualname__
+    _Safe.__module__ = base.__module__
+    return _Safe
+
+
+try:
+    BrowserChatOpenAI = _browser_safe_cls(_RawChatOpenAI)
+except Exception:
+    BrowserChatOpenAI = _RawChatOpenAI  # type: ignore[assignment,misc]
+
+try:
+    _SafeChatGroq = _browser_safe_cls(BrowserChatGroq)
+    if _SafeChatGroq is not None:
+        BrowserChatGroq = _SafeChatGroq  # type: ignore[misc]
+except Exception:
+    pass  # keep the raw BrowserChatGroq
+
+try:
+    _SafeChatOllama = _browser_safe_cls(ChatOllama)
+    if _SafeChatOllama is not None:
+        ChatOllama = _SafeChatOllama  # type: ignore[misc]
+except Exception:
+    pass  # keep the raw ChatOllama
+
+
 CAPTCHA_SIGNALS = frozenset(
     [
         "captcha",
@@ -81,7 +151,27 @@ def _is_browser_launch_failure(text: str) -> bool:
     return any(signal in lower for signal in BROWSER_LAUNCH_SIGNALS)
 
 
+_RATE_LIMIT_SIGNALS = ("rate_limit_exceeded", "429", "413", "tokens per minute")
+
+
+def _is_rate_limit_error(text: str) -> bool:
+    lower = text.lower()
+    return any(s in lower for s in _RATE_LIMIT_SIGNALS)
+
+
+class RateLimitError(RuntimeError):
+    """Raised when the cloud LLM rejects requests due to token/rate limits."""
+
+
 LOCAL_BROWSER_TIMEOUT_SECONDS = 120
+
+# Minimal DOM attributes for cloud models — keeps page representations small
+# enough for Groq's 8 000 TPM free-tier limit.
+_CLOUD_INCLUDE_ATTRS = ["title", "aria-label", "placeholder", "alt", "name", "role"]
+
+# Groq free-tier caps at 8 000 TPM.  The browser-use system prompt consumes
+# ~3 000 tokens; leave the rest for the DOM snapshot + response.
+_CLOUD_MAX_DOM_CHARS = 4000
 
 
 def _find_wayland_socket() -> tuple[Optional[str], Optional[str]]:
@@ -171,11 +261,74 @@ def _ensure_display_env() -> List[str]:
     return []
 
 
+# Groq models that browser-use cannot use reliably (tool_choice / send_action errors).
+# Fall back to a known-working model for browser tasks.
+_BROWSER_GROQ_FALLBACK = "meta-llama/llama-4-maverick-17b-128e-instruct"
+_BROWSER_GROQ_SKIP_MODELS = frozenset({"meta-llama/llama-4-maverick-17b-128e-instruct"})
+
+
+def _set_provider(llm, provider_name: str):
+    """Inject a ``provider`` attribute for browser-use's ``Agent.__init__`` check.
+
+    With our safe subclasses, plain ``setattr`` works because the overridden
+    ``__setattr__`` falls back to ``object.__setattr__`` for non-field names.
+    """
+    if not hasattr(llm, "provider"):
+        setattr(llm, "provider", provider_name)
+    return llm
+
+
+def _make_browser_llm(
+    model_name: str,
+    is_cloud: bool,
+    groq_api_key: Optional[str],
+    browser_use_api_key: Optional[str] = None,
+    openrouter_api_key: Optional[str] = None,
+):
+    """Create the appropriate LLM instance for browser-use.
+
+    Priority:
+      1. ChatBrowserUse (BU 2.0) — when browser_use_api_key is provided and
+         the library exposes the class.  Uses local Chromium with Browser Use's
+         proprietary LLM, which is optimised for browser tasks.
+      2. ChatOpenAI via OpenRouter — when openrouter_api_key is provided.
+      3. ChatGroq  — when is_cloud=True and a Groq key is available.
+      4. ChatOllama — local Ollama fallback.
+    """
+    if browser_use_api_key and _ChatBrowserUse is not None:
+        logger.info("browse_web: using ChatBrowserUse (BU 2.0) with local Chromium")
+        return _ChatBrowserUse(api_key=browser_use_api_key)
+    if openrouter_api_key and BrowserChatOpenAI is not None:
+        logger.info("browse_web: using OpenRouter model %r", model_name)
+        llm = BrowserChatOpenAI(
+            api_key=openrouter_api_key,
+            base_url="https://openrouter.ai/api/v1",
+            model=model_name,
+        )
+        return _set_provider(llm, "openrouter")
+    if is_cloud and BrowserChatGroq and groq_api_key:
+        if model_name in _BROWSER_GROQ_SKIP_MODELS:
+            logger.info(
+                "browse_web: %r has known browser-use issues on Groq; using %r",
+                model_name,
+                _BROWSER_GROQ_FALLBACK,
+            )
+            model_name = _BROWSER_GROQ_FALLBACK
+        return _set_provider(
+            BrowserChatGroq(model=model_name, api_key=groq_api_key), "groq"
+        )
+    return _set_provider(ChatOllama(model=model_name), "ollama")
+
+
 async def run_local_browser_task(
     task: str,
     model_name: str,
     start_url: Optional[str] = None,
     timeout: float = LOCAL_BROWSER_TIMEOUT_SECONDS,
+    is_cloud: bool = False,
+    groq_api_key: Optional[str] = None,
+    browser_use_api_key: Optional[str] = None,
+    openrouter_api_key: Optional[str] = None,
 ) -> str:
     """
     Execute a browser task using the local OSS browser-use + Playwright stack.
@@ -200,9 +353,24 @@ async def run_local_browser_task(
 
     extra_args = _ensure_display_env()
 
-    llm = ChatOllama(model=model_name)
+    llm = _make_browser_llm(model_name, is_cloud, groq_api_key, browser_use_api_key, openrouter_api_key)
     browser = Browser(headless=False, chromium_sandbox=False, args=extra_args)
-    agent = Agent(task=full_task, llm=llm, browser=browser)
+
+    agent_kwargs: dict = dict(
+        task=full_task,
+        llm=llm,
+        browser=browser,
+        # use_vision=not is_cloud,
+    )
+    if is_cloud or browser_use_api_key:
+        agent_kwargs.update(
+            include_attributes=_CLOUD_INCLUDE_ATTRS,
+            max_clickable_elements_length=_CLOUD_MAX_DOM_CHARS,
+            flash_mode=True,
+            use_judge=False,
+            max_failures=1,
+        )
+    agent = Agent(**agent_kwargs)
 
     try:
         history = await asyncio.wait_for(agent.run(), timeout=timeout)
@@ -215,7 +383,7 @@ async def run_local_browser_task(
 
         return output
 
-    except (CaptchaBlockedError, BrowserLaunchError):
+    except (CaptchaBlockedError, BrowserLaunchError, RateLimitError):
         raise
     except TimeoutError as exc:
         if _is_browser_launch_failure(str(exc)):
@@ -226,11 +394,18 @@ async def run_local_browser_task(
             msg += f": {detail}"
         raise TimeoutError(msg) from exc
     except Exception as exc:
-        msg = str(exc).lower()
-        if _is_browser_launch_failure(msg):
-            raise BrowserLaunchError(str(exc)) from exc
-        if _is_captcha_blocked(msg):
-            raise CaptchaBlockedError(str(exc)) from exc
+        msg = str(exc)
+        lower = msg.lower()
+        if _is_rate_limit_error(lower):
+            raise RateLimitError(
+                f"Cloud model rate/token limit exceeded — the page content "
+                f"is too large for the free tier.  Try a local model or a "
+                f"simpler page.  Detail: {msg[:300]}"
+            ) from exc
+        if _is_browser_launch_failure(lower):
+            raise BrowserLaunchError(msg) from exc
+        if _is_captcha_blocked(lower):
+            raise CaptchaBlockedError(msg) from exc
         raise
     finally:
         await browser.stop()
@@ -248,6 +423,10 @@ async def run_local_browser_session(
     model_name: str,
     session_name: str = "default",
     timeout_per_task: float = SESSION_TASK_TIMEOUT_SECONDS,
+    is_cloud: bool = False,
+    groq_api_key: Optional[str] = None,
+    browser_use_api_key: Optional[str] = None,
+    openrouter_api_key: Optional[str] = None,
 ) -> List[str]:
     """
     Run multiple tasks in a single persistent local browser session.
@@ -282,7 +461,7 @@ async def run_local_browser_session(
         logger.info("browse_web_with_session: opened session '%s'", session_name)
 
     browser = _sessions[session_name]
-    llm = ChatOllama(model=model_name)
+    llm = _make_browser_llm(model_name, is_cloud, groq_api_key, browser_use_api_key, openrouter_api_key)
     results: List[str] = []
 
     for i, task in enumerate(tasks):
@@ -290,7 +469,21 @@ async def run_local_browser_session(
             "browse_web_with_session: task %d/%d in session '%s'",
             i + 1, len(tasks), session_name,
         )
-        agent = Agent(task=task, llm=llm, browser=browser)
+        agent_kwargs: dict = dict(
+            task=task,
+            llm=llm,
+            browser=browser,
+            # use_vision=not is_cloud,
+        )
+        if is_cloud or browser_use_api_key:
+            agent_kwargs.update(
+                include_attributes=_CLOUD_INCLUDE_ATTRS,
+                max_clickable_elements_length=_CLOUD_MAX_DOM_CHARS,
+                flash_mode=True,
+                use_judge=False,
+                max_failures=1,
+            )
+        agent = Agent(**agent_kwargs)
         try:
             history = await asyncio.wait_for(agent.run(), timeout=timeout_per_task)
             output: str = history.final_result() or ""
@@ -303,9 +496,16 @@ async def run_local_browser_session(
                 msg += f": {detail}"
             raise TimeoutError(msg) from exc
         except Exception as exc:
-            msg = str(exc).lower()
-            if _is_browser_launch_failure(msg):
-                raise BrowserLaunchError(str(exc)) from exc
+            msg = str(exc)
+            lower = msg.lower()
+            if _is_rate_limit_error(lower):
+                raise RateLimitError(
+                    f"Cloud model rate/token limit exceeded — the page "
+                    f"content is too large for the free tier.  Try a local "
+                    f"model or a simpler page.  Detail: {msg[:300]}"
+                ) from exc
+            if _is_browser_launch_failure(lower):
+                raise BrowserLaunchError(msg) from exc
             raise
         results.append(output)
 

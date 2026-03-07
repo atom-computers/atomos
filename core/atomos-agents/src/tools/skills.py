@@ -60,9 +60,13 @@ def query_context_manager(project_name: str) -> str:
 def get_atomos_skills() -> List[Any]:
     """Return all skills available to Atom OS agents."""
     from tools.browser import get_browser_tools
+    from tools.editor import get_editor_tools
+    from tools.shell import get_shell_tools
 
     return [
         check_sync_status,
         query_context_manager,
         *get_browser_tools(),
+        *get_editor_tools(),
+        *get_shell_tools(),
     ]

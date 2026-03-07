@@ -5,7 +5,7 @@
 # install-ollama-applet.sh so that SurrealDB schemas, the Python
 # agents package (deepagents + custom tools), Ollama, and the
 # nomic-embed-text model are all available.
-set -e
+set -euo pipefail
 
 echo "Seeding tool registry into SurrealDB..."
 

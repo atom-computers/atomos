@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -29,10 +30,18 @@ SURREALDB_PASS = os.environ.get("SURREALDB_PASS", "root")
 EMBED_MODEL = "nomic-embed-text"
 OLLAMA_URL = "http://localhost:11434"
 
-DEFAULT_TOP_K = 3
+DEFAULT_TOP_K = 5
 SIMILARITY_THRESHOLD = 0.25
 
 _MIDDLEWARE_COUPLED_TOOLS = frozenset({"task", "write_todos"})
+
+_ALWAYS_AVAILABLE_TOOLS = frozenset({
+    "execute_command",
+    "create_file",
+    "read_file",
+    "edit_file",
+    "open_in_editor",
+})
 
 _tool_objects: dict[str, BaseTool] = {}
 
@@ -73,14 +82,26 @@ def _fingerprint(name: str, description: str) -> str:
 
 
 def _discover_deepagent_tools() -> list[dict]:
-    """Build a throw-away deepagents graph and extract its built-in tools."""
+    """Build a throw-away deepagents graph and extract its built-in tools.
+
+    Uses LocalShellBackend so the ``execute`` tool (shell execution) is
+    discovered alongside the filesystem tools.  LocalShellBackend extends
+    FilesystemBackend and adds the ``execute`` tool — see
+    https://docs.langchain.com/oss/python/deepagents/backends
+    """
     try:
         from langchain.chat_models import init_chat_model
         from deepagents import create_deep_agent
-        from deepagents.backends import FilesystemBackend
+        from deepagents.backends import LocalShellBackend
 
         llm = init_chat_model("ollama:_registry_probe")
-        backend = FilesystemBackend(root_dir="/", virtual_mode=False)
+        home = str(Path.home())
+        backend = LocalShellBackend(
+            root_dir=home,
+            env={"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": home},
+            timeout=120,
+            max_output_bytes=100_000,
+        )
         agent = create_deep_agent(
             tools=[],
             system_prompt="probe",
@@ -227,16 +248,30 @@ def retrieve_tools(
     top_k: int = DEFAULT_TOP_K,
     threshold: float = SIMILARITY_THRESHOLD,
 ) -> list[BaseTool]:
-    """Embed *query* and return the most relevant tool objects."""
+    """Embed *query* and return the most relevant tool objects.
+
+    Tools listed in ``_ALWAYS_AVAILABLE_TOOLS`` are included regardless
+    of similarity score so the agent can always create files and run
+    commands.  RAG-selected tools are appended on top of those.
+    """
     if not _tool_objects:
         logger.warning("No tool objects cached — falling back to empty tool list")
         return []
 
+    seen: set[str] = set()
+    selected: list[BaseTool] = []
+
+    for name in _ALWAYS_AVAILABLE_TOOLS:
+        if name in _tool_objects:
+            selected.append(_tool_objects[name])
+            seen.add(name)
+            logger.info("Tool always-on: %-20s", name)
+
     try:
         [query_emb] = _embed([query])
     except Exception as exc:
-        logger.error("Query embedding failed: %s — returning no tools", exc)
-        return []
+        logger.error("Query embedding failed: %s — returning core tools only", exc)
+        return selected
 
     emb_json = json.dumps(query_emb)
     sql = (
@@ -249,26 +284,28 @@ def retrieve_tools(
         results = _surreal_query(sql)
         if not results:
             logger.error("Vector search returned empty response")
-            return []
+            return selected
         if results[0].get("status") != "OK":
             logger.error(
                 "Vector search query failed: %s", results[0].get("result")
             )
-            return []
+            return selected
         rows = results[0].get("result", [])
-        selected: list[BaseTool] = []
         for row in rows:
             name = row["name"]
             score = row.get("score", 0)
             if score < threshold:
                 continue
+            if name in seen:
+                continue
             if name in _tool_objects:
                 selected.append(_tool_objects[name])
+                seen.add(name)
                 logger.info("Tool selected: %-20s (score=%.3f)", name, score)
         return selected
     except Exception as exc:
         logger.error("Vector search failed: %s", exc)
-        return []
+        return selected
 
 
 def ensure_registry() -> bool:

@@ -1,5 +1,5 @@
 use crate::agent::agent_service_client::AgentServiceClient;
-use crate::agent::{AgentRequest, AgentResponse, HasSecretRequest, StoreSecretRequest};
+use crate::agent::{AgentRequest, AgentResponse, ChatMessage, HasSecretRequest, StoreSecretRequest};
 use tonic::transport::Channel;
 
 #[derive(Clone)]
@@ -19,12 +19,14 @@ impl BridgeClient {
         model: String,
         images: Vec<String>,
         context: Option<Vec<u64>>,
+        history: Vec<ChatMessage>,
     ) -> anyhow::Result<tonic::Streaming<AgentResponse>> {
         let request = tonic::Request::new(AgentRequest {
             prompt,
             model,
             images,
             context: context.unwrap_or_default(),
+            history,
         });
 
         let response = self.client.stream_agent_turn(request).await?;

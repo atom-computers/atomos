@@ -1,13 +1,15 @@
 """
 LangChain tools for browser automation.
 
-browse_web              — one-off tasks: local OSS first, cloud fallback on
-                          CAPTCHA / launch failure
-browse_web_with_session — multi-step stateful tasks: always local, persistent
-                          Chromium window so the user can solve CAPTCHAs manually
+browse_web              — one-off tasks: always tries local Chromium + remote
+                          LLM first; escalates to Browser Use Cloud only on
+                          CAPTCHA, launch failure, or timeout.
+browse_web_with_session — multi-step stateful tasks: local persistent Chromium
+                          session; escalates to Browser Use Cloud only when
+                          Chromium cannot start.
 
 The local model name is set at agent initialisation time via set_local_model()
-so tools use the same Ollama model as the rest of the agent.
+so tools use the same model as the rest of the agent.
 """
 
 import logging
@@ -18,22 +20,43 @@ from langchain_core.tools import tool
 from tools.browser_local import (
     BrowserLaunchError,
     CaptchaBlockedError,
+    RateLimitError,
     run_local_browser_task,
     run_local_browser_session,
 )
-from tools.browser_cloud import run_cloud_browser_task
+from tools.browser_cloud import (
+    _get_browser_use_api_key,
+    run_cloud_browser_task,
+    run_cloud_browser_session,
+)
 from secret_store import CredentialRequiredError  # noqa: F401 — re-exported for server.py
 
 logger = logging.getLogger(__name__)
 
 # Set by agent_factory at startup via set_local_model().
 _local_model: str = "llama3.2"
+_model_is_cloud: bool = False
+_groq_api_key: str | None = None
+_openrouter_api_key: str | None = None
 
 
-def set_local_model(model_name: str) -> None:
-    """Register the Ollama model name to use for local browser tasks."""
-    global _local_model
+def set_local_model(
+    model_name: str,
+    is_cloud: bool = False,
+    groq_api_key: str | None = None,
+    openrouter_api_key: str | None = None,
+) -> None:
+    """Register the model to use for local browser tasks.
+
+    When *is_cloud* is True the local browser tools use Groq or OpenRouter
+    instead of Ollama.  Browser Use Cloud is only used as a fallback
+    (CAPTCHA, launch failure, etc.).
+    """
+    global _local_model, _model_is_cloud, _groq_api_key, _openrouter_api_key
     _local_model = model_name
+    _model_is_cloud = is_cloud
+    _groq_api_key = groq_api_key
+    _openrouter_api_key = openrouter_api_key
 
 
 @tool
@@ -45,9 +68,9 @@ async def browse_web(
     """
     Browse the web and complete a task using AI-powered browser automation.
 
-    Tries local Chromium + Ollama first. If blocked by CAPTCHA, bot detection,
-    or a browser launch failure, automatically escalates to Browser Use Cloud
-    (requires the cloud API key — user will be prompted once if not configured).
+    Always uses local Chromium driven by the configured remote LLM.  Falls
+    back to Browser Use Cloud only when Chromium cannot start, a CAPTCHA is
+    hit, or a timeout occurs.
 
     Use this for:
     - Searching websites and extracting information
@@ -62,11 +85,24 @@ async def browse_web(
     Returns:
         The result text from the completed browser task
     """
-    logger.info("browse_web: starting local attempt (model=%s)", _local_model)
+    bu_key = _get_browser_use_api_key()
+    logger.info("browse_web: trying local Chromium (model=%s cloud=%s bu_key=%s)", _local_model, _model_is_cloud, bool(bu_key))
     try:
-        result = await run_local_browser_task(task, _local_model, start_url)
+        result = await run_local_browser_task(
+            task, _local_model, start_url,
+            is_cloud=_model_is_cloud, groq_api_key=_groq_api_key,
+            browser_use_api_key=bu_key,
+            openrouter_api_key=_openrouter_api_key,
+        )
         logger.info("browse_web: local attempt succeeded")
         return result
+    except RateLimitError as exc:
+        logger.error("browse_web: cloud rate/token limit — %s", exc)
+        return (
+            f"The page content is too large for the cloud model's free-tier "
+            f"token limit.  Please try a simpler page, or use a local model "
+            f"with enough context capacity.  ({exc})"
+        )
     except CaptchaBlockedError as exc:
         logger.warning("browse_web: CAPTCHA/bot-detection — %s; escalating to cloud", exc)
     except BrowserLaunchError as exc:
@@ -76,7 +112,12 @@ async def browse_web(
     except OSError as exc:
         logger.warning("browse_web: local browser OS error — %s; escalating to cloud", exc)
 
-    logger.info("browse_web: attempting cloud fallback")
+    if not bu_key:
+        return (
+            "Local browser failed and no Browser Use Cloud key is configured. "
+            "Add a key to ~/.browser_use to enable cloud fallback."
+        )
+    logger.info("browse_web: attempting Browser Use Cloud fallback")
     return await run_cloud_browser_task(task, start_url, allowed_domains)
 
 
@@ -86,11 +127,12 @@ async def browse_web_with_session(
     session_name: str = "default",
 ) -> List[str]:
     """
-    Execute multiple browser tasks in a single persistent LOCAL browser session.
+    Execute multiple browser tasks in a single persistent browser session.
 
-    The Chromium window stays visible on the desktop across all tasks so the
-    user can solve CAPTCHAs or complete login flows manually when needed.
-    Cookies and localStorage are preserved between tasks in the same session.
+    Always uses a local Chromium window driven by the configured remote LLM,
+    so cookies and login state persist between tasks and the user can solve
+    CAPTCHAs manually.  Falls back to Browser Use Cloud only when Chromium
+    cannot start.
 
     Use this when tasks need to share login state across steps, e.g.:
     - Log in to a site, then scrape data from authenticated pages
@@ -106,7 +148,28 @@ async def browse_web_with_session(
     Returns:
         List of result strings, one per task in the same order
     """
-    return await run_local_browser_session(tasks, _local_model, session_name)
+    bu_key = _get_browser_use_api_key()
+    logger.info(
+        "browse_web_with_session: using local session (model=%s cloud=%s bu_key=%s)",
+        _local_model, _model_is_cloud, bool(bu_key),
+    )
+    try:
+        return await run_local_browser_session(
+            tasks, _local_model, session_name,
+            is_cloud=_model_is_cloud, groq_api_key=_groq_api_key,
+            browser_use_api_key=bu_key,
+            openrouter_api_key=_openrouter_api_key,
+        )
+    except BrowserLaunchError as exc:
+        logger.error("browse_web_with_session: Chromium failed to start — %s", exc)
+
+    if not bu_key:
+        raise BrowserLaunchError(
+            "Local Chromium failed and no Browser Use Cloud key is configured. "
+            "Add a key to ~/.browser_use to enable cloud fallback."
+        )
+    logger.info("browse_web_with_session: falling back to Browser Use Cloud")
+    return await run_cloud_browser_session(tasks, profile_name=session_name)
 
 
 def get_browser_tools() -> List[Any]:

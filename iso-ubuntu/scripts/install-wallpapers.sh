@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install custom wallpapers in chroot environment
-set -e
+set -euo pipefail
 
 echo "Installing Custom Wallpapers..."
 

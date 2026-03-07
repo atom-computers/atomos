@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install SurrealDB in chroot environment
-set -e
+set -euo pipefail
 
 echo "Installing SurrealDB..."
 
@@ -10,8 +10,10 @@ apt-get install -y curl
 # Download and install SurrealDB binary
 curl -sSf https://install.surrealdb.com | sh
 
-# Move binary to system path
-# Binary is already installed to /usr/local/bin by the installer script
+if [ ! -x /usr/local/bin/surreal ]; then
+    echo "FATAL: SurrealDB binary not found at /usr/local/bin/surreal after install"
+    exit 1
+fi
 chmod +x /usr/local/bin/surreal
 
 # Create SurrealDB data directory

@@ -6,6 +6,7 @@ Unit tests for browser tool orchestration.
 - browser.py: local→cloud escalation, LangChain tool interface
 """
 import os
+from contextlib import contextmanager
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -513,7 +514,7 @@ class TestCloudBrowserRunner:
     async def test_raises_credential_required_when_no_key(self):
         from secret_store import CredentialRequiredError
 
-        with patch("tools.browser_cloud.require_secret", side_effect=CredentialRequiredError("browser_use_api_key")):
+        with patch("tools.browser_cloud._get_browser_use_api_key", return_value=None):
             from tools.browser_cloud import run_cloud_browser_task
             with pytest.raises(CredentialRequiredError) as exc_info:
                 await run_cloud_browser_task("find repos")
@@ -530,10 +531,7 @@ class TestCloudBrowserRunner:
         mock_client = MagicMock()
         mock_client.run = AsyncMock(return_value=mock_result)
 
-        with (
-            patch("tools.browser_cloud.require_secret", return_value="real_api_key"),
-            patch("tools.browser_cloud._get_cloud_client", return_value=mock_client),
-        ):
+        with patch("tools.browser_cloud._get_cloud_client", return_value=mock_client):
             from tools.browser_cloud import run_cloud_browser_task
             result = await run_cloud_browser_task("find repos")
 
@@ -553,10 +551,7 @@ class TestCloudBrowserRunner:
         mock_client.profiles.list = AsyncMock(return_value=[])
         mock_client.run = AsyncMock(return_value=mock_task_result)
 
-        with (
-            patch("tools.browser_cloud.require_secret", return_value="key"),
-            patch("tools.browser_cloud._get_cloud_client", return_value=mock_client),
-        ):
+        with patch("tools.browser_cloud._get_cloud_client", return_value=mock_client):
             from tools.browser_cloud import run_cloud_browser_session
             await run_cloud_browser_session(["task 1", "task 2"])
 
@@ -573,15 +568,36 @@ class TestCloudBrowserRunner:
         mock_client.profiles.list = AsyncMock(return_value=[])
         mock_client.run = AsyncMock(side_effect=RuntimeError("task failed"))
 
-        with (
-            patch("tools.browser_cloud.require_secret", return_value="key"),
-            patch("tools.browser_cloud._get_cloud_client", return_value=mock_client),
-        ):
+        with patch("tools.browser_cloud._get_cloud_client", return_value=mock_client):
             from tools.browser_cloud import run_cloud_browser_session
             with pytest.raises(RuntimeError):
                 await run_cloud_browser_session(["failing task"])
 
         mock_client.sessions.stop.assert_awaited_once_with("session-789")
+
+    @pytest.mark.asyncio
+    async def test_reads_key_from_file(self):
+        """_get_browser_use_api_key reads from ~/.browser_use first."""
+        from tools.browser_cloud import _get_browser_use_api_key
+        with patch("tools.browser_cloud._read_browser_use_key_file", return_value="bu_test_key"):
+            assert _get_browser_use_api_key() == "bu_test_key"
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_secret_store(self):
+        """When file is missing, falls back to secret_store.get_secret."""
+        from tools.browser_cloud import _get_browser_use_api_key
+        with (
+            patch("tools.browser_cloud._read_browser_use_key_file", return_value=None),
+            patch.dict("os.environ", {}, clear=True),
+            patch("tools.browser_cloud.Path") as MockPath,
+        ):
+            MockPath.home.return_value = MagicMock()
+            MockPath.home.return_value.__truediv__ = lambda s, n: MagicMock()
+            mock_home_dir = MagicMock()
+            mock_home_dir.iterdir.return_value = []
+            MockPath.side_effect = lambda p: mock_home_dir if p == "/home" else MagicMock()
+            with patch("tools.browser_cloud.get_secret", return_value="bu_from_store"):
+                assert _get_browser_use_api_key() == "bu_from_store"
 
 
 # ---------------------------------------------------------------------------
@@ -597,11 +613,56 @@ class TestBrowseWebTool:
         assert bm._local_model == "mistral"
         set_local_model("llama3.2")  # restore default
 
+    # -- Cloud-first: when ~/.browser_use key exists, go straight to cloud --
+
     @pytest.mark.asyncio
-    async def test_returns_local_result_on_success(self):
-        with patch(
-            "tools.browser.run_local_browser_task",
-            new=AsyncMock(return_value="local result"),
+    async def test_uses_cloud_when_key_exists(self):
+        """With a ~/.browser_use key, browse_web goes directly to cloud."""
+        mock_cloud = AsyncMock(return_value="cloud result")
+        mock_local = AsyncMock(return_value="should not be called")
+
+        with (
+            patch("tools.browser._get_browser_use_api_key", return_value="bu_test"),
+            patch("tools.browser.run_cloud_browser_task", new=mock_cloud),
+            patch("tools.browser.run_local_browser_task", new=mock_local),
+        ):
+            from tools.browser import browse_web
+            result = await browse_web.ainvoke({"task": "find trending repos"})
+
+        assert result == "cloud result"
+        mock_cloud.assert_awaited_once()
+        mock_local.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_session_uses_cloud_when_key_exists(self):
+        """With a ~/.browser_use key, browse_web_with_session goes to cloud."""
+        mock_cloud = AsyncMock(return_value=["r1", "r2"])
+        mock_local = AsyncMock(return_value=["should not be called"])
+
+        with (
+            patch("tools.browser._get_browser_use_api_key", return_value="bu_test"),
+            patch("tools.browser.run_cloud_browser_session", new=mock_cloud),
+            patch("tools.browser.run_local_browser_session", new=mock_local),
+        ):
+            from tools.browser import browse_web_with_session
+            result = await browse_web_with_session.ainvoke(
+                {"tasks": ["log in", "check inbox"]}
+            )
+
+        assert result == ["r1", "r2"]
+        mock_cloud.assert_awaited_once()
+        mock_local.assert_not_awaited()
+
+    # -- Local fallback: when no key, try local first then escalate ----------
+
+    @pytest.mark.asyncio
+    async def test_returns_local_result_when_no_key(self):
+        with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
+            patch(
+                "tools.browser.run_local_browser_task",
+                new=AsyncMock(return_value="local result"),
+            ),
         ):
             from tools.browser import browse_web
             result = await browse_web.ainvoke({"task": "find trending repos"})
@@ -613,6 +674,7 @@ class TestBrowseWebTool:
         from tools.browser_local import CaptchaBlockedError
 
         with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
             patch(
                 "tools.browser.run_local_browser_task",
                 new=AsyncMock(side_effect=CaptchaBlockedError("blocked")),
@@ -633,6 +695,7 @@ class TestBrowseWebTool:
         from secret_store import CredentialRequiredError
 
         with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
             patch(
                 "tools.browser.run_local_browser_task",
                 new=AsyncMock(side_effect=CaptchaBlockedError("blocked")),
@@ -651,6 +714,7 @@ class TestBrowseWebTool:
     @pytest.mark.asyncio
     async def test_escalates_to_cloud_on_timeout(self):
         with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
             patch(
                 "tools.browser.run_local_browser_task",
                 new=AsyncMock(side_effect=TimeoutError("agent task timed out")),
@@ -670,6 +734,7 @@ class TestBrowseWebTool:
         from tools.browser_local import BrowserLaunchError
 
         with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
             patch(
                 "tools.browser.run_local_browser_task",
                 new=AsyncMock(side_effect=BrowserLaunchError("Chromium failed to start")),
@@ -687,6 +752,7 @@ class TestBrowseWebTool:
     @pytest.mark.asyncio
     async def test_escalates_to_cloud_on_os_error(self):
         with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
             patch(
                 "tools.browser.run_local_browser_task",
                 new=AsyncMock(side_effect=OSError("chromium binary not found")),
@@ -702,10 +768,11 @@ class TestBrowseWebTool:
         assert result == "cloud result"
 
     @pytest.mark.asyncio
-    async def test_cloud_not_called_when_local_succeeds(self):
+    async def test_cloud_not_called_when_local_succeeds_and_no_key(self):
         mock_cloud = AsyncMock(return_value="should not be called")
 
         with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
             patch("tools.browser.run_local_browser_task", new=AsyncMock(return_value="local ok")),
             patch("tools.browser.run_cloud_browser_task", new=mock_cloud),
         ):
@@ -715,11 +782,14 @@ class TestBrowseWebTool:
         mock_cloud.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_browse_web_with_session_calls_local_session(self):
-        with patch(
-            "tools.browser.run_local_browser_session",
-            new=AsyncMock(return_value=["r1", "r2"]),
-        ) as mock_session:
+    async def test_browse_web_with_session_calls_local_when_no_key(self):
+        with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
+            patch(
+                "tools.browser.run_local_browser_session",
+                new=AsyncMock(return_value=["r1", "r2"]),
+            ) as mock_session,
+        ):
             from tools.browser import browse_web_with_session
             result = await browse_web_with_session.ainvoke(
                 {"tasks": ["log in", "check inbox"]}
@@ -730,10 +800,13 @@ class TestBrowseWebTool:
 
     @pytest.mark.asyncio
     async def test_browse_web_with_session_passes_session_name(self):
-        with patch(
-            "tools.browser.run_local_browser_session",
-            new=AsyncMock(return_value=["done"]),
-        ) as mock_session:
+        with (
+            patch("tools.browser._get_browser_use_api_key", return_value=None),
+            patch(
+                "tools.browser.run_local_browser_session",
+                new=AsyncMock(return_value=["done"]),
+            ) as mock_session,
+        ):
             from tools.browser import browse_web_with_session
             await browse_web_with_session.ainvoke(
                 {"tasks": ["do thing"], "session_name": "work"}
@@ -742,19 +815,6 @@ class TestBrowseWebTool:
         call_kwargs = mock_session.call_args
         assert "work" in call_kwargs.args or call_kwargs.kwargs.get("session_name") == "work"
 
-    @pytest.mark.asyncio
-    async def test_browse_web_with_session_does_not_call_cloud(self):
-        mock_cloud = AsyncMock(return_value=["should not be called"])
-
-        with (
-            patch("tools.browser.run_local_browser_session", new=AsyncMock(return_value=["ok"])),
-            patch("tools.browser.run_cloud_browser_task", new=mock_cloud),
-        ):
-            from tools.browser import browse_web_with_session
-            await browse_web_with_session.ainvoke({"tasks": ["task"]})
-
-        mock_cloud.assert_not_awaited()
-
     def test_get_browser_tools_returns_two_tools(self):
         from tools.browser import get_browser_tools
         tools = get_browser_tools()
@@ -762,3 +822,509 @@ class TestBrowseWebTool:
         assert "browse_web" in names
         assert "browse_web_with_session" in names
         assert len(tools) == 2
+
+
+# ---------------------------------------------------------------------------
+# _make_browser_llm — real LLM classes, no fakes
+#
+# These tests use the REAL langchain Pydantic v2 model classes (ChatOpenAI,
+# ChatGroq, ChatOllama) so that Pydantic __getattr__ / __setattr__
+# restrictions are exercised the same way they are in production.  Only
+# Agent and Browser (which need a running Chromium) are mocked.
+# ---------------------------------------------------------------------------
+
+from langchain_openai import ChatOpenAI as RealChatOpenAI
+from langchain_groq import ChatGroq as RealChatGroq
+from langchain_ollama import ChatOllama as RealChatOllama
+
+
+class _StubChatBrowserUse:
+    """Minimal stub for browser-use's ChatBrowserUse (not pip-installable in dev)."""
+    provider = "browser-use"
+
+    def __init__(self, api_key=None):
+        self.api_key = api_key
+
+
+@contextmanager
+def _patch_browser_use_only():
+    """Patch _ChatBrowserUse (not installed in dev); leave real LLM classes alone."""
+    with patch("tools.browser_local._ChatBrowserUse", _StubChatBrowserUse):
+        yield
+
+
+@contextmanager
+def _patch_ollama_for_dev():
+    """In dev, browser_use isn't installed so ChatOllama is None.
+
+    Patch it with the real langchain_ollama ChatOllama (which is what
+    browser_use re-exports) so the Ollama path can be tested.
+    """
+    from tools.browser_local import _browser_safe_cls
+    safe = _browser_safe_cls(RealChatOllama)
+    with patch("tools.browser_local.ChatOllama", safe):
+        yield
+
+
+class TestMakeBrowserLlm:
+    """Verify _make_browser_llm picks the right backend in priority order.
+
+    Uses real langchain LLM classes — NOT mocks.
+    """
+
+    def test_browser_use_takes_top_priority(self):
+        with _patch_browser_use_only():
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "any-model", is_cloud=True, groq_api_key="gsk_x",
+                browser_use_api_key="bu_key", openrouter_api_key="or_key",
+            )
+            assert isinstance(llm, _StubChatBrowserUse)
+
+    def test_openrouter_returns_real_chat_openai(self):
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "z-ai/glm-5", is_cloud=True, groq_api_key="gsk_x",
+                openrouter_api_key="or_key",
+            )
+            assert isinstance(llm, RealChatOpenAI)
+
+    def test_openrouter_when_browser_use_class_missing(self):
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "z-ai/glm-5", is_cloud=False, groq_api_key=None,
+                browser_use_api_key="bu_key", openrouter_api_key="or_key",
+            )
+            assert isinstance(llm, RealChatOpenAI)
+
+    def test_groq_returns_real_chat_groq(self):
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "llama-4", is_cloud=True, groq_api_key="gsk_x",
+            )
+            assert isinstance(llm, RealChatGroq)
+
+    def test_ollama_returns_real_chat_ollama(self):
+        with (
+            patch("tools.browser_local._ChatBrowserUse", None),
+            _patch_ollama_for_dev(),
+        ):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "llama3.2", is_cloud=False, groq_api_key=None,
+            )
+            assert isinstance(llm, RealChatOllama)
+
+    def test_groq_skip_model_is_replaced(self):
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm, _BROWSER_GROQ_FALLBACK
+            llm = _make_browser_llm(
+                "meta-llama/llama-4-maverick-17b-128e-instruct",
+                is_cloud=True, groq_api_key="gsk_x",
+            )
+            assert isinstance(llm, RealChatGroq)
+            assert llm.model_name == _BROWSER_GROQ_FALLBACK
+
+
+# ---------------------------------------------------------------------------
+# browser-use Agent interface contract
+#
+# browser-use Agent.__init__ does two things to the LLM that break
+# Pydantic v2 models:
+#
+#   1. Reads llm.provider (agent/service.py:233)
+#      → Pydantic __getattr__ raises AttributeError
+#
+#   2. token_cost_service.register_llm(llm) does
+#      setattr(llm, 'ainvoke', tracked_ainvoke) (tokens/service.py:361)
+#      → Pydantic __setattr__ raises ValueError for non-field names
+#
+# These tests use the REAL Pydantic models and reproduce the exact
+# operations that crashed in production.
+# ---------------------------------------------------------------------------
+
+
+class TestBrowserUseCompatContract:
+    """LLMs from _make_browser_llm must survive browser-use's internal ops."""
+
+    def test_openrouter_provider_read(self):
+        """agent/service.py:233  →  if llm.provider == 'browser-use'"""
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "z-ai/glm-5", is_cloud=False, groq_api_key=None,
+                openrouter_api_key="or_key",
+            )
+        assert hasattr(llm, "provider")
+        assert llm.provider == "openrouter"
+
+    def test_openrouter_setattr_ainvoke(self):
+        """tokens/service.py:361  →  setattr(llm, 'ainvoke', tracked)"""
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "z-ai/glm-5", is_cloud=False, groq_api_key=None,
+                openrouter_api_key="or_key",
+            )
+        sentinel = object()
+        setattr(llm, "ainvoke", sentinel)
+        assert llm.ainvoke is sentinel
+
+    def test_groq_provider_read(self):
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "llama-4", is_cloud=True, groq_api_key="gsk_x",
+            )
+        assert hasattr(llm, "provider")
+        assert llm.provider == "groq"
+
+    def test_groq_setattr_ainvoke(self):
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "llama-4", is_cloud=True, groq_api_key="gsk_x",
+            )
+        sentinel = object()
+        setattr(llm, "ainvoke", sentinel)
+        assert llm.ainvoke is sentinel
+
+    def test_ollama_provider_read(self):
+        with (
+            patch("tools.browser_local._ChatBrowserUse", None),
+            _patch_ollama_for_dev(),
+        ):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "llama3.2", is_cloud=False, groq_api_key=None,
+            )
+        assert hasattr(llm, "provider")
+        assert llm.provider == "ollama"
+
+    def test_ollama_setattr_ainvoke(self):
+        with (
+            patch("tools.browser_local._ChatBrowserUse", None),
+            _patch_ollama_for_dev(),
+        ):
+            from tools.browser_local import _make_browser_llm
+            llm = _make_browser_llm(
+                "llama3.2", is_cloud=False, groq_api_key=None,
+            )
+        sentinel = object()
+        setattr(llm, "ainvoke", sentinel)
+        assert llm.ainvoke is sentinel
+
+    def test_provider_survives_agent_init_check(self):
+        """Reproduce the exact line from browser_use/agent/service.py:233."""
+        with patch("tools.browser_local._ChatBrowserUse", None):
+            from tools.browser_local import _make_browser_llm
+            for label, kwargs in [
+                ("openrouter", dict(
+                    model_name="z-ai/glm-5", is_cloud=False,
+                    groq_api_key=None, openrouter_api_key="or_key",
+                )),
+                ("groq", dict(
+                    model_name="llama-4", is_cloud=True,
+                    groq_api_key="gsk_x",
+                )),
+            ]:
+                llm = _make_browser_llm(**kwargs)
+                is_bu = llm.provider == "browser-use"
+                assert not is_bu, f"{label} LLM should not be 'browser-use'"
+
+    def test_set_provider_is_idempotent(self):
+        """Calling _set_provider twice must not overwrite the first value."""
+        from tools.browser_local import _set_provider, BrowserChatOpenAI
+        llm = BrowserChatOpenAI(api_key="test", model="test")
+        _set_provider(llm, "first")
+        _set_provider(llm, "second")
+        assert llm.provider == "first"
+
+    def test_raw_chat_openai_rejects_setattr(self):
+        """Verify the raw (unwrapped) ChatOpenAI from langchain DOES reject setattr.
+
+        This proves our safe subclass is necessary — without it, browser-use
+        would crash with ValueError.
+        """
+        raw = RealChatOpenAI(api_key="test", model="test")
+        with pytest.raises((ValueError, AttributeError)):
+            setattr(raw, "some_nonexistent_attr", "value")
+
+    def test_raw_chat_groq_rejects_setattr(self):
+        """Same proof for ChatGroq."""
+        raw = RealChatGroq(api_key="test", model="test")
+        with pytest.raises((ValueError, AttributeError)):
+            setattr(raw, "some_nonexistent_attr", "value")
+
+
+# ---------------------------------------------------------------------------
+# _browser_safe_cls — the subclassing mechanism
+# ---------------------------------------------------------------------------
+
+
+class TestBrowserSafeCls:
+    def test_returns_none_for_none(self):
+        from tools.browser_local import _browser_safe_cls
+        assert _browser_safe_cls(None) is None
+
+    def test_subclass_preserves_class_name(self):
+        from tools.browser_local import _browser_safe_cls
+        safe = _browser_safe_cls(RealChatOpenAI)
+        assert safe.__name__ == "ChatOpenAI"
+
+    def test_subclass_is_subclass(self):
+        from tools.browser_local import _browser_safe_cls
+        safe = _browser_safe_cls(RealChatOpenAI)
+        assert issubclass(safe, RealChatOpenAI)
+
+    def test_instances_pass_isinstance_check(self):
+        from tools.browser_local import _browser_safe_cls
+        safe = _browser_safe_cls(RealChatOpenAI)
+        llm = safe(api_key="test", model="test")
+        assert isinstance(llm, RealChatOpenAI)
+
+    def test_pydantic_fields_still_validated(self):
+        """Normal Pydantic field assignment must still go through validation."""
+        from tools.browser_local import _browser_safe_cls
+        safe = _browser_safe_cls(RealChatOpenAI)
+        llm = safe(api_key="test", model="test")
+        llm.temperature = 0.5
+        assert llm.temperature == 0.5
+
+
+# ---------------------------------------------------------------------------
+# run_local_browser_task — real LLMs, mocked Agent + Browser
+# ---------------------------------------------------------------------------
+
+
+def _make_successful_agent_and_browser():
+    mock_history = MagicMock()
+    mock_history.final_result.return_value = "ok"
+    mock_agent = MagicMock()
+    mock_agent.run = AsyncMock(return_value=mock_history)
+    mock_browser = MagicMock()
+    mock_browser.stop = AsyncMock()
+    return mock_agent, mock_browser
+
+
+class TestLocalBrowserRunnerLlmPaths:
+    """Verify run_local_browser_task creates the right LLM for each backend.
+
+    Agent and Browser are mocked (need real Chromium); LLM classes are real.
+    """
+
+    @pytest.mark.asyncio
+    async def test_openrouter_path(self):
+        mock_agent, mock_browser = _make_successful_agent_and_browser()
+        captured_llm = []
+
+        def capture_agent(**kw):
+            captured_llm.append(kw["llm"])
+            return mock_agent
+
+        with (
+            patch("tools.browser_local._BROWSER_USE_AVAILABLE", True),
+            patch("tools.browser_local._ChatBrowserUse", None),
+            patch("tools.browser_local.Agent", side_effect=capture_agent),
+            patch("tools.browser_local.Browser", return_value=mock_browser),
+            patch("tools.browser_local._ensure_display_env", return_value=[]),
+        ):
+            from tools.browser_local import run_local_browser_task
+            await run_local_browser_task(
+                "test", "z-ai/glm-5",
+                openrouter_api_key="or_key",
+            )
+
+        assert len(captured_llm) == 1
+        assert isinstance(captured_llm[0], RealChatOpenAI)
+        assert captured_llm[0].provider == "openrouter"
+
+    @pytest.mark.asyncio
+    async def test_groq_path(self):
+        mock_agent, mock_browser = _make_successful_agent_and_browser()
+        captured_llm = []
+
+        def capture_agent(**kw):
+            captured_llm.append(kw["llm"])
+            return mock_agent
+
+        with (
+            patch("tools.browser_local._BROWSER_USE_AVAILABLE", True),
+            patch("tools.browser_local._ChatBrowserUse", None),
+            patch("tools.browser_local.Agent", side_effect=capture_agent),
+            patch("tools.browser_local.Browser", return_value=mock_browser),
+            patch("tools.browser_local._ensure_display_env", return_value=[]),
+        ):
+            from tools.browser_local import run_local_browser_task
+            await run_local_browser_task(
+                "test", "llama-4",
+                is_cloud=True, groq_api_key="gsk_x",
+            )
+
+        assert len(captured_llm) == 1
+        assert isinstance(captured_llm[0], RealChatGroq)
+        assert captured_llm[0].provider == "groq"
+
+    @pytest.mark.asyncio
+    async def test_cloud_kwargs_applied_for_cloud_model(self):
+        """is_cloud=True must inject flash_mode, max_failures, etc."""
+        mock_agent, mock_browser = _make_successful_agent_and_browser()
+        captured_kwargs = []
+
+        def capture_agent(**kw):
+            captured_kwargs.append(kw)
+            return mock_agent
+
+        with (
+            patch("tools.browser_local._BROWSER_USE_AVAILABLE", True),
+            patch("tools.browser_local._ChatBrowserUse", None),
+            patch("tools.browser_local.Agent", side_effect=capture_agent),
+            patch("tools.browser_local.Browser", return_value=mock_browser),
+            patch("tools.browser_local._ensure_display_env", return_value=[]),
+        ):
+            from tools.browser_local import run_local_browser_task
+            await run_local_browser_task(
+                "test", "llama-4",
+                is_cloud=True, groq_api_key="gsk_x",
+            )
+
+        kw = captured_kwargs[0]
+        assert kw.get("flash_mode") is True
+        assert kw.get("use_judge") is False
+        assert kw.get("max_failures") == 1
+
+    @pytest.mark.asyncio
+    async def test_local_ollama_no_cloud_kwargs(self):
+        """Pure local Ollama must NOT inject cloud-specific Agent kwargs."""
+        mock_agent, mock_browser = _make_successful_agent_and_browser()
+        captured_kwargs = []
+
+        def capture_agent(**kw):
+            captured_kwargs.append(kw)
+            return mock_agent
+
+        with (
+            patch("tools.browser_local._BROWSER_USE_AVAILABLE", True),
+            patch("tools.browser_local._ChatBrowserUse", None),
+            patch("tools.browser_local.Agent", side_effect=capture_agent),
+            patch("tools.browser_local.Browser", return_value=mock_browser),
+            patch("tools.browser_local._ensure_display_env", return_value=[]),
+            _patch_ollama_for_dev(),
+        ):
+            from tools.browser_local import run_local_browser_task
+            await run_local_browser_task("test", "llama3.2")
+
+        kw = captured_kwargs[0]
+        assert "flash_mode" not in kw
+        assert "max_failures" not in kw
+
+
+# ---------------------------------------------------------------------------
+# run_local_browser_session — rate limit + launch failure handling
+# ---------------------------------------------------------------------------
+
+
+class TestLocalBrowserSessionErrorHandling:
+
+    @pytest.mark.asyncio
+    async def test_session_rate_limit_raises(self):
+        from tools.browser_local import RateLimitError
+
+        mock_agent = MagicMock()
+        mock_agent.run = AsyncMock(
+            side_effect=RuntimeError("rate_limit_exceeded: tokens per minute")
+        )
+        mock_browser = MagicMock()
+        mock_browser.stop = AsyncMock()
+
+        with (
+            patch("tools.browser_local._BROWSER_USE_AVAILABLE", True),
+            patch("tools.browser_local.Agent", return_value=mock_agent),
+            patch("tools.browser_local.Browser", return_value=mock_browser),
+            patch("tools.browser_local._ensure_display_env", return_value=[]),
+            patch("tools.browser_local._sessions", {}),
+            _patch_ollama_for_dev(),
+        ):
+            from tools.browser_local import run_local_browser_session
+            with pytest.raises(RateLimitError):
+                await run_local_browser_session(["task"], "llama3.2")
+
+    @pytest.mark.asyncio
+    async def test_session_rate_limit_429_raises(self):
+        from tools.browser_local import RateLimitError
+
+        mock_agent = MagicMock()
+        mock_agent.run = AsyncMock(
+            side_effect=RuntimeError("Error code: 429 — too many requests")
+        )
+        mock_browser = MagicMock()
+        mock_browser.stop = AsyncMock()
+
+        with (
+            patch("tools.browser_local._BROWSER_USE_AVAILABLE", True),
+            patch("tools.browser_local.Agent", return_value=mock_agent),
+            patch("tools.browser_local.Browser", return_value=mock_browser),
+            patch("tools.browser_local._ensure_display_env", return_value=[]),
+            patch("tools.browser_local._sessions", {}),
+            _patch_ollama_for_dev(),
+        ):
+            from tools.browser_local import run_local_browser_session
+            with pytest.raises(RateLimitError):
+                await run_local_browser_session(["task"], "llama3.2")
+
+    @pytest.mark.asyncio
+    async def test_session_launch_failure_in_task_raises(self):
+        from tools.browser_local import BrowserLaunchError
+
+        mock_agent = MagicMock()
+        mock_agent.run = AsyncMock(
+            side_effect=RuntimeError("ConnectionRefusedError: Connect call failed")
+        )
+        mock_browser = MagicMock()
+        mock_browser.stop = AsyncMock()
+
+        with (
+            patch("tools.browser_local._BROWSER_USE_AVAILABLE", True),
+            patch("tools.browser_local.Agent", return_value=mock_agent),
+            patch("tools.browser_local.Browser", return_value=mock_browser),
+            patch("tools.browser_local._ensure_display_env", return_value=[]),
+            patch("tools.browser_local._sessions", {}),
+            _patch_ollama_for_dev(),
+        ):
+            from tools.browser_local import run_local_browser_session
+            with pytest.raises(BrowserLaunchError):
+                await run_local_browser_session(["task"], "llama3.2")
+
+
+# ---------------------------------------------------------------------------
+# Rate-limit detection helpers
+# ---------------------------------------------------------------------------
+
+
+class TestRateLimitDetection:
+    def test_rate_limit_exceeded_detected(self):
+        from tools.browser_local import _is_rate_limit_error
+        assert _is_rate_limit_error("rate_limit_exceeded")
+
+    def test_429_detected(self):
+        from tools.browser_local import _is_rate_limit_error
+        assert _is_rate_limit_error("Error code: 429 Too Many Requests")
+
+    def test_413_detected(self):
+        from tools.browser_local import _is_rate_limit_error
+        assert _is_rate_limit_error("HTTP 413: Request Entity Too Large")
+
+    def test_tokens_per_minute_detected(self):
+        from tools.browser_local import _is_rate_limit_error
+        assert _is_rate_limit_error("exceeded tokens per minute limit for this model")
+
+    def test_normal_error_not_rate_limit(self):
+        from tools.browser_local import _is_rate_limit_error
+        assert not _is_rate_limit_error("network timeout after 30s")
+
+    def test_normal_output_not_rate_limit(self):
+        from tools.browser_local import _is_rate_limit_error
+        assert not _is_rate_limit_error("trending repos: repo-a, repo-b")

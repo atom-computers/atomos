@@ -60,12 +60,6 @@ if [ -d "$PROJECT_ROOT/cosmic-ext-applet-ollama" ]; then
     tar --exclude='target' --exclude='node_modules' --exclude='.git' -C "$PROJECT_ROOT" -cf - cosmic-ext-applet-ollama | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
 fi
 
-if [ -d "$PROJECT_ROOT/vendor/cocoindex" ]; then
-    echo "Copying cocoindex from vendor and excluding target/uv.lock..."
-    docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/vendor/cocoindex
-    tar --exclude='target' --exclude='node_modules' --exclude='.git' --exclude='uv.lock' -C "$PROJECT_ROOT/vendor" -cf - cocoindex | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/vendor/
-fi
-
 if [ -d "$SCRIPT_DIR/atom-installer" ]; then
     echo "Copying atom-installer and excluding target..."
     docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/atom-installer

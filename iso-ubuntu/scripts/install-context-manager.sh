@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install AtomOS context-manager in chroot environment
-set -e
+set -euo pipefail
 
 echo "Installing AtomOS context-manager..."
 

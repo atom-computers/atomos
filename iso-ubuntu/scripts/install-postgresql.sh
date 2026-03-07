@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install PostgreSQL 18 in chroot environment
-set -e
+set -euo pipefail
 
 echo "Installing PostgreSQL 18..."
 
