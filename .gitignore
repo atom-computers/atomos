@@ -15,3 +15,5 @@ venv/
 .pytest_cache/
 
 TASKLIST.md
+TASKLIST_*.md
+USER_STORIES.md
