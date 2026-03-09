@@ -94,8 +94,10 @@ async def browse_web(
             browser_use_api_key=bu_key,
             openrouter_api_key=_openrouter_api_key,
         )
-        logger.info("browse_web: local attempt succeeded")
-        return result
+        if result.strip():
+            logger.info("browse_web: local attempt succeeded")
+            return result
+        logger.warning("browse_web: local attempt returned empty output")
     except RateLimitError as exc:
         logger.error("browse_web: cloud rate/token limit — %s", exc)
         return (
@@ -118,7 +120,22 @@ async def browse_web(
             "Add a key to ~/.browser_use to enable cloud fallback."
         )
     logger.info("browse_web: attempting Browser Use Cloud fallback")
-    return await run_cloud_browser_task(task, start_url, allowed_domains)
+    try:
+        result = await run_cloud_browser_task(task, start_url, allowed_domains)
+        if result.strip():
+            return result
+        return (
+            "Browser task completed but returned no extractable text. "
+            "Please retry with a narrower prompt or specific URL."
+        )
+    except TimeoutError:
+        return (
+            "Browser Use Cloud timed out before producing a result. "
+            "Please retry with a narrower prompt or specific URL."
+        )
+    except Exception as exc:
+        logger.exception("browse_web: cloud fallback failed")
+        return f"Browser task failed in cloud fallback: {exc}"
 
 
 @tool
@@ -169,7 +186,13 @@ async def browse_web_with_session(
             "Add a key to ~/.browser_use to enable cloud fallback."
         )
     logger.info("browse_web_with_session: falling back to Browser Use Cloud")
-    return await run_cloud_browser_session(tasks, profile_name=session_name)
+    try:
+        return await run_cloud_browser_session(tasks, profile_name=session_name)
+    except Exception as exc:
+        logger.exception("browse_web_with_session: cloud fallback failed")
+        raise BrowserLaunchError(
+            f"Cloud fallback failed after local launch error: {exc}"
+        ) from exc
 
 
 def get_browser_tools() -> List[Any]:

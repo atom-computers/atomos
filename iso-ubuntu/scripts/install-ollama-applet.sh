@@ -101,7 +101,17 @@ cat > /etc/skel/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_wings <
 Some(([
     "com.system76.CosmicPanelWorkspacesButton",
     "com.system76.CosmicPanelAppButton",
+    "com.system76.CosmicAppletTime",
 ], [
+    "dev.heppen.ollama",
+]))
+EOF
+
+# Match panel layout from the guest VM:
+# keep standard status applets in the center segment and leave
+# the Atomos Agent applet on the end segment.
+cat > /etc/skel/.config/cosmic/com.system76.CosmicPanel.Panel/v1/plugins_center << 'EOF'
+Some([
     "com.system76.CosmicAppletInputSources",
     "com.system76.CosmicAppletA11y",
     "com.system76.CosmicAppletStatusArea",
@@ -112,8 +122,7 @@ Some(([
     "com.system76.CosmicAppletBattery",
     "com.system76.CosmicAppletNotifications",
     "com.system76.CosmicAppletPower",
-    "dev.heppen.ollama",
-]))
+])
 EOF
 
 # Set custom Dock aesthetics and positioning

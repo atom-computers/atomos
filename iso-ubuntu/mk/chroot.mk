@@ -1,6 +1,8 @@
 # Chroot build targets
 # Note: These targets assume running as root (required for debootstrap and chroot)
 
+INSTALL_SCRIPTS := $(wildcard scripts/*.sh)
+
 # Dependency source paths
 # Detect if running in container with /build-deps mounts (Podman) or /workspace mounts (Docker)
 ifneq ($(wildcard /build-deps/core),)
@@ -69,7 +71,7 @@ $(BUILD)/pool: $(BUILD)/chroot
 	sudo touch "$@.partial"
 	sudo mv "$@.partial" "$@"
 
-$(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
+$(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg $(INSTALL_SCRIPTS)
 	# Remove old chroot
 	rm -rf "$(BUILD)/chroot"
 	
@@ -180,6 +182,7 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-sync.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-context-manager.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atomos-agents.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-chromium.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-ollama-applet.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-seed-tools.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-zed.sh

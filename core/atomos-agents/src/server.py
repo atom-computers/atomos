@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import uuid
 
@@ -12,13 +13,45 @@ from tool_registry import retrieve_tools, ensure_registry
 from langchain_core.messages import AIMessage, HumanMessage
 from secret_store import CredentialRequiredError, store_secret, has_secret
 
+_terminal_tab_counter = 0
+
+_TERMINAL_TOOLS = frozenset({"terminal"})
+
+_SILENT_EDITOR_TOOLS = frozenset({
+    "read_file", "search_in_files",
+})
+
+
+def _next_tab_id() -> str:
+    global _terminal_tab_counter
+    _terminal_tab_counter += 1
+    return f"tab-{_terminal_tab_counter}"
+
+
+def _parse_exit_code(output: str) -> int:
+    """Extract exit code from shell tool output, defaulting to 0."""
+    for line in reversed(output.splitlines()):
+        line = line.strip()
+        if line.startswith("[exit ") and line.endswith("]"):
+            try:
+                return int(line[6:-1])
+            except ValueError:
+                pass
+        if line == "[timed out after" or "timed out" in line:
+            return 124
+    return 0
+
+
+def _extract_command(output: str) -> str:
+    """Extract the command from the first line (e.g. '$ ls -la' → 'ls -la')."""
+    for line in output.splitlines():
+        if line.startswith("$ "):
+            return line[2:].strip()
+    return "Shell"
+
 
 def _format_tool_output(content: str, tool_name: str) -> str:
-    """Wrap tool output in a markdown fenced code block.
-
-    The applet's markdown renderer displays these as terminal-style
-    boxes with monospace font and a distinct background.
-    """
+    """Wrap tool output in a markdown fenced code block."""
     safe = content.replace("```", "` ` `")
     return f"\n```\n{safe}\n```\n"
 
@@ -130,7 +163,37 @@ class AgentServiceServicer(bridge_pb2_grpc.AgentServiceServicer):
                 elif node == "tools":
                     current_tool_call = ""
                     content = getattr(chunk, "content", "")
-                    if isinstance(content, str) and content:
+
+                    if isinstance(content, str) and content and last_tool_call in _TERMINAL_TOOLS:
+                        tab_id = _next_tab_id()
+                        cmd_title = _extract_command(content)
+                        exit_code = _parse_exit_code(content)
+
+                        yield bridge_pb2.AgentResponse(
+                            terminal_event=json.dumps({
+                                "type": "open",
+                                "tab_id": tab_id,
+                                "title": f"$ {cmd_title}",
+                                "cwd": "",
+                            }),
+                        )
+                        yield bridge_pb2.AgentResponse(
+                            terminal_event=json.dumps({
+                                "type": "output",
+                                "tab_id": tab_id,
+                                "data": content,
+                            }),
+                        )
+                        yield bridge_pb2.AgentResponse(
+                            terminal_event=json.dumps({
+                                "type": "close",
+                                "tab_id": tab_id,
+                                "exit_code": exit_code,
+                            }),
+                        )
+                    elif isinstance(content, str) and content and last_tool_call in _SILENT_EDITOR_TOOLS:
+                        pass
+                    elif isinstance(content, str) and content:
                         formatted = _format_tool_output(content, last_tool_call)
                         yield bridge_pb2.AgentResponse(
                             content=formatted,

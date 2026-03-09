@@ -64,6 +64,16 @@ if ! "$ZED_DIR/bin/zed" --version 2>/dev/null; then
     echo "WARNING: 'zed --version' failed (expected in chroot without display)"
 fi
 
+# Avoid Zed's first-run "Unsupported GPU" interstitial on COSMIC/Pop-style
+# installs where PRIME discrete mode can cause llvmpipe fallback.
+if [ -f /etc/prime-discrete ]; then
+    PRIME_MODE=$(tr -d '[:space:]' < /etc/prime-discrete || true)
+    if [ "$PRIME_MODE" != "off" ]; then
+        echo "Setting /etc/prime-discrete to off for Zed GPU compatibility..."
+        echo "off" > /etc/prime-discrete
+    fi
+fi
+
 echo "Configuring Zed..."
 ln -sf "$ZED_DIR/bin/zed" /usr/local/bin/zed
 ln -sf "$ZED_DIR/bin/zed" /usr/bin/zed
@@ -82,19 +92,21 @@ install -D "$ZED_DIR/share/applications/dev.zed.Zed.desktop" -t /usr/share/appli
 sed -i "s|Icon=zed|Icon=$ZED_DIR/share/icons/hicolor/512x512/apps/zed.png|g" /usr/share/applications/dev.zed.Zed.desktop
 sed -i "s|Exec=zed|Exec=$ZED_DIR/bin/zed|g" /usr/share/applications/dev.zed.Zed.desktop
 
-echo "Adding Zed to the Cosmic Dock..."
-# Append Zed to the dock pinned applications list
-mkdir -p /etc/skel/.config/cosmic/com.system76.CosmicAppLibrary/v1/
-
-cat > /etc/skel/.config/cosmic/com.system76.CosmicAppLibrary/v1/pinned << 'EOF'
+echo "Adding Zed and Chromium to the Cosmic Dock..."
+# COSMIC dock favorites are stored in com.system76.CosmicAppList/v1/favorites
+# (RON list). Write both system defaults and per-user skeleton defaults.
+for base in /usr/share/cosmic /etc/skel/.config/cosmic; do
+mkdir -p "$base/com.system76.CosmicAppList/v1/"
+cat > "$base/com.system76.CosmicAppList/v1/favorites" << 'EOF'
 [
-    "dev.zed.Zed",
-    "firefox",
-    "cosmic-files",
-    "cosmic-term",
-    "cosmic-settings",
+    "chromium-browser",
+    "dev.zed.Zed",    
+    "com.system76.CosmicFiles",
+    "com.system76.CosmicTerm",
+    "com.system76.CosmicSettings",
 ]
 EOF
+done
 
 echo "Configuring AtomOS agent server for Zed (ACP)..."
 mkdir -p /etc/skel/.config/zed

@@ -42,10 +42,28 @@ class TestCaptchaDetection:
         from tools.browser_local import _is_captcha_blocked
         assert not _is_captcha_blocked("GitHub trending repositories: 1. awesome-repo...")
 
+    def test_challenges_word_is_not_captcha(self):
+        from tools.browser_local import _is_captcha_blocked
+        assert not _is_captcha_blocked(
+            "Recent breakthroughs and challenges in room temperature quantum computing"
+        )
+
     def test_detection_is_case_insensitive(self):
         from tools.browser_local import _is_captcha_blocked
         assert _is_captcha_blocked("CAPTCHA DETECTED")
         assert _is_captcha_blocked("Verify You Are Human")
+
+    def test_long_final_report_is_not_captcha_final_output(self):
+        from tools.browser_local import _is_captcha_final_output
+        long_report = (
+            "### Room-Temperature Quantum Computing Research Report\n"
+            + ("Detailed findings and challenges.\n" * 200)
+        )
+        assert not _is_captcha_final_output(long_report)
+
+    def test_short_cloudflare_page_is_captcha_final_output(self):
+        from tools.browser_local import _is_captcha_final_output
+        assert _is_captcha_final_output("Just a moment... Cloudflare challenge")
 
 
 class TestBrowserLaunchDetection:
@@ -768,6 +786,30 @@ class TestBrowseWebTool:
         assert result == "cloud result"
 
     @pytest.mark.asyncio
+    async def test_empty_local_result_escalates_to_cloud(self):
+        with (
+            patch("tools.browser._get_browser_use_api_key", return_value="bu_test"),
+            patch("tools.browser.run_local_browser_task", new=AsyncMock(return_value="")),
+            patch("tools.browser.run_cloud_browser_task", new=AsyncMock(return_value="cloud result")),
+        ):
+            from tools.browser import browse_web
+            result = await browse_web.ainvoke({"task": "find repos"})
+
+        assert result == "cloud result"
+
+    @pytest.mark.asyncio
+    async def test_cloud_timeout_returns_user_message(self):
+        with (
+            patch("tools.browser._get_browser_use_api_key", return_value="bu_test"),
+            patch("tools.browser.run_local_browser_task", new=AsyncMock(side_effect=TimeoutError("local timeout"))),
+            patch("tools.browser.run_cloud_browser_task", new=AsyncMock(side_effect=TimeoutError("cloud timeout"))),
+        ):
+            from tools.browser import browse_web
+            result = await browse_web.ainvoke({"task": "find repos"})
+
+        assert "timed out" in result.lower()
+
+    @pytest.mark.asyncio
     async def test_cloud_not_called_when_local_succeeds_and_no_key(self):
         mock_cloud = AsyncMock(return_value="should not be called")
 
@@ -1328,3 +1370,34 @@ class TestRateLimitDetection:
     def test_normal_output_not_rate_limit(self):
         from tools.browser_local import _is_rate_limit_error
         assert not _is_rate_limit_error("trending repos: repo-a, repo-b")
+
+
+class TestLocalTimeoutConfig:
+    def test_default_timeout_is_300(self):
+        from tools.browser_local import _read_local_browser_timeout
+        with patch.dict("os.environ", {}, clear=True):
+            assert _read_local_browser_timeout() == 300
+
+    def test_invalid_timeout_falls_back_to_300(self):
+        from tools.browser_local import _read_local_browser_timeout
+        with patch.dict("os.environ", {"BROWSER_LOCAL_TIMEOUT_SECONDS": "abc"}, clear=True):
+            assert _read_local_browser_timeout() == 300
+
+    def test_timeout_is_bounded(self):
+        from tools.browser_local import _read_local_browser_timeout
+        with patch.dict("os.environ", {"BROWSER_LOCAL_TIMEOUT_SECONDS": "5"}, clear=True):
+            assert _read_local_browser_timeout() == 30
+        with patch.dict("os.environ", {"BROWSER_LOCAL_TIMEOUT_SECONDS": "99999"}, clear=True):
+            assert _read_local_browser_timeout() == 1800
+
+
+class TestCloudTimeoutConfig:
+    def test_default_timeout_is_300(self):
+        from tools.browser_cloud import _read_cloud_browser_timeout
+        with patch.dict("os.environ", {}, clear=True):
+            assert _read_cloud_browser_timeout() == 300
+
+    def test_invalid_timeout_falls_back_to_300(self):
+        from tools.browser_cloud import _read_cloud_browser_timeout
+        with patch.dict("os.environ", {"BROWSER_CLOUD_TIMEOUT_SECONDS": "abc"}, clear=True):
+            assert _read_cloud_browser_timeout() == 300

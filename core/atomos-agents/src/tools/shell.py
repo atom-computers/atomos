@@ -1,11 +1,9 @@
 """
 LangChain tool for shell command execution on the host.
 
-Provides ``execute_command`` — a standalone shell execution tool that
+Provides ``terminal`` — a standalone shell execution tool that
 runs commands via subprocess with timeout and output-size guards.
-This complements the deepagents ``execute`` tool (exposed when
-LocalShellBackend is the backend) with an atomos-native implementation
-that works regardless of deepagents runtime context.
+This is an atomos-native implementation for terminal command execution.
 
 Security: this runs commands with the service user's permissions.
 The COSMIC applet's agent-mode toggle is the user-facing gate.
@@ -48,7 +46,7 @@ def _resolve_home() -> str:
     return str(home)
 
 
-@tool
+@tool("terminal")
 def execute_command(
     command: str,
     working_directory: Optional[str] = None,

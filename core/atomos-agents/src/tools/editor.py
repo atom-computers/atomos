@@ -1,17 +1,7 @@
 """
-LangChain tools for code editing and Zed editor integration.
+LangChain tool for launching a GUI code editor.
 
-open_in_editor    — launch a file/directory in Zed (or best available editor)
-read_file         — read file contents with optional line range
-edit_file         — search-and-replace a text span in a file
-create_file       — create a new file with given contents
-search_in_files   — regex search across files via ripgrep
-
-When the agent is invoked from the COSMIC applet (via gRPC), these tools
-give it direct filesystem access and the ability to surface results in
-Zed.  When the agent runs inside Zed over ACP, the editor provides its
-own file context — but these tools remain available for out-of-band
-filesystem operations.
+code_editor — launch a file/directory in Zed (or best available editor)
 """
 
 import logging
@@ -20,7 +10,7 @@ import platform
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List
 
 from langchain_core.tools import tool
 
@@ -200,61 +190,7 @@ def _launch_gui(cmd: list[str]) -> bool:
         return False
 
 
-_opened_projects: set[str] = set()
-
-
-def _project_root(path: Path) -> Path:
-    """Return the project root directory for *path*.
-
-    The project root is the first directory component below the user's
-    home (e.g. ``/home/atom/my_project/src/main.py`` → ``/home/atom/my_project``).
-    Falls back to the file's parent directory if it isn't under $HOME.
-    """
-    home = _resolve_home()
-    try:
-        rel = path.relative_to(home)
-        if rel.parts:
-            return home / rel.parts[0]
-    except ValueError:
-        pass
-    return path.parent
-
-
-def _auto_open_project(path: Path) -> str | None:
-    """Open the project directory in the editor once per project.
-
-    On the first file created under a project root, the whole directory
-    is opened in Zed so the user sees the file tree.  Subsequent files
-    under the same root are skipped — Zed already has the directory open
-    and shows new files automatically.
-
-    Returns the editor name on success, None otherwise.
-    """
-    project = _project_root(path)
-    key = str(project)
-    if key in _opened_projects:
-        return None
-
-    editor = _find_editor()
-    if editor and _launch_gui([editor, str(project)]):
-        _opened_projects.add(key)
-        return os.path.basename(editor)
-    return None
-
-
-def _auto_open_file(path: Path) -> str | None:
-    """Open an individual file in the editor (used after edits).
-
-    If the project is already open in Zed, this focuses the specific
-    file.  If not, it opens the file and Zed creates a new window.
-    """
-    editor = _find_editor()
-    if editor and _launch_gui([editor, str(path)]):
-        return os.path.basename(editor)
-    return None
-
-
-@tool
+@tool("code_editor")
 def open_in_editor(path: str) -> str:
     """Open a file, project folder, or coding workspace in the code editor (Zed).
 
@@ -292,149 +228,6 @@ def open_in_editor(path: str) -> str:
     )
 
 
-@tool
-def read_file(
-    file_path: str,
-    offset: Optional[int] = None,
-    limit: Optional[int] = None,
-) -> str:
-    """Read the contents of a file on disk.
-
-    Returns numbered lines so edits can reference exact positions.
-
-    Args:
-        file_path: Path to the file to read
-        offset: Optional 1-indexed line number to start from
-        limit: Optional maximum number of lines to return
-
-    Returns:
-        Numbered file contents, or an error message
-    """
-    resolved = _resolve_path(file_path)
-    if not resolved.is_file():
-        return f"File not found: {resolved}"
-    try:
-        text = resolved.read_text(errors="replace")
-        lines = text.splitlines()
-        start = max((offset or 1) - 1, 0)
-        end = (start + limit) if limit else len(lines)
-        numbered = [
-            f"{i + 1:>6}|{line}"
-            for i, line in enumerate(lines[start:end], start=start)
-        ]
-        return "\n".join(numbered) if numbered else "(empty file)"
-    except Exception as exc:
-        return f"Error reading {resolved}: {exc}"
-
-
-@tool
-def edit_file(file_path: str, old_text: str, new_text: str) -> str:
-    """Edit a file by replacing an exact text span with new text.
-
-    The old_text must appear verbatim in the file (including whitespace
-    and indentation).  Only the first occurrence is replaced.
-
-    Args:
-        file_path: Path to the file to edit
-        old_text: Exact text to find and replace
-        new_text: Replacement text
-
-    Returns:
-        Confirmation or error message
-    """
-    resolved = _resolve_path(file_path)
-    if not resolved.is_file():
-        return f"$ edit {resolved}\n[error: file not found]"
-    try:
-        content = resolved.read_text()
-        if old_text not in content:
-            return (
-                f"$ edit {resolved}\n"
-                "[error: old_text not found — ensure it matches exactly, including whitespace]"
-            )
-        updated = content.replace(old_text, new_text, 1)
-        resolved.write_text(updated)
-        editor = _auto_open_file(resolved)
-        opened = f" → opened in {editor}" if editor else ""
-        return f"$ edit {resolved}\n1 replacement applied{opened}"
-    except Exception as exc:
-        return f"$ edit {resolved}\n[error: {exc}]"
-
-
-@tool
-def create_file(file_path: str, contents: str) -> str:
-    """Create a new file with the given contents.
-
-    Parent directories are created automatically.  Refuses to overwrite
-    an existing file — use edit_file for that.
-
-    Args:
-        file_path: Path for the new file
-        contents: Text to write
-
-    Returns:
-        Confirmation or error message
-    """
-    resolved = _resolve_path(file_path)
-    if resolved.exists():
-        return f"$ create {resolved}\n[error: file already exists — use edit_file to modify it]"
-    try:
-        resolved.parent.mkdir(parents=True, exist_ok=True)
-        resolved.write_text(contents)
-        size = len(contents.encode())
-        editor = _auto_open_project(resolved)
-        opened = f" → opened project in {editor}" if editor else ""
-        return f"$ create {resolved}\n{size} bytes written{opened}"
-    except Exception as exc:
-        return f"$ create {resolved}\n[error: {exc}]"
-
-
-@tool
-def search_in_files(
-    pattern: str,
-    directory: str = ".",
-    file_glob: Optional[str] = None,
-) -> str:
-    """Search for a regex pattern across files using ripgrep.
-
-    Useful for finding function definitions, usages, imports, or any
-    text pattern across a codebase.
-
-    Args:
-        pattern: Regex pattern to search for
-        directory: Root directory to search in (default: current directory)
-        file_glob: Optional glob to filter files (e.g. "*.py", "*.rs")
-
-    Returns:
-        Matching lines with file paths and line numbers, or a message
-        if nothing matched
-    """
-    resolved = _resolve_path(directory)
-    if not resolved.is_dir():
-        return f"$ rg '{pattern}' {resolved}\n[error: directory not found]"
-    cmd: list[str] = [
-        "rg", "--line-number", "--max-count", "50",
-        "--color", "never", pattern, str(resolved),
-    ]
-    if file_glob:
-        cmd.extend(["--glob", file_glob])
-    prompt = f"$ rg '{pattern}' {resolved}"
-    if file_glob:
-        prompt += f" --glob '{file_glob}'"
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=30,
-        )
-        output = result.stdout.strip()
-        return f"{prompt}\n{output}" if output else f"{prompt}\n(no matches)"
-    except FileNotFoundError:
-        return f"{prompt}\n[error: ripgrep (rg) is not installed]"
-    except subprocess.TimeoutExpired:
-        return f"{prompt}\n[timed out after 30s]"
-    except Exception as exc:
-        return f"{prompt}\n[error: {exc}]"
-
-
 def get_editor_tools() -> List[Any]:
-    """Return all editor/filesystem tools."""
-    return [open_in_editor, read_file, edit_file, create_file, search_in_files]
+    """Return editor-facing tools only."""
+    return [open_in_editor]

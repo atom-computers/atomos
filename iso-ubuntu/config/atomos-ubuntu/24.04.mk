@@ -309,7 +309,7 @@ COSMIC_PKGS=\
 	cosmic-files \
 	cosmic-term \
 	cosmic-edit \
-	firefox \
+	chromium-browser \
 	pop-fonts
 
 # Development tools for building custom packages

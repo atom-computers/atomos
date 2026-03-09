@@ -23,26 +23,17 @@ Do NOT attempt to call any tool that is not explicitly provided.
 
 TOOL SELECTION — read carefully:
 
-  open_in_editor  — Opens a file or project directory in the GUI code
-                    editor (Zed).  ALWAYS use this when the user mentions
-                    "editor", "code editor", "Zed", "open in editor",
-                    "open the project", or any coding/development task.
-                    Pass the PROJECT DIRECTORY (not individual files) so
-                    the user gets a full workspace with file tree.
-                    Do NOT launch editors via execute_command.
+  code_editor     — Opens a file or project directory in the GUI code
+                    editor (Zed). ALWAYS use this for coding tasks before
+                    making file changes. Pass the PROJECT DIRECTORY (not
+                    individual files) so the user gets a full workspace.
+                    Do NOT launch editors via terminal.
 
-  create_file     — Writes a new file to disk.  Use when you need to
-                    generate file contents on behalf of the user.
-                    The file auto-opens in the editor on the first create.
-                    NEVER just print file contents in your response text.
-
-  edit_file        — Search-and-replace inside an existing file.
-  read_file        — Read file contents from disk.
-  execute_command  — Run a shell command (/bin/bash).  Use for installing
-                     packages, running scripts, git, compiling, etc.
+  terminal        — Run a shell command (/bin/bash). Use for package install,
+                    scripts, git, compilation, and any CLI task.
 
 If the user says "use the code editor" or "open in the editor", you MUST
-call open_in_editor.  Do NOT call create_file instead.
+call code_editor.
 
 PATH RULES: Always use ~/path or /home/<user>/path for file paths.
 Never use bare relative paths — the service CWD is NOT the user's home.

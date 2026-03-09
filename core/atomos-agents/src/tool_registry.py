@@ -35,11 +35,31 @@ SIMILARITY_THRESHOLD = 0.25
 
 _MIDDLEWARE_COUPLED_TOOLS = frozenset({"task", "write_todos"})
 
+_INTERNAL_ONLY_TOOLS = frozenset({
+    "check_sync_status",
+    "query_context_manager",
+})
+
 _ALWAYS_AVAILABLE_TOOLS = frozenset({
-    "execute_command",
+    # Terminal — output goes to the terminal window
+    "terminal",
+    # Editor — opens project/file in GUI editor
+    "code_editor",
+})
+
+_ALLOWED_EXPOSED_TOOLS = frozenset({
+    "code_editor",
+    "terminal",
+})
+
+_DISABLED_TOOLS = frozenset({
+    # Direct filesystem mutation/reads are intentionally disabled.
+    # Use terminal (bash) for file operations instead.
     "create_file",
     "read_file",
     "edit_file",
+    "search_in_files",
+    # Legacy tool name replaced by code_editor.
     "open_in_editor",
 })
 
@@ -82,13 +102,7 @@ def _fingerprint(name: str, description: str) -> str:
 
 
 def _discover_deepagent_tools() -> list[dict]:
-    """Build a throw-away deepagents graph and extract its built-in tools.
-
-    Uses LocalShellBackend so the ``execute`` tool (shell execution) is
-    discovered alongside the filesystem tools.  LocalShellBackend extends
-    FilesystemBackend and adds the ``execute`` tool — see
-    https://docs.langchain.com/oss/python/deepagents/backends
-    """
+    """Build a throw-away deepagents graph and extract its built-in tools."""
     try:
         from langchain.chat_models import init_chat_model
         from deepagents import create_deep_agent
@@ -147,15 +161,24 @@ def _discover_atomos_tools() -> list[dict]:
 
 
 def discover_all_tools() -> list[dict]:
-    """Return every available tool, with atomos tools taking priority."""
+    """Return every available tool, with atomos tools taking priority.
+
+    Internal-only tools (context enrichment, sync status) are excluded
+    from the user-facing set — they belong in the pre-prompt / RAG
+    pipeline, not in the agent's tool belt.
+    """
     atomos_tools = _discover_atomos_tools()
     deepagent_tools = _discover_deepagent_tools()
     seen: set[str] = set()
     combined: list[dict] = []
     for t in atomos_tools + deepagent_tools:
-        if t["name"] not in seen:
-            seen.add(t["name"])
-            combined.append(t)
+        name = t["name"]
+        if name in seen or name in _INTERNAL_ONLY_TOOLS or name in _DISABLED_TOOLS:
+            continue
+        if name not in _ALLOWED_EXPOSED_TOOLS:
+            continue
+        seen.add(name)
+        combined.append(t)
     return combined
 
 
@@ -251,8 +274,8 @@ def retrieve_tools(
     """Embed *query* and return the most relevant tool objects.
 
     Tools listed in ``_ALWAYS_AVAILABLE_TOOLS`` are included regardless
-    of similarity score so the agent can always create files and run
-    commands.  RAG-selected tools are appended on top of those.
+    of similarity score so the agent can always use the code editor and
+    run shell commands. RAG-selected tools are appended on top of those.
     """
     if not _tool_objects:
         logger.warning("No tool objects cached — falling back to empty tool list")
@@ -295,6 +318,10 @@ def retrieve_tools(
             name = row["name"]
             score = row.get("score", 0)
             if score < threshold:
+                continue
+            if name not in _ALLOWED_EXPOSED_TOOLS:
+                continue
+            if name in _DISABLED_TOOLS:
                 continue
             if name in seen:
                 continue

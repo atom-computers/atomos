@@ -104,7 +104,13 @@ CAPTCHA_SIGNALS = frozenset(
     [
         "captcha",
         "cloudflare",
-        "challenge",
+        # Keep challenge-related checks specific; bare "challenge" causes
+        # false positives in normal content ("research challenges", etc.).
+        "cloudflare challenge",
+        "managed challenge",
+        "security challenge",
+        "turnstile challenge",
+        "challenge page",
         "bot detection",
         "access denied",
         "please verify",
@@ -146,6 +152,20 @@ def _is_captcha_blocked(text: str) -> bool:
     return any(signal in lower for signal in CAPTCHA_SIGNALS)
 
 
+def _is_captcha_final_output(text: str) -> bool:
+    """Heuristic for final tool output: avoid false positives on real reports.
+
+    Final research outputs often contain words like "challenges" or rich
+    multi-section summaries. These should not be treated as CAPTCHA pages.
+    """
+    lower = text.lower()
+    if len(lower) > 1200:
+        return False
+    if "final result" in lower or "research report" in lower:
+        return False
+    return _is_captcha_blocked(lower)
+
+
 def _is_browser_launch_failure(text: str) -> bool:
     lower = text.lower()
     return any(signal in lower for signal in BROWSER_LAUNCH_SIGNALS)
@@ -163,7 +183,18 @@ class RateLimitError(RuntimeError):
     """Raised when the cloud LLM rejects requests due to token/rate limits."""
 
 
-LOCAL_BROWSER_TIMEOUT_SECONDS = 120
+def _read_local_browser_timeout() -> int:
+    """Return local browser timeout from env, with sane fallback bounds."""
+    raw = os.environ.get("BROWSER_LOCAL_TIMEOUT_SECONDS", "").strip()
+    try:
+        value = int(raw) if raw else 300
+    except ValueError:
+        value = 300
+    # Keep timeouts practical: avoid accidental 0/negative or runaway values.
+    return max(30, min(value, 1800))
+
+
+LOCAL_BROWSER_TIMEOUT_SECONDS = _read_local_browser_timeout()
 
 # Minimal DOM attributes for cloud models — keeps page representations small
 # enough for Groq's 8 000 TPM free-tier limit.
@@ -376,7 +407,7 @@ async def run_local_browser_task(
         history = await asyncio.wait_for(agent.run(), timeout=timeout)
         output: str = history.final_result() or ""
 
-        if _is_captcha_blocked(output):
+        if _is_captcha_final_output(output):
             raise CaptchaBlockedError(
                 f"CAPTCHA/bot-detection in agent output: {output[:300]}"
             )

@@ -27,6 +27,8 @@ message AgentResponse {
   string tool_call = 3;
   string status = 4;
   string credential_required = 5;
+  // JSON-encoded terminal event: {"type":"open"|"output"|"close"|"switch", "tab_id":"...", ...}
+  string terminal_event = 6;
 }
 
 message StoreSecretRequest {

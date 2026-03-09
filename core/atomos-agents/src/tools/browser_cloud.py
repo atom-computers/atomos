@@ -14,6 +14,7 @@ display or debug context that would otherwise reference the key.
 
 import logging
 import os
+import asyncio
 from pathlib import Path
 from typing import List, Optional
 
@@ -23,6 +24,19 @@ logger = logging.getLogger(__name__)
 
 CLOUD_KEY_TOKEN = "__BROWSER_USE_CLOUD_KEY__"
 _BROWSER_USE_API_KEY = "browser_use_api_key"
+
+
+def _read_cloud_browser_timeout() -> int:
+    """Return cloud browser timeout from env, with sane fallback bounds."""
+    raw = os.environ.get("BROWSER_CLOUD_TIMEOUT_SECONDS", "").strip()
+    try:
+        value = int(raw) if raw else 300
+    except ValueError:
+        value = 300
+    return max(30, min(value, 1800))
+
+
+_CLOUD_TASK_TIMEOUT_SECONDS = _read_cloud_browser_timeout()
 
 
 def _read_browser_use_key_file(path: Path) -> Optional[str]:
@@ -111,7 +125,9 @@ async def run_cloud_browser_task(
         kwargs["allowed_domains"] = allowed_domains
 
     task_response = await client.tasks.create_task(task=task, **kwargs)
-    result = await task_response.complete()
+    result = await asyncio.wait_for(
+        task_response.complete(), timeout=_CLOUD_TASK_TIMEOUT_SECONDS
+    )
     logger.info("Cloud browser task complete (id=%s, status=%s)", result.id, result.status)
     return result.output or ""
 
