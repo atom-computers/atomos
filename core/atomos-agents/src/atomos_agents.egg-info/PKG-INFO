@@ -4,13 +4,42 @@ Version: 0.1.0
 Summary: Atom OS Deep Agents Python integration
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
-Requires-Dist: grpcio>=1.62.0
-Requires-Dist: grpcio-tools>=1.62.0
+Requires-Dist: grpcio>=1.78.0
+Requires-Dist: grpcio-tools>=1.78.0
 Requires-Dist: protobuf>=4.25.0
 Requires-Dist: langchain>=0.1.0
 Requires-Dist: langchain-core>=0.1.0
-Requires-Dist: langchain-community>=0.0.10
+Requires-Dist: langchain-ollama>=0.1.0
+Requires-Dist: langgraph>=0.2.0
 Requires-Dist: pydantic>=2.0.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: aiohttp>=3.9.0
+Requires-Dist: deepagents>=0.4.0
+Requires-Dist: playwright>=1.40.0
+Requires-Dist: keyring>=25.0.0
+Requires-Dist: secretstorage>=3.3.0
+Requires-Dist: cryptography>=42.0.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Provides-Extra: local-browser
+Requires-Dist: browser-use>=0.12.0; extra == "local-browser"
+Provides-Extra: cloud-browser
+Requires-Dist: browser-use-sdk>=0.1.0; extra == "cloud-browser"
+
+# Atom OS Agents (`atomos-agents`)
+
+## Overview
+The Python half of the AI system, leveraging LangChain primitives. This is a gRPC server that listens for agent invocations from the `atomos-bridge`.
+
+## Deep Agents Integration
+It exposes the `create_deep_agent` factory builder:
+- **Middleware:** Implements memory, summarization, tool injection, and human-in-the-loop loops.
+- **Subagents:** Prepares specific sub-agent instances (Research, Code, Automation) depending on user routing.
+- **Tools:** Exposes OS-level tools like filesystem access, MCP integrations, browser drivers, and raw SurrealDB querying (scoped to safety).
+
+## Usage
+Run the server locally:
+```bash
+python -m atomos_agents.main
+```

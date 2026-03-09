@@ -60,12 +60,6 @@ if [ -d "$PROJECT_ROOT/cosmic-ext-applet-ollama" ]; then
     tar --exclude='target' --exclude='node_modules' --exclude='.git' -C "$PROJECT_ROOT" -cf - cosmic-ext-applet-ollama | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/
 fi
 
-if [ -d "$PROJECT_ROOT/vendor/cocoindex" ]; then
-    echo "Copying cocoindex from vendor and excluding target/uv.lock..."
-    docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/vendor/cocoindex
-    tar --exclude='target' --exclude='node_modules' --exclude='.git' --exclude='uv.lock' -C "$PROJECT_ROOT/vendor" -cf - cocoindex | docker exec -i --user root "$CONTAINER_ID" tar -xf - --no-same-owner --warning=no-unknown-keyword -C /workspace/vendor/
-fi
-
 if [ -d "$SCRIPT_DIR/atom-installer" ]; then
     echo "Copying atom-installer and excluding target..."
     docker exec --user root "$CONTAINER_ID" mkdir -p /workspace/atom-installer
@@ -73,19 +67,29 @@ if [ -d "$SCRIPT_DIR/atom-installer" ]; then
 fi
 
 echo -e "${BLUE}Building ISO inside container...${NC}"
+    MAKE_CMD="make iso"
 docker exec --user root -w /workspace/iso-ubuntu "$CONTAINER_ID" bash -c "
     set -e
     echo 'Starting ISO build...'
-    make iso
+    $MAKE_CMD
     echo 'Build complete!'
     find build -name '*.iso' -type f 2>/dev/null || echo 'No ISO found yet'
 "
 
 echo -e "${BLUE}Copying build artifacts back to host...${NC}"
 mkdir -p "$SCRIPT_DIR/build"
-docker cp "$CONTAINER_ID:/workspace/iso-ubuntu/build/." "$SCRIPT_DIR/build/" 2>/dev/null || {
+
+# Stage artifacts to a temporary directory in container so we don't copy the huge chroot/live directories back to host
+docker exec --user root "$CONTAINER_ID" bash -c "
+    mkdir -p /workspace/iso-ubuntu/out
+    find /workspace/iso-ubuntu/build -name '*.iso' -type f -exec cp {} /workspace/iso-ubuntu/out/ \; 2>/dev/null || true
+    find /workspace/iso-ubuntu/build -name '*.zsync' -type f -exec cp {} /workspace/iso-ubuntu/out/ \; 2>/dev/null || true
+    find /workspace/iso-ubuntu/build -name 'SHA256SUMS*' -type f -exec cp {} /workspace/iso-ubuntu/out/ \; 2>/dev/null || true
+"
+
+docker cp "$CONTAINER_ID:/workspace/iso-ubuntu/out/." "$SCRIPT_DIR/build/" 2>/dev/null || {
     echo -e "${RED}Warning: Could not copy build artifacts${NC}"
-    docker exec "$CONTAINER_ID" find /workspace/iso-ubuntu/build -type f 2>/dev/null || true
+    docker exec "$CONTAINER_ID" find /workspace/iso-ubuntu/out -type f 2>/dev/null || true
 }
 
 docker stop "$CONTAINER_ID"

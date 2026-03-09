@@ -1,0 +1,81 @@
+# Integration test container — mirrors the AtomOS runtime environment.
+#
+# Reproduces the same Ubuntu 24.04 + Chromium + browser-use stack that the
+# ISO install scripts set up.  Uses Weston (headless Wayland compositor) to
+# mirror production (COSMIC/Wayland) as closely as possible, so that
+# _find_wayland_socket() and _display_env() are exercised on the real code
+# path rather than falling back to X11.
+#
+# Usage (from core/atomos-agents/):
+#   docker build -f Dockerfile.test -t atomos-agents-test .
+#   docker run --rm atomos-agents-test
+#
+# Or via the Makefile:
+#   make test-integration
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    # Wayland compositor (headless) — mirrors COSMIC/Wayland on the live ISO
+    weston \
+    # Xvfb kept as fallback for the raw Chromium launch tests
+    xvfb \
+    # Chromium runtime deps (subset of playwright install-deps)
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0t64 \
+    libatk-bridge2.0-0t64 \
+    libcups2t64 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libatspi2.0-0t64 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2t64 \
+    libx11-xcb1 \
+    fonts-liberation \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/atomos/agents
+
+COPY pyproject.toml .
+COPY src/ src/
+COPY tests/ tests/
+
+# Install Python deps in the same order as install-atomos-agents.sh
+RUN pip3 install --break-system-packages browser-use && \
+    pip3 install --break-system-packages ".[dev]"
+
+RUN playwright install chromium && \
+    playwright install-deps chromium 2>/dev/null || true
+
+RUN python3 -c "from playwright.sync_api import sync_playwright; print('Playwright OK')"
+
+# Xvfb fallback display (used by raw Chromium launch tests)
+ENV DISPLAY=:99
+
+# Start Weston (headless Wayland) + Xvfb, then run integration tests.
+#
+# Weston --backend=headless writes its socket to XDG_RUNTIME_DIR.
+# We run as root in the container, so we set XDG_RUNTIME_DIR explicitly.
+# _find_wayland_socket() will discover the socket under /run/user/0/.
+CMD ["bash", "-c", "\
+    mkdir -p /run/user/0 && chmod 700 /run/user/0 && \
+    export XDG_RUNTIME_DIR=/run/user/0 && \
+    Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp &>/dev/null & \
+    weston --backend=headless --socket=wayland-1 &>/dev/null & \
+    sleep 2 && \
+    PYTHONPATH=src python3 -m pytest tests/ -m integration -v --tb=short --ignore=tests/test_integration_managers.py \
+"]

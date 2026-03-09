@@ -32,7 +32,7 @@ SURREAL_URL = os.environ.get("SURREAL_URL", "ws://127.0.0.1:8000")
 SURREAL_USER = os.environ.get("SURREAL_USER", "root")
 SURREAL_PASS = os.environ.get("SURREAL_PASS", "root")
 SURREAL_NS = os.environ.get("SURREAL_NS", "atomos")
-SURREAL_DB = os.environ.get("SURREAL_DB", "filesystem")
+SURREAL_DB = os.environ.get("SURREAL_DB", "atomos")
 SURREAL_TABLE = os.environ.get("SURREAL_TABLE", "document")
 
 HOME_DIR = os.environ.get("HOME_DIR", os.path.join(os.getcwd(), ".dev/$HOME"))

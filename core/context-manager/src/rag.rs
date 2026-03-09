@@ -35,7 +35,7 @@ pub async fn hybrid_search(db: &AtomosDb, context_path_prefix: &str, text: &str,
     // all-MiniLM-L6-v2 produces exactly identical 384 dim vectors matches CocoIndex pipeline
     let model = client.embedding_model("all-minilm");
     
-    // Initialize Rig SurrealDB adapter pointing at our filesystem.document collection
+    // Initialize Rig SurrealDB adapter pointing at our atomos.document collection
     let _vector_store = SurrealVectorStore::new(
         model.clone(), 
         db.db.clone(), 

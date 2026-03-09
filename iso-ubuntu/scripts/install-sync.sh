@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install AtomOS sync service in chroot environment
-set -e
+set -euo pipefail
 
 echo "Installing AtomOS sync service..."
 

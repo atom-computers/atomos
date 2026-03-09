@@ -4,6 +4,13 @@ package atomos.bridge;
 
 service AgentService {
   rpc StreamAgentTurn(AgentRequest) returns (stream AgentResponse);
+  rpc StoreSecret(StoreSecretRequest) returns (StoreSecretResponse);
+  rpc HasSecret(HasSecretRequest) returns (HasSecretResponse);
+}
+
+message ChatMessage {
+  string role = 1;
+  string content = 2;
 }
 
 message AgentRequest {
@@ -11,6 +18,7 @@ message AgentRequest {
   string model = 2;
   repeated string images = 3;
   repeated uint64 context = 4;
+  repeated ChatMessage history = 5;
 }
 
 message AgentResponse {
@@ -18,4 +26,27 @@ message AgentResponse {
   bool done = 2;
   string tool_call = 3;
   string status = 4;
+  string credential_required = 5;
+  // JSON-encoded terminal event: {"type":"open"|"output"|"close"|"switch", "tab_id":"...", ...}
+  string terminal_event = 6;
+}
+
+message StoreSecretRequest {
+  string service = 1;
+  string key = 2;
+  string value = 3;
+}
+
+message StoreSecretResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message HasSecretRequest {
+  string service = 1;
+  string key = 2;
+}
+
+message HasSecretResponse {
+  bool exists = 1;
 }

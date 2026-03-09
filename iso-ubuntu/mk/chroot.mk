@@ -1,28 +1,30 @@
 # Chroot build targets
 # Note: These targets assume running as root (required for debootstrap and chroot)
 
+INSTALL_SCRIPTS := $(wildcard scripts/*.sh)
+
 # Dependency source paths
-# Detect if running in container with /build-deps mounts (Podman/Docker)
+# Detect if running in container with /build-deps mounts (Podman) or /workspace mounts (Docker)
 ifneq ($(wildcard /build-deps/core),)
 	CORE_SRC := /build-deps/core
+else ifneq ($(wildcard /workspace/core),)
+	CORE_SRC := /workspace/core
 else
 	CORE_SRC := ../core
 endif
 
 ifneq ($(wildcard /build-deps/cosmic-ext-applet-ollama),)
 	APPLET_SRC := /build-deps/cosmic-ext-applet-ollama
+else ifneq ($(wildcard /workspace/cosmic-ext-applet-ollama),)
+	APPLET_SRC := /workspace/cosmic-ext-applet-ollama
 else
 	APPLET_SRC := ../cosmic-ext-applet-ollama
 endif
 
-ifneq ($(wildcard /build-deps/cocoindex),)
-	COCOINDEX_SRC := /build-deps/cocoindex
-else
-	COCOINDEX_SRC := ../vendor/cocoindex
-endif
-
 ifneq ($(wildcard /build-deps/atom-installer),)
 	ATOM_INSTALLER_SRC := /build-deps/atom-installer
+else ifneq ($(wildcard /workspace/atom-installer),)
+	ATOM_INSTALLER_SRC := /workspace/atom-installer
 else
 	ATOM_INSTALLER_SRC := atom-installer
 endif
@@ -69,7 +71,7 @@ $(BUILD)/pool: $(BUILD)/chroot
 	sudo touch "$@.partial"
 	sudo mv "$@.partial" "$@"
 
-$(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
+$(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg $(INSTALL_SCRIPTS)
 	# Remove old chroot
 	rm -rf "$(BUILD)/chroot"
 	
@@ -151,11 +153,6 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 		--exclude='target' --exclude='node_modules' --exclude='.git' \
 		"$(APPLET_SRC)/" "$(BUILD)/chroot/tmp/atomos-install/cosmic-ext-applet-ollama/"
 	
-	# Copy cocoindex
-	rsync -a --no-owner --no-group \
-		--exclude='target' --exclude='node_modules' --exclude='.git' --exclude='uv.lock' \
-		"$(COCOINDEX_SRC)/" "$(BUILD)/chroot/tmp/atomos-install/cocoindex/"
-	
 	# Copy atom-installer
 	rsync -a --no-owner --no-group \
 		--exclude='target' --exclude='.git' \
@@ -169,6 +166,15 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	mkdir -p "$(BUILD)/chroot/tmp/atomos-install/data"
 	cp -r data/wallpapers "$(BUILD)/chroot/tmp/atomos-install/data/wallpapers"
 	
+	# Pre-download Zed tarball OUTSIDE the chroot so a network failure is
+	# caught here (make aborts) rather than inside install-zed.sh where
+	# broken symlinks can slip through silently.
+	@echo "Downloading Zed editor tarball..."
+	$(eval ZED_DL_ARCH := $(if $(filter amd64,$(DISTRO_ARCH)),x86_64,$(if $(filter arm64,$(DISTRO_ARCH)),aarch64,$(error Unsupported arch for Zed: $(DISTRO_ARCH)))))
+	curl -fsSL "https://cloud.zed.dev/releases/stable/latest/download?asset=zed&arch=$(ZED_DL_ARCH)&os=linux&source=docs" \
+		-o "$(BUILD)/chroot/tmp/atomos-install/zed.tar.gz"
+	@echo "Zed tarball downloaded ($$(du -h "$(BUILD)/chroot/tmp/atomos-install/zed.tar.gz" | cut -f1))"
+
 	# Run custom installation scripts
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-postgresql.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-surrealdb.sh
@@ -176,7 +182,10 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-sync.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-context-manager.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atomos-agents.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-chromium.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-ollama-applet.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-seed-tools.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-zed.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atom-installer.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-distinst-custom.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-live-config.sh

@@ -9,17 +9,53 @@ description = "Atom OS Deep Agents Python integration"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "grpcio>=1.62.0",
-    "grpcio-tools>=1.62.0",
+    "grpcio>=1.78.0",
+    "grpcio-tools>=1.78.0",
     "protobuf>=4.25.0",
     "langchain>=0.1.0",
     "langchain-core>=0.1.0",
-    "langchain-community>=0.0.10",
-    "pydantic>=2.0.0"
+    "langchain-ollama>=0.1.0",
+    "langchain-groq>=0.1.0",
+    "langchain-openai>=0.1.0",
+    "langgraph>=0.2.0",
+    "pydantic>=2.0.0",
+    "requests>=2.31.0",
+    "aiohttp>=3.9.0",
+    "deepagents>=0.4.0",
+    # playwright provides the Chromium binary via `playwright install chromium`.
+    # browser-use v0.12+ uses cdp-use instead of playwright at runtime, but
+    # the playwright-managed Chromium binary is still the easiest way to get a
+    # known-good browser on the ISO.
+    "playwright>=1.40.0",
+    # Secret storage — secretstorage talks to gnome-keyring via D-Bus on AtomOS
+    "keyring>=25.0.0",
+    "secretstorage>=3.3.0",
+    # Fernet-encrypted file fallback for when D-Bus/gnome-keyring is unavailable
+    "cryptography>=42.0.0",
+    # ACP — Agent Client Protocol for Zed and other editor integrations
+    "agent-client-protocol>=0.1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0"
+]
+local-browser = [
+    # browser-use is installed with full deps in the ISO build BEFORE
+    # atomos-agents so that all its transitive deps are present.  The
+    # second pip install (atomos-agents) upgrades anthropic from the
+    # 0.76.0 pin to >=0.78.0.  See install-atomos-agents.sh.
+    "browser-use>=0.12.0",
+]
+cloud-browser = [
+    # Browser Use Cloud — primary browser backend when ~/.browser_use key exists.
+    # v3.x is the current stable; v2 default import path is used.
+    "browser-use-sdk>=3.0.0"
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+markers = [
+    "integration: tests that launch real Chromium inside Dockerfile.test container",
 ]

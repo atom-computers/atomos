@@ -10,7 +10,7 @@ use std::time::Duration;
 async fn test_integration_new_project_directory_created() {
     // 3. Integration Tests
     // Integration: new project directory created → context auto-discovered within next sync cycle
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     // Clean up first
     let _ = db.db.query("DELETE document WHERE path = '/Users/test/workspace/new_app/package.json'").await;
@@ -43,7 +43,7 @@ async fn test_integration_new_project_directory_created() {
 #[ignore = "Requires active SurrealDB instance for integration"]
 async fn test_integration_git_remote_changed() {
     // Integration: git remote changed → classification updated automatically
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     // Clean up
     let _ = db.db.query("DELETE document WHERE path = '/Users/test/workspace/git_app/.git/config'").await;
@@ -102,7 +102,7 @@ async fn test_integration_git_remote_changed() {
 #[tokio::test]
 #[ignore = "Requires active SurrealDB instance for integration"]
 async fn test_integration_context_switch_triggers_rag_scope() {
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     let scope_path = "/Users/test/workspace/project_rag";
     let _ = db.db.query("DELETE document WHERE path STARTSWITH $path").bind(("path", scope_path)).await;
@@ -143,7 +143,7 @@ async fn test_integration_full_pipeline_user_turn() {
     use context_manager::router;
     use context_manager::prompt_builder;
     
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     // Clean up
     let _ = db.db.query("DELETE project_context WHERE name = 'SyncManager E2E'").await;
@@ -177,7 +177,7 @@ async fn test_integration_full_pipeline_user_turn() {
 #[tokio::test]
 #[ignore = "Requires active SurrealDB + CocoIndex live-updater"]
 async fn test_e2e_cocoindex_new_file_to_rag() {
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     let scope_path = "/Users/test/workspace/e2e_proj";
     
@@ -207,7 +207,7 @@ async fn test_e2e_cocoindex_new_file_to_rag() {
 #[ignore = "Requires active SurrealDB + CocoIndex live-updater"]
 async fn test_e2e_cocoindex_file_deleted_adjusts_scope() {
     // End-to-end: file deleted → CocoIndex removes record → context manager adjusts project scope
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     let scope_path = "/Users/test/workspace/e2e_deleted";
     
@@ -243,7 +243,7 @@ async fn test_e2e_cocoindex_file_deleted_adjusts_scope() {
 async fn test_e2e_conversation_sync_summarizes_messages() {
     // End-to-end: conversation sync → context manager summarizes new messages
     // Summarization loop reads messages in last window and builds cross-project summary
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     let scope_path = "/Users/test/workspace/summary_proj";
     db.db.query("CREATE project_context:sum_proj SET name = 'Summary Project', path = $path, status = 'active'")
@@ -281,7 +281,7 @@ async fn test_e2e_conversation_sync_summarizes_messages() {
 async fn test_e2e_context_switch_scopes_rag() {
     // End-to-end: context switch correctly scopes RAG queries by path prefix
     // Same as test_integration_context_switch_triggers_rag_scope in logic API coverage
-    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "filesystem").await.unwrap();
+    let db = AtomosDb::connect("ws://127.0.0.1:8000", "root", "root", "atomos", "atomos").await.unwrap();
     
     let scope_path = "/Users/test/workspace/project_rag2";
     db.db.query("CREATE type::thing('project_context', 'test_rag2') SET name = 'RAG Project 2', path = $path, status = 'active'")

@@ -13,7 +13,7 @@ async fn main() -> surrealdb::Result<()> {
     let surreal_pass = env::var("SURREAL_PASS").unwrap_or_else(|_| "root".to_string());
     let surreal_ns = env::var("SURREAL_NS").unwrap_or_else(|_| "atomos".to_string());
     // The Sync Manager operates on filesystem, the context properties are isolated to 'contexts' or 'core'
-    let surreal_db = env::var("SURREAL_DB").unwrap_or_else(|_| "filesystem".to_string());
+    let surreal_db = env::var("SURREAL_DB").unwrap_or_else(|_| "atomos".to_string());
 
     println!("Connecting to SurrealDB at {} ...", surreal_url);
     

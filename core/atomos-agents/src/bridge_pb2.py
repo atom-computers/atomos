@@ -24,17 +24,27 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x62ridge.proto\x12\ratomos.bridge\"N\n\x0c\x41gentRequest\x12\x0e\n\x06prompt\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12\x0e\n\x06images\x18\x03 \x03(\t\x12\x0f\n\x07\x63ontext\x18\x04 \x03(\x04\"Q\n\rAgentResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\x12\x0c\n\x04\x64one\x18\x02 \x01(\x08\x12\x11\n\ttool_call\x18\x03 \x01(\t\x12\x0e\n\x06status\x18\x04 \x01(\t2^\n\x0c\x41gentService\x12N\n\x0fStreamAgentTurn\x12\x1b.atomos.bridge.AgentRequest\x1a\x1c.atomos.bridge.AgentResponse0\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x62ridge.proto\x12\ratomos.bridge\",\n\x0b\x43hatMessage\x12\x0c\n\x04role\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\"{\n\x0c\x41gentRequest\x12\x0e\n\x06prompt\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12\x0e\n\x06images\x18\x03 \x03(\t\x12\x0f\n\x07\x63ontext\x18\x04 \x03(\x04\x12+\n\x07history\x18\x05 \x03(\x0b\x32\x1a.atomos.bridge.ChatMessage\"\x86\x01\n\rAgentResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\x12\x0c\n\x04\x64one\x18\x02 \x01(\x08\x12\x11\n\ttool_call\x18\x03 \x01(\t\x12\x0e\n\x06status\x18\x04 \x01(\t\x12\x1b\n\x13\x63redential_required\x18\x05 \x01(\t\x12\x16\n\x0eterminal_event\x18\x06 \x01(\t\"A\n\x12StoreSecretRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"5\n\x13StoreSecretResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"0\n\x10HasSecretRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\"#\n\x11HasSecretResponse\x12\x0e\n\x06\x65xists\x18\x01 \x01(\x08\x32\x84\x02\n\x0c\x41gentService\x12N\n\x0fStreamAgentTurn\x12\x1b.atomos.bridge.AgentRequest\x1a\x1c.atomos.bridge.AgentResponse0\x01\x12T\n\x0bStoreSecret\x12!.atomos.bridge.StoreSecretRequest\x1a\".atomos.bridge.StoreSecretResponse\x12N\n\tHasSecret\x12\x1f.atomos.bridge.HasSecretRequest\x1a .atomos.bridge.HasSecretResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'bridge_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_AGENTREQUEST']._serialized_start=31
-  _globals['_AGENTREQUEST']._serialized_end=109
-  _globals['_AGENTRESPONSE']._serialized_start=111
-  _globals['_AGENTRESPONSE']._serialized_end=192
-  _globals['_AGENTSERVICE']._serialized_start=194
-  _globals['_AGENTSERVICE']._serialized_end=288
+  _globals['_CHATMESSAGE']._serialized_start=31
+  _globals['_CHATMESSAGE']._serialized_end=75
+  _globals['_AGENTREQUEST']._serialized_start=77
+  _globals['_AGENTREQUEST']._serialized_end=200
+  _globals['_AGENTRESPONSE']._serialized_start=203
+  _globals['_AGENTRESPONSE']._serialized_end=337
+  _globals['_STORESECRETREQUEST']._serialized_start=339
+  _globals['_STORESECRETREQUEST']._serialized_end=404
+  _globals['_STORESECRETRESPONSE']._serialized_start=406
+  _globals['_STORESECRETRESPONSE']._serialized_end=459
+  _globals['_HASSECRETREQUEST']._serialized_start=461
+  _globals['_HASSECRETREQUEST']._serialized_end=509
+  _globals['_HASSECRETRESPONSE']._serialized_start=511
+  _globals['_HASSECRETRESPONSE']._serialized_end=546
+  _globals['_AGENTSERVICE']._serialized_start=549
+  _globals['_AGENTSERVICE']._serialized_end=809
 # @@protoc_insertion_point(module_scope)
