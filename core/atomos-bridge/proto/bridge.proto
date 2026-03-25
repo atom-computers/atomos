@@ -6,6 +6,7 @@ service AgentService {
   rpc StreamAgentTurn(AgentRequest) returns (stream AgentResponse);
   rpc StoreSecret(StoreSecretRequest) returns (StoreSecretResponse);
   rpc HasSecret(HasSecretRequest) returns (HasSecretResponse);
+  rpc SendApproval(ApprovalRequest) returns (ApprovalReply);
 }
 
 message ChatMessage {
@@ -19,6 +20,8 @@ message AgentRequest {
   repeated string images = 3;
   repeated uint64 context = 4;
   repeated ChatMessage history = 5;
+  // Optional stable conversation identity shared across clients.
+  string thread_id = 6;
 }
 
 message AgentResponse {
@@ -29,7 +32,65 @@ message AgentResponse {
   string credential_required = 5;
   // JSON-encoded terminal event: {"type":"open"|"output"|"close"|"switch", "tab_id":"...", ...}
   string terminal_event = 6;
+  repeated UiBlock ui_blocks = 7;
 }
+
+// ── Generative UI ──────────────────────────────────────────────────────────
+
+enum UiBlockType {
+  UI_BLOCK_CARD = 0;
+  UI_BLOCK_TABLE = 1;
+  UI_BLOCK_APPROVAL_PROMPT = 2;
+  UI_BLOCK_PROGRESS_BAR = 3;
+  UI_BLOCK_FILE_TREE = 4;
+  UI_BLOCK_DIFF_VIEW = 5;
+}
+
+message UiBlockAction {
+  string id = 1;
+  string label = 2;
+  // "primary", "danger", "secondary"
+  string style = 3;
+}
+
+message TableRow {
+  repeated string cells = 1;
+}
+
+message UiBlock {
+  string block_id = 1;
+  UiBlockType block_type = 2;
+  string title = 3;
+  string description = 4;
+  // Card body (markdown)
+  string body = 5;
+  // Table columns
+  repeated string columns = 6;
+  repeated TableRow rows = 7;
+  // Approval prompt / card actions
+  repeated UiBlockAction actions = 8;
+  // Progress bar (0.0 – 1.0)
+  float progress = 9;
+  string progress_label = 10;
+  // File tree paths
+  repeated string file_paths = 11;
+  // Diff view
+  string diff_content = 12;
+  string diff_language = 13;
+}
+
+// ── Human-in-the-loop approval ─────────────────────────────────────────────
+
+message ApprovalRequest {
+  string block_id = 1;
+  string action_id = 2;
+}
+
+message ApprovalReply {
+  bool success = 1;
+}
+
+// ── Secrets ────────────────────────────────────────────────────────────────
 
 message StoreSecretRequest {
   string service = 1;

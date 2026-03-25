@@ -310,7 +310,9 @@ COSMIC_PKGS=\
 	cosmic-term \
 	cosmic-edit \
 	chromium-browser \
-	pop-fonts
+	pop-fonts \
+	tmux
+
 
 # Development tools for building custom packages
 BUILD_PKGS=\

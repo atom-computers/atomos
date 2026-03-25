@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AtomOS companion (example)
+Comment=Replace Exec with your Wayland/GTK binary; see vendor/phosh/autostart-example/README.md
+Exec=/bin/true
+Terminal=false
+Categories=Utility;
+Hidden=true
+X-GNOME-Autostart-enabled=false

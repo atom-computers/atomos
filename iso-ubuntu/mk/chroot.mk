@@ -29,6 +29,7 @@ else
 	ATOM_INSTALLER_SRC := atom-installer
 endif
 
+
 $(BUILD)/pool: $(BUILD)/chroot
 	# Unmount chroot if mounted
 	scripts/unmount.sh "$@.partial"
@@ -182,6 +183,7 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg $(INSTALL_SCRIPTS
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-sync.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-context-manager.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atomos-agents.sh
+	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-atomos-apps.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-chromium.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-ollama-applet.sh
 	chroot "$(BUILD)/chroot" /tmp/atomos-install/install-seed-tools.sh

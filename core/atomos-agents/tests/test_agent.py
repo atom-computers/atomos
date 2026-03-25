@@ -90,6 +90,38 @@ class TestAgentCache:
             )
 
 
+class TestSystemPromptShape:
+    """Verify prompt expansion behavior stays token-efficient."""
+
+    def test_prompt_stays_short_for_core_tools_only(self):
+        from types import SimpleNamespace
+        from agent_factory import _build_system_prompt
+        prompt = _build_system_prompt(
+            query="hello",
+            tools=[
+                SimpleNamespace(name="code_editor", description="Open editor"),
+                SimpleNamespace(name="terminal", description="Run shell commands"),
+            ],
+        )
+        assert "Tool details for this turn:" not in prompt
+
+    def test_prompt_expands_when_rag_tools_are_present(self):
+        from types import SimpleNamespace
+        from agent_factory import _build_system_prompt
+        prompt = _build_system_prompt(
+            query="find papers about transformers",
+            tools=[
+                SimpleNamespace(name="code_editor", description="Open editor"),
+                SimpleNamespace(
+                    name="arxiv_search_papers",
+                    description="Search arXiv by keyword, date, and categories",
+                ),
+            ],
+        )
+        assert "Tool details for this turn:" in prompt
+        assert "arxiv_search_papers" in prompt
+
+
 # ---------------------------------------------------------------------------
 # Model resolution tests
 # ---------------------------------------------------------------------------

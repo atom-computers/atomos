@@ -32,8 +32,28 @@ dependencies = [
     "secretstorage>=3.3.0",
     # Fernet-encrypted file fallback for when D-Bus/gnome-keyring is unavailable
     "cryptography>=42.0.0",
-    # ACP — Agent Client Protocol for Zed and other editor integrations
-    "agent-client-protocol>=0.1.0",
+    # ACP runtime for Zed/editor integrations (`from acp import ...`).
+    # This package provides the `acp` Python module used by src/acp_server.py.
+    "deepagents-acp>=0.0.4",
+    # arXiv research tools — imported as a library, not run as a server.
+    # Brings in arxiv, httpx, pymupdf4llm, and the mcp SDK transitively.
+    "arxiv-mcp-server>=0.3.0",
+    # Chrome DevTools Protocol tools — imported as a library for browser
+    # debugging (network, console, DOM, JS execution).  Coordinates with
+    # browser-use via the same CDP port; no separate server process.
+    "chrome-devtools-mcp-fork>=2.0.0",
+    # GPT Researcher — autonomous research agent.  Imported as a library;
+    # the agent calls conduct_research() + write_report() directly.
+    # Requires OPENAI_API_KEY and TAVILY_API_KEY at runtime.
+    "gpt-researcher>=0.9.0",
+    # Draw.io diagram tools — imported as a library for programmatic
+    # diagram creation (flowcharts, UML, ER, C4, architecture, etc.).
+    # No subprocess server; functions called directly in-process.
+    "drawio-mcp>=1.0.0",
+    # Notion tools — notion-mcp-ldraney brings notion-sdk-ldraney, a
+    # Python SDK for the Notion API v2025-09-03.  We use the SDK client
+    # directly (no MCP subprocess).  Requires NOTION_API_KEY at runtime.
+    "notion-mcp-ldraney>=0.1.13",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +73,12 @@ cloud-browser = [
     # v3.x is the current stable; v2 default import path is used.
     "browser-use-sdk>=3.0.0"
 ]
+
+[tool.atomos.security]
+# Only tool packages whose backing pip dependency appears in [project.dependencies]
+# can register tools.  Built-in, vendored, and OS-level adapters are always allowed.
+# Set to false to disable whitelist enforcement (NOT recommended for production).
+enforce_tool_whitelist = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"

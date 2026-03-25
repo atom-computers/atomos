@@ -1,10 +1,12 @@
 __init__
+acp_server
 agent_factory
 bridge_pb2
 bridge_pb2_grpc
 filesystem
 memory
 secret_store
+security
 server
 tool_registry
 tools

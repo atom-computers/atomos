@@ -10,6 +10,7 @@ Verifies that:
 import asyncio
 import json
 import pytest
+import bridge_pb2
 from unittest.mock import MagicMock, patch
 from langgraph.graph.state import CompiledStateGraph
 
@@ -206,6 +207,42 @@ class TestOtherToolsUnchanged:
 
         content_responses = [r for r in responses if r.content and "Created" in r.content]
         assert len(content_responses) >= 1
+
+
+class TestArxivToolStreaming:
+    """arXiv JSON split across stream chunks must not appear as fenced chat text."""
+
+    def test_arxiv_split_chunks_ui_only(self):
+        call = _make_chunk(tool_name="arxiv_search_papers")
+        part1 = _make_chunk(
+            tool_output='{\n  "total_results": 1,\n  "papers":'
+        )
+        part2 = _make_chunk(
+            tool_output=' [\n    {"id": "2401.00001", "title": "Test"}\n  ]\n}'
+        )
+        responses = _run_with_chunks([
+            (call, {"langgraph_node": "agent"}),
+            (part1, {"langgraph_node": "tools"}),
+            (part2, {"langgraph_node": "tools"}),
+        ])
+        fenced_arxiv = [
+            r
+            for r in responses
+            if r.content
+            and "```" in r.content
+            and ("2401.00001" in r.content or "total_results" in r.content)
+            and not r.done
+        ]
+        assert len(fenced_arxiv) == 0, (
+            "Partial arXiv JSON must not be wrapped in markdown fences"
+        )
+        tables = [
+            r
+            for r in responses
+            if r.ui_blocks
+            and r.ui_blocks[0].block_type == bridge_pb2.UI_BLOCK_TABLE
+        ]
+        assert len(tables) >= 1
 
 
 class TestToolScopeCleanup:

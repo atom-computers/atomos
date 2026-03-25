@@ -1,0 +1,56 @@
+diff --git a/src/app-grid.c b/src/app-grid.c
+index cc2fe6fb..22a5381f 100644
+--- a/src/app-grid.c
++++ b/src/app-grid.c
+@@ -331,33 +331,14 @@ search_apps (gpointer item, gpointer data)
+ {
+   PhoshAppGrid *self = data;
+   PhoshAppGridPrivate *priv = phosh_app_grid_get_instance_private (self);
+-  GAppInfo *info = item;
+-  const char *search = NULL;
+ 
+   g_return_val_if_fail (priv != NULL, TRUE);
+   g_return_val_if_fail (priv->search != NULL, TRUE);
+ 
+-  search = priv->search_string;
+-
+-  if (G_IS_DESKTOP_APP_INFO (info)) {
+-    if (!filter_adaptive (self, G_DESKTOP_APP_INFO (info)))
+-      return FALSE;
+-  }
+-
+-  /* filter out favorites when not searching */
+-  if (gm_str_is_null_or_empty (search)) {
+-    if (PHOSH_IS_FOLDER_INFO (info))
+-      return phosh_folder_info_refilter (PHOSH_FOLDER_INFO (info), search);
+-    if (phosh_favorite_list_model_app_is_favorite (NULL, info))
+-      return FALSE;
+-
+-    return TRUE;
+-  }
+-
+-  if (PHOSH_IS_FOLDER_INFO (info))
+-    return phosh_folder_info_refilter (PHOSH_FOLDER_INFO (info), search);
+-
+-  return phosh_util_matches_app_info (info, search);
++  /* AtomOS: overview is chat-style input only; do not surface the app grid. */
++  (void) item;
++  (void) self;
++  return FALSE;
+ }
+ 
+ 
+diff --git a/src/ui/app-grid.ui b/src/ui/app-grid.ui
+index 02b30952..5ab33bf8 100644
+--- a/src/ui/app-grid.ui
++++ b/src/ui/app-grid.ui
+@@ -42,7 +42,8 @@
+             </child>
+             <child>
+               <object class="GtkScrolledWindow" id="scrolled_window">
+-                <property name="visible">1</property>
++                <property name="visible">0</property>
++                <property name="can-focus">0</property>
+                 <property name="hexpand">1</property>
+                 <property name="vexpand">1</property>
+                 <child>

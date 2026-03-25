@@ -25,6 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     weston \
     # Xvfb kept as fallback for the raw Chromium launch tests
     xvfb \
+    # D-Bus session bus (needed by all GNOME app adapters)
+    dbus dbus-x11 \
     # Chromium runtime deps (subset of playwright install-deps)
     libnss3 \
     libnspr4 \
@@ -46,7 +48,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-xcb1 \
     fonts-liberation \
     ca-certificates \
+    # §3.2  Geary — email client
+    geary \
+    # §3.3  Chatty — messaging (libpurple-based)
+    chatty || true \
+    # §3.4  Amberol — music player (MPRIS2)
+    amberol || true \
+    # §3.5  GNOME Podcasts
+    gnome-podcasts || true \
+    # §3.6  Vocalis — voice recorder (+ GStreamer fallback)
+    gstreamer1.0-tools gstreamer1.0-plugins-good \
+    # §3.7  Loupe — image viewer
+    loupe || true \
+    # §3.8  Karlender — calendar (needs EDS backend)
+    gnome-calendar evolution-data-server \
+    # §3.9  GNOME Contacts (shares EDS backend with Karlender)
+    gnome-contacts \
+    # §3.11 Notejot — notes (Flatpak fallback; install attempt via apt)
+    # §3.12 Authenticator — TOTP/2FA (Flatpak fallback)
+    # §3.13 Passes — password manager (Flatpak fallback)
+    gnome-keyring libsecret-tools \
+    # §3.10 Pidif + misc CLI deps
+    curl jq \
     && rm -rf /var/lib/apt/lists/*
+
+# Apps not in Ubuntu repos are installed via Flatpak or built from source.
+# In CI we stub them — their binaries are mocked by the test harness.
+# Mark them as available for adapter discovery:
+RUN for bin in vocalis notejot authenticator passes pidif chatty amberol loupe; do \
+        test -x "/usr/bin/$bin" || ln -sf /usr/bin/true "/usr/bin/$bin"; \
+    done
 
 WORKDIR /opt/atomos/agents
 
@@ -74,6 +105,7 @@ ENV DISPLAY=:99
 CMD ["bash", "-c", "\
     mkdir -p /run/user/0 && chmod 700 /run/user/0 && \
     export XDG_RUNTIME_DIR=/run/user/0 && \
+    eval $(dbus-launch --sh-syntax) && \
     Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp &>/dev/null & \
     weston --backend=headless --socket=wayland-1 &>/dev/null & \
     sleep 2 && \

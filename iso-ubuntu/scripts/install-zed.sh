@@ -74,23 +74,44 @@ if [ -f /etc/prime-discrete ]; then
     fi
 fi
 
-echo "Configuring Zed..."
-ln -sf "$ZED_DIR/bin/zed" /usr/local/bin/zed
-ln -sf "$ZED_DIR/bin/zed" /usr/bin/zed
+# Suppress the "Unsupported GPU" dialog unconditionally so users on VMs
+# or software rendering (llvmpipe) never see a blocking first-run prompt.
+echo "Setting ZED_ALLOW_EMULATED_GPU=1 system-wide..."
+mkdir -p /etc/profile.d
+cat > /etc/profile.d/zed-gpu.sh << 'GPUENV'
+export ZED_ALLOW_EMULATED_GPU=1
+GPUENV
+mkdir -p /etc/environment.d
+echo "ZED_ALLOW_EMULATED_GPU=1" > /etc/environment.d/50-zed-gpu.conf
+if ! grep -q '^ZED_ALLOW_EMULATED_GPU=' /etc/environment 2>/dev/null; then
+    echo "ZED_ALLOW_EMULATED_GPU=1" >> /etc/environment
+fi
 
-# Verify the symlinks point to real files
+echo "Configuring Zed..."
+
+# Wrapper script instead of a plain symlink — guarantees
+# ZED_ALLOW_EMULATED_GPU=1 reaches every launch path (dock, terminal, agent).
+cat > /usr/local/bin/zed << WRAPPER
+#!/bin/sh
+export ZED_ALLOW_EMULATED_GPU=1
+exec "$ZED_DIR/bin/zed" "\$@"
+WRAPPER
+chmod +x /usr/local/bin/zed
+ln -sf /usr/local/bin/zed /usr/bin/zed
+
+# Verify the wrapper works
 for link in /usr/local/bin/zed /usr/bin/zed; do
     if [ ! -x "$link" ]; then
-        echo "FATAL: Symlink $link is broken (target: $(readlink -f "$link" 2>/dev/null || echo missing))"
+        echo "FATAL: $link is not executable (target: $(readlink -f "$link" 2>/dev/null || echo missing))"
         exit 1
     fi
 done
-echo "Symlinks verified: /usr/local/bin/zed, /usr/bin/zed"
+echo "Wrapper verified: /usr/local/bin/zed, /usr/bin/zed"
 
 # Install desktop file
 install -D "$ZED_DIR/share/applications/dev.zed.Zed.desktop" -t /usr/share/applications/
 sed -i "s|Icon=zed|Icon=$ZED_DIR/share/icons/hicolor/512x512/apps/zed.png|g" /usr/share/applications/dev.zed.Zed.desktop
-sed -i "s|Exec=zed|Exec=$ZED_DIR/bin/zed|g" /usr/share/applications/dev.zed.Zed.desktop
+sed -i "s|Exec=zed|Exec=/usr/local/bin/zed|g" /usr/share/applications/dev.zed.Zed.desktop
 
 echo "Adding Zed and Chromium to the Cosmic Dock..."
 # COSMIC dock favorites are stored in com.system76.CosmicAppList/v1/favorites
@@ -112,6 +133,7 @@ echo "Configuring AtomOS agent server for Zed (ACP)..."
 mkdir -p /etc/skel/.config/zed
 cat > /etc/skel/.config/zed/settings.json << 'SETTINGS'
 {
+  "theme": "One Dark",
   "agent_servers": {
     "AtomOS": {
       "type": "custom",

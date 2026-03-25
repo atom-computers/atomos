@@ -1,0 +1,4 @@
+build/
+.pmbootstrap/
+.pmbootstrap-container-home/
+.venv-pmb/

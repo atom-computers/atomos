@@ -1,8 +1,13 @@
 import base64
+import logging
 import os
 from typing import Any, List
 
 from langchain_core.tools import tool
+
+from tools._shared import is_tool_package_disabled
+
+logger = logging.getLogger(__name__)
 
 SURREALDB_USER = os.environ.get("SURREALDB_USER", "root")
 SURREALDB_PASS = os.environ.get("SURREALDB_PASS", "root")
@@ -57,16 +62,65 @@ def query_context_manager(project_name: str) -> str:
     except Exception as e:
         return f"Database error querying context manager for project {project_name}: {str(e)}"
 
-def get_atomos_skills() -> List[Any]:
-    """Return all skills available to Atom OS agents."""
-    from tools.browser import get_browser_tools
-    from tools.editor import get_editor_tools
-    from tools.shell import get_shell_tools
 
-    return [
+# ── gated tool package loaders ─────────────────────────────────────────────
+#
+# Each entry maps a human-readable namespace to (module_path, getter_fn).
+# Packages are loaded in order; disabled packages are skipped and logged.
+
+_TOOL_PACKAGES: list[tuple[str, str, str]] = [
+    ("browser",     "tools.browser",     "get_browser_tools"),
+    ("editor",      "tools.editor",      "get_editor_tools"),
+    ("shell",       "tools.shell",       "get_shell_tools"),
+    ("arxiv",       "tools.arxiv",       "get_arxiv_tools"),
+    ("devtools",    "tools.devtools",    "get_devtools_tools"),
+    ("superpowers", "tools.superpowers", "get_superpowers_tools"),
+    ("researcher",  "tools.researcher",  "get_researcher_tools"),
+    ("drawio",      "tools.drawio",      "get_drawio_tools"),
+    ("notion",      "tools.notion",      "get_notion_tools"),
+    ("google_workspace", "tools.google_workspace", "get_google_workspace_tools"),
+    # iso-ubuntu application adapters (§3)
+    ("geary",         "tools.geary",         "get_geary_tools"),
+    ("chatty",        "tools.chatty",        "get_chatty_tools"),
+    ("amberol",       "tools.amberol",       "get_amberol_tools"),
+    ("podcasts",      "tools.podcasts",      "get_podcasts_tools"),
+    ("vocalis",       "tools.vocalis",       "get_vocalis_tools"),
+    ("loupe",         "tools.loupe",         "get_loupe_tools"),
+    ("karlender",     "tools.karlender",     "get_karlender_tools"),
+    ("contacts",      "tools.contacts",      "get_contacts_tools"),
+    ("pidif",         "tools.pidif",         "get_pidif_tools"),
+    ("notejot",       "tools.notejot",       "get_notejot_tools"),
+    ("authenticator", "tools.authenticator", "get_authenticator_tools"),
+    ("passes",        "tools.passes",        "get_passes_tools"),
+]
+
+
+def get_atomos_skills() -> List[Any]:
+    """Return all skills available to Atom OS agents.
+
+    Tool packages can be individually disabled via environment variables::
+
+        ATOMOS_TOOLS_DISABLE_ARXIV=1      → arxiv tools will not load
+        ATOMOS_TOOLS_DISABLE_NOTION=true  → notion tools will not load
+    """
+    tools: List[Any] = [
         check_sync_status,
         query_context_manager,
-        *get_browser_tools(),
-        *get_editor_tools(),
-        *get_shell_tools(),
     ]
+
+    for namespace, module_path, getter_name in _TOOL_PACKAGES:
+        if is_tool_package_disabled(namespace):
+            logger.info("Tool package '%s' disabled via env var", namespace)
+            continue
+        try:
+            import importlib
+            mod = importlib.import_module(module_path)
+            getter = getattr(mod, getter_name)
+            tools.extend(getter())
+        except Exception as exc:
+            logger.warning(
+                "Failed to load tool package '%s' from %s: %s",
+                namespace, module_path, exc,
+            )
+
+    return tools

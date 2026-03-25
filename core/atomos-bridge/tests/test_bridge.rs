@@ -9,17 +9,23 @@ mod tests {
             model: "llama3".to_string(),
             images: vec![],
             context: vec![1, 2, 3],
+            history: vec![],
+            thread_id: "conv:test-thread".to_string(),
         };
 
         assert_eq!(request.prompt, "Test prompt");
         assert_eq!(request.model, "llama3");
         assert_eq!(request.context, vec![1, 2, 3]);
+        assert_eq!(request.thread_id, "conv:test-thread");
 
         let response = AgentResponse {
             content: "Test response".to_string(),
             done: true,
             tool_call: "".to_string(),
             status: "Done".to_string(),
+            credential_required: String::new(),
+            terminal_event: String::new(),
+            ui_blocks: vec![],
         };
 
         assert_eq!(response.content, "Test response");

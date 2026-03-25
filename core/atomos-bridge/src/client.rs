@@ -1,5 +1,7 @@
 use crate::agent::agent_service_client::AgentServiceClient;
-use crate::agent::{AgentRequest, AgentResponse, ChatMessage, HasSecretRequest, StoreSecretRequest};
+use crate::agent::{
+    AgentRequest, AgentResponse, ApprovalRequest, ChatMessage, HasSecretRequest, StoreSecretRequest,
+};
 use tonic::transport::Channel;
 
 #[derive(Clone)]
@@ -20,6 +22,7 @@ impl BridgeClient {
         images: Vec<String>,
         context: Option<Vec<u64>>,
         history: Vec<ChatMessage>,
+        thread_id: String,
     ) -> anyhow::Result<tonic::Streaming<AgentResponse>> {
         let request = tonic::Request::new(AgentRequest {
             prompt,
@@ -27,6 +30,7 @@ impl BridgeClient {
             images,
             context: context.unwrap_or_default(),
             history,
+            thread_id,
         });
 
         let response = self.client.stream_agent_turn(request).await?;
@@ -56,5 +60,20 @@ impl BridgeClient {
         let request = tonic::Request::new(HasSecretRequest { service, key });
         let response = self.client.has_secret(request).await?;
         Ok(response.into_inner().exists)
+    }
+
+    /// Send a human-in-the-loop approval response for an approval prompt.
+    /// Returns true if the server accepted the approval.
+    pub async fn send_approval(
+        &mut self,
+        block_id: String,
+        action_id: String,
+    ) -> anyhow::Result<bool> {
+        let request = tonic::Request::new(ApprovalRequest {
+            block_id,
+            action_id,
+        });
+        let response = self.client.send_approval(request).await?;
+        Ok(response.into_inner().success)
     }
 }

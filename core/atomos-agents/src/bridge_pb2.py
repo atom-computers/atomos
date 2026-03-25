@@ -24,27 +24,39 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x62ridge.proto\x12\ratomos.bridge\",\n\x0b\x43hatMessage\x12\x0c\n\x04role\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\"{\n\x0c\x41gentRequest\x12\x0e\n\x06prompt\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12\x0e\n\x06images\x18\x03 \x03(\t\x12\x0f\n\x07\x63ontext\x18\x04 \x03(\x04\x12+\n\x07history\x18\x05 \x03(\x0b\x32\x1a.atomos.bridge.ChatMessage\"\x86\x01\n\rAgentResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\x12\x0c\n\x04\x64one\x18\x02 \x01(\x08\x12\x11\n\ttool_call\x18\x03 \x01(\t\x12\x0e\n\x06status\x18\x04 \x01(\t\x12\x1b\n\x13\x63redential_required\x18\x05 \x01(\t\x12\x16\n\x0eterminal_event\x18\x06 \x01(\t\"A\n\x12StoreSecretRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"5\n\x13StoreSecretResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"0\n\x10HasSecretRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\"#\n\x11HasSecretResponse\x12\x0e\n\x06\x65xists\x18\x01 \x01(\x08\x32\x84\x02\n\x0c\x41gentService\x12N\n\x0fStreamAgentTurn\x12\x1b.atomos.bridge.AgentRequest\x1a\x1c.atomos.bridge.AgentResponse0\x01\x12T\n\x0bStoreSecret\x12!.atomos.bridge.StoreSecretRequest\x1a\".atomos.bridge.StoreSecretResponse\x12N\n\tHasSecret\x12\x1f.atomos.bridge.HasSecretRequest\x1a .atomos.bridge.HasSecretResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x62ridge.proto\x12\ratomos.bridge\",\n\x0b\x43hatMessage\x12\x0c\n\x04role\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\"\x8e\x01\n\x0c\x41gentRequest\x12\x0e\n\x06prompt\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12\x0e\n\x06images\x18\x03 \x03(\t\x12\x0f\n\x07\x63ontext\x18\x04 \x03(\x04\x12+\n\x07history\x18\x05 \x03(\x0b\x32\x1a.atomos.bridge.ChatMessage\x12\x11\n\tthread_id\x18\x06 \x01(\t\"\xb1\x01\n\rAgentResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\t\x12\x0c\n\x04\x64one\x18\x02 \x01(\x08\x12\x11\n\ttool_call\x18\x03 \x01(\t\x12\x0e\n\x06status\x18\x04 \x01(\t\x12\x1b\n\x13\x63redential_required\x18\x05 \x01(\t\x12\x16\n\x0eterminal_event\x18\x06 \x01(\t\x12)\n\tui_blocks\x18\x07 \x03(\x0b\x32\x16.atomos.bridge.UiBlock\"9\n\rUiBlockAction\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05label\x18\x02 \x01(\t\x12\r\n\x05style\x18\x03 \x01(\t\"\x19\n\x08TableRow\x12\r\n\x05\x63\x65lls\x18\x01 \x03(\t\"\xcf\x02\n\x07UiBlock\x12\x10\n\x08\x62lock_id\x18\x01 \x01(\t\x12.\n\nblock_type\x18\x02 \x01(\x0e\x32\x1a.atomos.bridge.UiBlockType\x12\r\n\x05title\x18\x03 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x04 \x01(\t\x12\x0c\n\x04\x62ody\x18\x05 \x01(\t\x12\x0f\n\x07\x63olumns\x18\x06 \x03(\t\x12%\n\x04rows\x18\x07 \x03(\x0b\x32\x17.atomos.bridge.TableRow\x12-\n\x07\x61\x63tions\x18\x08 \x03(\x0b\x32\x1c.atomos.bridge.UiBlockAction\x12\x10\n\x08progress\x18\t \x01(\x02\x12\x16\n\x0eprogress_label\x18\n \x01(\t\x12\x12\n\nfile_paths\x18\x0b \x03(\t\x12\x14\n\x0c\x64iff_content\x18\x0c \x01(\t\x12\x15\n\rdiff_language\x18\r \x01(\t\"6\n\x0f\x41pprovalRequest\x12\x10\n\x08\x62lock_id\x18\x01 \x01(\t\x12\x11\n\taction_id\x18\x02 \x01(\t\" \n\rApprovalReply\x12\x0f\n\x07success\x18\x01 \x01(\x08\"A\n\x12StoreSecretRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"5\n\x13StoreSecretResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"0\n\x10HasSecretRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\"#\n\x11HasSecretResponse\x12\x0e\n\x06\x65xists\x18\x01 \x01(\x08*\x9d\x01\n\x0bUiBlockType\x12\x11\n\rUI_BLOCK_CARD\x10\x00\x12\x12\n\x0eUI_BLOCK_TABLE\x10\x01\x12\x1c\n\x18UI_BLOCK_APPROVAL_PROMPT\x10\x02\x12\x19\n\x15UI_BLOCK_PROGRESS_BAR\x10\x03\x12\x16\n\x12UI_BLOCK_FILE_TREE\x10\x04\x12\x16\n\x12UI_BLOCK_DIFF_VIEW\x10\x05\x32\xd2\x02\n\x0c\x41gentService\x12N\n\x0fStreamAgentTurn\x12\x1b.atomos.bridge.AgentRequest\x1a\x1c.atomos.bridge.AgentResponse0\x01\x12T\n\x0bStoreSecret\x12!.atomos.bridge.StoreSecretRequest\x1a\".atomos.bridge.StoreSecretResponse\x12N\n\tHasSecret\x12\x1f.atomos.bridge.HasSecretRequest\x1a .atomos.bridge.HasSecretResponse\x12L\n\x0cSendApproval\x12\x1e.atomos.bridge.ApprovalRequest\x1a\x1c.atomos.bridge.ApprovalReplyb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'bridge_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
+  _globals['_UIBLOCKTYPE']._serialized_start=1126
+  _globals['_UIBLOCKTYPE']._serialized_end=1283
   _globals['_CHATMESSAGE']._serialized_start=31
   _globals['_CHATMESSAGE']._serialized_end=75
-  _globals['_AGENTREQUEST']._serialized_start=77
-  _globals['_AGENTREQUEST']._serialized_end=200
-  _globals['_AGENTRESPONSE']._serialized_start=203
-  _globals['_AGENTRESPONSE']._serialized_end=337
-  _globals['_STORESECRETREQUEST']._serialized_start=339
-  _globals['_STORESECRETREQUEST']._serialized_end=404
-  _globals['_STORESECRETRESPONSE']._serialized_start=406
-  _globals['_STORESECRETRESPONSE']._serialized_end=459
-  _globals['_HASSECRETREQUEST']._serialized_start=461
-  _globals['_HASSECRETREQUEST']._serialized_end=509
-  _globals['_HASSECRETRESPONSE']._serialized_start=511
-  _globals['_HASSECRETRESPONSE']._serialized_end=546
-  _globals['_AGENTSERVICE']._serialized_start=549
-  _globals['_AGENTSERVICE']._serialized_end=809
+  _globals['_AGENTREQUEST']._serialized_start=78
+  _globals['_AGENTREQUEST']._serialized_end=220
+  _globals['_AGENTRESPONSE']._serialized_start=223
+  _globals['_AGENTRESPONSE']._serialized_end=400
+  _globals['_UIBLOCKACTION']._serialized_start=402
+  _globals['_UIBLOCKACTION']._serialized_end=459
+  _globals['_TABLEROW']._serialized_start=461
+  _globals['_TABLEROW']._serialized_end=486
+  _globals['_UIBLOCK']._serialized_start=489
+  _globals['_UIBLOCK']._serialized_end=824
+  _globals['_APPROVALREQUEST']._serialized_start=826
+  _globals['_APPROVALREQUEST']._serialized_end=880
+  _globals['_APPROVALREPLY']._serialized_start=882
+  _globals['_APPROVALREPLY']._serialized_end=914
+  _globals['_STORESECRETREQUEST']._serialized_start=916
+  _globals['_STORESECRETREQUEST']._serialized_end=981
+  _globals['_STORESECRETRESPONSE']._serialized_start=983
+  _globals['_STORESECRETRESPONSE']._serialized_end=1036
+  _globals['_HASSECRETREQUEST']._serialized_start=1038
+  _globals['_HASSECRETREQUEST']._serialized_end=1086
+  _globals['_HASSECRETRESPONSE']._serialized_start=1088
+  _globals['_HASSECRETRESPONSE']._serialized_end=1123
+  _globals['_AGENTSERVICE']._serialized_start=1286
+  _globals['_AGENTSERVICE']._serialized_end=1624
 # @@protoc_insertion_point(module_scope)

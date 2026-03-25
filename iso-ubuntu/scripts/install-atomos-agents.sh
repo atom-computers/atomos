@@ -8,6 +8,12 @@ echo "Installing AtomOS agents service..."
 mkdir -p /opt/atomos/agents
 cp -r /tmp/atomos-install/core/atomos-agents/* /opt/atomos/agents/
 
+# Install the tmux attach script to a well-known path so the COSMIC
+# applet can set SHELL= when launching cosmic-term.
+mkdir -p /usr/local/share/atomos
+cp /opt/atomos/agents/scripts/atomos-tmux-attach.sh /usr/local/share/atomos/
+chmod +x /usr/local/share/atomos/atomos-tmux-attach.sh
+
 # Install Python dependencies for agents service.
 #
 # browser-use must be installed FIRST with all its transitive deps
@@ -16,8 +22,31 @@ cp -r /tmp/atomos-install/core/atomos-agents/* /opt/atomos/agents/
 # by the second pip install which pulls in deepagents → langchain-anthropic
 # → anthropic>=0.78.0.  The minor anthropic upgrade is backward-compatible
 # and browser-use continues to work correctly.
+#
+# Some system-installed Python packages were placed by apt without a
+# pip-compatible RECORD file.  Remove their dist-info so pip can freely
+# upgrade them instead of failing with "RECORD file not found".
+# This list covers every package that Ubuntu 24.04's debootstrap installs
+# into /usr/lib/python3/dist-packages and that our dependency tree upgrades.
+rm -rf /usr/lib/python3/dist-packages/urllib3-*.dist-info \
+       /usr/lib/python3/dist-packages/PyJWT-*.dist-info \
+       /usr/lib/python3/dist-packages/PyYAML-*.dist-info \
+       /usr/lib/python3/dist-packages/six-*.dist-info \
+       /usr/lib/python3/dist-packages/setuptools-*.dist-info \
+       /usr/lib/python3/dist-packages/certifi-*.dist-info \
+       /usr/lib/python3/dist-packages/requests-*.dist-info \
+       /usr/lib/python3/dist-packages/idna-*.dist-info \
+       /usr/lib/python3/dist-packages/charset_normalizer-*.dist-info \
+       /usr/lib/python3/dist-packages/packaging-*.dist-info \
+       /usr/lib/python3/dist-packages/pyparsing-*.dist-info \
+       /usr/lib/python3/dist-packages/distro-*.dist-info 2>/dev/null || true
+
+
 cd /opt/atomos/agents
 pip3 install --break-system-packages browser-use
+# ACP server runtime used by Zed (`from acp import ...` in acp_server.py).
+# Keep this explicit so editor integration works even if project deps drift.
+pip3 install --break-system-packages deepagents-acp
 pip3 install --break-system-packages .
 
 # Ensure Chromium binary is available for browser automation.

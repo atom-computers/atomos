@@ -17,7 +17,7 @@ mkdir -p /etc/skel/.config/cosmic/com.system76.CosmicBackground/v1/
 cat > /etc/skel/.config/cosmic/com.system76.CosmicBackground/v1/all << 'EOF'
 (
     output: "all",
-    source: Path("/usr/share/backgrounds/atomos/frozen-exoplanet.jpg"),
+    source: Path("/usr/share/backgrounds/atomos/gargantua-black.jpg"),
     filter_by_theme: true,
     rotation_frequency: 300,
     filter_method: Lanczos,

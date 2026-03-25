@@ -7,11 +7,14 @@ Catches regressions like:
     sync invocation"; server must use agent.astream() via grpc.aio
   - Missing 'session_id' in config['configurable']
   - thread_id not scoped per model (model switches not taking effect)
+  - Raw tool-call markup leaking to the UI
 """
 import asyncio
 import pytest
 from unittest.mock import MagicMock, patch
 from langgraph.graph.state import CompiledStateGraph
+
+from server import _ToolCallFilter
 
 
 # ---------------------------------------------------------------------------
@@ -32,12 +35,14 @@ def _make_chunk(text=None, tool_name=None):
     return chunk
 
 
-def _make_request(prompt="Hello", model="llama3", context=(), images=()):
+def _make_request(prompt="Hello", model="llama3", context=(), images=(), history=(), thread_id=""):
     req = MagicMock()
     req.prompt = prompt
     req.model = model
     req.context = list(context)
     req.images = list(images)
+    req.history = list(history)
+    req.thread_id = thread_id
     return req
 
 
@@ -155,6 +160,25 @@ class TestServicerConfig:
         assert cfg["thread_id"] == "default:qwen3:8b"
         assert cfg["session_id"] == "default:qwen3:8b"
 
+    def test_config_uses_explicit_thread_id_when_provided(self):
+        """Client-provided thread_id should override server defaults."""
+        captured_calls = []
+        mock_agent = _make_mock_agent([], captured_calls)
+        request = _make_request(model="qwen3:8b", thread_id="conv:shared-thread-1")
+
+        with (
+            patch("server.create_agent_for_query", return_value=mock_agent),
+            patch("server.retrieve_tools", return_value=[]),
+            patch("server.ensure_registry"),
+        ):
+            from server import AgentServiceServicer
+            servicer = AgentServiceServicer()
+            _run(servicer, request)
+
+        cfg = captured_calls[0]["config"]["configurable"]
+        assert cfg["thread_id"] == "conv:shared-thread-1"
+        assert cfg["session_id"] == "conv:shared-thread-1"
+
 
 # ---------------------------------------------------------------------------
 # Streaming output mapping
@@ -222,3 +246,102 @@ class TestServicerStreaming:
         assert responses[-1].done is True
         assert "boom" in responses[-1].content
         assert responses[-1].status == "Error"
+
+
+# ---------------------------------------------------------------------------
+# _ToolCallFilter — raw tool-call markup stripping
+# ---------------------------------------------------------------------------
+
+class TestToolCallFilter:
+    """Verify that _ToolCallFilter strips raw tool-call markup from streamed text."""
+
+    def test_plain_text_passes_through(self):
+        f = _ToolCallFilter()
+        assert f.feed("Hello world") == "Hello world"
+
+    def test_complete_tool_call_stripped(self):
+        f = _ToolCallFilter()
+        result = f.feed('<tool_call>researcher_research(query="quantum gravity")</tool_call>')
+        assert result == ""
+
+    def test_tool_call_with_arg_value_close_stripped(self):
+        f = _ToolCallFilter()
+        result = f.feed(
+            '<tool_call>researcher_research(query="quantum gravity", '
+            'report_type="research_report")</arg_value>'
+        )
+        assert result == ""
+
+    def test_text_before_tool_call_preserved(self):
+        f = _ToolCallFilter()
+        result = f.feed(
+            'Let me research that. '
+            '<tool_call>researcher_research(query="test")</tool_call>'
+        )
+        assert result == "Let me research that. "
+
+    def test_text_after_tool_call_preserved(self):
+        f = _ToolCallFilter()
+        result = f.feed(
+            '<tool_call>researcher_research(query="test")</tool_call>'
+            ' Here are the results.'
+        )
+        assert "Here are the results." in result
+
+    def test_split_across_chunks(self):
+        f = _ToolCallFilter()
+        r1 = f.feed("Hello <tool_call>researcher_research(")
+        r2 = f.feed('query="quantum gravity")')
+        r3 = f.feed("</tool_call> Done.")
+        combined = r1 + r2 + r3
+        assert "researcher_research" not in combined
+        assert "tool_call" not in combined
+        assert "Hello" in combined
+
+    def test_pipe_delimited_tags(self):
+        f = _ToolCallFilter()
+        result = f.feed('<|tool_call|>func(x=1)<|/tool_call|>')
+        assert result == ""
+
+    def test_no_false_positive_on_angle_brackets(self):
+        f = _ToolCallFilter()
+        result = f.feed("Use the <code> tag for inline code.")
+        assert result == "Use the <code> tag for inline code."
+
+    def test_flush_returns_buffered_text(self):
+        f = _ToolCallFilter()
+        f.feed("<tool_call>incomplete")
+        remainder = f.flush()
+        assert "incomplete" in remainder
+
+    def test_multiple_tool_calls_in_one_chunk(self):
+        f = _ToolCallFilter()
+        result = f.feed(
+            '<tool_call>func_a()</tool_call>'
+            'middle text'
+            '<tool_call>func_b()</tool_call>'
+        )
+        assert "func_a" not in result
+        assert "func_b" not in result
+        assert "middle text" in result
+
+    def test_streamed_tool_call_not_emitted_to_ui(self):
+        """End-to-end: raw tool-call text in agent chunks must not appear in responses."""
+        raw_tc = '<tool_call>researcher_research(query="quantum gravity")</arg_value>'
+        chunk = _make_chunk(text=raw_tc)
+        metadata = {"langgraph_node": "agent"}
+
+        mock_agent = _make_mock_agent([(chunk, metadata)])
+
+        with (
+            patch("server.create_agent_for_query", return_value=mock_agent),
+            patch("server.retrieve_tools", return_value=[]),
+            patch("server.ensure_registry"),
+        ):
+            from server import AgentServiceServicer
+            servicer = AgentServiceServicer()
+            responses = _run(servicer, _make_request())
+
+        all_content = "".join(r.content for r in responses)
+        assert "tool_call" not in all_content
+        assert "researcher_research" not in all_content

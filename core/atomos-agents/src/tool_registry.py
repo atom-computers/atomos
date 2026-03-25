@@ -20,6 +20,11 @@ from typing import Any
 import requests
 from langchain_core.tools import BaseTool
 
+from security import (
+    wrap_tool_with_security,
+    validate_tool_whitelist,
+)
+
 logger = logging.getLogger(__name__)
 
 SURREALDB_URL = os.environ.get("SURREALDB_URL", "http://localhost:8000")
@@ -29,6 +34,7 @@ SURREALDB_USER = os.environ.get("SURREALDB_USER", "root")
 SURREALDB_PASS = os.environ.get("SURREALDB_PASS", "root")
 EMBED_MODEL = "nomic-embed-text"
 OLLAMA_URL = "http://localhost:11434"
+
 
 DEFAULT_TOP_K = 5
 SIMILARITY_THRESHOLD = 0.25
@@ -50,6 +56,119 @@ _ALWAYS_AVAILABLE_TOOLS = frozenset({
 _ALLOWED_EXPOSED_TOOLS = frozenset({
     "code_editor",
     "terminal",
+    # arxiv tools (imported directly from arxiv-mcp-server package)
+    "arxiv_search_papers",
+    "arxiv_download_paper",
+    "arxiv_list_papers",
+    "arxiv_read_paper",
+    # chrome devtools tools (imported from chrome-devtools-mcp-fork package)
+    "devtools_connect",
+    "devtools_execute_javascript",
+    "devtools_get_page_info",
+    "devtools_get_network_requests",
+    "devtools_get_console_logs",
+    "devtools_get_dom",
+    # superpowers workflow skills (vendored from obra/superpowers)
+    "superpowers_list_skills",
+    "superpowers_use_skill",
+    "superpowers_get_skill_file",
+    "superpowers_recommend_skills",
+    "superpowers_compose_workflow",
+    "superpowers_validate_workflow",
+    "superpowers_search_skills",
+    # GPT Researcher tools (imported from gpt-researcher package)
+    "researcher_research",
+    "researcher_get_sources",
+    "researcher_get_context",
+    "researcher_get_costs",
+    # Draw.io diagram tools (imported from drawio-mcp package)
+    "drawio_diagram",
+    "drawio_draw",
+    "drawio_style",
+    "drawio_layout",
+    "drawio_inspect",
+    # Notion workspace tools (imported from notion-sdk-ldraney)
+    "notion_search",
+    "notion_get_page",
+    "notion_create_page",
+    "notion_update_page",
+    "notion_get_block_children",
+    "notion_append_blocks",
+    "notion_query_database",
+    "notion_get_database",
+    # Google Workspace CLI tools (wrapped via gcloud CLI)
+    "google_mail_search",
+    "google_mail_send",
+    "google_calendar_list",
+    "google_calendar_create",
+    "google_drive_list",
+    "google_drive_download",
+    "google_docs_read",
+    "google_docs_write",
+    # Geary email tools (iso-ubuntu app adapter)
+    "email_compose",
+    "email_send",
+    "email_search",
+    "email_read",
+    # Chatty messaging tools (iso-ubuntu app adapter)
+    "chat_send",
+    "chat_read",
+    "chat_list",
+    "chat_search",
+    # Amberol music tools (MPRIS2 D-Bus adapter)
+    "music_play",
+    "music_pause",
+    "music_skip",
+    "music_queue",
+    "music_now_playing",
+    # GNOME Podcasts tools (iso-ubuntu app adapter)
+    "podcast_subscribe",
+    "podcast_list",
+    "podcast_play",
+    "podcast_search",
+    # Vocalis voice recorder tools (iso-ubuntu app adapter)
+    "voice_record_start",
+    "voice_record_stop",
+    "voice_recordings_list",
+    # Loupe image viewer tools (iso-ubuntu app adapter)
+    "image_open",
+    "image_metadata",
+    # Karlender calendar tools (EDS D-Bus adapter)
+    "calendar_list",
+    "calendar_create",
+    "calendar_update",
+    "calendar_delete",
+    "calendar_search",
+    # GNOME Contacts tools (EDS D-Bus adapter)
+    "contacts_list",
+    "contacts_search",
+    "contacts_create",
+    "contacts_get",
+    # Pidif feed reader tools (CLI adapter)
+    "feeds_add",
+    "feeds_list",
+    "feeds_articles",
+    "feeds_read",
+    "feeds_search",
+    # Notejot notes tools (file-based adapter)
+    "notes_create",
+    "notes_list",
+    "notes_read",
+    "notes_update",
+    "notes_delete",
+    "notes_search",
+    # Authenticator TOTP tools (Secret Service adapter)
+    "auth_list",
+    "auth_get_code",
+    "auth_add",
+    # Passes password manager tools (Secret Service adapter)
+    "pass_list",
+    "pass_get",
+    "pass_add",
+    "pass_search",
+    # Browser automation tools (local Chromium + cloud fallback)
+    "browse_web",
+    "browse_web_with_session",
 })
 
 _DISABLED_TOOLS = frozenset({
@@ -160,18 +279,51 @@ def _discover_atomos_tools() -> list[dict]:
         return []
 
 
+class ToolNamespaceCollisionError(RuntimeError):
+    """Raised when two tool packages register tools with the same name."""
+
+
+def _check_namespace_collisions(tools: list[dict]) -> None:
+    """Raise ``ToolNamespaceCollisionError`` if any two tool packages
+    register tools with the same name.
+
+    Only checks tools from different *sources*.  Duplicate names within
+    the same source are silently deduplicated (first-wins) by
+    ``discover_all_tools``.
+    """
+    name_to_source: dict[str, str] = {}
+    for t in tools:
+        name = t["name"]
+        source = t.get("source", "unknown")
+        if name in name_to_source and name_to_source[name] != source:
+            raise ToolNamespaceCollisionError(
+                f"Tool name collision: '{name}' is registered by both "
+                f"'{name_to_source[name]}' and '{source}'.  "
+                f"Each tool package must use a unique namespace prefix "
+                f"(e.g. 'arxiv_', 'devtools_') to avoid collisions."
+            )
+        name_to_source[name] = source
+
+
 def discover_all_tools() -> list[dict]:
     """Return every available tool, with atomos tools taking priority.
 
     Internal-only tools (context enrichment, sync status) are excluded
     from the user-facing set — they belong in the pre-prompt / RAG
     pipeline, not in the agent's tool belt.
+
+    Raises ``ToolNamespaceCollisionError`` if two different tool sources
+    register tools with the same name.
     """
     atomos_tools = _discover_atomos_tools()
     deepagent_tools = _discover_deepagent_tools()
+
+    all_tools = atomos_tools + deepagent_tools
+    _check_namespace_collisions(all_tools)
+
     seen: set[str] = set()
     combined: list[dict] = []
-    for t in atomos_tools + deepagent_tools:
+    for t in all_tools:
         name = t["name"]
         if name in seen or name in _INTERNAL_ONLY_TOOLS or name in _DISABLED_TOOLS:
             continue
@@ -276,6 +428,9 @@ def retrieve_tools(
     Tools listed in ``_ALWAYS_AVAILABLE_TOOLS`` are included regardless
     of similarity score so the agent can always use the code editor and
     run shell commands. RAG-selected tools are appended on top of those.
+
+    Every returned tool is wrapped with the security layer (audit
+    logging, approval gating, output sanitisation).
     """
     if not _tool_objects:
         logger.warning("No tool objects cached — falling back to empty tool list")
@@ -286,7 +441,7 @@ def retrieve_tools(
 
     for name in _ALWAYS_AVAILABLE_TOOLS:
         if name in _tool_objects:
-            selected.append(_tool_objects[name])
+            selected.append(wrap_tool_with_security(_tool_objects[name]))
             seen.add(name)
             logger.info("Tool always-on: %-20s", name)
 
@@ -326,7 +481,7 @@ def retrieve_tools(
             if name in seen:
                 continue
             if name in _tool_objects:
-                selected.append(_tool_objects[name])
+                selected.append(wrap_tool_with_security(_tool_objects[name]))
                 seen.add(name)
                 logger.info("Tool selected: %-20s (score=%.3f)", name, score)
         return selected
@@ -341,6 +496,15 @@ def ensure_registry() -> bool:
     global _tool_objects
     _tool_objects = {t["name"]: t["tool"] for t in tools}
     logger.info("Discovered %d tools: %s", len(tools), [t["name"] for t in tools])
+
+    from tools.skills import _TOOL_PACKAGES
+    namespaces = [ns for ns, _, _ in _TOOL_PACKAGES]
+    violations = validate_tool_whitelist(namespaces)
+    if violations:
+        logger.warning(
+            "Tool whitelist violations — these namespaces have undeclared "
+            "dependencies in pyproject.toml: %s", violations,
+        )
 
     if not tools:
         return False

@@ -16,36 +16,112 @@ from tools.browser import set_local_model
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are Atom, an intelligent assistant running on AtomOS.
+_SYSTEM_PROMPT_TEMPLATE = """You are Atom, an intelligent assistant running on AtomOS.
 
-You have access to the tools listed below — use ONLY those tools.
-Do NOT attempt to call any tool that is not explicitly provided.
+Use ONLY the tools provided in this turn. Never invent unavailable tools.
 
-TOOL SELECTION — read carefully:
+Core tools:
+- code_editor: Open the project directory in Zed for coding tasks.
+- terminal: Run shell commands for CLI work (install, build, git, scripts).
 
-  code_editor     — Opens a file or project directory in the GUI code
-                    editor (Zed). ALWAYS use this for coding tasks before
-                    making file changes. Pass the PROJECT DIRECTORY (not
-                    individual files) so the user gets a full workspace.
-                    Do NOT launch editors via terminal.
+If the user asks to use/open the code editor, call `code_editor`.
 
-  terminal        — Run a shell command (/bin/bash). Use for package install,
-                    scripts, git, compilation, and any CLI task.
+Coding workflow policy:
+- For implementation tasks, execute changes in files instead of pasting full code in chat.
+- When acp_read_file or acp_write_file are available (e.g. in Zed), use them to open and focus the file in the editor; do not rely only on code_editor or paste code in chat.
+- If no project folder exists yet, create one first (for example with `terminal`), then open it with `code_editor`.
+- Use `code_editor` with an explicit absolute project path (or target file path), not `~` or an empty path.
+- After editing, briefly report which files were created/updated.
 
-If the user says "use the code editor" or "open in the editor", you MUST
-call code_editor.
+PATH RULES: The user's home directory is {user_home}.
+Always use absolute paths under {user_home}/ for file operations.
+Never assume the service CWD is the user's home.
 
-PATH RULES: Always use ~/path or /home/<user>/path for file paths.
-Never use bare relative paths — the service CWD is NOT the user's home.
-
-Never ask the user for API keys or credentials directly — the system
-manages credential storage securely.
-
-Be concise and direct. If no tools are needed, just answer the question.
+Never ask the user for raw credentials or API keys.
+Be concise and direct.
+Avoid top-level markdown headings (`# Heading`) in normal responses.
+`##` and deeper headings are fine when useful.
 """
+
+_ALWAYS_ON_TOOL_NAMES = frozenset({"code_editor", "terminal"})
+_TOOL_HELP_QUERY_RE = re.compile(
+    r"\b("
+    r"what\s+tools?|which\s+tools?|available\s+tools?|"
+    r"tool\s+list|capabilities?|how\s+do\s+i\s+use|"
+    r"help\s+with\s+tools?|more\s+info|details?"
+    r")\b",
+    re.IGNORECASE,
+)
+_MAX_TOOL_HELP_TOOLS = 12
+_MAX_TOOL_HELP_DESC_CHARS = 500
 
 NUM_CTX = 8192
 DEFAULT_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+
+
+def _resolve_home() -> str:
+    """Best-effort resolution of the real user's home directory."""
+    home = Path.home()
+    if home != Path("/root"):
+        return str(home)
+    sudo_user = os.environ.get("SUDO_USER")
+    if sudo_user:
+        candidate = Path("/home") / sudo_user
+        if candidate.is_dir():
+            return str(candidate)
+    try:
+        for entry in sorted(Path("/home").iterdir()):
+            if entry.is_dir() and not entry.name.startswith("."):
+                return str(entry)
+    except OSError:
+        pass
+    return str(home)
+
+
+def _clean_tool_description(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def _render_tool_help(tools: list[BaseTool]) -> str:
+    lines: list[str] = []
+    for tool in tools[:_MAX_TOOL_HELP_TOOLS]:
+        name = getattr(tool, "name", "") or "unknown_tool"
+        desc = _clean_tool_description(getattr(tool, "description", ""))
+        if not desc:
+            lines.append(f"- {name}")
+            continue
+        if len(desc) > _MAX_TOOL_HELP_DESC_CHARS:
+            desc = f"{desc[:_MAX_TOOL_HELP_DESC_CHARS].rstrip()}..."
+        lines.append(f"- {name}: {desc}")
+    return "\n".join(lines)
+
+
+def _should_expand_tool_help(query: str, tools: list[BaseTool]) -> bool:
+    for tool in tools:
+        name = getattr(tool, "name", "")
+        if name and name not in _ALWAYS_ON_TOOL_NAMES:
+            return True
+    return bool(_TOOL_HELP_QUERY_RE.search(query or ""))
+
+
+def _build_system_prompt(query: str = "", tools: list[BaseTool] | None = None) -> str:
+    prompt = _SYSTEM_PROMPT_TEMPLATE.replace("{user_home}", _resolve_home())
+    if not tools:
+        return prompt
+
+    tool_names = [
+        getattr(tool, "name", "") for tool in tools if getattr(tool, "name", "")
+    ]
+    if tool_names:
+        prompt += f"\nTools available this turn: {', '.join(tool_names)}."
+
+    if not _should_expand_tool_help(query, tools):
+        return prompt
+
+    tool_help = _render_tool_help(tools)
+    if tool_help:
+        prompt += f"\n\nTool details for this turn:\n{tool_help}"
+    return prompt
 
 OPENROUTER_MODELS = frozenset({
     "z-ai/glm-5",
@@ -363,6 +439,7 @@ def create_agent_for_query(
     model_name: str,
     tools: list[BaseTool],
     thread_id: str = "default",
+    query: str = "",
 ):
     """Build a lightweight react agent with only the given tools.
 
@@ -397,6 +474,6 @@ def create_agent_for_query(
     return create_react_agent(
         model=llm,
         tools=tools,
-        prompt=SYSTEM_PROMPT,
+        prompt=_build_system_prompt(query=query, tools=tools),
         checkpointer=_checkpointer,
     )

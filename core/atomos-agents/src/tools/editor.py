@@ -71,7 +71,10 @@ def _resolve_path(raw: str) -> Path:
       service CWD, which is ``/opt/atomos/agents/src/``).
     - Concatenated double-paths are cleaned up (keeps the last absolute).
     """
-    cleaned = raw.strip()
+    cleaned = (raw or "").strip()
+    if not cleaned:
+        # Avoid opening $HOME root; default to a dedicated coding workspace.
+        cleaned = "~/projects/atomos-workspace"
     parts = cleaned.split()
     for part in reversed(parts):
         if part.startswith("/") or part.startswith("~"):
@@ -85,6 +88,24 @@ def _resolve_path(raw: str) -> Path:
         p = _resolve_home() / p
 
     return p.resolve()
+
+
+def _ensure_edit_target(path: Path) -> tuple[Path, str]:
+    """Ensure the requested editor target exists.
+
+    - Missing directory path => create directory tree.
+    - Missing file path      => create parent dirs + empty file.
+    """
+    if path.exists():
+        return path, ""
+
+    if path.suffix:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch(exist_ok=True)
+        return path, f"Created file {path}"
+
+    path.mkdir(parents=True, exist_ok=True)
+    return path, f"Created directory {path}"
 
 
 def _find_editor() -> str | None:
@@ -138,6 +159,7 @@ def _build_gui_env() -> dict[str, str]:
     """
     env = os.environ.copy()
     env["HOME"] = str(_resolve_home())
+    env.setdefault("ZED_ALLOW_EMULATED_GPU", "1")
 
     if not env.get("WAYLAND_DISPLAY") and not env.get("DISPLAY"):
         import glob as _glob
@@ -207,25 +229,28 @@ def open_in_editor(path: str) -> str:
         Confirmation message or error description
     """
     resolved = _resolve_path(path)
-    if not resolved.exists():
-        return f"$ open {resolved}\n[error: path does not exist]"
+    created_note = ""
+    try:
+        resolved, created_note = _ensure_edit_target(resolved)
+    except OSError as exc:
+        return f"[error: could not prepare path {resolved}: {exc}]"
 
     editor = _find_editor()
     if editor:
         name = os.path.basename(editor)
         if _launch_gui([editor, str(resolved)]):
-            return f"$ {name} {resolved}"
+            if created_note:
+                return f"{created_note}. Opened {resolved} in {name}"
+            return f"Opened {resolved} in {name}"
         logger.warning("Editor %s failed — trying OS default", editor)
 
-    system = platform.system()
-    fallback = "xdg-open" if system == "Linux" else ("open" if system == "Darwin" else None)
+    fallback = "xdg-open" if platform.system() == "Linux" else None
     if fallback and _launch_gui([fallback, str(resolved)]):
-        return f"$ {fallback} {resolved}"
+        if created_note:
+            return f"{created_note}. Opened {resolved}"
+        return f"Opened {resolved}"
 
-    return (
-        f"$ open {resolved}\n"
-        f"[error: no editor found (tried {', '.join(_EDITOR_CANDIDATES)})]"
-    )
+    return f"[error: no editor found (tried {', '.join(_EDITOR_CANDIDATES)})]"
 
 
 def get_editor_tools() -> List[Any]:

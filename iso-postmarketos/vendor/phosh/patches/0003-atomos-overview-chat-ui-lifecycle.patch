@@ -1,0 +1,59 @@
+diff --git a/src/app-grid.c b/src/app-grid.c
+--- a/src/app-grid.c
++++ b/src/app-grid.c
+@@ -650,6 +650,21 @@ on_search_gained_focus (GtkWidget    *widget,
+ }
+ 
+ 
++static void
++atomos_overview_chat_ui_control (const char *action)
++{
++  g_autoptr (GError) err = NULL;
++  char *argv[3];
++
++  argv[0] = (char *) "/usr/libexec/atomos-overview-chat-ui";
++  argv[1] = (char *) action;
++  argv[2] = NULL;
++
++  if (!g_spawn_async (NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &err))
++    g_warning ("atomos-overview-chat-ui: %s", err->message);
++}
++
++
+ static void
+ phosh_app_grid_class_init (PhoshAppGridClass *klass)
+ {
+@@ -749,6 +764,7 @@ phosh_app_grid_reset (PhoshAppGrid *self)
+   priv = phosh_app_grid_get_instance_private (self);
+ 
+   adjustment = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (priv->scrolled_window));
++  atomos_overview_chat_ui_control ("--hide");
+ 
+   gtk_adjustment_set_value (adjustment, 0);
+   gtk_entry_set_text (GTK_ENTRY (priv->search), "");
+@@ -768,11 +784,8 @@ phosh_app_grid_reset (PhoshAppGrid *self)
+ void
+ phosh_app_grid_focus_search (PhoshAppGrid *self)
+ {
+-  PhoshAppGridPrivate *priv;
+-
+   g_return_if_fail (PHOSH_IS_APP_GRID (self));
+-  priv = phosh_app_grid_get_instance_private (self);
+-  gtk_widget_grab_focus (priv->search);
++  atomos_overview_chat_ui_control ("--show");
+ }
+ 
+ 
+diff --git a/src/ui/app-grid.ui b/src/ui/app-grid.ui
+--- a/src/ui/app-grid.ui
++++ b/src/ui/app-grid.ui
+@@ -28,7 +28,8 @@
+                 <property name="margin-bottom">12</property>
+                 <child>
+                   <object class="GtkSearchEntry" id="search">
+-                    <property name="visible">1</property>
++                    <property name="visible">0</property>
++                    <property name="can-focus">0</property>
+                     <property name="halign">fill</property>
+                     <property name="hexpand">1</property>
+                     <property name="placeholder-text" translatable="yes">Message…</property>

@@ -49,6 +49,11 @@ class AgentServiceStub(object):
                 request_serializer=bridge__pb2.HasSecretRequest.SerializeToString,
                 response_deserializer=bridge__pb2.HasSecretResponse.FromString,
                 _registered_method=True)
+        self.SendApproval = channel.unary_unary(
+                '/atomos.bridge.AgentService/SendApproval',
+                request_serializer=bridge__pb2.ApprovalRequest.SerializeToString,
+                response_deserializer=bridge__pb2.ApprovalReply.FromString,
+                _registered_method=True)
 
 
 class AgentServiceServicer(object):
@@ -72,6 +77,12 @@ class AgentServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SendApproval(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AgentServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -89,6 +100,11 @@ def add_AgentServiceServicer_to_server(servicer, server):
                     servicer.HasSecret,
                     request_deserializer=bridge__pb2.HasSecretRequest.FromString,
                     response_serializer=bridge__pb2.HasSecretResponse.SerializeToString,
+            ),
+            'SendApproval': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendApproval,
+                    request_deserializer=bridge__pb2.ApprovalRequest.FromString,
+                    response_serializer=bridge__pb2.ApprovalReply.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -172,6 +188,33 @@ class AgentService(object):
             '/atomos.bridge.AgentService/HasSecret',
             bridge__pb2.HasSecretRequest.SerializeToString,
             bridge__pb2.HasSecretResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendApproval(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/atomos.bridge.AgentService/SendApproval',
+            bridge__pb2.ApprovalRequest.SerializeToString,
+            bridge__pb2.ApprovalReply.FromString,
             options,
             channel_credentials,
             insecure,

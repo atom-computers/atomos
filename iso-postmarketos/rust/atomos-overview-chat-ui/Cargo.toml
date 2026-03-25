@@ -1,0 +1,4 @@
+[workspace]
+members = ["core", "app-gtk", "app-egui"]
+resolver = "2"
+default-members = ["core"]
