@@ -17,6 +17,8 @@ Output artifacts:
 - `build/host-export-fairphone-fp4/boot.img`
 - `build/host-export-fairphone-fp4/fairphone-fp4.img`
 
+The flashed rootfs includes **`btlescan`** as `/usr/bin/btlescan` (and `/usr/local/bin/btlescan`) after a successful `make build`.
+
 ## Host Requirements
 
 - Linux host or Linux VM (required for pmbootstrap loop-device image creation)

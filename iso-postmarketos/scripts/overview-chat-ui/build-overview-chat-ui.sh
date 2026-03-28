@@ -20,6 +20,7 @@ fi
 
 # shellcheck source=/dev/null
 source "$PROFILE_ENV_SOURCE"
+ROOTFS_CHROOT_NAME="${PMOS_DEVICE:-$PROFILE_NAME}"
 
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
 
@@ -61,7 +62,7 @@ resolve_sysroot() {
         ${PMB_WORK:+"$(abs_pmb_work "$PMB_WORK")"} \
         "${atomos_home}/.atomos-pmbootstrap-work/${PROFILE_NAME}"; do
         [ -n "$work_base" ] || continue
-        s="${work_base}/chroot_rootfs_${PROFILE_NAME}"
+        s="${work_base}/chroot_rootfs_${ROOTFS_CHROOT_NAME}"
         if [ -d "$s" ]; then
             printf '%s\n' "$s"
             return 0
@@ -74,7 +75,7 @@ SYSROOT="$(resolve_sysroot || true)"
 if [ -z "$SYSROOT" ] || [ ! -d "$SYSROOT" ]; then
     atomos_home="$(base_home_effective)"
     echo "ERROR: unable to locate rootfs sysroot for cross-build." >&2
-    echo "  Need: <pmb-work>/chroot_rootfs_${PROFILE_NAME} (run pmbootstrap install or make build first)." >&2
+    echo "  Need: <pmb-work>/chroot_rootfs_${ROOTFS_CHROOT_NAME} (run pmbootstrap install or make build first)." >&2
     echo "  Tried work directories (in order):" >&2
     [ -n "${PMB_WORK_OVERRIDE:-}" ] && echo "    $(abs_pmb_work "$PMB_WORK_OVERRIDE")  (PMB_WORK_OVERRIDE)" >&2
     [ -n "${PMB_WORK:-}" ] && echo "    $(abs_pmb_work "$PMB_WORK")  (PMB_WORK from profile)" >&2
@@ -87,7 +88,7 @@ export PMB_WORK_OVERRIDE="$(dirname "$SYSROOT")"
 
 echo "Ensuring GTK/libadwaita dev metadata in target rootfs..."
 pmb chroot -r -- /bin/sh -eu -c \
-    'apk add --no-interactive pkgconf glib-dev gdk-pixbuf-dev pango-dev cairo-dev gtk4.0-dev libadwaita-dev'
+    'apk add --no-interactive pkgconf glib-dev gdk-pixbuf-dev pango-dev cairo-dev gtk4.0-dev libadwaita-dev gtk4-layer-shell-dev'
 
 PC_DIRS=()
 [ -d "$SYSROOT/usr/lib/pkgconfig" ] && PC_DIRS+=("$SYSROOT/usr/lib/pkgconfig")
@@ -158,6 +159,7 @@ build_container() {
     "$engine" run --rm \
         -e PMB_WORK_OVERRIDE="${PMB_WORK_OVERRIDE:-}" \
         -e PROFILE_NAME="${PROFILE_NAME:-}" \
+        -e ROOTFS_CHROOT_NAME="${ROOTFS_CHROOT_NAME:-}" \
         -e PKG_CONFIG_ALLOW_CROSS=1 \
         -e TARGET_PKG_CONFIG_ALLOW_CROSS=1 \
         -v "$REPO_ROOT":/work \
@@ -170,10 +172,11 @@ if command -v rustup >/dev/null 2>&1; then
     rustup target add "'"$TARGET_TRIPLE"'" >/dev/null 2>&1 || true
 fi
 if [ -n "${PMB_WORK_OVERRIDE:-}" ] && [ -n "${PROFILE_NAME:-}" ]; then
+    ROOTFS_CHROOT_NAME="${ROOTFS_CHROOT_NAME:-$PROFILE_NAME}"
     if [[ "$PMB_WORK_OVERRIDE" = /* ]]; then
-        SYSROOT="${PMB_WORK_OVERRIDE}/chroot_rootfs_${PROFILE_NAME}"
+        SYSROOT="${PMB_WORK_OVERRIDE}/chroot_rootfs_${ROOTFS_CHROOT_NAME}"
     else
-        SYSROOT="/work/${PMB_WORK_OVERRIDE}/chroot_rootfs_${PROFILE_NAME}"
+        SYSROOT="/work/${PMB_WORK_OVERRIDE}/chroot_rootfs_${ROOTFS_CHROOT_NAME}"
     fi
     if [ -d "$SYSROOT/usr/lib/pkgconfig" ] || [ -d "$SYSROOT/usr/lib/'"$PKGCONF_TRIPLE"'/pkgconfig" ] || [ -d "$SYSROOT/lib/pkgconfig" ]; then
         PC_DIRS=()

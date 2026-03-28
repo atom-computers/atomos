@@ -362,6 +362,7 @@ dependencies = [
  "anyhow",
  "atomos-overview-chat-ui",
  "gtk4",
+ "gtk4-layer-shell",
  "libadwaita",
 ]
 
@@ -1267,6 +1268,7 @@ dependencies = [
  "gdk-pixbuf",
  "gdk4-sys",
  "gio",
+ "gl",
  "glib",
  "libc",
  "pango",
@@ -1352,6 +1354,15 @@ dependencies = [
  "libc",
  "system-deps",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "gl"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a94edab108827d67608095e269cf862e60d920f144a5026d3dbcfd8b877fb404"
+dependencies = [
+ "gl_generator",
 ]
 
 [[package]]
@@ -1622,6 +1633,34 @@ dependencies = [
  "gtk4-sys",
  "libc",
  "pango",
+]
+
+[[package]]
+name = "gtk4-layer-shell"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aec4fd3226bb6aa8dda5370142e14a4d15f00bba99bfb355b6ef7bb49d100758"
+dependencies = [
+ "bitflags 2.11.0",
+ "gdk4",
+ "glib",
+ "glib-sys",
+ "gtk4",
+ "gtk4-layer-shell-sys",
+ "libc",
+]
+
+[[package]]
+name = "gtk4-layer-shell-sys"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3057dc117db2d664a9b45f1956568701914e80cf9f2c8cef0a755af4c1c8105"
+dependencies = [
+ "gdk4-sys",
+ "glib-sys",
+ "gtk4-sys",
+ "libc",
+ "system-deps",
 ]
 
 [[package]]

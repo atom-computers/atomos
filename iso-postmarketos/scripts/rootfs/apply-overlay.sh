@@ -129,7 +129,13 @@ cat > /usr/libexec/atomos-overview-chat-ui << "EOF"
 #!/bin/sh
 set -eu
 BIN="/usr/local/bin/atomos-overview-chat-ui"
-PIDFILE="/run/atomos-overview-chat-ui.pid"
+# Default to non-layer mode for QEMU/older compositor stability.
+# Set ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL=1 to opt into layer-shell.
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL:-0}"
+export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-1}"
+# Phosh runs this as the logged-in user; /run/ is root-only. Use the session dir.
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.pid"
+LOGFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.log"
 
 is_running() {
     [ -f "$PIDFILE" ] || return 1
@@ -146,11 +152,28 @@ start_ui() {
     if is_running; then
         return 0
     fi
-    "$BIN" >/dev/null 2>&1 &
-    echo "$!" > "$PIDFILE"
+    (
+        printf '%s\n' "---- $(date) ----"
+        set +e
+        "$BIN"
+        rc=$?
+        logger -t atomos-overview-chat-ui "process-exit rc=$rc"
+        exit "$rc"
+    ) >>"$LOGFILE" 2>&1 &
+    pid=$!
+    echo "$pid" > "$PIDFILE"
+    sleep 0.2
+    if ! kill -0 "$pid" 2>/dev/null; then
+        logger -t atomos-overview-chat-ui "exited immediately (no Wayland? from SSH: match phosh user WAYLAND_DISPLAY); log: $LOGFILE"
+        rm -f "$PIDFILE"
+    fi
 }
 
 stop_ui() {
+    if [ "${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-0}" = "1" ]; then
+        logger -t atomos-overview-chat-ui "hide ignored (ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE=1)"
+        return 0
+    fi
     if ! is_running; then
         rm -f "$PIDFILE"
         return 0
@@ -162,9 +185,11 @@ stop_ui() {
 
 case "${1:-}" in
     --show)
+        logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} runtime=${XDG_RUNTIME_DIR:-<unset>}"
         start_ui
         ;;
     --hide)
+        logger -t atomos-overview-chat-ui "action=hide"
         stop_ui
         ;;
     *)

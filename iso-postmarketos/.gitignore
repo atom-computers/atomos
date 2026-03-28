@@ -1,4 +1,5 @@
 build/
+.btlescan-install/
 .pmbootstrap/
 .pmbootstrap-container-home/
 .venv-pmb/

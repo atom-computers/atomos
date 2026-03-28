@@ -41,6 +41,18 @@ fi
 # shellcheck source=/dev/null
 source "$PROFILE_ENV_SOURCE"
 
+SCREENLOCK_IDLE_SECONDS="${ATOMOS_SCREENLOCK_IDLE_SECONDS:-${PMOS_SCREENLOCK_IDLE_SECONDS:-300}}"
+SCREENLOCK_LOCK_DELAY_SECONDS="${ATOMOS_SCREENLOCK_LOCK_DELAY_SECONDS:-${PMOS_SCREENLOCK_LOCK_DELAY_SECONDS:-0}}"
+
+if ! [[ "$SCREENLOCK_IDLE_SECONDS" =~ ^[0-9]+$ ]]; then
+    echo "Invalid screen lock idle delay (seconds): $SCREENLOCK_IDLE_SECONDS" >&2
+    exit 1
+fi
+if ! [[ "$SCREENLOCK_LOCK_DELAY_SECONDS" =~ ^[0-9]+$ ]]; then
+    echo "Invalid screen lock post-blank delay (seconds): $SCREENLOCK_LOCK_DELAY_SECONDS" >&2
+    exit 1
+fi
+
 # Inner script runs under /bin/sh in the chroot (POSIX).
 INNER_SCRIPT=$(cat <<'INNER'
 set -e
@@ -75,6 +87,8 @@ if ! command -v dbus-run-session >/dev/null 2>&1; then
 fi
 
 URI="file://$WALL"
+IDLE_DELAY="__SCREENLOCK_IDLE_SECONDS__"
+LOCK_DELAY="__SCREENLOCK_LOCK_DELAY_SECONDS__"
 write_gs_script() {
     _out="$1"
     mkdir -p "$(dirname "$_out")"
@@ -83,12 +97,17 @@ write_gs_script() {
 set -e
 export HOME="$HOME"
 URI="$URI"
+IDLE_DELAY="$IDLE_DELAY"
+LOCK_DELAY="$LOCK_DELAY"
 export URI
 dbus-run-session -- gsettings set org.gnome.desktop.background picture-uri "\$URI"
 dbus-run-session -- gsettings set org.gnome.desktop.background picture-uri-dark "\$URI"
 dbus-run-session -- gsettings set org.gnome.desktop.background picture-options zoom
 dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-uri "\$URI"
 dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-options zoom
+dbus-run-session -- gsettings set org.gnome.desktop.session idle-delay "uint32 \$IDLE_DELAY"
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-enabled true
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-delay "uint32 \$LOCK_DELAY"
 EOS
 chmod +x "$_out"
 }
@@ -155,12 +174,15 @@ fi
 INNER
 )
 
+INNER_SCRIPT="${INNER_SCRIPT//__SCREENLOCK_IDLE_SECONDS__/$SCREENLOCK_IDLE_SECONDS}"
+INNER_SCRIPT="${INNER_SCRIPT//__SCREENLOCK_LOCK_DELAY_SECONDS__/$SCREENLOCK_LOCK_DELAY_SECONDS}"
+
 if [ "${ATOMOS_WALLPAPER_DCONF_DUMP_ONLY:-0}" = "1" ]; then
     printf '%s\n' "$INNER_SCRIPT"
     exit 0
 fi
 
-echo "Applying AtomOS wallpaper (gsettings via dbus) in chroot (${PROFILE_NAME})..."
+echo "Applying AtomOS wallpaper + lock timeout (idle=${SCREENLOCK_IDLE_SECONDS}s, lock-delay=${SCREENLOCK_LOCK_DELAY_SECONDS}s) in chroot (${PROFILE_NAME})..."
 if [ "$PMB_CONTAINER_ROOT" = "1" ]; then
     PMB_CONTAINER_AS_ROOT=1 bash "$PMB" "$PROFILE_ENV_ARG" chroot -r -- /bin/sh -eu -c "$INNER_SCRIPT"
 else

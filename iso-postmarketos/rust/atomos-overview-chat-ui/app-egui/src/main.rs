@@ -27,7 +27,8 @@ impl eframe::App for DevPreviewApp {
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::default()
-                    .fill(egui::Color32::from_rgb(16, 20, 30))
+                    // Neutral dark background for dev preview (avoid "blue tint").
+                    .fill(egui::Color32::from_rgb(14, 14, 14))
                     .inner_margin(0.0),
             )
             .show(ctx, |ui| {

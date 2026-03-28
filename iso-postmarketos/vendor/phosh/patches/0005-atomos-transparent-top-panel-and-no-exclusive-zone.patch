@@ -1,0 +1,44 @@
+diff --git a/src/stylesheet/common.css b/src/stylesheet/common.css
+index 426d63d3..78306b53 100644
+--- a/src/stylesheet/common.css
++++ b/src/stylesheet/common.css
+@@ -8,11 +8,14 @@ phosh-top-panel {
+ }
+ 
+ phosh-top-panel-bg {
+-  background: @phosh_bg_color;
++  background: transparent;
+ }
+ 
+ #top-bar-bin {
+   transition: background-color 200ms ease;
++  background-color: transparent;
++  background-image: none;
++  box-shadow: none;
+ }
+ 
+ #top-bar-bin:not(.p-solid) #top-bar label {
+@@ -26,6 +29,9 @@ phosh-top-panel-bg {
+ #top-bar {
+   padding-top: 4px;
+   padding-bottom: 4px;
++  background-color: transparent;
++  background-image: none;
++  box-shadow: none;
+ }
+ 
+ .phosh-wwan-indicator,
+diff --git a/src/top-panel.c b/src/top-panel.c
+index 974e8008..4abe36a8 100644
+--- a/src/top-panel.c
++++ b/src/top-panel.c
+@@ -1098,7 +1098,8 @@ phosh_top_panel_new (struct zwlr_layer_shell_v1          *layer_shell,
+                        "namespace", "phosh top-panel",
+                        /* drag-surface */
+                        "layer-shell-effects", layer_shell_effects,
+-                       "exclusive", PHOSH_TOP_BAR_HEIGHT,
++                       /* AtomOS: let wallpaper/apps extend behind the top bar. */
++                       "exclusive", 0,
+                        "threshold", PHOSH_TOP_PANEL_DRAG_THRESHOLD,
+                        NULL);
+ }

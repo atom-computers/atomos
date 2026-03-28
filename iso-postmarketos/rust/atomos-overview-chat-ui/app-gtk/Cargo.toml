@@ -10,6 +10,7 @@ atomos-overview-chat-ui = { path = "../core" }
 gtk = { package = "gtk4", version = "0.9" }
 adw = { package = "libadwaita", version = "0.7" }
 anyhow = "1"
+gtk4-layer-shell = "0.5"
 
 [[bin]]
 name = "atomos-overview-chat-ui"

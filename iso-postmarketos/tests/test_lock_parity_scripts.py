@@ -13,6 +13,7 @@ S_PMB = SCRIPTS / "pmb"
 S_PHOSH = SCRIPTS / "phosh"
 S_ROOTFS = SCRIPTS / "rootfs"
 S_VALIDATE = SCRIPTS / "validate"
+S_DEVICE = SCRIPTS / "device"
 
 
 def run_script(path, *args, env=None):
@@ -130,6 +131,9 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             self.assertIn("gsettings set org.gnome.desktop.background picture-uri", result.stdout)
             self.assertIn("picture-uri-dark", result.stdout)
             self.assertIn("org.gnome.desktop.screensaver", result.stdout)
+            self.assertIn("org.gnome.desktop.session idle-delay", result.stdout)
+            self.assertIn("org.gnome.desktop.screensaver lock-enabled true", result.stdout)
+            self.assertIn("org.gnome.desktop.screensaver lock-delay", result.stdout)
             self.assertIn("getent passwd 10000", result.stdout)
 
     def test_phosh_dconf_dump_contains_favorites(self):
@@ -318,9 +322,11 @@ class TestPhoshAtomosPatches(unittest.TestCase):
         patch1 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0001-atomos-overview-no-app-grid.patch"
         patch2 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0002-atomos-overview-chat-entry-submit.patch"
         patch3 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0003-atomos-overview-chat-ui-lifecycle.patch"
+        patch4 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0004-atomos-overview-chat-ui-show-on-unfold.patch"
         self.assertTrue(patch1.is_file(), msg="expected no-app-grid patch file")
         self.assertTrue(patch2.is_file(), msg="expected chat-entry-submit patch file")
         self.assertTrue(patch3.is_file(), msg="expected chat-ui lifecycle patch file")
+        self.assertTrue(patch4.is_file(), msg="expected chat-ui show-on-unfold patch file")
 
         text1 = patch1.read_text(encoding="utf-8")
         self.assertIn("search_apps", text1)
@@ -337,6 +343,10 @@ class TestPhoshAtomosPatches(unittest.TestCase):
         self.assertIn("--show", text3)
         self.assertIn("--hide", text3)
 
+        text4 = patch4.read_text(encoding="utf-8")
+        self.assertIn("on_drag_state_changed", text4)
+        self.assertIn("phosh_overview_focus_app_search", text4)
+
     def test_apply_patch_script_syntax(self):
         r = subprocess.run(
             ["bash", "-n", str(S_PHOSH / "apply-phosh-atomos-patches.sh")],
@@ -344,6 +354,22 @@ class TestPhoshAtomosPatches(unittest.TestCase):
             text=True,
         )
         self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+
+class TestAtomosDeviceScripts(unittest.TestCase):
+    def test_bash_syntax(self):
+        for name in (
+            "atomos-device-ssh.sh",
+            "atomos-overview-chat-ui-remote-show.sh",
+            "atomos-overview-chat-ui-remote-diag.sh",
+            "atomos-overview-chat-ui-remote-fg.sh",
+        ):
+            r = subprocess.run(
+                ["bash", "-n", str(S_DEVICE / name)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(r.returncode, 0, msg=f"{name}: {r.stderr}")
 
 
 class TestWireCustomApkReposScript(unittest.TestCase):

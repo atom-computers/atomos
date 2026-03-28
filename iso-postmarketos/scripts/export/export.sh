@@ -14,6 +14,14 @@ PMB="$ROOT_DIR/scripts/pmb/pmb.sh"
 # shellcheck source=/dev/null
 source "$PROFILE_ENV"
 
+BOOT_REQUIRED=1
+case "${PMOS_DEVICE:-}" in
+    qemu-*|qemu_*)
+        BOOT_REQUIRED=0
+        ;;
+esac
+ROOTFS_CHROOT_NAME="${PMOS_DEVICE:-$PROFILE_NAME}"
+
 EXPORT_DIR="$BUILD_DIR/export-${PROFILE_NAME}"
 mkdir -p "$BUILD_DIR"
 
@@ -115,7 +123,14 @@ stream_vendor_boot_from_chroot() {
 }
 
 stream_disk_from_chroot() {
-    pmb_exec chroot --output "$PMB_CHROOT_OUTPUT_MODE" -- cat "/home/pmos/rootfs/${PROFILE_NAME}.img" >"$DISK_OUT"
+    local disk_cmd
+    disk_cmd='for n in "'"${PROFILE_NAME}"'" "'"${PMOS_DEVICE:-}"'"; do
+    [ -n "$n" ] || continue
+    p="/home/pmos/rootfs/${n}.img"
+    [ -r "$p" ] && exec cat "$p"
+done
+exit 1'
+    pmb_exec chroot --output "$PMB_CHROOT_OUTPUT_MODE" -- /bin/sh -eu -c "$disk_cmd" >"$DISK_OUT"
 }
 
 # Treat undersized output as failure (EIO can still exit 0 from outer tools).
@@ -169,48 +184,68 @@ DISK_OUT="$CORE_EXPORT_DIR/${PROFILE_NAME}.img"
 py_unlink "$BOOT_OUT" "$DISK_OUT"
 
 PMB_W="$(pmb_work_abs || true)"
-ROOTFS_CHROOT_NAME="${PMOS_DEVICE:-$PROFILE_NAME}"
 HOST_BOOT=""
 HOST_VENDOR_BOOT=""
-HOST_DISK=""
+HOST_DISK_PROFILE=""
+HOST_DISK_DEVICE=""
 if [ -n "$PMB_W" ] && [ -d "$PMB_W" ]; then
     HOST_BOOT="$PMB_W/chroot_rootfs_${ROOTFS_CHROOT_NAME}/boot/boot.img"
     HOST_VENDOR_BOOT="$PMB_W/chroot_rootfs_${ROOTFS_CHROOT_NAME}/boot/vendor_boot.img"
-    HOST_DISK="$PMB_W/chroot_native/home/pmos/rootfs/${PROFILE_NAME}.img"
+    HOST_DISK_PROFILE="$PMB_W/chroot_native/home/pmos/rootfs/${PROFILE_NAME}.img"
+    HOST_DISK_DEVICE="$PMB_W/chroot_native/home/pmos/rootfs/${PMOS_DEVICE:-}.img"
 fi
 
 boot_sz=0
-if copy_artifact_from_host "$HOST_BOOT" "$BOOT_OUT"; then
-    boot_sz=$(file_size "$BOOT_OUT")
-fi
-if [ "${boot_sz:-0}" -lt 1048576 ] && [ -n "$HOST_VENDOR_BOOT" ]; then
-    py_unlink "$BOOT_OUT"
-    if copy_artifact_from_host "$HOST_VENDOR_BOOT" "$BOOT_OUT"; then
+if [ "$BOOT_REQUIRED" -eq 1 ]; then
+    if copy_artifact_from_host "$HOST_BOOT" "$BOOT_OUT"; then
         boot_sz=$(file_size "$BOOT_OUT")
     fi
+    if [ "${boot_sz:-0}" -lt 1048576 ] && [ -n "$HOST_VENDOR_BOOT" ]; then
+        py_unlink "$BOOT_OUT"
+        if copy_artifact_from_host "$HOST_VENDOR_BOOT" "$BOOT_OUT"; then
+            boot_sz=$(file_size "$BOOT_OUT")
+        fi
+    fi
+    set +o pipefail
+    if [ "${boot_sz:-0}" -lt 1048576 ]; then
+        py_unlink "$BOOT_OUT"
+        retry_export_step 3 stream_boot_ok || true
+        boot_sz=$(file_size "$BOOT_OUT")
+    fi
+    if [ "${boot_sz:-0}" -lt 1048576 ]; then
+        py_unlink "$BOOT_OUT"
+        retry_export_step 3 stream_vendor_boot_ok || true
+        boot_sz=$(file_size "$BOOT_OUT")
+    fi
+    set -o pipefail
 fi
-set +o pipefail
-if [ "${boot_sz:-0}" -lt 1048576 ]; then
-    py_unlink "$BOOT_OUT"
-    retry_export_step 3 stream_boot_ok || true
-    boot_sz=$(file_size "$BOOT_OUT")
-fi
-if [ "${boot_sz:-0}" -lt 1048576 ]; then
-    py_unlink "$BOOT_OUT"
-    retry_export_step 3 stream_vendor_boot_ok || true
-    boot_sz=$(file_size "$BOOT_OUT")
-fi
-set -o pipefail
 
 if [ "${boot_sz:-0}" -lt 1048576 ]; then
-    echo "ERROR: boot image export failed (host paths tried + chroot stream for boot.img / vendor_boot.img)." >&2
     py_unlink "$BOOT_OUT"
-    exit 1
+    if [ "$BOOT_REQUIRED" -eq 1 ]; then
+        echo "ERROR: boot image export failed (host paths tried + chroot stream for boot.img / vendor_boot.img)." >&2
+        exit 1
+    fi
+    if copy_artifact_from_host "$HOST_BOOT" "$BOOT_OUT" || copy_artifact_from_host "$HOST_VENDOR_BOOT" "$BOOT_OUT"; then
+        boot_sz=$(file_size "$BOOT_OUT")
+    fi
+    if [ "${boot_sz:-0}" -ge 1048576 ]; then
+        echo "NOTE: optional boot image found for device '${PMOS_DEVICE:-unknown}'."
+    else
+        py_unlink "$BOOT_OUT"
+        echo "NOTE: boot image not found for device '${PMOS_DEVICE:-unknown}'; continuing with disk image export."
+    fi
 fi
 
 disk_sz=0
-if copy_artifact_from_host "$HOST_DISK" "$DISK_OUT"; then
+if copy_artifact_from_host "$HOST_DISK_PROFILE" "$DISK_OUT"; then
     disk_sz=$(file_size "$DISK_OUT")
+fi
+if [ "${disk_sz:-0}" -lt 10485760 ] && [ -n "${PMOS_DEVICE:-}" ] && [ "$PMOS_DEVICE" != "$PROFILE_NAME" ]; then
+    py_unlink "$DISK_OUT"
+    if copy_artifact_from_host "$HOST_DISK_DEVICE" "$DISK_OUT"; then
+        disk_sz=$(file_size "$DISK_OUT")
+    fi
 fi
 if [ "${disk_sz:-0}" -lt 10485760 ]; then
     py_unlink "$DISK_OUT"
@@ -220,7 +255,8 @@ if [ "${disk_sz:-0}" -lt 10485760 ]; then
     disk_sz=$(file_size "$DISK_OUT")
 fi
 if [ "${disk_sz:-0}" -lt 10485760 ]; then
-    echo "ERROR: rootfs disk image export failed: /home/pmos/rootfs/${PROFILE_NAME}.img ($disk_sz bytes)." >&2
+    echo "ERROR: rootfs disk image export failed ($disk_sz bytes)." >&2
+    echo "  Tried: /home/pmos/rootfs/${PROFILE_NAME}.img and /home/pmos/rootfs/${PMOS_DEVICE:-}.img" >&2
     echo "  Hint: keep PMB_WORK on a local ext4 disk (not virtiofs); or retry after [Errno 5] EIO." >&2
     py_unlink "$DISK_OUT"
     exit 1
@@ -345,9 +381,19 @@ check_artifact_readable() {
     return 0
 }
 
-REQUIRED_BOOT="$FINAL_EXPORT_DIR/boot.img"
 REQUIRED_DISK="$FINAL_EXPORT_DIR/${PROFILE_NAME}.img"
-if ! check_artifact_readable "$REQUIRED_BOOT" || ! check_artifact_readable "$REQUIRED_DISK"; then
+if [ "$BOOT_REQUIRED" -eq 1 ]; then
+    REQUIRED_BOOT="$FINAL_EXPORT_DIR/boot.img"
+    HAVE_REQUIRED_BOOT=0
+    if check_artifact_readable "$REQUIRED_BOOT"; then
+        HAVE_REQUIRED_BOOT=1
+    fi
+else
+    REQUIRED_BOOT="$FINAL_EXPORT_DIR/boot.img"
+    HAVE_REQUIRED_BOOT=1
+fi
+
+if [ "$HAVE_REQUIRED_BOOT" -ne 1 ] || ! check_artifact_readable "$REQUIRED_DISK"; then
     echo "ERROR: exported core artifacts are missing or unreadable." >&2
     echo "  boot: $REQUIRED_BOOT" >&2
     echo "  disk: $REQUIRED_DISK" >&2
@@ -356,7 +402,7 @@ fi
 
 # Always stage host-share-safe artifacts inside the repo (no symlinks).
 HOST_BUNDLE_DIR="$ROOT_DIR/build/host-export-${PROFILE_NAME}"
-python3 - "$FINAL_EXPORT_DIR" "$HOST_BUNDLE_DIR" "$PROFILE_NAME" <<'PY'
+python3 - "$FINAL_EXPORT_DIR" "$HOST_BUNDLE_DIR" "$PROFILE_NAME" "$BOOT_REQUIRED" <<'PY'
 import os
 import pathlib
 import shutil
@@ -365,10 +411,14 @@ import sys
 src_dir = pathlib.Path(sys.argv[1])
 dst_dir = pathlib.Path(sys.argv[2])
 profile = sys.argv[3]
+boot_required = sys.argv[4] == "1"
 
-core = [src_dir / "boot.img", src_dir / f"{profile}.img"]
+core = [src_dir / f"{profile}.img"]
+if boot_required:
+    core.insert(0, src_dir / "boot.img")
 optional = [
     src_dir / f"pmos-{profile}.zip",
+    src_dir / "boot.img",
     src_dir / f"{profile}-boot.img",
     src_dir / f"{profile}-root.img",
 ]
@@ -413,6 +463,8 @@ printf '%s\n' "$HOST_BUNDLE_DIR" > "$ROOT_DIR/build/LAST_EXPORT_DIR_${PROFILE_NA
 
 echo "Final export directory: $HOST_BUNDLE_DIR"
 echo "Core artifacts:"
-echo "  $HOST_BUNDLE_DIR/boot.img"
+if [ "$BOOT_REQUIRED" -eq 1 ]; then
+    echo "  $HOST_BUNDLE_DIR/boot.img"
+fi
 echo "  $HOST_BUNDLE_DIR/${PROFILE_NAME}.img"
 echo "Export complete."

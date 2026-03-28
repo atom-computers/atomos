@@ -1,8 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
+if [ "$#" -gt 1 ]; then
+    echo "Usage: $0 [profile-env]" >&2
+    exit 1
+fi
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROFILE_ENV="$ROOT_DIR/config/fairphone-fp4.env"
+PROFILE_ENV="${1:-config/fairphone-fp4.env}"
 BUILD_DIR="$ROOT_DIR/build"
 
 if [ "$(uname -s)" = "Darwin" ]; then
@@ -10,24 +15,27 @@ if [ "$(uname -s)" = "Darwin" ]; then
     exit 2
 fi
 
-if [ ! -f "$PROFILE_ENV" ]; then
+PROFILE_ENV_SOURCE="$PROFILE_ENV"
+if [ ! -f "$PROFILE_ENV_SOURCE" ] && [ -f "$ROOT_DIR/$PROFILE_ENV" ]; then
+    PROFILE_ENV_SOURCE="$ROOT_DIR/$PROFILE_ENV"
+fi
+if [ ! -f "$PROFILE_ENV_SOURCE" ]; then
     echo "ERROR: missing profile env: $PROFILE_ENV" >&2
     exit 2
 fi
 
 # shellcheck source=/dev/null
-source "$PROFILE_ENV"
+source "$PROFILE_ENV_SOURCE"
 
 if [ -z "${PROFILE_NAME:-}" ] || [ -z "${PMOS_DEVICE:-}" ] || [ -z "${PMOS_UI:-}" ]; then
     echo "ERROR: profile env is missing required variables (PROFILE_NAME/PMOS_DEVICE/PMOS_UI)." >&2
     exit 2
 fi
 
-PROFILE_ENV_REL="config/fairphone-fp4.env"
 PMB="$ROOT_DIR/scripts/pmb/pmb.sh"
 
 pmb() {
-    bash "$PMB" "$PROFILE_ENV_REL" "$@"
+    bash "$PMB" "$PROFILE_ENV_SOURCE" "$@"
 }
 
 warn_if_workdir_on_unreliable_fs() {
@@ -51,14 +59,28 @@ warn_if_workdir_on_unreliable_fs() {
 ensure_native_abuild_keys() {
     echo "=== Ensure abuild signing keys in native chroot ==="
     pmb chroot -- /bin/sh -eu -c '
+        if ! command -v abuild-keygen >/dev/null 2>&1; then
+            apk add --no-interactive abuild
+        fi
         mkdir -p /home/pmos/.abuild
         chown pmos:pmos /home/pmos/.abuild
+        have_private=0
         for f in /home/pmos/.abuild/*.rsa; do
             if [ -f "$f" ]; then
-                exit 0
+                have_private=1
+                break
             fi
         done
-        busybox su pmos -c "HOME=/home/pmos abuild-keygen -a -n"
+        if [ "$have_private" -eq 0 ]; then
+            busybox su pmos -c "HOME=/home/pmos abuild-keygen -a -n"
+        fi
+        # pmbootstrap build indexes signed APKs immediately after build.
+        # Ensure native chroot trusts the abuild key used by /home/pmos/.abuild.
+        mkdir -p /etc/apk/keys
+        for pub in /home/pmos/.abuild/*.rsa.pub; do
+            [ -f "$pub" ] || continue
+            install -m 644 "$pub" /etc/apk/keys/
+        done
     '
 }
 
@@ -120,12 +142,12 @@ pmb config device "$PMOS_DEVICE"
 pmb config ui "$PMOS_UI"
 pmb config build_pkgs_on_install false
 bash "$ROOT_DIR/scripts/pmb/set-pmbootstrap-option.sh" "$CFG" "build_pkgs_on_install" "false" >/dev/null
-bash "$ROOT_DIR/scripts/pmb/ensure-pmbootstrap-mirrors.sh" "$PROFILE_ENV_REL"
+bash "$ROOT_DIR/scripts/pmb/ensure-pmbootstrap-mirrors.sh" "$PROFILE_ENV_SOURCE"
 
 if [ "$PMOS_UI" = "phosh" ]; then
     bash "$ROOT_DIR/scripts/pmb/set-container-provider.sh" "$CFG" "postmarketos-base-ui-audio-backend" "pipewire"
     ensure_native_abuild_keys
-    bash "$ROOT_DIR/scripts/phosh/build-atomos-phosh-pmbootstrap.sh" "$PROFILE_ENV_REL"
+    bash "$ROOT_DIR/scripts/phosh/build-atomos-phosh-pmbootstrap.sh" "$PROFILE_ENV_SOURCE"
 fi
 
 EXTRA_PACKAGES_EFFECTIVE="${PMOS_EXTRA_PACKAGES:-}"
@@ -157,27 +179,32 @@ fi
 pmb install --password "$PMOS_INSTALL_PASSWORD" --add "$EXTRA_PACKAGES_EFFECTIVE"
 
 echo "=== Apply AtomOS rootfs customizations ==="
-bash "$ROOT_DIR/scripts/rootfs/wire-custom-apk-repos.sh" "$PROFILE_ENV_REL"
-bash "$ROOT_DIR/scripts/rootfs/install-btlescan.sh" "$PROFILE_ENV_REL"
-bash "$ROOT_DIR/scripts/overview-chat-ui/build-overview-chat-ui.sh" "$PROFILE_ENV_REL"
-bash "$ROOT_DIR/scripts/overview-chat-ui/install-overview-chat-ui.sh" "$PROFILE_ENV_REL"
+bash "$ROOT_DIR/scripts/rootfs/wire-custom-apk-repos.sh" "$PROFILE_ENV_SOURCE"
+bash "$ROOT_DIR/scripts/rootfs/install-btlescan.sh" "$PROFILE_ENV_SOURCE"
+bash "$ROOT_DIR/scripts/rootfs/install-bt-tools.sh" "$PROFILE_ENV_SOURCE"
+bash "$ROOT_DIR/scripts/overview-chat-ui/build-overview-chat-ui.sh" "$PROFILE_ENV_SOURCE"
+bash "$ROOT_DIR/scripts/overview-chat-ui/install-overview-chat-ui.sh" "$PROFILE_ENV_SOURCE"
 
 WALLPAPER_SRC="$ROOT_DIR/data/wallpapers/gargantua-black.jpg"
 
 if [ -n "$WALLPAPER_SRC" ] && [ -f "$WALLPAPER_SRC" ]; then
     COPY_WP='mkdir -p /usr/share/backgrounds/gnome /usr/share/backgrounds/atomos /usr/share/backgrounds && cat > /usr/share/backgrounds/gnome/gargantua-black.jpg && cat /usr/share/backgrounds/gnome/gargantua-black.jpg > /usr/share/backgrounds/gargantua-black.jpg && cat /usr/share/backgrounds/gnome/gargantua-black.jpg > /usr/share/backgrounds/atomos/gargantua-black.jpg'
     pmb chroot -r -- /bin/sh -eu -c "$COPY_WP" < "$WALLPAPER_SRC"
-    bash "$ROOT_DIR/scripts/rootfs/apply-atomos-wallpaper-dconf.sh" "$PROFILE_ENV_REL"
+    bash "$ROOT_DIR/scripts/rootfs/apply-atomos-wallpaper-dconf.sh" "$PROFILE_ENV_SOURCE"
 fi
 
-bash "$ROOT_DIR/scripts/phosh/apply-atomos-phosh-dconf.sh" "$PROFILE_ENV_REL"
-ATOMOS_LOCK_PARITY=1 bash "$ROOT_DIR/scripts/rootfs/apply-overlay.sh" "$PROFILE_ENV_REL"
+bash "$ROOT_DIR/scripts/phosh/apply-atomos-phosh-dconf.sh" "$PROFILE_ENV_SOURCE"
+ATOMOS_LOCK_PARITY=1 bash "$ROOT_DIR/scripts/rootfs/apply-overlay.sh" "$PROFILE_ENV_SOURCE"
 
 echo "=== Resync rootfs and export image ==="
-bash "$ROOT_DIR/scripts/rootfs/resync-rootfs-to-disk-image.sh" "$PROFILE_ENV_REL"
-bash "$ROOT_DIR/scripts/rootfs/rootfs-diagnostic.sh" "$PROFILE_ENV_REL" || true
-bash "$ROOT_DIR/scripts/export/export.sh" "$PROFILE_ENV_REL" "$BUILD_DIR"
+bash "$ROOT_DIR/scripts/rootfs/resync-rootfs-to-disk-image.sh" "$PROFILE_ENV_SOURCE"
+bash "$ROOT_DIR/scripts/rootfs/rootfs-diagnostic.sh" "$PROFILE_ENV_SOURCE" || true
+bash "$ROOT_DIR/scripts/export/export.sh" "$PROFILE_ENV_SOURCE" "$BUILD_DIR"
 
 echo "Build complete:"
-echo "  $BUILD_DIR/host-export-${PROFILE_NAME}/boot.img"
+if [ -f "$BUILD_DIR/host-export-${PROFILE_NAME}/boot.img" ]; then
+    echo "  $BUILD_DIR/host-export-${PROFILE_NAME}/boot.img"
+elif [[ "${PMOS_DEVICE:-}" == qemu-* ]] || [[ "${PMOS_DEVICE:-}" == qemu_* ]]; then
+    echo "  $BUILD_DIR/host-export-${PROFILE_NAME}/boot.img (optional; not generated for this QEMU profile)"
+fi
 echo "  $BUILD_DIR/host-export-${PROFILE_NAME}/${PROFILE_NAME}.img"

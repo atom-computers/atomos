@@ -30,6 +30,8 @@ This scaffold builds **`postmarketos-ui-phosh`** (`PMOS_UI=phosh` in [`config/fa
 - [`vendor/phosh/patches/0001-atomos-overview-no-app-grid.patch`](../vendor/phosh/patches/0001-atomos-overview-no-app-grid.patch): hides app/favorites overview content.
 - [`vendor/phosh/patches/0002-atomos-overview-chat-entry-submit.patch`](../vendor/phosh/patches/0002-atomos-overview-chat-entry-submit.patch): transitional **Message…** bottom entry that submits via **`/usr/libexec/atomos-overview-chat-submit`**.
 - [`vendor/phosh/patches/0003-atomos-overview-chat-ui-lifecycle.patch`](../vendor/phosh/patches/0003-atomos-overview-chat-ui-lifecycle.patch): overview lifecycle bridge that toggles **`/usr/libexec/atomos-overview-chat-ui --show/--hide`** and hides the transitional in-Phosh entry.
+- [`vendor/phosh/patches/0004-atomos-overview-chat-ui-show-on-unfold.patch`](../vendor/phosh/patches/0004-atomos-overview-chat-ui-show-on-unfold.patch): ensures **`--show`** runs whenever the overview **unfolds** (swipe/Super), not only via the application-view key action (upstream sets `focus_app_search` only there).
+- [`vendor/phosh/patches/0005-atomos-transparent-top-panel-and-no-exclusive-zone.patch`](../vendor/phosh/patches/0005-atomos-transparent-top-panel-and-no-exclusive-zone.patch): makes the folded status bar transparent and removes its exclusive zone so wallpaper/content continues behind the panel area.
 
 The long-term target is a Rust UI surface (`rust/atomos-overview-chat-ui`) with transparent background and multiline growth behavior. Patches apply during **`make build`** (via checkout) or manually: **`./scripts/phosh/apply-phosh-atomos-patches.sh`**.
 
