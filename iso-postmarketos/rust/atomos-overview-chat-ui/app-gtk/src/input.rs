@@ -27,6 +27,7 @@ pub fn wire_input_layout_behavior(input_scroller: &gtk::ScrolledWindow, input: &
         .set_min_content_height(initial_layout.min_content_height + INPUT_VERTICAL_INSET_PX);
     input_scroller
         .set_max_content_height(initial_layout.max_content_height + INPUT_VERTICAL_INSET_PX);
+    input_scroller.set_height_request(initial_layout.min_content_height + INPUT_VERTICAL_INSET_PX);
     input_scroller.set_vscrollbar_policy(if initial_layout.needs_scroll {
         gtk::PolicyType::Automatic
     } else {
@@ -42,6 +43,7 @@ pub fn wire_input_layout_behavior(input_scroller: &gtk::ScrolledWindow, input: &
             .set_min_content_height(state.min_content_height + INPUT_VERTICAL_INSET_PX);
         input_scroller_clone
             .set_max_content_height(state.max_content_height + INPUT_VERTICAL_INSET_PX);
+        input_scroller_clone.set_height_request(state.min_content_height + INPUT_VERTICAL_INSET_PX);
         input_scroller_clone.set_vscrollbar_policy(if state.needs_scroll {
             gtk::PolicyType::Automatic
         } else {

@@ -10,7 +10,7 @@ REDOX_BUILD = redox-build
 CONFIG_SRC = config/atom.toml
 CONFIG_DEST = $(REDOX_BUILD)/config/$(ARCH)/$(CONFIG_NAME).toml
 
-.PHONY: all qemu sync help setup-build
+.PHONY: all qemu sync help setup-build pmos-build pmos-build-qemu pmos-qemu
 
 # Default target
 all: setup-build sync
@@ -46,10 +46,22 @@ all: setup-build sync
 # Run in QEMU
 qemu: all
 	@echo "Running Atom OS in QEMU (on host)..."
+	@echo "NOTE: this target boots the Redox image."
+	@echo "      For postmarketOS QEMU use: make pmos-qemu"
 	$(MAKE) -C $(REDOX_BUILD) qemu ARCH=$(ARCH) CONFIG_NAME=$(CONFIG_NAME) PODMAN_BUILD=0 SKIP_CHECK_TOOLS=1 live=no disk=nvme \
 		-o build/$(ARCH)/$(CONFIG_NAME)/harddrive.img \
 		-o build/$(ARCH)/$(CONFIG_NAME)/repo.tag \
 		-o prefix
+
+# postmarketOS wrappers (iso-postmarketos/)
+pmos-build:
+	@$(MAKE) -C iso-postmarketos build
+
+pmos-build-qemu:
+	@$(MAKE) -C iso-postmarketos build-qemu
+
+pmos-qemu:
+	@$(MAKE) -C iso-postmarketos qemu
 
 # Setup build directory and patch sources
 setup-build:
@@ -97,5 +109,8 @@ help:
 	@echo "Available targets:"
 	@echo "  all    - Build the Atom OS image (wraps 'make all' in redox-build/)"
 	@echo "  qemu   - Run Atom OS in QEMU (wraps 'make qemu' in redox-build/)"
+	@echo "  pmos-build      - Build postmarketOS (fairphone-fp4) in iso-postmarketos/"
+	@echo "  pmos-build-qemu - Build postmarketOS QEMU image in iso-postmarketos/"
+	@echo "  pmos-qemu       - Boot postmarketOS QEMU image from iso-postmarketos/build/"
 	@echo "  sync   - Symlink config to redox-build/config/"
 	@echo "  clean  - Clean the build artifacts"

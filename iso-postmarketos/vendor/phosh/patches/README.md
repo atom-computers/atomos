@@ -16,6 +16,12 @@ Apply manually (from `iso-postmarketos/`):
 bash scripts/phosh/apply-phosh-atomos-patches.sh
 ```
 
+Patch controls for isolation runs:
+
+- `ATOMOS_PHOSH_APPLY_PATCHES=0` disables all AtomOS Phosh patches.
+- `ATOMOS_PHOSH_PATCHES=0001,0002` applies only selected patches (prefix or full filename).
+- `ATOMOS_PHOSH_GIT_REF=<commit-or-tag>` pins upstream Phosh source before patching.
+
 **`make build`** runs this via **`scripts/phosh/checkout-phosh.sh`** automatically.
 
 After rebasing Phosh, refresh a patch with:

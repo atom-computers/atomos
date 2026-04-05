@@ -29,6 +29,6 @@ LOG="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.log"
 } >>"$LOG" 2>/dev/null || true
 exec /usr/libexec/atomos-overview-chat-ui --show
 REMOTE_SH
-)
+) 
 
 exec bash "$ROOT_DIR/scripts/device/atomos-device-ssh.sh" /bin/sh -lc "$REMOTE_SH"

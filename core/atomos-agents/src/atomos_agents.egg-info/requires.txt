@@ -11,14 +11,11 @@ pydantic>=2.0.0
 requests>=2.31.0
 aiohttp>=3.9.0
 deepagents>=0.4.0
-playwright>=1.40.0
 keyring>=25.0.0
 secretstorage>=3.3.0
 cryptography>=42.0.0
 deepagents-acp>=0.0.4
-arxiv-mcp-server>=0.3.0
 chrome-devtools-mcp-fork>=2.0.0
-gpt-researcher>=0.9.0
 drawio-mcp>=1.0.0
 notion-mcp-ldraney>=0.1.13
 
@@ -31,3 +28,10 @@ pytest-asyncio>=0.23.0
 
 [local-browser]
 browser-use>=0.12.0
+playwright>=1.40.0
+
+[research-arxiv]
+arxiv-mcp-server>=0.3.0
+
+[research-web]
+gpt-researcher>=0.9.0

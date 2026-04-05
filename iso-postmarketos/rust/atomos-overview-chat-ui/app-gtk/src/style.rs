@@ -1,7 +1,13 @@
 use gtk::gdk;
 use gtk::prelude::*;
 
-pub fn install_css(desktop_like: bool) {
+use crate::logic::{env_flag_enabled, theme_class};
+
+fn custom_css_disabled() -> bool {
+    env_flag_enabled(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS"))
+}
+
+fn stylesheet(desktop_like: bool) -> String {
     let top_row_padding_top = 8;
     let root_bg = if desktop_like {
         "background-color: alpha(#0b0f17, 0.92);"
@@ -10,10 +16,8 @@ pub fn install_css(desktop_like: bool) {
         // darkening rather than an obvious colored tint.
         "background-color: alpha(#000000, 0.22);"
     };
-    let input_extra = "outline: 1px solid alpha(#ffffff, 0.22); outline-offset: -1px;";
-
-    let css = gtk::CssProvider::new();
-    css.load_from_data(&format!(
+    let input_extra = "border: 1px solid alpha(#ffffff, 0.22); box-shadow: none;";
+    format!(
         "
 window.atomos-chat-root {{
   {root_bg}
@@ -30,6 +34,15 @@ textview.atomos-chat-input {{
   background-color: transparent;
   color: #ffffff;
   padding: 10px 14px;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}}
+textview.atomos-chat-input:focus {{
+  padding: 10px 14px;
+  border: none;
+  outline: none;
+  box-shadow: none;
 }}
 box.atomos-top-row {{
   padding: {top_row_padding_top}px 12px 0 12px;
@@ -102,7 +115,16 @@ label.atomos-app-label {{
         root_bg = root_bg,
         input_extra = input_extra,
         top_row_padding_top = top_row_padding_top
-    ));
+    )
+}
+
+pub fn install_css(desktop_like: bool) {
+    if custom_css_disabled() {
+        eprintln!("atomos-overview-chat-ui: custom CSS disabled by env");
+        return;
+    }
+    let css = gtk::CssProvider::new();
+    css.load_from_data(&stylesheet(desktop_like));
     if let Some(display) = gdk::Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,
@@ -112,13 +134,54 @@ label.atomos-app-label {{
     }
 }
 
-pub fn apply_theme_class(win: &adw::ApplicationWindow) {
-    let prefers_dark = gtk::Settings::default()
-        .map(|settings| settings.property::<bool>("gtk-application-prefer-dark-theme"))
-        .unwrap_or(true);
-    if prefers_dark {
-        win.add_css_class("atomos-dark");
-    } else {
-        win.add_css_class("atomos-light");
+#[cfg(test)]
+mod tests {
+    use super::{custom_css_disabled, stylesheet};
+
+    #[test]
+    fn stylesheet_avoids_focus_within_selector_for_target_compat() {
+        let desktop_css = stylesheet(true);
+        let mobile_css = stylesheet(false);
+        assert!(
+            !desktop_css.contains(":focus-within"),
+            "desktop CSS contains :focus-within, which crashes on target images"
+        );
+        assert!(
+            !mobile_css.contains(":focus-within"),
+            "mobile CSS contains :focus-within, which crashes on target images"
+        );
     }
+
+    #[test]
+    fn input_frame_uses_border_not_outline() {
+        let css = stylesheet(false);
+        assert!(css.contains("scrolledwindow.atomos-chat-input"));
+        assert!(css.contains("border: 1px solid alpha(#ffffff, 0.22);"));
+    }
+
+    #[test]
+    fn css_disable_flag_defaults_to_off() {
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS");
+        assert!(!custom_css_disabled());
+    }
+
+    #[test]
+    fn css_disable_flag_honors_env() {
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", "1");
+        assert!(custom_css_disabled());
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS");
+    }
+}
+
+pub fn apply_theme_class(win: &adw::ApplicationWindow) {
+    if env_flag_enabled(std::env::var(
+        "ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS",
+    )) {
+        eprintln!("atomos-overview-chat-ui: theme class disabled by env");
+        return;
+    }
+    // Avoid string-typed GObject property access here. Some target stacks emit
+    // unstable GLib errors during early startup when querying settings this way.
+    let prefers_dark = adw::StyleManager::default().is_dark();
+    win.add_css_class(theme_class(prefers_dark));
 }

@@ -17,14 +17,11 @@ Requires-Dist: pydantic>=2.0.0
 Requires-Dist: requests>=2.31.0
 Requires-Dist: aiohttp>=3.9.0
 Requires-Dist: deepagents>=0.4.0
-Requires-Dist: playwright>=1.40.0
 Requires-Dist: keyring>=25.0.0
 Requires-Dist: secretstorage>=3.3.0
 Requires-Dist: cryptography>=42.0.0
 Requires-Dist: deepagents-acp>=0.0.4
-Requires-Dist: arxiv-mcp-server>=0.3.0
 Requires-Dist: chrome-devtools-mcp-fork>=2.0.0
-Requires-Dist: gpt-researcher>=0.9.0
 Requires-Dist: drawio-mcp>=1.0.0
 Requires-Dist: notion-mcp-ldraney>=0.1.13
 Provides-Extra: dev
@@ -32,8 +29,13 @@ Requires-Dist: pytest>=8.0.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
 Provides-Extra: local-browser
 Requires-Dist: browser-use>=0.12.0; extra == "local-browser"
+Requires-Dist: playwright>=1.40.0; extra == "local-browser"
 Provides-Extra: cloud-browser
 Requires-Dist: browser-use-sdk>=3.0.0; extra == "cloud-browser"
+Provides-Extra: research-arxiv
+Requires-Dist: arxiv-mcp-server>=0.3.0; extra == "research-arxiv"
+Provides-Extra: research-web
+Requires-Dist: gpt-researcher>=0.9.0; extra == "research-web"
 
 # Atom OS Agents (`atomos-agents`)
 

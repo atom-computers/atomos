@@ -20,6 +20,12 @@ if [ ! -f "$PROFILE_ENV_SOURCE" ]; then
 fi
 # shellcheck source=/dev/null
 source "$PROFILE_ENV_SOURCE"
+OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-1}"
+case "${PMOS_DEVICE:-}" in
+    qemu-*|qemu_*)
+        OVERVIEW_RUNTIME_DEFAULT=0
+        ;;
+esac
 
 if ! command -v ssh >/dev/null 2>&1; then
     echo "ssh is required." >&2
@@ -66,6 +72,17 @@ resolve_bin_path() {
 reject_glibc_linked_binary() {
     [ "${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK:-0}" = "1" ] && return 0
     local bin="$1"
+    if command -v readelf >/dev/null 2>&1; then
+        local interp
+        interp="$(readelf -l "$bin" 2>/dev/null | sed -n 's/.*Requesting program interpreter: \(.*\)]/\1/p' | head -n 1 || true)"
+        if [ -n "$interp" ] && [ "$interp" != "/lib/ld-musl-aarch64.so.1" ]; then
+            echo "ERROR: binary interpreter is not musl: $interp" >&2
+            echo "  Expected: /lib/ld-musl-aarch64.so.1" >&2
+            echo "  Build the musl artifact: bash $ROOT_DIR/scripts/overview-chat-ui/build-overview-chat-ui.sh $PROFILE_ENV_SOURCE" >&2
+            echo "  Override (not for pmOS): ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK=1" >&2
+            exit 1
+        fi
+    fi
     if ! command -v file >/dev/null 2>&1; then
         echo "WARN: 'file' not installed; cannot verify binary is musl-safe for pmOS." >&2
         return 0
@@ -120,8 +137,9 @@ REMOTE_TMP_DIR="${ATOMOS_OVERVIEW_CHAT_UI_REMOTE_TMP:-/tmp/atomos-overview-chat-
 REMOTE_SUDO="${ATOMOS_OVERVIEW_CHAT_UI_REMOTE_SUDO:-sudo}"
 REMOTE_SUDO_PASSWORD="${ATOMOS_OVERVIEW_CHAT_UI_REMOTE_SUDO_PASSWORD:-$SSH_PASSWORD}"
 # BusyBox/proc comm name can be truncated, making `pkill -x atomos-overview-chat-ui`
-# a no-op. Match by executable path so hotfix always restarts the real process.
-REMOTE_RESTART_CMD="${ATOMOS_OVERVIEW_CHAT_UI_RESTART_CMD:-pkill -f /usr/local/bin/atomos-overview-chat-ui || true}"
+# a no-op. Match by executable path. Use [a] to avoid matching the restart shell's
+# own command line, which can terminate the installer with SIGTERM (exit 143).
+REMOTE_RESTART_CMD="${ATOMOS_OVERVIEW_CHAT_UI_RESTART_CMD:-pkill -f /usr/local/bin/[a]tomos-overview-chat-ui || true}"
 
 tmpdir="$(mktemp -d)"
 cleanup() {
@@ -143,12 +161,25 @@ BIN="/usr/local/bin/atomos-overview-chat-ui"
 # Default to non-layer mode for QEMU/older compositor stability.
 # Set ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL=1 to opt into layer-shell.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL:-0}"
-# Default to touch-dismiss enabled in packaged runtime; set to 0 to disable.
-export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-1}"
+# Touch-dismiss can trigger compositor/input-stack instability on some phones.
+# Keep disabled by default; set to 1 to opt in.
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-0}"
 export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-1}"
+# Safety fallback: some target GTK stacks crash while parsing advanced CSS.
+# Set to 0 to re-enable themed CSS after confirming target stability.
+export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS:-1}"
+# QEMU/virt stacks can crash GTK4 GL renderers very early; prefer software cairo.
+export GDK_BACKEND="${GDK_BACKEND:-wayland}"
+export GSK_RENDERER="${ATOMOS_OVERVIEW_CHAT_UI_GSK_RENDERER:-cairo}"
+export LIBGL_ALWAYS_SOFTWARE="${ATOMOS_OVERVIEW_CHAT_UI_LIBGL_ALWAYS_SOFTWARE:-1}"
+# Additional safety defaults for unstable target stacks.
+export ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE="${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE:-1}"
+export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
 # Phosh runs this as the logged-in user; /run/ is root-only. Use the session dir.
 PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.pid"
 LOGFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.log"
+DISABLE_FILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.disabled"
 
 is_running() {
     [ -f "$PIDFILE" ] || return 1
@@ -165,11 +196,20 @@ start_ui() {
     if is_running; then
         return 0
     fi
+    if [ -f "$DISABLE_FILE" ]; then
+        logger -t atomos-overview-chat-ui "runtime disabled by marker file: $DISABLE_FILE"
+        return 0
+    fi
     (
         printf '%s\n' "---- $(date) ----"
         set +e
         "$BIN"
         rc=$?
+        if [ "$rc" -eq 127 ]; then
+            # "command not found"/loader failure class; avoid restart loops.
+            : > "$DISABLE_FILE"
+            logger -t atomos-overview-chat-ui "binary exec failed rc=127; wrote disable marker $DISABLE_FILE"
+        fi
         logger -t atomos-overview-chat-ui "process-exit rc=$rc"
         exit "$rc"
     ) >>"$LOGFILE" 2>&1 &
@@ -198,6 +238,10 @@ stop_ui() {
 
 case "${1:-}" in
     --show)
+        if [ "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1}" != "1" ]; then
+            logger -t atomos-overview-chat-ui "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
+            exit 0
+        fi
         logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} runtime=${XDG_RUNTIME_DIR:-<unset>}"
         start_ui
         ;;
@@ -213,6 +257,7 @@ case "${1:-}" in
         ;;
 esac
 EOF
+sed -i "s/__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__/${OVERVIEW_RUNTIME_DEFAULT}/g" "$tmpdir/atomos-overview-chat-ui-launcher"
 
 if [ "$SKIP_BIN_INSTALL" != "1" ]; then
     cp "$BIN_PATH" "$tmpdir/atomos-overview-chat-ui-bin"
@@ -267,17 +312,36 @@ rm -rf "$REMOTE_TMP_DIR"
 EOF
 )"
 
+REMOTE_INSTALL_BASENAME="atomos-overview-chat-ui-install.sh"
+REMOTE_INSTALL_PATH="$tmpdir/$REMOTE_INSTALL_BASENAME"
+printf '%s\n' "$REMOTE_INSTALL_SCRIPT" > "$REMOTE_INSTALL_PATH"
+chmod 700 "$REMOTE_INSTALL_PATH"
+
 echo "Installing hotfix payload on device..."
 install_rc=0
 if [ -n "$REMOTE_SUDO" ]; then
     if [ -n "${REMOTE_SUDO_PASSWORD:-}" ]; then
-        REMOTE_INSTALL_STDIN="$(printf '%s\n%s' "$REMOTE_SUDO_PASSWORD" "$REMOTE_INSTALL_SCRIPT")"
-        "${SSH_CMD[@]}" "$SSH_TARGET" "$REMOTE_SUDO" -S -- /bin/sh -eu -s <<<"$REMOTE_INSTALL_STDIN" || install_rc=$?
+        if [ "$SKIP_BIN_INSTALL" = "1" ]; then
+            "${SCP_CMD[@]}" "$REMOTE_INSTALL_PATH" "$SSH_TARGET:$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME"
+        else
+            "${SCP_CMD[@]}" "$REMOTE_INSTALL_PATH" "$SSH_TARGET:$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME"
+        fi
+        "${SSH_CMD[@]}" "$SSH_TARGET" "printf '%s\n' $(shell_quote_sq "$REMOTE_SUDO_PASSWORD") | $REMOTE_SUDO -S -p '' -k -- /bin/sh -eu '$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME'" || install_rc=$?
     else
-        "${SSH_CMD[@]}" "$SSH_TARGET" "$REMOTE_SUDO" -- /bin/sh -eu -s <<<"$REMOTE_INSTALL_SCRIPT" || install_rc=$?
+        if [ "$SKIP_BIN_INSTALL" = "1" ]; then
+            "${SCP_CMD[@]}" "$REMOTE_INSTALL_PATH" "$SSH_TARGET:$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME"
+        else
+            "${SCP_CMD[@]}" "$REMOTE_INSTALL_PATH" "$SSH_TARGET:$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME"
+        fi
+        "${SSH_CMD[@]}" "$SSH_TARGET" "$REMOTE_SUDO" -- /bin/sh -eu "$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME" || install_rc=$?
     fi
 else
-    "${SSH_CMD[@]}" "$SSH_TARGET" /bin/sh -eu -s <<<"$REMOTE_INSTALL_SCRIPT" || install_rc=$?
+    if [ "$SKIP_BIN_INSTALL" = "1" ]; then
+        "${SCP_CMD[@]}" "$REMOTE_INSTALL_PATH" "$SSH_TARGET:$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME"
+    else
+        "${SCP_CMD[@]}" "$REMOTE_INSTALL_PATH" "$SSH_TARGET:$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME"
+    fi
+    "${SSH_CMD[@]}" "$SSH_TARGET" /bin/sh -eu "$REMOTE_TMP_DIR/$REMOTE_INSTALL_BASENAME" || install_rc=$?
 fi
 
 if [ "$install_rc" -ne 0 ]; then

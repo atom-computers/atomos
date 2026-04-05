@@ -32,6 +32,12 @@ LOCK_PARITY="${ATOMOS_LOCK_PARITY:-${PMOS_LOCK_PARITY:-1}}"
 if [ "$LOCK_PARITY" != "0" ]; then
     LOCK_PARITY=1
 fi
+OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-1}"
+case "${PMOS_DEVICE:-}" in
+    qemu-*|qemu_*)
+        OVERVIEW_RUNTIME_DEFAULT=0
+        ;;
+esac
 
 echo "Applying mobile Phosh overlay via chroot..."
 echo "  lock parity layer: $LOCK_PARITY"
@@ -132,10 +138,25 @@ BIN="/usr/local/bin/atomos-overview-chat-ui"
 # Default to non-layer mode for QEMU/older compositor stability.
 # Set ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL=1 to opt into layer-shell.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL:-0}"
+# Touch-dismiss can trigger compositor/input-stack instability on some phones.
+# Keep disabled by default; set to 1 to opt in.
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-0}"
 export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-1}"
+# Safety fallback: some target GTK stacks crash while parsing advanced CSS.
+# Set to 0 to re-enable themed CSS after confirming target stability.
+export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS:-1}"
+# QEMU/virt stacks can crash GTK4 GL renderers very early; prefer software cairo.
+export GDK_BACKEND="${GDK_BACKEND:-wayland}"
+export GSK_RENDERER="${ATOMOS_OVERVIEW_CHAT_UI_GSK_RENDERER:-cairo}"
+export LIBGL_ALWAYS_SOFTWARE="${ATOMOS_OVERVIEW_CHAT_UI_LIBGL_ALWAYS_SOFTWARE:-1}"
+# Additional safety defaults for unstable target stacks.
+export ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE="${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE:-1}"
+export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
 # Phosh runs this as the logged-in user; /run/ is root-only. Use the session dir.
 PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.pid"
 LOGFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.log"
+DISABLE_FILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.disabled"
 
 is_running() {
     [ -f "$PIDFILE" ] || return 1
@@ -152,11 +173,20 @@ start_ui() {
     if is_running; then
         return 0
     fi
+    if [ -f "$DISABLE_FILE" ]; then
+        logger -t atomos-overview-chat-ui "runtime disabled by marker file: $DISABLE_FILE"
+        return 0
+    fi
     (
         printf '%s\n' "---- $(date) ----"
         set +e
         "$BIN"
         rc=$?
+        if [ "$rc" -eq 127 ]; then
+            # "command not found"/loader failure class; avoid restart loops.
+            : > "$DISABLE_FILE"
+            logger -t atomos-overview-chat-ui "binary exec failed rc=127; wrote disable marker $DISABLE_FILE"
+        fi
         logger -t atomos-overview-chat-ui "process-exit rc=$rc"
         exit "$rc"
     ) >>"$LOGFILE" 2>&1 &
@@ -185,6 +215,10 @@ stop_ui() {
 
 case "${1:-}" in
     --show)
+        if [ "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1}" != "1" ]; then
+            logger -t atomos-overview-chat-ui "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
+            exit 0
+        fi
         logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} runtime=${XDG_RUNTIME_DIR:-<unset>}"
         start_ui
         ;;
@@ -204,6 +238,7 @@ chmod 755 /usr/libexec/atomos-overview-chat-ui
 '
 
 OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__LOCK_PARITY__/$LOCK_PARITY}"
+OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__/$OVERVIEW_RUNTIME_DEFAULT}"
 
 if [ "${ATOMOS_OVERLAY_DUMP_ONLY:-0}" = "1" ]; then
     printf '%s\n' "$OVERLAY_SCRIPT"

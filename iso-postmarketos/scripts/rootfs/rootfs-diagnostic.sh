@@ -57,6 +57,25 @@ else
         fi
     done
 fi
+echo "--- package ownership / policies ---"
+if command -v apk >/dev/null 2>&1; then
+    for p in /usr/bin/phosh /usr/libexec/phosh; do
+        if [ -e "$p" ]; then
+            echo "apk info -W $p"
+            apk info -W "$p" 2>&1 || true
+        fi
+    done
+    echo "apk policy phosh phosh-mobile-settings feedbackd"
+    apk policy phosh phosh-mobile-settings feedbackd 2>&1 || true
+else
+    echo "(apk not present)"
+fi
+echo "--- diagnostic tools ---"
+if command -v rg >/dev/null 2>&1; then
+    echo "rg present: $(command -v rg)"
+else
+    echo "rg missing (install ripgrep for log filtering)"
+fi
 echo "--- /etc/atomos/phosh-profile.env ---"
 if [ -f /etc/atomos/phosh-profile.env ]; then
     cat /etc/atomos/phosh-profile.env

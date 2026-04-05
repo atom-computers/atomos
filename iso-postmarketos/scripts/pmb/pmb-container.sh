@@ -35,12 +35,17 @@ fi
 
 "$ENGINE" build -t "$IMAGE_TAG" -f "$ROOT_DIR/docker/pmbootstrap.Dockerfile" "$ROOT_DIR/docker" >/dev/null
 mkdir -p "$HOST_HOME_DIR"
+WORK_MOUNT_ARGS=()
+if [ -n "${PMB_WORK_OVERRIDE:-}" ] && [[ "$PMB_WORK_OVERRIDE" = /* ]] && [ -d "$PMB_WORK_OVERRIDE" ]; then
+    WORK_MOUNT_ARGS+=(-v "$PMB_WORK_OVERRIDE:$PMB_WORK_OVERRIDE")
+fi
 
 if [ "${PMB_CONTAINER_AS_ROOT:-0}" = "1" ]; then
     exec "$ENGINE" run --rm -i \
         --privileged \
         -v "$ROOT_DIR":/work \
         -v "$HOST_HOME_DIR":"$CONTAINER_HOME_DIR" \
+        "${WORK_MOUNT_ARGS[@]}" \
         -w /work \
         -e HOME="$CONTAINER_HOME_DIR" \
         -e PMB_WORK_OVERRIDE="${PMB_WORK_OVERRIDE:-}" \
@@ -61,6 +66,7 @@ else
         --user "$UID_GID" \
         -v "$ROOT_DIR":/work \
         -v "$HOST_HOME_DIR":"$CONTAINER_HOME_DIR" \
+        "${WORK_MOUNT_ARGS[@]}" \
         -w /work \
         -e HOME="$CONTAINER_HOME_DIR" \
         -e PMB_WORK_OVERRIDE="${PMB_WORK_OVERRIDE:-}" \

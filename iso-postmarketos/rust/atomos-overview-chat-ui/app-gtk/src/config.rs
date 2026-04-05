@@ -4,6 +4,8 @@ use gtk::gdk::prelude::MonitorExt;
 use gtk::gio::prelude::ListModelExt;
 use gtk::glib::prelude::Cast;
 
+use crate::logic::{env_flag_enabled, parse_bool_env_value, resolve_desktop_like_mode};
+
 pub const WIDTH_REQUEST: i32 = 640;
 /// Large monitor (desktop / laptop): tall window and visible chrome.
 pub const HEIGHT_DESKTOP_LIKE: i32 = 420;
@@ -13,27 +15,25 @@ pub const HEIGHT_OVERLAY_STRIP: i32 = 120;
 pub const INPUT_VERTICAL_INSET_PX: i32 = 20;
 
 pub fn layer_shell_enabled() -> bool {
-    matches!(
-        std::env::var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL").as_deref(),
-        Ok("1")
-    )
+    env_flag_enabled(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL"))
 }
 
 pub fn touch_dismiss_enabled() -> bool {
-    matches!(
-        std::env::var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS").as_deref(),
-        Ok("1")
-    )
+    env_flag_enabled(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS"))
 }
 
 /// Use GDK primary/largest monitor geometry (logical px). Phones stay in strip mode.
 pub fn session_looks_like_desktop() -> bool {
-    let Some((w, h)) = largest_monitor_size_logical() else {
+    if env_flag_enabled(std::env::var(
+        "ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE",
+    )) {
         return false;
-    };
-    let lo = w.min(h);
-    let hi = w.max(h);
-    lo >= 600 && hi >= 900
+    }
+    resolve_desktop_like_mode(desktop_like_override(), largest_monitor_size_logical())
+}
+
+fn desktop_like_override() -> Option<bool> {
+    parse_bool_env_value(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE"))
 }
 
 fn largest_monitor_size_logical() -> Option<(i32, i32)> {
@@ -58,4 +58,54 @@ fn largest_monitor_size_logical() -> Option<(i32, i32)> {
         }
     }
     best
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{desktop_like_override, layer_shell_enabled, touch_dismiss_enabled};
+
+    #[test]
+    fn desktop_like_override_unset() {
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE");
+        assert_eq!(desktop_like_override(), None);
+    }
+
+    #[test]
+    fn desktop_like_override_true() {
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE", "1");
+        assert_eq!(desktop_like_override(), Some(true));
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE");
+    }
+
+    #[test]
+    fn desktop_like_override_false() {
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE", "0");
+        assert_eq!(desktop_like_override(), Some(false));
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE");
+    }
+
+    #[test]
+    fn layer_shell_enabled_honors_flag() {
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL", "1");
+        assert!(layer_shell_enabled());
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL", "0");
+        assert!(!layer_shell_enabled());
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL");
+    }
+
+    #[test]
+    fn touch_dismiss_enabled_honors_flag() {
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS", "1");
+        assert!(touch_dismiss_enabled());
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS", "0");
+        assert!(!touch_dismiss_enabled());
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS");
+    }
+
+    #[test]
+    fn skip_monitor_probe_forces_mobile_mode() {
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE", "1");
+        assert!(!session_looks_like_desktop());
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE");
+    }
 }

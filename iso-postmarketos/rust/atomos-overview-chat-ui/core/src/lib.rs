@@ -75,6 +75,11 @@ mod tests {
     }
 
     #[test]
+    fn line_count_trailing_newline_matches_lines_behavior() {
+        assert_eq!(line_count("hello\n"), 1);
+    }
+
+    #[test]
     fn layout_clamps_to_min_line() {
         let state = layout_state_for_text("");
         assert_eq!(state.visible_lines, MIN_LINES);
@@ -118,6 +123,14 @@ mod tests {
     }
 
     #[test]
+    fn enter_action_preserves_internal_newlines_on_submit() {
+        assert_eq!(
+            enter_action("hello\nworld", false),
+            EnterKeyAction::Submit("hello\nworld".to_string())
+        );
+    }
+
+    #[test]
     fn parse_lifecycle_show() {
         assert_eq!(parse_lifecycle_action(Some("--show")), "--show");
     }
@@ -131,5 +144,10 @@ mod tests {
     fn parse_lifecycle_default_run() {
         assert_eq!(parse_lifecycle_action(None), "run");
         assert_eq!(parse_lifecycle_action(Some("--unknown")), "run");
+    }
+
+    #[test]
+    fn parse_lifecycle_empty_arg_defaults_run() {
+        assert_eq!(parse_lifecycle_action(Some("")), "run");
     }
 }

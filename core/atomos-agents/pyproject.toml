@@ -22,11 +22,6 @@ dependencies = [
     "requests>=2.31.0",
     "aiohttp>=3.9.0",
     "deepagents>=0.4.0",
-    # playwright provides the Chromium binary via `playwright install chromium`.
-    # browser-use v0.12+ uses cdp-use instead of playwright at runtime, but
-    # the playwright-managed Chromium binary is still the easiest way to get a
-    # known-good browser on the ISO.
-    "playwright>=1.40.0",
     # Secret storage — secretstorage talks to gnome-keyring via D-Bus on AtomOS
     "keyring>=25.0.0",
     "secretstorage>=3.3.0",
@@ -35,17 +30,10 @@ dependencies = [
     # ACP runtime for Zed/editor integrations (`from acp import ...`).
     # This package provides the `acp` Python module used by src/acp_server.py.
     "deepagents-acp>=0.0.4",
-    # arXiv research tools — imported as a library, not run as a server.
-    # Brings in arxiv, httpx, pymupdf4llm, and the mcp SDK transitively.
-    "arxiv-mcp-server>=0.3.0",
     # Chrome DevTools Protocol tools — imported as a library for browser
     # debugging (network, console, DOM, JS execution).  Coordinates with
     # browser-use via the same CDP port; no separate server process.
     "chrome-devtools-mcp-fork>=2.0.0",
-    # GPT Researcher — autonomous research agent.  Imported as a library;
-    # the agent calls conduct_research() + write_report() directly.
-    # Requires OPENAI_API_KEY and TAVILY_API_KEY at runtime.
-    "gpt-researcher>=0.9.0",
     # Draw.io diagram tools — imported as a library for programmatic
     # diagram creation (flowcharts, UML, ER, C4, architecture, etc.).
     # No subprocess server; functions called directly in-process.
@@ -67,11 +55,24 @@ local-browser = [
     # second pip install (atomos-agents) upgrades anthropic from the
     # 0.76.0 pin to >=0.78.0.  See install-atomos-agents.sh.
     "browser-use>=0.12.0",
+    # Optional browser binary manager. Kept out of base deps because
+    # musllinux/aarch64 wheels are not consistently available.
+    "playwright>=1.40.0",
 ]
 cloud-browser = [
     # Browser Use Cloud — primary browser backend when ~/.browser_use key exists.
     # v3.x is the current stable; v2 default import path is used.
     "browser-use-sdk>=3.0.0"
+]
+research-arxiv = [
+    # arXiv research tools — optional because transitive deps (e.g. pymupdf)
+    # may require native toolchains/libclang on musl targets.
+    "arxiv-mcp-server>=0.3.0",
+]
+research-web = [
+    # GPT Researcher — optional because its dependency stack can require
+    # heavyweight native builds on musl targets.
+    "gpt-researcher>=0.9.0",
 ]
 
 [tool.atomos.security]

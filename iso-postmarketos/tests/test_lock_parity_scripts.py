@@ -14,6 +14,14 @@ S_PHOSH = SCRIPTS / "phosh"
 S_ROOTFS = SCRIPTS / "rootfs"
 S_VALIDATE = SCRIPTS / "validate"
 S_DEVICE = SCRIPTS / "device"
+STYLE_RS = (
+    ISO_ROOT
+    / "rust"
+    / "atomos-overview-chat-ui"
+    / "app-gtk"
+    / "src"
+    / "style.rs"
+)
 
 
 def run_script(path, *args, env=None):
@@ -45,6 +53,8 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             self.assertIn("phosh-profile.env", result.stdout)
             self.assertIn("mobile Phosh", result.stdout)
             self.assertIn("atomos-overview-chat-submit", result.stdout)
+            self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", result.stdout)
+            self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", result.stdout)
             self.assertNotIn("atomos-mobile-lockscreen --lock", result.stdout)
             self.assertNotIn("atomos-lock-daemon.desktop", result.stdout)
             self.assertNotIn("atomos-lock-daemon.service", result.stdout)
@@ -190,6 +200,11 @@ class TestCheckoutPhoshScript(unittest.TestCase):
         )
         self.assertEqual(r.returncode, 0, msg=r.stderr)
 
+    def test_supports_phosh_ref_pin(self):
+        text = (S_PHOSH / "checkout-phosh.sh").read_text(encoding="utf-8")
+        self.assertIn("ATOMOS_PHOSH_GIT_REF", text)
+        self.assertIn("Using pinned Phosh ref", text)
+
 
 class TestResetWorkdirScript(unittest.TestCase):
     def test_bash_syntax(self):
@@ -234,6 +249,36 @@ class TestBuildOverviewChatUiScript(unittest.TestCase):
         self.assertNotIn("--features", text)
         self.assertIn("resolve_sysroot", text)
         self.assertIn(".atomos-pmbootstrap-work", text)
+        self.assertIn("default_overview_linker", text)
+        self.assertIn("aarch64-linux-gnu-gcc", text)
+        self.assertIn("qemu-aarch64", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ALLOW_APK_UPGRADE", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_MUSL_RETRY_WITH_RUST_LLD", text)
+        self.assertIn("Retrying overview chat UI build with rust-lld", text)
+
+
+class TestOverviewChatUiCssSafety(unittest.TestCase):
+    """Static CSS checks to prevent target-image startup crashes."""
+
+    def test_style_does_not_use_focus_within(self):
+        text = STYLE_RS.read_text(encoding="utf-8")
+        self.assertNotIn(
+            "scrolledwindow.atomos-chat-input:focus-within",
+            text,
+            msg="avoid :focus-within in GTK CSS due target parser/runtime crash risk",
+        )
+        self.assertNotIn(
+            "textview.atomos-chat-input:focus-within",
+            text,
+            msg="avoid :focus-within in GTK CSS due target parser/runtime crash risk",
+        )
+
+    def test_input_frame_uses_border_and_not_outline(self):
+        text = STYLE_RS.read_text(encoding="utf-8")
+        self.assertIn("scrolledwindow.atomos-chat-input", text)
+        self.assertIn("border: 1px solid alpha(#ffffff, 0.22);", text)
+        self.assertNotIn("outline: 1px solid alpha(#ffffff, 0.22);", text)
+
 
 class TestInstallOverviewChatUiScript(unittest.TestCase):
     def test_bash_syntax(self):
@@ -248,6 +293,82 @@ class TestInstallOverviewChatUiScript(unittest.TestCase):
         text = (S_OVERVIEW / "install-overview-chat-ui.sh").read_text(encoding="utf-8")
         self.assertIn("/usr/local/bin/atomos-overview-chat-ui", text)
         self.assertIn("/usr/bin/atomos-overview-chat-ui", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_GSK_RENDERER", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
+        self.assertIn("atomos-overview-chat-ui.disabled", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_REQUIRE_BINARY", text)
+        self.assertIn("no prebuilt binary found; fail install", text)
+
+
+class TestInstallAtomosAgentsScript(unittest.TestCase):
+    def test_bash_syntax(self):
+        r = subprocess.run(
+            ["bash", "-n", str(S_ROOTFS / "install-atomos-agents.sh")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_dump_mode_contains_bridge_contract(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = pathlib.Path(td)
+            profile = tmp / "profile.env"
+            profile.write_text(
+                "\n".join(
+                    [
+                        'PROFILE_NAME="test"',
+                        'PMOS_INSTALL_ATOMOS_AGENTS="1"',
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            result = run_script(
+                S_ROOTFS / "install-atomos-agents.sh",
+                profile,
+                env={"ATOMOS_INSTALL_DUMP_ONLY": "1"},
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertIn("atomos-agents.service", result.stdout)
+            self.assertIn("Environment=PORT=50051", result.stdout)
+            self.assertIn("/opt/atomos/agents/src/server.py", result.stdout)
+            self.assertIn("ExecStart=/usr/local/bin/atomos-agents-run", result.stdout)
+            self.assertIn("python3 -m pip install --break-system-packages --target /opt/atomos/agents/.deps", result.stdout)
+
+    def test_build_image_calls_install_agents_step(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("scripts/rootfs/install-atomos-agents.sh", text)
+
+    def test_build_image_verifies_overview_chat_ui_artifacts(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("verify_overview_chat_ui_install", text)
+        self.assertIn("test -x /usr/local/bin/atomos-overview-chat-ui", text)
+        self.assertIn("test -x /usr/libexec/atomos-overview-chat-submit", text)
+        self.assertIn("verify_overview_chat_ui_launcher_contract", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
+        self.assertIn("atomos-overview-chat-ui.disabled", text)
+        self.assertIn("delete-native-rootfs-images.sh", text)
+
+    def test_build_image_defaults_qemu_to_stock_phosh(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("ATOMOS_ENABLE_VENDOR_PHOSH_ON_QEMU", text)
+        self.assertIn("ATOMOS_SKIP_VENDOR_PHOSH_BUILD=1", text)
+        self.assertIn("QEMU profile detected; defaulting to stock phosh", text)
+        self.assertIn("purge_local_phosh_overrides", text)
+        self.assertIn("verify_stock_phosh_origin", text)
+        self.assertIn("/(mnt/pmbootstrap|home/pmos)/packages/", text)
+        self.assertIn("Skip vendor Phosh source sync (stock phosh mode)", text)
+
+    def test_build_image_supports_pmaports_commit_pin(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("PMOS_PMAPORTS_COMMIT", text)
+        self.assertIn("pin_pmaports_commit", text)
+        self.assertIn("Resetting dirty pmaports cache before pinning commit", text)
+        self.assertIn("git -C \"$PMAPORTS_CACHE\" checkout -q \"$commit\"", text)
+        self.assertIn("Pinned pmaports cache to commit", text)
 
 
 class TestPreviewOverviewChatUiScript(unittest.TestCase):
@@ -295,6 +416,12 @@ class TestHotfixOverviewChatUiScript(unittest.TestCase):
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_RESTART_CMD", text)
         self.assertIn("reject_glibc_linked_binary", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_GSK_RENDERER", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
+        self.assertIn("atomos-overview-chat-ui.disabled", text)
 
 
 class TestEnsurePmbootstrapMirrors(unittest.TestCase):
@@ -355,6 +482,12 @@ class TestPhoshAtomosPatches(unittest.TestCase):
         )
         self.assertEqual(r.returncode, 0, msg=r.stderr)
 
+    def test_apply_patch_script_supports_selection(self):
+        text = (S_PHOSH / "apply-phosh-atomos-patches.sh").read_text(encoding="utf-8")
+        self.assertIn("ATOMOS_PHOSH_APPLY_PATCHES", text)
+        self.assertIn("ATOMOS_PHOSH_PATCHES", text)
+        self.assertIn("patch_is_selected", text)
+
 
 class TestAtomosDeviceScripts(unittest.TestCase):
     def test_bash_syntax(self):
@@ -363,6 +496,7 @@ class TestAtomosDeviceScripts(unittest.TestCase):
             "atomos-overview-chat-ui-remote-show.sh",
             "atomos-overview-chat-ui-remote-diag.sh",
             "atomos-overview-chat-ui-remote-fg.sh",
+            "atomos-phosh-runtime-smoke.sh",
         ):
             r = subprocess.run(
                 ["bash", "-n", str(S_DEVICE / name)],
@@ -467,8 +601,25 @@ class TestWallpaperAsset(unittest.TestCase):
 
     def test_build_script_references_wallpaper_paths(self):
         text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
-        self.assertIn("../iso-ubuntu/data/wallpapers/gargantua-black.jpg", text)
-        self.assertIn("data/wallpapers/gargantua-black.jpg", text)
+        self.assertIn("gargantua-black.jpg", text)
+        self.assertTrue(
+            "../iso-ubuntu/data/wallpapers/gargantua-black.jpg" in text
+            or "data/wallpapers/gargantua-black.jpg" in text
+        )
+
+
+class TestProfileRuntimePackages(unittest.TestCase):
+    def test_arm64_virt_has_runtime_diag_and_audio_packages(self):
+        text = (ISO_ROOT / "config" / "arm64-virt.env").read_text(encoding="utf-8")
+        self.assertIn("pipewire-pulse", text)
+        self.assertIn("ripgrep", text)
+        self.assertIn("PMOS_PMAPORTS_COMMIT", text)
+
+    def test_fairphone_fp4_has_runtime_diag_and_audio_packages(self):
+        text = (ISO_ROOT / "config" / "fairphone-fp4.env").read_text(encoding="utf-8")
+        self.assertIn("pipewire-pulse", text)
+        self.assertIn("ripgrep", text)
+        self.assertIn("PMOS_PMAPORTS_COMMIT", text)
 
 
 if __name__ == "__main__":

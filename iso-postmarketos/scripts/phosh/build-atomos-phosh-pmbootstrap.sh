@@ -95,6 +95,30 @@ phosh_apkbuild_path() {
     return 1
 }
 
+ensure_writable_pmaports_cache() {
+    local cache="$1"
+    [ -d "$cache" ] || return 0
+    # Container-root pmbootstrap operations can leave cache_git files owned by root
+    # on the host mount. Ensure local patching steps can update APKBUILD.
+    local candidate=""
+    local d
+    for d in temp main community testing; do
+        if [ -f "$cache/$d/phosh/APKBUILD" ]; then
+            candidate="$cache/$d/phosh/APKBUILD"
+            break
+        fi
+    done
+    if [ -n "$candidate" ] && [ -w "$candidate" ]; then
+        return 0
+    fi
+    echo "Fixing ownership for pmaports cache: $cache"
+    if command -v sudo >/dev/null 2>&1; then
+        sudo chown -R "$(id -u):$(id -g)" "$cache"
+    else
+        chown -R "$(id -u):$(id -g)" "$cache"
+    fi
+}
+
 ensure_phosh_apkbuild_maintainer() {
     local apkbuild_path="$1"
     local maint="${ATOMOS_APKBUILD_MAINTAINER:-AtomOS Build <george@atomcomputers.org>}"
@@ -297,6 +321,7 @@ if ! phosh_apkbuild_in_pmaports "$PMAPORTS_CACHE"; then
         exit 1
     fi
 fi
+ensure_writable_pmaports_cache "$PMAPORTS_CACHE"
 
 PHOSH_APKBUILD_PATH="$(phosh_apkbuild_path "$PMAPORTS_CACHE")"
 if [ -z "$PHOSH_APKBUILD_PATH" ]; then

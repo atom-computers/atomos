@@ -78,12 +78,12 @@ if command -v apk >/dev/null 2>&1; then
 fi
 
 if ! command -v gsettings >/dev/null 2>&1; then
-    echo "ERROR: gsettings not in chroot after apk (need glib); cannot set wallpaper" >&2
-    exit 1
+    echo "WARN: gsettings not in chroot after apk (need glib); skipping wallpaper dconf apply" >&2
+    exit 0
 fi
 if ! command -v dbus-run-session >/dev/null 2>&1; then
-    echo "ERROR: dbus-run-session not in chroot after apk (need dbus); cannot set wallpaper" >&2
-    exit 1
+    echo "WARN: dbus-run-session not in chroot after apk (need dbus); skipping wallpaper dconf apply" >&2
+    exit 0
 fi
 
 URI="file://$WALL"
@@ -168,8 +168,8 @@ if [ "${ATOMOS_WALLPAPER_DCONF_SKEL:-1}" = "1" ]; then
 fi
 
 if [ "$ok" -eq 0 ]; then
-    echo "ERROR: could not apply gsettings (no uid 10000, no user, skel failed?)" >&2
-    exit 1
+    echo "WARN: could not apply wallpaper gsettings (no uid 10000, no user, skel failed?)" >&2
+    exit 0
 fi
 INNER
 )

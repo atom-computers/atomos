@@ -64,6 +64,7 @@ export_btlescan_cross_link_env() {
     if command -v ld.lld >/dev/null 2>&1 || command -v ld64.lld >/dev/null 2>&1; then
         target_rustflags="${target_rustflags} -C link-arg=-fuse-ld=lld"
     fi
+    target_rustflags="${target_rustflags} -C link-arg=--sysroot=${sysroot}"
     target_rustflags="${target_rustflags} -C link-arg=-Wl,-rpath-link,${sysroot}/usr/lib"
     target_rustflags="${target_rustflags} -C link-arg=-Wl,-rpath-link,${sysroot}/lib"
     target_rustflags="${target_rustflags} -C link-arg=-lm"
@@ -161,7 +162,19 @@ ensure_target_dbus_pkgconfig() {
 build_btlescan() {
     mkdir -p "$BTLESCAN_ROOT"
     ensure_target_dbus_pkgconfig
-    if command -v cargo >/dev/null 2>&1; then
+    local use_host_cargo=1
+    # In containerized pmbootstrap flows, host cargo can be too old for upstream
+    # lockfile formats (e.g. lock v4). Prefer reproducible container builds.
+    if [ "${PMB_USE_CONTAINER:-0}" = "1" ] && [ "${ATOMOS_BTLESCAN_ALLOW_HOST_CARGO_IN_CONTAINER_MODE:-0}" != "1" ]; then
+        use_host_cargo=0
+    fi
+    # On Debian/Ubuntu hosts, host-side cross links can pick glibc aarch64 libs
+    # (e.g. /lib/aarch64-linux-gnu) instead of the pmOS musl sysroot.
+    # Prefer the dedicated container path there.
+    if ! command -v apk >/dev/null 2>&1; then
+        use_host_cargo=0
+    fi
+    if [ "$use_host_cargo" = "1" ] && command -v cargo >/dev/null 2>&1; then
         ensure_alpine_build_deps
         if command -v rustup >/dev/null 2>&1; then
             rustup target add "$RUST_TARGET" >/dev/null 2>&1 || true
@@ -223,6 +236,7 @@ if [ -n "${PMB_WORK_OVERRIDE:-}" ] && [ -n "${ROOTFS_CHROOT_NAME:-}" ]; then
         if command -v ld.lld >/dev/null 2>&1 || command -v ld64.lld >/dev/null 2>&1; then
             target_rustflags="${target_rustflags} -C link-arg=-fuse-ld=lld"
         fi
+        target_rustflags="${target_rustflags} -C link-arg=--sysroot=${SYSROOT}"
         target_rustflags="${target_rustflags} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib"
         target_rustflags="${target_rustflags} -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
         target_rustflags="${target_rustflags} -C link-arg=-lm"

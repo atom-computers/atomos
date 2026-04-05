@@ -29,6 +29,7 @@ TARGET_TRIPLE="aarch64-unknown-linux-musl"
 PKGCONF_TRIPLE="aarch64-linux-musl"
 BIN_PATH="$CRATE_DIR/target/$TARGET_TRIPLE/release/atomos-overview-chat-ui"
 PMB="$ROOT_DIR/scripts/pmb/pmb.sh"
+PMB_CONTAINER="$ROOT_DIR/scripts/pmb/pmb-container.sh"
 
 pmb() {
     bash "$PMB" "$PROFILE_ENV" "$@"
@@ -86,9 +87,126 @@ fi
 # pmb.sh must use the same work dir as this sysroot (profile env alone may point elsewhere).
 export PMB_WORK_OVERRIDE="$(dirname "$SYSROOT")"
 
-echo "Ensuring GTK/libadwaita dev metadata in target rootfs..."
-pmb chroot -r -- /bin/sh -eu -c \
-    'apk add --no-interactive pkgconf glib-dev gdk-pixbuf-dev pango-dev cairo-dev gtk4.0-dev libadwaita-dev gtk4-layer-shell-dev'
+DEV_APK_ADD_CMD='set -eu;
+apk update;
+if ! apk add --no-interactive pkgconf glib-dev gdk-pixbuf-dev pango-dev cairo-dev graphene-dev libadwaita-dev gtk4-layer-shell-dev gtk4.0-dev; then
+  echo "WARN: apk add failed (likely repo/version skew)." >&2;
+  if [ "${ATOMOS_OVERVIEW_CHAT_UI_ALLOW_APK_UPGRADE:-0}" = "1" ]; then
+    echo "WARN: trying apk upgrade + retry (ATOMOS_OVERVIEW_CHAT_UI_ALLOW_APK_UPGRADE=1)..." >&2;
+    apk upgrade --no-interactive || true;
+  else
+    echo "WARN: skipping apk upgrade by default to avoid mutating runtime package set." >&2;
+    echo "WARN: set ATOMOS_OVERVIEW_CHAT_UI_ALLOW_APK_UPGRADE=1 to opt in." >&2;
+  fi;
+  apk add --no-interactive pkgconf glib-dev gdk-pixbuf-dev pango-dev cairo-dev graphene-dev libadwaita-dev gtk4-layer-shell-dev gtk4.0-dev;
+fi'
+
+has_required_pc_files() {
+    local pc
+    for pc in \
+        "$SYSROOT/usr/lib/pkgconfig/gdk-pixbuf-2.0.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/cairo.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/pango.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/gtk4.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/graphene-gobject-1.0.pc"; do
+        [ -f "$pc" ] || return 1
+    done
+    return 0
+}
+
+print_missing_pc_files() {
+    local pc
+    for pc in \
+        "$SYSROOT/usr/lib/pkgconfig/gdk-pixbuf-2.0.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/cairo.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/pango.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/gtk4.pc" \
+        "$SYSROOT/usr/lib/pkgconfig/graphene-gobject-1.0.pc"; do
+        [ -f "$pc" ] || echo "  missing: $pc" >&2
+    done
+}
+
+ensure_dev_packages_via_container() {
+    if [ ! -x "$PMB_CONTAINER" ]; then
+        return 1
+    fi
+
+    local out rc container_work_override
+    if [ -n "${PMB_WORK:-}" ]; then
+        container_work_override="$PMB_WORK"
+    elif [[ "$PMB_WORK_OVERRIDE" = "$ROOT_DIR"* ]]; then
+        container_work_override=".${PMB_WORK_OVERRIDE#$ROOT_DIR}"
+    else
+        container_work_override="$PMB_WORK_OVERRIDE"
+    fi
+
+    echo "Configuring containerized pmbootstrap target..."
+    PMB_CONTAINER_AS_ROOT=1 PMB_WORK_OVERRIDE="$container_work_override" \
+        bash "$PMB_CONTAINER" "$PROFILE_ENV_SOURCE" config device "$PMOS_DEVICE"
+    if [ -n "${PMOS_UI:-}" ]; then
+        PMB_CONTAINER_AS_ROOT=1 PMB_WORK_OVERRIDE="$container_work_override" \
+            bash "$PMB_CONTAINER" "$PROFILE_ENV_SOURCE" config ui "$PMOS_UI"
+    fi
+
+    echo "Ensuring GTK/libadwaita dev metadata via containerized pmbootstrap..."
+    set +e
+    out="$(PMB_CONTAINER_AS_ROOT=1 PMB_WORK_OVERRIDE="$container_work_override" bash "$PMB_CONTAINER" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$DEV_APK_ADD_CMD" 2>&1)"
+    rc=$?
+    set -e
+    if [ "$rc" -eq 0 ]; then
+        [ -n "$out" ] && printf '%s\n' "$out"
+        return 0
+    fi
+
+    [ -n "$out" ] && printf '%s\n' "$out" >&2
+    case "$out" in
+        *"Did you run 'pmbootstrap init'?"*|*"pmaports dir not found"*|*"Work path not found"*)
+            echo "Container pmbootstrap not initialized yet; running one-time init..." >&2
+            set +e
+            out="$(yes '' | PMB_CONTAINER_AS_ROOT=1 PMB_WORK_OVERRIDE="$container_work_override" bash "$PMB_CONTAINER" "$PROFILE_ENV_SOURCE" --as-root init 2>&1)"
+            rc=$?
+            set -e
+            [ -n "$out" ] && printf '%s\n' "$out" >&2
+            [ "$rc" -eq 0 ] || return 1
+            PMB_CONTAINER_AS_ROOT=1 PMB_WORK_OVERRIDE="$container_work_override" \
+                bash "$PMB_CONTAINER" "$PROFILE_ENV_SOURCE" config device "$PMOS_DEVICE"
+            if [ -n "${PMOS_UI:-}" ]; then
+                PMB_CONTAINER_AS_ROOT=1 PMB_WORK_OVERRIDE="$container_work_override" \
+                    bash "$PMB_CONTAINER" "$PROFILE_ENV_SOURCE" config ui "$PMOS_UI"
+            fi
+            PMB_CONTAINER_AS_ROOT=1 PMB_WORK_OVERRIDE="$container_work_override" bash "$PMB_CONTAINER" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$DEV_APK_ADD_CMD"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+if [ "${ATOMOS_OVERVIEW_CHAT_UI_SKIP_PMB_APK_ADD:-0}" = "1" ]; then
+    echo "Skipping pmbootstrap apk add (ATOMOS_OVERVIEW_CHAT_UI_SKIP_PMB_APK_ADD=1)."
+else
+    echo "Ensuring GTK/libadwaita dev metadata in target rootfs..."
+    if ! pmb chroot -r -- /bin/sh -eu -c "$DEV_APK_ADD_CMD"; then
+        echo "WARN: host pmbootstrap chroot apk step failed." >&2
+        if has_required_pc_files; then
+            echo "Found required pkg-config files in sysroot; continuing." >&2
+        else
+            echo "Required pkg-config files are missing; trying containerized pmbootstrap fallback..." >&2
+            if ! ensure_dev_packages_via_container; then
+                echo "WARN: containerized pmbootstrap fallback failed; continuing with existing sysroot packages." >&2
+                echo "  Set ATOMOS_OVERVIEW_CHAT_UI_SKIP_PMB_APK_ADD=1 to suppress pmbootstrap steps." >&2
+            fi
+        fi
+    fi
+fi
+
+if ! has_required_pc_files; then
+    echo "ERROR: required GTK pkg-config files are still missing in sysroot: $SYSROOT" >&2
+    print_missing_pc_files
+    echo "Run this manually to diagnose package availability in the target rootfs:" >&2
+    echo "  bash \"$PMB\" \"$PROFILE_ENV_SOURCE\" chroot -r -- apk search -x '*gtk*dev' '*graphene*dev' '*libadwaita*dev'" >&2
+    exit 1
+fi
 
 PC_DIRS=()
 [ -d "$SYSROOT/usr/lib/pkgconfig" ] && PC_DIRS+=("$SYSROOT/usr/lib/pkgconfig")
@@ -120,6 +238,23 @@ find_container_engine() {
     fi
 }
 
+default_overview_linker() {
+    # QEMU aarch64 images have shown early startup crashes with rust-lld-linked
+    # gtk/adwaita binaries. Prefer GCC linker there unless explicitly overridden.
+    if [ -n "${ATOMOS_OVERVIEW_CHAT_UI_LINKER:-}" ]; then
+        printf '%s\n' "${ATOMOS_OVERVIEW_CHAT_UI_LINKER}"
+        return 0
+    fi
+    case "${PMOS_DEVICE:-}" in
+        qemu-aarch64|qemu_arm64|qemu-aarch64-*)
+            printf '%s\n' "aarch64-linux-gnu-gcc"
+            ;;
+        *)
+            printf '%s\n' "rust-lld"
+            ;;
+    esac
+}
+
 build_host() {
     if ! command -v cargo >/dev/null 2>&1; then
         return 1
@@ -127,8 +262,27 @@ build_host() {
     if command -v rustup >/dev/null 2>&1; then
         rustup target add "$TARGET_TRIPLE" >/dev/null 2>&1 || true
     fi
+    local debug_flags=""
+    if [ "${ATOMOS_OVERVIEW_CHAT_UI_DEBUG_SYMBOLS:-0}" = "1" ]; then
+        debug_flags=" -C debuginfo=2 -C force-frame-pointers=yes -C strip=none"
+    fi
+    local overview_linker
+    overview_linker="$(default_overview_linker)"
+    local gcc_native_flags=""
+    if [ "$overview_linker" = "rust-lld" ]; then
+        for d in /usr/lib/gcc-cross/aarch64-linux-gnu/* /usr/lib/gcc/aarch64-linux-gnu/*; do
+            [ -d "$d" ] || continue
+            gcc_native_flags="${gcc_native_flags} -L native=${d}"
+        done
+    fi
+    local -a host_env=(
+        "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=$overview_linker"
+    )
+    if [ "$overview_linker" = "rust-lld" ]; then
+        host_env+=("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS=-Clink-self-contained=yes -C target-feature=-crt-static -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/${PKGCONF_TRIPLE}${gcc_native_flags}${debug_flags}")
+    fi
     echo "Building overview chat UI via host cargo (target: $TARGET_TRIPLE)..."
-    cargo build \
+    env "${host_env[@]}" cargo build \
         --manifest-path "$CRATE_DIR/Cargo.toml" \
         -p atomos-overview-chat-ui-app \
         --release \
@@ -160,6 +314,7 @@ build_container() {
         -e PMB_WORK_OVERRIDE="${PMB_WORK_OVERRIDE:-}" \
         -e PROFILE_NAME="${PROFILE_NAME:-}" \
         -e ROOTFS_CHROOT_NAME="${ROOTFS_CHROOT_NAME:-}" \
+        -e ATOMOS_OVERVIEW_CHAT_UI_LINKER="$(default_overview_linker)" \
         -e PKG_CONFIG_ALLOW_CROSS=1 \
         -e TARGET_PKG_CONFIG_ALLOW_CROSS=1 \
         -v "$REPO_ROOT":/work \
@@ -190,12 +345,38 @@ if [ -n "${PMB_WORK_OVERRIDE:-}" ] && [ -n "${PROFILE_NAME:-}" ]; then
         export PKG_CONFIG_SYSROOT_DIR="$SYSROOT"
         export PKG_CONFIG_PATH="$PC_PATH"
         export PKG_CONFIG_LIBDIR="$PC_PATH"
-        export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static"
-        if command -v ld.lld >/dev/null 2>&1 || command -v ld64.lld >/dev/null 2>&1; then
-            export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-fuse-ld=lld"
+        OVERVIEW_LINKER="${ATOMOS_OVERVIEW_CHAT_UI_LINKER:-}"
+        if [ -z "${OVERVIEW_LINKER}" ]; then
+            case "${ROOTFS_CHROOT_NAME:-}" in
+                qemu-aarch64|qemu_arm64|qemu-aarch64-*)
+                    OVERVIEW_LINKER="aarch64-linux-gnu-gcc"
+                    ;;
+                *)
+                    OVERVIEW_LINKER="rust-lld"
+                    ;;
+            esac
         fi
-        export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib"
-        export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
+        OVERVIEW_DEBUG_FLAGS=""
+        if [ "${ATOMOS_OVERVIEW_CHAT_UI_DEBUG_SYMBOLS:-0}" = "1" ]; then
+            OVERVIEW_DEBUG_FLAGS=" -C debuginfo=2 -C force-frame-pointers=yes -C strip=none"
+        fi
+        export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="${OVERVIEW_LINKER}"
+        if [ "${OVERVIEW_LINKER}" = "rust-lld" ]; then
+            GCC_NATIVE_FLAGS=""
+            for d in /usr/lib/gcc-cross/aarch64-linux-gnu/* /usr/lib/gcc/aarch64-linux-gnu/*; do
+                [ -d "$d" ] || continue
+                GCC_NATIVE_FLAGS="${GCC_NATIVE_FLAGS} -L native=${d}"
+            done
+            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -C target-feature=-crt-static -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/'"$PKGCONF_TRIPLE"'${GCC_NATIVE_FLAGS}${OVERVIEW_DEBUG_FLAGS}"
+        else
+            export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static"
+            if command -v ld.lld >/dev/null 2>&1 || command -v ld64.lld >/dev/null 2>&1; then
+                export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-fuse-ld=lld"
+            fi
+            export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib"
+            export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
+            export RUSTFLAGS="${RUSTFLAGS}${OVERVIEW_DEBUG_FLAGS}"
+        fi
         export LIBRARY_PATH="${LIBRARY_PATH:-}${LIBRARY_PATH:+:}${SYSROOT}/usr/lib:${SYSROOT}/lib"
     fi
 fi
@@ -208,15 +389,54 @@ cargo build \
 '
 }
 
-if build_host; then
-    :
-else
+verify_binary_is_musl() {
+    if ! command -v file >/dev/null 2>&1; then
+        echo "WARN: 'file' not installed; cannot verify final binary interpreter." >&2
+        return 0
+    fi
+    local desc
+    desc="$(file -b "$BIN_PATH" 2>/dev/null || true)"
+    if echo "$desc" | grep -qE 'interpreter.*/lib/ld-linux|ld-linux-aarch64'; then
+        echo "ERROR: built binary is glibc-linked (unexpected for $TARGET_TRIPLE)." >&2
+        echo "  file: $BIN_PATH" >&2
+        echo "  meta: $desc" >&2
+        echo "  Check linker config (cargo target linker/env) and rebuild." >&2
+        echo "  Temporary override: ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK=1 (not for pmOS)." >&2
+        return 1
+    fi
+    return 0
+}
+
+PREFER_CONTAINER="${ATOMOS_OVERVIEW_CHAT_UI_PREFER_CONTAINER:-1}"
+if [ "$PREFER_CONTAINER" = "1" ]; then
+    echo "Skipping host cargo cross-build (ATOMOS_OVERVIEW_CHAT_UI_PREFER_CONTAINER=1); using container build."
     build_container
+else
+    if build_host; then
+        :
+    else
+        build_container
+    fi
 fi
 
 if [ ! -x "$BIN_PATH" ]; then
     echo "ERROR: overview chat UI binary not found after build: $BIN_PATH" >&2
     exit 1
+fi
+
+if [ "${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK:-0}" != "1" ]; then
+    if ! verify_binary_is_musl; then
+        # Debian/Ubuntu-based builders can emit glibc-linked output when GCC
+        # linker selection bleeds host libc defaults into a musl target.
+        # Retry once with rust-lld + self-contained linker path in container.
+        if [ "${ATOMOS_OVERVIEW_CHAT_UI_MUSL_RETRY_WITH_RUST_LLD:-1}" = "1" ] && [ "${ATOMOS_OVERVIEW_CHAT_UI_LINKER:-}" != "rust-lld" ]; then
+            echo "Retrying overview chat UI build with rust-lld to enforce musl linkage..."
+            ATOMOS_OVERVIEW_CHAT_UI_LINKER=rust-lld build_container
+            verify_binary_is_musl
+        else
+            exit 1
+        fi
+    fi
 fi
 
 echo "Built overview chat UI: $BIN_PATH"

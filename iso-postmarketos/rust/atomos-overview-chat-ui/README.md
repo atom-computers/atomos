@@ -115,3 +115,36 @@ The suite covers:
 - scrollbar threshold behavior
 - Enter vs Shift+Enter submit behavior
 - lifecycle argument parsing used by launcher wrappers
+
+## Coverage workflow
+
+Use the coverage gate script from `iso-postmarketos/`:
+
+- `bash scripts/overview-chat-ui/coverage-overview-chat-ui.sh`
+
+Requirements:
+
+- `cargo-llvm-cov` installed (`cargo install cargo-llvm-cov`)
+
+Thresholds are configurable:
+
+- `ATOMOS_OVERVIEW_CHAT_UI_CORE_MIN_LINES` (default `95`)
+- `ATOMOS_OVERVIEW_CHAT_UI_APP_GTK_MIN_LINES` (default `90`)
+
+By default only `core` coverage is enforced because it is deterministic and does
+not require GTK runtime development libraries.
+
+To include `app-gtk` coverage on GTK-enabled Linux hosts:
+
+- `ATOMOS_OVERVIEW_CHAT_UI_COVERAGE_INCLUDE_GTK=1 bash scripts/overview-chat-ui/coverage-overview-chat-ui.sh`
+
+`app-gtk` coverage requires pkg-config entries for:
+
+- `gtk4`
+- `gdk-pixbuf-2.0`
+- `graphene-gobject-1.0`
+
+Out of scope for this coverage gate:
+
+- compositor-dependent startup behavior on device (Phosh/Wayland runtime)
+- end-to-end interaction smoke tests against a live shell session

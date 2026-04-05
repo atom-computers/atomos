@@ -25,6 +25,10 @@ echo ""
 
 echo "=== launcher/binary ==="
 ls -l /usr/libexec/atomos-overview-chat-ui /usr/local/bin/atomos-overview-chat-ui 2>/dev/null || true
+if command -v readelf >/dev/null 2>&1 && [ -x /usr/local/bin/atomos-overview-chat-ui ]; then
+  echo "--- ELF interpreter ---"
+  readelf -l /usr/local/bin/atomos-overview-chat-ui 2>/dev/null | sed -n "s/.*Requesting program interpreter: \(.*\)]/\1/p"
+fi
 echo ""
 
 echo "=== pidfile/process ==="
@@ -34,7 +38,7 @@ if [ -f "$PIDFILE" ]; then
 else
   echo "pidfile missing: $PIDFILE"
 fi
-ps aux | grep '[a]tomos-overview-chat-ui' || true
+ps aux | grep "[a]tomos-overview-chat-ui" || true
 echo ""
 
 echo "=== $PHOSH_RUN/atomos-overview-chat-ui.log (tail) ==="
@@ -45,6 +49,28 @@ tail -n 60 /tmp/atomos-overview-chat-ui.log 2>/dev/null || echo "(no log in /tmp
 echo ""
 echo "=== journalctl -t atomos-overview-chat-ui (last 20) ==="
 journalctl -t atomos-overview-chat-ui -n 20 --no-pager 2>/dev/null || true
+echo ""
+echo "=== coredumpctl (overview chat ui) ==="
+if command -v coredumpctl >/dev/null 2>&1; then
+  if command -v sudo >/dev/null 2>&1; then
+    CDBASE="sudo coredumpctl"
+  else
+    CDBASE="coredumpctl"
+  fi
+  sh -c "$CDBASE list /usr/local/bin/atomos-overview-chat-ui --no-pager" 2>/dev/null || true
+  latest="$(sh -c "$CDBASE list /usr/local/bin/atomos-overview-chat-ui --no-pager" 2>/dev/null | awk 'NF {id=$1} END {print id}')"
+  if [ -z "$latest" ]; then
+    latest="$(sh -c "$CDBASE list --no-pager" 2>/dev/null | grep 'atomos-overview-chat-ui' | awk 'NF {id=$1} END {print id}')"
+  fi
+  if [ -n "$latest" ]; then
+    echo "--- coredumpctl info $latest ---"
+    sh -c "$CDBASE info $latest --no-pager" 2>/dev/null || true
+  else
+    echo "(no matching coredump entries visible)"
+  fi
+else
+  echo "(coredumpctl not available)"
+fi
 REMOTE_SH
 )
 
