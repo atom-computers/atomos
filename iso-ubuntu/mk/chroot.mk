@@ -78,6 +78,19 @@ $(BUILD)/chroot.tag: $(BUILD)/iso-key.gpg $(BUILD)/iso-pub.gpg $(INSTALL_SCRIPTS
 	
 	# Create build directory
 	mkdir -p "$(BUILD)"
+
+	# Validate host prerequisites before starting bootstrap.
+	@if ! command -v debootstrap >/dev/null 2>&1; then \
+		echo "ERROR: debootstrap is required but was not found."; \
+		if [ "$$(uname -s)" = "Darwin" ]; then \
+			echo "macOS host detected. Use the containerized builder instead:"; \
+			echo "  ./build-with-podman.sh"; \
+		else \
+			echo "Install it with your package manager (example Debian/Ubuntu):"; \
+			echo "  sudo apt-get install -y debootstrap"; \
+		fi; \
+		exit 127; \
+	fi
 	
 	# Bootstrap base system
 	debootstrap \

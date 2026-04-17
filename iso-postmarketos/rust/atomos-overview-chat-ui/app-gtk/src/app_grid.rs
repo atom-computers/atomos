@@ -2,10 +2,38 @@ use gtk::gio;
 use gtk::gio::prelude::*;
 use gtk::prelude::*;
 
+fn normalized_id_label(id: &str) -> String {
+    let base = id.trim_end_matches(".desktop");
+    let last = base.rsplit('.').next().unwrap_or(base);
+    let cleaned = last
+        .replace(['-', '_'], " ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    if cleaned.is_empty() {
+        return "Application".to_string();
+    }
+    let mut chars = cleaned.chars();
+    let Some(first) = chars.next() else {
+        return "Application".to_string();
+    };
+    let mut out = String::new();
+    out.extend(first.to_uppercase());
+    out.push_str(chars.as_str());
+    out
+}
+
 fn app_label(app: &gio::AppInfo) -> String {
+    let display_name = app.display_name();
+    if !display_name.trim().is_empty() {
+        return display_name.to_string();
+    }
+    let name = app.name();
+    if !name.trim().is_empty() {
+        return name.to_string();
+    }
     app.id()
-        .map(|id| id.trim_end_matches(".desktop").to_string())
-        .filter(|s| !s.trim().is_empty())
+        .map(|id| normalized_id_label(&id))
         .unwrap_or_else(|| "Application".to_string())
 }
 
@@ -21,10 +49,40 @@ fn visible_apps() -> Vec<gio::AppInfo> {
 }
 
 fn app_icons_enabled() -> bool {
-    matches!(
+    !matches!(
         std::env::var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS").as_deref(),
-        Ok("1")
+        Ok("0")
     )
+}
+
+#[cfg(target_os = "linux")]
+fn app_icon_from_desktop_id(id: &str) -> Option<gio::Icon> {
+    let desktop = gio::DesktopAppInfo::new(id)?;
+    desktop.icon()
+}
+
+#[cfg(not(target_os = "linux"))]
+fn app_icon_from_desktop_id(_id: &str) -> Option<gio::Icon> {
+    None
+}
+
+fn app_icon(app: &gio::AppInfo) -> Option<gio::Icon> {
+    if let Some(icon) = app.icon() {
+        return Some(icon);
+    }
+    let id = app.id()?;
+    // Some images expose AppInfo without icon metadata on the first object.
+    // Retry via DesktopAppInfo using both raw id and normalized .desktop id.
+    if let Some(icon) = app_icon_from_desktop_id(&id) {
+        return Some(icon);
+    }
+    if !id.ends_with(".desktop") {
+        let desktop_id = format!("{id}.desktop");
+        if let Some(icon) = app_icon_from_desktop_id(&desktop_id) {
+            return Some(icon);
+        }
+    }
+    None
 }
 
 pub fn build_app_grid_sheet() -> gtk::ScrolledWindow {
@@ -56,7 +114,7 @@ pub fn build_app_grid_sheet() -> gtk::ScrolledWindow {
         // Some device images include malformed icon metadata. Keep runtime safe
         // by defaulting to a known icon and requiring explicit opt-in for gicon.
         let icon = if load_icons {
-            if let Some(gicon) = app.icon() {
+            if let Some(gicon) = app_icon(&app) {
                 let img = gtk::Image::from_gicon(&gicon);
                 img.set_pixel_size(40);
                 img
@@ -107,4 +165,19 @@ pub fn build_app_grid_sheet() -> gtk::ScrolledWindow {
     scroller.add_css_class("atomos-app-sheet");
     scroller.set_child(Some(&flow));
     scroller
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalized_id_label;
+
+    #[test]
+    fn normalized_id_label_uses_last_segment() {
+        assert_eq!(normalized_id_label("com.app.word.desktop"), "Word");
+    }
+
+    #[test]
+    fn normalized_id_label_humanizes_separators() {
+        assert_eq!(normalized_id_label("org.gnome.file-roller"), "File roller");
+    }
 }

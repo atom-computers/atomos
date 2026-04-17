@@ -67,9 +67,16 @@ pub fn build_ui(app: &adw::Application) {
     win.set_decorated(desktop_like || !use_layer_shell);
     if !desktop_like {
         // Some target images crash in layer-shell setup. Keep a safe default and
-        // allow explicit opt-in for protocol integration during focused testing.
+        // avoid creating a regular toplevel that gets treated as an app window.
         if use_layer_shell {
-            configure_mobile_overlay_surface(&win);
+            let configured = configure_mobile_overlay_surface(&win);
+            if !configured {
+                eprintln!(
+                    "atomos-overview-chat-ui: layer-shell requested but unavailable; exiting to avoid toplevel fallback"
+                );
+                app.quit();
+                return;
+            }
         } else {
             // Debug-friendly fallback on QEMU: force a standard toplevel that
             // should be clearly visible even if layer-shell placement fails.

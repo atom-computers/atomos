@@ -32,12 +32,8 @@ LOCK_PARITY="${ATOMOS_LOCK_PARITY:-${PMOS_LOCK_PARITY:-1}}"
 if [ "$LOCK_PARITY" != "0" ]; then
     LOCK_PARITY=1
 fi
-OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-1}"
-case "${PMOS_DEVICE:-}" in
-    qemu-*|qemu_*)
-        OVERVIEW_RUNTIME_DEFAULT=0
-        ;;
-esac
+OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-0}"
+OVERVIEW_OVERLAY_CONTRACT_VERSION="overview-chat-ui-overlay-v5-lifecycle-only"
 
 echo "Applying mobile Phosh overlay via chroot..."
 echo "  lock parity layer: $LOCK_PARITY"
@@ -135,12 +131,13 @@ cat > /usr/libexec/atomos-overview-chat-ui << "EOF"
 #!/bin/sh
 set -eu
 BIN="/usr/local/bin/atomos-overview-chat-ui"
-# Default to non-layer mode for QEMU/older compositor stability.
+# Default to toplevel fallback for hardware stability.
 # Set ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL=1 to opt into layer-shell.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL:-0}"
 # Touch-dismiss can trigger compositor/input-stack instability on some phones.
 # Keep disabled by default; set to 1 to opt in.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-0}"
+# Keep visible by default while diagnosing fold/unfold lifecycle issues.
 export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-1}"
 # Safety fallback: some target GTK stacks crash while parsing advanced CSS.
 # Set to 0 to re-enable themed CSS after confirming target stability.
@@ -152,20 +149,76 @@ export LIBGL_ALWAYS_SOFTWARE="${ATOMOS_OVERVIEW_CHAT_UI_LIBGL_ALWAYS_SOFTWARE:-1
 # Additional safety defaults for unstable target stacks.
 export ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE="${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"
+# Keep layer defaults aligned with installer/hotfix launchers.
+export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-top}"
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
-# Phosh runs this as the logged-in user; /run/ is root-only. Use the session dir.
-PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.pid"
-LOGFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.log"
-DISABLE_FILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.disabled"
+# Phosh runs this as the logged-in user; prefer session runtime dir.
+PIDFILE=""
+LOGFILE=""
+DISABLE_FILE=""
 
 is_running() {
+    resolve_runtime_paths
     [ -f "$PIDFILE" ] || return 1
     pid=$(cat "$PIDFILE" 2>/dev/null || true)
     [ -n "$pid" ] || return 1
     kill -0 "$pid" 2>/dev/null
 }
 
+resolve_runtime_paths() {
+    runtime="${XDG_RUNTIME_DIR:-}"
+    if [ -z "$runtime" ] || [ ! -d "$runtime" ]; then
+        uid="$(id -u 2>/dev/null || true)"
+        candidate="/run/user/$uid"
+        if [ -n "$uid" ] && [ -d "$candidate" ]; then
+            runtime="$candidate"
+            export XDG_RUNTIME_DIR="$runtime"
+        else
+            runtime="/tmp"
+            export XDG_RUNTIME_DIR="$runtime"
+        fi
+    fi
+    PIDFILE="$runtime/atomos-overview-chat-ui.pid"
+    LOGFILE="$runtime/atomos-overview-chat-ui.log"
+    DISABLE_FILE="$runtime/atomos-overview-chat-ui.disabled"
+}
+
+bind_phosh_session_env() {
+    if ! command -v pgrep >/dev/null 2>&1; then
+        logger -t atomos-overview-chat-ui "pgrep unavailable; cannot auto-bind Wayland env"
+        return 0
+    fi
+    phosh_pid="$(pgrep phosh | head -n 1 || true)"
+    if [ -z "$phosh_pid" ]; then
+        logger -t atomos-overview-chat-ui "phosh pid not found; WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-<unset>}"
+        return 0
+    fi
+    env_file="/proc/$phosh_pid/environ"
+    if [ ! -r "$env_file" ]; then
+        logger -t atomos-overview-chat-ui "cannot read $env_file to import session env"
+        return 0
+    fi
+    for var in WAYLAND_DISPLAY XDG_RUNTIME_DIR DISPLAY DBUS_SESSION_BUS_ADDRESS; do
+        # /proc/<pid>/environ is NUL-separated. BusyBox tr can mis-handle
+        # \0 and corrupt values (e.g. wayland-0 -> wayland-n), so use
+        # xargs -0 to split safely.
+        line="$(xargs -0 -n1 < "$env_file" 2>/dev/null | awk -v k="$var" "index(\$0, k \"=\") == 1 { print; exit }" || true)"
+        [ -n "$line" ] && export "$line"
+    done
+
+    # If imported display does not exist, clamp to a known-safe default.
+    if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -n "${WAYLAND_DISPLAY:-}" ] && [ ! -S "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" ]; then
+        if [ -S "${XDG_RUNTIME_DIR}/wayland-0" ]; then
+            WAYLAND_DISPLAY="wayland-0"
+            export WAYLAND_DISPLAY
+            logger -t atomos-overview-chat-ui "corrected invalid WAYLAND_DISPLAY to wayland-0"
+        fi
+    fi
+}
+
 start_ui() {
+    resolve_runtime_paths
     if [ ! -x "$BIN" ]; then
         logger -t atomos-overview-chat-ui "binary not installed; no-op start"
         return 0
@@ -178,7 +231,7 @@ start_ui() {
         return 0
     fi
     (
-        printf '%s\n' "---- $(date) ----"
+        printf "%s\n" "---- $(date) ----"
         set +e
         "$BIN"
         rc=$?
@@ -219,6 +272,7 @@ case "${1:-}" in
             logger -t atomos-overview-chat-ui "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
             exit 0
         fi
+        bind_phosh_session_env
         logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} runtime=${XDG_RUNTIME_DIR:-<unset>}"
         start_ui
         ;;
@@ -235,10 +289,20 @@ case "${1:-}" in
 esac
 EOF
 chmod 755 /usr/libexec/atomos-overview-chat-ui
+
+mkdir -p /etc/atomos
+rm -f /etc/atomos/overview-chat-ui-always-on
+printf "%s\n" "__OVERVIEW_OVERLAY_CONTRACT_VERSION__" > /etc/atomos/overview-chat-ui-overlay-contract
+
+rm -f /usr/libexec/atomos-overview-chat-ui-boot
+rm -f /usr/lib/systemd/user/atomos-overview-chat-ui.service
+rm -f /etc/systemd/user/default.target.wants/atomos-overview-chat-ui.service
+rm -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop
 '
 
 OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__LOCK_PARITY__/$LOCK_PARITY}"
 OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__/$OVERVIEW_RUNTIME_DEFAULT}"
+OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__OVERVIEW_OVERLAY_CONTRACT_VERSION__/$OVERVIEW_OVERLAY_CONTRACT_VERSION}"
 
 if [ "${ATOMOS_OVERLAY_DUMP_ONLY:-0}" = "1" ]; then
     printf '%s\n' "$OVERLAY_SCRIPT"

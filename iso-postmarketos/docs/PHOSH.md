@@ -8,7 +8,7 @@ This scaffold builds **`postmarketos-ui-phosh`** (`PMOS_UI=phosh` in [`config/fa
 
 **Goal:** Diverge from vanilla pmaports Phosh when needed, rebase on [World/Phosh](https://gitlab.gnome.org/World/Phosh/), and land **new UI in Rust** without rewriting the whole shell overnight.
 
-**Where Phosh source lives:** Keep a **plain local clone** of upstream Phosh at **`vendor/phosh/phosh`** (gitignored; not a submodule). **`make build`** runs [`scripts/phosh/checkout-phosh.sh`](../scripts/phosh/checkout-phosh.sh) first (clone/update + apply patches). You can refresh manually with `bash scripts/phosh/checkout-phosh.sh`. See [`vendor/phosh/README.md`](../vendor/phosh/README.md).
+**Where Phosh source lives:** Keep a **plain local clone** of upstream Phosh at **`rust/phosh/phosh`** (gitignored; not a submodule). Edit this fork directly and keep your branch history there. **`make build`** runs [`scripts/phosh/checkout-phosh.sh`](../scripts/phosh/checkout-phosh.sh) first (clone/update only; no patch replay). You can refresh manually with `bash scripts/phosh/checkout-phosh.sh`. Overview: [`rust/phosh/README.md`](../rust/phosh/README.md); packaging extras: [`vendor/phosh/README.md`](../vendor/phosh/README.md).
 
 **Packaging:** Pick one path — pmaports fork, custom APK repo (static HTTP + signing keys), or hybrid (override only `phosh` / `phoc` / `squeekboard`). Fork the APKBUILDs you change; bump versions or `replaces=` so your `.apk` wins. See [`vendor/phosh/packaging/README.md`](../vendor/phosh/packaging/README.md).
 
@@ -16,9 +16,9 @@ This scaffold builds **`postmarketos-ui-phosh`** (`PMOS_UI=phosh` in [`config/fa
 
 **Rust / new UI:** Keep **phoc + phosh** as the session spine. Ship new pieces as separate binaries or libs (e.g. GTK4/libadwaita via gtk-rs, or Wayland clients). Integrate via autostart or greetd until you deliberately replace the shell (panel, overview, notifications, session contract). Template: [`vendor/phosh/autostart-example/`](../vendor/phosh/autostart-example/).
 
-**Rebase & security:** Rebase patches on upstream tags; watch pmaports `edge` and CVEs for packages you fork.
+**Rebase & security:** Rebase your fork branch on upstream tags; watch pmaports `edge` and CVEs for packages you fork.
 
-**This repo today:** On a **Linux** builder, **`make build`** runs checkout + patches, builds patched Phosh via **[`scripts/phosh/build-atomos-phosh-pmbootstrap.sh`](../scripts/phosh/build-atomos-phosh-pmbootstrap.sh)**, then applies AtomOS rootfs customizations including wallpaper, [`scripts/phosh/apply-atomos-phosh-dconf.sh`](../scripts/phosh/apply-atomos-phosh-dconf.sh), and [`scripts/rootfs/apply-overlay.sh`](../scripts/rootfs/apply-overlay.sh) (includes **`/usr/libexec/atomos-overview-chat-submit`**). Validate with [`scripts/validate/validate-lock-parity.sh`](../scripts/validate/validate-lock-parity.sh).
+**This repo today:** On a **Linux** builder, **`make build`** syncs your local Phosh fork, builds it via **[`scripts/phosh/build-atomos-phosh-pmbootstrap.sh`](../scripts/phosh/build-atomos-phosh-pmbootstrap.sh)**, then applies AtomOS rootfs customizations including wallpaper, [`scripts/phosh/apply-atomos-phosh-dconf.sh`](../scripts/phosh/apply-atomos-phosh-dconf.sh), and [`scripts/rootfs/apply-overlay.sh`](../scripts/rootfs/apply-overlay.sh) (includes **`/usr/libexec/atomos-overview-chat-submit`**). Validate with [`scripts/validate/validate-lock-parity.sh`](../scripts/validate/validate-lock-parity.sh).
 
 ---
 
@@ -26,14 +26,13 @@ This scaffold builds **`postmarketos-ui-phosh`** (`PMOS_UI=phosh` in [`config/fa
 
 **Product goal:** The overview should **not** list or search apps. Replace the **app search bar** with a **chat-style input**, **anchored at the bottom** (top panel can stay as today).
 
-**Implementation (AtomOS):** The overview patch chain is now split for migration:
-- [`vendor/phosh/patches/0001-atomos-overview-no-app-grid.patch`](../vendor/phosh/patches/0001-atomos-overview-no-app-grid.patch): hides app/favorites overview content.
-- [`vendor/phosh/patches/0002-atomos-overview-chat-entry-submit.patch`](../vendor/phosh/patches/0002-atomos-overview-chat-entry-submit.patch): transitional **Message…** bottom entry that submits via **`/usr/libexec/atomos-overview-chat-submit`**.
-- [`vendor/phosh/patches/0003-atomos-overview-chat-ui-lifecycle.patch`](../vendor/phosh/patches/0003-atomos-overview-chat-ui-lifecycle.patch): overview lifecycle bridge that toggles **`/usr/libexec/atomos-overview-chat-ui --show/--hide`** and hides the transitional in-Phosh entry.
-- [`vendor/phosh/patches/0004-atomos-overview-chat-ui-show-on-unfold.patch`](../vendor/phosh/patches/0004-atomos-overview-chat-ui-show-on-unfold.patch): ensures **`--show`** runs whenever the overview **unfolds** (swipe/Super), not only via the application-view key action (upstream sets `focus_app_search` only there).
-- [`vendor/phosh/patches/0005-atomos-transparent-top-panel-and-no-exclusive-zone.patch`](../vendor/phosh/patches/0005-atomos-transparent-top-panel-and-no-exclusive-zone.patch): makes the folded status bar transparent and removes its exclusive zone so wallpaper/content continues behind the panel area.
+**Implementation (AtomOS):** Maintain these overview/home changes directly in your fork sources under `rust/phosh/phosh/src/`:
+- hide app/favorites overview content when desired,
+- in-process **Message…** overview entry that submits to **`/usr/libexec/atomos-overview-chat-submit`**,
+- in-process **home/desktop** chat entry in `home.ui`,
+- optional transparent top panel + exclusive-zone behavior.
 
-The long-term target is a Rust UI surface (`rust/atomos-overview-chat-ui`) with transparent background and multiline growth behavior. Patches apply during **`make build`** (via checkout) or manually: **`./scripts/phosh/apply-phosh-atomos-patches.sh`**.
+The long-term target is a Rust UI surface (`rust/atomos-overview-chat-ui`) with transparent background and multiline growth behavior, but short-term shell behavior is now owned directly in the fork checkout.
 
 **macOS:** `make build` exits immediately; full image creation requires Linux loop devices. You can still patch/test Phosh changes from a Linux VM/device.
 

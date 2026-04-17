@@ -76,7 +76,25 @@ cleanup_stale_pmbootstrap_loops() {
     done < <(losetup -a 2>/dev/null || true)
 }
 
+cleanup_stale_dynamic_partition_mappers() {
+    command -v dmsetup >/dev/null 2>&1 || return 0
+    local mapper_name mapper_dev
+    while IFS= read -r mapper_name; do
+        [ -n "$mapper_name" ] || continue
+        mapper_dev="/dev/mapper/${mapper_name}"
+        if grep -q " ${mapper_dev} " /proc/mounts 2>/dev/null; then
+            continue
+        fi
+        dmsetup remove "$mapper_name" >/dev/null 2>&1 || dmsetup remove -f "$mapper_name" >/dev/null 2>&1 || true
+    done < <(
+        dmsetup ls --target linear 2>/dev/null \
+            | sed -n 's/^\([^[:space:]]\+\).*/\1/p' \
+            | sed -n '/^\(system\|system_ext\|product\|vendor\|odm\|vendor_dlkm\|system_dlkm\|odm_dlkm\)_[ab]$/p'
+    )
+}
+
 prepare_loop_pool
+cleanup_stale_dynamic_partition_mappers
 cleanup_stale_pmbootstrap_loops
 
 map_loop_device_partitions() {
@@ -147,6 +165,8 @@ fi
 if grep -q "expected it to be at /dev/loop[0-9]\\+p1" "$TMP_LOG"; then
     echo "Detected missing /dev/loopXp1 node; forcing loop/udev rescan and retrying once..." >&2
     ensure_loop_partitions
+    cleanup_stale_dynamic_partition_mappers
+    cleanup_stale_pmbootstrap_loops
     FAILED_LOOP="$(grep -Eo '/dev/loop[0-9]+' "$TMP_LOG" | tail -n1 || true)"
     if [ -n "$FAILED_LOOP" ]; then
         map_loop_device_partitions "$FAILED_LOOP"

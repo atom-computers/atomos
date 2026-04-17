@@ -1,17 +1,14 @@
-# Local Phosh source
+# Phosh extras (packaging & examples)
 
-Upstream shell: [World/Phosh/phosh](https://gitlab.gnome.org/World/Phosh/phosh).
+The **AtomOS Phosh fork** (clone + direct-edit workflow) lives under **[`../../rust/phosh/`](../../rust/phosh/)** — not a submodule; the upstream clone under `rust/phosh/phosh/` is gitignored.
 
-The working tree lives in **`phosh/`** next to this file. That directory is listed in `.gitignore` so this repository does not embed Phosh history or a submodule pointer—clone it on demand like any other local directory.
+This `vendor/phosh/` tree keeps **packaging** and **autostart** material that is not part of the C sources:
 
-Populate or update (AtomOS patches apply automatically; patches are always applied by checkout-phosh.sh):
+- [`packaging/README.md`](packaging/README.md) — pmaports / APK repo workflow
+- [`autostart-example/`](autostart-example/) — desktop file template for companion UI
+
+Refresh Phosh sources from `iso-postmarketos/`:
 
 ```bash
-bash ../../scripts/phosh/checkout-phosh.sh
-# re-apply patches only:
-bash ../../scripts/phosh/apply-phosh-atomos-patches.sh
+bash scripts/phosh/checkout-phosh.sh
 ```
-
-`checkout-phosh.sh` resets local uncommitted changes before applying patches so stale states do not break `make build`.
-
-See [`docs/PHOSH.md`](../../docs/PHOSH.md), [`packaging/README.md`](packaging/README.md), and [`autostart-example/README.md`](autostart-example/README.md).

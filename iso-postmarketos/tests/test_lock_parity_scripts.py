@@ -22,6 +22,8 @@ STYLE_RS = (
     / "src"
     / "style.rs"
 )
+PHOSH_HOME_C = ISO_ROOT / "rust" / "phosh" / "phosh" / "src" / "home.c"
+PHOSH_TOP_PANEL_C = ISO_ROOT / "rust" / "phosh" / "phosh" / "src" / "top-panel.c"
 
 
 def run_script(path, *args, env=None):
@@ -54,7 +56,17 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             self.assertIn("mobile Phosh", result.stdout)
             self.assertIn("atomos-overview-chat-submit", result.stdout)
             self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", result.stdout)
+            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS:-1}"', result.stdout)
             self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", result.stdout)
+            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}"', result.stdout)
+            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"', result.stdout)
+            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-top}"', result.stdout)
+            self.assertIn("bind_phosh_session_env()", result.stdout)
+            self.assertIn("xargs -0 -n1", result.stdout)
+            self.assertIn("corrected invalid WAYLAND_DISPLAY to wayland-0", result.stdout)
+            self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS", result.stdout)
+            self.assertIn("overview-chat-ui-overlay-contract", result.stdout)
+            self.assertIn("overview-chat-ui-overlay-v5-lifecycle-only", result.stdout)
             self.assertNotIn("atomos-mobile-lockscreen --lock", result.stdout)
             self.assertNotIn("atomos-lock-daemon.desktop", result.stdout)
             self.assertNotIn("atomos-lock-daemon.service", result.stdout)
@@ -141,6 +153,10 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             self.assertIn("gsettings set org.gnome.desktop.background picture-uri", result.stdout)
             self.assertIn("picture-uri-dark", result.stdout)
             self.assertIn("org.gnome.desktop.screensaver", result.stdout)
+            self.assertIn("gsettings set org.gnome.desktop.screensaver picture-uri-dark", result.stdout)
+            self.assertIn("50-atomos-wallpaper.conf", result.stdout)
+            self.assertIn("locks/50-atomos-wallpaper", result.stdout)
+            self.assertIn("dconf update", result.stdout)
             self.assertIn("org.gnome.desktop.session idle-delay", result.stdout)
             self.assertIn("org.gnome.desktop.screensaver lock-enabled true", result.stdout)
             self.assertIn("org.gnome.desktop.screensaver lock-delay", result.stdout)
@@ -191,6 +207,31 @@ class TestDockerfileToolchain(unittest.TestCase):
             "Dockerfile must add the aarch64 musl rustup target")
 
 
+class TestPhoshHomeAndPanelSourceContracts(unittest.TestCase):
+    def test_home_disables_swipe_drag_and_reserved_divider_strip(self):
+        text = PHOSH_HOME_C.read_text(encoding="utf-8")
+        self.assertIn('"drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE', text)
+        self.assertIn('"exclusive-zone", 0', text)
+        self.assertIn('"exclusive", 0', text)
+        self.assertIn("home-bar tap should not toggle fold/unfold", text)
+
+    def test_home_app_grid_toggle_defaults_to_enabled(self):
+        text = PHOSH_HOME_C.read_text(encoding="utf-8")
+        self.assertIn("app_grid_toggle_enabled", text)
+        self.assertIn("static gboolean enabled = TRUE;", text)
+        self.assertIn('enabled = g_strcmp0 (env, "0") != 0;', text)
+
+    def test_home_ignores_fold_while_app_grid_visible(self):
+        text = PHOSH_HOME_C.read_text(encoding="utf-8")
+        self.assertIn("ignoring fold callback while app-grid is opening/visible", text)
+        self.assertIn("self->app_grid_toggle_queued || gtk_widget_get_visible (GTK_WIDGET (app_grid))", text)
+
+    def test_top_panel_disables_drag_mode(self):
+        text = PHOSH_TOP_PANEL_C.read_text(encoding="utf-8")
+        self.assertIn("PHOSH_DRAG_SURFACE_DRAG_MODE_NONE", text)
+        self.assertIn('"drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE', text)
+
+
 class TestCheckoutPhoshScript(unittest.TestCase):
     def test_bash_syntax(self):
         r = subprocess.run(
@@ -203,6 +244,7 @@ class TestCheckoutPhoshScript(unittest.TestCase):
     def test_supports_phosh_ref_pin(self):
         text = (S_PHOSH / "checkout-phosh.sh").read_text(encoding="utf-8")
         self.assertIn("ATOMOS_PHOSH_GIT_REF", text)
+        self.assertIn("rust/phosh/phosh", text)
         self.assertIn("Using pinned Phosh ref", text)
 
 
@@ -228,6 +270,97 @@ class TestBuildAtomosPhoshScript(unittest.TestCase):
     def test_bash_syntax(self):
         r = subprocess.run(
             ["bash", "-n", str(S_PHOSH / "build-atomos-phosh-pmbootstrap.sh")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_drops_virtual_gnome_settings_daemon_dep(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("ensure_phosh_apkbuild_no_virtual_gsd_dep", text)
+        self.assertIn('dep != "gnome-settings-daemon"', text)
+
+    def test_resets_native_tmp_source_override_state(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("prepare_native_tmp_for_src_override", text)
+        self.assertIn("/tmp/pmbootstrap-local-source-copy", text)
+        self.assertIn("/tmp/src-pkgname", text)
+
+    def test_resets_native_ccache_permissions(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("prepare_native_ccache_dir", text)
+        self.assertIn("/home/pmos/.ccache/tmp", text)
+        self.assertIn("ATOMOS_PHOSH_DISABLE_CCACHE", text)
+        self.assertIn("CCACHE_DISABLE=1", text)
+
+    def test_resets_native_user_cache_permissions(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("prepare_native_user_cache_dir", text)
+        self.assertIn("/home/pmos/.cache", text)
+        self.assertIn("g-ir-scanner", text)
+
+    def test_resets_native_abuild_key_permissions(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("prepare_native_abuild_key_permissions", text)
+        self.assertIn("/home/pmos/.abuild", text)
+        self.assertIn("chmod 600", text)
+        self.assertIn("Regenerating unreadable abuild private key", text)
+        self.assertIn("abuild-keygen -a -n", text)
+        self.assertIn("install -m 644", text)
+        self.assertIn("prepare_host_apk_keyring_from_native", text)
+        self.assertIn("config_apk_keys", text)
+
+    def test_resets_native_package_output_permissions(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("prepare_native_package_output_permissions", text)
+        self.assertIn("/home/pmos/packages/pmos/${ARCH}", text)
+        self.assertIn("/home/pmos/packages/edge/${ARCH}", text)
+        self.assertIn("chown -R pmos:pmos /home/pmos/packages", text)
+        self.assertIn("chmod -R a+rwX /home/pmos/packages", text)
+        self.assertIn("prepare_native_abuild_repo_destination", text)
+        self.assertIn("REPODEST=/home/pmos/packages/edge", text)
+        self.assertIn("prepare_host_package_output_permissions", text)
+        self.assertIn('pmos_root="${pkg_root}/pmos"', text)
+        self.assertIn("prepare_host_local_repo_aliases", text)
+        self.assertIn("Aliased local package repo path: pmos/${ARCH} -> edge/${ARCH}", text)
+        self.assertIn("ABUILD_ENV=(REPODEST=/home/pmos/packages/edge)", text)
+        self.assertIn("recover_edge_repo_from_pmos_on_missing_artifact", text)
+        self.assertIn("recover_edge_repo_from_any_local_phosh_artifacts", text)
+        self.assertIn("Package not found after build", text)
+        self.assertIn("Recovered missing edge artifact", text)
+        self.assertIn("Recovered edge artifact from local buckets", text)
+        self.assertIn("PMB_WORK_OVERRIDE", text)
+
+    def test_prefers_non_temp_phosh_apkbuild_before_temp(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("for d in main community testing temp; do", text)
+        self.assertIn("A stale temp/phosh from older", text)
+
+    def test_aligns_phosh_pkgver_with_source_meson_version(self):
+        text = (S_PHOSH / "build-atomos-phosh-pmbootstrap.sh").read_text(encoding="utf-8")
+        self.assertIn("ensure_phosh_apkbuild_pkgver_matches_source", text)
+        self.assertIn("version:\\s*'([^']+)'", text)
+        self.assertIn("pkgver=", text)
+
+
+class TestPreviewPhoshGtkContainerScript(unittest.TestCase):
+    def test_bash_syntax(self):
+        r = subprocess.run(
+            ["bash", "-n", str(S_PHOSH / "preview-phosh-gtk-container.sh")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_defaults_to_egui_preview(self):
+        text = (S_PHOSH / "preview-phosh-gtk-container.sh").read_text(encoding="utf-8")
+        self.assertIn("preview-overview-chat-ui-egui.sh", text)
+        self.assertIn("--container-x11", text)
+        self.assertIn("ATOMOS_PREVIEW_CONTAINER_IMAGE", text)
+
+    def test_visual_preview_script_syntax(self):
+        r = subprocess.run(
+            ["bash", "-n", str(S_PHOSH / "preview-phosh-home-chat-ui-visual.sh")],
             capture_output=True,
             text=True,
         )
@@ -293,10 +426,17 @@ class TestInstallOverviewChatUiScript(unittest.TestCase):
         text = (S_OVERVIEW / "install-overview-chat-ui.sh").read_text(encoding="utf-8")
         self.assertIn("/usr/local/bin/atomos-overview-chat-ui", text)
         self.assertIn("/usr/bin/atomos-overview-chat-ui", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT:-0", text)
+        self.assertIn("resolve_runtime_paths", text)
+        self.assertIn('candidate="/run/user/$uid"', text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_GSK_RENDERER", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_LAYER", text)
+        self.assertIn("bind_phosh_session_env_if_missing", text)
+        self.assertIn("pgrep phosh", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
         self.assertIn("atomos-overview-chat-ui.disabled", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_REQUIRE_BINARY", text)
@@ -350,17 +490,66 @@ class TestInstallAtomosAgentsScript(unittest.TestCase):
         self.assertIn("verify_overview_chat_ui_launcher_contract", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
         self.assertIn("atomos-overview-chat-ui.disabled", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS", text)
+        self.assertIn("overview-chat-ui-overlay-contract", text)
+        self.assertIn("overview-chat-ui-overlay-v5-lifecycle-only", text)
         self.assertIn("delete-native-rootfs-images.sh", text)
 
     def test_build_image_defaults_qemu_to_stock_phosh(self):
         text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
-        self.assertIn("ATOMOS_ENABLE_VENDOR_PHOSH_ON_QEMU", text)
+        self.assertIn("ATOMOS_ENABLE_VENDOR_PHOSH", text)
         self.assertIn("ATOMOS_SKIP_VENDOR_PHOSH_BUILD=1", text)
         self.assertIn("QEMU profile detected; defaulting to stock phosh", text)
         self.assertIn("purge_local_phosh_overrides", text)
         self.assertIn("verify_stock_phosh_origin", text)
+        self.assertIn("verify_vendor_phosh_origin", text)
         self.assertIn("/(mnt/pmbootstrap|home/pmos)/packages/", text)
-        self.assertIn("Skip vendor Phosh source sync (stock phosh mode)", text)
+        self.assertIn("apk add --upgrade phosh", text)
+        self.assertIn("installed phosh version", text)
+        self.assertIn("newest local vendor build", text)
+        self.assertIn("gresource extract /usr/libexec/phosh /mobi/phosh/ui/home.ui", text)
+        self.assertIn("home_chat_entry", text)
+        self.assertIn("atomos_apps_toggle_btn", text)
+        self.assertIn("Skip local Phosh fork sync (stock phosh mode)", text)
+
+    def test_build_image_does_not_pin_gnome_settings_daemon_provider(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertNotIn('set-container-provider.sh" "$CFG" "gnome-settings-daemon"', text)
+        self.assertNotIn('EXTRA_PACKAGES_EFFECTIVE="${EXTRA_PACKAGES_EFFECTIVE},gnome-settings-daemon', text)
+        self.assertIn("clear_legacy_gsd_config_provider", text)
+        self.assertIn("Cleared legacy gnome-settings-daemon provider override(s).", text)
+
+    def test_build_image_has_chrony_overwrite_recovery(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("trying to overwrite etc/chrony/chrony\\\\.conf owned by postmarketos-base-ui", text)
+        self.assertIn("apk add --no-interactive --force-overwrite chrony-common chrony", text)
+        self.assertNotIn("apk upgrade --no-interactive --force-overwrite", text)
+        self.assertIn("clear_legacy_gsd_world_entries", text)
+        self.assertIn("sync_local_systemd_edge_indexes", text)
+        self.assertIn("Synced local APKINDEX files: edge -> systemd-edge", text)
+        self.assertIn("prepare_rootfs_systemd_apk_state", text)
+        self.assertIn("/var/lib/systemd-apk/installed.units", text)
+
+    def test_build_image_removes_stale_rootfs_chroot(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("removing stale rootfs chroot for clean install", text)
+        self.assertIn("chroot_rootfs_${PMOS_DEVICE}", text)
+        self.assertIn("sudo rm -rf", text)
+
+    def test_build_image_fixes_native_rootfs_output_permissions(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("prepare_native_rootfs_output_permissions", text)
+        self.assertIn("chown -R pmos:pmos /home/pmos/rootfs", text)
+        self.assertIn("rm -f /home/pmos/rootfs/*-sparse.img", text)
+        self.assertIn("Cannot open output file .*sparse", text)
+
+    def test_build_image_syncs_local_phosh_fork(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        self.assertIn("Sync local Phosh fork sources", text)
+        self.assertIn("verify_vendor_phosh_source_contract", text)
+        self.assertIn("Verify local Phosh fork source tree", text)
+        self.assertIn("test -f \"$src_dir/src/home.c\"", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT", text)
 
     def test_build_image_supports_pmaports_commit_pin(self):
         text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
@@ -399,6 +588,29 @@ class TestPreviewOverviewChatUiScript(unittest.TestCase):
         self.assertNotIn("--features", text)
         self.assertIn("atomos-overview-chat-ui-egui", text)
 
+    def test_gtk_osx_setup_wrapper_syntax(self):
+        r = subprocess.run(
+            ["bash", "-n", str(S_OVERVIEW / "setup-gtk-osx.sh")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_local_test_harness_syntax(self):
+        r = subprocess.run(
+            ["bash", "-n", str(S_OVERVIEW / "test-overview-chat-ui-local.sh")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_local_test_harness_targets_all_crates(self):
+        text = (S_OVERVIEW / "test-overview-chat-ui-local.sh").read_text(encoding="utf-8")
+        self.assertIn("atomos-overview-chat-ui", text)
+        self.assertIn("atomos-overview-chat-ui-app", text)
+        self.assertIn("atomos-overview-chat-ui-egui", text)
+        self.assertNotIn("--features", text)
+
 
 class TestHotfixOverviewChatUiScript(unittest.TestCase):
     def test_bash_syntax(self):
@@ -416,10 +628,17 @@ class TestHotfixOverviewChatUiScript(unittest.TestCase):
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_RESTART_CMD", text)
         self.assertIn("reject_glibc_linked_binary", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT:-0", text)
+        self.assertIn("resolve_runtime_paths", text)
+        self.assertIn('candidate="/run/user/$uid"', text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_GSK_RENDERER", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_LAYER", text)
+        self.assertIn("bind_phosh_session_env_if_missing", text)
+        self.assertIn("pgrep phosh", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
         self.assertIn("atomos-overview-chat-ui.disabled", text)
 
@@ -444,49 +663,23 @@ class TestSetPmbootstrapOptionScript(unittest.TestCase):
         self.assertEqual(r.returncode, 0, msg=r.stderr)
 
 
-class TestPhoshAtomosPatches(unittest.TestCase):
-    def test_overview_chat_patch_chain_exists(self):
-        patch1 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0001-atomos-overview-no-app-grid.patch"
-        patch2 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0002-atomos-overview-chat-entry-submit.patch"
-        patch3 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0003-atomos-overview-chat-ui-lifecycle.patch"
-        patch4 = ISO_ROOT / "vendor" / "phosh" / "patches" / "0004-atomos-overview-chat-ui-show-on-unfold.patch"
-        self.assertTrue(patch1.is_file(), msg="expected no-app-grid patch file")
-        self.assertTrue(patch2.is_file(), msg="expected chat-entry-submit patch file")
-        self.assertTrue(patch3.is_file(), msg="expected chat-ui lifecycle patch file")
-        self.assertTrue(patch4.is_file(), msg="expected chat-ui show-on-unfold patch file")
+class TestPhoshForkWorkflow(unittest.TestCase):
+    def test_checkout_script_uses_local_fork_path(self):
+        text = (S_PHOSH / "checkout-phosh.sh").read_text(encoding="utf-8")
+        self.assertIn("rust/phosh/phosh", text)
+        self.assertIn("ATOMOS_PHOSH_SRC", text)
+        self.assertNotIn("reset --hard", text)
+        self.assertNotIn("clean -fd", text)
+        self.assertNotIn("apply-phosh-atomos-patches.sh", text)
 
-        text1 = patch1.read_text(encoding="utf-8")
-        self.assertIn("search_apps", text1)
-        self.assertIn("do not surface the app grid", text1)
-        self.assertIn("scrolled_window", text1)
-
-        text2 = patch2.read_text(encoding="utf-8")
-        self.assertIn("g_spawn_async", text2)
-        self.assertIn("atomos-overview-chat-submit", text2)
-        self.assertIn("phosh-atomos-chat-entry", text2)
-
-        text3 = patch3.read_text(encoding="utf-8")
-        self.assertIn("atomos-overview-chat-ui", text3)
-        self.assertIn("--show", text3)
-        self.assertIn("--hide", text3)
-
-        text4 = patch4.read_text(encoding="utf-8")
-        self.assertIn("on_drag_state_changed", text4)
-        self.assertIn("phosh_overview_focus_app_search", text4)
-
-    def test_apply_patch_script_syntax(self):
-        r = subprocess.run(
-            ["bash", "-n", str(S_PHOSH / "apply-phosh-atomos-patches.sh")],
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(r.returncode, 0, msg=r.stderr)
-
-    def test_apply_patch_script_supports_selection(self):
+    def test_apply_patch_script_is_deprecated(self):
         text = (S_PHOSH / "apply-phosh-atomos-patches.sh").read_text(encoding="utf-8")
-        self.assertIn("ATOMOS_PHOSH_APPLY_PATCHES", text)
-        self.assertIn("ATOMOS_PHOSH_PATCHES", text)
-        self.assertIn("patch_is_selected", text)
+        self.assertIn("deprecated", text)
+        self.assertIn("Maintain Phosh directly", text)
+
+    def test_local_phosh_fork_checkout_exists_or_is_ignorable(self):
+        gitignore = (ISO_ROOT / "rust" / "phosh" / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("upstream Phosh", gitignore)
 
 
 class TestAtomosDeviceScripts(unittest.TestCase):
@@ -496,6 +689,7 @@ class TestAtomosDeviceScripts(unittest.TestCase):
             "atomos-overview-chat-ui-remote-show.sh",
             "atomos-overview-chat-ui-remote-diag.sh",
             "atomos-overview-chat-ui-remote-fg.sh",
+            "atomos-overview-chat-ui-segfault-repro.sh",
             "atomos-phosh-runtime-smoke.sh",
         ):
             r = subprocess.run(
@@ -504,6 +698,14 @@ class TestAtomosDeviceScripts(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(r.returncode, 0, msg=f"{name}: {r.stderr}")
+
+    def test_overview_chat_ui_segfault_repro_contract(self):
+        text = (S_DEVICE / "atomos-overview-chat-ui-segfault-repro.sh").read_text(encoding="utf-8")
+        self.assertIn("atomos-overview-chat-ui --show", text)
+        self.assertIn("atomos-overview-chat-ui --hide", text)
+        self.assertIn("coredumpctl list /usr/local/bin/atomos-overview-chat-ui", text)
+        self.assertIn("RESULT: FAIL", text)
+        self.assertIn("RESULT: PASS", text)
 
 
 class TestWireCustomApkReposScript(unittest.TestCase):

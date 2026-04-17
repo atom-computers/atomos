@@ -3,13 +3,21 @@ use gtk::prelude::*;
 
 use crate::logic::{env_flag_enabled, theme_class};
 
+fn force_transparent_root() -> bool {
+    env_flag_enabled(std::env::var(
+        "ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT",
+    ))
+}
+
 fn custom_css_disabled() -> bool {
     env_flag_enabled(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS"))
 }
 
 fn stylesheet(desktop_like: bool) -> String {
     let top_row_padding_top = 8;
-    let root_bg = if desktop_like {
+    let root_bg = if force_transparent_root() {
+        "background-color: alpha(#000000, 0.22);"
+    } else if desktop_like {
         "background-color: alpha(#0b0f17, 0.92);"
     } else {
         // Mobile/overlay surfaces sit on top of existing UI; keep the root as a subtle

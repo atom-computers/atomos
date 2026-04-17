@@ -4,7 +4,15 @@
 # Configuration settings
 DISTRO_CODE?=atomos-ubuntu
 DISTRO_VERSION?=24.04
-DISTRO_ARCH?=$(shell dpkg --print-architecture)
+DISTRO_ARCH?=$(shell if command -v dpkg >/dev/null 2>&1; then dpkg --print-architecture; else arch="$$(uname -m)"; if [ "$$arch" = "x86_64" ] || [ "$$arch" = "amd64" ]; then echo amd64; elif [ "$$arch" = "aarch64" ] || [ "$$arch" = "arm64" ]; then echo arm64; else echo unknown; fi; fi)
+
+# Normalize common architecture aliases to Debian names used by package lists.
+DISTRO_ARCH:=$(patsubst x86_64,amd64,$(DISTRO_ARCH))
+DISTRO_ARCH:=$(patsubst aarch64,arm64,$(DISTRO_ARCH))
+
+ifeq ($(DISTRO_ARCH),unknown)
+$(error Unable to detect DISTRO_ARCH. Install dpkg or pass DISTRO_ARCH=amd64|arm64)
+endif
 
 DISTRO_EPOCH?=$(shell date +%s)
 DISTRO_DATE?=$(shell date +%Y%m%d)

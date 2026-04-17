@@ -1,4 +1,5 @@
 use adw::prelude::*;
+use gtk::gio;
 
 mod app_grid;
 mod config;
@@ -10,8 +11,12 @@ mod ui;
 
 fn main() -> anyhow::Result<()> {
     eprintln!("atomos-overview-chat-ui: main phase=begin");
+    // Use NON_UNIQUE so foreground/manual invocations are debuggable even when
+    // another instance is already registered. Launcher PID-guarding still
+    // prevents duplicate background processes in normal shell lifecycle usage.
     let app = adw::Application::builder()
         .application_id("org.atomos.OverviewChatUi")
+        .flags(gio::ApplicationFlags::NON_UNIQUE)
         .build();
     eprintln!("atomos-overview-chat-ui: main phase=app-built");
 

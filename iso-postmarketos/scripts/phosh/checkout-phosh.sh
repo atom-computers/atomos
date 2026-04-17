@@ -1,10 +1,10 @@
 #!/bin/bash
-# Clone or refresh local Phosh tree at vendor/phosh/phosh, then apply patches.
+# Clone or refresh local Phosh fork at rust/phosh/phosh (no patch replay).
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PHOSH_GIT_URL="https://gitlab.gnome.org/World/Phosh/phosh.git"
-PHOSH_CLONE_DIR="$ROOT_DIR/vendor/phosh/phosh"
+PHOSH_CLONE_DIR="${PHOSH_CLONE_DIR:-${ATOMOS_PHOSH_SRC:-$ROOT_DIR/rust/phosh/phosh}}"
 PHOSH_GIT_REF="${ATOMOS_PHOSH_GIT_REF:-}"
 
 if [ -e "$PHOSH_CLONE_DIR" ] && [ ! -d "$PHOSH_CLONE_DIR/.git" ]; then
@@ -13,12 +13,6 @@ if [ -e "$PHOSH_CLONE_DIR" ] && [ ! -d "$PHOSH_CLONE_DIR/.git" ]; then
 fi
 
 if [ -d "$PHOSH_CLONE_DIR/.git" ]; then
-    if ! git -C "$PHOSH_CLONE_DIR" diff --quiet || ! git -C "$PHOSH_CLONE_DIR" diff --cached --quiet || [ -n "$(git -C "$PHOSH_CLONE_DIR" ls-files --others --exclude-standard)" ]; then
-        echo "Resetting local Phosh checkout before applying AtomOS patches."
-        git -C "$PHOSH_CLONE_DIR" reset --hard HEAD
-        git -C "$PHOSH_CLONE_DIR" clean -fd
-    fi
-
     echo "Updating Phosh clone at $PHOSH_CLONE_DIR"
     git -C "$PHOSH_CLONE_DIR" fetch origin
     if [ -n "$PHOSH_GIT_REF" ]; then
@@ -28,8 +22,12 @@ if [ -d "$PHOSH_CLONE_DIR/.git" ]; then
         fi
         git -C "$PHOSH_CLONE_DIR" checkout -q "$PHOSH_GIT_REF"
     elif git -C "$PHOSH_CLONE_DIR" rev-parse -q --verify "@{upstream}" >/dev/null 2>&1; then
-        if ! git -C "$PHOSH_CLONE_DIR" pull --ff-only; then
-            echo "NOTE: fast-forward pull failed; resolve in $PHOSH_CLONE_DIR" >&2
+        if git -C "$PHOSH_CLONE_DIR" diff --quiet && git -C "$PHOSH_CLONE_DIR" diff --cached --quiet && [ -z "$(git -C "$PHOSH_CLONE_DIR" ls-files --others --exclude-standard)" ]; then
+            if ! git -C "$PHOSH_CLONE_DIR" pull --ff-only; then
+                echo "NOTE: fast-forward pull failed; resolve in $PHOSH_CLONE_DIR" >&2
+            fi
+        else
+            echo "NOTE: local edits present; skipping automatic pull in $PHOSH_CLONE_DIR"
         fi
     else
         echo "NOTE: current branch has no upstream; fetched origin only."
@@ -44,7 +42,5 @@ else
         git -C "$PHOSH_CLONE_DIR" checkout -q "$PHOSH_GIT_REF"
     fi
 fi
-
-PHOSH_CLONE_DIR="$PHOSH_CLONE_DIR" bash "$ROOT_DIR/scripts/phosh/apply-phosh-atomos-patches.sh"
 
 echo "Phosh source: $PHOSH_CLONE_DIR"

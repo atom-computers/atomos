@@ -1,6 +1,6 @@
 # Packaging a patched Phosh for postmarketOS
 
-Use a **local clone** of upstream ([`../README.md`](../README.md), `bash scripts/phosh/checkout-phosh.sh`) and ship `.apk` files that override pmaports builds. Patches under [`../patches/`](../patches/) (overview chat input, etc.) apply automatically after checkout; package from that patched tree.
+Use a **local clone** of upstream ([`../../rust/phosh/README.md`](../../rust/phosh/README.md), `bash scripts/phosh/checkout-phosh.sh`) and ship `.apk` files that override pmaports builds. Maintain your shell changes directly in `rust/phosh/phosh` and package from that tree.
 
 ## pmaports / `abuild`
 

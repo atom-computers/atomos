@@ -89,6 +89,42 @@ fi
 URI="file://$WALL"
 IDLE_DELAY="__SCREENLOCK_IDLE_SECONDS__"
 LOCK_DELAY="__SCREENLOCK_LOCK_DELAY_SECONDS__"
+
+# Seed system dconf as a fallback/default for all users so lock + home stay in
+# parity even when per-user gsettings are not yet initialized at image build
+# time (or are later reset). Per-user writes below can still override unless
+# explicitly locked by policy.
+mkdir -p /etc/dconf/db/local.d /etc/dconf/db/local.d/locks
+cat > /etc/dconf/db/local.d/50-atomos-wallpaper.conf << EOS
+[org/gnome/desktop/background]
+picture-uri='$URI'
+picture-uri-dark='$URI'
+picture-options='zoom'
+
+[org/gnome/desktop/screensaver]
+picture-uri='$URI'
+picture-uri-dark='$URI'
+picture-options='zoom'
+lock-enabled=true
+lock-delay=uint32 $LOCK_DELAY
+
+[org/gnome/desktop/session]
+idle-delay=uint32 $IDLE_DELAY
+EOS
+cat > /etc/dconf/db/local.d/locks/50-atomos-wallpaper << 'EOS'
+/org/gnome/desktop/background/picture-uri
+/org/gnome/desktop/background/picture-uri-dark
+/org/gnome/desktop/background/picture-options
+/org/gnome/desktop/screensaver/picture-uri
+/org/gnome/desktop/screensaver/picture-uri-dark
+/org/gnome/desktop/screensaver/picture-options
+/org/gnome/desktop/screensaver/lock-enabled
+/org/gnome/desktop/screensaver/lock-delay
+/org/gnome/desktop/session/idle-delay
+EOS
+if command -v dconf >/dev/null 2>&1; then
+    dconf update || true
+fi
 write_gs_script() {
     _out="$1"
     mkdir -p "$(dirname "$_out")"
@@ -104,6 +140,7 @@ dbus-run-session -- gsettings set org.gnome.desktop.background picture-uri "\$UR
 dbus-run-session -- gsettings set org.gnome.desktop.background picture-uri-dark "\$URI"
 dbus-run-session -- gsettings set org.gnome.desktop.background picture-options zoom
 dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-uri "\$URI"
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-uri-dark "\$URI"
 dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-options zoom
 dbus-run-session -- gsettings set org.gnome.desktop.session idle-delay "uint32 \$IDLE_DELAY"
 dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-enabled true

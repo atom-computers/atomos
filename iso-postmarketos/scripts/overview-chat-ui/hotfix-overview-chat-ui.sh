@@ -20,12 +20,17 @@ if [ ! -f "$PROFILE_ENV_SOURCE" ]; then
 fi
 # shellcheck source=/dev/null
 source "$PROFILE_ENV_SOURCE"
-OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-1}"
-case "${PMOS_DEVICE:-}" in
-    qemu-*|qemu_*)
-        OVERVIEW_RUNTIME_DEFAULT=0
-        ;;
-esac
+OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-0}"
+OVERVIEW_LAYER_SHELL_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT:-0}"
+
+sed_inplace() {
+    # GNU sed supports `-i`; BSD/macOS sed requires `-i ''`.
+    if sed --version >/dev/null 2>&1; then
+        sed -i "$1" "$2"
+    else
+        sed -i '' "$1" "$2"
+    fi
+}
 
 if ! command -v ssh >/dev/null 2>&1; then
     echo "ssh is required." >&2
@@ -39,18 +44,27 @@ fi
 SSH_CMD=(ssh)
 SCP_CMD=(scp)
 SSH_PASSWORD="${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-${PMOS_INSTALL_PASSWORD:-147147}}}"
+SSH_PORT="${ATOMOS_DEVICE_SSH_PORT:-22}"
 if ! command -v sshpass >/dev/null 2>&1; then
     echo "sshpass is required." >&2
     exit 1
 fi
 SSH_AUTH_OPTS=(
+    -p "$SSH_PORT"
+    -o PreferredAuthentications=password
+    -o PubkeyAuthentication=no
+    -o KbdInteractiveAuthentication=no
+    -o NumberOfPasswordPrompts=1
+)
+SCP_AUTH_OPTS=(
+    -P "$SSH_PORT"
     -o PreferredAuthentications=password
     -o PubkeyAuthentication=no
     -o KbdInteractiveAuthentication=no
     -o NumberOfPasswordPrompts=1
 )
 SSH_CMD=(sshpass -p "$SSH_PASSWORD" ssh "${SSH_AUTH_OPTS[@]}")
-SCP_CMD=(sshpass -p "$SSH_PASSWORD" scp "${SSH_AUTH_OPTS[@]}")
+SCP_CMD=(sshpass -p "$SSH_PASSWORD" scp "${SCP_AUTH_OPTS[@]}")
 
 BIN_PATH=""
 SKIP_BIN_INSTALL="${ATOMOS_OVERVIEW_CHAT_UI_SKIP_BIN_INSTALL:-0}"
@@ -158,12 +172,13 @@ cat > "$tmpdir/atomos-overview-chat-ui-launcher" <<'EOF'
 #!/bin/sh
 set -eu
 BIN="/usr/local/bin/atomos-overview-chat-ui"
-# Default to non-layer mode for QEMU/older compositor stability.
+# Default to toplevel fallback for hardware stability.
 # Set ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL=1 to opt into layer-shell.
-export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL:-0}"
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL:-__OVERVIEW_CHAT_UI_LAYER_SHELL_DEFAULT__}"
 # Touch-dismiss can trigger compositor/input-stack instability on some phones.
 # Keep disabled by default; set to 1 to opt in.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-0}"
+# Keep visible by default while diagnosing fold/unfold lifecycle issues.
 export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-1}"
 # Safety fallback: some target GTK stacks crash while parsing advanced CSS.
 # Set to 0 to re-enable themed CSS after confirming target stability.
@@ -175,20 +190,75 @@ export LIBGL_ALWAYS_SOFTWARE="${ATOMOS_OVERVIEW_CHAT_UI_LIBGL_ALWAYS_SOFTWARE:-1
 # Additional safety defaults for unstable target stacks.
 export ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE="${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"
+export ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT="${ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT:-1}"
+# Lifecycle mode controls app visibility; default layer should remain visible on home.
+export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-top}"
+export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
-# Phosh runs this as the logged-in user; /run/ is root-only. Use the session dir.
-PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.pid"
-LOGFILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.log"
-DISABLE_FILE="${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.disabled"
+# Phosh runs this as the logged-in user; prefer session runtime dir.
+PIDFILE=""
+LOGFILE=""
+DISABLE_FILE=""
 
 is_running() {
+    resolve_runtime_paths
     [ -f "$PIDFILE" ] || return 1
     pid=$(cat "$PIDFILE" 2>/dev/null || true)
     [ -n "$pid" ] || return 1
     kill -0 "$pid" 2>/dev/null
 }
 
+resolve_runtime_paths() {
+    runtime="${XDG_RUNTIME_DIR:-}"
+    if [ -z "$runtime" ] || [ ! -d "$runtime" ]; then
+        uid="$(id -u 2>/dev/null || true)"
+        candidate="/run/user/$uid"
+        if [ -n "$uid" ] && [ -d "$candidate" ]; then
+            runtime="$candidate"
+            export XDG_RUNTIME_DIR="$runtime"
+        else
+            runtime="/tmp"
+            export XDG_RUNTIME_DIR="$runtime"
+        fi
+    fi
+    PIDFILE="$runtime/atomos-overview-chat-ui.pid"
+    LOGFILE="$runtime/atomos-overview-chat-ui.log"
+    DISABLE_FILE="$runtime/atomos-overview-chat-ui.disabled"
+}
+
+bind_phosh_session_env_if_missing() {
+    [ -n "${WAYLAND_DISPLAY:-}" ] && [ -n "${XDG_RUNTIME_DIR:-}" ] && return 0
+    if ! command -v pgrep >/dev/null 2>&1; then
+        logger -t atomos-overview-chat-ui "pgrep unavailable; cannot auto-bind Wayland env"
+        return 0
+    fi
+    phosh_pid="$(pgrep phosh | head -n 1 || true)"
+    if [ -z "$phosh_pid" ]; then
+        logger -t atomos-overview-chat-ui "phosh pid not found; WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-<unset>}"
+        return 0
+    fi
+    env_file="/proc/$phosh_pid/environ"
+    if [ ! -r "$env_file" ]; then
+        logger -t atomos-overview-chat-ui "cannot read $env_file to import session env"
+        return 0
+    fi
+    for var in WAYLAND_DISPLAY XDG_RUNTIME_DIR DISPLAY DBUS_SESSION_BUS_ADDRESS; do
+        cur=""
+        case "$var" in
+            WAYLAND_DISPLAY) cur="${WAYLAND_DISPLAY:-}" ;;
+            XDG_RUNTIME_DIR) cur="${XDG_RUNTIME_DIR:-}" ;;
+            DISPLAY) cur="${DISPLAY:-}" ;;
+            DBUS_SESSION_BUS_ADDRESS) cur="${DBUS_SESSION_BUS_ADDRESS:-}" ;;
+        esac
+        if [ -z "$cur" ]; then
+            line="$(tr '\0' '\n' < "$env_file" | awk -F= -v k="$var" '$1 == k { print; exit }' || true)"
+            [ -n "$line" ] && export "$line"
+        fi
+    done
+}
+
 start_ui() {
+    resolve_runtime_paths
     if [ ! -x "$BIN" ]; then
         logger -t atomos-overview-chat-ui "binary not installed; no-op start"
         return 0
@@ -242,6 +312,7 @@ case "${1:-}" in
             logger -t atomos-overview-chat-ui "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
             exit 0
         fi
+        bind_phosh_session_env_if_missing
         logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} runtime=${XDG_RUNTIME_DIR:-<unset>}"
         start_ui
         ;;
@@ -257,7 +328,8 @@ case "${1:-}" in
         ;;
 esac
 EOF
-sed -i "s/__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__/${OVERVIEW_RUNTIME_DEFAULT}/g" "$tmpdir/atomos-overview-chat-ui-launcher"
+sed_inplace "s/__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__/${OVERVIEW_RUNTIME_DEFAULT}/g" "$tmpdir/atomos-overview-chat-ui-launcher"
+sed_inplace "s/__OVERVIEW_CHAT_UI_LAYER_SHELL_DEFAULT__/${OVERVIEW_LAYER_SHELL_DEFAULT}/g" "$tmpdir/atomos-overview-chat-ui-launcher"
 
 if [ "$SKIP_BIN_INSTALL" != "1" ]; then
     cp "$BIN_PATH" "$tmpdir/atomos-overview-chat-ui-bin"

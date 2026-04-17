@@ -28,6 +28,7 @@ CRATE_DIR="$ROOT_DIR/rust/atomos-overview-chat-ui"
 TARGET_TRIPLE="aarch64-unknown-linux-musl"
 PKGCONF_TRIPLE="aarch64-linux-musl"
 BIN_PATH="$CRATE_DIR/target/$TARGET_TRIPLE/release/atomos-overview-chat-ui"
+MUSL_DYNAMIC_LINKER="/lib/ld-musl-aarch64.so.1"
 PMB="$ROOT_DIR/scripts/pmb/pmb.sh"
 PMB_CONTAINER="$ROOT_DIR/scripts/pmb/pmb-container.sh"
 
@@ -225,7 +226,7 @@ export TARGET_PKG_CONFIG_ALLOW_CROSS=1
 export PKG_CONFIG_SYSROOT_DIR="$SYSROOT"
 export PKG_CONFIG_PATH="$PC_PATH"
 export PKG_CONFIG_LIBDIR="$PC_PATH"
-export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
+export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static -C link-arg=-Wl,--dynamic-linker,${MUSL_DYNAMIC_LINKER} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
 export LIBRARY_PATH="${LIBRARY_PATH:-}${LIBRARY_PATH:+:}${SYSROOT}/usr/lib:${SYSROOT}/lib"
 
 find_container_engine() {
@@ -279,7 +280,7 @@ build_host() {
         "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=$overview_linker"
     )
     if [ "$overview_linker" = "rust-lld" ]; then
-        host_env+=("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS=-Clink-self-contained=yes -C target-feature=-crt-static -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/${PKGCONF_TRIPLE}${gcc_native_flags}${debug_flags}")
+        host_env+=("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS=-Clink-self-contained=yes -C target-feature=-crt-static -C link-arg=--dynamic-linker=${MUSL_DYNAMIC_LINKER} -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/${PKGCONF_TRIPLE}${gcc_native_flags}${debug_flags}")
     fi
     echo "Building overview chat UI via host cargo (target: $TARGET_TRIPLE)..."
     env "${host_env[@]}" cargo build \
@@ -367,12 +368,13 @@ if [ -n "${PMB_WORK_OVERRIDE:-}" ] && [ -n "${PROFILE_NAME:-}" ]; then
                 [ -d "$d" ] || continue
                 GCC_NATIVE_FLAGS="${GCC_NATIVE_FLAGS} -L native=${d}"
             done
-            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -C target-feature=-crt-static -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/'"$PKGCONF_TRIPLE"'${GCC_NATIVE_FLAGS}${OVERVIEW_DEBUG_FLAGS}"
+            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -C target-feature=-crt-static -C link-arg=--dynamic-linker=/lib/ld-musl-aarch64.so.1 -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/'"$PKGCONF_TRIPLE"'${GCC_NATIVE_FLAGS}${OVERVIEW_DEBUG_FLAGS}"
         else
             export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static"
             if command -v ld.lld >/dev/null 2>&1 || command -v ld64.lld >/dev/null 2>&1; then
                 export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-fuse-ld=lld"
             fi
+            export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,--dynamic-linker,/lib/ld-musl-aarch64.so.1"
             export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib"
             export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
             export RUSTFLAGS="${RUSTFLAGS}${OVERVIEW_DEBUG_FLAGS}"
@@ -407,6 +409,57 @@ verify_binary_is_musl() {
     return 0
 }
 
+detect_readelf_tool() {
+    if command -v readelf >/dev/null 2>&1; then
+        printf '%s\n' "readelf"
+        return 0
+    fi
+    if command -v llvm-readelf >/dev/null 2>&1; then
+        printf '%s\n' "llvm-readelf"
+        return 0
+    fi
+    return 1
+}
+
+verify_binary_has_musl_interp() {
+    local readelf_tool
+    readelf_tool="$(detect_readelf_tool || true)"
+    if [ -z "$readelf_tool" ]; then
+        # Fallback for hosts without binutils/llvm tools (e.g. minimal macOS setups).
+        # `file` output on dynamic ELF usually includes the interpreter path.
+        if command -v file >/dev/null 2>&1; then
+            local desc
+            desc="$(file -b "$BIN_PATH" 2>/dev/null || true)"
+            if echo "$desc" | grep -q "interpreter ${MUSL_DYNAMIC_LINKER}"; then
+                return 0
+            fi
+            echo "ERROR: cannot verify PT_INTERP with readelf, and file metadata does not show expected musl interpreter." >&2
+            echo "  file: $BIN_PATH" >&2
+            echo "  meta: $desc" >&2
+            echo "  Install binutils (readelf) or llvm-readelf for definitive verification." >&2
+            return 1
+        fi
+        echo "ERROR: neither readelf/llvm-readelf nor file is available; cannot verify PT_INTERP for $BIN_PATH." >&2
+        return 1
+    fi
+    local headers
+    headers="$("$readelf_tool" -W -l "$BIN_PATH" 2>/dev/null || true)"
+    if ! echo "$headers" | grep -q "INTERP"; then
+        echo "ERROR: built binary is missing PT_INTERP program header." >&2
+        echo "  This can segfault before main() on target (unresolved startup relocations)." >&2
+        echo "  file: $BIN_PATH" >&2
+        return 1
+    fi
+    if ! echo "$headers" | grep -q "Requesting program interpreter: $MUSL_DYNAMIC_LINKER"; then
+        echo "ERROR: built binary PT_INTERP is unexpected (wanted $MUSL_DYNAMIC_LINKER)." >&2
+        echo "  file: $BIN_PATH" >&2
+        echo "  Found:" >&2
+        echo "$headers" | grep "Requesting program interpreter" >&2 || true
+        return 1
+    fi
+    return 0
+}
+
 PREFER_CONTAINER="${ATOMOS_OVERVIEW_CHAT_UI_PREFER_CONTAINER:-1}"
 if [ "$PREFER_CONTAINER" = "1" ]; then
     echo "Skipping host cargo cross-build (ATOMOS_OVERVIEW_CHAT_UI_PREFER_CONTAINER=1); using container build."
@@ -425,7 +478,7 @@ if [ ! -x "$BIN_PATH" ]; then
 fi
 
 if [ "${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK:-0}" != "1" ]; then
-    if ! verify_binary_is_musl; then
+    if ! verify_binary_is_musl || ! verify_binary_has_musl_interp; then
         # Debian/Ubuntu-based builders can emit glibc-linked output when GCC
         # linker selection bleeds host libc defaults into a musl target.
         # Retry once with rust-lld + self-contained linker path in container.
@@ -433,6 +486,7 @@ if [ "${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MUSL_CHECK:-0}" != "1" ]; then
             echo "Retrying overview chat UI build with rust-lld to enforce musl linkage..."
             ATOMOS_OVERVIEW_CHAT_UI_LINKER=rust-lld build_container
             verify_binary_is_musl
+            verify_binary_has_musl_interp
         else
             exit 1
         fi

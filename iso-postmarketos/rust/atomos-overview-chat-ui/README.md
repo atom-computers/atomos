@@ -79,6 +79,18 @@ helpers, and restarts the overview UI process on the device. Override
 `ATOMOS_OVERVIEW_CHAT_UI_RESTART_CMD` if you want to bounce the full shell
 session instead of just the chat UI process.
 
+Launcher defaults are tuned for shell integration: layer-shell is enabled,
+`--hide` events are honored, and the surface defaults to the `top` layer so it
+is visible on home/overview while app visibility is still controlled by Phosh
+lifecycle show/hide hooks, unless explicitly overridden.
+When `--show` is invoked from sessions that do not already carry Wayland vars
+(for example over SSH), the launcher now attempts to import
+`WAYLAND_DISPLAY`/`XDG_RUNTIME_DIR` from the running `phosh` process.
+By default, the rootfs overlay does not force always-on autostart; lifecycle
+hooks in patched Phosh control when the surface appears. For explicit
+supervised always-on startup during focused debugging, set
+`ATOMOS_OVERVIEW_CHAT_UI_ALWAYS_ON_DEFAULT=1` at build time.
+
 **`--show` over SSH:** SSH sessions usually have no `WAYLAND_DISPLAY`, so GTK exits at once (empty `ps`). Use **`pgrep phosh | head -n 1`** (not `pgrep -x phosh` — on some images it matches nothing and leaves `PID` empty). On-device one-liner:
 
 ```sh
@@ -108,6 +120,16 @@ The launcher appends GTK output to `$XDG_RUNTIME_DIR/atomos-overview-chat-ui.log
 Run the library tests (no GTK required):
 
 - `cargo test -p atomos-overview-chat-ui`
+
+Run the local all-suites harness from `iso-postmarketos/`:
+
+- `bash scripts/overview-chat-ui/test-overview-chat-ui-local.sh`
+
+Useful toggles:
+
+- `ATOMOS_OVERVIEW_CHAT_UI_LOCAL_TEST_GTK=0` skip GTK suite
+- `ATOMOS_OVERVIEW_CHAT_UI_LOCAL_TEST_STRICT=1` fail when a suite is skipped
+- `ATOMOS_OVERVIEW_CHAT_UI_LOCAL_TEST_SMOKE=1` run optional short preview smoke
 
 The suite covers:
 
