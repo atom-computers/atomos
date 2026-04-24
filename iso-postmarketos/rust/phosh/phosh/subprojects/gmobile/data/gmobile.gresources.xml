@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/mobi/phosh/gmobile/">
+    <!-- Devices with one panel matched by their DT compatible -->
+    <file preprocess="json-stripblanks">devices/display-panels/daria,zahedan.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/fairphone,fp4.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/fairphone,fp5.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/fairphone,fp6.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/furilabs,flx1.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/gigaset,gs5.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/gigaset,gx4.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/moto,bronco.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/motorola,dubai.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/motorola,river.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/nothing,spacewar.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/google,gs101-bluejay.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/google,gs101-oriole.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/google,gs101-raven.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/oneplus,enchilada.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/oneplus,fajita.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/purism,librem5.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/shift,axolotl.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/volla,mimameid.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/volla,vidofnir.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,angelica.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,angelican.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,beryllium.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,curtana.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,daisy.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,dandelion.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,excalibur.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,gram.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,joyeuse.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,onclite.json</file>
+    <file preprocess="json-stripblanks">devices/display-panels/xiaomi,lavender.json</file>
+  </gresource>
+</gresources>

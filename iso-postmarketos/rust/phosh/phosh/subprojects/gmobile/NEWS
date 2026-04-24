@@ -1,0 +1,223 @@
+gmobile 0.7.0
+-------------
+Released March 2026
+* Display-panel-* helper fixes
+* Display panel support for:
+    * Google Pixel 6a
+    * Motorola edge 30
+    * Motorola Moto G7
+    * SHIFT6mq
+    * Fix suppport for Pixel 6 and 6 pro
+* Contributors:
+    * Achill Gilgenast
+    * Guido Günther
+    * Pedro Alves
+    * Val Packett
+
+gmobile 0.6.0
+-------------
+Released December 2025
+* Allow for different corner radii
+* Add hwdb and udev rule to configure minimum torch brightness
+* Oneplus 6: Use different corner radii for top and bottom
+* Leak fixes
+* Issues fixed:
+    * https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/10
+    * https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/5
+* Contributors:
+    * Guido Günther
+    * Robert Eckelmann
+
+gmobile 0.5.0
+-------------
+Released November 2025
+* Add display information for Fairphone 6
+* Allow to run gm-display-panel-run-phosh headless allowing one to use
+  the tool with compositors that restrict window sizes and in ci.
+* Contributors:
+    * Guido Günther
+    * Luca Weiss
+
+gmobile 0.4.0
+-------------
+Released June 2025
+* Add MCC to ISO country code conversion.
+* Wakeup key support for:
+  * Fairphone 5
+  * FuriPhone FLX1
+* Display panel support for:
+  * Fix border radius for OnePlus6
+* Contributors:
+    * Bardia Moshiri
+    * Evangelos Ribeiro Tzaras
+    * fossdd
+    * Guido Günther
+
+gmobile 0.3.0
+-------------
+Released May 2025
+* New API: Allow to set wakep timers
+* Build vapi files too
+* Allow to install tests
+* Wakeup key support:
+  * Handle 3.5mm headset play-pause button on PinePhone
+* Contributors:
+    * Adam
+    * Guido Günther
+
+gmobile 0.2.2
+-------------
+Released March 2025
+* Wakeup key support for:
+  * Google Pixel 3a (sargo)
+  * SHIFT6mq
+  * Samsung Galaxy A5
+  * Xioami Mi A2 Lite (daisy)
+* Display panel support for:
+  * Furilabs FLX1
+  * Nothing Phone 1 (spacewar)
+* Issues fixed:
+    * https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/12
+* Contributors:
+    * Eugene Lepshy
+    * Evangelos Ribeiro Tzaras
+    * Guido Günther
+    * Rafael Fontenelle
+    * Sam Day
+
+gmobile 0.2.1
+-------------
+Released: June 2024
+* New hwdb entries:
+    * Generic AVRCP bluetooth (e.g. Headsets with volume buttons)
+    * Juno Tablets
+    * OnePlus 6/6T
+    * Pine64 Pinephone Pro
+* Updated hwdb entries:
+    * Pine64 PinePhone
+* Simplify the run-phosh helper to test notch information
+* Contributors:
+    * Arnaud Ferraris
+    * Giovanni Caligaris
+    * Guido Günther
+    * Philip Hands
+* Issues fixed:
+    * https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/7
+
+gmobile 0.2.0
+-------------
+Released: May 2024
+* Add hwdb for wakeup keys that allow e.g. Wayland compositors to figure out
+  whether a key should unblank the screen. See gmobile.udev(5) for details.
+* Contributors:
+    * Guido Günther
+    * nee
+
+gmobile 0.1.0
+-------------
+Released: March 2024
+* Split public and private headers
+* Improve API docs
+* Use GSourceOnceFunc for `_once` functions
+  This is a slight API break.
+* Install shared library with .0 soname
+* Make JSON files compatible with recent json-glib
+* Added devices:
+  * Xiaomi Mi A2 Lite
+* Issues fixed:
+  * https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/4
+* Contributors:
+    * Andrea Bolognani
+    * Guido Günther
+
+gmobile 0.0.6
+-------------
+Released: February 2024
+* Build a shared library for testing purposes.
+* Added devices:
+  * Daria Bond
+  * Gigaset GS5
+  * Gigaset GX4
+  * Google Pixel 6
+  * Google Pixel 6 Pro
+  * Motorola ThinkPhone
+  * Volla Phone 22
+  * Volla Phone X23
+  * Xiaomi POCO M2 Pro
+  * Xiaomi Redmi 7
+  * Xiaomi Redmi 9C
+  * Xiaomi Redmi 9C NFC
+  * Xiaomi Redmi Note 7
+  * Xiaomi Redmi Note 9 Pro
+  * Xiaomi Redmi Note 9 Pro Max
+  * Xiaomi Redmi Note 9S
+* Updated devies:
+  * Xiaomi Redmi 9A
+* Contributors:
+    * Bardia Moshiri
+    * Guido Günther
+
+gmobile 0.0.5
+-------------
+Released: January 2024
+* Fix build on FreeBSD
+* Add new macros to check for empty string types
+* Added devices:
+  * Fairphone 5
+* Updated devices:
+  * Fairphone 4
+* Contributors:
+    * Arnaud Ferraris
+    * Guido Günther
+    * Jan Beich
+    * Luca Weiss
+
+gmobile 0.0.4
+-------------
+Released: October 2023
+* Add helper to render all display infos
+* Added devices:
+    * Xiaomi Dandelion
+* Contributors:
+    * darkc0der
+    * Guido Günther
+
+gmobile 0.0.3
+-------------
+Released: August 2023
+* Fix Librem 5 device information
+
+gmobile 0.0.2
+-------------
+Released: July 2023
+* New tools:
+  gm-display-panel-run-phosh: Run a nested phosh and phoc emulating the
+  given device and enable cutout overlay rendering
+* Added devices:
+  * Fairphone 4
+  * Xiaomi Poco F1
+* No API changes
+* Contributors:
+  * Guido Günther
+  * Luca Weiss
+  * Suraj Kumar Mahto
+
+gmobile 0.0.1
+-------------
+Released: January 2023
+* Initial release (no API guarantees!)
+* New API:
+  - GmSvgPath: Store SVG path and get it's bounds
+  - GmRect: Simple rectangle
+  - GmCutout: A display cutout or notch
+  - GmDisplayPanel: Describes a display panel
+  - GmDeviceInfo: Retrieve device information
+* New tools:
+  - gm-display-panel-preview: Generate SVGs and HTML to visualize a device's
+    panel
+* Added devices:
+  - Librem 5
+  - OnePlus 6
+  - OnePlust 6T
+* API changes:
+  gm_device_tree_get_compatibles -> gm_devicetree_get_compatibles

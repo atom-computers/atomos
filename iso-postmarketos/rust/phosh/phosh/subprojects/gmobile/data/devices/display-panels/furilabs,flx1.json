@@ -1,0 +1,14 @@
+{
+  "name": "FuriLabs FLX1",
+  "x-res": 1080,
+  "y-res": 2412,
+  "border-radius": 100,
+  "width": 68,
+  "height": 157,
+  "cutouts" : [
+    {
+      "name": "camera",
+      "path": "M 103 27  a 42 42 0 0 0 0 84  a 42 42 0 0 0 0 -84  Z"
+    }
+  ]
+}

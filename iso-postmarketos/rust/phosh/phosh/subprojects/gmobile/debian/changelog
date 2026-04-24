@@ -1,0 +1,301 @@
+gmobile (0.7.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * display-panel-preview: Fix corner radii calculation.
+    We need to take each corner radius into account when
+    calculating the horizontal and vertical line lengths.
+    Fixes: 4656c26 ("display-panel: Allow for different top and bottom corner radii")
+
+  [ Achill Gilgenast ]
+  * data: Add display information for shift,axolotl
+  * display-panel-run-phosh: Use meson's libexecdir to guess libexecdir of
+    phosh. Instead of hardcoding /usr/libexec as libexecdir, other builds might
+    install phosh with another libexecdir like /usr/lib. So if they build
+    gmobile with /usr/lib, chances are high that they also built phosh with the
+    same /usr/lib.
+
+  [ Pedro Alves ]
+  * data: Rename pixel devices to match mainline.
+    The Pixel 6 and 6 pro are both supported in the mainline kernel now, but
+    their compatibles are in the form of google,gs101-[device] rather than
+    pixel,[device] as specified in this repo.
+    This commit fixes that incompatibility by renaming them to match
+    mainline.
+  * data: Add cutout for bluejay (Pixel 6a)
+    The cutout path has been taken from Android sources:
+
+  [ Val Packett ]
+  * data: Add cutout for dubai (Motorola edge 30), river (Motorola Moto G7)
+    Derived from Android sources.
+
+ -- Guido Günther <agx@sigxcpu.org>  Thu, 26 Mar 2026 09:27:57 +0100
+
+gmobile (0.6.0) experimental; urgency=medium
+
+  * treewide: Move resources into our canonical namespace
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 24 Dec 2025 13:00:13 +0100
+
+gmobile (0.6.0~beta1) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * display-panel-run-phosh: Send SIGTERM.
+    Send SIGTERM to phoc for clean shutdown.
+  * display-panel-run-phosh: Allow to take screenshot.
+    Allow to take a screenshot via `-S name`. We use
+    a delayed callback to give phosh enough time to start
+    so we don't accidentally bind to another process exposing
+    the same API. Should that not prove to be robust enough
+    we can spawn a separate bus.
+    Closes: https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/10
+  * data: Fix match rule description.
+    Fixes: 249da02 ("data: Introduce udev rules and hwdb to track wakeup keys")
+  * data: Add hwdb for torch brightness.
+    This allows to specify a minimum brightness.
+  * display-panel-run-phosh: Don't assert when not taking screenshots.
+    Fixes: 9a8e066 ("display-panel-run-phosh: Allow to take screenshot")
+  * display-panel-run-phosh: Use `fake-builtin`
+    Cutouts are only rendered for builtin panels
+  * display-panel-run-phosh: Allow to configure phoc.
+    This makes it easier to test phoc changes regarding cutouts
+  * tests/cutout: Don't leak cutout
+  * display-panel: Don't leak on JSON parsing
+  * tests: Ease running with valgrind
+  * ci: Switch to forky
+  * ci: Run ASAN in CI
+  * render-all: Trap on warnings.
+    This makes sure we can pass all display panels without warnings.
+  * cutout: Handle serializing properties.
+    We don't want to serialize the bounding box so we need to skip it.
+  * display-panel: Fix leaks on serialize
+  * data: Fix nothing phone camera cutout.
+    The current path is a triangle, let's make it a square. This
+    has no effect on the resulting bounding box.
+    Ideally we'd use a circle that approximate the camera but we
+    don't have such a device to test.
+    Fixes: d5e36f8 ("data: Add display information for nothing,spacewar")
+  * display-panel: Allow for different top and bottom corner radii.
+    In fact we treat all four corners separately to be able to handle all
+    kinds of (rectangular) displays.
+    Closes: https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/5
+  * examples: Add python example.
+    Useful to test bindings
+  * data: Use bottom border radius for enchilada.
+    Thanks fossdd for caring about the future
+
+  [ Robert Eckelmann ]
+  * data: Add more torch min brightness values
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 17 Dec 2025 16:04:33 +0100
+
+gmobile (0.5.0) experimental; urgency=medium
+
+  [ Luca Weiss ]
+  * data: Add display information for fairphone,fp6
+
+  [ Guido Günther ]
+  * build: Make gir warnings fatal.
+    Otherwise we'll acquire more warnings over time
+  * build: Make doc warnings fatal.
+    Otherwise we'll acquire more warnings over time
+  * run-phosh: Use correct unref function
+  * run-phosh: Allow for headless backend.
+    Passing `--headless` or `-h` will run things headless rather
+    than preseinting a window on screen.
+    This will also make it easy to run this in CI
+
+ -- Guido Günther <agx@sigxcpu.org>  Sun, 09 Nov 2025 17:59:31 +0100
+
+gmobile (0.4.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * tests: Fix name of not-installed test
+  * build: Start 0.4.0 cycle
+  * tests: Sort alphabetically
+  * gm-mcc-mnc: Add MCC to ISO country code conversion.
+    We use this in Chatty, Calls and Cbd so it should move to a library.
+  * doc: Fix manpage subject.
+
+  [ Evangelos Ribeiro Tzaras ]
+  * data/hwdb: Insert empty line to indicate a new input device.
+    Fixes b1cd28b89a105b83b3b485c28f94af0b53dc6966
+  * data/hwdb: Add Fairphone 5
+  * meson: Fix typo
+
+  [ fossdd ]
+  * data: Add border radius for oneplus,enchilada
+
+  [ Bardia Moshiri ]
+  * data/hwdb: Add FuriPhone FLX1
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 21 Jun 2025 10:59:16 +0200
+
+gmobile (0.3.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * ci: Update shared scripts and dotfiles to a9fef9a
+  * build: Format meson files.
+  * ci: Check meson format
+  * build: Build vapi too
+  * treewide: Drop glib version conditionals. We require glib 2.78 anyway
+  * timeout: Conditionally cleanup source members.
+    We might have partially inited sources when setting up a source fails.
+    This can happen with the following changes.
+  * timeout: Pass clockid. This allows us to use the code for different
+    clock types
+  * timeout: Add wakeup timer
+  * timeout: Bubble up errors. This slightly changes the existing API/ABI as
+    gm_timeout_add_seconds_once can now return 0 but given the current users
+    that is likely o.k.
+  * example: Add wake system example
+  * build: Allow to install tests
+  * packaging: Add package for tests
+  * packaging: Add autopkgtest that runs the installed tests
+
+  [ Adam ]
+  * data/hwdb: Add pinephone 3.5mm headset play-pause button
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 07 May 2025 09:30:39 +0200
+
+gmobile (0.2.2) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * packaging: Don't set gtk_doc twice
+  * doc: Link to wakeup key post.
+    It has additional details to the manpage
+  * data: Add display-panel for Furilabs FLX1.
+    This information was built from scratch to be able to actually match the
+    camera cutout and run unmodified gmobile / phosh.
+  * build: Bump glib dependency.
+    We want to use g_strv_builder_take()
+  * util: Add helper to list all known devices.
+    This makes it easier to e.g. show them in lists
+  * data/hwdb: Add Google Pixel 3a (Sargo)
+    Closes: https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/12
+    Thanks to Giovanni Caligaris
+
+  [ Rafael Fontenelle ]
+  * Add GPL-3-or-later to README.md
+
+  [ Sam Day ]
+  * data/hwdb: Add Samsung Galaxy A5 wakeup keys
+
+  [ Eugene Lepshy ]
+  * data: Add display information for nothing,spacewar
+
+  [ Evangelos Ribeiro Tzaras ]
+  * data/hwdb: Add xioami-daisy
+  * data/hwdb: Add shift6mq wakeup keys
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 21 Mar 2025 18:43:07 +0100
+
+gmobile (0.2.1) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * Revert "ci: Add workaround for broken gcovr in Debian"
+    This reverts commit 40a273a03c5c72b9e9790b459acf31f285291bb6.
+    Debian testing has a fixed gcovr (7.2+really-1.1) again.
+  * examples/run-phosh: Use scale calculation from phoc.
+    Since we don't have physical dimensions for the nested display one had
+    to pass in the scale to use manually. Use the data from gmobile when
+    available.
+  * data: Add wakeup key info for OnePlus 6/6T
+  * ci: Use fdo mirror in GNOME infra. This avoids an external dependency
+  * data/hwdb: Simplify entries for volume button only controllers.
+    On the PP{,P} and OnePlus {Enchilada,Fajita} the volume keys are the
+    only buttons on the respective controllers so we can use
+    GM_WAKEUP_KEY_DEFAULT instead of listing individual keys.
+  * data/hwdb: Add Juno tablets.
+    Closes: https://gitlab.gnome.org/World/Phosh/gmobile/-/issues/7
+    Thanks to Giovanni Caligaris
+  * data/hwdb: Add generic AVRCP bluetooth hardware.
+    This ensures external BT devies using this profile don't trigger unblank
+    by default.
+    Note that udev translates the `(AVRCP)` to `_AVRCP_`.
+    Thanks to Philip Hands <phil@hands.com> for debugging this with me
+
+  [ Arnaud Ferraris ]
+  * data/hwdb: Add wakeup key info for  PinePhone Pro
+  * data/hwdb: Fix PinePhone compatible string.
+    The compatible string used for the original PinePhone is wrong and too
+    restrictive:
+    * the main string ends with the HW revision, the final `pine64` is the
+      start of another compatible string
+    * there are more revisions in the wild than only `1.2`, we should
+      account for those as well
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 21 Jun 2024 22:01:52 +0200
+
+gmobile (0.2.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * util: Fix copyright header.
+    Fixes: e8d3fa8 ("treewide: Use consistent copyright headers")
+  * packaging: Update package descriptions
+  * README: Mention that we can be used as a shared lib
+  * build-howto: Explain how to use as a shared library
+  * build: Don't use str for boolean argument. This is deprecated in meson
+  * ci: No need to remove lcov anymore
+  * ci: Use build dependencies. Instead of open coding these use what we have
+    in packaging
+  * ci: Add workaround for broken gcovr in Debian.
+    See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1070172
+  * ci: Add style checks
+  * packaging: Handle nocheck
+  * packaging: Handle nodoc
+  * packaging: Ignore package dirs
+  * build: Prefer '/' over join_paths()
+  * data: Introduce udev rules and hwdb to track wakeup keys.
+    On phones and tablets the only key that should usually unidle a device
+    is the power button while other exposed hardware keys like the volume
+    buttons shouldn't e.g. take the device out of idle / unblank the screen.
+    Allow to specify whether an input device has wakeup keys (default is
+    1) and to specify whether individual keys on that device are wakeup
+    keys or not. E.g.
+    gmobile:…
+     GM_WAKEUP_KEY_DEFAULT=0
+     GM_WAKEUP_KEY_116=1
+    would mark all keys on the matching input device as non-wakeup keys
+    with the exception of the power button. This would be a typical setting
+    for phones. Whereas on a convertible that has a single keyboard device
+    containing both the exposed volume keys as well as the regular input
+    keys
+    gmobile:…
+     GM_WAKEUP_KEY_114=0
+     GM_WAKEUP_KEY_115=0
+    would allow all keys to unidle the device except for the exposed volume
+    rocker.
+    See https://github.com/systemd/systemd/pull/32261 for details
+    Device tree devices can't match via dmi modalias. The corresponding
+    thing there is the DT compatible. Allow to match by the most specific
+    part of the device tree compatible. This allows to e.g. match the volume
+    keys on a Librem 5 like:
+      gmobile:name:gpio-keys:dt:purism,librem5*
+    matching on a specific model would look like
+      gmobile:name:gpio-keys:dt:purism,librem5r4
+    See https://github.com/systemd/systemd/pull/32362 for details
+  * data/hwdb: Add wakeup keys for the Librem 11 tablet
+  * data/hwdb: Add wakeup keys for the Librem 5 phone
+  * doc: Add manpage explaining the hwdb entries.
+    This text based on parts of the libinput documentation.
+
+  [ nee ]
+  * data/hwdb: Add wakeup keys for the PinePhone beta
+    based on outputs with postmarket-os edge gnome-mobile:
+    pine64-pinephone:~$ sudo libinput debug-events
+    -event4   KEYBOARD_KEY            +4294967.294s KEY_VOLUMEUP (115) pressed
+     event4   KEYBOARD_KEY            +0.193s       KEY_VOLUMEUP (115) released
+     event4   KEYBOARD_KEY            +1.586s       KEY_VOLUMEDOWN (114) pressed
+     event4   KEYBOARD_KEY            +1.817s       KEY_VOLUMEDOWN (114) released
+    pine64-pinephone:~$ cat /sys/class/input/event4/device/name
+    1c21800.lradc
+    pine64-pinephone:~$ cat /sys/firmware/devicetree/base/compatible
+    pine64,pinephone-1.2pine64,pinephoneallwinner,sun50i-a64
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 10 May 2024 11:45:37 +0200
+
+gmobile (0.1.0) experimental; urgency=medium
+
+  * Initial release
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 08 Mar 2024 17:57:06 +0100

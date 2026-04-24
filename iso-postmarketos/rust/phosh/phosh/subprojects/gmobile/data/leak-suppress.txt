@@ -1,0 +1,7 @@
+# Use via environment variable LSAN_OPTIONS=suppressions=data/leak-suppress.txt
+
+#
+# gvfs:
+#
+# https://gitlab.gnome.org/GNOME/gvfs/-/issues/577
+leak:g_daemon_vfs_init

@@ -1,0 +1,7 @@
+Tests: build-test
+Depends: libgmobile-dev, pkgconf
+Restrictions: allow-stderr, superficial
+
+Tests: installed-tests
+Restrictions: allow-stderr
+Depends: gmobile-tests, dbus, xauth, xvfb, gnome-desktop-testing

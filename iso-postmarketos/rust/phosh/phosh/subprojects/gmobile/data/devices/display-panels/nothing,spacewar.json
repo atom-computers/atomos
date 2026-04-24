@@ -1,0 +1,14 @@
+{
+  "name": "Nothing Phone (1)",
+  "border-radius": 107,
+  "width": 76,
+  "height": 159,
+  "x-res": 1080,
+  "y-res": 2400,
+  "cutouts" : [
+    {
+      "name": "camera",
+      "path": "M 83,35 h 65 v 65 h -65 Z"
+    }
+  ]
+}

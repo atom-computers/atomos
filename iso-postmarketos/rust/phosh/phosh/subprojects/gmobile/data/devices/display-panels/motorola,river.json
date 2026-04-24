@@ -1,0 +1,14 @@
+{
+  "name": "Motorola Moto G7",
+  "x-res": 1080,
+  "y-res": 2270,
+  "border-radius": 118,
+  "width": 68,
+  "height": 143,
+  "cutouts": [
+    {
+      "name": "notch",
+      "path": "M 460,0 L 490,110 L 590,110 L 620,0 Z"
+    }
+  ]
+}

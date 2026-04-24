@@ -1,0 +1,13 @@
+{
+    "name": "Google Pixel 6a",
+    "x-res": 1080,
+    "y-res": 2400,
+    "width": 64,
+    "height": 142,
+    "cutouts": [
+        {
+            "name": "notch",
+            "path": "M 507 66 A 33 33 0 1 0 573 66 A 33 33 0 1 0 507 66 Z"
+        }
+    ]
+}

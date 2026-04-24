@@ -1,0 +1,29 @@
+option('examples',
+       type: 'boolean', value: true,
+       description: 'Whether to compile the examples')
+
+option('tests',
+       type: 'boolean', value: true,
+       description: 'Whether to compile unit tests')
+
+option('installed_tests',
+       type: 'boolean', value: false,
+       description: 'Whether to install the tests')
+
+option('gtk_doc',
+       type: 'boolean', value: false,
+       description: 'Whether to generate the API reference')
+
+option('man',
+       type: 'boolean', value: false,
+       description : 'Whether to generate man pages (requires rst2man)')
+
+option('introspection', type: 'boolean', value: true,
+       description : 'Build introspection data (requires gobject-introspection)')
+
+option('vapi', type: 'boolean', value: true,
+       description : 'Build vapi (requires introspection)')
+
+option('hwdb',
+       type: 'boolean', value: true,
+       description : 'Whether to install udev rules and hwdb entries')

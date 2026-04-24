@@ -1,0 +1,14 @@
+{
+  "name": "Motorola edge 30",
+  "x-res": 1080,
+  "y-res": 2400,
+  "border-radius": 100,
+  "width": 69,
+  "height": 152,
+  "cutouts": [
+    {
+      "name": "camera",
+      "path": "M 498.5,65 a 41.5,41.5 0 1 0 83,0 a 41.5,41.5 0 1 0 -83,0 Z"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "The Fairphone (Gen. 6)",
+  "x-res": 1116,
+  "y-res": 2484,
+  "border-radius": 100,
+  "width": 66,
+  "height": 146,
+  "cutouts" : [
+    {
+      "name": "notch",
+      "path": "M 558 16 a 42 42 0 0 0 0 90 a 42 42 0 0 0 0 -90 Z"
+    }
+  ]
+}
