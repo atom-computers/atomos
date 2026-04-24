@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-oneplus-dumpling
+pkgdesc="OnePlus 5T"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.mainline.conf
+	modules-initfs.alpine
+	modules-initfs.mainline
+	phoc.ini
+"
+subpackages="
+	$pkgname-kernel-alpine:kernel_alpine
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_alpine() {
+	# FIXME: msm-modem-uim-selection hangs boot for some 20 seconds when installed with non-free FW
+	pkgdesc="Upstream stable kernel, unpatched Alpine linux-stable"
+	depends="linux-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Close to mainline kernel, plenty of working features and fixes"
+	depends="linux-postmarketos-qcom-msm8998 soc-qcom-msm8998"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for GPU, Wi-Fi, Bluetooth etc. (also needed for full disk encryption)"
+	depends="firmware-oneplus-msm8998"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	# some scaling tweaks
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+f13d36016df546a0f0c6643054cb897a4c57c9eaafdfb6b424afe0f55d9bc4b14838240ab4b47f71812bee2cf6113d53557a95a7ad44bd6048d877f43790defd  deviceinfo
+515b7a75cf7cfc9c3e9d122140a32fd14f84fe99456145686a93ed04de3977d07272ba4dc9b05d213461e62733530a0ea6def83c48621f5c0b2d10f2254ed359  kernel-cmdline.mainline.conf
+53472343462865f6b44897a079edc62dbbefe1b3ad0c7ceb02fa85a21d0162c0505321b516fc37a9fa7fcfe946cd17fd03a70b24bca302aa18773b576e5f14c9  modules-initfs.alpine
+27fa563174768cf1c3b0568b9e5b84cfb5eb54ed29ff4788eaba829ca484a053dff46ae7f64741c59a9e7652970f5858e8bf42af5ae23fe6f37660777ca40d4a  modules-initfs.mainline
+2288f08a44aae5136c0c0c846501c2bd4bcb10f05454b40c6e4490d398385b8a7129216047b5eb7982ca6d62d3aa71f3e18bfb8661d0cd32c8a600685ca0da48  phoc.ini
+"

@@ -1,0 +1,32 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Kidd Lee <LeeXiaolan@gmail.com>"
+pkgname=device-xiaomi-ido
+pkgdesc="Xiaomi Xiaomi Redmi 3"
+pkgver=3
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-xiaomi-ido mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo
+	kernel-cmdline.conf
+	fb.modes
+	initfs-hook.sh
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/fb.modes "$pkgdir"/etc/fb.modes
+}
+sha512sums="
+8cc220f304bbab3c298edaa1c5db8c5bc6b0964a3214bd014a1a55757767b585b569f38d87cc02bfeaa82b1d7a4c121734b39586ed8bfc1f1f48ba1708730583  deviceinfo
+55f6ad6b6097cfe26f11a76f98adaba4e0d142144886298c61f7f5b010fee9f44716696dfa0e1abaac43b51a3bb18ea86e3a64b16072ba72da98d02b1b39badb  kernel-cmdline.conf
+8a72f8d34fd0a8c7b6de0a2ab16e255b3fe28993e1aef7c25c3c4becc5851e51f5dcc3814acc75c8bb829bc02d180d976ee3877a98982d29cfc5cb7ea84f1c32  fb.modes
+3b46dfab8465935349a8775e0247a3ea4274c16a9f526f17e1397ae2f6bdef11d9cbd969dc630a7d647e4130f5a2f1a8e85357fc34a5b1900411f9219a62b38e  initfs-hook.sh
+"

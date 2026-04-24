@@ -1,0 +1,61 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/GT-I8160_defconfig
+
+pkgname=linux-samsung-codina
+pkgver=3.0.101
+pkgrel=4
+pkgdesc="Samsung Galaxy Ace 2 kernel"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-codina"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc4"
+
+# Source
+_repository="Samsung_STE_Kernel"
+_commit="ada5cb730330749534576adcaad0df8ac9062e5a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/TeamCanjica/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	01_reduce_lzo_compression.patch
+	02_fix_fb_rgb_mode.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+b436eeab728ba4ab3f536b89c7e3e7ac282836030daf8c37116df3ebb76b114f1111ec6392f8389e0729439ded09c04a4416491cc04b6a56d903b52e84aebb88  linux-samsung-codina-ada5cb730330749534576adcaad0df8ac9062e5a.tar.gz
+c441de6c86eb87d3c7a8578de5a9f465a84bdd9b583699e0222d3e09681765954b2c950bf00b53155305df266092ae1e7783baac0f8bd8791092a191109f9222  config-samsung-codina.armv7
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+30ac7171fe2a5aa90c15e56465b35bfc84015079296df2ebbb4287a2848ac5e8cf8e0dbb00dfdf84acb6692587eefdfc338e65ef3170a1a3e5b279b317ba43f3  01_reduce_lzo_compression.patch
+3a78bb5e250637a1c9dbba1b31a539f98d89c1ccaab54f100ca3c39345c99aa2243f700f38c06f71164a898914a2bf8c2de1ccee187922b062056c6a5ad3acbb  02_fix_fb_rgb_mode.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

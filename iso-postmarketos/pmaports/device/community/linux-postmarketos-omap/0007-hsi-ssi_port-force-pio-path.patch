@@ -1,0 +1,44 @@
+From 912d41160ee66ae498a06c61ab1ea8ac1341faeb Mon Sep 17 00:00:00 2001
+From: "Sicelo A. Mhlongo" <absicsz@gmail.com>
+Date: Mon, 13 Mar 2023 22:21:40 +0200
+Subject: [PATCH] hsi: ssi_port: force pio path
+
+The SSI modem in Nokia N900 has never worked with DMA mode, but in recent
+kernels, it somehow always chooses to use DMA. Force it to use the working and
+tested PIO path.
+
+---
+ drivers/hsi/controllers/omap_ssi_port.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/hsi/controllers/omap_ssi_port.c b/drivers/hsi/controllers/omap_ssi_port.c
+index b9495b720f1b..3adbe75f85cc 100644
+--- a/drivers/hsi/controllers/omap_ssi_port.c
++++ b/drivers/hsi/controllers/omap_ssi_port.c
+@@ -320,19 +320,19 @@ static int ssi_start_pio(struct hsi_msg *msg)
+ static int ssi_start_transfer(struct list_head *queue)
+ {
+ 	struct hsi_msg *msg;
+-	int lch = -1;
++	/* int lch = -1; */
+ 
+ 	if (list_empty(queue))
+ 		return 0;
+ 	msg = list_first_entry(queue, struct hsi_msg, link);
+ 	if (msg->status != HSI_STATUS_QUEUED)
+ 		return 0;
+-	if ((msg->sgt.nents) && (msg->sgt.sgl->length > sizeof(u32)))
++	/* if ((msg->sgt.nents) && (msg->sgt.sgl->length > sizeof(u32)))
+ 		lch = ssi_claim_lch(msg);
+ 	if (lch >= 0)
+ 		return ssi_start_dma(msg, lch);
+-	else
+-		return ssi_start_pio(msg);
++	else */
++	return ssi_start_pio(msg);
+ }
+ 
+ static int ssi_async_break(struct hsi_msg *msg)
+-- 
+2.39.2
+

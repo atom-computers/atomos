@@ -1,0 +1,11 @@
+diff --git a/wayland-sessions/sway_hrdl.desktop.orig b/wayland-sessions/sway_hrdl.desktop
+index 334a343136..367f1e20d0 100644
+--- a/wayland-sessions/sway_hrdl.desktop.orig
++++ b/wayland-sessions/sway_hrdl.desktop
+@@ -1,5 +1,5 @@
+ [Desktop Entry]
+ Name=sway_hrdl
+ Comment=A sway/waybar configuration integrated into hrdl's custom rockchip_ebc driver
+-Exec=sway_hrdl
++Exec=dbus-run-session sway_hrdl
+ Type=Application

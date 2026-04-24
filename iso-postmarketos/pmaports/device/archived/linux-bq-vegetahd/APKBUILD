@@ -1,0 +1,70 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/alps_defconfig
+
+pkgname=linux-bq-vegetahd
+pkgver=3.10.49
+pkgrel=0
+pkgdesc="BQ Aquaris E5 HD kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="bq-vegetahd"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	xz
+"
+
+# Source
+_repository="android_kernel_bq_vegetahd"
+_commit="fc8ba1dc9fe42ee265d8dadcf6655a749a791ec1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Pablito2020/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	001-fix_inline_on_ipanic_rom.patch
+	002-fix_undefined_reference_to_mt_disable_uart.patch
+	003-fix_undefined_reference_to_bad_udelay.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+9c6ad7fd482b17a372be01176de972d6016faf216504deb8571ae20087fcb383cf24ed66ee773993b99200649bf69b163d1c05e36fe52c97a0414698dd472e42  linux-bq-vegetahd-fc8ba1dc9fe42ee265d8dadcf6655a749a791ec1.tar.gz
+f958fc782311b6401b0285bcdd0916b7b54fffd78ac5063d54ed9efc4e8b387c96482a78e30d3fea0a9d03231c95d5f0747c46e61925a633df5a6feed3389444  config-bq-vegetahd.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+93c961ff44ff4a77a9439ad604e465a046f78d9a57c87cb8ef587fbf49bd6ec5044440e0163c2a3c4f654af2cf34ca47d401aef4d476796207f6427d78d22fa5  001-fix_inline_on_ipanic_rom.patch
+f3741832108d66d28b13dc7466859cf0a54a59ab6ffa670df214807bfbff9de90c46eaa7bb83f131900616bbbeff63e626dcccc312d0ce7c72d344ba0d3f622e  002-fix_undefined_reference_to_mt_disable_uart.patch
+83f3299ae8af61923eb644c77a131689a78fc3f2e362cd20412d74229ea8530bb5680915f81fe99d135a327a9f43b1ff23a297fc946b7fefa1fdcdb2cc76d594  003-fix_undefined_reference_to_bad_udelay.patch
+"

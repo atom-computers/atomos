@@ -1,0 +1,8 @@
+# This file is provided by postmarketos-base.
+
+# this option is required for some DEs (e.g., Phosh) to be cleaned up fully so
+# they aren't automatically restarted by a child process
+rc_cgroup_cleanup="yes"
+
+# UID of user to autologin (pmOS default UID is 10000)
+AUTOLOGIN_UID=10000

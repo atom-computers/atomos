@@ -1,0 +1,83 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/pmos-a40_defconfig
+
+pkgname=linux-samsung-a40
+pkgver=4.4.177
+pkgrel=1
+pkgdesc="Samsung Galaxy A40 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a40"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="linux-samsung-a30"
+_commit="5eeafe2bfcb93847b403fd92bd92f9d0a9f6341d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/faveoled/$_repository/-/archive/$_commit/$_repository-$_commit.tar.gz
+	fix-check-lxdialog.patch
+	makefiles_fix.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+	rem_android_ifdef.patch
+	ifdef_exynos_fimc_is2.patch
+	ifdef_knox_ncm_nf_conntrack_core_c.patch
+	ifdef_knox_ncm_sock_c.patch
+	ifdef_knox_ncm_udp_c.patch
+	decon_fix.patch
+	dont_skip_initramfs.patch
+	skip_abox_itmon_notifier.patch
+	use-pmos-fw-loc.patch
+	$_config
+"
+builddir="$srcdir/linux-samsung-a30-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	objcopy -I binary -O ihex firmware/exynos7885_acpm_fvp.fw firmware/exynos7885_acpm_fvp.fw.ihex
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Build headers
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" headers_install
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+76be6d88311496b07918bfdb07b4af5623c890e0b2dc5e923258444dfda825ec0e1222d4af52a11b27905916c9ea1662214355163e63f2f8f93a78f95cac4f77  linux-samsung-a40-5eeafe2bfcb93847b403fd92bd92f9d0a9f6341d.tar.gz
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+65da43ce42dfc9eff3e0c2c2c367b6ca9e45786ddec8c3949b8f4095927288cd19f6722e859c72f98299621c3bf4280547f6009babb7de47df210aa44d0497d8  makefiles_fix.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+fa1c3e4bdf0a7d5647ec5cf28c02f3082dea51c463309bd1626d4ee2cc4413a6641d0f108decc2c7a243891422bb0f5f835d3ac495f1cfb21a0e41dc7afb8ceb  rem_android_ifdef.patch
+fc32c1499cf2964605d6815086ae9b58db3e30e52f383fd4d58035b8ff84ba4cf1e77b3f88a11d96f1aeb5d324817f057adb334504339113d47be1296f6c2398  ifdef_exynos_fimc_is2.patch
+fcd83fcc045430767cf87babf44c598f3d983c7a376864ba1d896e5993009d50b5e8148ff5461db640f77ea857dc151cf54f0ab4d39c82d12fa01c7cec2d4398  ifdef_knox_ncm_nf_conntrack_core_c.patch
+6aaabe87793670a9cecca1f9bcbcb781745bea33ce73d5e71fe5080e83b085afa4e102c769ba3767d62f2059c59be03b71b3907fa2c5bc57451249da48a9311d  ifdef_knox_ncm_sock_c.patch
+3b793b97c99e14c448c3a91ccb79c474c7869c5896eac18f1e54cb73b0e3f79fcc0422652d98eaf54692cbd073173539e1ba27b1ba0f1dfdb6be80b111501aab  ifdef_knox_ncm_udp_c.patch
+88a5ef18d9eb31e6d80317925907651229529cd41f8b181b61c14ff56b340341c8ff5c95ab0dd9562b9575d4e206623e7dc039a9eb6b34c455165878df63cd86  decon_fix.patch
+53df4a36ba45032c752fb8730f9ada88e6b7990b6afd8ff977dce88128ed5a155531023687094243e61d78e4be9396d5e8b168cbfd09197ef9a6917cf5df0959  dont_skip_initramfs.patch
+ce5928e9237931c6aa181be29c9ecd4f66e8330a5d36a2dbd0032909b6677083593e281f33e2059f7b5f8ef7372fc506a3d47323bde1877416b5152998aaed7b  skip_abox_itmon_notifier.patch
+382e70e8cfc50a7942f469c9377cdfaf76c4888ba75b6a45ad7effbbdbe2d3e7d925f6e30e52ceb204bdc685c683e2c9cb4df75309623c33f51709949c0f1532  use-pmos-fw-loc.patch
+b35bcc84ef600bd9fcbb3c839a106f5c34eaa16fc8c87a6d95161f24532987d975d92983e4439f7fa971dea942f6c58f8820b860be397d893bc1a636cfda48e2  config-samsung-a40.aarch64
+"

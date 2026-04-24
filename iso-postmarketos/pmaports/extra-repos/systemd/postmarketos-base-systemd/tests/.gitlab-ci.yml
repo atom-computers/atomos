@@ -1,0 +1,10 @@
+
+pmos-base-systemd-unit-tests:
+  extends: .package-test
+  script:
+    - .ci/lib/testlib.sh extra-repos/systemd/postmarketos-base-systemd/tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_REF_PROTECTED == "false"
+      changes:
+        - extra-repos/systemd/postmarketos-base-systemd/rootfs-usr-libexec-systemd-apk-trigger
+        - extra-repos/systemd/postmarketos-base-systemd/tests

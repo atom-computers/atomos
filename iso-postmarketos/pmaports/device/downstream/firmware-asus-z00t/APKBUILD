@@ -1,0 +1,123 @@
+pkgname=firmware-asus-z00t
+pkgver=0
+pkgrel=2
+pkgdesc="Firmware for asus-z00t"
+url="https://github.com/F2F056C4-B868-4F9D-BF2A-45B9CD317E1D/asus-z00t-firmware"
+arch="aarch64"
+license="proprietary"
+depends="wcnss-wlan"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="d75a9d565250429ed5b06ed6c5d6f50cfadf9cb9"
+_repo="asus-z00t-firmware"
+_dir="$_repo-$_commit"
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/F2F056C4-B868-4F9D-BF2A-45B9CD317E1D/$_repo/archive/$_commit.tar.gz
+	https://raw.githubusercontent.com/LineageOS/android_device_asus_msm8916-common/cm-14.1/wifi/WCNSS_qcom_cfg.ini
+"
+
+package() {
+	cd "$srcdir"
+
+	for part in b00 b01 b02 b03 mdt; do
+		install -Dm644 "$_dir/firmware/image/keymaste.$part" "$pkgdir/lib/firmware/postmarketos/keymaster/keymaster.$part";
+	done
+
+	# prima
+	_files="
+		WCNSS_cfg.dat
+		WCNSS_wlan_dictionary.dat
+		WCNSS_qcom_wlan_nv_cmcc_zd550kl.bin
+		WCNSS_qcom_wlan_nv_cucc_zd550kl.bin
+		WCNSS_qcom_wlan_nv_ze550kg.bin
+		WCNSS_qcom_wlan_nv_ze550kl.bin
+		WCNSS_qcom_wlan_nv_ze550kl_cmcc.bin
+		WCNSS_qcom_wlan_nv_ze551kl.bin
+		WCNSS_qcom_wlan_nv_ze600kl.bin
+		WCNSS_qcom_wlan_nv_zx550kl.bin
+	"
+	for f in $_files; do
+		install -Dm644 "$_dir/etc-firmware/wlan/prima/$f" \
+			"$pkgdir/lib/firmware/postmarketos/wlan/prima/$f"
+	done
+	_files="
+		WCNSS_qcom_cfg.ini
+	"
+	for f in $_files; do
+		install -Dm644 "$f" \
+			"$pkgdir/lib/firmware/postmarketos/wlan/prima/$f"
+	done
+
+	# qualcomm
+	_files="
+		cmnlib.b00
+		cmnlib.b01
+		cmnlib.b02
+		cmnlib.b03
+		cmnlib.mdt
+		isdbtmm.b00
+		isdbtmm.b01
+		isdbtmm.b02
+		isdbtmm.b03
+		isdbtmm.mdt
+		mba.mbn
+		modem.b00
+		modem.b01
+		modem.b02
+		modem.b03
+		modem.b04
+		modem.b05
+		modem.b06
+		modem.b08
+		modem.b09
+		modem.b12
+		modem.b13
+		modem.b14
+		modem.b15
+		modem.b16
+		modem.b17
+		modem.b18
+		modem.b21
+		modem.b22
+		modem.b23
+		modem.b25
+		modem.b26
+		modem.mdt
+		playread.b00
+		playread.b01
+		playread.b02
+		playread.b03
+		playread.mdt
+		venus.b00
+		venus.b01
+		venus.b02
+		venus.b03
+		venus.b04
+		venus.mbn
+		venus.mdt
+		wcnss.b00
+		wcnss.b01
+		wcnss.b02
+		wcnss.b03
+		wcnss.b04
+		wcnss.b05
+		wcnss.b06
+		wcnss.b07
+		wcnss.b08
+		wcnss.b09
+		wcnss.b10
+		wcnss.b11
+		wcnss.mdt
+		widevine.b00
+		widevine.b01
+		widevine.b02
+		widevine.b03
+		widevine.mdt
+	"
+	for f in $_files; do
+		install -Dm644 "$_dir/firmware/image/$f" \
+			"$pkgdir/lib/firmware/postmarketos/$f"
+	done
+}
+sha512sums="f6011a1b0f367eba1e03fa38ef3eba35340492934e9160d37bb1211b05025c39f27e1991a6df32b8a3de4f1c9463bf27846998de46d84e1a2f2c97cda321d4e7  firmware-asus-z00t-d75a9d565250429ed5b06ed6c5d6f50cfadf9cb9.tar.gz
+284fe8cfceff62b07089db11f994571de18554aa5d94cda825c36c1ec64cffab0acd0ae797fdb49bdb37ca47944cbd738da709e9f858fb459866f38f17163c98  WCNSS_qcom_cfg.ini"

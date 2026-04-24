@@ -1,0 +1,385 @@
+From 53f964b0dad5d9b8ede8cefce759d870068a48a6 Mon Sep 17 00:00:00 2001
+From: Shinjo Park <peremen@gmail.com>
+Date: Tue, 28 Jun 2022 23:47:09 +0200
+Subject: [PATCH 4/4] samsung-kiran: Fix sprdfb to get a working screen
+
+* Specify sprdfb memory address so mmap() won't fail
+* Apply commit 6632662e89687748f20a023eb443c53d77fc270a from Tizen
+  (profile/mobile/platform/kernel/linux-3.10-sc7730) to fix broken
+  ioctl()
+---
+ .../boot/dts/sprd-sc7727-tizen_kiran-r00.dtsi |  2 +
+ .../boot/dts/sprd-sc7727-tizen_kiran-r01.dtsi |  2 +
+ .../boot/dts/sprd-sc7727-tizen_kiran-r02.dtsi |  2 +
+ .../boot/dts/sprd-sc7727-tizen_kiran-r03.dtsi |  2 +
+ .../boot/dts/sprd-sc7727-tizen_kiran-r04.dtsi |  2 +
+ .../boot/dts/sprd-sc7727-tizen_kiran-r05.dtsi |  2 +
+ .../boot/dts/sprd-sc7727-tizen_kiran-r06.dtsi |  2 +
+ drivers/video/sprdfb/sprdfb.h                 | 20 ++++++---
+ drivers/video/sprdfb/sprdfb_dispc.c           | 41 +++++++++++--------
+ drivers/video/sprdfb/sprdfb_main.c            | 22 +++++-----
+ include/video/sprd_fb.h                       | 20 +++++++--
+ 11 files changed, 82 insertions(+), 35 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r00.dtsi b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r00.dtsi
+index 1e92c956..b97ce36d 100644
+--- a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r00.dtsi
++++ b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r00.dtsi
+@@ -502,6 +502,8 @@
+ 		clocks = <&clk_256m>, <&clk_256m>, <&clk_384m>, <&clk_aon_apb>, <&clk_dispc0>, <&clk_dispc0_dbi>, <&clk_dispc0_dpi>, <&clk_disp_emc>, <&clk_spi2>, <&ext_26m>;
+ 		clock-src = <256000000 256000000 384000000>;
+ 		dpi_clk_div = <7>;
++                sprd,fb_mem = <0x9efffc00 0x177000>;
++                sprd,fb_display_size = <480 800>;
+ 	};
+ 	gsp:gsp@20a00000 {
+ 		compatible = "sprd,gsp";
+diff --git a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r01.dtsi b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r01.dtsi
+index 17bdf44d..90f77984 100644
+--- a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r01.dtsi
++++ b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r01.dtsi
+@@ -506,6 +506,8 @@
+ 		clocks = <&clk_256m>, <&clk_256m>, <&clk_384m>, <&clk_aon_apb>, <&clk_dispc0>, <&clk_dispc0_dbi>, <&clk_dispc0_dpi>, <&clk_disp_emc>, <&clk_spi2>, <&ext_26m>;
+ 		clock-src = <256000000 256000000 384000000>;
+ 		dpi_clk_div = <7>;
++                sprd,fb_mem = <0x9efffc00 0x177000>;
++                sprd,fb_display_size = <480 800>;
+ 	};
+ 	gsp:gsp@20a00000 {
+ 		compatible = "sprd,gsp";
+diff --git a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r02.dtsi b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r02.dtsi
+index 0507838b..59750f75 100644
+--- a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r02.dtsi
++++ b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r02.dtsi
+@@ -506,6 +506,8 @@
+ 		clocks = <&clk_256m>, <&clk_256m>, <&clk_384m>, <&clk_aon_apb>, <&clk_dispc0>, <&clk_dispc0_dbi>, <&clk_dispc0_dpi>, <&clk_disp_emc>, <&clk_spi2>, <&ext_26m>;
+ 		clock-src = <256000000 256000000 384000000>;
+ 		dpi_clk_div = <7>;
++                sprd,fb_mem = <0x9efffc00 0x177000>;
++                sprd,fb_display_size = <480 800>;
+ 	};
+ 	gsp:gsp@20a00000 {
+ 		compatible = "sprd,gsp";
+diff --git a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r03.dtsi b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r03.dtsi
+index 0507838b..59750f75 100644
+--- a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r03.dtsi
++++ b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r03.dtsi
+@@ -506,6 +506,8 @@
+ 		clocks = <&clk_256m>, <&clk_256m>, <&clk_384m>, <&clk_aon_apb>, <&clk_dispc0>, <&clk_dispc0_dbi>, <&clk_dispc0_dpi>, <&clk_disp_emc>, <&clk_spi2>, <&ext_26m>;
+ 		clock-src = <256000000 256000000 384000000>;
+ 		dpi_clk_div = <7>;
++                sprd,fb_mem = <0x9efffc00 0x177000>;
++                sprd,fb_display_size = <480 800>;
+ 	};
+ 	gsp:gsp@20a00000 {
+ 		compatible = "sprd,gsp";
+diff --git a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r04.dtsi b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r04.dtsi
+index 01a6e42c..2b13cbe9 100644
+--- a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r04.dtsi
++++ b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r04.dtsi
+@@ -506,6 +506,8 @@
+ 		clocks = <&clk_256m>, <&clk_256m>, <&clk_384m>, <&clk_aon_apb>, <&clk_dispc0>, <&clk_dispc0_dbi>, <&clk_dispc0_dpi>, <&clk_disp_emc>, <&clk_spi2>, <&ext_26m>;
+ 		clock-src = <256000000 256000000 384000000>;
+ 		dpi_clk_div = <7>;
++                sprd,fb_mem = <0x9efffc00 0x177000>;
++                sprd,fb_display_size = <480 800>;
+ 	};
+ 	gsp:gsp@20a00000 {
+ 		compatible = "sprd,gsp";
+diff --git a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r05.dtsi b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r05.dtsi
+index 4dd47d23..ab531512 100644
+--- a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r05.dtsi
++++ b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r05.dtsi
+@@ -511,6 +511,8 @@
+ 		clocks = <&clk_256m>, <&clk_256m>, <&clk_384m>, <&clk_aon_apb>, <&clk_dispc0>, <&clk_dispc0_dbi>, <&clk_dispc0_dpi>, <&clk_disp_emc>, <&clk_spi2>, <&ext_26m>;
+ 		clock-src = <256000000 256000000 384000000>;
+ 		dpi_clk_div = <7>;
++                sprd,fb_mem = <0x9efffc00 0x177000>;
++                sprd,fb_display_size = <480 800>;
+ 	};
+ 	gsp:gsp@20a00000 {
+ 		compatible = "sprd,gsp";
+diff --git a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r06.dtsi b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r06.dtsi
+index d8f2cbb7..b6b902e6 100644
+--- a/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r06.dtsi
++++ b/arch/arm/boot/dts/sprd-sc7727-tizen_kiran-r06.dtsi
+@@ -511,6 +511,8 @@
+ 		clocks = <&clk_256m>, <&clk_256m>, <&clk_384m>, <&clk_aon_apb>, <&clk_dispc0>, <&clk_dispc0_dbi>, <&clk_dispc0_dpi>, <&clk_disp_emc>, <&clk_spi2>, <&ext_26m>;
+ 		clock-src = <256000000 256000000 384000000>;
+ 		dpi_clk_div = <7>;
++                sprd,fb_mem = <0x9efffc00 0x177000>;
++                sprd,fb_display_size = <480 800>;
+ 	};
+ 	gsp:gsp@20a00000 {
+ 		compatible = "sprd,gsp";
+diff --git a/drivers/video/sprdfb/sprdfb.h b/drivers/video/sprdfb/sprdfb.h
+index 39048eb2..7888aed5 100755
+--- a/drivers/video/sprdfb/sprdfb.h
++++ b/drivers/video/sprdfb/sprdfb.h
+@@ -112,6 +112,11 @@ enum {
+ 	SPRD_DISPLAY_UPDATE_MAX
+ };
+ 
++typedef struct overlay_size {
++	uint16_t hsize;
++	uint16_t vsize;
++} overlay_size;
++
+ typedef struct overlay_rect {
+ 	uint16_t x;
+ 	uint16_t y;
+@@ -119,13 +124,19 @@ typedef struct overlay_rect {
+ 	uint16_t h;
+ } overlay_rect;
+ 
++typedef struct overlay_endian {
++	uint16_t y;
++	uint16_t u;
++	uint16_t v;
++} overlay_endian;
++
+ typedef struct overlay_info {
+ 	int layer_index;
+ 	int data_type;
+-	int y_endian;
+-	int uv_endian;
+-	bool rb_switch;
++	overlay_size size;
+ 	overlay_rect rect;
++	overlay_endian endian;
++	bool rb_switch;
+ } overlay_info;
+ 
+ #if defined (CONFIG_DRM_SPRD) && defined (CONFIG_SPRDFB_USE_GEM_INDEX)
+@@ -154,8 +165,7 @@ typedef struct overlay_display {
+ 
+ #ifdef SPRDFB_OVERLAY_DEBUG
+ struct ov_info {
+-	int y_endian;
+-	int uv_endian;
++	overlay_endian endian;
+ 	int layer_index;
+ 	unsigned char *osd_buffer;
+ 	unsigned char *img_buffer;
+diff --git a/drivers/video/sprdfb/sprdfb_dispc.c b/drivers/video/sprdfb/sprdfb_dispc.c
+index b3fbea20..6a071dc4 100644
+--- a/drivers/video/sprdfb/sprdfb_dispc.c
++++ b/drivers/video/sprdfb/sprdfb_dispc.c
+@@ -1838,9 +1838,11 @@ static int overlay_close(struct sprdfb_device *dev, uint32_t layer_index)
+ 	return 0;
+ }
+ 
+-static int overlay_img_configure(struct sprdfb_device *dev, int type, overlay_rect *rect, int y_endian, int uv_endian, bool rb_switch)
++static int overlay_img_configure(struct sprdfb_device *dev, int type, overlay_size *size,
++        overlay_rect *rect, overlay_endian *endian, bool rb_switch)
+ {
+ 	uint32_t reg_value;
++	int y_endian = endian->y, u_endian = endian->u, v_endian = endian->v;
+ 
+ 	pr_debug("sprdfb: [%s] : %d, (%d, %d,%d,%d)\n", __FUNCTION__, type, rect->x, rect->y, rect->h, rect->w);
+ 
+@@ -1849,15 +1851,16 @@ static int overlay_img_configure(struct sprdfb_device *dev, int type, overlay_re
+ 		return -1;
+ 	}
+ 
+-	if((y_endian >= SPRD_IMG_DATA_ENDIAN_LIMIT) || (uv_endian >= SPRD_IMG_DATA_ENDIAN_LIMIT)){
+-		printk(KERN_ERR "sprdfb: Overlay config fail (y, uv endian error)");
++	if((y_endian >= SPRD_IMG_DATA_ENDIAN_LIMIT) || (u_endian >= SPRD_IMG_DATA_ENDIAN_LIMIT) ||
++		(v_endian >= SPRD_IMG_DATA_ENDIAN_LIMIT)){
++		printk(KERN_ERR "sprdfb: Overlay config fail (endian error)");
+ 		return -1;
+ 	}
+ 
+ 	dispc_clear_bits(BIT(2), DISPC_OSD_CTRL);
+ 
+ 	reg_value = dispc_read(DISPC_IMG_CTRL);
+-	reg_value |= (y_endian << 8)|(uv_endian<< 10)|(type << 4);
++	reg_value |= (y_endian << 8)|(u_endian << 10)|(v_endian << 12)|(type << 4);
+ 	if(rb_switch)
+ 		reg_value |= (1 << 15);
+ 
+@@ -1866,7 +1869,7 @@ static int overlay_img_configure(struct sprdfb_device *dev, int type, overlay_re
+ 	reg_value = (rect->h << 16) | (rect->w);
+ 	dispc_write(reg_value, DISPC_IMG_SIZE_XY);
+ 
+-	dispc_write(rect->w, DISPC_IMG_PITCH);
++	dispc_write(size->hsize, DISPC_IMG_PITCH);
+ 
+ 	reg_value = (rect->y << 16) | (rect->x);
+ 	dispc_write(reg_value, DISPC_IMG_DISP_XY);
+@@ -1903,9 +1906,11 @@ static int overlay_img_configure(struct sprdfb_device *dev, int type, overlay_re
+ 	return 0;
+ }
+ 
+-static int overlay_osd_configure(struct sprdfb_device *dev, int type, overlay_rect *rect, int y_endian, int uv_endian, bool rb_switch)
++static int overlay_osd_configure(struct sprdfb_device *dev, int type, overlay_size *size,
++	overlay_rect *rect, overlay_endian *endian, bool rb_switch)
+ {
+ 	uint32_t reg_value;
++	int y_endian = endian->y;
+ 
+ 	pr_debug("sprdfb: [%s] : %d, (%d, %d,%d,%d)\n", __FUNCTION__, type, rect->x, rect->y, rect->h, rect->w);
+ 
+@@ -1931,7 +1936,7 @@ static int overlay_osd_configure(struct sprdfb_device *dev, int type, overlay_re
+ 	reg_value = (rect->h << 16) | (rect->w);
+ 	dispc_write(reg_value, DISPC_OSD_SIZE_XY);
+ 
+-	dispc_write(rect->w, DISPC_OSD_PITCH);
++	dispc_write(size->hsize, DISPC_OSD_PITCH);
+ 
+ 	reg_value = (rect->y << 16) | (rect->x);
+ 	dispc_write(reg_value, DISPC_OSD_DISP_XY);
+@@ -1953,16 +1958,16 @@ static int32_t sprdfb_dispc_enable_overlay(struct sprdfb_device *dev, struct ove
+ 	bool	is_refresh_lock_down=false;
+ 	bool	is_clk_enable=false;
+ 
+-	pr_info("%s:layer[%d]type[%d]endian[%d %d]rect[%d %d %d %d]\n",
++	pr_info("%s:layer[%d]type[%d]sz[%d %d]r[%d %d %d %d]endian[%d %d %d]\n",
+ 		"set_ovl",  info->layer_index, info->data_type,
+-		info->y_endian, info->uv_endian,
+-		info->rect.x, info->rect.y, info->rect.w, info->rect.h);
++                info->size.hsize, info->size.vsize,
++		info->rect.x, info->rect.y, info->rect.w, info->rect.h,
++		info->endian.y, info->endian.u, info->endian.v);
+ 	dev->dbg_cnt = 3;
+ 
+ #ifdef SPRDFB_OVERLAY_DEBUG
+-	dev->overlay_data.y_endian = info->y_endian;
+-	dev->overlay_data.uv_endian = info->uv_endian;
+ 	dev->overlay_data.rect = info->rect;
++	dev->overlay_data.endian = info->endian;
+ #endif
+ 
+ 	if (NULL == info || ((info->layer_index != SPRD_LAYER_IMG) &&
+@@ -1994,12 +1999,16 @@ static int32_t sprdfb_dispc_enable_overlay(struct sprdfb_device *dev, struct ove
+ #endif
+ 
+ 	if(SPRD_LAYER_IMG == info->layer_index){
+-		result = overlay_img_configure(dev, info->data_type, &(info->rect), info->y_endian, info->uv_endian, info->rb_switch);
++		result = overlay_img_configure(dev, info->data_type, &info->size, &info->rect,
++			&info->endian, info->rb_switch);
+ 	}else if(SPRD_LAYER_OSD == info->layer_index){
+-		result = overlay_osd_configure(dev, info->data_type, &(info->rect), info->y_endian, info->uv_endian, info->rb_switch);
++		result = overlay_osd_configure(dev, info->data_type, &info->size, &info->rect,
++			&info->endian, info->rb_switch);
+ 	}else if (SPRD_LAYER_BOTH == info->layer_index) {
+-		result = overlay_osd_configure(dev, info->data_type, &(info->rect), info->y_endian, info->uv_endian, info->rb_switch);
+-		result = overlay_img_configure(dev, info->data_type, &(info->rect), info->y_endian, info->uv_endian, info->rb_switch);
++		result = overlay_osd_configure(dev, info->data_type, &info->size, &info->rect,
++			&info->endian, info->rb_switch);
++		result = overlay_img_configure(dev, info->data_type, &info->size, &info->rect,
++			&info->endian, info->rb_switch);
+ 	}else{
+ 		printk(KERN_ERR "sprdfb: sprdfb_dispc_enable_overlay fail. (invalid layer index)\n");
+ 	}
+diff --git a/drivers/video/sprdfb/sprdfb_main.c b/drivers/video/sprdfb/sprdfb_main.c
+index 841d7b9b..0a7eccc7 100755
+--- a/drivers/video/sprdfb/sprdfb_main.c
++++ b/drivers/video/sprdfb/sprdfb_main.c
+@@ -227,8 +227,8 @@ static int sprdfb_blank(int blank, struct fb_info *info)
+ 
+ static int setup_fb_mem(struct sprdfb_device *dev, struct platform_device *pdev)
+ {
+-#ifdef CONFIG_PAN_DISPLAY
+-	uint32_t len, addr;
++	uint32_t len;
++        void *addr;
+ 	bool use_reserve_mem;
+     uint32_t reserve_mem[2];
+     int ret;
+@@ -282,11 +282,6 @@ static int setup_fb_mem(struct sprdfb_device *dev, struct platform_device *pdev)
+         dev->fb->screen_base = (char*)addr;
+ 	}
+ 	return 0;
+-#else
+-    dev->fb->fix.smem_start = 0;
+-    dev->fb->fix.smem_len = 0;
+-    dev->fb->screen_base = 0;
+-#endif
+ }
+ 
+ static void setup_fb_info(struct sprdfb_device *dev)
+@@ -449,6 +444,7 @@ static int sprdfb_ioctl(struct fb_info *info, unsigned int cmd,
+ 	overlay_display local_overlay_display;
+ 	int layer_index;
+ #endif
++	int power_mode;
+ 	void __user *argp = (void __user *)arg;
+ 
+ 	if(NULL == info){
+@@ -530,6 +526,11 @@ static int sprdfb_ioctl(struct fb_info *info, unsigned int cmd,
+ 		}
+ 		break;
+ 
++	case SPRD_FB_SET_POWER_MODE:
++		result = copy_from_user(&power_mode, argp, sizeof(power_mode));
++		printk("sprdfb: [%s]: SPRD_FB_SET_POWER_MODE (%d)\n", __FUNCTION__, power_mode);
++		break;
++
+ 	default:
+ 		printk(KERN_INFO "sprdfb: [%s]: unknown cmd(%d)\n", __FUNCTION__, cmd);
+ 		break;
+@@ -647,9 +648,10 @@ static ssize_t sprdfb_overlay_info_show(struct device *dev,
+ 			layer_type,
+ 			fb_dev->overlay_data.osd_buffer,
+ 			fb_dev->overlay_data.img_buffer);
+-	pos += sprintf(buf+pos, "y_endian[%d], uv_endian[%d], ",
+-			fb_dev->overlay_data.y_endian,
+-			fb_dev->overlay_data.uv_endian);
++	pos += sprintf(buf+pos, "y_endian[%d], u_endian[%d], v_endian[%d], ",
++			fb_dev->overlay_data.endian.y,
++			fb_dev->overlay_data.endian.u,
++			fb_dev->overlay_data.endian.v);
+ 	pos += sprintf(buf+pos, "dst: x[%d], y[%d], w[%d], h[%d]\n",
+ 			fb_dev->overlay_data.rect.x,
+ 			fb_dev->overlay_data.rect.y,
+diff --git a/include/video/sprd_fb.h b/include/video/sprd_fb.h
+index da4631f2..7171230b 100644
+--- a/include/video/sprd_fb.h
++++ b/include/video/sprd_fb.h
+@@ -41,6 +41,11 @@ enum{
+ 	SPRD_DISPLAY_OVERLAY_LIMIT
+ };
+ 
++typedef struct overlay_setting_size {
++	uint16_t hsize;
++	uint16_t vsize;
++} overlay_setting_size;
++
+ typedef struct overlay_setting_rect {
+ 	uint16_t x; //start point - x
+ 	uint16_t y; //start point - y
+@@ -48,13 +53,19 @@ typedef struct overlay_setting_rect {
+ 	uint16_t h; //height
+ }overlay_setting_rect;
+ 
++typedef struct overlay_setting_endian {
++	uint16_t y;
++	uint16_t u;
++	uint16_t v;
++} overlay_setting_endian;
++
+ typedef struct overlay_setting {
+ 	int layer_index;
+ 	int data_type;
+-	int y_endian;
+-	int uv_endian;
+-	bool rb_switch;
++	overlay_setting_size size;
+ 	overlay_setting_rect rect;
++	overlay_setting_endian endian;
++	bool rb_switch;
+ } overlay_setting;
+ 
+ typedef struct overlay_display_setting {
+@@ -75,5 +86,6 @@ int sprdfb_IOdeinit(void);
+ #define SPRD_FB_DISPLAY_OVERLAY _IOW(SPRD_FB_IOCTL_MAGIC, 2, unsigned int)
+ #define SPRD_FB_CHANGE_FPS _IOW(SPRD_FB_IOCTL_MAGIC, 3, unsigned int)
+ #define SPRD_FB_IS_REFRESH_DONE _IOW(SPRD_FB_IOCTL_MAGIC, 4, unsigned int)
+-#define SPRD_FB_UNSET_OVERLAY _IOW(SPRD_FB_IOCTL_MAGIC, 5, unsigned int)
++#define SPRD_FB_SET_POWER_MODE _IOW(SPRD_FB_IOCTL_MAGIC, 5, unsigned int)
++#define SPRD_FB_UNSET_OVERLAY _IOW(SPRD_FB_IOCTL_MAGIC, 6, unsigned int)
+ #endif
+-- 
+2.34.1
+

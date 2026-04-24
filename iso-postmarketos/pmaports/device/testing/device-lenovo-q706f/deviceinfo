@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Lenovo Xiaoxin Pad Pro 12.6"
+deviceinfo_manufacturer="Lenovo"
+deviceinfo_codename="lenovo-q706f"
+deviceinfo_year="2021"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1600"
+deviceinfo_screen_height="2560"
+
+# Kernel options
+deviceinfo_dtb="qcom/sm8250-lenovo-q706f"
+deviceinfo_append_dtb="true"
+deviceinfo_flash_kernel_on_update="true"
+
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_flash_sparse="true"
+
+# Required for devices using UFS as storage (instead of e.g. eMMC)
+deviceinfo_rootfs_image_sector_size="4096"
+
+# Support super partition flashing
+deviceinfo_super_partitions="/dev/sda17 /dev/sda17"

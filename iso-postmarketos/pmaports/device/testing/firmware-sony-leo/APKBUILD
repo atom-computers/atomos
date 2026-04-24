@@ -1,0 +1,54 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-sony-leo
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Sony Xperia Z3"
+url="https://github.com/FairBlobs/leo-firmware"
+arch="armv7"
+license="proprietary"
+subpackages="
+	$pkgname-adsp
+	$pkgname-modem
+	$pkgname-wifi
+	"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+_commit="8d3b4c091b27ee74e973651f709adbfc5740e9fb"
+source="https://github.com/FairBlobs/leo-firmware/archive/$_commit/leo-firmware-$_commit.tar.gz"
+builddir="$srcdir/leo-firmware-$_commit"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pkgdesc="Sony Xperia Z3 adsp firmware"
+
+	cd "$builddir"
+	for _i in adsp.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+modem() {
+	pkgdesc="Sony Xperia Z3 modem firmware"
+
+	cd "$builddir"
+	for _i in modem.* mba.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+wifi() {
+	pkgdesc="Sony Xperia Z3 wifi firmware"
+
+	cd "$builddir"
+	install -Dm644 brcmfmac4339-sdio.sony,xperia-leo.bin -t \
+		"$subpkgdir"/lib/firmware/brcm/
+	install -Dm644 brcmfmac4339-sdio.txt -t \
+		"$subpkgdir"/lib/firmware/brcm/
+}
+
+sha512sums="
+ef6fc9b1dee7ab38c5fcfe1386d670ddeee44a5647f01445acf3fb3d71ef1952354b220d90f09b82524b39b48420a68fe6e7b90937d52d9d18eca5403ba585e5  leo-firmware-8d3b4c091b27ee74e973651f709adbfc5740e9fb.tar.gz
+"

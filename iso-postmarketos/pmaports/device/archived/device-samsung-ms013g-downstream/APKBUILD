@@ -1,0 +1,26 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+pkgname=device-samsung-ms013g-downstream
+pkgdesc="Samsung Galaxy Grand 2 (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-ms013g mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+2cc73e3466d24c22ae44d271277d193aeea9172f0855963e106ec7959e59d7b4ba55f0732acf570711f12370d4d0e9c0be81f13cd36412d6032e95c37c0fafec  deviceinfo
+04ded7827e2ccdcfab17c1fc1824c1d9f1732d3f3afc26dc954d8bf1909b211fe7e70049f25aeb1adb06adfa8ef341c291a414e6ab77ce0e37ea12e13f6785d7  kernel-cmdline.conf
+"

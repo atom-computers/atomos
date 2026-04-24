@@ -1,0 +1,493 @@
+diff -urpN a/arch/arm/include/asm/unistd.h b/arch/arm/include/asm/unistd.h
+--- a/arch/arm/include/asm/unistd.h	2023-11-04 23:16:59.184916145 +0530
++++ b/arch/arm/include/asm/unistd.h	2023-11-04 23:15:28.515387803 +0530
+@@ -15,7 +15,7 @@
+ 
+ #include <uapi/asm/unistd.h>
+ 
+-#define __NR_syscalls  (380)
++#define __NR_syscalls  (385)
+ #define __ARM_NR_cmpxchg		(__ARM_NR_BASE+0x00fff0)
+ 
+ #define __ARCH_WANT_STAT64
+diff -urpN a/arch/arm/include/uapi/asm/unistd.h b/arch/arm/include/uapi/asm/unistd.h
+--- a/arch/arm/include/uapi/asm/unistd.h	2023-11-04 23:16:59.184916145 +0530
++++ b/arch/arm/include/uapi/asm/unistd.h	2023-11-04 23:15:28.535389137 +0530
+@@ -406,7 +406,7 @@
+ #define __NR_process_vm_writev		(__NR_SYSCALL_BASE+377)
+ #define __NR_kcmp			(__NR_SYSCALL_BASE+378)
+ #define __NR_finit_module		(__NR_SYSCALL_BASE+379)
+-
++#define __NR_memfd_create               (__NR_SYSCALL_BASE+385)
+ /*
+  * This may need to be greater than __NR_last_syscall+1 in order to
+  * account for the padding in the syscall table
+diff -urpN a/arch/arm/kernel/calls.S b/arch/arm/kernel/calls.S
+--- a/arch/arm/kernel/calls.S	2023-11-04 23:16:59.184916145 +0530
++++ b/arch/arm/kernel/calls.S	2023-11-04 23:15:28.535389137 +0530
+@@ -389,6 +389,12 @@
+ 		CALL(sys_process_vm_writev)
+ 		CALL(sys_kcmp)
+ 		CALL(sys_finit_module)
++		CALL(sys_ni_syscall)
++		CALL(sys_ni_syscall)
++		CALL(sys_ni_syscall)
++		CALL(sys_ni_syscall)
++		CALL(sys_ni_syscall)
++/* 385 */      	CALL(sys_memfd_create)
+ #ifndef syscalls_counted
+ .equ syscalls_padding, ((NR_syscalls + 3) & ~3) - NR_syscalls
+ #define syscalls_counted
+diff -urpN a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
+--- a/arch/arm/kernel/entry-common.S	2023-11-04 23:16:59.184916145 +0530
++++ b/arch/arm/kernel/entry-common.S	2023-11-04 23:15:28.535389137 +0530
+@@ -101,9 +101,11 @@ ENDPROC(ret_from_fork)
+  * Ensure that the system call table is equal to __NR_syscalls,
+  * which is the value the rest of the system sees
+  */
+-.ifne NR_syscalls - __NR_syscalls
+-.error "__NR_syscalls is not equal to the size of the syscall table"
+-.endif
++/*
++ * .ifne NR_syscalls - __NR_syscalls
++ * .error "__NR_syscalls is not equal to the size of the syscall table"
++ * .endif
++ */
+ 
+ #undef CALL
+ #define CALL(x) .long x
+diff -urpN a/arch/x86/syscalls/syscall_32.tbl b/arch/x86/syscalls/syscall_32.tbl
+--- a/arch/x86/syscalls/syscall_32.tbl	2023-11-04 23:16:59.184916145 +0530
++++ b/arch/x86/syscalls/syscall_32.tbl	2023-11-04 23:15:29.875478433 +0530
+@@ -357,3 +357,4 @@
+ 348	i386	process_vm_writev	sys_process_vm_writev		compat_sys_process_vm_writev
+ 349	i386	kcmp			sys_kcmp
+ 350	i386	finit_module		sys_finit_module
++356 i386    memfd_create        sys_memfd_create
+\ No newline at end of file
+diff -urpN a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
+--- a/arch/x86/syscalls/syscall_64.tbl	2023-11-04 23:16:59.184916145 +0530
++++ b/arch/x86/syscalls/syscall_64.tbl	2023-11-04 23:15:29.875478433 +0530
+@@ -320,6 +320,7 @@
+ 311	64	process_vm_writev	sys_process_vm_writev
+ 312	common	kcmp			sys_kcmp
+ 313	common	finit_module		sys_finit_module
++319 common  memfd_create        sys_memfd_create
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff -urpN a/fs/fcntl.c b/fs/fcntl.c
+--- a/fs/fcntl.c	2023-11-04 23:16:59.184916145 +0530
++++ b/fs/fcntl.c	2023-11-04 23:15:34.695797497 +0530
+@@ -20,6 +20,7 @@
+ #include <linux/signal.h>
+ #include <linux/rcupdate.h>
+ #include <linux/pid_namespace.h>
++#include <linux/shmem_fs.h>
+ #include <linux/user_namespace.h>
+ 
+ #include <asm/poll.h>
+@@ -327,6 +328,10 @@ static long do_fcntl(int fd, unsigned in
+ 	case F_GETPIPE_SZ:
+ 		err = pipe_fcntl(filp, cmd, arg);
+ 		break;
++	case F_ADD_SEALS:
++	case F_GET_SEALS:
++		err = shmem_fcntl(filp, cmd, arg);
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -745,4 +750,4 @@ static int __init fcntl_init(void)
+ 	return 0;
+ }
+ 
+-module_init(fcntl_init)
++module_init(fcntl_init)
+\ No newline at end of file
+diff -urpN a/include/linux/shmem_fs.h b/include/linux/shmem_fs.h
+--- a/include/linux/shmem_fs.h	2023-11-04 23:16:59.184916145 +0530
++++ b/include/linux/shmem_fs.h	2023-11-04 23:15:28.111360843 +0530
+@@ -1,6 +1,7 @@
+ #ifndef __SHMEM_FS_H
+ #define __SHMEM_FS_H
+ 
++#include <linux/file.h>
+ #include <linux/swap.h>
+ #include <linux/mempolicy.h>
+ #include <linux/pagemap.h>
+@@ -12,6 +13,7 @@
+ struct shmem_inode_info {
+ 	spinlock_t		lock;
+ 	unsigned long		flags;
++	unsigned int		seals;		/* shmem seals */
+ 	unsigned long		alloced;	/* data pages alloced to file */
+ 	union {
+ 		unsigned long	swapped;	/* subtotal assigned to swap */
+@@ -61,5 +63,20 @@ static inline struct page *shmem_read_ma
+ 	return shmem_read_mapping_page_gfp(mapping, index,
+ 					mapping_gfp_mask(mapping));
+ }
++#ifdef CONFIG_TMPFS
++
++extern int shmem_add_seals(struct file *file, unsigned int seals);
++extern int shmem_get_seals(struct file *file);
++extern long shmem_fcntl(struct file *file, unsigned int cmd, unsigned long arg);
++
++#else
++
++static inline long shmem_fcntl(struct file *f, unsigned int c, unsigned long a)
++{
++	return -EINVAL;
++}
+ 
+ #endif
++
++
++#endif
+\ No newline at end of file
+diff -urpN a/include/linux/syscalls.h b/include/linux/syscalls.h
+--- a/include/linux/syscalls.h	2023-11-04 23:16:59.184916145 +0530
++++ b/include/linux/syscalls.h	2023-11-04 23:15:28.111360843 +0530
+@@ -782,6 +782,7 @@ asmlinkage long sys_timerfd_settime(int
+ asmlinkage long sys_timerfd_gettime(int ufd, struct itimerspec __user *otmr);
+ asmlinkage long sys_eventfd(unsigned int count);
+ asmlinkage long sys_eventfd2(unsigned int count, int flags);
++asmlinkage long sys_memfd_create(const char __user *uname_ptr, unsigned int flags);
+ asmlinkage long sys_fallocate(int fd, int mode, loff_t offset, loff_t len);
+ asmlinkage long sys_old_readdir(unsigned int, struct old_linux_dirent __user *, unsigned int);
+ asmlinkage long sys_pselect6(int, fd_set __user *, fd_set __user *,
+diff -urpN a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
+--- a/include/uapi/asm-generic/unistd.h	2023-11-04 23:16:59.184916145 +0530
++++ b/include/uapi/asm-generic/unistd.h	2023-11-04 23:15:28.363377660 +0530
+@@ -692,9 +692,10 @@ __SC_COMP(__NR_process_vm_writev, sys_pr
+ __SYSCALL(__NR_kcmp, sys_kcmp)
+ #define __NR_finit_module 273
+ __SYSCALL(__NR_finit_module, sys_finit_module)
+-
++#define __NR_memfd_create 279
++__SYSCALL(__NR_memfd_create, sys_memfd_create)
+ #undef __NR_syscalls
+-#define __NR_syscalls 274
++#define __NR_syscalls 280
+ 
+ /*
+  * All syscalls below here should go away really,
+@@ -901,4 +902,4 @@ __SYSCALL(__NR_fork, sys_ni_syscall)
+ #define __NR_stat64 __NR3264_stat
+ #define __NR_lstat64 __NR3264_lstat
+ #endif
+-#endif
++#endif
+\ No newline at end of file
+diff -urpN a/include/uapi/linux/fcntl.h b/include/uapi/linux/fcntl.h
+--- a/include/uapi/linux/fcntl.h	2023-11-04 23:16:59.184916145 +0530
++++ b/include/uapi/linux/fcntl.h	2023-11-04 23:15:28.367377926 +0530
+@@ -26,8 +26,21 @@
+  */
+ #define F_SETPIPE_SZ	(F_LINUX_SPECIFIC_BASE + 7)
+ #define F_GETPIPE_SZ	(F_LINUX_SPECIFIC_BASE + 8)
++/*
++ * Set/Get seals
++ */
++#define F_ADD_SEALS    (F_LINUX_SPECIFIC_BASE + 9)
++#define F_GET_SEALS    (F_LINUX_SPECIFIC_BASE + 10)
+ 
+ /*
++ * Types of seals
++ */
++#define F_SEAL_SEAL    0x0001  /* prevent further seals from being set */
++#define F_SEAL_SHRINK  0x0002  /* prevent file from shrinking */
++#define F_SEAL_GROW    0x0004  /* prevent file from growing */
++#define F_SEAL_WRITE   0x0008  /* prevent writes */
++/* (1U << 31) is reserved for signed error codes */
++/*
+  * Types of directory notifications that may be requested.
+  */
+ #define DN_ACCESS	0x00000001	/* File accessed */
+@@ -49,4 +62,4 @@
+ #define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname */
+ 
+ 
+-#endif /* _UAPI_LINUX_FCNTL_H */
++#endif /* _UAPI_LINUX_FCNTL_H */
+\ No newline at end of file
+diff -urpN a/include/uapi/linux/memfd.h b/include/uapi/linux/memfd.h
+--- a/include/uapi/linux/memfd.h	1970-01-01 05:30:00.000000000 +0530
++++ b/include/uapi/linux/memfd.h	2023-11-04 23:15:28.367377926 +0530
+@@ -0,0 +1,8 @@
++#ifndef _UAPI_LINUX_MEMFD_H
++#define _UAPI_LINUX_MEMFD_H
++
++/* flags for memfd_create(2) (unsigned int) */
++#define MFD_CLOEXEC            0x0001U
++#define MFD_ALLOW_SEALING      0x0002U
++
++#endif /* _UAPI_LINUX_MEMFD_H */
+\ No newline at end of file
+diff -urpN a/kernel/sys_ni.c b/kernel/sys_ni.c
+--- a/kernel/sys_ni.c	2023-11-04 23:16:59.184916145 +0530
++++ b/kernel/sys_ni.c	2023-11-04 23:15:34.983816472 +0530
+@@ -193,6 +193,7 @@ cond_syscall(compat_sys_timerfd_settime)
+ cond_syscall(compat_sys_timerfd_gettime);
+ cond_syscall(sys_eventfd);
+ cond_syscall(sys_eventfd2);
++cond_syscall(sys_memfd_create);
+ 
+ /* performance counters: */
+ cond_syscall(sys_perf_event_open);
+@@ -208,4 +209,4 @@ cond_syscall(sys_open_by_handle_at);
+ cond_syscall(compat_sys_open_by_handle_at);
+ 
+ /* compare kernel pointers */
+-cond_syscall(sys_kcmp);
++cond_syscall(sys_kcmp);
+\ No newline at end of file
+diff -urpN a/mm/shmem.c b/mm/shmem.c
+--- a/mm/shmem.c	2023-11-04 23:16:59.184916145 +0530
++++ b/mm/shmem.c	2023-11-04 23:15:35.039820156 +0530
+@@ -67,6 +67,10 @@ static struct vfsmount *shm_mnt;
+ #include <linux/seq_file.h>
+ #include <linux/magic.h>
+ 
++#include <linux/syscalls.h>
++#include <linux/fcntl.h>
++#include <uapi/linux/memfd.h>
++
+ #include <asm/uaccess.h>
+ #include <asm/pgtable.h>
+ 
+@@ -596,6 +600,7 @@ EXPORT_SYMBOL_GPL(shmem_truncate_range);
+ static int shmem_setattr(struct dentry *dentry, struct iattr *attr)
+ {
+ 	struct inode *inode = dentry->d_inode;
++	struct shmem_inode_info *info = SHMEM_I(inode);
+ 	int error;
+ 
+ 	error = inode_change_ok(inode, attr);
+@@ -605,6 +610,10 @@ static int shmem_setattr(struct dentry *
+ 	if (S_ISREG(inode->i_mode) && (attr->ia_valid & ATTR_SIZE)) {
+ 		loff_t oldsize = inode->i_size;
+ 		loff_t newsize = attr->ia_size;
++		/* protected by i_mutex */
++		if ((newsize < oldsize && (info->seals & F_SEAL_SHRINK)) ||
++		    (newsize > oldsize && (info->seals & F_SEAL_GROW)))
++			return -EPERM;
+ 
+ 		if (newsize != oldsize) {
+ 			i_size_write(inode, newsize);
+@@ -1391,6 +1400,7 @@ static struct inode *shmem_get_inode(str
+ 		info = SHMEM_I(inode);
+ 		memset(info, 0, (char *)inode - (char *)info);
+ 		spin_lock_init(&info->lock);
++		info->seals = F_SEAL_SEAL;
+ 		info->flags = flags & VM_NORESERVE;
+ 		INIT_LIST_HEAD(&info->swaplist);
+ 		simple_xattrs_init(&info->xattrs);
+@@ -1444,7 +1454,17 @@ shmem_write_begin(struct file *file, str
+ 			struct page **pagep, void **fsdata)
+ {
+ 	struct inode *inode = mapping->host;
++	struct shmem_inode_info *info = SHMEM_I(inode);
+ 	pgoff_t index = pos >> PAGE_CACHE_SHIFT;
++
++	/* i_mutex is held by caller */
++	if (unlikely(info->seals)) {
++		if (info->seals & F_SEAL_WRITE)
++			return -EPERM;
++		if ((info->seals & F_SEAL_GROW) && pos + len > inode->i_size)
++			return -EPERM;
++	}
++
+ 	return shmem_getpage(inode, index, pagep, SGP_WRITE, NULL);
+ }
+ 
+@@ -1724,6 +1744,109 @@ static ssize_t shmem_file_splice_read(st
+ 	}
+ 	return error;
+ }
++static int shmem_wait_for_pins(struct address_space *mapping)
++{
++	return 0;
++}
++
++#define F_ALL_SEALS (F_SEAL_SEAL | \
++		     F_SEAL_SHRINK | \
++		     F_SEAL_GROW | \
++		     F_SEAL_WRITE)
++
++int shmem_add_seals(struct file *file, unsigned int seals)
++{
++	struct inode *inode = file_inode(file);
++	struct shmem_inode_info *info = SHMEM_I(inode);
++	int error;
++
++	/*
++	 * SEALING
++	 * Sealing allows multiple parties to share a shmem-file but restrict
++	 * access to a specific subset of file operations. Seals can only be
++	 * added, but never removed. This way, mutually untrusted parties can
++	 * share common memory regions with a well-defined policy. A malicious
++	 * peer can thus never perform unwanted operations on a shared object.
++	 *
++	 * Seals are only supported on special shmem-files and always affect
++	 * the whole underlying inode. Once a seal is set, it may prevent some
++	 * kinds of access to the file. Currently, the following seals are
++	 * defined:
++	 *   SEAL_SEAL: Prevent further seals from being set on this file
++	 *   SEAL_SHRINK: Prevent the file from shrinking
++	 *   SEAL_GROW: Prevent the file from growing
++	 *   SEAL_WRITE: Prevent write access to the file
++	 *
++	 * As we don't require any trust relationship between two parties, we
++	 * must prevent seals from being removed. Therefore, sealing a file
++	 * only adds a given set of seals to the file, it never touches
++	 * existing seals. Furthermore, the "setting seals"-operation can be
++	 * sealed itself, which basically prevents any further seal from being
++	 * added.
++	 *
++	 * Semantics of sealing are only defined on volatile files. Only
++	 * anonymous shmem files support sealing. More importantly, seals are
++	 * never written to disk. Therefore, there's no plan to support it on
++	 * other file types.
++	 */
++
++	if (file->f_op != &shmem_file_operations)
++		return -EINVAL;
++	if (!(file->f_mode & FMODE_WRITE))
++		return -EPERM;
++	if (seals & ~(unsigned int)F_ALL_SEALS)
++		return -EINVAL;
++
++	mutex_lock(&inode->i_mutex);
++
++	if (info->seals & F_SEAL_SEAL) {
++		error = -EPERM;
++		goto unlock;
++	}
++
++	/* TODO: this is the place to actually apply seals to
++	 * file->f_mapping, but this was not backported yet */
++
++	info->seals |= seals;
++	error = 0;
++
++unlock:
++	mutex_unlock(&inode->i_mutex);
++	return error;
++}
++EXPORT_SYMBOL_GPL(shmem_add_seals);
++
++int shmem_get_seals(struct file *file)
++{
++	if (file->f_op != &shmem_file_operations)
++		return -EINVAL;
++
++	return SHMEM_I(file_inode(file))->seals;
++}
++EXPORT_SYMBOL_GPL(shmem_get_seals);
++
++long shmem_fcntl(struct file *file, unsigned int cmd, unsigned long arg)
++{
++	long error;
++
++	switch (cmd) {
++	case F_ADD_SEALS:
++		/* disallow upper 32bit */
++		if (arg > UINT_MAX)
++			return -EINVAL;
++
++		error = shmem_add_seals(file, arg);
++		break;
++	case F_GET_SEALS:
++		error = shmem_get_seals(file);
++		break;
++	default:
++		error = -EINVAL;
++		break;
++	}
++
++	return error;
++}
+ 
+ /*
+  * llseek SEEK_DATA or SEEK_HOLE through the radix_tree.
+@@ -2560,6 +2683,78 @@ static int shmem_show_options(struct seq
+ 	shmem_show_mpol(seq, sbinfo->mpol);
+ 	return 0;
+ }
++
++
++#define MFD_NAME_PREFIX "memfd:"
++#define MFD_NAME_PREFIX_LEN (sizeof(MFD_NAME_PREFIX) - 1)
++#define MFD_NAME_MAX_LEN (NAME_MAX - MFD_NAME_PREFIX_LEN)
++
++#define MFD_ALL_FLAGS (MFD_CLOEXEC | MFD_ALLOW_SEALING)
++
++SYSCALL_DEFINE2(memfd_create,
++		const char __user *, uname,
++		unsigned int, flags)
++{
++	struct shmem_inode_info *info;
++	struct file *file;
++	int fd, error;
++	char *name;
++	long len;
++
++	if (flags & ~(unsigned int)MFD_ALL_FLAGS)
++		return -EINVAL;
++
++	/* length includes terminating zero */
++	len = strnlen_user(uname, MFD_NAME_MAX_LEN + 1);
++	if (len <= 0)
++		return -EFAULT;
++	if (len > MFD_NAME_MAX_LEN + 1)
++		return -EINVAL;
++
++	name = kmalloc(len + MFD_NAME_PREFIX_LEN, GFP_TEMPORARY);
++	if (!name)
++		return -ENOMEM;
++
++	strcpy(name, MFD_NAME_PREFIX);
++	if (copy_from_user(&name[MFD_NAME_PREFIX_LEN], uname, len)) {
++		error = -EFAULT;
++		goto err_name;
++	}
++
++	/* terminating-zero may have changed after strnlen_user() returned */
++	if (name[len + MFD_NAME_PREFIX_LEN - 1]) {
++		error = -EFAULT;
++		goto err_name;
++	}
++
++	fd = get_unused_fd_flags((flags & MFD_CLOEXEC) ? O_CLOEXEC : 0);
++	if (fd < 0) {
++		error = fd;
++		goto err_name;
++	}
++
++	file = shmem_file_setup(name, 0, VM_NORESERVE);
++	if (IS_ERR(file)) {
++		error = PTR_ERR(file);
++		goto err_fd;
++	}
++	info = SHMEM_I(file_inode(file));
++	file->f_mode |= FMODE_LSEEK | FMODE_PREAD | FMODE_PWRITE;
++	file->f_flags |= O_RDWR | O_LARGEFILE;
++	if (flags & MFD_ALLOW_SEALING)
++		info->seals &= ~F_SEAL_SEAL;
++
++	fd_install(fd, file);
++	kfree(name);
++	return fd;
++
++err_fd:
++	put_unused_fd(fd);
++err_name:
++	kfree(name);
++	return error;
++}
++
+ #endif /* CONFIG_TMPFS */
+ 
+ static void shmem_put_super(struct super_block *sb)

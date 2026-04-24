@@ -1,0 +1,28 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=hello-world
+pkgver=1
+pkgrel=6
+pkgdesc="hello world program to be built in the testsuite"
+url="https://en.wikipedia.org/wiki/%22Hello,_World!%22_program"
+arch="all"
+license="MIT"
+source="main.c Makefile"
+
+build() {
+	cd "$srcdir"
+	make
+}
+
+check() {
+	cd "$srcdir"
+	printf 'hello, world!\n' > expected
+	./hello-world > real
+	diff -q expected real
+}
+
+package() {
+	install -D -m755 "$srcdir"/hello-world \
+		"$pkgdir"/usr/bin/hello-world
+}
+sha512sums="62385af6a68cd4e0c03b15992bb9f1d20b8d6c8a33724ca2d28629a139e95016d0502257f8a3a8be53eef30e11b3e372a2469cb1989dbd387ebea4464a9273ee  main.c
+80c32948d3254f5e4f9084d73754824e7d7d7d117770b041a1a13baf056773de265153fe518cc3e735db55b638411aa6fbd0e17b5b674dfc89e69a9391fbd3bb  Makefile"

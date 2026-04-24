@@ -1,0 +1,12 @@
+#!/bin/sh
+
+rc-update -qq del gpsd
+rc-update -q add gnss-share
+rc-update -q add l5-ship-mode shutdown
+rc-update -q add l5-lockdown-support
+
+# Clean up any old, unneeded legacy u-boot images from /boot
+for f in uInitrd uImage; do
+	[ ! -f "/boot/$f" ] && continue
+	rm -f "/boot/$f"
+done

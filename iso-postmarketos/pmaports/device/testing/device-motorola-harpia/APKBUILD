@@ -1,0 +1,46 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-motorola-harpia
+pkgdesc="Motorola Moto G4 Play"
+pkgver=12
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+# Backwards compatibility for old kernel variant subpackages
+replaces="$pkgname-kernel-mainline $pkgname-kernel-mainline-modem"
+for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	# harpia's WCNSS firmware has problems with WiFi channels on some device
+	# variants, using osprey's firmware seems to help as a workaround
+	# (see https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/1085)
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		 firmware-motorola-harpia-wcnss-nv firmware-motorola-harpia-venus
+		 firmware-motorola-osprey-wcnss"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+9f937c6b6e9913ddc03af78068dc0627e19096d2d91c7a922dcc94f349ebff56fd4174487011ead4b16d78ffda79b726d4fff6f4b391fad619e0b3e3cc23709f  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+525a3e20672a7dff26b885b99ee157e0ece33efa10db34c90aed45dc47d7f1c2e90d7082dc84f2724892f199b5adaca04d5864f0aa1d1e4b8ea695f840346d60  modules-initfs
+"

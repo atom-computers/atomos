@@ -1,0 +1,36 @@
+From 2b81a237b028e63d1e5e26330c97a007db0a2178 Mon Sep 17 00:00:00 2001
+From: user0-07161 <user0thenyancat@proton.me>
+Date: Wed, 15 Oct 2025 13:14:53 +0200
+Subject: [PATCH] Include Wi-Fi Firmware
+
+---
+ drivers/net/wireless/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/Kconfig b/drivers/net/wireless/Kconfig
+index 8c8edaf..8c74e75 100644
+--- a/drivers/net/wireless/Kconfig
++++ b/drivers/net/wireless/Kconfig
+@@ -32,6 +32,7 @@ source "drivers/net/wireless/rsi/Kconfig"
+ source "drivers/net/wireless/st/Kconfig"
+ source "drivers/net/wireless/ti/Kconfig"
+ source "drivers/net/wireless/zydas/Kconfig"
++source "drivers/net/wireless/wifimtk/Kconfig"
+ 
+ config PCMCIA_RAYCS
+ 	tristate "Aviator/Raytheon 2.4GHz wireless support"
+-- 
+diff --git a/drivers/net/wireless/Makefile b/drivers/net/wireless/Makefile
+index f00d429..36dad04 100644
+--- a/drivers/net/wireless/Makefile
++++ b/drivers/net/wireless/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_WLAN_VENDOR_INTEL) += intel/
+ obj-$(CONFIG_WLAN_VENDOR_INTERSIL) += intersil/
+ obj-$(CONFIG_WLAN_VENDOR_MARVELL) += marvell/
+ obj-$(CONFIG_WLAN_VENDOR_MEDIATEK) += mediatek/
++obj-$(CONFIG_WLAN_VENDOR_MEDIATEK) += wifimtk/
+ obj-$(CONFIG_WLAN_VENDOR_RALINK) += ralink/
+ obj-$(CONFIG_WLAN_VENDOR_REALTEK) += realtek/
+ obj-$(CONFIG_WLAN_VENDOR_RSI) += rsi/
+2.51.0
+

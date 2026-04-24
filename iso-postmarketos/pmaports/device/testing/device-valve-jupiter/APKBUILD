@@ -1,0 +1,49 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=device-valve-jupiter
+pkgdesc="Valve Steam Deck"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	linux-firmware-cirrus
+	linux-firmware-rtl_bt
+	linux-firmware-rtw88
+	linux-valve-jupiter
+	oem-amd
+	postmarketos-base
+	systemd-boot
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-gnome-mobile:gnome_mobile
+	"
+source="
+	00-scaling-factor.gschema.override
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+gnome_mobile() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-gnome-mobile"
+	install -Dm644 "$srcdir"/00-scaling-factor.gschema.override \
+		-t "$subpkgdir"/usr/share/glib-2.0/schemas/
+}
+
+sha512sums="
+f2b0e3bf013b87e13828f95d3db7327c7afee33a0703d764ea5b96f0f791a01af2f2685ab5b17db1729fe68e78fd0e39f3a9b2f53530aa493897066d87b43248  00-scaling-factor.gschema.override
+8f68d7d07b9c69e7ef161a7bd192f31d1ad71532ab3d602d024568cb0f2ee73ea5776fe1b4afb48703153479facd4728dff1adf8caa10780b2f8e81f3233f1b8  deviceinfo
+5f84e68b7acb0387b479031c97cbb648452ff04fdf0667aeb27d8f3365f099a41dd97a5a470a7971d0eaf61f128f75f44c514c05bf5901c394209331250223c3  kernel-cmdline.conf
+07005dfb4be471a3988d34cb7cc40113e4b6ef6f518fc1f586d816673d5bb7a9c7c5878db77e635fdc460a2c6ceb120a5e8f9a06c20730d0aefc65e5a3165659  modules-initfs
+"

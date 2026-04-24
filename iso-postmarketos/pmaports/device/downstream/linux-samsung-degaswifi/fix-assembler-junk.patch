@@ -1,0 +1,60 @@
+diff -urpN a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+--- a/arch/arm/boot/compressed/head.S	2023-10-26 15:58:29.356796074 +0530
++++ b/arch/arm/boot/compressed/head.S	2023-10-26 16:02:57.874378434 +0530
+@@ -114,7 +114,7 @@
+ #endif
+ 		.endm
+ 
+-		.section ".start", #alloc, #execinstr
++		.section ".start", "ax"
+ /*
+  * sort out different calling conventions
+  */
+diff -urpN a/arch/arm/boot/compressed/piggy.gzip.S b/arch/arm/boot/compressed/piggy.gzip.S
+--- a/arch/arm/boot/compressed/piggy.gzip.S	2023-10-26 15:58:29.356796074 +0530
++++ b/arch/arm/boot/compressed/piggy.gzip.S	2023-10-26 16:02:57.874378434 +0530
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata,"a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.gzip"
+diff -urpN a/arch/arm/boot/compressed/piggy.lzma.S b/arch/arm/boot/compressed/piggy.lzma.S
+--- a/arch/arm/boot/compressed/piggy.lzma.S	2023-10-26 15:58:29.356796074 +0530
++++ b/arch/arm/boot/compressed/piggy.lzma.S	2023-10-26 16:02:57.874378434 +0530
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata,"a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.lzma"
+diff -urpN a/arch/arm/boot/compressed/piggy.lzo.S b/arch/arm/boot/compressed/piggy.lzo.S
+--- a/arch/arm/boot/compressed/piggy.lzo.S	2023-10-26 15:58:29.356796074 +0530
++++ b/arch/arm/boot/compressed/piggy.lzo.S	2023-10-26 16:02:57.874378434 +0530
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata,"a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.lzo"
+diff -urpN a/arch/arm/boot/compressed/piggy.xzkern.S b/arch/arm/boot/compressed/piggy.xzkern.S
+--- a/arch/arm/boot/compressed/piggy.xzkern.S	2023-10-26 15:58:29.356796074 +0530
++++ b/arch/arm/boot/compressed/piggy.xzkern.S	2023-10-26 16:02:57.874378434 +0530
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata,"a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.xzkern"
+diff -urpN a/arch/arm/mm/proc-v7.S b/arch/arm/mm/proc-v7.S
+--- a/arch/arm/mm/proc-v7.S	2023-10-26 15:58:29.540797102 +0530
++++ b/arch/arm/mm/proc-v7.S	2023-10-26 16:02:57.874378434 +0530
+@@ -383,7 +383,7 @@ __v7_setup_stack:
+ 	string	cpu_elf_name, "v7"
+ 	.align
+ 
+-	.section ".proc.info.init", #alloc, #execinstr
++	.section ".proc.info.init", "ax"
+ 
+ 	/*
+ 	 * Standard v7 proc info content

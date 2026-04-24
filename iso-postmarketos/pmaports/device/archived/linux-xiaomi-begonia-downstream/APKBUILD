@@ -1,0 +1,52 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/begonia_user_defconfig
+
+pkgname=linux-xiaomi-begonia-downstream
+pkgver=4.14.218
+pkgrel=0
+pkgdesc="Xiaomi Redmi Note 8 Pro kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-begonia"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev dtc flex openssl-dev perl gcompat"
+
+# Source
+_repository="begonia"
+_commit="78b3211ba301969cbb685fb9890c7b14d14497f1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/AgentFabulous/$_repository/archive/$_commit.tar.gz
+	$_config
+	disable_dtbo_check.patch
+	fix_cmdline.patch
+	use_system_dtc.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+a44a056f53811cdfd08673a68f1a0002ad0e28b32b7125544a008cfb352fb098e5ccf48cdab036f3530c0ef75bf4ea2bdbe85c47ae736b7dc50c6153e4866002  linux-xiaomi-begonia-downstream-78b3211ba301969cbb685fb9890c7b14d14497f1.tar.gz
+67b8f38351d147d1032fa5dcbf8f66a8d7c5c7f0f6c24a5fe09a3319cc78b1e6a5c3c0b9a19691a282462e6c849a0eda50ebb9fe7c391390e984ff5f57552eab  config-xiaomi-begonia.aarch64
+4780a539bee4fc687cd28dab1091b3f8aa5ea896b53d8358ccca99b550eb71268cc49e4762cc5d2c9d0fad3db76001e950daeb4cac6270dd3102099792e123c3  disable_dtbo_check.patch
+5c79eebfa777ce5041033191438e79163444ff961b16d1ece58ae064bfeeabab8c186fd819d8b0fc9eede53e2e41410bd9479c122341387d608a1b95a0130610  fix_cmdline.patch
+c9e562403cd572c66def9adea434731b77617f7561f1ce1079e21e8f02e8fd9cc1febd7e52c581e8e4b1c4aca21c5ca8c5813d2006be13051048d681a640ab3d  use_system_dtc.patch
+"

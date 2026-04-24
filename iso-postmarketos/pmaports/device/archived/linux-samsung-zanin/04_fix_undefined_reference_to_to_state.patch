@@ -1,0 +1,33 @@
+diff --git a/drivers/media/video/camdrv_ss.h b/drivers/media/video/camdrv_ss.h
+index c0638a87..028ce393 100755
+--- a/drivers/media/video/camdrv_ss.h
++++ b/drivers/media/video/camdrv_ss.h
+@@ -165,6 +165,7 @@ enum camdrv_ss_cam_light {
+ 	CAM_HIGH_LIGHT,
+ };
+ 
++struct camdrv_ss_state *to_state(struct v4l2_subdev *sd);
+ 
+ struct camdrv_ss_sensor_cap {
+ /************************/
+@@ -187,7 +188,6 @@ struct camdrv_ss_sensor_cap {
+ 
+ 	int delay_duration;
+ 
+-
+ /*******************/
+ /* FUNCTION POINTERS */
+ /******************/
+diff --git a/drivers/media/video/camdrv_ss_sr200pc20m.c b/drivers/media/video/camdrv_ss_sr200pc20m.c
+index 8d34aad4..e0798aa0 100755
+--- a/drivers/media/video/camdrv_ss_sr200pc20m.c
++++ b/drivers/media/video/camdrv_ss_sr200pc20m.c
+@@ -60,8 +60,6 @@
+ #endif
+ 
+ static DEFINE_MUTEX(af_cancel_op);
+-extern  struct camdrv_ss_state *to_state(struct v4l2_subdev *sd);
+-
+ 
+ extern  int camdrv_ss_i2c_set_config_register(struct i2c_client *client, 
+                                          regs_t reg_buffer[], 

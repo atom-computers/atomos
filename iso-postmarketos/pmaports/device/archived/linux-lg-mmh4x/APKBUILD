@@ -1,0 +1,57 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/mmh4x_defconfig
+
+pkgname=linux-lg-mmh4x
+pkgver=4.9.190
+pkgrel=0
+pkgdesc="LG K40 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="lg-mmh4x"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="lmx420as-kernel"
+_commit="b4ee716c6598d1335ec8ebdf86465c1122b59685"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/lg-mmh4x/$_repository/-/archive/$_commit/$_repository-$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+f3e70892136b0a8dc777c50949abdc4168d4804fbcf30b8f88bf59e7a5ec09e1dca8a63414741d928a50f1122b4cab95d48aa7f2503a22f726c38ed2ac487676  linux-lg-mmh4x-b4ee716c6598d1335ec8ebdf86465c1122b59685.tar.gz
+869653a8c005c36e51fe314f69eafb6aa9304564942bad88af379988f028af20a961685654f39d612c268c1dea16a3557d80ebbbc9c9864bb2ef8142ff243866  config-lg-mmh4x.armv7
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  gcc10-extern_YYLOC_global_declaration.patch
+"

@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="PINE64 PinePhone"
+deviceinfo_manufacturer="PINE64"
+deviceinfo_codename="pine64-pinephone"
+deviceinfo_year="2019"
+deviceinfo_dtb="allwinner/sun50i-a64-pinephone-1.1 allwinner/sun50i-a64-pinephone-1.2"
+# gpio_vibra: needed for osk-sdl haptic feedback
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1440"
+deviceinfo_getty="ttyS0;115200"
+deviceinfo_dev_internal_storage="/dev/mmcblk2"
+deviceinfo_dev_internal_storage_repartition="true"
+
+# Bootloader related
+deviceinfo_sd_embed_firmware="u-boot/pine64-pinephone/u-boot-sunxi-with-spl-528.bin:8"
+deviceinfo_partition_type="msdos"

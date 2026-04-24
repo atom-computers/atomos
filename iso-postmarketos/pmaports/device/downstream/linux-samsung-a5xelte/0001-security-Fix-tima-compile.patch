@@ -1,0 +1,38 @@
+From 07b641581bc9678835f912c504017f86a23a8e95 Mon Sep 17 00:00:00 2001
+From: Apavayan Sinha <info@apavayan.com>
+Date: Sun, 24 Jul 2016 15:02:04 +0530
+Subject: [PATCH] security: Fix tima compile
+
+Signed-off-by: Apavayan Sinha <info@apavayan.com>
+---
+ security/Makefile             | 2 +-
+ security/tima_uevent/Makefile | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/security/Makefile b/security/Makefile
+index 5123df02374..965390f17cc 100644
+--- a/security/Makefile
++++ b/security/Makefile
+@@ -33,7 +33,7 @@ obj-$(CONFIG_INTEGRITY)			+= integrity/built-in.o
+ obj-$(CONFIG_MST_LDO)	  += mstdrv/
+ 
+ # TIMA uevent 
+-obj-$(CONFIG_TIMA)     += tima_uevent/tima_uevent.o
++obj-$(CONFIG_TIMA)     += tima_uevent/
+ #ICCC
+ obj-$(CONFIG_TZ_ICCC)	  += tz_iccc/
+ 
+diff --git a/security/tima_uevent/Makefile b/security/tima_uevent/Makefile
+index 4f1ca82645b..1621efaf56d 100644
+--- a/security/tima_uevent/Makefile
++++ b/security/tima_uevent/Makefile
+@@ -2,5 +2,5 @@
+ # Makefile for TIMA kernel uevent drivers.
+ #
+ 
+-#obj-$(CONFIG_TIMA)   += tima_uevent.o
++obj-$(CONFIG_TIMA)   += tima_uevent.o
+ 
+-- 
+2.32.0
+

@@ -1,0 +1,28 @@
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index 926e4a4..17e735f 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -2872,8 +2872,8 @@ static int mdss_fb_set_par(struct fb_info *info)
+ 	else
+ 		mfd->fbi->fix.line_length = var->xres * var->bits_per_pixel / 8;
+ 
+-	mfd->fbi->fix.smem_len = mfd->fbi->fix.line_length *
+-					mfd->fbi->var.yres_virtual;
++	/*mfd->fbi->fix.smem_len = mfd->fbi->fix.line_length *
++					mfd->fbi->var.yres_virtual;*/
+ 
+ 	if (mfd->panel_reconfig || (mfd->fb_imgType != old_imgType)) {
+ 		mdss_fb_blank_sub(FB_BLANK_POWERDOWN, info, mfd->op_enable);
+diff --git a/drivers/video/msm/mdss/mdss_mdp.c b/drivers/video/msm/mdss/mdss_mdp.c
+index 9e178d1..6b6044c 100644
+--- a/drivers/video/msm/mdss/mdss_mdp.c
++++ b/drivers/video/msm/mdss/mdss_mdp.c
+@@ -224,7 +224,7 @@ u32 mdss_mdp_fb_stride(u32 fb_index, u32 xres, int bpp)
+ 	   is writing directly to fb0, the framebuffer pitch
+ 	   also needs to be 32 pixel aligned */
+ 
+-	if (fb_index == 0)
++	if (fb_index == 1)
+ 		return ALIGN(xres, 32) * bpp;
+ 	else
+ 		return xres * bpp;

@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: LGPL-2.1+
+#
+# Example to use the Framework Laptop 13's power button LED as
+# status LED for feedbackd.
+#
+# To use:
+#
+# ```
+# cp 90-framework-laptop-feedbackd.rules /etc/udev/rules.d/90-framework-laptop-feedbackd.rules
+# sudo udevadm trigger --subsystem-match=leds --action=change
+# killall feedbackd
+# ```
+
+ACTION=="remove", GOTO="fbd_fw_end"
+
+SUBSYSTEM=="leds", DEVPATH=="*/chromeos:white:power", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+
+LABEL="fbd_fw_end"

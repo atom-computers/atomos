@@ -1,0 +1,94 @@
+# Archived: Downstream port, only for reference. Use mainline port (samsung-janice)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/janice_defconfig
+
+pkgname=linux-samsung-janice-downstream
+pkgver=3.0.101
+pkgrel=1
+pkgdesc="Samsung Galaxy S Advance kernel from Epirex"
+arch="armhf"
+_carch="arm"
+_flavor="samsung-janice"
+url="https://github.com/Epirex/Samsung_STE_Kernel"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev busybox-static-armhf gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="Samsung_STE_Kernel"
+_commit="ac7219c4b8dcec7bc5a598d42c6be0db4aa36332"
+_config="config-$_flavor.armhf"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Epirex/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	01_remove_ramdisks_from_initramfs.patch
+	02_reduce_lzo_compression.patch
+	03_change_modules_install_dir.patch
+	04_change_dhd_firmware_dir.patch
+	05_fix_fb_rgb_mode.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.0-fix-piggy.lzo.S.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	init
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+
+	# Use Alpine's busybox.static instead of the pre-compiled busybox shipped
+	# with the source
+	cp -v /usr/$(arch_to_hostspec $arch)/bin/busybox.static \
+		"$builddir"/usr/u8500_initramfs_files/busybox
+
+	# use custom init script in the initramfs which loads the initramfs from
+	# the kernel2 partition ("isorec")
+	cp -v "$srcdir"/init "$builddir"/usr/u8500_initramfs_files/init
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS"
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="
+bb8218d803ec27f983449a43d14df75122311609a39e5b57095f4e8933752a2699fa0d4df1674aeee7d6e3a439551dacc9af3cab26b6e3e71f0441a4f16693df  linux-samsung-janice-downstream-ac7219c4b8dcec7bc5a598d42c6be0db4aa36332.tar.gz
+803896d20e7a26214652daf3848c6b0db015477525e02ccb7299029c3d4dd97a45c164af7dde869325e51599baa4491491a56f9b7c358d7b68d505fdae730a44  config-samsung-janice.armhf
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+3c8e15644eced6f73c5c7d3df0437f3a9f750f4ec32d744c9e4266ccccef9e38316a898227a898a9fc0696bee0281c0e14312de2944e27a696f18a42deabb383  01_remove_ramdisks_from_initramfs.patch
+ef5b912c26fea4ab882592bdf7487942c64b123de8d25d08d976f29743f311742ee2f773bf2d110ddb5095f254dbb0bd4487c5cfce77311929082599199e7ebd  02_reduce_lzo_compression.patch
+27bba6d070db6f499d030680c020906fc3238dc60d90a9b2f0f3a355ef15beb227c1cf48b7858156264fe10f7943772ed00a837be36ba4b80de8199f0383e688  03_change_modules_install_dir.patch
+47533412cc91d2ead046039c90180ebc459e157017be85dca69cd882a183963448beb973f2cb7eaccbcd35354b0ed6a668131cd39ea30393dd52fd93b7e26815  04_change_dhd_firmware_dir.patch
+67278735e21c00d4208e76788d3d99ff1bd9c628608f60a73004f6deb8a4bc75fdf7c1e43108010c57aa6da06aa5e49292b109a2c4421212e181abaca45ea44d  05_fix_fb_rgb_mode.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+8837c884060d87232ba3fa9fce0e815d7ddf33c82ad49260426fe83754baa2f4d92a36a17561083ac8b3674564b7433b3141cacc63b520deec52bbcc1d92d5c9  linux3.0-fix-piggy.lzo.S.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+ef01c51c138239a49c1d00ae0074a07fed267d64934cf3d436a8ff057b91692ee2d040a45eacbb0dc62d5017a708c4dca2fadc282c850fa72aeebcfa787e2cbc  init
+"

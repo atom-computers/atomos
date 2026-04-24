@@ -1,0 +1,26 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-hollyss
+pkgdesc="Sony Xperia M5"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-hollyss mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+da822bc7d1a2b7e85826377dbcd341c455eab5fe8b28dfb47bbd1c7fe2cd535cae508d9974212278f79444f34f0f4c069a788b44bbadde3adb400aa46da77dda  deviceinfo
+75b4a3a1c978e1b8619e101920d50bd6b5473e5a5dd7881fd4807cf24df4bd978f0ae797794b2356cf9d337f217fc8e1ea1a5b55dc2d915e679d229dbb69021e  kernel-cmdline.conf
+"

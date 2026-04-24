@@ -1,0 +1,56 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_crosshatch_defconfig
+
+pkgname=linux-google-crosshatch-downstream
+pkgver=4.9.200
+pkgrel=0
+pkgdesc="Google Pixel 3 XL kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="google-crosshatch"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool openssl-dev lz4 dtc"
+
+# Source
+_repository="android_kernel_google_msm-4.9"
+# Lineage 17.1 branch
+_commit="d6cae0bddcfc25ce897d43a11a4d3c5d07777831"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	clk-qcom-mdss-fix-in-tree-build.patch
+	arm64-boot-disable-building-DTBO-images.patch
+	sec_ts-disable-touchscreen-firmware-upgrade.patch
+	cam_sensor_io-fix-in-tree-build.patch
+	cam_sensor_module-add-cam_sensor_utils-to-include-path.patch
+	thermal-fix-build-error.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	KERNEL_IMAGE_NAME="Image.lz4-dtb" downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="e63d9c877182952aff07beeb2581dae15ae2316a24deb5bffdc633884a438ae30685d7cdd3302d275443a7d0bcd02b33d0d49461abe56995adf43e5a5636a81e  linux-google-crosshatch-downstream-d6cae0bddcfc25ce897d43a11a4d3c5d07777831.tar.gz
+169643e6373e20d41428f2e8404fb6d489d33f41a27774d5e37f3f2ee874dc99577e4880b737a8411a1bd20d556f233b3a48ac2b451277256871500fe244f977  config-google-crosshatch.aarch64
+720c5856b7d1d8b3cb20f77507818b7fe1b4950d444f7ed20cb02d255987d8860d5ed293e81ea326f147af13004b524886c733123794ac62978fda13689a5189  clk-qcom-mdss-fix-in-tree-build.patch
+f175233f0cd4e5658937cf50c8535a2b9f1a0d9c7c3fb52aa54096f7733f292e1ab6c2cebadde8479980f27d9b8f7d03f98da3f8166858c8519d91de2a37f1ba  arm64-boot-disable-building-DTBO-images.patch
+7c941332085c6a2372ad083400e354c61f38752c2706d07592a7ce6a72aa5d8bb9cb10521fe0c941ac4e49aa3dbd2f9473c42ed2a10ec66b1b50b65e8ad1e0a8  sec_ts-disable-touchscreen-firmware-upgrade.patch
+95c385ceefac59f863629ea684d5bf47a37cbc45537a5539cccb47eb57ed5544987b7a7824677c96089e8c6d867cda45e419b478654f8485b0694506afa43135  cam_sensor_io-fix-in-tree-build.patch
+3003e2b6f16edb8a5d3b52a65249ddce91ba3be4bed9f6f6bc193a55f667ff5e2d4ff667af623ba7b949006f2a5e45f13e12214c9068c6bfebfb34f04d2b631b  cam_sensor_module-add-cam_sensor_utils-to-include-path.patch
+7bc6d7fd84750ad9244fde9e1c74dab395a827a784c984ab51d71c7e122fb13dcef9b8863a3d31322af64da94a53327af6a83c613b3b46e6c17acf1dcb7c5823  thermal-fix-build-error.patch"

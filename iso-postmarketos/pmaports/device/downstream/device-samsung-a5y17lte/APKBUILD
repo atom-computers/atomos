@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-a5y17lte
+pkgdesc="Samsung Galaxy A5 (2017)"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-a5y17lte mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo initfs-hook.sh"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for the Samsung Galaxy A5 2017"
+	depends="firmware-samsung-universal7880"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+957bd62ceeabd98e07626ada18bd91a630ee1fe52daabe88e23deadec3a21a985ee39cc08b50c2653c1597797c9c6277b70aa0980b5d2a69d048c4c835227035  deviceinfo
+92effac4743fbcfc47461723eac7b088efb58574d76822293ba95d66edd4820886241173a84bed6a9095801d39311c29aeac409add53421bb2c5a6caf395226c  initfs-hook.sh
+"

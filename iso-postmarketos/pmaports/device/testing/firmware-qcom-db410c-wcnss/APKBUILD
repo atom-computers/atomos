@@ -1,0 +1,48 @@
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=firmware-qcom-db410c-wcnss
+pkgver=1034.2.1
+pkgrel=5
+pkgdesc="DragonBoard 410c WiFi/BT firmware"
+url="https://releases.linaro.org/96boards/dragonboard410c/qualcomm/firmware/"
+subpackages="$pkgname-doc"
+arch="aarch64 armv7"
+license="custom"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="mtools pil-squasher"
+source="https://releases.linaro.org/96boards/dragonboard410c/qualcomm/firmware/linux-board-support-package-r$pkgver.zip"
+builddir="$srcdir/linux-board-support-package-r$pkgver"
+
+# This package is a replacement for linux-firmware-qcom (packaging only necessary
+# firmware plus some missing ones), so it's packaged in /qcom, not /postmarketos.
+replaces="linux-firmware-qcom"
+_fwdir="/lib/firmware/qcom"
+
+unpack() {
+	default_unpack
+
+	# Extract firmware files from FAT file system image
+	mcopy -i "$builddir"/bootloaders-linux/NON-HLOS.bin -p -m -v \
+		::image/wcnss.* "$builddir"
+}
+
+build() {
+	pil-squasher wcnss.mbn wcnss.mdt
+}
+
+package() {
+	install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+	install -Dm644 NOTICE.txt "$pkgdir"/usr/share/licenses/$pkgname/NOTICE
+
+	# Use this firmware by default for devices that can use unsigned firmware
+	provides="firmware-qcom-msm8916-wcnss"
+	provider_priority=100
+
+	install -Dm644 "$builddir"/wcnss.mbn -t "$pkgdir/$_fwdir"/apq8016/
+
+	# Still link to old location in case this is installed on other devices
+	mkdir -p "$pkgdir"/lib/firmware/postmarketos
+	ln -s "$_fwdir"/apq8016/wcnss.mbn "$pkgdir"/lib/firmware/postmarketos/wcnss.mbn
+	ln -s "$_fwdir"/apq8016/wcnss.mbn "$pkgdir"/lib/firmware/postmarketos/wcnss.mdt
+}
+
+sha512sums="4b5d0250552ff3b0a55af9395e62064299a1240f22a5f50383de95723db964351412fa2b38f24fe73fdeb613366e0eb6b3c335600c238546db783ca84647e2d2  linux-board-support-package-r1034.2.1.zip"

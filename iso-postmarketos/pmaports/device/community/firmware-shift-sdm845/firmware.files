@@ -1,0 +1,16 @@
+./lib/firmware/postmarketos/qca/crbtfw21.tlv
+./lib/firmware/qca/axolotl/crnv21.bin
+./lib/firmware/qcom/sdm845/axolotl/a630_zap.mbn
+./lib/firmware/qcom/sdm845/axolotl/adsp.mbn
+./lib/firmware/qcom/sdm845/axolotl/adspr.jsn
+./lib/firmware/qcom/sdm845/axolotl/adspua.jsn
+./lib/firmware/qcom/sdm845/axolotl/cdsp.mbn
+./lib/firmware/qcom/sdm845/axolotl/cdspr.jsn
+./lib/firmware/qcom/sdm845/axolotl/ipa_fws.mbn
+./lib/firmware/qcom/sdm845/axolotl/modem.mbn
+./lib/firmware/qcom/sdm845/axolotl/modemr.jsn
+./lib/firmware/qcom/sdm845/axolotl/modemuw.jsn
+./lib/firmware/qcom/sdm845/axolotl/slpi.mbn
+./lib/firmware/qcom/sdm845/axolotl/slpir.jsn
+./lib/firmware/qcom/sdm845/axolotl/slpius.jsn
+./lib/firmware/qcom/sdm845/axolotl/venus.mbn

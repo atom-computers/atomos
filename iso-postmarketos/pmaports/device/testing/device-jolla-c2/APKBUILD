@@ -1,0 +1,56 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Affe Null <affenull2345@gmail.com>"
+pkgname=device-jolla-c2
+pkgdesc="Jolla C2"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-unisoc-ums9230
+	android-tools
+	firmware-jolla-c2-boot
+	linux-postmarketos-unisoc-ums9230
+	postmarketos-base
+	soc-unisoc-ums9230
+	u-boot-jolla-c2
+"
+_pmb_recommends="firmware-jolla-c2-wcn"
+makedepends="devicepkg-dev"
+source="
+	90-firmware-loader.rules
+	deviceinfo
+	load-firmware.sh
+	modules-initfs
+	pulse-jolla-c2.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	# Generate a dummy initramfs for the chainloadable U-Boot image
+	fallocate -l 4k dummy-initramfs
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/pulse-jolla-c2.conf \
+		"$pkgdir"/etc/pulse/daemon.conf.d/89-jolla-c2.conf
+	install -Dm644 dummy-initramfs \
+		"$pkgdir"/usr/share/u-boot/reeder-s19mps/dummy-initramfs
+	install -Dm644 "$srcdir"/90-firmware-loader.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d
+	install -Dm755 "$srcdir"/load-firmware.sh \
+		"$pkgdir"/usr/libexec/jolla-c2-firmware.sh
+}
+
+sha512sums="
+e2d256243177b2eb60ad7a8c6e163a07a607003ca12a551b455712aad622cf7f54905832c950d9e6503a174ed05406421e52e40ded665b6224346bce72bd136e  90-firmware-loader.rules
+11235873680350599e8e6b8f753f7c14defd39bc08fbcaf48f95bd93efb31e8342a0c30eba9fda992dd29d4da449625e6ae84fa08ee2ada79c82b766a3d93591  deviceinfo
+a59df35c2190b477988f56cda1a420e154ea0eaad6ef23928b92e1c8d08c4f60acd1c984439d63b53a82dd1aa85f68212bcccc3de20526f0a0206c773b3e4b33  load-firmware.sh
+fd0a23c87c939b7206bb709d951089bc6e530c037d9c1c5759ea501df37f13c80209b4ebd862abe9ed54108f28dae470054ea35d0892479309147b16d23391d6  modules-initfs
+9c472065b19141dd4c7555869b955de2e679b36e597f9fa3bdac18d0e9460986b0e2fffe1e04751301305f1b6474c1375803afb7d6212eeae91b4905d0bf8ff8  pulse-jolla-c2.conf
+"

@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-pine64-a64lts
+pkgdesc="PINE64 A64-LTS"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+depends="postmarketos-base linux-postmarketos-allwinner u-boot-sunxi u-boot-tools"
+makedepends="
+	devicepkg-dev
+	u-boot-tools
+"
+source="
+	deviceinfo
+	uboot-script.cmd
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n postmarketos -d "$srcdir"/uboot-script.cmd "$srcdir"/boot.scr
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi and Bluetooth firmware"
+	depends="linux-firmware-rtlwifi linux-firmware-rtl_bt"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+58a8fa4d3606f89888d51858807b166fd38385d12672aeb59f8b34e1cc8a695e43cc351af74815f4542ea51beab20c8555f6fcc5100fdb0934e424a0275ee00b  deviceinfo
+9f53b80ebc9cbbea488c75dc9b3abe374d5a5e6b756831dd5d298fd4af73450fedea5cc93381f93bbbdd3503cffd4ea5edb2a6836ea130fb408327ea4cf12576  uboot-script.cmd
+"

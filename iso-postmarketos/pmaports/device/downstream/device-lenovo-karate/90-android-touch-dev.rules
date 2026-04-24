@@ -1,0 +1,4 @@
+# use 'weston-calibrator' to calibrate the touchscreen!
+SUBSYSTEM=="input", ATTRS{name}=="fts_ts", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1", \
+ENV{LIBINPUT_CALIBRATION_MATRIX}="0.975358 0.020484 -20.695250 0.031747 1.034592 -60.641296"

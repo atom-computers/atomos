@@ -1,0 +1,88 @@
+From ad2e377174580a99479fb66c4dbc5c93efd4d8d2 Mon Sep 17 00:00:00 2001
+From: Marijn Suijten <marijn.suijten@somainline.org>
+Date: Tue, 9 Apr 2024 22:37:57 +0200
+Subject: [PATCH 15/29] dual-DSI dual-DSC panel
+
+---
+ drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c    | 8 +++++++-
+ drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c     | 2 +-
+ drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c | 3 ++-
+ drivers/gpu/drm/msm/disp/dpu1/dpu_hw_top.h     | 3 +--
+ drivers/gpu/drm/msm/dsi/dsi_host.c             | 4 ++--
+ 5 files changed, 13 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+index 9b8e57cc286b..301ed0b14bfd 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_encoder.c
+@@ -2041,8 +2041,13 @@ static void dpu_encoder_prep_dsc(struct dpu_encoder_virt *dpu_enc,
+ 	this_frame_slices = pic_width / dsc->slice_width;
+ 	intf_ip_w = this_frame_slices * dsc->slice_width;
+ 
++	/*
++	 * dsc merge case: when using 2 encoders for the same stream,
++	 * no. of slices need to be same on both the encoders.
++	 */
+ 	enc_ip_w = intf_ip_w / num_dsc;
+-	initial_lines = dpu_encoder_dsc_initial_line_calc(dsc, enc_ip_w);
++	initial_lines = 3;
++	// dpu_encoder_dsc_initial_line_calc(dsc, enc_ip_w);
+ 
+ 	for (i = 0; i < num_dsc; i++)
+ 		dpu_encoder_dsc_pipe_cfg(ctl, hw_dsc[i], hw_pp[i],
+@@ -2663,6 +2668,7 @@ static int dpu_encoder_setup_display(struct dpu_encoder_virt *dpu_enc,
+ 		DPU_DEBUG("h_tile_instance %d = %d, split_role %d\n",
+ 				i, controller_id, phys_params.split_role);
+ 
++		// TODO: this is where we need to grab two INTfs?
+ 		phys_params.hw_intf = dpu_encoder_get_intf(dpu_kms->catalog, &dpu_kms->rm,
+ 							   disp_info->intf_type,
+ 							   controller_id);
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c
+index ac834db2e4c1..2a3c3368d519 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c
+@@ -580,7 +580,7 @@ static void dpu_hw_ctl_intf_cfg_v1(struct dpu_hw_ctl *ctx,
+ 	 * added in SW. Power on reset value is not disable.
+ 	 */
+ 	if (ctx->mdss_ver->core_major_ver >= 7)
+-		mode_sel = CTL_DEFAULT_GROUP_ID  << 28;
++		mode_sel = CTL_DEFAULT_GROUP_ID << 28;
+ 
+ 	if (cfg->intf_mode_sel == DPU_CTL_MODE_SEL_CMD)
+ 		mode_sel |= BIT(17);
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
+index b3395e9c34a1..97999c5d0803 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dsc_1_2.c
+@@ -109,9 +109,10 @@ static void dpu_hw_dsc_config_1_2(struct dpu_hw_dsc *hw_dsc,
+ 	if (mode & DSC_MODE_MULTIPLEX)
+ 		data |= BIT(1);
+ 
+-	num_active_slice_per_enc = dsc->slice_count;
+ 	if (mode & DSC_MODE_MULTIPLEX)
+ 		num_active_slice_per_enc = dsc->slice_count / 2;
++	else
++		num_active_slice_per_enc = dsc->slice_count;
+ 
+ 	data |= (num_active_slice_per_enc & 0x3) << 7;
+ 
+diff --git a/drivers/gpu/drm/msm/dsi/dsi_host.c b/drivers/gpu/drm/msm/dsi/dsi_host.c
+index e0de545d4077..620b44881ad9 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -996,9 +996,9 @@ static void dsi_timing_setup(struct msm_dsi_host *msm_host, bool is_bonded_dsi)
+ 		u32 bytes_per_pclk;
+ 
+ 		/* update dsc params with timing params */
+-		if (!dsc || !mode->hdisplay || !mode->vdisplay) {
++		if (!dsc || !hdisplay || !mode->vdisplay) {
+ 			pr_err("DSI: invalid input: pic_width: %d pic_height: %d\n",
+-			       mode->hdisplay, mode->vdisplay);
++			       hdisplay, mode->vdisplay);
+ 			return;
+ 		}
+ 
+-- 
+2.53.0
+

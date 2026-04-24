@@ -1,0 +1,56 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/vt8500_v6_v7_defconfig
+maintainer=""
+pkgname=linux-tokio-techbook
+pkgver=4.3.0
+pkgrel=5
+pkgdesc="Tokio Techbook kernel fork, close to mainline"
+arch="armv7"
+_carch="arm"
+_flavor="tokio-techbook"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+
+# Source
+# Mainline 4.3.0
+# https://github.com/torvalds/linux/commit/6a13feb9c82803e2b815eca72fa7a9f5561d7861
+_repository="linux"
+_commit="6a13feb9c82803e2b815eca72fa7a9f5561d7861"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/torvalds/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+}
+
+sha512sums="0fde6b90d9ec94eca00f419e51f112f258e9cb9795375379e4078dc800784dad882935db39e74fb748727a82c91046e23dd39c76ae14bca9afe6f6b19d1ea452  linux-tokio-techbook-6a13feb9c82803e2b815eca72fa7a9f5561d7861.tar.gz
+bf9c970166d238f8a154aeca8c6c451fffd18919b9705aa30c2bb1af99f1c448c2293040bf504337a93533ef9832ac10004555e0be0a0b13955b8533750d98b4  config-tokio-techbook.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch"

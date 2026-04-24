@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_zerofltexx_defconfig
+
+pkgname=linux-samsung-zeroltexx
+pkgver=3.10.108
+pkgrel=3
+pkgdesc="Samsung Galaxy S6 edge kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-zeroltexx"
+url="https://github.com/Exynos7420/android_kernel_samsung_exynos7420"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc linux-headers installkernel devicepkg-dev dtbtool-exynos"
+
+# Source
+_repository="android_kernel_samsung_exynos7420"
+_commit="31cf7c95814358c4cd76feacf2f29bebc057fefc"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Exynos7420/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-fix-red-blue.patch
+	02-fix-wifi-firmware-path.patch
+	03-fix-fimc-is-firmware-path.patch
+	Makefile_fix_paths.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KCPPFLAGS=-mstrict-align KCFLAGS=-mstrict-align \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype  0x217584da \
+		-o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *zerolte_eur_open_*.dtb)
+}
+
+package() {
+	KERNEL_IMAGE_NAME="Image" downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+1f8917dfaf01865cbc0385579cad1565dcb1ec4445bbeaf3e70d0bd8a6a572a457813c311f54360f54c79b373e621d280982f560cf01091d156c90efcc98067b  linux-samsung-zeroltexx-31cf7c95814358c4cd76feacf2f29bebc057fefc.tar.gz
+48b7cde7bbd96931486f480c519adac057f3d7c74eff7ae6838f1084ed9b9a2ccb5f61c86d4dd21dc7ed292c5332d2adf4ee0a79476baacfcd47c193c6b84644  config-samsung-zeroltexx.aarch64
+f3e4770bb251efefce312986eeec6c5a8a55066c5408cdd10e00ab2657a4bff155da6a19155ceaf39c5f34cc02cbbb7866aa7b4e65c33cdd3cff4590fadba2a4  01-fix-red-blue.patch
+9afbb020311f0bf8043f021292d0f05041ff4e29003bf2114dfc31906869f44dbf15ff560170bc9e9baf62d7bb4ed73d58415212fecac6f1bdd6886783b0fcc1  02-fix-wifi-firmware-path.patch
+c98a074f46376936493b74285632cf38818bdb9d5e7b70b5b291aa8774711a93f352cb569d856215ebc75a33f819a8ce6cd5ccbee506d0a81141938924cf45e3  03-fix-fimc-is-firmware-path.patch
+00aac98cfbaa68bd30c41622b12f38106f6595e2d74ee5cdd05add56f03facb4db45deb43b5df997143b54497d621b9fc5bae7207898c70df0672ebb482c4b46  Makefile_fix_paths.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+8684da1ef7032cb2160c9b071b2bf8cb57a31f5527ee3f6e9e3b58fa485a0ff244e3bc85446c8b09f5b5cec7d1a3f92da681f63495728aaa547438c93eb375d5  0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+"

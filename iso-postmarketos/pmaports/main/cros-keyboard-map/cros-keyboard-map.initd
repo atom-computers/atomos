@@ -1,0 +1,30 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="cros-keyboard-map"
+description="Generate keyboard mapping for Chrome OS devices"
+command="/usr/bin/pmos-generate-cros-keymap"
+
+DIRECTORY="/tmp/cros-keymap"
+FILENAME="keyd.conf"
+
+command_args="--file $DIRECTORY/$FILENAME"
+if [ "$inverted_functional_row" = "true" ]; then
+	command_args="$command_args --inverted"
+fi
+
+start_pre() {
+	[ -d "$DIRECTORY" ] || mkdir "$DIRECTORY"
+}
+
+start() {
+	ebegin "Starting cros-keyboard-map"
+	# This script must be executed before keyd, block keyd before it's done
+	$command $command_args
+	eend $?
+}
+
+depend() {
+	before keyd
+	after udev-settle tmpfs
+}

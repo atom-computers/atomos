@@ -1,0 +1,43 @@
+author	Vinay Simha BN <simhavcs@gmail.com>	2016-10-17 13:45:44 -0700
+committer	John Stultz <john.stultz@linaro.org>	2017-05-12 14:09:23 -0700
+commit	7c0667f5e450796a1494e05b419aad1a264ee09f (patch)
+tree	bdae632852a7e70bc14bcb75deffa037b31ac95b
+parent	25001b47cca9a155f261d5b8c9acea6150213ca9 (diff)
+download	flo-7c0667f5e450796a1494e05b419aad1a264ee09f.tar.gz
+arm: dts: qcom: apq8064-nexus7: Add smb345 charger node
+Add smb345 charger node to nexus7 dts.
+
+Signed-off-by: Vinay Simha BN <simhavcs@gmail.com>
+[jstultz: split out from larger patch from Vinay]
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+Diffstat
+-rw-r--r--	arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts	17	
+		
+1 files changed, 17 insertions, 0 deletions
+diff --git a/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts b/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts
+index 3cae48f..03a4b33 100644
+--- a/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts
++++ b/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts
+@@ -329,6 +329,23 @@
+ 					reg = <0x55>;
+ 				};
+ 
++				smb345@6a {
++					compatible = "summit,smb345";
++					reg = <0x6a>;
++					status = "okay";
++					interrupt-parent = <&tlmm_pinmux>;
++					interrupts = <23 IRQ_TYPE_EDGE_BOTH>;
++
++					max-chg-curr = <1800000>;
++					usb-curr-limit = <450000>;
++
++					chip-temp-thershold = <110>;
++
++					enable-usb-charging;
++					enable-otg-charging;
++
++					enable-chg-ctrl = <0>;  /* SW (i2c interface) */
++				};
+ 			};
+ 		};

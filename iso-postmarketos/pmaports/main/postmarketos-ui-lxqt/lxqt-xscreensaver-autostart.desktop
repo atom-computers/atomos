@@ -1,0 +1,8 @@
+# This file disables XScreenSaver autostart by option "Hidden=true".
+# It overrides the corresponding desktop file in /etc/xdg/autostart.
+[Desktop Entry]
+Type=Application
+Name=XScreenSaver
+TryExec=xscreensaver
+Exec=xscreensaver -no-splash
+Hidden=true

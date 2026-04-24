@@ -1,0 +1,55 @@
+diff --git a/Makefile b/Makefile
+index 539e4cd3c..e95fc2571 100644
+--- a/Makefile
++++ b/Makefile
+@@ -677,6 +677,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, attribute-alias)
++KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
+ 
+ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+ KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
+diff --git a/drivers/char/rdbg.c b/drivers/char/rdbg.c
+index 0c623221b..400efb134 100644
+--- a/drivers/char/rdbg.c
++++ b/drivers/char/rdbg.c
+@@ -136,7 +136,7 @@ struct rdbg_device {
+ 
+ int registers[32] = {0};
+ static struct rdbg_device g_rdbg_instance = {
+-	{ {0} },
++	{},
+ 	NULL,
+ 	0,
+ 	SMP2P_NUM_PROCS,
+
+Newer GCC doesn't trust that `dbg_buff` can hold `count` for the copy_from_user.
+Probably related to unsigned overflow?
+
+diff --git a/drivers/platform/msm/ipa/ipa_v3/ipa.c b/drivers/platform/msm/ipa/ipa_v3/ipa.c
+index 9c0643d01..e2aa6d9bb 100644
+--- a/drivers/platform/msm/ipa/ipa_v3/ipa.c
++++ b/drivers/platform/msm/ipa/ipa_v3/ipa.c
+@@ -5970,6 +5970,9 @@ static ssize_t ipa3_write(struct file *file, const char __user *buf,
+ 
+ 	char dbg_buff[32] = { 0 };
+ 
++	if (sizeof(dbg_buff) < count)
++		return -EFAULT;
++
+ 	if (sizeof(dbg_buff) < count + 1)
+ 		return -EFAULT;
+ 
+diff --git a/techpack/audio/asoc/codecs/wcd_cpe_core.c b/techpack/audio/asoc/codecs/wcd_cpe_core.c
+index 2e154e701..9fd3eb7ea 100644
+--- a/techpack/audio/asoc/codecs/wcd_cpe_core.c
++++ b/techpack/audio/asoc/codecs/wcd_cpe_core.c
+@@ -2257,6 +2257,7 @@ static int fill_cmi_header(struct cmi_hdr *hdr,
+ 		return -EINVAL;
+ 	}
+ 
++	memset(hdr, 0, sizeof(*hdr));
+ 	CMI_HDR_SET_SESSION(hdr, session_id);
+ 	CMI_HDR_SET_SERVICE(hdr, service_id);
+ 	if (version)

@@ -1,0 +1,44 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-golden
+pkgdesc="Samsung Galaxy S III mini"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-u8500
+	linux-postmarketos-stericsson
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kwin
+	"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	kwin.sh
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kwin() {
+	install_if="$pkgname kwin"
+	install -Dm644 "$srcdir"/kwin.sh "$subpkgdir"/etc/profile.d/kwin.sh
+}
+
+sha512sums="
+4f898113d75adebe15a8c0a3e7e9814e26081640365c1c75e6c0720dc11464b426536434b9120b1291ef495b07918d09fa70f0067fcefa25da98787eb8e140f1  deviceinfo
+447fd07a0896a72af0cf69708be98f92311ac9b5c1c75ae8a131bf55be3f2d6a82bedc9b2373bc2589a09b1049ad22f8eff7d6cb012e1759df11e83fada01eb2  kernel-cmdline.conf
+685ec71484a932c59f83f1039d4d18a010a5849342e96d9e15ae8ce64374aac15073f9c51d7d9f270c60e70d2ea15c685b8f528cdc40f991b093b9227cba6a48  kwin.sh
+"

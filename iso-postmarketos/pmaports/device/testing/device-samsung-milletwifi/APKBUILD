@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-milletwifi
+pkgdesc="Samsung Galaxy Tab 4 8.0 Wi-Fi"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8226
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8226
+	"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-samsung-milletwifi-wcnss-nv msm-firmware-loader msm-modem"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+6c813fc6589b38ab90535b8736f03de13cb0326adf949b87e0860d1b0919a4dd1144ce9467ad8c329cda98c47e0d3f3765aeb7b3bf2aa9636a946d81f2b75d2e  deviceinfo
+a721d179181806fe39d26f48b2a1fe2e01fc6e775ad51c48739504e6221eab1a0c63e27b0753af0092131ca2b33c0cc042d743b2bcd842ea1ffbab1d81f6c7f1  kernel-cmdline.conf
+566fbcbd958c465fa546068095c51678b6635a247dd7ef1d6c7f4c5fd527a21f41ed4daf8f63a1342433f150d3437b102e523bfa63d17ff64a0ebe48eb7b9ae6  modules-initfs
+"

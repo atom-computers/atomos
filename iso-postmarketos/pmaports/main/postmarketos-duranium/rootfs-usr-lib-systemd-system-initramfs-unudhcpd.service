@@ -1,0 +1,13 @@
+[Unit]
+Description=DHCP Server for USB Gadget (initramfs)
+DefaultDependencies=no
+After=initramfs-usb-gadget.service
+ConditionPathExists=/run/usb-gadget-iface
+
+[Service]
+Type=simple
+# FIXME: network addresses should be configurable, perhaps via cmdline param
+ExecStart=/bin/sh -c 'unudhcpd -i "$(cat /run/usb-gadget-iface)" -s 172.16.42.1 -c 172.16.42.2'
+
+[Install]
+WantedBy=emergency.target

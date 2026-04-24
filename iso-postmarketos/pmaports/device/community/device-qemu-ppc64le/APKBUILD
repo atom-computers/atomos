@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+# Co-Maintainer: famfo <famfo@famfo.xyz>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=device-qemu-ppc64le
+pkgver=7
+pkgrel=5
+pkgdesc="Simulated device in QEMU (ppc64le)"
+url="https://postmarketos.org"
+arch="ppc64le"
+license="MIT"
+depends="
+	grub-ieee1275
+	postmarketos-base
+	postmarketos-qemu-common
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-mainline:kernel_mainline
+	"
+
+source="
+	kernel-cmdline.conf
+	deviceinfo
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel (recommended, best balance between stability and features)"
+	depends="linux-postmarketos-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long-term maintainance kernel (most stability, not all security fixes & new features)"
+	depends="linux-postmarketos-lts linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Upstream development kernel (regular breakage, latest features)"
+	depends="linux-postmarketos-mainline linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+875267ce79b89ab77b7caa86f34bb942019ec0a5390a0f0a5156faa316367a59545b395a564875d2b2c48b83ebcb67c12b27895905301ac34410389333284ebd  kernel-cmdline.conf
+4e8d60fe172dfd392075ecf533e06ecfa42925355b242b112045915a1b3e51ac0880daa23f7750a4f480bd0fb2b7ebab77b6e28292ec4cba015653383cc1824a  deviceinfo
+"

@@ -1,0 +1,44 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-acer-t01
+pkgdesc="Acer Liquid Z330"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8909
+	soc-qcom-msm8916-rproc
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="
+		firmware-qcom-adreno-a300
+		msm-firmware-loader
+		firmware-acer-t01-wcnss-nv
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+8e01034af301b363722ce819ac2566eed2572db97bef3cc8b78df4f7ff08fbb00d04ace7578633e285695f76a8dea78777d2be7a0349fd22e8afdeb335a5e5ca  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+a0e3f4ca9dd9bb171b021ee07a2aaf3886b3d6376bb38298128b0bf0325a2305e48ba42a37105b13f7f469fb98d8326c8ce95b6259f8974a4f04b09acb3af7f2  modules-initfs
+"

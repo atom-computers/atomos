@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Source Parts Pocket P.C."
+deviceinfo_manufacturer="Source Parts"
+deviceinfo_codename="sourceparts-pocketpc"
+deviceinfo_year="2021"
+deviceinfo_dtb="allwinner/sun50i-a64-pocket-pc"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1920"
+deviceinfo_screen_height="1080"
+deviceinfo_getty="ttyS0;115200"
+deviceinfo_dev_internal_storage="/dev/mmcblk2"
+deviceinfo_dev_internal_storage_repartition="true"
+
+# Bootloader related
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_sd_embed_firmware="u-boot/sourceparts-pocketpc/u-boot-sunxi-with-spl-552.bin:8"

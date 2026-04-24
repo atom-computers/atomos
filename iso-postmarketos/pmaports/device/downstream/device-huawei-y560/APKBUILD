@@ -1,0 +1,24 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-huawei-y560
+pkgdesc="Huawei Ascend Y560"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-huawei-y560 mkbootimg xz"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+a62910b0f463a388d05a719de3becafc7165142252325874e8c7819ac4b67acee75d148b98110002d6f39f9699cbc39bfa48d1cef93d5762937e704e183b3fb8  deviceinfo
+0b2163126e6badc65bf840889157405b1011ddf19bba40b79cb568e1a685782a4ea93a099d1f490a215047f3ef378cf7d60d7c78236cb48a94bdf21ded4af48a  kernel-cmdline.conf
+"

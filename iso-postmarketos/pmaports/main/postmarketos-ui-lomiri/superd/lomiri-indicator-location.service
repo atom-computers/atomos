@@ -1,0 +1,11 @@
+[Unit]
+Description=Lomiri Indicator Location Backend
+PartOf=graphical-session.target
+PartOf=lomiri-indicators.target
+
+[Service]
+ExecStart=/usr/libexec/lomiri-indicator-location/lomiri-indicator-location-service
+Restart=on-failure
+
+[Install]
+WantedBy=lomiri-indicators.target

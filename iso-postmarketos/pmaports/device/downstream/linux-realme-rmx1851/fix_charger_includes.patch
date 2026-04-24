@@ -1,0 +1,26 @@
+diff --git a/drivers/power/oppo/charger_ic/oppo_bq25882.c b/drivers/power/oppo/charger_ic/oppo_bq25882.c
+index 06d4a197e..d7360890f 100644
+--- a/drivers/power/oppo/charger_ic/oppo_bq25882.c
++++ b/drivers/power/oppo/charger_ic/oppo_bq25882.c
+@@ -64,7 +64,7 @@ extern void mt_power_off(void);
+ 
+ #include "../oppo_vooc.h"
+ #include "../oppo_gauge.h"
+-#include <oppo_bq25882.h>
++#include "oppo_bq25882.h"
+ 
+ 
+ static struct chip_bq25882 *charger_ic = NULL;
+diff --git a/drivers/power/oppo/charger_ic/oppo_da9313.c b/drivers/power/oppo/charger_ic/oppo_da9313.c
+index 3f2391839..e900784a4 100644
+--- a/drivers/power/oppo/charger_ic/oppo_da9313.c
++++ b/drivers/power/oppo/charger_ic/oppo_da9313.c
+@@ -68,7 +68,7 @@ extern void mt_power_off(void);
+ 
+ #include "../oppo_vooc.h"
+ #include "../oppo_gauge.h"
+-#include <oppo_da9313.h>
++#include "oppo_da9313.h"
+ #include <linux/proc_fs.h>
+ 
+ static struct chip_da9313 *the_chip = NULL;

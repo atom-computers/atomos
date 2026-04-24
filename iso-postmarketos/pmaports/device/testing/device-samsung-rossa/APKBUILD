@@ -1,0 +1,52 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Raymond Hackley <wonderfulShrineMaidenOfParadise@postmarketos.org>"
+pkgname=device-samsung-rossa
+pkgdesc="Samsung Galaxy Core Prime LTE"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	mkbootimg
+	linux-postmarketos-qcom-msm8916
+	soc-qcom-msm8916
+	soc-qcom-msm8916-rproc
+	soc-samsung-msm8916-modem-workaround
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+# Backwards compatibility for old device package name
+_old_pkgname="device-samsung-cprime"
+replaces="$_old_pkgname"
+provides="$_old_pkgname=$pkgver-r$pkgrel"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader firmware-samsung-rossa-wcnss-nv"
+	provides="$_old_pkgname-nonfree-firmware=$pkgver-r$pkgrel"
+
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+ef398dee1e31ddf65e6714c8c19f0ff3ba1fe234b6cb479412b7aa96614f8edf0e8285d401cce398304435d961b4770f3d5fae4e337455d2301fb8ed1e91a987  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+9ead03b9e3edb69b238b25e5eecd477c99f03223237a549d124903dfb56a8be02df25ea43c8c308998d2250f9e586c8fef594007f43bc426dfb2d074a6270bba  modules-initfs
+"

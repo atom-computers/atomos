@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Petr Vorel <petr.vorel@gmail.com>"
+pkgname=device-huawei-angler
+pkgver=7
+pkgrel=0
+pkgdesc="Huawei Nexus 6P"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	firmware-aosp-broadcom-wlan
+	linux-postmarketos-qcom-msm8994
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+a5709a265994263f1b348864552f82574601d7600ba293e34a9883265cb8a44a27b22f01cb9d42c8f90bc0dd2de0160c6dd554c18c12a3118cf4d86e29ea77be  deviceinfo
+e9a2223fcb15391c52976e492648375a70f09fc1c7a5e876fd870d3091056d523f97d3e8fefc5113c3c3b0051ec163ed41d662bde8f0d5ed3c64c6075252e79c  kernel-cmdline.conf
+"

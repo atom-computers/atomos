@@ -1,0 +1,16 @@
+[Unit]
+Description=Framebuffer keyboard UI service
+ConditionPathExists=/dev/tty0
+After=getty@tty1.service
+
+[Service]
+Type=exec
+ExecStart=/bin/sh -c "exec /usr/bin/fbkeyboard -r $(cat /sys/class/graphics/fbcon/rotate) -f /usr/share/fonts/dejavu/DejaVuSans.ttf"
+ExecStartPre=-modprobe uinput
+ExecStartPre=-/bin/sh -c "echo 0 > /sys/class/graphics/fbcon/cursor_blink"
+Restart=always
+RestartSec=1s
+PIDFile=/run/fbkeyboard.pid
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,24 @@
+maintainer="Arnav Singh <me@arnavion.dev>"
+pkgname=firmware-pine64-ov5640
+pkgver=0_git20201028
+pkgrel=3
+_commit="61beaa4eb1ad87ad067cfbe123fbcd0a0cf01246"
+pkgdesc="Firmware for the ov5640 autofocus"
+url="https://github.com/pmsourcedump/ov5640"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-$_commit.bin::https://github.com/pmsourcedump/ov5640/blob/$_commit/ov5640_af.bin?raw=true"
+makedepends="zstd"
+
+package() {
+	install -d "$pkgdir/lib/firmware/postmarketos"
+
+	# "--force" is needed because the input is a symlink to the downloaded file under /var/cache/distfiles/,
+	# and zstd ignores symlinks unless "--force" is specified.
+	zstd --compress -19 --force "$srcdir/$pkgname-$_commit.bin" -o "$pkgdir/lib/firmware/postmarketos/ov5640_af.bin.zst"
+
+	chmod 0644 "$pkgdir/lib/firmware/postmarketos/ov5640_af.bin.zst"
+}
+
+sha512sums="4e0c050f483e2e6c4584874a70e90748f8adfb612c8eef38b877d69d8085dbe29f3ae36bb9c299dc5a3986223d82bd51d4eefcaa9709bcfbca5a249098cfb0f0  firmware-pine64-ov5640-61beaa4eb1ad87ad067cfbe123fbcd0a0cf01246.bin"

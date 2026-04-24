@@ -1,0 +1,36 @@
+diff --git a/arch/arm/mach-ux500/board-janice-mcde.c b/arch/arm/mach-ux500/board-janice-mcde.c
+index 00417c38..7b8d8b31 100644
+--- a/arch/arm/mach-ux500/board-janice-mcde.c
++++ b/arch/arm/mach-ux500/board-janice-mcde.c
+@@ -222,7 +222,7 @@ static struct mcde_display_device generic_display0 = {
+ 	.port = &port0,
+ 	.chnl_id = MCDE_CHNL_A,
+ 	.fifo = MCDE_FIFO_A,
+-	.default_pixel_format = MCDE_OVLYPIXFMT_RGBA8888,//support RGBA888 for janice
++	.default_pixel_format = MCDE_OVLYPIXFMT_RGB888,//support RGBA888 for janice
+ 	.x_res_padding = 0,
+ 	.y_res_padding = 0,
+ 	.native_x_res = 480,
+@@ -243,7 +243,7 @@ static int display_postregistered_callback(struct notifier_block *nb,
+ {
+ 	struct mcde_display_device *ddev = dev;
+ 	u16 width, height;
+-	u16 virtual_height;
++	u16 virtual_width, virtual_height;
+ 	struct fb_info *fbi;
+ #if defined(CONFIG_DISPDEV) || defined(CONFIG_COMPDEV)
+ 	struct mcde_fb *mfb;		
+@@ -256,10 +256,11 @@ static int display_postregistered_callback(struct notifier_block *nb,
+ 		return 0;
+ 	 
+ 	mcde_dss_get_native_resolution(ddev, &width, &height);
+-	virtual_height = height * 3;
++	virtual_width = width * 2;
++	virtual_height = height * 2;
+ 
+ 	/* Create frame buffer */
+-	fbi = mcde_fb_create(ddev, width, height, width, virtual_height,
++	fbi = mcde_fb_create(ddev, width, height, virtual_width, virtual_height,
+ 				ddev->default_pixel_format, FB_ROTATE_UR);
+ 
+ 	if (IS_ERR(fbi)) {

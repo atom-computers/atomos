@@ -1,0 +1,35 @@
+maintainer="Jack O'Brien <obri.jack.02@gmail.com>"
+pkgname=device-microsoft-makepeace
+pkgdesc="Microsoft Lumia 640 XL"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8226
+	lk2nd-msm8226
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+84a23b540bd72021cff544837cce5534d717edd1b5f3bdc98f8b29a297eb1657bacaff94ce59a8a03b047e46b253681809b8a144401bc5b1aab3243bab9f124f  deviceinfo
+62d380a05828ec2cf180c0fcc105c7cf492f709fed086b37a093cacadf19ee7a4ca035db238c5d2e3f1f5e4f1d928248d6f1d7957430bb2cb8529e52c773429a  modules-initfs
+c1125b9f9258e19c85238d7b8d22272cecd3f3c22d08ce1048c332b82b538ca1c4f99fe918059fec976238d016eddeccc56247eecbefbfe54aedd07cb73b3603  kernel-cmdline.conf
+"

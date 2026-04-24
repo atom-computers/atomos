@@ -1,0 +1,7 @@
+# Override settings from /usr/share/deviceinfo/deviceinfo with this file.
+# After modifying: Some settings require running "mkinitfs" as root and/or
+# a reboot to apply.
+# Reference: https://postmarketos.org/deviceinfo
+
+# Examples:
+# deviceinfo_usb_network_function="ncm.usb0"

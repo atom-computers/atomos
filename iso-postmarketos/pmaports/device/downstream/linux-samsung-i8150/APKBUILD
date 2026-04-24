@@ -1,0 +1,64 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ancora_defconfig
+
+pkgname=linux-samsung-i8150
+pkgver=3.4.93
+pkgrel=2
+pkgdesc="Samsung Galaxy W kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-i8150"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	xz
+"
+
+# Source
+_repository="LerNex-Ancora-Kernel"
+_commit="2c418765f498472c4a93714b9132760a895d2f84"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LeroViten/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+4e31014282cc8c67608658aa411e63557e0ccd268196ef6c0012534b6b004392f9cfe079be825dc007353adce684f986dd88a7b52c2420d80ee3916839440c1e  linux-samsung-i8150-2c418765f498472c4a93714b9132760a895d2f84.tar.gz
+62829ba670093ec23b4f934ba03f2e77fac505f6c8146e061eb372526f9770866e856bb83f641058a80cb43ff532074b1c8b32c9668db1d2e05671197a09e065  config-samsung-i8150.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

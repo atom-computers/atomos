@@ -1,0 +1,6 @@
+# PCI runtime power management
+ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
+
+# USB autosuspend
+ACTION=="add", SUBSYSTEM=="usb", ATTR{power/control}="auto"
+ACTION=="add", SUBSYSTEM=="usb", TEST=="power/autosuspend" ATTR{power/autosuspend}="60"

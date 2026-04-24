@@ -1,0 +1,20 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Clockwork Tech ClockworkPi uConsole with Rapsberry Pi compute modules"
+deviceinfo_manufacturer="Clockwork Tech"
+deviceinfo_codename="clockworkpi-uconsole-rpi"
+deviceinfo_year="2023"
+deviceinfo_arch="aarch64"
+deviceinfo_disable_dhcpd="true"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_getty="ttyAMA0;115200"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"

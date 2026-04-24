@@ -1,0 +1,83 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Lukas Timmermann <lukas@timmermann.space>
+maintainer="Alexandre Marquet <tb@a-marquet.fr>"
+pkgname=device-samsung-manta
+pkgdesc="Google Nexus 10"
+pkgver=14
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	linux-postmarketos-exynos5
+	postmarketos-base
+	systemd-boot
+	u-boot-manta
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-disable-gsd-color:disable_gsd_color
+"
+source="
+	deviceinfo
+	modules-initfs
+	hwclock
+	ucm/HiFi.conf
+	ucm/Manta_WM1811.conf
+"
+replaces="openrc" # for hwclock configuration
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	mkdir -p "$pkgdir"/usr/lib/modules-load.d
+	echo "ds2482" \
+		> "$pkgdir"/usr/lib/modules-load.d/ds2482.conf
+
+	mkdir -p "$pkgdir"/usr/lib/modprobe.d
+	echo "options ds2482 active_pullup=0" \
+		> "$pkgdir"/usr/lib/modprobe.d/ds2482.conf
+
+	install -Dm644 "$srcdir"/hwclock \
+		-t "$pkgdir"/etc/conf.d/
+
+	_manta_audio_dir="$pkgdir/usr/share/alsa/ucm2/conf.d/Manta_WM1811"
+	install -Dm644 "$srcdir"/Manta_WM1811.conf \
+		-t "$pkgdir"/usr/share/alsa/ucm2/conf.d/Manta_WM1811/
+	install -Dm644 "$srcdir"/HiFi.conf \
+		-t "$pkgdir"/usr/share/alsa/ucm2/conf.d/Manta_WM1811/
+
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for Samsung Manta (Nexus 10)"
+	depends="
+		firmware-samsung-manta
+		linux-firmware-brcm
+		linux-firmware-s5p-mfc
+	"
+	mkdir "$subpkgdir"
+}
+
+disable_gsd_color() {
+	# Prevent high CPU usage of gsd-color (see issue #3853)
+	install_if="$pkgname=$pkgver-r$pkgrel gnome-settings-daemon"
+
+	mkdir -p "$subpkgdir"/usr/share/systemd/user/
+	ln -s /dev/null "$subpkgdir"/usr/share/systemd/user/org.gnome.SettingsDaemon.Color.service
+}
+
+sha512sums="
+c7cf9e0796cb6e85130bf322e89a0839e97ede6edc90d38fc02d197c949bd3b93e52389761e5adc690e502a443aa723f5fd61fad4d9ba580bd3ad695af9a808c  deviceinfo
+e00c58936fa4340f8531538136ad028d002342a4399b68d26190b931831108007486257f9d8a48c3ed454696b45d176b1497d624c33ace21e61eba33ac7ce136  modules-initfs
+8a9756c66bf1eacd6a9717abf772a198123391deac7e32a520666dd6f72c4c5b09d1a4791437c8902f62cf4b49106ace195d57082972b1cb4c843c8e1b065875  hwclock
+0a3d0365369335fcb4793d6dce93b744111478e191f4725e06da431cd080874ba897ea5abf92da9fc9005a5520da253e199620229231b16fb58a41a1091e6a44  HiFi.conf
+0e9c4690db5316fc9c820a1c993235f2b39e1b2852288d1a1b51af670a7ddfd1a3f8f3bf6678ba5ade04389b74ca230667f61115d78b91077ec5bf9b9622f32b  Manta_WM1811.conf
+"

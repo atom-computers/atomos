@@ -1,0 +1,5 @@
+#!/bin/sh
+# We need to start before udev in sysinit runlevel
+rc-update add msm-firmware-loader sysinit
+# We also sometimes need to unpack modem blobs before rmtfs
+rc-update add msm-firmware-loader-unpack boot

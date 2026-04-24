@@ -1,0 +1,38 @@
+--- a/init/do_mounts.c 2021-01-29 21:41:59.349992543 +0100
++++ b/init/do_mounts.c        2021-01-29 21:47:30.189991934 +0100
+@@ -290,6 +290,7 @@
+ }
+ EXPORT_SYMBOL_GPL(name_to_dev_t);
+
++/*
+ static int __init root_dev_setup(char *line)
+ {
+        strlcpy(saved_root_name, line, sizeof(saved_root_name));
+@@ -297,6 +298,7 @@
+ }
+
+ __setup("root=", root_dev_setup);
++*/
+
+ static int __init rootwait_setup(char *str)
+ {
+--- a/init/initramfs.c 2021-01-29 21:41:59.349992543 +0100
++++ b/init/initramfs.c        2021-01-29 21:44:41.699992244 +0100
+@@ -609,7 +609,7 @@
+ #endif
+
+ static int __initdata do_skip_initramfs;
+-
++/*
+ static int __init skip_initramfs_param(char *str)
+ {
+        if (*str)
+@@ -618,7 +618,7 @@
+        return 1;
+ }
+ __setup("skip_initramfs", skip_initramfs_param);
+-
++*/
+ static int __init populate_rootfs(void)
+ {
+        char *err;

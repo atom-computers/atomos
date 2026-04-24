@@ -1,0 +1,11 @@
+--- a/scripts/Makefile.lib	2021-01-04 14:53:56.447554188 +0100
++++ b/scripts/Makefile.lib	2021-01-04 14:54:57.445167162 +0100
+@@ -293,7 +293,7 @@
+ $(obj)/%.dtb.S: $(obj)/%.dtb
+ 	$(call cmd,dt_S_dtb)
+ 
+-DTCTOOL = $(KBUILD_SRC)/tools/dtc
++DTCTOOL = dtc
+ quiet_cmd_dtc = DTC     $@
+ cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
+ 	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \

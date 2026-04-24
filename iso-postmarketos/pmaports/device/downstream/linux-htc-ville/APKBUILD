@@ -1,0 +1,60 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ville_defconfig
+
+pkgname=linux-htc-ville
+pkgver=3.4.114
+pkgrel=2
+pkgdesc="HTC One S kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-ville"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_htc_msm8960"
+_commit="cb121ea9e86cd51e814cb50048fd64544e672bcc"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	static-inline-in-ftrace.h.patch
+	psmouse_base.patch
+	kgsl_iommu_sync_lock.patch
+	fix_mdp4_parameter.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+66658db2533659c233d469f2d4040b520f4e9f156dfc1ceb637b1689ad5d63a6513f584d07668eed56ff089749da802492f6945066a8e7ba3bba71ce7783fb24  linux-htc-ville-cb121ea9e86cd51e814cb50048fd64544e672bcc.tar.gz
+b6cead79f20d59b4d14440c7bb611081ee0b3526836c1143e978c9e4af13f0ef019df35a246b92fe56ad4121f895f1043a444bb224238a2f37c59c3f30b7e635  config-htc-ville.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  static-inline-in-ftrace.h.patch
+f7e31cfe422696922aec52002e56c58103183966edee3bb8e1995d33f8d37b07c32280a8ecc213874e358a6ff367418556a4542fba7e3c17e4b8e82e05c3a543  psmouse_base.patch
+448bad436377a22c93ac401b9aecb504fe8e84b9511a3dd28f3cc125f3725cc1168ef03dee9f8f1085a9fbb7910b9e75cd25a382ccce626b427c8e27f7c17ffc  kgsl_iommu_sync_lock.patch
+bdb9414e022716df75c0b0f09379ea62c410c5b032ce9a5e02c0cd5bf67933b9fd0247386a22feeab4d7504eaec94caec2037d865a351a5f8bc3c3065c74c957  fix_mdp4_parameter.patch
+"

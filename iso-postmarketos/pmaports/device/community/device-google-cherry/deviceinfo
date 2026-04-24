@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Google Cherry Chromebook"
+deviceinfo_manufacturer="Google"
+deviceinfo_codename="google-cherry"
+deviceinfo_year="2021"
+deviceinfo_dtb="mediatek/mt8195-cherry*"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="laptop"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+deviceinfo_disable_dhcpd="true"
+
+# Bootloader related
+deviceinfo_cgpt_kpart="/boot/vmlinuz.kpart"
+deviceinfo_cgpt_kpart_start="8192"
+# 128M kernel partition
+deviceinfo_cgpt_kpart_size="262144"
+# We are supposed to use "cherry" board here, but cherry dts does
+# not include cherry compatible which results in loading a wrong
+# dtb. "mt8195" board may result in including dtbs that are for
+# mt8195 but not related to Chrome OS devices which would increase
+# image size. This doesn't happen for us because we provide only 
+# dtbs from deviceinfo_dtb variable and nothing more, so use "mt8195"
+# board here.
+deviceinfo_depthcharge_board="mt8195"
+deviceinfo_depthcharge_compression="lzma"
+deviceinfo_generate_depthcharge_image="true"

@@ -1,0 +1,29 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-amazon-mantis
+pkgdesc="Amazon Fire TV Stick 4K"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-amazon-mantis
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+4ce458d7aa08ed2b1fc6a11fb39e38e9a323232be9f8f220c31912650297141ed4997f0115b5a3e290e1f57ada5a1e706b8c623b0e48a1f596bed2d5ebd871ba  deviceinfo
+"

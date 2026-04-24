@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-huawei-sturgeon
+pkgdesc="Huawei Watch"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-huawei-sturgeon-adsp
+	firmware-huawei-sturgeon-wifi
+	linux-postmarketos-qcom-msm8226
+	lk2nd-msm8226
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8226
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+f8bda7c01f011e6ce681dfe3f92c754f4d53f4961d5679a2ba908206610276e79752da8dc8def2cf2d144d27f623d22a1f9781f4abf41d8fff3c5e0499a76ef8  deviceinfo
+4a40b89d343fac05d0604a9f93c11425353affc3b7a69f0d329278ea1afe2b978502ca2ae4150cffea877e2031bc4330fae78a31e18bccf3e2706f32b643d516  kernel-cmdline.conf
+"

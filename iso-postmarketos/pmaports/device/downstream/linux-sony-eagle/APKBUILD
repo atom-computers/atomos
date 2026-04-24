@@ -1,0 +1,89 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/eagle_ss_defconfig
+
+pkgname=linux-sony-eagle
+pkgver=3.4.0
+pkgrel=7
+pkgdesc="Sony Xperia M2 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="sony-eagle"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool gcc4"
+
+# Compiler: this kernel was only tested with GCC4. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_sony_msm8226"
+_commit="53fc207771ed87a44d9f7c73058f4638b883e474"
+_primacommit="79403896e1c410582044c50dfce92d5e97233e0c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ilpianista/$_repository/archive/$_commit.tar.gz
+	prima-$_primacommit.tar.gz::https://git.codelinaro.org/clo/external-wlan/prima/-/archive/$_primacommit/prima-$_primacommit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	02_reduce_lzo_compression.patch
+	03_fix_add_uevent_var.patch
+	linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+	gcc-wrapper-port-to-py3.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	06_fix_mdss_fb_rgb_mode.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.0-fix-piggy.lzo.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_primadir="$srcdir/prima-$_primacommit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		-C "$builddir" M="$_primadir" CONFIG_PRONTO_WLAN=m CONFIG_PRIMA_WLAN_LFR=y \
+		CONFIG_QCOM_TDLS=y CONFIG_ENABLE_LINUX_REG=y \
+		KERNEL_BUILD=1 WLAN_ROOT="$_primadir" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	mkdir -p "$pkgdir"/lib/modules/$pkgver
+	install -Dm644 "$_primadir"/wlan.ko "$pkgdir"/lib/modules/$pkgver/
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+4c5a675e2583480cf91ddd73527cb26480fd0d385427b5d6fd6a4e975cfe8d979a647451291c8d123cff66efbc1f97baa87b4eb8be4d7745f739d4bda5ea081e  linux-sony-eagle-53fc207771ed87a44d9f7c73058f4638b883e474.tar.gz
+75ccdd063fd2e6435d6ab9aa4f8158bb5f1f335311472a491c194d0ad2e56079cc5757455182bdf78d204851d2232b49f439f173d1b05366043a10e2340692a7  prima-79403896e1c410582044c50dfce92d5e97233e0c.tar.gz
+7822530d295958b9f2de25975e1846662b280e4091cd82c177f501e9b428118c3699bdac61fe774e560f311d383f1e9059786695a10544d320538729eb68e31b  config-sony-eagle.armv7
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+30ac7171fe2a5aa90c15e56465b35bfc84015079296df2ebbb4287a2848ac5e8cf8e0dbb00dfdf84acb6692587eefdfc338e65ef3170a1a3e5b279b317ba43f3  02_reduce_lzo_compression.patch
+72553b9283552fd003ee50e93a96c358184503e02500ca0b1790eb5e5e16c308193c04ee881dbf447424bba50afa2d1e38ad01a1d34482dcc17e73a337e07026  03_fix_add_uevent_var.patch
+5e81c20b0b30c1ab09bd59f1e1b77fcce945a27de8144c68617ddc5e8f10e1f6fa8b1e4cd5d63e43511d61dace46fb26b14a6227a667b9718d44c8b81dbe6100  linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+13e289c889a48946cd3d976932f06f749bed5c6596776f4b683aada4e3e2f50b66286d6f550b8f2e260b58867b759591bbf8b54cc07ad9d3bb761ff477f036a1  gcc-wrapper-port-to-py3.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+2ce72397039e5a842e6564586ec14dcd2aaf0430959a42c18406c9c3736ce6f6fc6af146b345fa81977748a3182ce585af0da5db3e39cd4dc5314b6186478a64  06_fix_mdss_fb_rgb_mode.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+8837c884060d87232ba3fa9fce0e815d7ddf33c82ad49260426fe83754baa2f4d92a36a17561083ac8b3674564b7433b3141cacc63b520deec52bbcc1d92d5c9  linux3.0-fix-piggy.lzo.S.patch
+"

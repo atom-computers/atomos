@@ -1,0 +1,44 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Achill Gilgenast <achill@achill.org>"
+pkgname=device-raspberry-pi3
+pkgdesc="Raspberry Pi 3B/3B+"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base raspberrypi-bootloader linux-rpi bluetooth-raspberry-pi"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-openrc"
+source="deviceinfo kernel-cmdline.conf modules-initfs usercfg.txt 95-vchiq-permissions.rules networkmanager.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/usercfg.txt "$pkgdir"/boot/usercfg.txt
+	install -Dm644 "$srcdir"/95-vchiq-permissions.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/95-vchiq-permissions.rules
+	install -Dm644 "$srcdir"/networkmanager.conf \
+		"$pkgdir"/usr/lib/NetworkManager/conf.d/10-rpi3.conf
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+606bfde2ae8abd19c45085774b55c38268d72bf1b686863817e9293a617a31817fe246dbb191d2b65b535fe66952dbe5ef4a7b4536beadc56b38fd316d5b3cd0  deviceinfo
+d60c4e19dc92b0847f5667a1655a9cf95931b5be6630673fe987ff42f9ac94f19ce59ccf0e34960a686753549bd62677c0f5a6c15e1a4a842b99bda5825d62be  kernel-cmdline.conf
+e3515cf9f41807917eac1f7663e0131bd18783824facf15f2bb0381635bf6d9a0c334f3786b6fb76d01469de6449878c871f8b747f45e9e3cee77699905cf319  modules-initfs
+a1724e0accc2cbba4c24efb0f9bc99d480811b35cefc225c7e4a9015d0f66bb0db83ceee9948d8d96938a2fb7077ddba00abb6be943504b793abc40df6f0aecb  usercfg.txt
+7e5505cb07d5b4a81bd28443d508336b5c547356538f1c06f91ed93ad0d7d456d4f74f1d24df5a2e08c17e74f0a66607352ac4874e967e9a91dfec9522d2d58d  95-vchiq-permissions.rules
+0f79016bf717dea43830962f524deae8d1cedc274376e40bd912ebe63208c5b1c3b7a5aa14379da19020c587dbd5588df2f0066ca1540070a226983a43e4159b  networkmanager.conf
+"

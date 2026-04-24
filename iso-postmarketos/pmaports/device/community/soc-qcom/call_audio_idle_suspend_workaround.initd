@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+
+name="call_audio_idle_suspend_workaround"
+description="Disable pulseaudio suspend-on-idle module during call"
+pid="/run/call_audio_idle_suspend_workaround.pid"
+command="/usr/sbin/call_audio_idle_suspend_workaround"
+supervisor=supervise-daemon
+respawn_delay=1
+respawn_max=10
+start_stop_daemon_args="--env $env_var"
+
+depend() {
+	need dbus
+}

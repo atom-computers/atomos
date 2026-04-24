@@ -1,0 +1,23 @@
+maintainer="Maxim Karasev <begs@disroot.org>"
+pkgname=firmware-xunlong-orangepi3
+pkgver=1
+pkgrel=0
+_commit="3ddc301c272f081aa5513c1934f6d530bf80de4a"
+pkgdesc="Firmware for the Xunlong Orange Pi 3 (xunlong-orangepi3)"
+url="https://github.com/LibreELEC/brcmfmac_sdio-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://github.com/LibreELEC/brcmfmac_sdio-firmware/archive/$_commit/brcmfmac_sdio-firmware-$_commit.tar.gz"
+builddir="$srcdir/brcmfmac_sdio-firmware-$_commit"
+
+package() {
+	for file in BCM4345C5.hcd brcmfmac43456-sdio.bin brcmfmac43456-sdio.xunlong,orangepi-3.txt; do
+		install -Dm 0644 "$file" -t "$pkgdir"/lib/firmware/postmarketos/brcm
+	done
+}
+
+
+sha512sums="
+6638fbb6a1ed94e17da1dfea3efa2914f1465ff8788bd937c8c221a80b160f5469242d99be941042bd4134301d3d7c34fe1be2c3b3cb9342f4a32bbe24b03bf2  brcmfmac_sdio-firmware-3ddc301c272f081aa5513c1934f6d530bf80de4a.tar.gz
+"

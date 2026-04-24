@@ -1,0 +1,7 @@
+#!/bin/sh
+
+rc-update add bluetooth default
+rc-update add brightnessctl default
+rc-update add elogind default
+rc-update add lightdm default
+rc-update add networkmanager default

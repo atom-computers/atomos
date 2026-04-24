@@ -1,0 +1,73 @@
+maintainer=""
+pkgname=linux-google-smaug
+pkgver=6.3.13
+pkgrel=4
+pkgdesc="Mainline kernel fork for Google Pixel C"
+arch="aarch64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	zstd
+"
+
+_carch="arm64"
+
+# Source
+_config="config-$_flavor.$arch"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-$_kernver.tar.xz
+	$_config
+	0001-Add-JDI-LPM102A188A-display-panel-support.patch
+	0002-arm64-dts-nvidia-tegra210-smaug-Add-touch.patch
+"
+builddir="$srcdir/linux-${_kernver//_/-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+850f56587c49c7ad3e4873a4b9d8160b0b015ac00dbe272d3fd4b661d18a6e73d1d9dea69376fa002d47b195648c617ef0143a54cdf3bf7c361f0b90cc262e16  linux-6.3.13.tar.xz
+b5f8bbd0caa9f4b618c0a68d4face40c9b29851e8ea641aa5141b491873fea7e90afd6b371bf06abbd3ab638404c9eb0090bc63a59e886e93331f3aaa94d0312  config-google-smaug.aarch64
+e0d397f36fece6fbcdef81803bc2c694ad0a085bfa9afb20f2ff20d6981dfc5e0d931608fbdab8eddd01809ce756fae3beb59eb45ea2bff80302bdd74ae0663a  0001-Add-JDI-LPM102A188A-display-panel-support.patch
+1979cb9316c8253c500d0e21b4b6981f3028ced29ee0a609b3b4d017148afc62ade1a9dca34732d33c1fc94ed723f7d51fa4a06b1f7c8c413b012af7096b89b9  0002-arm64-dts-nvidia-tegra210-smaug-Add-touch.patch
+"

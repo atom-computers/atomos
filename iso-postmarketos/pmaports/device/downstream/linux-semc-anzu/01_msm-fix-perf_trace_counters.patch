@@ -1,0 +1,34 @@
+From e41494c15d4df342854ac3d2940f5d6ac3158212 Mon Sep 17 00:00:00 2001
+From: Bryan Huntsman <bryanh@codeaurora.org>
+Date: Mon, 3 Jun 2013 18:48:08 -0700
+Subject: [PATCH] msm: fix in-tree compilation for perf_trace_counters
+
+In-tree compilation for arch/arm/mach-msm/perf_trace_counters.c was
+hitting this error:
+
+    In file included from arch/arm/mach-msm/perf_trace_counters.h:127:0,
+                     from arch/arm/mach-msm/perf_trace_counters.c:14:
+    include/trace/define_trace.h:79:43: fatal error: ./perf_trace_counters.h: No such file or directory
+
+Instructions for TRACE_INCLUDE_FILE in include/trace/define_trace.h say
+"the path is relative to define_trace.h, not the file including it".
+Fix in-tree compilation by making the path relative to define_trace.h.
+
+Signed-off-by: Bryan Huntsman <bryanh@codeaurora.org>
+---
+ arch/arm/mach-msm/perf_trace_counters.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-msm/perf_trace_counters.h b/arch/arm/mach-msm/perf_trace_counters.h
+index ce7e336aa40d..8f77badf42ac 100644
+--- a/arch/arm/mach-msm/perf_trace_counters.h
++++ b/arch/arm/mach-msm/perf_trace_counters.h
+@@ -121,7 +121,6 @@ TRACE_EVENT(sched_switch_with_ctrs,
+ 
+ #endif
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../arch/arm/mach-msm
+ #define TRACE_INCLUDE_FILE perf_trace_counters
+ #include <trace/define_trace.h>
+-

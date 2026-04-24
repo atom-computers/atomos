@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/libra_defconfig
+
+pkgname=linux-xiaomi-libra
+pkgver=3.10.107
+pkgrel=4
+pkgdesc="Xiaomi Mi 4c kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-libra"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_xiaomi_msm8992"
+_commit="6e461515d5ce2d621fcc91c376a6ba6c852f46c8"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+8feb3a1d1fa3b25c48027ea20f5a90fbb0ef4c1b5675974b0bb0eb72d5a64d243ff97d5d892279721dadbb35ff8b1869e1bf6f0d91588c6b7b7231f488120afd  linux-xiaomi-libra-6e461515d5ce2d621fcc91c376a6ba6c852f46c8.tar.gz
+33d7b1ef7cca5541fd08e8d0242c22db1e5ad135ac2326e52ec3e28015e817d805214b5ecb29dede4832c411f252288b2b2165a4f0cd3be2d16e393f1a2921d0  config-xiaomi-libra.aarch64
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

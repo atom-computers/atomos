@@ -1,0 +1,58 @@
+pkgname=firmware-samsung-a40
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for the Samsung Galaxy A40"
+url="https://github.com/resulknad/firmware-samsung-a40.git"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="510164047b8ed394ff7c735ecccf81bf7d4a4ad6"
+source="$pkgname-$_commit.tar.gz"
+_url="https://github.com/resulknad/firmware-samsung-a40"
+source="$pkgname-$_commit.tar.gz::$_url/archive/$_commit.tar.gz"
+
+package() {
+	#VENDOR FILES
+	cd "$srcdir/firmware-samsung-a40-$_commit/firmware/"
+	install -Dm644 APBargeIn_AUDIO_SLSI.bin \
+		"$pkgdir"/lib/firmware/postmarketos/APBargeIn_AUDIO_SLSI.bin
+	install -Dm644 AP_AUDIO_SLSI.bin \
+		"$pkgdir"/lib/firmware/postmarketos/AP_AUDIO_SLSI.bin
+	install -Dm644 calliope_dram.bin \
+		"$pkgdir"/lib/firmware/postmarketos/calliope_dram.bin
+	install -Dm644 calliope_sram.bin \
+		"$pkgdir"/lib/firmware/postmarketos/calliope_sram.bin
+	install -Dm644 fimc_is_lib.bin \
+		"$pkgdir"/lib/firmware/postmarketos/fimc_is_lib.bin
+	install -Dm644 fimc_is_rta.bin \
+		"$pkgdir"/lib/firmware/postmarketos/fimc_is_rta.bin
+	install -Dm644 mfc_fw.bin \
+		"$pkgdir"/lib/firmware/postmarketos/mfc_fw.bin
+	install -Dm644 setfile_2p6.bin \
+		"$pkgdir"/lib/firmware/postmarketos/setfile_2p6.bin
+	install -Dm644 setfile_2x5.bin \
+		"$pkgdir"/lib/firmware/postmarketos/setfile_2x5.bin
+	install -Dm644 setfile_5e9.bin \
+		"$pkgdir"/lib/firmware/postmarketos/setfile_5e9.bin
+	install -Dm644 Tfa9896.cnt \
+		"$pkgdir"/lib/firmware/postmarketos/Tfa9896.cnt
+
+	#WIFI FIRMWARE
+	cd "$srcdir/firmware-samsung-a40-$_commit/etc/wifi/"
+	install -Dm644 mx \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx
+	install -Dm644 mx140.bin \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140.bin
+	install -Dm644 mx140_bt.hcf \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140_bt.hcf
+	install -Dm644 mx140_wlan.hcf \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140_wlan.hcf
+	install -Dm644 mx140_wlan_t.hcf \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140_wlan_t.hcf
+}
+
+sha512sums="
+c1b76ac47a5d774a789c7af524ccbb38aa6ecd51f80e758deb2263510a53b24363026163fe29f41b699fb47e81c735bc13d1f6252f7538db374ea307b9a999ff  firmware-samsung-a40-510164047b8ed394ff7c735ecccf81bf7d4a4ad6.tar.gz
+"

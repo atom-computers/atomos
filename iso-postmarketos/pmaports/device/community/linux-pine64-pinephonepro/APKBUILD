@@ -1,0 +1,81 @@
+maintainer="Jan Jasper de Kroon <jajadekroon@gmail.com>"
+pkgname=linux-pine64-pinephonepro
+pkgver=6.17.7
+_pkgver=6.17
+_tagdate=20251104-2007
+pkgrel=1
+pkgdesc="Mainline kernel for the pinephone pro"
+arch="aarch64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-pinephonepro
+	"
+makedepends="
+	bash
+	bison
+	clang
+	findutils
+	flex
+	gmp-dev
+	gzip
+	linux-headers
+	lld
+	llvm
+	mpc1-dev
+	mpfr-dev
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	rsync
+	xz
+	"
+
+case "$CARCH" in
+	aarch64*) _carch="arm64" ;;
+	arm*) _carch="arm" ;;
+esac
+
+# Source
+_config="config-$_flavor.$CARCH"
+source="
+	https://gitlab.com/pine64-org/linux/-/archive/ppp-$_pkgver-$_tagdate/linux-ppp-$_pkgver-$_tagdate.tar.gz
+	config-$_flavor.aarch64
+	"
+builddir="$srcdir/linux-ppp-$_pkgver-$_tagdate"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))"
+
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-$_flavor
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+e3036a458a2fc418307683d0041ef592baed5ca4556074ff72861a1d37d44503e75565dc3074385d80656d239f97c3b0297b71574f3e48fef89c160949f93267  linux-ppp-6.17-20251104-2007.tar.gz
+5431de420ea64c8e93781739ae3cbf7ef98c6c8c25c3dd9de535e7f3b4caec32a30eed3456b5a1900a8fc8ad57feb511149f1b4124e043672e36fd7a7e296eb8  config-pine64-pinephonepro.aarch64
+"

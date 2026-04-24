@@ -1,0 +1,3 @@
+URxvt*foreground: White
+URxvt*background: Black
+URxvt*font: xft:Droid Sans Mono:style=Regular:pixelsize=15:antialias=true:hinting=true

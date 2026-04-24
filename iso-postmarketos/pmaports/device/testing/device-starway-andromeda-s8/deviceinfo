@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Starway Andromeda S8"
+deviceinfo_manufacturer="Starway"
+deviceinfo_codename="starway-andromeda-s8"
+deviceinfo_year="2013"
+deviceinfo_dtb="rk3188-starway-andromeda-s8"
+deviceinfo_arch="armv7"
+deviceinfo_no_framebuffer="true"
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="16384"
+deviceinfo_header_version="0"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x60408000"
+deviceinfo_flash_offset_ramdisk="0x62000000"
+deviceinfo_flash_offset_second="0x60f00000"
+deviceinfo_flash_offset_tags="0x60088000"
+

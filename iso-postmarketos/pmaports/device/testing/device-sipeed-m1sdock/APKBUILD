@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-sipeed-m1sdock
+pkgdesc="Sipeed M1s DOCK"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="riscv64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-bflb
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+15bf1d879bc8c4738db73dae6213564857bcf25eb58a03f51e5b519eadd97d6c834d203dbc5a6b9b63aed43a1d3075ef20470d8ca09d3a7263cb009e432ab990  deviceinfo
+be6af3ec8971ef5e807c019eccf15d6af825d93f00ad89236e2dfa727a4595f60ebb1a3f5e59d3152a6872ebebae5c3d502615017230c4805a738b10f72ebb40  kernel-cmdline.conf
+"

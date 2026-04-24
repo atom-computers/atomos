@@ -1,0 +1,61 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_mata_defconfig
+maintainer="Avery Dorgan <avery@averydorgan.com>"
+pkgname=linux-essential-mata
+pkgver=4.4.227
+pkgrel=3
+pkgdesc="Essential PH1 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="essential-mata"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="android_kernel_essential_msm8998"
+_commit="d13a367745bb75601f7346d4d9d7525a6ca6e332"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	cc-option_wrapper_Wno-frame-larger.patch
+	f_fs_module_inittest.patch
+	0001-Revert-tty-check-before-stopping-kthread.patch
+	0002-Revert-tty-move-tty_port-workqueue-to-be-a-kthread.patch
+	0003-Revert-tty-add-tty_port_set_policy-function.patch
+	0004-Revert-msm_serial_hs-make-the-Bluetooth-tty-thread-R.patch
+	0006-Add-condition-for-calling-mdss_fb_free_fb_ion_memory.patch
+	init-ignore-dm-parameter.patch
+	init-initramfs-disable-do_skip_initramfs.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="7d0d937c3482eaf2e30f5de29b62398201203d29674003980774d227896343d870e6f0f821a78489d7d5d76ce11d9d002e84ea471a72f193c5fc9b2b90c6173c  linux-essential-mata-d13a367745bb75601f7346d4d9d7525a6ca6e332.tar.gz
+6c91b29d223bfe6cf6186fdd52fb2d5cce812aa6a99aa2e60970f2ee94569d576b2c2b070c3f51f84795f72bccb98bb06580d00b0ae994bc8504f05aae52ee68  config-essential-mata.aarch64
+f41ccfd64f3d9f6a467048420d4c9e17ff512f6cd8d1fd521a758dc80bef2dfab559b740e7dc2d0bbb49855359556d4fb6ec5c00892f3f6850f3b8785c195219  cc-option_wrapper_Wno-frame-larger.patch
+bb9adbcd1df17f9197a9d66bacd0103164182ff3813a3b346128c88244135f40de3c3c7c6dd9391df47d9dccd5fd35ffcc248e0abae51214d09a2f5e7d960c31  f_fs_module_inittest.patch
+1a8cb6ed2cc9b81815160ec990c16385cbe94d71e1607c5968c24a5fa653128fc3e25dfdac861b03faa163d612251814d4c59f4c083258c0d9964c74504c462d  0001-Revert-tty-check-before-stopping-kthread.patch
+892a5414647ba609741382bea12de9e2731481fd109bc8febcf77210e1a8d672f22588b5086f27ec32d87b9aea1b0ab1a9e0556f7bd11ddcdfd6ab8b6a1904b0  0002-Revert-tty-move-tty_port-workqueue-to-be-a-kthread.patch
+94d8c6a9009fca6484d12cef0698b6e219a09bd82b9ed20eb109467f141514aa9f418988470e658ab340710fb910337645cc772ebe2e59547d329e0c35c9a2a6  0003-Revert-tty-add-tty_port_set_policy-function.patch
+89401939fbedfe4719de4706a09702504a92e171806788e597513b7dfca763f4a345895f963b300840fa126c628b43dc3836cf5b3958667b1e6993c1ef0e973e  0004-Revert-msm_serial_hs-make-the-Bluetooth-tty-thread-R.patch
+f226a33de5ca4b5919465bee3a2e68e2bfe376c56afcb2884d72d57d4a3c1a0627f1f71c0d4d28e7bf4b3e3cc4fb4122c2e3aeeb9637c41390d95fa9f5495a89  0006-Add-condition-for-calling-mdss_fb_free_fb_ion_memory.patch
+66ac924e2619994dad71a88223d62e911cc90c20f578eb1b0544f115de8367ea9767e7955245c70699f7af040bb8c42f9fa7aff60d4638f1e568a3b3662d30a6  init-ignore-dm-parameter.patch
+0f536e5acd0f5e6d6774918d8e226ae1f4edc486596fc5c93a110b4eb2555e0f1281f460065928a7f7a272b886f61f7967fe60cc4952ed1f4b37143bd2a28962  init-initramfs-disable-do_skip_initramfs.patch"

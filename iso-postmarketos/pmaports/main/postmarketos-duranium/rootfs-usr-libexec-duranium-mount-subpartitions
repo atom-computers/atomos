@@ -1,0 +1,66 @@
+#!/bin/sh
+set -e
+
+# Read ESP UUID from EFI variable
+mount -t efivarfs efivarfs /sys/firmware/efi/efivars 2>/dev/null || true
+efi_var="$(find /sys/firmware/efi/efivars -name 'LoaderDevicePartUUID-*' 2>/dev/null | head -n1)"
+
+if [ ! -e "$efi_var" ]; then
+    echo "ERROR: LoaderDevicePartUUID EFI variable not found"
+    exit 1
+fi
+
+esp_uuid="$(dd if="$efi_var" bs=1 skip=4 2>/dev/null | tr -d '\0' | tr '[:upper:]' '[:lower:]')"
+
+if [ -z "$esp_uuid" ]; then
+    echo "ERROR: Failed to read ESP UUID from EFI variable"
+    exit 1
+fi
+
+echo "ESP UUID from EFI: $esp_uuid"
+
+losetup_args="-Pfv --show --direct-io=on"
+
+attempt_start="$(cut -d. -f1 /proc/uptime)"
+wait_seconds=10
+
+echo "Scanning for subpartition container (timeout: ${wait_seconds}s)..."
+
+while true; do
+    if [ -b "/dev/disk/by-partuuid/$esp_uuid" ]; then
+        echo "ESP partition already visible, no subpartition mounting needed"
+        exit 0
+    fi
+    for dev in /sys/class/block/*/partition; do
+        [ -e "$dev" ] || continue
+        partition="/dev/$(basename "$(dirname "$dev")")"
+        [ -b "$partition" ] || continue
+
+        if sfdisk --dump "$partition" 2>/dev/null | grep -qi "$esp_uuid"; then
+            sector_size="$(lsblk -ndo PHY-SEC "$partition" 2>/dev/null)"
+            if [ -n "$sector_size" ]; then
+                # not strictly required if it's 512 (the default for losetup)
+                # but doing this anyways saves us from a potentially risky
+                # numerical comparison to a parsed string value
+                losetup_args="$losetup_args --sector-size $sector_size"
+            fi
+            echo "Found subpartition container: $partition"
+            # shellcheck disable=SC2086
+            loop_dev="$(losetup $losetup_args "$partition")"
+            if [ -z "$loop_dev" ]; then
+                echo "ERROR: losetup failed for $partition"
+                exit 1
+            fi
+            echo "Mounted subpartitions via $loop_dev"
+            exit 0
+        fi
+    done
+
+    now="$(cut -d. -f1 /proc/uptime)"
+    if [ "$now" -ge $(( attempt_start + wait_seconds )) ]; then
+        echo "ERROR: subpartition container not found after ${wait_seconds}s"
+        exit 1
+    fi
+
+    sleep 0.1
+done

@@ -1,0 +1,12 @@
+diff --git a/drivers/tspdrv/tspdrv.c b/drivers/tspdrv/tspdrv.c
+index 8101fa9..cc383ba 100644
+--- a/drivers/tspdrv/tspdrv.c
++++ b/drivers/tspdrv/tspdrv.c
+@@ -40,6 +40,7 @@
+ #include <linux/platform_device.h>
+ #include <asm/uaccess.h>
+ #include <asm/atomic.h>
++#include <asm/bootinfo.h>
+ #include "tspdrv.h"
+ 
+ #define IMMVIBESPI_MULTIPARAM_SUPPORT

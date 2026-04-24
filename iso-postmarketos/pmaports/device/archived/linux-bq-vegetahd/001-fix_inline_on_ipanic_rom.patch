@@ -1,0 +1,21 @@
+Error:
+armv7-alpine-linux-musleabihf-ld: drivers/built-in.o: in function `ipanic_mrdump_mini':
+/home/pmos/build/src/android_kernel_bq_vegetahd-fc8ba1dc9fe42ee265d8dadcf6655a749a791ec1/drivers/misc/mediatek/aee/ipanic/ipanic_rom.c:381: undefined reference to `ipanic_mem_write'
+armv7-alpine-linux-musleabihf-ld: /home/pmos/build/src/android_kernel_bq_vegetahd-fc8ba1dc9fe42ee265d8dadcf6655a749a791ec1/drivers/misc/mediatek/aee/ipanic/ipanic_rom.c:381: undefined reference to `ipanic_mem_write'
+
+In fact the function was declared as inline, but later it was passed as argument to another function. C Inline functions have no address.
+Declaring the affected functions as not inline should fix that.
+
+diff --git a/drivers/misc/mediatek/aee/ipanic/ipanic_rom.c b/drivers/misc/mediatek/aee/ipanic/ipanic_rom.c
+index 68b68f0e..fb925341 100644
+--- a/drivers/misc/mediatek/aee/ipanic/ipanic_rom.c
++++ b/drivers/misc/mediatek/aee/ipanic/ipanic_rom.c
+@@ -295,7 +295,7 @@ inline int ipanic_next_write(fn_next next, void *data, int off, int total, int e
+        return ipanic_func_write(next, data, off, total, encrypt);
+ }
+
+-inline int ipanic_mem_write(void *buf, int off, int len, int encrypt)
++int ipanic_mem_write(void *buf, int off, int len, int encrypt)
+ {
+        struct ipanic_memory_block mem_info = {
+                .kstart = (unsigned long)buf,

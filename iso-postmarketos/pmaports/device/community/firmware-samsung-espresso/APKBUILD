@@ -1,0 +1,33 @@
+maintainer="Mithil Bavishi <bavishimithil@gmail.com>"
+pkgname=firmware-samsung-espresso
+pkgver=1
+pkgrel=1
+pkgdesc="Samsung Galaxy Tab Firmware"
+url="https://github.com/TheMuppets/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="89fe5020dbaf2920dece954ce86aa2edf3389852"
+_url="https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commit/espresso-common/proprietary/system/etc/wifi"
+_files="
+	bcmdhd_sta.bin
+	nvram_net.txt
+"
+for _i in $_files; do
+	source="$source $_i::$_url/$_i";
+done
+
+package() {
+	install -Dm644 "$srcdir/nvram_net.txt" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/"brcmfmac4330-sdio.samsung,espresso7.txt"
+	install -Dm644 "$srcdir/nvram_net.txt" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/"brcmfmac4330-sdio.samsung,espresso10.txt"
+	install -Dm644 "$srcdir/bcmdhd_sta.bin" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/"brcmfmac4330-sdio.bin"
+}
+sha512sums="
+bd2729c2cbc3c52e1abc5c6e0f4ba32b3b77711bc73c76aece591f8de642da69f0edb8620e422e102e0eaced8c9d76870ac63dfc7113e318ad8aa2633a32b10f  bcmdhd_sta.bin
+24c0eab68996c9f80453cf01c8059ec6672175668a13ebd91abcd33bf56afd94c7564d0f6e6d2b87d3a44171ca3dce895ffd13b61d29ae583b76635998e4042f  nvram_net.txt
+"

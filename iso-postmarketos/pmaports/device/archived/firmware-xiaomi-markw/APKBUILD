@@ -1,0 +1,25 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-markw
+pkgver=2
+pkgrel=2
+pkgdesc="Firmware files for Xiaomi Redmi 4 Prime (markw)"
+url="https://gitlab.com/vipaoL/firmware-xiaomi-markw"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="8cc7f7d9e56aa9fa0193403b694115d759eafaf2"
+
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit/lib/firmware/postmarketos"
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/markw"
+
+package() {
+	# GPU firmwares
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+f57ec60776f0cfd89ccc0f4a561aa261367b299796b4a9121814c560eab7a28b3049a3defcc129942098b88937fad8f6c3bbf2d1ac7d89d4175c8ec4014c1a8a  firmware-xiaomi-markw-8cc7f7d9e56aa9fa0193403b694115d759eafaf2.tar.gz
+"

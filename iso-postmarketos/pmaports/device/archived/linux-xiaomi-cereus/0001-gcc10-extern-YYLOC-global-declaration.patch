@@ -1,0 +1,51 @@
+From 1978be4d1641894fe7f1c6999d77a6a455b4c655 Mon Sep 17 00:00:00 2001
+From: Jerin Philip <jerinphilip@live.in>
+Date: Mon, 11 Sep 2023 02:15:18 +0530
+Subject: [PATCH 1/2] gcc10 extern YYLOC global declaration
+
+Based on https://lkml.org/lkml/2020/4/1/1206. In original patch, YYLOC declaration was removed.
+However, using original patch, which removes yylloc declaration on 3.18.14 kernel version results in 'yylloc not declared' error.
+See part of the original description below:
+
+gcc 10 will default to -fno-common, which causes this error at link
+time:
+
+  (.text+0x0): multiple definition of `yylloc'; dtc-lexer.lex.o (symbol from plugin):(.text+0x0): first defined here
+
+This is because both dtc-lexer as well as dtc-parser define the same
+global symbol yyloc. Before with -fcommon those were merged into one
+defintion. The proper solution would be to to mark this as "extern",
+---
+ scripts/dtc/dtc-lexer.l             | 2 +-
+ scripts/dtc/dtc-lexer.lex.c_shipped | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/dtc/dtc-lexer.l b/scripts/dtc/dtc-lexer.l
+index 790fbf6cf2d7..e7eab4d7c5a9 100644
+--- a/scripts/dtc/dtc-lexer.l
++++ b/scripts/dtc/dtc-lexer.l
+@@ -38,7 +38,7 @@ LINECOMMENT	"//".*\n
+ #include "srcpos.h"
+ #include "dtc-parser.tab.h"
+ 
+-YYLTYPE yylloc;
++extern YYLTYPE yylloc;
+ extern bool treesource_error;
+ 
+ /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
+diff --git a/scripts/dtc/dtc-lexer.lex.c_shipped b/scripts/dtc/dtc-lexer.lex.c_shipped
+index ba525c2f9fc2..a2fe8dbc0fd3 100644
+--- a/scripts/dtc/dtc-lexer.lex.c_shipped
++++ b/scripts/dtc/dtc-lexer.lex.c_shipped
+@@ -637,7 +637,7 @@ char *yytext;
+ #include "srcpos.h"
+ #include "dtc-parser.tab.h"
+ 
+-YYLTYPE yylloc;
++extern YYLTYPE yylloc;
+ extern bool treesource_error;
+ 
+ /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
+-- 
+2.42.0
+

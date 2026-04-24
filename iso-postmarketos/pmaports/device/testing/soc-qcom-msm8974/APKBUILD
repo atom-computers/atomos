@@ -1,0 +1,33 @@
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=soc-qcom-msm8974
+pkgdesc="Common package for Qualcomm MSM8974 devices"
+pkgver=2
+pkgrel=1
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="armv7"
+options="!check !archcheck !tracedeps pmb:cross-native"
+depends="swclock-offset"
+subpackages="
+	$pkgname-gpu
+"
+
+source="
+	adreno-a330-quirks.sh
+"
+
+package() {
+	mkdir -p $pkgdir
+}
+
+gpu() {
+	pkgdesc="Various GPU workarounds for Adreno a330"
+	install_if="$pkgname=$pkgver-r$pkgrel mesa-dri-gallium"
+
+	install -Dm644 "$srcdir"/adreno-a330-quirks.sh \
+		"$subpkgdir"/etc/profile.d/adreno-a330-quirks.sh
+}
+
+sha512sums="
+c5a3fe3616cea7aa3e54a45d47ae741eb5e8528db4bf1b207ce7df6ff221ffc5126d5bbbffa630bc1dcedf6d2beeac253eb04b2167cdb7c2a21d342b13ba04c4  adreno-a330-quirks.sh
+"

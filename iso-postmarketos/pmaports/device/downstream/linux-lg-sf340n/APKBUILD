@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+
+pkgname=linux-lg-sf340n
+pkgver=3.18.71
+pkgrel=0
+pkgdesc="LG Stylo 3 Plus kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lg-sf340n"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	gcc6
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lge_sd4xx-common"
+_commit="5738ee4d063b2037010b8932e02d9ae9c9377a4e"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LG-SD4XX/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	replace-Sun-Solaris-style-flag-on-section.patch
+	01_fix_gcc6_errors.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+
+sha512sums="
+083734f915183578318bd90a419253c24be95af4f6b88fae33c2553b1af98b203128f730ef4b8025e028e83a9bfb5f263bb46a5332c059166e0b03f2b90b92aa  linux-lg-sf340n-5738ee4d063b2037010b8932e02d9ae9c9377a4e.tar.gz
+fe94f3eef5e9214e33c9c235f084e88ec79cc731554743f80eb6f504a2e603bea225f7e9a024cdcf2ba5c5a86b85a661d144f5613592e0975414cf7355388d2b  config-lg-sf340n.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+447cbff1af8989c270e5bad0b783f33329594199a35ee4c01ef4a6a8ed41d534041ef8952656f8c80d8720223393c6466d84c7277cd03973698235e58aa721c8  replace-Sun-Solaris-style-flag-on-section.patch
+f70bc2c087f741212152b5d224e8faba39635d4c79c63a656e70c0d88936cf87eea22c90bf64a35eda4f4186840ac8248ca82ed6acb9d30e18e76c80820dc8fa  01_fix_gcc6_errors.patch
+"

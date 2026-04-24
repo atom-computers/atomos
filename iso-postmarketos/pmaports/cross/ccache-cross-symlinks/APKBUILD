@@ -1,0 +1,40 @@
+# This package gets installed in the native chroot only. When cross-
+# compiling packages in the native chroot (e.g. kernel packages), the
+# cross-compiler does not get called directly, but wrapped through
+# ccache, which can then cache the results.
+maintainer=""
+pkgname=ccache-cross-symlinks
+pkgver=3
+pkgrel=3
+pkgdesc="Enable ccache for cross-compilers with symlinks"
+url="https://ccache.samba.org/"
+arch="noarch"
+license="MIT"
+depends="ccache"
+options="!check"
+
+package() {
+	# Keep in sync with pmb.config.build_device_architectures
+	local _archs="armhf armv7 aarch64 x86_64 x86 riscv64 ppc64le loongarch64"
+
+	local _bins="c++ cc cpp g++ gcc clang clang++"
+	mkdir -p "$pkgdir/usr/lib/ccache/bin"
+	cd "$pkgdir/usr/lib/ccache/bin"
+	for _arch in $_archs; do
+		if [ "$_arch" = "$CARCH" ]; then
+			continue
+		fi
+		_hostspec="$(arch_to_hostspec $_arch)"
+		for _bin in $_bins; do
+			# Relative symlink, so it works with crossdirect (pointing to
+			# /native/usr/bin/ccache)
+			ln -v -s ../../../bin/ccache ${_hostspec}-${_bin}
+		done
+
+		ln -v -s ../../../bin/ccache gcc4-${_hostspec}-gcc
+		ln -v -s ../../../bin/ccache gcc6-${_hostspec}-gcc
+	done
+
+	ln -v -s ../../../bin/ccache gcc4-gcc
+	ln -v -s ../../../bin/ccache gcc6-gcc
+}

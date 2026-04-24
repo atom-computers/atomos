@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/atis112_defconfig
+
+pkgname=linux-htc-protou
+pkgver=3.4.8
+pkgrel=5
+pkgdesc="HTC Desire X kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-protou"
+url="https://github.com/ProtouProject/android_kernel_htc_protou"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_htc_protou"
+_commit="0e395015315c8950e85b70271b973a7d3c1a3ac5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ProtouProject/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	timeconst.pl-Eliminate-Perl-warning.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix-boot-gcc5.patch
+	fix_otg_errors.patch
+	no-hardcoded-CROSS_COMPILE.patch
+	no-hardcoded-nvram-path.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+f779774222ce1f89a9d658fa789be5112fa3f8c8fe7220eead28a6b353b001f49bd45bacfb3ca2fa3663c8ad8495ca4e83a153dd45362016294f8f00f28a4214  linux-htc-protou-0e395015315c8950e85b70271b973a7d3c1a3ac5.tar.gz
+a076ab6c18cd64575479ff025401285d63e21615fa9e57ccfc69e99b799b802e74c66a8a49cbf2117231eec9d796322cb953833f82584e2b6d297153d14190f8  config-htc-protou.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+5ea8c150174224791466ae66e13f44b567c447382e348612e2b0f58d85d499a348a6b24cd5bd1f979631e9610cbe490a5dbe213275d13d4376964268ab3d88ea  fix-boot-gcc5.patch
+1e357bb5026a1d01e8a7a65bea32d9f81811f93fbc0071a23b603a630b93e619cd811d7539c85d6d2c4e330295d4ae6e01cf799f9aa675cf2be603e6e7fdfa75  fix_otg_errors.patch
+555033f2ef3e23d84a552e92a6307bf292f91146ee4d8a03b2485f9b5028c2aa3f7ced6ef268acaca7d12649f4bfa7f8fccca39394097f63a5ff2134b912e9e2  no-hardcoded-CROSS_COMPILE.patch
+63b842453979cf13e402ee32f9f21d675e181ca04b1bd3ce6e3c8624943737aa2cf135979157b383e2f7a6a3c67623ce0388a5362e2f44c005066ae633c1829c  no-hardcoded-nvram-path.patch
+"

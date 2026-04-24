@@ -1,0 +1,74 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/manning_defconfig
+
+pkgname=linux-lenovo-manning
+pkgver=3.18.60
+pkgrel=0
+pkgdesc="Lenovo K8 Note kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lenovo-manning"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtc
+	findutils
+	flex
+	gcc6
+	openssl-dev
+	perl
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lenovo_manning"
+_commit="7b5c7a78b165f3e75e50204c27466520fa3e72ea"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Maanush2004/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-check-lxdialog.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	Include-cust.dtsi-created-by-DrvGen-instead-of-runni.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	use_system_dtc.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+92c87f218a1a8f0f15edeeb2a52ca0a761cbe580a023ba90e6b962ab669694882348dbb7209e83c8badc202b493a0676742b585bd4b593906a4d5ef3a6de4f6d  linux-lenovo-manning-7b5c7a78b165f3e75e50204c27466520fa3e72ea.tar.gz
+1eb38f407ded44885cabb3748040667a2d3f98f4a45f2964ea9d2412b4f8df4d60c534dfc5cbdfff881f243bf31ba586720c7881996d743d045dcdee71c12f7d  config-lenovo-manning.aarch64
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+840375b72d4e93e6c56c776e8beb26e54b75aa9d6297e2c80389d497c060e8113e5d14adcef6907cfe3caebd0e1a3e61b3742e09d2d770a8f274871c398ac01f  Include-cust.dtsi-created-by-DrvGen-instead-of-runni.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+6c49bd6cbd7dc5f7b5eda451dc8ea52bb5c62a662eb8997e5b00dfe0ac77a7eca3e310e1134f121d5db7bcff7cc608b349180b30f1a1eccb55a7d69a0b2fc4fb  use_system_dtc.patch
+"

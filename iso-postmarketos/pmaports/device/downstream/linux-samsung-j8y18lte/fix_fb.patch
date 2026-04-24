@@ -1,0 +1,76 @@
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+@@ -2130,7 +2130,7 @@
+ 		if (is_panel_split(mfd) && pdata->next)
+ 			mdss_fb_validate_split(pdata->panel_info.xres,
+ 					pdata->next->panel_info.xres, mfd);
+-		mdss_panelinfo_to_fb_var(panel_info, var);
++		mdss_panelinfo_to_fb_var(mfd);
+ 		if (mdss_fb_send_panel_event(mfd, MDSS_EVENT_CHECK_PARAMS,
+ 							panel_info))
+ 			pr_err("Failed to send panel event CHECK_PARAMS\n");
+@@ -2274,7 +2274,7 @@
+ 		 * programmed in the controller.
+ 		 * Update this info in the upstream structs.
+ 		 */
+-		mdss_panelinfo_to_fb_var(panel_info, var);
++		mdss_panelinfo_to_fb_var(mfd);
+
+ 		/* Start the work thread to signal idle time */
+ 		if (mfd->idle_time)
+@@ -3018,7 +3018,7 @@
+ 		return ret;
+ 	}
+
+-	mdss_panelinfo_to_fb_var(panel_info, var);
++	mdss_panelinfo_to_fb_var(mfd);
+
+ 	fix->type = panel_info->is_3d_panel;
+ 	if (mfd->mdp.fb_stride)
+@@ -3729,7 +3729,7 @@
+ 	}
+ 	var->xres_virtual = var->xres;
+ 	var->yres_virtual = pinfo->yres * mfd->fb_page;
+-	mdss_panelinfo_to_fb_var(pinfo, var);
++	mdss_panelinfo_to_fb_var(mfd);
+ }
+
+ int mdss_fb_atomic_commit(struct fb_info *info,
+@@ -3951,9 +3951,14 @@
+ 		pinfo->mipi.dsi_pclk_rate = pinfo->clk_rate;
+ }
+
+-void mdss_panelinfo_to_fb_var(struct mdss_panel_info *pinfo,
+-						struct fb_var_screeninfo *var)
++void mdss_panelinfo_to_fb_var(struct msm_fb_data_type *mfd)
+ {
++	if (!mfd)
++		return -EINVAL;
++
++	struct mdss_panel_info *pinfo = mfd->panel_info;
++	struct fb_info *fbi = mfd->fbi;
++	struct fb_var_screeninfo *var = &fbi->var;
+ 	u32 frame_rate;
+
+ 	var->xres = mdss_fb_get_panel_xres(pinfo);
+@@ -3989,7 +3994,14 @@
+ 	if (pinfo->physical_height)
+ 		var->height = pinfo->physical_height;
+
+-	pr_debug("ScreenInfo: res=%dx%d [%d, %d] [%d, %d]\n",
++	//Hack to update current fbi->mode according to fbi->var when var is updated from panel info
++	if (fbi->mode) {
++		printk("Updating mdss fb mode from fb var\n");
++		fb_var_to_videomode(fbi->mode, var);
++	}
++
++	printk("ScreenInfo: res=%dx%d [%d, %d] [%d, %d]\n",
++
+ 		var->xres, var->yres, var->left_margin,
+ 		var->right_margin, var->upper_margin,
+ 		var->lower_margin);
+@@ -5562,4 +5574,4 @@
+ 		mfd->fps_info.last_sampled_time_us = current_time_us;
+ 		mfd->fps_info.frame_count = 0;
+ 	}
+-}
++}

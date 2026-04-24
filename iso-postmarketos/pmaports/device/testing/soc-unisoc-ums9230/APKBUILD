@@ -1,0 +1,28 @@
+maintainer="Affe Null <affenull2345@gmail.com>"
+pkgname=soc-unisoc-ums9230
+pkgdesc="Common package for Unisoc UMS9230 devices"
+pkgver=1
+pkgrel=1
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps"
+depends="rpmsgexport unisoc-nvitem-daemon unisoc-timesync-daemon"
+source="
+	70-rpmsg.rules
+	99-sprd-watchdog.rules
+"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	install -Dm644 "$srcdir"/70-rpmsg.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d
+	install -Dm644 "$srcdir"/99-sprd-watchdog.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d
+}
+
+sha512sums="
+38644b83b4194356706c99f9607c5f5d3c4af60f71d0825e5c855935d3d0b0b90e38ab8941d88ac8409a49cebc535c55f09a8ff9eb74e80ca2ad3b0c012392b7  70-rpmsg.rules
+b8b67766f99f0d1fce7955e232fd938f12b136b06d25ed959af3e75e9a55a308c0080072fb91eef3e374a82ee9441b3f4c1eeae6b3d157630e5076f13848190e  99-sprd-watchdog.rules
+"

@@ -1,0 +1,46 @@
+# bcm94330wlsdgb.txt
+manfid=0x2d0
+prodid=0x0552
+vendid=0x14e4
+devid=0x4360
+boardtype=0x0552
+boardrev=0x11
+# this design has 2.4GHz SP3T switch
+boardflags=0x00080200
+nocrc=1
+xtalfreq=37400
+boardnum=22
+#macaddr=00:11:22:33:44:55
+ag0=255
+aa2g=1
+ccode=EU
+#NC028 PA
+pa0b0=5198
+pa0b1=-625
+pa0b2=-177
+rssismf2g=0xa
+rssismc2g=0x3
+rssisav2g=0x7
+maxp2ga0=0x4c
+# 2.4G Tx Power offsets
+cck2gpo=0x5555
+ofdm2gpo=0x77777777
+mcs2gpo0=0xBBBB
+mcs2gpo1=0xBBBB
+sromrev=3
+#il0macaddr=00:11:22:33:44:55
+wl0id=0x431b
+cckPwrOffset=5
+swctrlmap_2g=0x24142414,0x22122212,0x22122414,0x111212,0x1ff
+rfreg033=0x19
+rfreg033_cck=0x1f
+dacrate2g=160
+txalpfbyp2g=1
+bphyscale=17
+cckPwrIdxCorr=-15
+pacalidx2g=45
+tcgaintbl=1
+pacalath2g=180
+pacalidx2g1=55
+muxenab=0x10
+rssi_offset=10

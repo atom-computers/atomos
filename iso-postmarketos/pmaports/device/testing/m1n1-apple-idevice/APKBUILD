@@ -1,0 +1,124 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=m1n1-apple-idevice
+_pkgname=m1n1
+pkgver=1.5.0_git20260208
+_commit="bd117d710e1c88a2cba45d47a030334bf74f212e"
+pkgrel=0
+pkgdesc="m1n1 bootloader for Apple Generic iDevice"
+url="https://github.com/HoolockLinux/m1n1"
+arch="aarch64"
+license="MIT"
+makedepends="
+	inkscape
+	imagemagick
+	postmarketos-artwork-icons
+	rustup
+	"
+checkdepends="
+	py3-construct
+	py3-pyserial
+	py3-pytest
+	python3
+	"
+subpackages="
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-udev::noarch"
+source="https://github.com/HoolockLinux/m1n1/archive/$_commit.tar.gz
+	0001-vendor-dependencies-with-cargo-instead-of-git.patch
+	"
+builddir="$srcdir/$_pkgname-$_commit"
+# net: Cargo pulls crates
+options="net"
+
+export CARGO_HOME="$srcdir/cargo"
+export RUSTUP_HOME="$srcdir/rustup"
+
+prepare() {
+	default_prepare
+
+	# Show postmarketOS logo on boot
+	rm -r "$builddir"/data/bootlogo*
+
+	inkscape -w 48 -h 48 \
+		/usr/share/pixmaps/postmarketos-logo.svg \
+		-o "$builddir"/data/bootlogo_48.png
+	magick "$builddir"/data/bootlogo_48.png \
+		-background black \
+		-flatten -depth 8 \
+		rgba:"$builddir"/data/bootlogo_48.bin
+
+	inkscape -w 128 -h 128 \
+		/usr/share/pixmaps/postmarketos-logo.svg \
+		-o "$builddir"/data/bootlogo_128.png
+	magick "$builddir"/data/bootlogo_128.png \
+		-background black \
+		-flatten -depth 8 \
+		rgba:"$builddir"/data/bootlogo_128.bin
+
+	inkscape -w 256 -h 256 \
+		/usr/share/pixmaps/postmarketos-logo.svg \
+		-o "$builddir"/data/bootlogo_256.png
+	magick "$builddir"/data/bootlogo_256.png \
+		-background black \
+		-flatten -depth 8 \
+		rgba:"$builddir"/data/bootlogo_256.bin
+
+	# Use rustup to install bare-metal aarch64 target and our toolchain
+	rustup-init -q -y --default-toolchain=none --profile=minimal
+	. "$srcdir"/cargo/env
+	rustup default stable
+	rustup target add aarch64-unknown-none-softfloat
+
+	cd "$builddir"/rust
+	cargo vendor --locked
+}
+
+build() {
+	. "$srcdir"/cargo/env
+	make RELEASE=1 CHAINLOADING=1
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m pytest -v
+}
+
+package() {
+	# mach-o binary for usage with iBoot
+	install -Dm644 "$builddir"/build/m1n1-idevice.macho \
+		"$pkgdir"/usr/share/m1n1/m1n1-idevice.macho
+
+	# mach-o stub for usage with building mock kernel images
+	install -Dm644 "$builddir"/build/monitor-stub.macho \
+		"$pkgdir"/usr/share/m1n1/idevice-monitor-stub.macho
+
+	# binary for usage with PongoOS bootm
+	# renamed to m1n1-idevice.bin to not conflict with m1n1
+	install -Dm644 "$builddir"/build/m1n1.bin \
+		"$pkgdir"/usr/share/m1n1/m1n1-idevice.bin
+
+	install -Dm644 "$builddir"/LICENSE \
+		"$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
+
+	install -Dm644 "$builddir"/udev/80-m1n1.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/80-m1n1.rules
+}
+
+dev() {
+	default_dev
+
+	amove usr/share/m1n1/m1n1-idevice.bin
+}
+
+# NOTE: This should be removed if m1n1 gets into aports
+udev() {
+	pkgdesc="$pkgdesc (udev rules)"
+
+	amove usr/lib/udev/rules.d/80-m1n1.rules
+}
+
+sha512sums="
+aade06305038dcf9b704c28c45b04b1a3fe27d26bc929f496f4720c2c0c7be81715c1ce8e51a0318c4ccac3e05c50f530e9de398d534e0e554b74db90fdc647b  bd117d710e1c88a2cba45d47a030334bf74f212e.tar.gz
+a3c4076c47761b1cb2b546a206148945209136b0ea376e1e332f61f91f2d79f5a2e9ce6d6ffd1079bcc49fda37c502dad5d58ae7bc4be270d9d1d8f172fc7b55  0001-vendor-dependencies-with-cargo-instead-of-git.patch
+"

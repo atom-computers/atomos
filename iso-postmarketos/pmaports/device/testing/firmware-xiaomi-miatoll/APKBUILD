@@ -1,0 +1,50 @@
+maintainer="Nikroks <nikroks@mainlining.org>"
+pkgname=firmware-xiaomi-miatoll
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for miatoll"
+url="https://github.com/sm7125-mainline/firmware-xiaomi-miatoll"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-qca linux-firmware-ath10k"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps textrels pmb:cross-native"
+
+_commit="a7073ad14a91a103d14effbc87a94e632e29011a"
+
+source="
+	$pkgname.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-initramfs-firmware.files
+	firmware.files
+	sensor.files
+"
+
+subpackages="$pkgname-sensors:firmware_sensors"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname-$_commit/$_i" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+
+	install -Dm644 "$srcdir/30-initramfs-firmware.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+firmware_sensors() {
+	pkgdesc="Files to be included to add sensor support"
+	depends="$pkgname"
+	install_if="$pkgname-nonfree-firmware"
+	mkdir "$subpkgdir"
+
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname-$_commit/$_i" "$pkgdir/$_i"
+	done < "$srcdir/sensor.files"
+}
+
+sha512sums="
+5535bbb86d41dabca255e76f0edd3032e58df1a8bee444dc26238119b224bdd8b3db97101439a81b9c24a16eeba106e8d0adf22904f0f810ee91008b69102a10  firmware-xiaomi-miatoll.tar.gz
+98169679ceffe080a4346efe60269c3a44047c7156a3dd816e6687720cee2f5e2b336faabe2cf46dcfdb5f1a6999b5a08164e0ac1280453c8fc7f5c9b31924cd  30-initramfs-firmware.files
+2ec6119d5180965ba93d526f160687bd9b7e93ef884cc81994098902b4dcf6956f3aeda1f162227b0312e4192f5a6afd2c6fa6bf76b8c6dcff325e3dfd23c883  firmware.files
+a489f41673bb2084bbae7f3f4d17b48b69690eace59e3d33791a4b8c4367b892b69a378372dc4c14c13ae681c5417f6a7c79d5235b6eb7109acd95c979619e85  sensor.files
+"

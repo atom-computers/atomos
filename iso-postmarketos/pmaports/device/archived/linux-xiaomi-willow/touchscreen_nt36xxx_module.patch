@@ -1,0 +1,77 @@
+The touchscreen driver expects to have firmware available immediately, but our rootfs
+mounts a little too late. These patches are necessary to compile it as a module.
+saved_command_line isn't exposed to modules, so we just hardcode the tianma vendor.
+
+diff --git a/drivers/input/touchscreen/nt36xxx_spi_bbb/Kconfig b/drivers/input/touchscreen/nt36xxx_spi_bbb/Kconfig
+index e8674dc6a..14ccef8e7 100644
+--- a/drivers/input/touchscreen/nt36xxx_spi_bbb/Kconfig
++++ b/drivers/input/touchscreen/nt36xxx_spi_bbb/Kconfig
+@@ -12,7 +12,7 @@ config TOUCHSCREEN_NT36xxx_HOSTDL_SPI_BBB
+ 	  If unsure, say N.
+ 
+ config TOUCHSCREEN_NT36xxx_HOSTDL_SPI_CCC
+-	bool "Novatek NT36xxx host download SPI driver"
++	tristate "Novatek NT36xxx host download SPI driver"
+ 	depends on ( SPI || TOUCHSCREEN_AAAAAA_CCC )
+ 	default n
+ 	help
+
+diff --git a/drivers/input/touchscreen/nt36xxx_spi_bbb/Makefile b/drivers/input/touchscreen/nt36xxx_spi_bbb/Makefile
+index bca7b8a85..9ca3cfc3d 100644
+--- a/drivers/input/touchscreen/nt36xxx_spi_bbb/Makefile
++++ b/drivers/input/touchscreen/nt36xxx_spi_bbb/Makefile
+@@ -5,4 +5,5 @@
+ # Each configuration option enables a list of files.
+ 
+ obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI_BBB) += nt36xxx.o nt36xxx_fw_update.o nt36xxx_ext_proc.o nt36xxx_mp_ctrlram.o
+-obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI_CCC) += nt36xxx.o nt36xxx_fw_update.o nt36xxx_ext_proc.o nt36xxx_mp_ctrlram.o
++obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI_CCC) += ts_nt36xxx.o
++ts_nt36xxx-y := nt36xxx.o nt36xxx_fw_update.o nt36xxx_ext_proc.o nt36xxx_mp_ctrlram.o
+
+diff --git a/drivers/input/touchscreen/nt36xxx_spi_bbb/nt36xxx.c b/drivers/input/touchscreen/nt36xxx_spi_bbb/nt36xxx.c
+index 93f4d0b1c..f48d3fc7b 100644
+--- a/drivers/input/touchscreen/nt36xxx_spi_bbb/nt36xxx.c
++++ b/drivers/input/touchscreen/nt36xxx_spi_bbb/nt36xxx.c
+@@ -43,8 +43,6 @@
+ #endif /* #if NVT_TOUCH_ESD_PROTECT */
+ 
+ #ifdef CHECK_TOUCH_VENDOR
+-extern char *saved_command_line;
+-
+ //---Touch Vendor ID---
+ static uint8_t touch_vendor_id = 0;
+ #endif
+@@ -2711,31 +2709,8 @@ static int32_t __init nvt_driver_init(void)
+ 
+ #ifdef CHECK_TOUCH_VENDOR
+ 	//Check TP vendor
+-	if (IS_ERR_OR_NULL(saved_command_line)){
+-		NVT_ERR("saved_command_line ERROR!\n");
+-		ret = -ENOMEM;
+-		goto err_driver;
+-	} else {
+-		if (strstr(saved_command_line,"tianma") != NULL) {
+-			touch_vendor_id = TP_VENDOR_TIANMA;
+-			NVT_LOG("TP info: [Vendor]tianma [IC]nt36672a\n");
+-		} else if (strstr(saved_command_line,"shenchao") != NULL) {
+-			touch_vendor_id = TP_VENDOR_EBBG;
+-			NVT_LOG("TP info: [Vendor]shenchao [IC]nt36672a\n");
+-		} else {
+-			touch_vendor_id = TP_VENDOR_UNKNOW;
+-			NVT_ERR("Unknow Touch\n");
+-			ret = -ENODEV;
+-			goto err_driver;
+-		}
+-	}
+-
+-	//Check android mode
+-	if (strstr(saved_command_line, "androidboot.mode=charger") != NULL) {
+-		NVT_LOG("androidboot.mode=charger, doesn't support touch in the charging mode!\n");
+-		ret = -ENODEV;
+-		goto err_driver;
+-	}
++	touch_vendor_id = TP_VENDOR_TIANMA;
++	NVT_LOG("TP info: [Vendor]tianma [IC]nt36672a\n");
+ #endif
+ 
+ 	//---add spi driver---

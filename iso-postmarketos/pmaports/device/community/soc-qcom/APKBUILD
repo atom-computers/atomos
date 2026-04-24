@@ -1,0 +1,201 @@
+# Co-Maintainer: Aelin <aelin@postmarketos.org>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=soc-qcom
+pkgdesc="Common package for Qualcomm devices"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps"
+depends="
+	bootmac
+	msm-modem
+	swclock-offset
+	tqftpserv
+"
+replaces="
+	soc-qcom-sdm845
+	soc-qcom-sdm845-nonfree-firmware
+	upower
+"
+subpackages="
+	$pkgname-gstreamer-openrc:gstreamer_openrc
+	$pkgname-gstreamer-systemd:gstreamer_systemd
+	$pkgname-modem
+	$pkgname-modem-systemd:modem_systemd
+	$pkgname-modem-openrc:modem_openrc
+	$pkgname-openrc
+	$pkgname-pd-mapper:pd_mapper
+	$pkgname-pd-mapper-openrc:pd_mapper_openrc
+	$pkgname-pulseaudio
+	$pkgname-pulseaudio-openrc:pulseaudio_openrc
+	$pkgname-pulseaudio-systemd:pulseaudio_systemd
+	$pkgname-qbootctl
+	$pkgname-qbootctl-openrc:qbootctl_openrc
+	$pkgname-vulkan
+"
+
+source="
+	51-qcom.conf
+	UPower.conf
+	call_audio_idle_suspend_workaround.confd
+	call_audio_idle_suspend_workaround.initd
+	call-audio-idle-suspend-workaround.service
+	call_audio_idle_suspend_workaround.sh
+	gstreamer.conf
+	gstreamer.sh
+	modem-gnss.initd
+	modem-gnss.service
+"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	# Shutdown when battery is critical instead of sleep
+	install -Dm644 "$srcdir"/UPower.conf \
+		"$pkgdir"/etc/UPower/UPower.conf
+
+	install -Dm644 "$srcdir"/51-qcom.conf \
+		-t "$pkgdir"/usr/share/wireplumber/wireplumber.conf.d
+}
+
+gstreamer_openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	replaces="soc-qcom-sdm845-gstreamer-openrc"
+
+	install -Dm755 "$srcdir"/gstreamer.sh \
+		"$subpkgdir"/etc/profile.d/50-soc-qcom-gstreamer.sh
+}
+
+gstreamer_systemd() {
+	install_if="$pkgname=$pkgver-r$pkgrel systemd"
+	replaces="soc-qcom-sdm845-gstreamer-systemd"
+
+	install -Dm644 "$srcdir"/gstreamer.conf \
+		"$subpkgdir"/etc/environment.d/50-soc-qcom-gstreamer.conf
+}
+
+modem() {
+	pkgdesc="Modem services and configuration"
+	depends="
+		q6voiced
+		msm-modem-uim-selection
+		81voltd
+	"
+
+	mkdir -p "$subpkgdir"
+}
+
+modem_systemd() {
+	# NOTE: this can be dropped after MM is released with:
+	# https://gitlab.freedesktop.org/mobile-broadband/ModemManager/-/merge_requests/1409
+	replaces="device-google-sargo-systemd"
+
+	install -Dm644 "$srcdir"/modem-gnss.service \
+		-t "$subpkgdir"/usr/lib/systemd/system
+
+	default_systemd
+}
+
+modem_openrc() {
+	install_if="$pkgname-modem=$pkgver-r$pkgrel openrc"
+	depends="q6voiced-openrc openrc"
+	replaces="soc-qcom-sdm845-modem-openrc device-google-sargo-openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+
+	install -Dm755 "$srcdir"/modem-gnss.initd \
+		"$subpkgdir"/etc/init.d/modem-gnss
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="
+		openrc
+		tqftpserv-openrc
+	"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+
+	mkdir "$subpkgdir"
+}
+
+pd_mapper() {
+	pkgdesc="Enable Qualcomm PD mapper service"
+	depends="pd-mapper"
+
+	mkdir "$subpkgdir"
+}
+
+pd_mapper_openrc() {
+	install_if="$pkgname-pd-mapper=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="openrc"
+
+	mkdir "$subpkgdir"
+}
+
+qbootctl() {
+	pkgdesc="Enable qbootctl mark-boot-successful service"
+	depends="qbootctl"
+
+	mkdir "$subpkgdir"
+}
+
+qbootctl_openrc() {
+	install_if="$pkgname-qbootctl=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="openrc"
+
+	mkdir "$subpkgdir"
+}
+
+vulkan() {
+	pkgdesc="Vulkan support for freedreno"
+	install_if="$pkgname vulkan-loader"
+	depends="mesa-vulkan-freedreno"
+	mkdir "$subpkgdir"
+}
+
+pulseaudio() {
+	install_if="$pkgname=$pkgver-r$pkgrel pulseaudio"
+	replaces="soc-qcom-sdm845-pulseaudio"
+
+	# Call Audio idle suspend workaround code
+	install -Dm755 "$srcdir"/call_audio_idle_suspend_workaround.sh \
+		"$subpkgdir"/usr/sbin/call_audio_idle_suspend_workaround
+}
+
+pulseaudio_openrc() {
+	install_if="$pkgname-pulseaudio=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	replaces="soc-qcom-sdm845-pulseaudio-openrc"
+	depends="openrc"
+
+	# Call Audio idle suspend workaround init script
+	install -Dm755 "$srcdir"/call_audio_idle_suspend_workaround.initd \
+		"$subpkgdir"/etc/init.d/call_audio_idle_suspend_workaround
+
+	install -Dm644 "$srcdir"/call_audio_idle_suspend_workaround.confd \
+		"$subpkgdir"/etc/conf.d/call_audio_idle_suspend_workaround
+}
+
+pulseaudio_systemd() {
+	# Call Audio idle suspend workaround systemd unit
+	install -Dm644 "$srcdir"/call-audio-idle-suspend-workaround.service \
+		-t "$subpkgdir"/usr/lib/systemd/user
+
+	default_systemd
+}
+
+sha512sums="
+28c14f47eaedec577d152001c51753537c98f267ac4a0acf78a304efebe5f6a1b4dc6d501497da9a0a925806a1d9c80b25e001cf9b1eb21efa22cd6a41ff753b  51-qcom.conf
+9d455b56558d453d501a1ad869ffa79f9952ed43485a9847d506db6a78bfcd9f9c9d855660ee1d368eb74f4429385ec166addc30d802261c75562e785fe84c52  UPower.conf
+6fb4c0bd8b7ed534d855a6732ccff783960e3cfa0e0cc7effcbb93afa00798dec15361a37a3200081bc114c8d266b7a0851cc4e819ad36eabdb47a50c72620d9  call_audio_idle_suspend_workaround.confd
+5a58475b6e2ee1d655f3f23d8dc19e1cb2f32f1dfff3b9a9337d9c5baad1ec24bfaec0fb9cc03f00e5a291bee27c6b8bffbc65157e2bee5d65ef6d1adcb0910b  call_audio_idle_suspend_workaround.initd
+6f08583574782c01d826ee6b67dd0ceca7b700559efa49042c4b9f182fcd7a4f390c8b011d8ede1820f0ac151eaee24e31a8bac127e2aaf9a6fd605eb17fbea9  call-audio-idle-suspend-workaround.service
+6da0a9209f114354aa2aa1185ec3896a8e0bb1bfce0dc3fc4c0de339cf1389feaa2d724e733c251ff032a5e86d37d9549e94f8f7c7a5accfedbd8a4d6316bbfd  call_audio_idle_suspend_workaround.sh
+f86ebf68bb7e41b531e5cd8fc3e54d8fafad314fb80950277e41004303b3bf75b2ae96f0228bdf4ed67645aee8ceaf247140b4843c66365259d2908b8991b877  gstreamer.conf
+471583b91bc35608cb75d0b3ceb88fa793a4e763ea228703c50ffb1b45c0e9054646c46f710164ec3ef65a882a204fd59546f3a0ebb94b8d6c6f08c4043bcfd3  gstreamer.sh
+99773091f2653f71d4365fdf4cce048a1904cd044a714778567ce0ff6c9c9d76ad537e6e49d1d02bf385f9d35c00794d093ece0fed046072ed5e1ea65baa5201  modem-gnss.initd
+30b16842f585409992ce5a7f0540228655d991e76ba6b86ded65e7442b900ff35d37507913769f1883664aa985d07fe00f9bc22f751eec88d94c180dbe26be5c  modem-gnss.service
+"

@@ -1,0 +1,76 @@
+# Co-Maintainer: David Wronek <david@mainlining.org>
+# Co-Maintainer: Aelin <aelin@postmarketos.org>
+maintainer="Danila Tikhonov <danila@jiaxyga.com>"
+_flavor="postmarketos-qcom-sm7150"
+pkgname=linux-$_flavor
+pkgver=6.18.0
+pkgrel=1
+pkgdesc="Mainline Kernel fork for SM7150 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://github.com/sm7150-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+"
+
+_tag="$pkgver"
+
+# Source
+source="
+	$pkgname-v$_tag.tar.gz::$url/archive/v$_tag.tar.gz
+	config-$_flavor.$arch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+		"$pkgdir/boot/linux.efi"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sm7150* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+ddd996b60a67844fcf9e29bcfc951429eb687b1a643e930ba54f362dfe4fea7ee8a93bf9c30480f3c2559ffe594cfa596e62c007fb22b621285c26694e37cac6  linux-postmarketos-qcom-sm7150-v6.18.0.tar.gz
+1a76bc435cd56b56762e896cb9cfcebc269c2b70e96589726397af7c5c4baca739dab17fa92bd662c49489a4bd867a4171554909842cdc663e9dfdd96605c83a  config-postmarketos-qcom-sm7150.aarch64
+"

@@ -1,0 +1,49 @@
+maintainer=""
+pkgname=firmware-sony-fusion3
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for sony-fusion3 (yuga, odin, dogo, pollux/pollux_windy)"
+url="https://developer.sony.com/file/download/software-binaries-for-xperia-z-xperia-zl-and-xperia-tablet-z"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source wcnss
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05 wcnss.mdt"
+_commit="4a5433fd6cc32910226501cd8c5acdae66cc862c"
+_url="https://github.com/TheMuppets/proprietary_vendor_sony/raw/$_commit/fusion3-common/proprietary/etc/firmware"
+for _i in $_files; do
+	source="$source $pkgname-$_commit-$_i::$_url/$_i"
+done
+
+# Source wlan prima
+_files_prima="WCNSS_cfg.dat WCNSS_qcom_wlan_nv.bin WCNSS_qcom_cfg.ini"
+_commit_prima="0a127c74599e0f81a8a64e25afe50beb054182e1"
+_url_prima="https://github.com/LineageOS/android_device_sony_fusion3-common/raw/$_commit_prima/wifi/"
+for _i in $_files_prima; do
+	source="$source $pkgname-$_commit_prima-$_i::$_url_prima/$_i"
+done
+
+package() {
+	for _i in $_files; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files_prima; do
+		install -Dm644 "$srcdir/$pkgname-$_commit_prima-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="
+d8bd8fbec0aaf5e9199bb9d5b537cafc5a4afc3cd67e501da3ab76715ba3fbe4c6ae70403a789adcb40b95f94d3b141c66b11bf2ff970002e32054e6c6633d12  firmware-sony-fusion3-4a5433fd6cc32910226501cd8c5acdae66cc862c-wcnss.b00
+72e861191346bed765bf50e302a15395c487c11fb51bcf7321b99bba4878c004c26a31a4fb5f26c122ef4d33a2c415b47f80f2746e3722a7045e9b9d603a3149  firmware-sony-fusion3-4a5433fd6cc32910226501cd8c5acdae66cc862c-wcnss.b01
+ff507a70ed64bd7cd9d1c9d2016beeb9bbb0f0b9ac19a8fa248312d13bfc82dc51929366c6405a5660a372303d889972b09bcbe41fed95fd84a2935e064ac7b4  firmware-sony-fusion3-4a5433fd6cc32910226501cd8c5acdae66cc862c-wcnss.b02
+7252245a66bae6cc9d9dce2fd87e84447fd37072c05894d3adf730ac12cb42fb3372bba3ee8ace37cab7cb63472791c574362308f187832d277deec1bfd3198b  firmware-sony-fusion3-4a5433fd6cc32910226501cd8c5acdae66cc862c-wcnss.b04
+519cb089e0814bfa17a14619ae027af750ceb320e8c5ea48d3b86e926c1cc113cef52c7e983e8ed861b41cff207b5435bb03c701ea9bcb2d02a55cd3b53ce90b  firmware-sony-fusion3-4a5433fd6cc32910226501cd8c5acdae66cc862c-wcnss.b05
+a8a95962ca53b0050abeab12209dc96061d9f8028232b6476788899140d94e5b0407cbeadf308f23fbcbd939f054550722276e7f1ece3a10370667ef78de55f3  firmware-sony-fusion3-4a5433fd6cc32910226501cd8c5acdae66cc862c-wcnss.mdt
+523dd31de87d657fa0872a65d5e120caa3dfcc6e55c9d7f18b546d53c0a5d1ebf5558240ad5d4de880622673d8ffa3f0ab1c984e1c53046948b05eea2f81642f  firmware-sony-fusion3-0a127c74599e0f81a8a64e25afe50beb054182e1-WCNSS_cfg.dat
+256a1cc0c6eda271db9924468dfe9e9902f6e040e48bd1e2c1a0a8de206ee49e711e552390bd8c6c273bb5ea4e81a2361d716b07e259c536ff44656ca15fb84a  firmware-sony-fusion3-0a127c74599e0f81a8a64e25afe50beb054182e1-WCNSS_qcom_wlan_nv.bin
+c4a35e0090e1fa76311e076464767f469072f5665e38976202c7e00989133512174742d3c8459b5e228ca1ab8419cd2c9b9f81d91bc26fb75a0961c2722b6454  firmware-sony-fusion3-0a127c74599e0f81a8a64e25afe50beb054182e1-WCNSS_qcom_cfg.ini
+"

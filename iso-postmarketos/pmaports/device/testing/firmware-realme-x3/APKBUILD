@@ -1,0 +1,52 @@
+
+maintainer="Patriot-06 <mbmc172@gmail.com>"
+pkgname=firmware-realme-x3
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Realme X3"
+url="https://github.com/sm8150-linux-mainline/firmware-realme-x3"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="b8e5f8b3ccc739545d1efccf9fc4a41656b9f188"
+source="https://github.com/sm8150-linux-mainline/firmware-realme-x3/archive/$_commit/x3-firmware-$_commit.tar.gz"
+builddir="$srcdir/firmware-realme-x3-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	pkgdesc="Firmware files for Realme X3"
+
+	# TODO: Replace with a dependency on firmware-qcom-adreno-a640
+	install -Dm644 "$builddir"/a630_sqe.fw -t \
+		"$pkgdir/lib/firmware/qcom/"
+	install -Dm644 "$builddir"/a640_gmu.bin -t \
+		"$pkgdir/lib/firmware/qcom/"
+
+	install -Dm644 "$builddir"/a640_zap.mbn -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/realme/x3/"
+	install -Dm644 "$builddir"/adsp* -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/realme/x3/"
+	install -Dm644 "$builddir"/cdsp* -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/realme/x3/"
+	install -Dm644 "$builddir"/modem* -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/realme/x3/"
+	install -Dm644 "$builddir"/venus.* -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/realme/x3/"
+	install -Dm644 "$builddir"/firmware-5.bin -t \
+		"$pkgdir/lib/firmware/ath10k/WCN3990/hw1.0/"
+	install -Dm644 "$builddir"/board-2.bin -t \
+		"$pkgdir/lib/firmware/ath10k/WCN3990/hw1.0/"
+	install -Dm644 "$builddir"/wlanmdsp.mbn -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/realme/x3/"
+	install -Dm644 "$builddir"/crbtfw01.tlv -t \
+		"$pkgdir/lib/firmware/qca/"
+	install -Dm644 "$builddir"/crnv01.bin -t \
+		"$pkgdir/lib/firmware/qca/"
+	install -Dm644 "$builddir"/novatek_nt36672c_fw.bin -t \
+		"$pkgdir/lib/firmware/novatek/"
+}
+
+sha512sums="
+ec5b34609524482bc175f8452a0581dabbfb1bcdf02539d2fc6a6535543efa97b5fdc642ff0f969105ef212a963ce58487cb93857c27026b6bb20c3dd55469ba  x3-firmware-b8e5f8b3ccc739545d1efccf9fc4a41656b9f188.tar.gz
+"

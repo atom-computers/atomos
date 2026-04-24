@@ -1,0 +1,51 @@
+From 7acfecc35efefab4df9444f46726bb29a8b50afa Mon Sep 17 00:00:00 2001
+From: Zhenhua Huang <zhenhuah@codeaurora.org>
+Date: Wed, 27 Aug 2014 12:52:39 +0800
+Subject: [PATCH] power: smb1360: Fix issue for safety-timer setting
+
+Safety-timer means maximum duration in minutes that a single charge
+cycle may last.
+Fix issue by correcting the safety timer enable bit.
+
+Change-Id: I2f4592bbb98360d80dd9210ed50b3cac83e137ae
+Signed-off-by: Zhenhua Huang <zhenhuah@codeaurora.org>
+---
+ drivers/power/smb1360-charger-fg-wt88047.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/power/smb1360-charger-fg-wt88047.c b/drivers/power/smb1360-charger-fg-wt88047.c
+index fa03089b8b7..94672901436 100644
+--- a/drivers/power/smb1360-charger-fg-wt88047.c
++++ b/drivers/power/smb1360-charger-fg-wt88047.c
+@@ -75,7 +75,7 @@
+ #define CHG_STAT_DISABLE_BIT		BIT(0)
+ 
+ #define CFG_SFY_TIMER_CTRL_REG		0x0A
+-#define SAFETY_TIME_EN_BIT			BIT(4)
++#define SAFETY_TIME_DISABLE_BIT		BIT(5)
+ #define SAFETY_TIME_MINUTES_SHIFT	2
+ #define SAFETY_TIME_MINUTES_MASK	SMB1360_MASK(3, 2)
+ 
+@@ -3580,7 +3580,7 @@ static int smb1360_hw_init(struct smb1360_chip *chip)
+ 		if (chip->safety_time == 0) {
+ 			/* safety timer disabled */
+ 			rc = smb1360_masked_write(chip, CFG_SFY_TIMER_CTRL_REG,
+-						SAFETY_TIME_EN_BIT, 0);
++			SAFETY_TIME_DISABLE_BIT, SAFETY_TIME_DISABLE_BIT);
+ 			if (rc < 0) {
+ 				dev_err(chip->dev,
+ 				"Couldn't disable safety timer rc = %d\n",
+@@ -3595,8 +3595,8 @@ static int smb1360_hw_init(struct smb1360_chip *chip)
+ 				}
+ 			}
+ 			rc = smb1360_masked_write(chip, CFG_SFY_TIMER_CTRL_REG,
+-				SAFETY_TIME_EN_BIT | SAFETY_TIME_MINUTES_MASK,
+-				SAFETY_TIME_EN_BIT | reg);
++			SAFETY_TIME_DISABLE_BIT | SAFETY_TIME_MINUTES_MASK,
++								reg);
+ 			if (rc < 0) {
+ 				dev_err(chip->dev,
+ 					"Couldn't set safety timer rc = %d\n",
+-- 
+2.30.1
+

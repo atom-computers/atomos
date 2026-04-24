@@ -1,0 +1,95 @@
+# Co-Maintainer: Alicja Michalska <ellyqw@mainlining.org>
+# Co-Maintainer: Ingo Reitz <9l@9lo.re>
+maintainer="WeirdTreeThing <bradyn127@protonmail.com>"
+pkgname=linux-postmarketos-mediatek-mt81
+pkgver=6.18.21
+pkgrel=0
+pkgdesc="Mainline kernel for mediatek mt8183/mt8192/mt8195/mt8186"
+arch="aarch64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	devicepkg-dev
+	findutils
+	flex
+	gzip
+	lld
+	llvm
+	lz4
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	rsync
+	xz
+	zstd
+"
+replaces="linux-postmarketos-mtk-mt8183 linux-postmarketos-mediatek-mt8183 linux-postmarketos-mediatek-mt81xx"
+
+_carch="arm64"
+
+# Source
+_config="config-$_flavor.$CARCH"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-$_kernver.tar.xz
+	mt8183-fix-bluetooth.patch
+	mt8186-enable-dpi.patch
+	mt8186-ASoC-hdmi-codec-Add-event-handler-for-hdmi-TX.patch
+	mt8186-SoC-mediatek-mt8186-correct-the-HDMI-widgets.patch
+	mt8186-drm-bridge-it6505-Add-audio-support.patch
+	mt8186-ASoC-mediatek-mt8186-make-FE-nonatomic-and-no_pcm.patch
+	mtk-pmdomain.patch
+	config-$_flavor.aarch64
+"
+builddir="$srcdir/linux-$_kernver"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+905fd68a53a69d228dbfbded4bbdbda68d1d776f31e5950d52771c9923d13950f3b76cbd840f04beb9029fe39d6c1946f66bccce0241f8a01d13b8af6c6fa8b1  linux-6.18.21.tar.xz
+d74da1231181835bec82015da1b3f5b08a1fe9c3c35dd712e285891094d94d9427ceac75d32f74be3a635e17d93ad82b37adf97db8176efc91aed17535023fc2  mt8183-fix-bluetooth.patch
+e4eaff9d3ec1a56ae2503dd353ad57bf072219e68c26ba8b894feb90d6ccb01bd131cdde8d238451258679aca1203a9ebdd888f01ee2a118d46f981ff4bcf54c  mt8186-enable-dpi.patch
+2c282b7cd4f72c998d65e4160b9d1f9122676a6392ef45f734dbd5428754eccc06404a057ea19ea097bf6237e27b3483c271c1ed15b20e359419ab9fb61b8d83  mt8186-ASoC-hdmi-codec-Add-event-handler-for-hdmi-TX.patch
+b2dcf3e3b9f80d185f587972ab6fc1f07e8ec7c7dbe3aa75c53ff6d3c7380ff4c3e6f394792976589d5e786923939a0860c70b486ae78925d0f122a5bf2516e0  mt8186-SoC-mediatek-mt8186-correct-the-HDMI-widgets.patch
+e09b8fc578742b0efcfb7e4419b30de39feecf3303def62576110c98e3a7101c68c78d1276f885e585ee21536df1f2474df5816f0dffa8f99ea1df1c787fe2c6  mt8186-drm-bridge-it6505-Add-audio-support.patch
+b4c005f705bbae87b93dd061b4d02f982f2dbce1c59635a02b501def1eb784b057d1555c2c11e868f81a91365dcd1c0fbecf85034b6da701011cb2b68ecb3404  mt8186-ASoC-mediatek-mt8186-make-FE-nonatomic-and-no_pcm.patch
+06539b9c5cdaa41e4e0a4bfb8e300548cf95387db716a2f896062690075f07419e9e211c0cb5537caaa046cfae646e47413e12fde0a3c71c9f94868f464de208  mtk-pmdomain.patch
+18fc8e451b249d022d59a6d1328ddcf27a2ffb5706ba78a7a97942e07dc283dcfb07657b2e607db7277ab4641ae3d31322e72b797f6d4c8f14b0ceff7372b30a  config-postmarketos-mediatek-mt81.aarch64
+"

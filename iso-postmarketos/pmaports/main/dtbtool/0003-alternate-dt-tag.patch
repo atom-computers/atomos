@@ -1,0 +1,43 @@
+diff --git a/dtbTool b/dtbTool
+index 0c14a94..ce7844c 100755
+--- a/dtbTool
++++ b/dtbTool
+@@ -333,7 +333,7 @@ class DTRecord:
+ 			return True
+ 		return False
+ 
+-def generate_records(f, pagesize):
++def generate_records(f, pagesize, dt_tag):
+ 	version = None
+ 	size = os.stat(f).st_size
+ 	mod = size % pagesize
+@@ -344,7 +344,11 @@ def generate_records(f, pagesize):
+ 	s = ctypes.create_string_buffer(fi.read())
+ 	blob = ctypes.byref(s)
+ 
+-	msm_id = fdt_get_property_int(blob, 0, "qcom,msm-id")
++	# Use a different dt tag if requested
++	if dt_tag is None:
++		dt_tag = "qcom,msm-id"
++
++	msm_id = fdt_get_property_int(blob, 0, dt_tag)
+ 	if msm_id is None:
+ 		compats = fdt_get_property_string(blob, 0, "compatible")
+ 		if len(compats) == 0:
+@@ -434,6 +438,7 @@ if __name__ == "__main__":
+ 	# New options
+ 	parser.add_option("--version", dest="version", type="int",
+ 			  help="Force version")
++	parser.add_option("--dt-tag", help="alternate dt tag")
+ 
+ 	(options, args) = parser.parse_args()
+ 
+@@ -448,7 +453,7 @@ if __name__ == "__main__":
+ 
+ 	records = []
+ 	for f in flist:
+-		records += generate_records(f, pagesize)
++		records += generate_records(f, pagesize, options.dt_tag)
+ 
+ 	if len(records) == 0:
+ 		sys.exit("No valid dtbs found")

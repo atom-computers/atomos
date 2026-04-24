@@ -1,0 +1,66 @@
+# Kernel config based on: arch/arm/configs/msm8960dt_mmi_defconfig
+
+pkgname=linux-motorola-ghost
+pkgver=3.4.42
+pkgrel=8
+pkgdesc="Moto X (2013) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="motorola-ghost"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev coreutils xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_motorola_ghost"
+_commit="37aee207bbd85eb20091286258a6b2529315cae8"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	01_gpu-msm-fix-gcc5-compile.patch
+	02_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+	03_Input-sentelic-use-static-inline-instead-of-inline.patch
+	04_fix-video-argb-setting.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+6e9700cd05af9cc27a4684fece48fa240969df11bc91fd53450496dde63df173cea2181699785439cf110874653612a8ae0493a456be8f0100aafd7eca918fa0  linux-motorola-ghost-37aee207bbd85eb20091286258a6b2529315cae8.tar.gz
+97f2295bd8456871cca17817b473315a7bfacaa4f2f2e6ae0b9f36c3f6b5f50870b61e662302b7c69bdfcf39bcc33ce2322234396df1d0e211e28bd6d19c9a09  config-motorola-ghost.armv7
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  01_gpu-msm-fix-gcc5-compile.patch
+5c49f6ff6773a7dc3067d2b1359648fe7a9f758b6c068d6fa69d9aaf24a291ba8022c960317d926aabc11d020a71b20c4e81a6fcf9b21ef66d9b6d065bae23e9  02_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+2d77d90b501aa8afbf81629e73fc0a2055b373942975f58277e43f398d0835b3dbbff4a1118137ec82873ba90a254fea87c1d73ba7708578f1779bd0b4c6ff2d  03_Input-sentelic-use-static-inline-instead-of-inline.patch
+e3083c260ed9c4fc0d83f43106700b6173876dbfae072f6e6696ac6785a4dc17771fbcb3e21601e04ed29a11bf0f7a2a09ad549375e0c34cea245c7f2e2bcbbd  04_fix-video-argb-setting.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

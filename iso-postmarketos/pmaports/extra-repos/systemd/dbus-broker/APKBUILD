@@ -1,0 +1,41 @@
+# Forked from Alpine to enable systemd support
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=dbus-broker
+_pkgver=37
+pkgver=9999$_pkgver
+pkgrel=1
+pkgdesc="Linux D-Bus Message Broker"
+url="https://github.com/bus1/dbus-broker"
+# armhf: no systemd
+arch="all !armhf"
+license="Apache-2.0"
+makedepends="meson linux-headers py3-docutils systemd-dev expat-dev"
+subpackages="$pkgname-doc $pkgname-systemd"
+source="https://github.com/bus1/dbus-broker/releases/download/v$_pkgver/dbus-broker-$_pkgver.tar.xz
+	gcc14.patch
+	0001-test-sockopt-loosen-verification-of-stale-pidfds.patch
+	"
+builddir="$srcdir/$pkgname-$_pkgver"
+
+build() {
+	abuild-meson . build -Ddocs=true
+	meson compile -C build
+}
+
+check() {
+	# Some tests timeout when run under qemu, so only run tests if we're on x86_64
+	# since we know this is a "native" arch in gitlab CI and bpo
+	case "$CARCH" in
+	x86_64) meson test --print-errorlogs -C build;;
+	esac
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+sha512sums="
+9f7c8aa4fabd1fc2da7b521a742874dd0e54f12c24fd5b9a3cbc91e8de05b9d08299cb0b353b923a6b8e33be194222e0242b6ba7cad795a350e7d056b7303e13  dbus-broker-37.tar.xz
+4038a5d6aba3d22c9dca05dbf1021e7abe0edec4f112050b4645ea6a7e1f2ca045403fab59f5558329d8f0fbecbac224d8cc38d88351dc6169352d572a041559  gcc14.patch
+16d3c191f10df3cd2155f17aa29f906277aa4b169bae1a93a7414eb3ec56b8699b6d1c00a31295829e0c618fef9346f94d5dc21a4b70750b020ec8d6b724346c  0001-test-sockopt-loosen-verification-of-stale-pidfds.patch
+"

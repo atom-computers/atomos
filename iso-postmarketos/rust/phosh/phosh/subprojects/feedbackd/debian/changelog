@@ -1,0 +1,1337 @@
+feedbackd (0.8.9) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * packaging: Add build profile to build with and install media roles.
+    We create an wireplumber-xdg-media-roles package that contains the role configuration.
+  * theme: Fix window-close event name
+  * doc: Update build instructions.
+    We use meson and also tweak some other bits for readability
+  * doc: Better separate custom and device themes
+  * doc: Document `$device` in device themes.
+    It identifies the theme as device theme so we should document it.
+  * feedback-themes: Mention the profiles feedback types are used in
+  * doc: Clarify event lookup
+  * doc: Mention what fbcli is
+  * feedback-themes: Improve manpage.
+    Explain relation between profiles, events and feedback a bit better.
+  * feedbackd: Add --verbose option.
+    Easier to discover than `G_MESSAGES_DEBUG`
+  * feedbackd: Allow replacement and an option for it.
+    This brings us in line with e.g. the portals
+  * feedbackd: Exit with EXIT_FAILURE if we can't get the bus name.
+    Makes usage in scritps and systemd units more robust.
+  * feedbackd: Add --version option
+  * examples: Add a less blinky example.
+    Uncategorized notifications can be distracting. Add an example that
+    disable the notification LED for these. Copy to
+    ~/.config/feedbackd/themes/
+    and enable via
+    gsettings set org.sigxcpu.feedbackd theme strict
+  * ci: Update URL to shared repo
+
+  [ stsdc ]
+  * udev: Match on devices with multiple status LEDs
+  * rules: Update regex for status LED device path
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 06 Feb 2026 20:23:49 +0100
+
+feedbackd (0.8.8) experimental; urgency=medium
+
+  [ Lukas Timmermann ]
+  * 72-feedbackd.rules: Add isa1200 haptics driver
+
+  [ Achill Gilgenast ]
+  * data: Add sysusers configuration.
+    Allows distros to add the feedbackd group by using sd-sysusers.
+    Closes: https://gitlab.freedesktop.org/feedbackd/feedbackd/-/issues/83
+
+  [ Guido Günther ]
+  * packaging: Use dh-sysuser.
+    We can drop adding the group manually. We move the udev triggering
+    to the end to ensure the group is already there.
+  * alert-slider: Minor cleanups.
+    Fix help string and move event into the block it is used in
+  * feedback-led: Document rgb color strings
+  * led-multicolor: Scale to RGB colors to LEDs max brightness.
+    Otherwise we might exceed max brightness and get -EINVAL.
+    Tested-by: Chris Vogel <chris@ween.de>
+    Reported-by: Chris Vogel <chris@ween.de>
+    Closes: https://gitlab.freedesktop.org/feedbackd/feedbackd/-/issues/95
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 30 Dec 2025 10:49:55 +0100
+
+feedbackd (0.8.7) experimental; urgency=medium
+
+  * build: Rename options file.
+    Bump needed meson version for that
+  * run: Simplify running.
+    We usually want the daemon so default to that when nothing
+    else is passed in.
+  * data: Set suitable media roles for events.
+    Mark alarms, alerts and ring tones.
+  * data: Add media roles configuration.
+    This ensures we properly duck any "multimedia" streams when playing
+    event sounds. We also introduce an alert group for e.g. cell broadcasts.
+    For testing copy to
+      ~/.config/wireplumber/wireplumber.conf.d/media-role-nodes.conf
+    and
+      systemctl --user restart wireplumber
+  * build: Allow to install media roles.
+    Install role based config if set.
+  * dev-sound: Only set media role when role based routing is enabled.
+    This allows to already update the theme without breaking existing installations.
+  * data: Add preferred output targets for alarms and alerts.
+    We usually want them to go to the speaker by default.
+    This needs https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/754
+  * media-roles: Add Phone role.
+    E.g. calls and wys already tag streams with this
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 08 Nov 2025 09:44:20 +0100
+
+feedbackd (0.8.6) experimental; urgency=medium
+
+  * ci: Publish docs
+  * doc: Use gitlab page URL
+  * data: Move udev rule to 72
+    systemd as of 258 requires uaccess tag processing to be < 73.
+    See https://github.com/systemd/systemd/issues/39206#issuecomment-3368532706
+  * packaging: Trigger change event for input subsystem too
+
+ -- Guido Günther <agx@sigxcpu.org>  Sun, 05 Oct 2025 09:15:40 +0200
+
+feedbackd (0.8.5) experimental; urgency=medium
+
+  [ Luca Weiss ]
+  * udev: Add rule for AW86927.
+    Driver is currently under review upstream:
+    https://lore.kernel.org/linux-arm-msm/20250814-aw86927-v3-0-c99434083e6a@fairphone.com/
+
+  [ Guido Günther ]
+  * treewide: Fix feedack typo
+  * feedback-manager: Let app level cap important level.
+    As per DBus spec the `important` hint is meant to override
+    the global feedback level not any per app level the user
+    might have configured as otherwise there's no way to override
+    this.
+    Closes: https://gitlab.freedesktop.org/feedbackd/feedbackd/-/issues/93
+  * treewide: Clarify that `important` affects the global level.
+    The DBus spec had it right but the other places weren't clear
+    on that.
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 30 Sep 2025 10:17:40 +0200
+
+feedbackd (0.8.4) experimental; urgency=medium
+
+  [ Sicelo A. Mhlongo ]
+  * fbd-dev-led: Support LEDs with legacy naming.
+    As noted in include/dt-bindings/leds/common.h in the Linux kernel, the Nokia
+    N900 has leds that use legacy naming. Until this naming scheme is removed from
+    the kernel, support it through the use of an additional FEEDBACKD_LED_COLOR
+    udev property, which must be set to the color corresponding to the LED.
+  * udev: Support legacy LED naming.
+    The Nokia N900 and Motorola Droid 4 use obsolete naming for LEDs, as indicated
+    in include/dt-bindings/leds/common.h in the Linux kernel. Since the obsolete
+    naming is still in wide use, support them in feedbackd until it is eventually
+    removed in the kernel.
+  * tests: Test legacy LED name detection
+
+  [ Guido Günther ]
+  * doc: Sort events alphabetically.
+    While we have "button-{pressed,released}" events there's often the
+    desire to control sound for key presses of e.g. on screen keyboards too.
+    Add a separate event for that.
+  * data: Add key press/release events.
+    While we have "button-{pressed,released}" events there's often the
+    desire to control sound for key presses of e.g. on screen keyboards too.
+    Add separate events for that.
+    This allows us to e.g. add a particular sound for OSK key presses and
+    OSKs can send this with an `important` hint so they're also usable
+    in silent mode.
+    Closes: https://gitlab.freedesktop.org/feedbackd/feedbackd/-/issues/85
+  * schema: Allow Stevia OSK to override the globla feedback level
+  * schema: Allow all OSK to use important hint.
+    OSK use the common OSK app-id so allow that too.
+    Fixes: 4ba029d ("schema: Allow Stevia OSK to override the globla feedback level")
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 06 Aug 2025 08:36:00 +0200
+
+feedbackd (0.8.3) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * build: Use gnome.post_install. Allows us to drop a custom script
+  * doc: Update fbcli manpage. There's some more options nowadays
+  * libfeedback: Indicate that the library is cross desktop.
+    The only non generic thing is that we pick up the sound
+    scheme from GNOME when available but we'd happily extend
+    that to other DEs.
+
+  [ Evangelos Ribeiro Tzaras ]
+  * build: Use library() instead of build_target() for libfeedback.
+    Originally raised in cellbroadcast, but applies here as well
+    (because cbd yoinked large parts of meson.build!)
+
+  [ Luca Weiss ]
+  * udev: Add more haptic driver rules.
+    Mostly a compilation of different rules added to postmarketOS over the
+    years.
+  * udev: Align rules for gpio/pwm-vibrator.
+    Update the rule for the "platform-vibrator" entry to be like all the other
+    rules, matching by ATTRS{name} instead of ENV{ID_PATH}. Since it was
+    matching for both gpio-vibrator and pwm-vibrator, add entries for both.
+    Tested on Fairphone 2 which uses the gpio-vibrator driver.
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 25 Jun 2025 19:43:13 +0200
+
+feedbackd (0.8.2) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * ci: Update for fdo. Drop the now unneeded tags and the arm64 build
+  * ci: Allow coverage collection to fail
+  * treewide: Update repo URLs.
+    We leave changelog and NEWS untouched as they track history.
+  * README: Add CoC
+  * ci: Add ci-fairy check.
+    This makes sure we have Signed-off-by:
+  * doc: Document missing VibraRumble properties.
+    Fixes f089ad2 ("vibra-rumble: Add magnitude property")
+  * doc: Document Sound properties
+  * doc: Reference manpage.
+    Refer to manpage rather than to the classes in the source code.
+  * doc: Fix parent-name reference.
+    Closes: https://gitlab.freedesktop.org/feedbackd/feedbackd/-/issues/89
+  * doc: Clarify theme use
+  * packaging: Fix inverted Breaks
+  * fbd-dev-led-multicolor: Ignore LEDs that don't have three values.
+    We assume that multicolor LEDs are RGB so reject those that don't
+    have three components.
+    E.g. the Framework Laptop exposes a power button LED as multicolor
+    that only has a white component. This way it gets treated as single color LED.
+  * examples: Add example udev rule for Framework 13 Laptop
+  * tests: Test sound feedback
+  * feedback-sound: Allow to set media role.
+    This will allow us to specify the role when playing the sound.
+  * fbd-dev-sound: Set special media role when present.
+    We default to "event".
+  * doc: Document media-role property
+  * fbd-dev-led: Ignore leds that can't handle patterns.
+    While in theory we could have themes with only freq = 0 values we
+    currently assume there can be patterns.
+  * fbd-dev-led: Sort leds by priority.
+    This makes sure we e.g. prefer multicolor leds over single color ones
+    and those that can be on insuspend (qcom) over those that can't.
+    We can extend this to allow to set the priority via udev/hwdb in the
+    future.
+  * vibra: Some style and comment fixes
+  * vibra-pattern: Don't overwrite magnitudes.
+    When determining the value for the rumble we assigned the result to the
+    value in the array thus potentially overwriting the value from the theme.
+    This goes unnoticed as long as we don't lower the global `max_strength`
+    below the magnitude. But when we e.g. set the `max_strength` to
+    zero the device will fail to rumble when we increase `max_strength`
+    later on again.
+    Steps to reproduce:
+      - Use an event that used `VibraRumble`, e.g. `button-press`
+        in the oneplus,fajita device theme
+      - `fbcli -E button-pressed` -> works
+      - set haptic feedback to 0%:
+        `gsettings set org.sigxcpu.feedbackd max-haptic-strength 0.0`
+      - set it back to 100%:
+        `gsettings set org.sigxcpu.feedbackd max-haptic-strength 1.0`
+      - `fbcli -E button-pressed` -> no feedback
+
+  [ knoppix knoppix ]
+  * Allow constant lighting of notification LED through the setting of
+    frequency in theme.json to zero.
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 09 May 2025 21:42:55 +0200
+
+feedbackd (0.8.1) experimental; urgency=medium
+
+  * libfeedback: Only cancel feedbacks if ever inited.
+    If lfb_init() wasn't called before lfb_uninit() we'd otherwise raise a
+    critical which isn't nice for a library.
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 29 Mar 2025 10:07:40 +0100
+
+feedbackd (0.8.0) experimental; urgency=medium
+
+  [ Sam Day ]
+  * feedback-led: Ensure flash LED is stopped when prefer-flash gets disabled.
+    Fixes: #82
+
+  [ Guido Günther ]
+  * libfeedback: Make libfeedback.h only include other files.
+    Move the init functions to their own header so we don't clutter
+    libfeedback.h more in the future.
+  * ci: Update shared scripts and dot files to 0ed15ed
+  * build: Format meson files.
+    This will make adding future files less noisy.
+  * ci: Check meson file formats
+  * build: Make doc warnings fatal.
+    This restructure showed that we introduce them just so easily
+  * ci: Add consistency check.
+    Simplifies releases
+  * doc: Make mardown lint happy
+  * README: Add getting in touch section
+  * ci: Make yamllint happy
+  * treewide: Fix typos
+  * data/haptic: Document duration unit in the protocol
+  * vibra-pattern: Reset pos when done.
+    This allows to reuse the feedback.
+  * vibra-pattern: Check for NULL dev.
+    When running e.g. in the theme validator we might not have a vibra dev.
+  * vibra-pattern: End pending vibra when a new one is triggered.
+    This wasn't much of an issue for the DBus API but when using
+    it as event feedback it matters as we might start the new
+    feedback just before the old one ended due to timers being
+    slighlty late.
+  * fbd-feedback-vibra-pattern: Deserialize properties.
+    This allows us to use them in feedback themes
+  * doc: Document the `VibraPattern` feedback
+  * data: Refresh schema when it changed
+  * feedback-vibra: Add and track max-haptic-strength gsetting
+  * vibra-pattern: Honor max haptic strength
+  * vibra-rumble: Honor max haptic strength
+  * vibra-periodic: Honor max strength.
+    Since we scale down the magnitude we also scale down the fade in level
+    to keep the ratio between the two the same.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/84
+  * data: Add an event for notification-new-generic.
+    We didn't do so until now to not make people go crazy with buzzing
+    phones. Now that we can fine tune the feedback strength better lets see
+    how this works.
+  * data: Make button press feedback less intrusive.
+    This way it can be kept enabled in more situations.
+  * vibra-rumble: Add magnitude property.
+    We add a magnitude property and set it to 0.5 by default. This ensure
+    the relative magnitude stays the same when switching from 0xFFFF to
+    0x7FFF in dev-vibra.
+  * dev-vibra: Allow full magnitude in rumble.
+    Lets not artificially cap the magnitude in the device specific
+    implementation.
+    Since the default magnitude for the common rumble feedback was set to
+    0.5 in the previous commit the effective magnitude in existing themes
+    remains unchanged for that event.
+    The pattern feedbacks didn't make it into a release yet so there's
+    nothing that could get broken.
+    The change doubles the effective when using the Vibra DBus API but as it
+    seems that libmanette didn't land support yet lets just ignore that
+    here.
+    Periodic feedback is unaffected as it uses a different internal API.
+  * doc: Mention theme reload on SIGHUP
+  * vibra-periodic: Modernize doc comment and property definitions.
+    Also untabify. No functional change.
+    Gpb-Dch: Ignore
+  * vibra-periodic: Use same range as in rumble and periodic.
+    We use [0.0, 1.0] in the other haptic feedbacks so let's make periodic
+    do the same.
+    We adjust dev-vibra to match that.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/86
+  * vibra-periodic: Use better defaults for fade-in-*
+    Lets start at zero when not specified otherwise and also set an
+    arbitrary fade-in-time as setting it to the duration isn't very helpful.
+    While at that move the defaults to the feedback rather than the device
+    so we ensure consistency over different device implementations.
+  * vibra-periodic: Deserialize magnitude and fade-in-level manually.
+    This allows us to add proper fallbacks
+  * vibra-periodic: Add a fallback for the previous [0, 0xFFFF] range.
+    This keeps old themes working
+  * default/theme: Use [0.0, 1.0] for vibra-periodic.
+    We switch `message-new-cellbroadcast` to VibraPeriodic as that is better
+    recognizable than the periodic pattern.
+
+  [ Evangelos Ribeiro Tzaras ]
+  * tests: Depend on daemon for integration test.
+    The carefree developer might try running meson test
+    before meson compile, leaving them with a failing integration test:
+    Start of lfb-integration tests
+    dbus-daemon[326641]: [session uid=1000 pid=326641 pidfd=8] Activating service name='org.sigxcpu.Feedback' requested by ':1.0' (uid=1000 pid=326640 comm="$(pwd)/_build/tests/te")
+    + exec $(pwd)/_build/src/feedbackd
+    $(pwd)/_build/run: 18: exec: $(pwd)/_build/src/feedbackd: not found
+  * tests: Depend on compiled schemas.
+    The carefree developer might try running meson test
+    before meson compile, leaving them with failing
+    feedback-vibra and feedback-profile tests:
+    Start of feedbackd tests
+    Start of fbd tests
+    Start of feedback-vibra tests
+    fbd-feedback-manager-DEBUG: No vibra capable device found
+    fbd-feedback-manager-DEBUG: Failed to init leds device: No usable LEDs found
+    not ok /feedbackd/fbd/feedback-vibra/pattern - GLib-GIO-FATAL-ERROR: No GSettings schemas are installed on the system
+    Bail out!
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 21 Mar 2025 19:15:49 +0100
+
+feedbackd (0.7.0) experimental; urgency=medium
+
+  * packaging: Add symbols from 0.6.0
+  * dir-locals: Set display column
+  * feedback-manager: Split out event feedback preparation.
+    It's becoming gradually more complex so move it to a separate function.
+  * feedback-manager: Improve readability of add_event_feedbacks()
+    Save one indent level and add the feedback at the very end. This
+    makes extending easier.
+  * feedback-manager: Drop fb_found boolean.
+    Just check the elements on the event list. This makes it easier to
+    extend as we can't forget to toggle the variable.
+  * data: Document sound-file hint
+  * libfeedback: Allow to set sound-file hint
+  * fbd-feedback-sound: Allow to set file name.
+    This will be preferred over "effect" when set.
+  * fbd-dev-sound: Play custom sound file if specified
+  * feedback-manager: Parse sound file hint
+  * feedback-manager: Add sound feedback for custom sound file.
+    If a custom sound is provided for the event, use that instead of the one
+    from the theme. We always add the sound event, even when the theme
+    doesn't have sound feedback for that event honoring the users choice.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/merge_requests/150
+  * cli: Allow to provide custom sound file
+  * build: Bump dev versions.
+    Allows us to bump symbols and have proper dependencies in consuming
+    projects
+  * packaging: Add symbols from 0.7.0
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 03 Feb 2025 14:08:12 +0100
+
+feedbackd (0.6.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * event-naming-spec: Fix section description
+  * event-naming-spec: Expand on notification events.
+    We move them to the system category as the notification server
+    is a system component and add an event for new notifications
+    for the notification server to use
+  * theme: Add notification-missed-new.
+    We'll remove message-new-notification somewhat later to not break
+    existing themes.
+    This reverts commit 5cc9713984778e61c4218e8ff6d896324cba5d5d.
+  * ci: Drop duplicate format check
+  * doc: Modernize README a bit
+  * data: Really add gnome-clocks.
+    Fixes d5b2042 ("data: Add gnome-clocks to allow-important list")
+  * feedback-rumble: Fix indent.
+    There were some tabs from day 0
+  * dev-vibra: Allow to check if the device is busy.
+    We accept `NULL` to make the case of no haptic easy to handle.
+  * feedback-manager: Split out feedback level calculation.
+    This allows to use it from other places too and while at that
+    documents it.
+  * feedback-manager: Don't trigger haptic feedbacks when vibra is busy.
+    This just gives odd vibration. Later on we should use priorities to
+    allow for higher priority events like phone calls to override lower
+    priority events like e.g. button presses. This is similar to how we want
+    to handle LED patterns.
+  * feedback-vibra: Use g_timeout_add_once.
+    Fix some indent while at that
+  * feedback-vibra: Clear timer id.
+    Make sure we clear the timer id when vibra ended.
+  * feedback-vibra: Allow derived classes to override duration.
+    This allows the derived classes to perform the length duration
+    calculation.  The parent class can thus still keep track of the total
+    feedback length.
+  * dev-vibra: Allow to set magnitude.
+    Allows for more subtle feedback
+  * feedback-vibra: Add support for patterns.
+    Add a new class that takes an array of durations and magnitudes.
+    A magnitude of 0 indicates a pause.
+    We can consider dropping the VibraRumble class at some point as that
+    is a special case of VibraPeriodic now however as the feedbacks are
+    encoded in the themes let's make sure VibraPattern is good API before
+    deprecating VibraRumble.
+  * data: Add vibration API.
+    The API is meant to trigger the given vibration pattern on the haptic
+    device. The pattern is sequence of relative amplitude and duration
+    pairs. A magnitude of 0.0 indicates a pause.
+  * haptic-manager: New object to handle the Haptic DBus interface.
+    The API has lower priority than the event based API to e.g.  not miss
+    incoming phone calls or cell broadast messages.
+  * feedback-manager: Instantiate .Haptic DBus interface.
+    Make the haptic interface available on the Bus when a haptic
+    motor is found at daemon startup.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/80
+  * README: Document new API
+
+  [ Dang Huynh ]
+  * fbd-ledctrl: Add null pointer check for groups.
+    The set_perms function does not check if getgrnam returns a null
+    pointer.
+    This causes the fbd-ledctrl to crash when a non-existent group is
+    passed.
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 21 Dec 2024 11:07:33 +0100
+
+feedbackd (0.5.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * packaging: Update lintian overrides
+  * packaging: Install NEWS and README. They contain useful information
+  * packaging: Use pkgconf. It's preferred over pkg-config in Debian
+  * doc: Document gsettings used by feedbackd
+  * udev: Add support for haptics on Oneplus Enchilada / Fajita.
+    The spmi_haptics driver isn't in mainline Linux as of Linux 6.11.
+  * theme: Add events for cellbroadcast
+  * data: Allow logged in users to access the alert slider
+  * fbd-alert-slider: Small service to track alert sliders.
+    This tracks the alert slider on OnePlus 6/6T devices
+    and adjusts the profile level accordingly.
+    This is based on a script by "isyourbrain foss" in the Phosh matrix
+    channel.
+  * data: Add systemd unit to start alert slider service
+  * data: Allow alert-slider to override the feedback level.
+    This allows the alert-slider to also emit feedback when phone is in
+    silent mode.
+  * data: Add gnome-clocks to allow-important list.
+    This will allow us to drop the override from phosh
+  * packaging: Better handle RC version when updating changelog.
+    This allows us to switch from RCs to releases without manual
+    effort.
+
+  [ Robert Mader ]
+  * udev-rules: Add support for haptics on Google Sargo.
+    The drv2624 driver isn't in mainline Linux as of Linux 6.11.
+    Taken from
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 27 Sep 2024 13:46:42 +0200
+
+feedbackd (0.4.1) experimental; urgency=medium
+
+  * not-intalled: Avoid gmobile on all arches.
+    This only matters for the case where we use the embedded
+    gmobile but better to be correct.
+  * tests: Use decimal values.
+    We don't rely on that anywhere anyway.
+    Co-authored-by: Tomi Lähteenmäki <lihis@lihis.net>
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/79
+  * build: Install udev rule.
+    Don't hide it in the packaging as that makes it easier to miss.
+    This makes debian/ really only carry packaging information.
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 12 Aug 2024 22:54:48 +0200
+
+feedbackd (0.4.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * docs: Expand the examples section a bit
+  * led: Add doc strings
+  * led: Drop unused variable
+  * led: Don't forget to init variable
+  * fbd-dev-led-multicolor: Drop unused variable
+  * fbd-theme-validate: Use G_NORETURN
+  * Build: Use meson instead of ninja
+  * ci: Add clang build
+  * tests: Add umockdev based tests for leds.
+    This ensures we can probe the different led types correctly
+    The umockdev data was recoreded on an Librem 5 and Librem 14
+  * led-qcom: Use char instead of gchar.
+    We prefer the C types in new code.
+  * led-qcom-multicolor: Drop unused defines
+  * led-qcom-multicolor: Don't leak qcom_led
+  * led-qcom: Check for LED driver.
+    The hw_pattern attribute is driver specific. Ensure we don't apply the
+    LED pattern to unknown drivers.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/77
+  * ci: Update common files from meta-phosh.
+    This updates to commit f3c92e90dcc0d65322888217429b75dd101bd0d3
+  * ci: Use common jobs from meta-phosh
+  * build: Let daemon dependency depend on generated enum headers.
+    Otherwise it might not be available in the tests
+  * dev-led-multicolor: Use correct format specifier.
+    The values are unsigned int
+  * doc: Document feedback types.
+    This allows us to remove the list from the README
+  * doc: Fix URLs.
+    Don't use Markdown markup as it looks odd in the generated page.
+  * fbd-feedback-led: Modernize property definitions.
+    Adapt current phosh coding style before making other changes
+  * feedback-led: Support colors as strings.
+    The FbdDevLedColor enum defines the hardware color of the LED. We used
+    it for the feedbacks color value as long as the kernel mostly had
+    single color LEDs. As multicolor LEDs are common nowadays switch the
+    color to a string which will allow us to use RGB values later on.
+  * feedbackd: Pass GMOBILE_USE_UNSTABLE_API to all files.
+    No need to ack that individually
+  * feedback-led: Document hw LED types
+  * led: Parse color values and pass them down the chain.
+    We parse RGB color values as HEX ('#RRGGBB') and use those when a RGB
+    LED is available. Single color LEDs won't see a change.
+  * theme: Use different colors for emails and calls.
+    This makes them a bit simpler to distinguish
+  * manager: Move schema name to header.
+    This makes it available to other compilation units
+  * led: Drop FBD_FEEDBACK_LED_COLOR_LAST.
+    With new led types we might not loop over all of them. This makes
+    it a bit more obvious.
+  * feedback-led: Check if at least one LED is available.
+    So far we didn't create any FbdDevLeds if there wasn't at least one
+    usable LED. Once we introduce flash LEDs we might probe the LED but the
+    LED might not be usable as the user hasn't enabled using it. Prepare for
+    that scenario.
+  * led: Add flash LED type.
+    Camera flashes are also exported via the LED subsystem. We use a
+    separate LED type so they're not picked by default.
+    We don't use them as fallbacks either.
+  * leds: Probe flash LED
+  * feedback-led: Allow to prefer flash LEDs over notification LEDs
+  * udev: Allow to use flash devices
+  * packaging: Don't require root for building.
+    This helps the nightly builds
+  * packaging: Build-depend on shared gmobile.
+    This ensures we don't use the subproject in packaging builds
+  * cli: Inform user when no feedback was found.
+    This might either be because the event doesn't exist or when the profile
+    doesn't have any feedback on the current level.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/76
+  * tests/fbd-event: Check if objects are finalized.
+    This gives us more info than just using automatic cleanup
+  * event: Make removing feedbacks more self contained.
+    If the feedback is in our list of feedbacks disconnect signals
+    and drop the reference we hold.
+    As we have removed the signal handler that would invoke `check_ended()`
+    we invoke this manually when the list becomes empty.
+  * event: Allow to end events by level.
+    The level here is an abstract value but in fact matches the profile
+    level. Well make this a property when fixing #35.
+  * feedback-manager: End too noisy feedbacks on profile level change.
+    When the profile gets lowered from e.g. quiet to silent we want to end
+    all ongoing feedbacks that belong to the quiet level.
+    This allows to e.g. silence an incoming phone call by switching the
+    feedback level via phosh's quick setting.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/13
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/55
+
+  [ Dylan Van Assche ]
+  * fbd-dev-led-multicolor: Use separate log domain.
+    Debugging driver probing is much easier when each driver has its own log domain.
+  * fbd-dev-led-multicolor: Fix typo in error message
+    multicololo -> multicolor LED
+  * fbd-dev-led: Scan for RGB color as well.
+    Multicolor LEDs have the color 'rgb', we should also scan it
+    as they are also a FbdDevLed.
+  * fbd-dev-led-*: Adjust to method convention
+    fbd_dev_led_ is the convention for methods, adjust them all.
+  * fbd-dev-led: Rework color API.
+    Drop has_color API since supported colors are set during probing
+    and can be handled completely separately from the classes for
+    each type of hardware.
+  * fbd-ledctrl: Set permissions for hw_pattern.
+    Allow access to hw_pattern sysfs node for feedbackd, similar to other nodes.
+  * fbd-dev-led: Check max_brightness_percentage range.
+    Percentages are always between 0.0 and 100.0.
+    Also fix a typo along the way.
+  * fbd-dev-led-multicolor: Support red, green, blue and white LED colors.
+    Provide our own supports_color method to specify which colors are
+    actually implemented by the driver. RGB LEDs could provide different
+    colors as well such as orange, purple, etc. but those are not supported
+    yet.
+  * fbd-dev-led-qcom: Support QCOM LPG LED single color.
+    QCOM LPG LEDs expose a hw_pattern sysfs entry which accepts a limited
+    set of patterns but allows to use dedicated hardware for blinking the
+    LED. This way, battery life can be improved and the LED still blinks,
+    even if the device is suspended.
+  * fbd-dev-led-qcom-multicolor: Support QCOM LPG LED multicolor.
+    QCOM LPG LEDs can also operate in a multicolor fashion.
+    Reuse the probing sequence of multicolor LEDs and the hw_pattern
+    configuration of single color QCOM LPG LEDs.
+  * fbd-dev-leds: Probe QCOM HW LED types.
+    Try first the QCOM hardware LED types which require the most features of
+    LED drivers. Try until we have a single color GPIO LED which is the
+    minimal LED driver support we require. If the LED does not meet that
+    expectation either, we ignore the LED.
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 11 Jun 2024 09:49:20 +0200
+
+feedbackd (0.3.0) experimental; urgency=medium
+
+  * feedback-themes: Improve wording
+  * manpages: Improve references
+  * manpages: Fix whatis entry
+  * debian: Update from the current packaging in Debian
+    - Validate fbd-theme-validate
+    - Add Build-dep to symbols file
+    - Add doc-base registration
+    - Use dh_installman to fix nodoc build
+    - Update debian/copyright
+    - Improve Recommends: and multi arch annotations
+    - Add lintian overrides
+  * debian: Fix nodoc build.
+    Don't try to install the dev docs in that case.
+  * debian: Install NEWS
+  * packaging: Use meson's default wrap mode
+    ci should be allowed to download gmobile
+  * build: Switch gmobile to 0.0.4.
+    We switch to a wrap which helps us to avoid the submodule
+  * ci: Switch to trixie
+  * ci: Add uncrustify config and checker.
+    Based on what we added to phoc recently
+  * ci: Run style checks on merge requests
+  * fbd-dev-led-multicolor: Fix indentation
+  * fbd-dev-led-multicolor: Drop unused variable
+  * fbd-dev-led-multicolor: Make it a derivable type.
+    This will allow hw-pattern classes to derive from it.
+  * Draft: ci: Add rules for format-check
+  * build: Switch to gmobile 0.1.0
+  * build: Allow to use shared gmobile
+  * packaging: Add libgirepository1.0-dev
+  * README: Note what's the preferred way to specify a theme
+  * build: Validate schema file
+  * data/dbus: Document current flags
+  * data/dbus: Document important hint.
+    The important hint can be used by apps to override the current per app
+    or system wide feedback level (if the feedback server allows it).
+  * data/schema: Add 'allow-override' gsetting.
+    This allows to list apps that can override the currently
+    effective feedback level by setting the 'impotant' hint in
+    the event.
+  * fbcli: Allow to override app-id.
+    Useful for testing
+  * feedback-manager: Use MIN()
+    A bit easier to read
+  * libfeedback: Allow to set important hint
+  * feedback-manager: Parse important hint
+  * cli: Allow to set important hint
+  * feedback-manager: Handle important hint.
+    This allows blessed apps to override the per-app as well as the global
+    feedback level. This can e.g. be useful for alarm clocks.
+
+ -- Guido Günther <agx@sigxcpu.org>  Sun, 21 Apr 2024 12:15:01 +0200
+
+feedbackd (0.2.1) experimental; urgency=medium
+
+  * Update NEWS
+  * event: Fix doc link
+  * treewide: Drop superfluous '()' after functions in doc strings.
+    Otherwise we have that doubled in the docs
+  * doc: Better cross reference manpages
+  * doc: Add manpage for feedback themes.
+    This should direct users to the documentation.
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 29 Aug 2023 18:32:09 +0200
+
+feedbackd (0.2.0) experimental; urgency=medium
+
+  * build: Bump version to 0.2.0. We have a slight api change.
+  * lfb-event: Avoid allocation when getting profile.
+    We can return the const *. This makes it consistent with other getters.
+    This is an API change we didn't find any users and the API is declared
+    unstable.
+  * tests: Get properties all at once
+  * lfb-event: Add getter and setter for app-id.
+    For applications this is figured out automatically but notification
+    daemons and portal implementations might want to override it to have the
+    per-app feedback profile picked up automatically.
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 17 Apr 2023 12:14:14 +0200
+
+feedbackd (0.1.1) experimental; urgency=medium
+
+  * build: Avoid meson deprecation warning
+  * fbd-event: Make sure we iterate the list safely.
+    When all feedbacks are done the event signals "feedbacks-ended" which
+    lets the manager dispose the feedback. When all feedbacks end instantly
+    and synchronously (as is the case with the dummy feedback) this triggers
+    the disposal of the event within the loop leading to a crash.
+    Make sure the object doesn't go away be referencing it during the loop
+    iteration.
+    We didn't see this before as glib's slice allocator for lists papered
+    over this for us.
+    Closes: https://source.puri.sm/Librem5/feedbackd/-/issues/69
+  * tests: Don't leak json string
+  * tests: Don't leak profiles and test that.
+    We finalize the theme first so the last reference is dropped when
+    finalizing the profiles.
+  * feedback-profile: Don't leak json array when serializing profile
+    json_array_add_element doesn't transfer ownership
+  * feedback-theme: Don't leak json array when serializing profile
+    json_array_add_element doesn't transfer ownership.
+  * feedback-theme: Don't leak parent name
+  * tests/profile: Don't leak json node
+
+ -- Guido Günther <agx@sigxcpu.org>  Thu, 23 Mar 2023 10:35:01 +0100
+
+feedbackd (0.1.0) experimental; urgency=medium
+
+  [ Dylan Van Assche ]
+  * udev: load the required kernel modules.
+    Loading the required kernel modules such as ledtrig-pattern via
+    /etc/modules-load.d may introduce a race condition on some systems such
+    as non-systemd based distros. Load the kernel modules using the builtin
+    'kmod load' udev command instead.
+
+  [ Guido Günther ]
+  * debian: Drop obsolete conf file.
+    As this is now handled via udev's kmod builtin we can drop this.
+  * theme: Fix some indentation
+  * fbd-dev-leds: Use gi-docgen compatible format.
+    We don't document the server classes via gi-docgen atm but
+    as we use it for the lib update classes we touch.
+  * Move LED device to separate file.
+    We separate out the led as different LED types have different
+    ways to set patterns, etc
+  * fbd-dev-leds: Move led creation into fbd-dev-led.
+    This will allow us to separate the different led types
+  * fbd-dev-leds: Move pattern trigger into fbd-dev-led
+  * fbd-dev-led: Allow to lookup color.
+    This allows us to make the led structure into an opaque in
+    the next commit
+  * fbd-dev-led: Make structure opaque.
+    This will allow us to turn it into a GObject
+  * fbd-dev-led: Turn into a GObject.
+    This is just the minimal changes to switch to a derivable GObject
+  * fbd-dev-led: Use GInitable.
+    Use default GObject patterns instead of stuffing things into the
+    fbd_dev_led_new () so derived classes can override it.
+  * fbd-dev-led: Add class methods so derived classes can override functionality
+  * fbd-dev-led: Move multicolor handling to separate class.
+    Everything related to multicolor moves into the new class and we add the
+    necessary getters and setters so derived classes can access the parent
+    classes attributes where needed.
+  * d/gbp.conf: Be less strict when matching the meson version field
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 25 Feb 2023 14:04:43 +0100
+
+feedbackd (0.0.3) experimental; urgency=medium
+
+  * build: Add dbus sources to the lib dependency.  Otherwise we might fail to
+    generate it for the executables
+  * event-naming-spec: Separate application and system events.
+    Make it obvious which events are meant to be used by "normal" GUI
+    applications in contrast to system components like desktop shells or
+    components monitoring the battery, etc.
+    This was prompted by
+    https://github.com/flatpak/xdg-desktop-portal/issues/929
+  * feedback-theme: Add screen-shot event.
+    Used to indicate that a screen shot is being taken.
+  * lfb-event: Fix docstring.
+    This allows gi-docgen to pick it up
+  * doc: Fix link to spec in manpage
+  * libfeedback: Fix link to specs.
+    Since we now have them as part of the API docs we can avoid any remote
+    URLs
+  * Update gmobile to 0.0.1
+
+ -- Guido Günther <agx@sigxcpu.org>  Thu, 02 Feb 2023 12:10:51 +0100
+
+feedbackd (0.0.2) experimental; urgency=medium
+
+  [ Chris Vogel ]
+  * docs: Update references to documentation from branch master to branch main.
+  * README: Mention python example
+  * doc: feedback stops when client disconnects
+  * run: Export GI_TYPELIB_PATH as well.
+    This is needed for programs needing GObject introspection data
+  * run: Don't hardcode feedbackd.
+    This allows arbitrary executables from the source tree with
+    a well defined environment.
+  * example: Document usage
+
+  [ Guido Günther ]
+  * run: Fix daemon name.
+    Fixes: 99fc8c2 ("run: Make it easy to run under gdb and document usage")
+  * example: Wait a bit before ending
+    feedbackd terminates feedback when clients disconnect from DBus so
+    we need to wait a bit before quitting as otherwise no feedback will
+    be played. (Closes: #65)
+  * d/gbp.conf: Update branch.
+    Missed that one when switching to 'main'
+  * ci: Switch build to bookworm / byzantium.
+    Use Debian bookworm for the tests and PureOS byzantium for the
+    package build
+    We use the arm64 builder as the amd64 one fails to find a shell in the
+    bookworm image.
+  * d/control: Add settings schema for the tests
+  * d/control: Drop Breaks/Replaces on packages long gone
+  * d/rules: Support nodoc build profile
+  * build: Bump required meson version
+  * Switch library documentation to gi-docgen.
+    Switch from gtk-doc to gi-docgen for the library documentation and
+    adjust the source files accordingly.
+    We don't bother about the daemon doc headers as they're not built into
+    any docs atm. (Closes: #56)
+  * Include specifications in the documentation.
+    Now that we can use markdown easily add them as they provide
+    help to the developer what events exist, etc.
+  * dir-locals: Simplify consistent JS indenting
+  * feedback-vibra: Fix indentation
+  * tests: Test feedback theme name
+  * feedback-theme: No need for constructed.
+    We can do all that in init
+  * feedback-theme: Fix indentation
+  * feedback-theme: Use getter.
+    Ensures we stay consistent with future changes
+  * feedback-theme: Allow to set name
+  * feedback-profile: Document hash types
+  * feedback-dummy: Add getter for duration.
+    Useful in tests
+  * feedback-profile: Allow to update profiles.
+    Allow to add feedbacks from a profile to another one
+  * feedback-theme: Allow to update theme.
+    New profiles are added, existing profiles updated. This will
+    allow to merge themes.
+  * feedback-theme: Allow to get and set parent theme name.
+    If set the parent theme's feedbackd and profiles should be merged into
+    this theme.
+  * ci: Install git.
+    Needed for the submodule
+  * Add gmobile library
+  * build: Don't include main in lib.
+    For that move the error quark to a separate file.
+  * Recursively load themes.
+    Themes (other than the default theme) can specify a `parent-name` in the
+    json file. This theme will be used as a base for the theme. Events and
+    profiles of the children override those in the parents.
+    For this we move the lookup code into it's separate class and also add
+    tests. (Closes: #38)
+  * theme-expander: Allow to set the theme to expand
+  * data: Allow to set feedback theme
+  * manager: Don't load theme in constructor.
+    Loading the theme can trigger calls to
+    fbd_feedback_manager_get_default() which then results in an endless look
+    as the object isn't fully initialized in constructed. Instead do
+    the setup in main() which has the advantage that the manager's life
+    cycle becomes more obvious too.
+  * feedback-manager: Handle theme gsetting.
+    Update the theme when the gsetting changes
+  * README: Document custom themes
+  * tests: Help old glib on PureOS along
+  * theme-expander: Also log initial theme file
+  * Add theme validator.
+    Recursively loads a given theme file.
+  * ci: Use bookworm image for package build too.
+    No need to fight against old glib and friends in PureOS
+  * doc: Convert manpages to rst.
+    This will make it more fun to add details and more manpages.
+  * doc: Add manual page for fbd-theme-validate
+  * d/rules: Don't build tests with nocheck
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 13 Dec 2022 13:53:57 +0100
+
+feedbackd (0.0.1) byzantium; urgency=medium
+
+  [ Evangelos Ribeiro Tzaras ]
+  * spec: Clarify feedback noisiness.
+    The old wording could be interpreted as the feedback being discarded if
+    it's noisier than the currently selected profile which is not the case.
+    Also take the new per application settings into account.
+  * lfb-event: Fix SPDX identifier.
+    The library is LGPL-2.1+, not GPL-3.0+
+  * test-lfb-integration: Test event state in async callback
+  * lfb-event: Notify state change before completing async task
+    lfb_event_trigger_feedback_async() internally uses a GTask to handle
+    invocation of the user provided callback when g_task_return_*() is
+    called.
+    Currently GTask is completed first and only afterwards is the state of
+    the event being updated which can lead to surprising behaviour.
+  * feedback-manager: Use guint for event id.
+    The ID is inserted into a hashtable below with GUINT_TO_POINTER
+    and is set using self->next_id++ with next_id also being a guint,
+    so change the type accordingly.
+  * run: Make it easy to run under gdb and document usage.
+    Having a fast and easy way to run the daemon under gdb can be beneficial
+    for debugging. For that start the run script with FBD_GDB=1.
+  * tests/integration: Indicate that callback quits main loop
+    on_event_triggered() is renamed to on_event_triggered_quit()
+    as we will shortly introduce a variant that does not quit.
+  * tests/integration: Fix whitespace.
+    Remove all tabs in favour of spaces and align function arguments.
+  * tests/integration: Test that "feedback-ended" is propagated through
+    LfbEvent.
+    When no feedbacks are available (either because the requested event does
+    not exist in the theme or because the system does not have required
+    capabilities, e.g. no vibration motor or LED) feedbackd will emit a
+    "feedback-ended" signal (with reason LFB_EVENT_STATE_REASON_NOT_FOUND)
+    on DBus _before_ completing the event triggering DBus call.
+    Since the DBus call was not completed yet, LfbEvent will not have
+    learned it's ID yet and therefore not emit it's own "feedback-ended"
+    GObject signal.
+    In this case the test will timeout since the main loop is never quit.
+  * feedback-manager: Complete DBus call before emitting "feedback-ended"
+    See previous commit adding the test (that now passes) for the reasoning.
+    Fixes: #62
+
+  [ Guido Günther ]
+  * data: Drop outdated comment.
+    We use the hints since some time, see lfb_event_set_feedback_profile().
+  * lfb-event: Fix typo. It's LfbEvent
+  * lfb-event: Use consistent prefix.
+    Make async data use the same prefix.
+  * Use g_error() when library is not initialized.
+    This makes sure it still works when asserts are disabled.
+  * lfb-event: Untabify
+  * tests: Drop unused variable
+  * tests/integration: Check the state of the ended event
+  * manager: Use FEEDBACKD_UDEV_ATTR.
+    It was introduced in
+    a5b4f99 ("feedbackd: Support visual feedback via LEDs")
+  * fbd: Fix indentation
+
+ -- Guido Günther <agx@sigxcpu.org>  Thu, 10 Nov 2022 13:53:19 +0100
+
+feedbackd (0.0.0+git20220520) byzantium; urgency=medium
+
+  [ Guido Günther ]
+  * udev: Drop pre L5 pre 5.9 workaround.
+    Not neeed in 2022.
+  * udev: Use more generic comment.
+    Make it more obvious that this isn't device specific
+
+  [ Dylan Van Assche ]
+  * fbd-dev-leds: use define for max_brightness.
+    All other attributes use a define, let's do the same for max_brightness.
+  * fbd-dev-leds: rename var to max_brightness_percentage.
+    Improve readability of the code.
+
+  [ Luca Weiss ]
+  * fbd-dev-leds: support for multicolor LEDs.
+    Add support for multicolor LEDs as supported by the kernel.
+    Used by Qualcomm devices such as SHIFT 6mq, OnePlus 6, etc.
+    Co-Developed-by: Dylan Van Assche <me@dylanvanassche.be>
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 20 May 2022 10:55:13 +0200
+
+feedbackd (0.0.0+git20220208) byzantium; urgency=medium
+
+  [ Pablo Correa Gómez ]
+  * Reload theme on SIGHUP signal.
+    Allows for users/applications to request a theme reload
+    by sending SIGHUP signal to the daemon.
+
+  [ Evangelos Ribeiro Tzaras ]
+  * lfb-event: Clarify docstring on lfb_event_set_feedback_profile
+  * fbd-event: Fix return value for fbd_event_get_sender
+  * doc: Clarify that the timeout is in seconds
+
+  [ Guido Günther ]
+  * libfeedback: Remove unused variables
+  * tests: Remove unused variables
+  * manager: Set initial profile to unknown.
+    This makes sure we sync the profile with the DBus property after
+    fetching it from GSettings.
+  * manager: Sync profile with setting on startup.
+    On startup the GSetting is the relevant input for selecting the profle.
+    (Closes: #52)
+  * manager: Don't sync DBus profile property.
+    This will happen in on_feedbackd_setting_changed() once the
+    profile was adjusted.
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 08 Feb 2022 11:29:41 +0100
+
+feedbackd (0.0.0+git20211018) byzantium; urgency=medium
+
+  [ Evangelos Ribeiro Tzaras ]
+  * fbd-dev-sound: Honour sound theme name for all GNOME based desktops.
+  * d/control: Add json-glib-tools as build dependency.
+    This will make sure that the json theme file gets validated in CI.
+  * feedback-theme: Add phone-{hangup,failure,outgoing-busy} events.
+  * naming-spec: Fix upper cases, whitespaces and punctuation.
+
+  [ Andreas Hartmann ]
+  * fbd-feedback-manager: Make sure theme path components are '/' separated.
+  * README: Add explanation on custom theme paths.
+
+  [ Pablo Correa Gómez ]
+  * feedback-manager: Search for default theme under XDG_CONFIG_HOME first.
+    This would allow users to create their own feedback profiles
+  * Fix typos in documentation
+  * README: dbus calls not usable to trigger feedback.
+    Fixes #45
+
+  [ Guido Günther ]
+  * examples: Unbreak python example.
+  * docs: Fix --profile short option. It's '-P', not '-p'.
+  * cli: Fix changing global profile.
+  * feedback-theme: Add camera related events
+  * gitlab-ci: Switch to bullseye.
+  * fbd-dev-sound: Delay sending `ended` signal. This makes sure
+    we properly end the feedback even when looping.
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 19 Oct 2021 13:13:43 +0200
+
+feedbackd (0.0.0+git20210426) byzantium; urgency=medium
+
+  [ Martin Bürgmann ]
+  * implement fbd_dev_sound_stop
+    tracks the FdbFeedbackSounds in a GHashTable in the FdbDevSound
+    (Closes: #10)
+
+  [ Guido Günther ]
+  * fbd-dev-sound: Don't leak GError
+  * fbd-dev-sound: Don't warn when sound was cancelled.
+    This is not an error per se.
+  * lfb-event: Don't leak error.
+    Don't leak the error values in the success case
+  * tests: Run lfb_event_{get,set}_timeout
+  * test-lfb-integration: Test invocation error
+  * event: Make log-domain match source file name
+  * tests: Run event tests too
+  * event: Remove 'g' prefix from common C types.
+    This matches phosh's style.
+  * fbd-event: Add sender property.
+    This allows us to store the DBus sender
+  * fbd-manager: Keep DBus sender around
+  * feedback-manager: Track DBus clients and end feedbacks if they go away.
+    When the client goes away we build up a list of events to end feedback
+    for to make sure the hash table isn't modified in place. the alternative
+    approach would be to disconnect the on_event_feedbacks_ended handler,
+    duplicate the DBus signal emission and use g_hash_table_foreach_remove
+    but that looks less robust than using the same code path. (Closes: #25)
+  * Help emacs to indent properly
+  * fbd-feedback-theme: Don't leak JSON node
+  * fbd-dev-leds: Free actual FbdDevLed as well.
+    So far we only unref'ed the device.
+  * fbd-dev-leds: Don't leak enum_name
+    g_enum_to_string() is transfer full.
+  * fbd-dev-leds: Don't leak color
+    g_ascii_strdown() creates a copy already.
+  * fbd-dev-leds: Use automatic deep cleanup for device list.
+    The current logic was fragile and failed e.g. when the
+    FEEDBACKD_UDEV_VAL_LED would not match leaking the dev since the
+    g_object_unref() at the end of the loop was never hit.
+    Prevent that with automatic cleanup and explicitly ref'ing the
+    devs we want to use.
+  * fbd-dev-sound: Use correct cleanup for hash table.
+    This went unnoticed since the manager forgot to cleanup
+    this at all (see follow up commit).
+  * fbd-feedback-manager: Make sure to dispose sound device as well.
+    Fixes another leak.
+  * fbd-feedback-manager: Don't leak config_path.
+    It's assigned multiple times.
+  * fbd-feedback-manager: Don't leak device list
+
+  [ Clayton Craft ]
+  * fbd-ledctrl: fix matching of trigger in list of triggers.
+    If the trigger is the last thing in sysfs_path/LED_TRIGGER_ATTR, then
+    the new-line at the end of the output causes g_strv_contains to fail to
+    find the trigger in the list. This strips the new-line before splitting
+    the output into a list for searching.
+
+  [ Sebastian Spaeth ]
+  * README: Fix gdbus test command.
+    It is TriggerFeedback and not Feedback (anymore). Also add a note how to
+    end the feedback in order to prevent loss of hearing :-).
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 26 Apr 2021 12:34:38 +0200
+
+feedbackd (0.0.0+git20210125) amber-phone; urgency=medium
+
+  [ Dylan Van Assche ]
+  * meson.build: compile GLib schemas on install.
+    Run a script as a post install to make sure that all GLib schemas are compiled
+  * fbd-feedback-manager: Allow device-specific feedbackd themes.
+
+  [ Guido Günther ]
+  * feedback-manager: Fix formatting.
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 25 Jan 2021 10:50:15 +0100
+
+feedbackd (0.0.0+git20201114) amber-phone; urgency=high
+
+  [ Guido Günther ]
+  * sound: Set 'event' media role.  This allows pa to cork, duck, etc.
+  * gitlab-ci: Honor PKG_ONLY.  This allow us to get debs quicker
+  * udev: Update led maching for the librem5.  The names changed in device
+    tree which tickles up into userspace.
+  * debian: Don't abuse the video group.  Use a separate group for users that
+    should be able to access the LED devices.
+
+  [ Luca Weiss ]
+  * fbd-dev-leds: fix brightness parameter.
+    The fbd_dev_led_set_brightness function is only getting called with
+    parameter 0 at the moment so this was never noticed.
+  * Fix typos
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 14 Nov 2020 15:54:23 +0100
+
+feedbackd (0.0.0+git20200726) amber-phone; urgency=medium
+
+  [ Arnaud Ferraris ]
+  * debian: udev: add support for PinePhone front LEDs
+  * fbd-dev-leds: store LED color when parsing devices.
+    Failing to do so will always select the first recognized LED (the blue
+    one for the PinePhone).
+
+  [ Guido Günther ]
+  * Release new git snapshot
+  * fbd-dev-sound: Be less verbose on missing sound files.
+    This is quite common so don't fill the logs at normal debug levels
+    but be more specific about what is missing.
+  * fbd-feedback-base: Add fbd_feedback_is_available ()
+    This allows to check if a feedback type is available
+    at all.
+  * feedback-manager: Fix indentation
+  * fbd-feedback-manager: Check if feedback is usable.
+    If we don't find any usable feedbacks for an event return
+    FBD_EVENT_END_REASON_NOT_FOUND.
+  * fbd-feedback-led: Implement is_available ()
+    This avoids criticals when there's no Leds available.
+  * feedback-vibra-rumble: Implement is_available.
+    This avoids criticals when there's no rumble vibra available.
+  * feedback-vibra-periodic: Implement is_available.
+    This avoids criticals when there's no periodic vibra available.
+  * feedback-sound: Implement is_available.
+    This avoids criticals when there's sound device available. We
+    can also be more precise about the reason why feedback ended.
+  * feedback-theme: Avoid warning when feedback is not found.
+    We tell the caller so debug level is enough
+  * tests: Don't check end reason in feedback handler.
+    This allows to reuse the feedback handler and we check the
+    reason in the actual test function anyway.
+  * tests: Test event not found case too
+  * feedback-manager: Deeply free the feedback list.
+    Instead of freeing each element after each iteration and then the list
+    itself at the very end just fully free the list. g_autoslist does
+    not work well on oder glib so do that manually.
+    This is just cosmetics.
+  * feedback-manager: Don't forget to remove not found events from the hash table.
+    This plugs a leak.
+  * feedback-manager: Dispose leds too
+  * feedback-led: Stop the correct led color
+  * feedback-led: Don't try to stop led when there's no led device.
+    This is not a critical since we prevented submitting initially
+    but daemon cleanup processes all entries in the theme.
+  * fbd: Dispose manager at the very end
+
+ -- Guido Günther <agx@sigxcpu.org>  Sun, 26 Jul 2020 13:05:59 +0200
+
+feedbackd (0.0.0+git20200714) amber-phone; urgency=medium
+
+  [ Arnaud Ferraris ]
+  * doc: fix typos
+  * doc: feedbackd: add short description.
+    Lintian issues a warning if short description is empty.
+  * fbd-ledctrl: fix typo
+
+  [ Guido Günther ]
+  * lfb-event: Clarify return values of `finished` functions.
+    They just indicate that we talked to feedbackd successfully.
+  * lfb-event: Connect done handler in async case too.
+    Otherwise the event state is not updated properly
+  * tests: Don't quit mainloop on event end.
+    This is needed to properly test aync where we have the
+    finished async event handler and the signal.
+  * tests: Use async feedback as the test name implies
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 14 Jul 2020 10:30:45 +0200
+
+feedbackd (0.0.0+git20200707) amber-phone; urgency=medium
+
+  [ Sebastian Krzyszkowiak ]
+  * data: Lower rumble time for window-close and button-pressed even more.
+    Haptic feedback for touchscreen input should be as subtle as possible
+    to not make it distracting.
+  * data: Add button-released event
+
+  [ Guido Günther ]
+  * feedback-sound: Plug a leak.
+    We did not free the effect name
+  * Doc cleanups
+  * feedback-manager: Only act on add.
+    We would otherwise ignore the action when no vibra device was yet found.
+    Make sure we release the old device when updating.
+  * libfeedback: Unset _initted early.
+    This make sure a client does not end up in our shutdown phase and sees a
+    half initted library.
+  * libfeedback: Cancel all running feedbacks on uninit.
+    We keep track of the active ids and end them on uninit. This
+    make sure feedbacks don't continue to run if the application quits
+    and forgets to end a feedback.
+  * fbcli: Quit main loop on CTRL-C / SIGTERM.
+    This makes sure we invoke the cleanup function correctly and allows
+    to test running event handling.
+  * docs: Add manpages (Closes: #12)
+  * data: Drop phone-missed-call in 'quiet' profile.  Only want LEDs there.
+  * feedbackd: Add helper to set up permissions for LEDs.
+    This helper knows about the triggers and necessary permission.
+    It's intended to be run via udev.
+  * debian: Setup leds via udev.
+    This allows feedbackd to set periodic feedback and makes usable
+    LED devices identifiable by feedbackd.
+  * feedbackd: Support visual feedback via LEDs.
+    later on by using the 'repeat' attribute of the LED pattern
+    trigger.
+  * data: Use LED feedback for missed calls, IMs and SMS
+  * Add generic missed notification.
+    This can be used e.g. by the shell for general purpose notifications
+    but also for in app notifications of the foreground app.
+  * feedback-manager: Add hint to select feedback profile per event.
+    This e.g. allows events that are meant for haptic only to avoid
+    emitting a sound by omitting the 'full' level and using "quiet"
+    instead. (Closes: #7)
+  * LfbEvent: Add feedback-profile property.
+    This allows to specify the feedback profile to use for
+    this particular event.
+  * cli: Allow to set profile per event.
+    We allowed set the global profile via `-P` use it as per event
+    profile when used with `-E`.
+
+  [ Dorota Czaplejewicz ]
+  * build: Remove feedback dependencies from libfeedback builds
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 10 Jul 2020 11:52:07 +0200
+
+feedbackd (0.0.0+git20200527) amber; urgency=medium
+
+  [ Rasmus Thomsen ]
+  * build: add proper dependencies on gdbus-codgen-generated headers.
+    Without this it was possible that ninja built a target that needs
+    the generated header before the header was generated
+
+  [ Guido Günther ]
+  * Release another git snapshot
+  * Honor sound theme on GNOME.
+    We don't set this for other DEs since they might want to pick a good
+    default from elsewhere.
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 27 May 2020 10:00:08 +0200
+
+feedbackd (0.0.0+git20200420) amber; urgency=medium
+
+  [ Guido Günther ]
+  * Release another git snapshot
+  * Add symbols file
+  * theme: order feedbacks alphabetically.
+  * theme: Add feedbacks for window-close and button-press
+  * Allow to lower the feedback level per application.
+
+  [ Arnaud Ferraris ]
+  * d/control: customize short descriptions per binary package
+  * d/control: change feedbackd-common architecture to 'all'
+  * debian: rename gir package to match typelib name
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 20 Apr 2020 09:55:33 +0200
+
+feedbackd (0.0.0+git20200305) amber-phone; urgency=medium
+
+  * feedbackd-common: Add proper Breaks/Replaces.
+    This handles partial upgrades with newer schema but old feedbackd.
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 23 Mar 2020 10:21:14 +0100
+
+feedbackd (0.0.0+git20200304) amber-phone; urgency=medium
+
+  [ Guido Günther ]
+  * libfeedback: Drop trailing semicolon.
+    Trips up some compilers.
+    Thanks to Andrea Schaefer
+  * build: Don't add lfb-enums.c to list of generated sources.
+    Otherwise when used as a subproject the master project will try
+    to rebuild with it's own set of flags. These lack
+    LIBFEEDBACK_COMPILATION which does not end well.
+  * Fix typos
+  * theme: Add timeout-completed event for alarms and stop watches
+  * Update docs (Closes: #4, #8)
+  * debian: Split out shared files.
+    This allows other programs (like gnome-control-center) to consume the
+    settings schema without having to depend on the daemon itself.
+
+  [ Rasmus Thomsen ]
+  * fbd-feedback-profile: use G_GSIZE_FORMAT instead of hardcoding lu.
+    On 32-bit platforms lu doesn't apply since GType is defined as a gsize
+    fixes #15
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 04 Mar 2020 16:46:36 +0100
+
+feedbackd (0.0.0+git20200214) amber-phone; urgency=medium
+
+  * Initial git snapshot
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 16 Oct 2019 21:22:33 +0200

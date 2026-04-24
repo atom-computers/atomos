@@ -1,0 +1,32 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-bullhead-downstream
+pkgdesc="Google Nexus 5X"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+depends="
+	firmware-lg-bullhead
+	linux-lg-bullhead-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+156ad8e8c9777d3a5f0283aa6913ce0735e01802e2283a790bd5ad767cc2f6ddd77807e1f4c9bb485fe43325f3ce002454279eae308250e60d821c431eb9fb7f  deviceinfo
+c1c1d614b2ae7af332e98160c6bbc9bda280171284a059a0a270bcacc8d928febef1db9d208909d9af4e5efaff48461c003a4bb0fedf1ab72e76fba8f8057034  kernel-cmdline.conf
+"

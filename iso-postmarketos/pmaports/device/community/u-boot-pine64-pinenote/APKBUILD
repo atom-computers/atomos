@@ -1,0 +1,67 @@
+maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
+pkgname=u-boot-pine64-pinenote
+pkgver=2026.04
+pkgrel=0
+_ddr_ver=1.20
+_trust_ver=2.17
+pkgdesc="u-boot bootloader for the Pinenote (rk3566)"
+url="https://gitlab.com/a-wai/u-boot-pinenote"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+options="!check"
+
+makedepends="
+	bash
+	bc
+	bison
+	dtc
+	flex
+	gnutls-dev
+	libfdt
+	make
+	openssl-dev
+	py3-elftools
+	py3-setuptools
+	python3-dev
+	swig
+"
+_rkbin_commit="fd73dcf27702e1efc2065055215320adeaadee84"
+builddir="$srcdir"/u-boot-$pkgver
+source="
+	https://ftp.denx.de/pub/u-boot/u-boot-${pkgver//_/-}.tar.bz2
+	https://github.com/rockchip-linux/rkbin/raw/$_rkbin_commit/bin/rk35/rk3566_ddr_1056MHz_ultra_v$_ddr_ver.bin
+	https://github.com/rockchip-linux/rkbin/raw/$_rkbin_commit/bin/rk35/rk3568_bl31_ultra_v$_trust_ver.elf
+	https://github.com/PNDeb/pinenote-debian-image/releases/download/v20250101_01/rk356x_spl_loader_v1.12.112.bin
+	0001-board-rockchip-add-pine64-pinenote.patch
+	update-u-boot
+"
+
+build() {
+	export ROCKCHIP_TPL="$srcdir"/rk3566_ddr_1056MHz_ultra_v$_ddr_ver.bin
+	export BL31="$srcdir"/rk3568_bl31_ultra_v$_trust_ver.elf
+
+	make pinenote-rk3566_defconfig
+	make
+
+	# make idbloader.img
+	tools/mkimage -n rk3568 -T rksd -d "$ROCKCHIP_TPL:$builddir"/spl/u-boot-spl.bin "$builddir"/idbloader.img
+}
+
+package() {
+	install -D -m755 "$srcdir"/update-u-boot "$pkgdir"/usr/sbin/update-u-boot
+	install -Dm644 \
+		"$builddir"/idbloader.img \
+		"$builddir"/u-boot.itb \
+		"$srcdir"/rk356x_spl_loader_v1.12.112.bin \
+		-t "$pkgdir"/usr/share/u-boot/pine64-pinenote
+}
+
+sha512sums="
+c5fca2abc533759985dfcc6d071d154007535787b0bbd569b61bda1fe2f3a31fba08481c8caf18cf5f2bc79609f50dee504977a8b65e8c4cc21f277268232e03  u-boot-2026.04.tar.bz2
+0791395e4afeb287bc3b6a33aad9ba7c913b5a9aa2259ad1c4a8ef4c667097e47e919d76c568bae64907f38b5a5f824bb16d79ee3d5467f57c6781c644e6387e  rk3566_ddr_1056MHz_ultra_v1.20.bin
+1f257e9da6a80661235c62800b4b4b0ac6a7dffe7840d5bfa423737f8bd6de9184f4a8f57cd57b31e40389f695a33fa2875c5fcd9624e44fa081d0529daa6aaf  rk3568_bl31_ultra_v2.17.elf
+386fcd19d53cf2af5bb7a704d9c6e9fc5b05bf5c1aba7d4e052dc83e57c416b4e85074b2486c7f31f7618e50931bce00fbe425e46e01445653445b0fded67537  rk356x_spl_loader_v1.12.112.bin
+276309b6917899b3cb6e061dbe6ef4635b71f785fbc2f5c09fbbc185a25773cd775dea7ede92f15ff6bd749e7294d51219b526f84454ba61e1b1defa30fc9f0e  0001-board-rockchip-add-pine64-pinenote.patch
+0296588a73bdb968f1413c1e416b05da01202dd8bdeadb9fe9530ab08ed071c60ec44f6591d88453da0ea82c4d9364f85d74bb5830093c0cf97f63080f4011e5  update-u-boot
+"

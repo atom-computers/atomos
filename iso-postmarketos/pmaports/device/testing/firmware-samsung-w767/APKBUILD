@@ -1,0 +1,55 @@
+maintainer=""
+pkgname=firmware-samsung-w767
+pkgver=1
+pkgrel=2
+pkgdesc="Firmware files for Samsung Galaxy Book S"
+url="https://gitlab.com/jenneron/firmware-samsung-galaxy-boo-s"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="984886db0d4f5a90c45e7d89f8345d6ddca45273"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/jenneron/firmware-samsung-galaxy-book-s/-/archive/$_commit/firmware-lenovo-yoga-5g-$_commit.tar.gz
+	30-gpu-firmware.files
+	31-remoteproc-firmware.files
+"
+
+builddir="$srcdir/firmware-samsung-galaxy-book-s-$_commit"
+
+package() {
+	_fwdir="$pkgdir/lib/firmware/qcom"
+	install -Dm644 a680_gmu.bin -t "$_fwdir"
+	install -Dm644 a680_sqe.fw -t "$_fwdir"
+
+	_fwdir="$pkgdir/lib/firmware/qca"
+	install -Dm644 crnv01.bin -t "$_fwdir"
+	install -Dm644 crbtfw01.tlv -t "$_fwdir"
+
+	_fwdir="$pkgdir/lib/firmware/qcom/samsung/w767"
+	install -Dm644 adspr.jsn -t "$_fwdir"
+	install -Dm644 adspua.jsn -t "$_fwdir"
+	install -Dm644 battmgr.jsn -t "$_fwdir"
+	install -Dm644 cdspr.jsn -t "$_fwdir"
+	install -Dm644 modemuw.jsn -t "$_fwdir"
+	install -Dm644 qcadsp8180.mbn -t "$_fwdir"
+	install -Dm644 qccdsp8180.mbn -t "$_fwdir"
+	install -Dm644 qcdxkmsuc8180.mbn -t "$_fwdir"
+	install -Dm644 qcmpss8180_XEF.mbn -t "$_fwdir"
+	install -Dm644 wlanmdsp.mbn -t "$_fwdir"
+
+	install -Dm644 "$srcdir"/30-gpu-firmware.files -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+
+	# While loading ADSP firmware which is responsible for VBUS supply,
+	# USB loses power for a short time. We need remoteproc firmware
+	# on initramfs stage to boot from USB.
+	install -Dm644 "$srcdir"/31-remoteproc-firmware.files -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+73eb208c04c259bc9a0e58dce026767a8fd4c897d150577cd8a190d97411a8128f7d9846ac31dd1a65178d9ce35c6e4a63427fb02e7c9b37967cfca987284559  firmware-samsung-w767-984886db0d4f5a90c45e7d89f8345d6ddca45273.tar.gz
+a930c4f89640ff8f5de5146ede37d87844c7f75cf0fc0e3afd7708cda4543f11dcf2ae4483d34b44dc34ce8285aecc5c9fa9921cfbfdb81c2bf6e86a72da4945  30-gpu-firmware.files
+2445ce36adea1cfdcbe5fc112ae299caea340125b186c12aa6fe54d25d4b21ce6fbab11cd5d16ff83049fce8f139d8af68f929e79b84539396b5fb1b605f1008  31-remoteproc-firmware.files
+"

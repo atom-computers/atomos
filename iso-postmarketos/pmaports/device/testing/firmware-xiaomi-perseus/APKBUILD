@@ -1,0 +1,44 @@
+maintainer=""
+pkgname=firmware-xiaomi-perseus
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi Mix 3"
+url="https://codeberg.org/Noi/firmware-xiaomi-perseus"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-qca linux-firmware-ath10k"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps textrels pmb:cross-native"
+
+_commit="0fed8729c3cc3c7fb9a2a15507b424e8b7e08037"
+
+source="$pkgname.tar.gz::$url/archive/$_commit.tar.gz
+	firmware.files
+	sensor.files
+	"
+
+subpackages="$pkgname-sensors:firmware_sensors"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname/$_i" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+}
+
+firmware_sensors() {
+	pkgdesc="Files to be included to add sensor support"
+	depends="$pkgname"
+	install_if="$pkgname-nonfree-firmware"
+	mkdir "$subpkgdir"
+
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname/$_i" "$pkgdir/$_i"
+	done < "$srcdir/sensor.files"
+}
+
+sha512sums="
+74344f033ad8f241fdc2d76678c3783f94dc33fbbeeb9812a196cfc28288d33dca1bf24f41b759c310eec48253baa0fad9c16ddd5aff9e70a73bca27eeb45e26  firmware-xiaomi-perseus.tar.gz
+79d3e49a46c6aa7a2c23c5004c4f6eafbe3390af3197e026e60ae127ac1d37dc71e5390294f4f9e1dcf92e3c5de2047f48de6483a9de91dc3789dc33adcfb9b5  firmware.files
+157fa30fb8a631c18bc2455b5d42eb27b2da8031d1483fc52080c77e6281daf9b6e775859c4e6f56d68bf25b8fabe85ded0b4e10995913634487fa1623db70f1  sensor.files
+"

@@ -1,0 +1,55 @@
+From 51d377c1f56e3812c70c4fc2626f3ee80524e262 Mon Sep 17 00:00:00 2001
+From: Shinjo Park <peremen@gmail.com>
+Date: Tue, 28 Jun 2022 23:25:07 +0200
+Subject: [PATCH 1/4] samsung-kiran: Add initramfs files required for isorec
+
+---
+ usr/kiran_initramfs.list | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+ create mode 100644 usr/kiran_initramfs.list
+
+diff --git a/usr/kiran_initramfs.list b/usr/kiran_initramfs.list
+new file mode 100644
+index 00000000..256d31e1
+--- /dev/null
++++ b/usr/kiran_initramfs.list
+@@ -0,0 +1,36 @@
++dir /cache 755 0 0
++dir /dev 755 0 0
++dir /dev/block 755 0 0
++nod /dev/block/mmcblk0 600 0 0 b 179 0
++nod /dev/block/mmcblk0p1 600 0 0 b 179 1
++nod /dev/block/mmcblk0p2 600 0 0 b 179 2
++nod /dev/block/mmcblk0p3 600 0 0 b 179 3
++nod /dev/block/mmcblk0p4 600 0 0 b 179 4
++nod /dev/block/mmcblk0p5 600 0 0 b 179 5
++nod /dev/block/mmcblk0p6 600 0 0 b 179 6
++nod /dev/block/mmcblk0p7 600 0 0 b 179 7
++nod /dev/block/mmcblk0p8 600 0 0 b 179 8
++nod /dev/block/mmcblk0p9 600 0 0 b 179 9
++nod /dev/block/mmcblk0p10 600 0 0 b 179 10
++nod /dev/block/mmcblk0p11 600 0 0 b 179 11
++nod /dev/block/mmcblk0p12 600 0 0 b 179 12
++nod /dev/block/mmcblk0p13 600 0 0 b 179 13
++nod /dev/block/mmcblk0p14 600 0 0 b 179 14
++nod /dev/block/mmcblk0p15 600 0 0 b 179 15
++nod /dev/block/mmcblk0p16 600 0 0 b 179 16
++nod /dev/block/mmcblk0p17 600 0 0 b 179 17
++nod /dev/block/mmcblk0p18 600 0 0 b 179 18
++nod /dev/block/mmcblk0p19 600 0 0 b 179 19
++nod /dev/block/mmcblk0p20 600 0 0 b 179 20
++nod /dev/block/mmcblk0p21 600 0 0 b 179 21
++nod /dev/block/mmcblk0p22 600 0 0 b 179 22
++nod /dev/block/mmcblk0p23 600 0 0 b 179 23
++nod /dev/block/mmcblk0p24 600 0 0 b 179 24
++slink /init /stage1/init 777 0 0
++dir /proc 755 0 0
++dir /stage1 755 0 0
++file /stage1/busybox source/usr/kiran_initramfs_files/busybox 755 0 0
++file /stage1/init source/usr/kiran_initramfs_files/init 755 0 0
++dir /sys 755 0 0
++dir /mnt 755 0 0
++dir /mnt/.lfs 755 0 0
+-- 
+2.34.1
+

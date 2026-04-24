@@ -1,0 +1,31 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-google-crosshatch
+pkgdesc="Google Pixel 3 XL"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-google-crosshatch-mainline-dtbo
+	linux-google-crosshatch-mainline
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+53733320ea9ab88d2fbe1a4a26874200ef18d92bf93d9aa5b2e042d912cdc5b230de7fd5743558e47133f5bce759dd24d2c2b8e4e07f7a67a93a9b5f433d6231  deviceinfo
+c2762af3b8268599d2edf37f1dca6284e85e7fd6222a701c7699b9baedb3312bad766100a6bafcd2b2660f04241429b19d5f641f2b0a3915dd4cb079d52b0680  kernel-cmdline.conf
+"

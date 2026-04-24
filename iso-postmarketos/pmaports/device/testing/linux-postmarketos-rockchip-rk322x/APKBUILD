@@ -1,0 +1,118 @@
+maintainer="leap123 <leap123@canaglie.org>"
+pkgname=linux-postmarketos-rockchip-rk322x
+pkgver=6.16.5
+pkgrel=0
+pkgdesc="Rockchip RK322X kernel package"
+arch="armv7"
+_carch="arm"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+	zstd
+"
+
+# Source
+_config="config-$_flavor.$arch"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+
+# Most of the patches are taken from Armbian and ilmich's LibreELEC port
+# https://github.com/armbian/build/tree/main/patch/kernel/archive/rockchip-6.16/patches.armbian/
+# https://github.com/rk-unofficial-cfw/LibreELEC.tv/tree/le12-rk322x-wip/projects/Rockchip/devices/RK322X/patches/linux/default/
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-$_kernver.tar.xz
+	$_config
+	0002-rockchip-from-list.patch
+	1000-rockchip-fixes.patch
+	1000-drm-rockchip.patch
+	1001-v4l2-rockchip.patch
+	1002-for-libreelec.patch
+	1003-rk322x-iep-node.patch
+	1004-rk322x-pinctrl-nand.patch
+	2000-v4l2-wip-rkvdec-hevc.patch
+	2001-v4l2-wip-iep-driver.patch
+	4001-fix-ddr-clock-gate-add-SIP-v2-calls.patch
+	4002-rk322x-analog-audio-codec.patch
+	4003-add-bcm43342-chip.patch
+	4003-add-ddr-clock-and-SIP-related-constant.patch
+	4003-extend-rockchip-dfi-driver.patch
+	4004-add-dmc-driver.patch
+	4005-usb-reset-props.patch
+	4009-rk322x-composite-mmc-clk.patch
+	4010-rk322x-gpio-ir-driver.patch
+	4011-rk322x-box-ir-keymap.patch
+	9000-rk322x-dts.patch
+	9003-fix-dmc-suspend-ddr2.patch
+	9004-wip-audio-passtrough.patch
+	9005-rk322x-plane-overlay.patch
+	9006-dwc2-no-clock-gating.patch
+"
+builddir="$srcdir/linux-$_kernver"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+0c08a9ac9ab69b2e7ac7c3d19807b746f706df39f5d29883d7dbf2f3d7f32f8d80611ea4168d43f3617bf203aa50e5f965b28cdb9d29d674e6a28753e948da16  linux-6.16.5.tar.xz
+7cf8b70ad3cfbf912a3327f372b8baf7d47b88d441bce16b6d95a3ccd1e82b441cf82cc7bd21f56a756833733cd44796898ee3f807e3748b04cfa67804fb67ab  config-postmarketos-rockchip-rk322x.armv7
+f5cc313109d24fac0abc3d082721af90382236754bbc00eb35a856af2422b47737d915282d6f83688df714dea10b0894d984d7e566ae0ce54badf92da254f27c  0002-rockchip-from-list.patch
+755fa2f33f8f04fcf30fb0afaeff19cdbcf97988788dc4885425c3632b4653449c442f46ad5da3fa00e5110a0e02cbf150e22c180dc708156d9f1e05fded0a46  1000-rockchip-fixes.patch
+430c063a55e327335d4a8af9a02bd2af168397cb3c6fda3ab554cd4d3caf812f36931331699789769e1e7bdd2635173fb2f6e8b0719dce81ba802bff0b7c3946  1000-drm-rockchip.patch
+21061380752f8ee85e7590aa79aa13793a918a24856e61092c31a4eb1b305758d5c43935902d560589d1cc4e2fe6cc6ce9dd3e232eebf3fe6b53506fd174cb00  1001-v4l2-rockchip.patch
+83c27a239bd0ddeb622ce061bc0b6b0a0109fa4c3cdaf985cf52b2c929293586ac7d38e6629ce72331e12f74c39616b14628a15aa5f7180521ab2ee6a6091d66  1002-for-libreelec.patch
+64f7154b1f0794cdfcd4ad37cb4cb41300161b4a955a4ead2838822df2ef60539191bfd478636dad80bc4d0ad9d0660541a004268146649e0a117043f9a69768  1003-rk322x-iep-node.patch
+85af7e52df6dee6fb8a6230d1fe9b3bf24118b56019cb9e3b8118510860c68b8230de42f3d4f6a13ac58592deb0ac50ea5fb49d84a8570a0bc2b0882608f2984  1004-rk322x-pinctrl-nand.patch
+eb1068ac3660f9e245dff363f6231c4a55136dc9b581b3b4189b4f43bf4e9d5e050e40cfdbc470e2e243723c4aa0c278555631da56d71a2ec7c5b120713872a2  2000-v4l2-wip-rkvdec-hevc.patch
+a40c3a876bde585501b0d331c69d8f17404cb1eefc7dd9f0c693953824abcbbd251828bd7961177e580342705657b0209ac0e9f458987464a5ac0f51b01c3025  2001-v4l2-wip-iep-driver.patch
+dfc6b72899b863130632bd9afd352eefb76216137bc8eda02489bb787a08f4f9cd5045bf58303c139c50104b8a27a9f442d3967a6def0fce0c5a271699161ace  4001-fix-ddr-clock-gate-add-SIP-v2-calls.patch
+32189b732256eb74784f08ac7740cb54ec2a43af08cb78c9ff0f4f3feabc5a7d2a4f2df33e505dd4ff87f349312b0ff9662d82fa34d4e19ed00ebfcbb23ad9f9  4002-rk322x-analog-audio-codec.patch
+a825862be1b7e9a3251139f4855311351286aacf2338ec6b12c43b64abdb4ee10166c44a9c9121393152b5d93e75d3bfd708ba0c7c0d19e3e7901c6c245e6cbf  4003-add-bcm43342-chip.patch
+9e02e9f71ed87af9779524a6d42679b88c4867b53ecdf6b809f5dda1ab4cae36fa8c063da82181421e4dc552b6006b7a737d8004984e3ed6bff2ebd3cb6f9ae2  4003-add-ddr-clock-and-SIP-related-constant.patch
+a527330c542df63721f8f869d8756bb0a7ff71676798ae37791f93ca6e8a3b410daa9b92cc358e30b93f9e0a252830514cc78a988061acd1433768cad3915ab5  4003-extend-rockchip-dfi-driver.patch
+818f1951909f803f319e478019080acf258d85024ff6e6884ec1b1685f8ab7cfee5ef34f4a5b5b3006205eb1be568ca6b17703113a1b21a921f8d8b8ed989917  4004-add-dmc-driver.patch
+cfbe137fa7218dc23ddbba1fece0f8f690f07e0ef168645b404cf407caeae8bbde514d80afbf9ed2b190e8efd729bc89aa7cdbb974d97c6e56009b8b2b1cf9e8  4005-usb-reset-props.patch
+34595ed17ccc773a79ba21602e7bc350fcd859c4ab50453fd5209a709439e03ef7ad2a0335344a2aaf18652f15449415a2883444dfedee9a8fd0612a7966cf50  4009-rk322x-composite-mmc-clk.patch
+c5062e22bf58bcfaeeb00e37664a51c1d33796799b3cb615a272f82612ad970b404cd0d43f5509de4d754b95768b33ab8bfdd0ae70f1ac0c0bbd3d9121aa9499  4010-rk322x-gpio-ir-driver.patch
+bce32c2714d36edf019d57b23e2b9d117cf5e855c2956b62bf1570cb1f4a33768531cdc18e414015d5868d8f6100db23a7b79f9026f31e95defc5ea11cce6caf  4011-rk322x-box-ir-keymap.patch
+2503d8c879e873e332da42bb59aa3af0e382490a67aa4c5876437203da3333113aec0fec6f4932f25261b25d44d58692b2da9c4b76e0f5b3e41b9faa2055a241  9000-rk322x-dts.patch
+ce75483e47323459f0a6b9cd45d71a38f234cbfa6fc0da181cdbf71d351812d083e7fa55a8d4f3a8bb885c5c5435b76e1d42a8b5d9f8a4d46b6dfe78288e9816  9003-fix-dmc-suspend-ddr2.patch
+830841d81ec8517834cd5eda9c5abbfc260b5822cefa3d47a111902bcf98ea5631b4f7e14ae19a69b273bcc8b5bcab8ab1fdb5bcf22bd17752d622f1174cb850  9004-wip-audio-passtrough.patch
+4661f54e6f9ce32ef2d1277109036c0781ad30b55679bcdc7d1c35225db70a23db29b7b0021352e82b7e586fffb65cf4674d8c0e06dfa4a0094362a122db47d0  9005-rk322x-plane-overlay.patch
+774c7eb8a2c99d8286809dd2ed20ed1922eb0c33ba4d8987eb264cdd0787035744e4d11ef9c38ddd1e19cf2825df2250bbbd6953533580bb262e1db40c7a4966  9006-dwc2-no-clock-gating.patch
+"

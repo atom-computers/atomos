@@ -1,0 +1,30 @@
+# Temporary hack
+# Upstream issue: https://gitlab.freedesktop.org/mesa/mesa/-/issues/8929
+maintainer=""
+pkgname=mesa-dri-simpledrm
+pkgdesc="Temporary KMSRO stub for simpledrm"
+pkgver=0.1
+pkgrel=1
+url="https://mesa.freedesktop.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="mesa-dri-gallium"
+replaces="mesa-dri-gallium"
+makedepends="gcc"
+source="
+	usr-lib-xorg-modules-dri-simpledrm_dri.c
+"
+builddir="$srcdir"
+
+build() {
+	gcc usr-lib-xorg-modules-dri-simpledrm_dri.c -shared -o usr-lib-xorg-modules-dri-simpledrm_dri.so
+}
+
+package() {
+	install -Dm755 "$srcdir"/usr-lib-xorg-modules-dri-simpledrm_dri.so "$pkgdir"/usr/lib/xorg/modules/dri/simpledrm_dri.so
+}
+
+sha512sums="
+999b4909b25e9fcadb1e9ca034c0a014b219a8a3cf908072f1f8f58f75489ca72dd3765b2f5b9d89b69e29c7c1554a0fc5d62b11a2ab129103d9d3d6ed0c7f6c  usr-lib-xorg-modules-dri-simpledrm_dri.c
+"

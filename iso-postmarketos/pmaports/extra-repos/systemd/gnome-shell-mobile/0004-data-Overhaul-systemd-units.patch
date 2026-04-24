@@ -1,0 +1,133 @@
+From a1444e7bb90fbe881c3cb0dbd37a3ee9b0e03af1 Mon Sep 17 00:00:00 2001
+From: Adrian Vovk <adrianvovk@gmail.com>
+Date: Thu, 13 Nov 2025 14:01:20 -0500
+Subject: [PATCH 4/4] data: Overhaul systemd units
+
+This simplifies the structure of the systemd units, since we no longer
+support running with X11. But it also allows us to pass in the
+gnome-shell session mode via systemd.
+
+This removes the need for GDM to have any special code to handle the
+GNOME_SHELL_SESSION_MODE environment variable, and allows GNOME sessions
+to specify directly what session mode they need without the involvement
+of GDM. This makes it trivial to define custom gnome-session sessions
+that use custom gnome-shell session modes.
+
+Sessions that consist entirely of a gnome-shell mode (like the
+gnome-classic session) will need to do a little more legwork to define
+themselves as proper gnome-session sessions.
+
+Signed-off-by: Achill Gilgenast <achill@achill.org>
+---
+ data/meson.build                              | 33 +++----------------
+ data/org.gnome.Shell.target.in                |  9 -----
+ ...service.in => org.gnome.Shell@.service.in} |  9 +++--
+ 3 files changed, 9 insertions(+), 42 deletions(-)
+ delete mode 100644 data/org.gnome.Shell.target.in
+ rename data/{org.gnome.Shell@wayland.service.in => org.gnome.Shell@.service.in} (72%)
+
+diff --git a/data/meson.build b/data/meson.build
+index d48308743cbf..d02fa12b00af 100644
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -113,40 +113,17 @@ install_data('00_org.gnome.shell.gschema.override', install_dir: schemadir)
+ if have_systemd
+   unitconf = configuration_data()
+   unitconf.set('bindir', bindir)
+-  supported_sessions = ['wayland']
+-  if have_x11
+-    configure_file(
+-      input: 'org.gnome.Shell@x11.service.in',
+-      output: 'org.gnome.Shell@x11.service',
+-      configuration: unitconf,
+-      install_dir: systemduserunitdir
+-    )
+-    supported_sessions += ['x11']
+-  endif
+-
+   configure_file(
+-    input: 'org.gnome.Shell@wayland.service.in',
+-    output: 'org.gnome.Shell@wayland.service',
++    input: 'org.gnome.Shell@.service.in',
++    output: 'org.gnome.Shell@.service',
+     configuration: unitconf,
+     install_dir: systemduserunitdir
+   )
+ 
+-
+-  units = files('org.gnome.Shell-disable-extensions.service')
+-  targetconf = configuration_data()
+-  sessions_wants = []
+-  foreach session: supported_sessions
+-    sessions_wants += 'org.gnome.Shell@' + session + '.service'
+-  endforeach
+-  targetconf.set('SUPPORTED_SESSIONS', ' '.join(sessions_wants))
+-  target = configure_file(
+-    input: 'org.gnome.Shell.target.in',
+-    output: 'org.gnome.Shell.target',
+-    configuration: targetconf
++  install_data (
++    'org.gnome.Shell-disable-extensions.service',
++    install_dir: systemduserunitdir,
+   )
+-  units += target
+-
+-  install_data(units, install_dir: systemduserunitdir)
+ endif
+ 
+ # for unit tests - gnome.compile_schemas() only looks in srcdir
+diff --git a/data/org.gnome.Shell.target.in b/data/org.gnome.Shell.target.in
+deleted file mode 100644
+index bb65fa0e6b63..000000000000
+--- a/data/org.gnome.Shell.target.in
++++ /dev/null
+@@ -1,9 +0,0 @@
+-[Unit]
+-Description=GNOME Shell
+-DefaultDependencies=no
+-
+-Requisite=gnome-session-initialized.target
+-PartOf=gnome-session-initialized.target
+-Before=gnome-session-initialized.target
+-
+-Wants=@SUPPORTED_SESSIONS@
+\ No newline at end of file
+diff --git a/data/org.gnome.Shell@wayland.service.in b/data/org.gnome.Shell@.service.in
+similarity index 72%
+rename from data/org.gnome.Shell@wayland.service.in
+rename to data/org.gnome.Shell@.service.in
+index 813da0b7081d..d9dd732d2188 100644
+--- a/data/org.gnome.Shell@wayland.service.in
++++ b/data/org.gnome.Shell@.service.in
+@@ -1,6 +1,5 @@
+ [Unit]
+-Description=GNOME Shell on Wayland
+-# On wayland, force a session shutdown
++Description=GNOME Shell
+ OnFailure=org.gnome.Shell-disable-extensions.service gnome-session-shutdown.target
+ OnFailureJobMode=replace-irreversibly
+ CollectMode=inactive-or-failed
+@@ -13,17 +12,17 @@ Requisite=gnome-session-initialized.target
+ PartOf=gnome-session-initialized.target
+ Before=gnome-session-initialized.target
+ 
+-ConditionEnvironment=XDG_SESSION_TYPE=%I
++AssertEnvironment=XDG_SESSION_TYPE=wayland
+ 
+ [Service]
+ Slice=session.slice
+ Type=notify
+-ExecStart=@bindir@/gnome-shell
++ExecStart=@bindir@/gnome-shell --mode=%i
+ # Exit code 1 means we are probably *not* dealing with an extension failure
+ SuccessExitStatus=1
+ 
+ # unset some environment variables that were set by the shell and won't work now that the shell is gone
+-ExecStopPost=-/bin/sh -c 'test "$SERVICE_RESULT" != "exec-condition" && systemctl --user unset-environment GNOME_SETUP_DISPLAY WAYLAND_DISPLAY DISPLAY XAUTHORITY'
++ExecStopPost=-systemctl --user unset-environment GNOME_SETUP_DISPLAY WAYLAND_DISPLAY DISPLAY XAUTHORITY
+ 
+ # On wayland we cannot restart
+ Restart=no
+-- 
+2.53.0
+

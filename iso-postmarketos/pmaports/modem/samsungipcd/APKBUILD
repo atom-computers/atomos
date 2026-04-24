@@ -1,0 +1,47 @@
+maintainer="sleirsgoevy <sleirsgoevy@gmail.com>"
+pkgname=samsungipcd
+pkgver=0.3.0
+pkgrel=1
+pkgdesc="AT modem emulation using libsamsung-ipc"
+url="https://gitlab.com/sleirsgoevy/samsungipcd"
+arch="all"
+license="GPL-2.0-or-later"
+depends="libsamsung-ipc ppp networkmanager-ppp"
+makedepends="libsamsung-ipc gcc make ppp-dev"
+subpackages="$pkgname-openrc"
+source="
+	samsungipcd-v$pkgver.tgz::$url/-/archive/v$pkgver/samsungipcd-v$pkgver.tar.gz
+	samsungipcd.sh
+	90-ttywc.rules
+	options.ttywc
+"
+builddir="$srcdir/samsungipcd-v$pkgver"
+
+options="!check"
+
+build() {
+	make
+}
+
+package() {
+	make PREFIX="$pkgdir/usr" install
+	install -Dm755 "$srcdir/samsungipcd.sh" "$pkgdir/etc/init.d/samsungipcd"
+	install -Dm644 "$srcdir/90-ttywc.rules" "$pkgdir/usr/lib/udev/rules.d/90-ttywc.rules"
+	install -Dm644 "$srcdir/options.ttywc" "$pkgdir/etc/ppp/options.ttywc"
+	install -Dm644 "$srcdir/options.ttywc" "$pkgdir/etc/ppp/options.ttywd"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+46203ef88db8cfd31bb0a2d37e4213f1e99834b78e407c3d1a46c089247ba4b7952485dda722ac61e31a5eae4a418ae992259c990e5696344658371c4956b809  samsungipcd-v0.3.0.tgz
+7bdc6cbc4a9add0f4a5a5d4584fbf4fc64cf4a1f0d93a85e97229eba47bbe66a8e0bd8958b4606141a0189422e13af252d3c0301f61069dc75a64e0a3b59d959  samsungipcd.sh
+2c93b98260a8b89d25bfc6bf554dc66f198846f35ed839069212aea2204b9cc92710ea7aa5c77003bd6952085018af1083640052094a115ba67257f9745f80bf  90-ttywc.rules
+f1dde4204352e5f6edef4b884b48ebbe6ec97b80697593f6f49754e60530024cf6171bb1cf0d2bfdd5ac24f22f2d6a9ef11aa4874a68448b6ee72baa5be70293  options.ttywc
+"

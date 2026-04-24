@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="WD MyCloud Gen2"
+deviceinfo_manufacturer="WD MyCloud"
+deviceinfo_codename="wd-glacier"
+deviceinfo_year="2015"
+deviceinfo_dtb="armada-375-wd-glacier"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_no_framebuffer="true"
+
+# Bootloader related
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_legacy_uboot_load_address="00008000"
+deviceinfo_initfs_compression="gzip"
+deviceinfo_disable_dhcpd="true"
+
+# The stock os use appended dtb
+deviceinfo_append_dtb="true"
+
+# serial support
+deviceinfo_getty="ttyS0;115200"
+

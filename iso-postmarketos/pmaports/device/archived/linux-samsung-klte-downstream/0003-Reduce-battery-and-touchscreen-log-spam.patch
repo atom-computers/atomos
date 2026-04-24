@@ -1,0 +1,647 @@
+From c467cfc3b24ccf4ae5a6153a89eb3805906ce72b Mon Sep 17 00:00:00 2001
+From: drebrez <drebrez@gmail.com>
+Date: Sun, 2 Dec 2018 22:36:11 +0100
+Subject: [PATCH] Reduce battery and touchscreen log spam
+
+---
+ drivers/battery/max17048_fuelgauge.c          |   7 +-
+ drivers/battery/max77804k_charger.c           |  24 ++--
+ drivers/battery/sec_battery.c                 | 135 ++++++++++--------
+ drivers/battery/sec_fuelgauge.c               |   7 +-
+ drivers/fingerprint/fingerprint.h             |   7 +-
+ drivers/fingerprint/vfs61xx.c                 |  29 ++--
+ .../touchscreen/synaptics/synaptics_i2c_rmi.c |  12 +-
+ drivers/thermal/msm_thermal.c                 |  56 ++++----
+ 8 files changed, 147 insertions(+), 130 deletions(-)
+
+diff --git a/drivers/battery/max17048_fuelgauge.c b/drivers/battery/max17048_fuelgauge.c
+index ef07336db85..45e3672e75d 100644
+--- a/drivers/battery/max17048_fuelgauge.c
++++ b/drivers/battery/max17048_fuelgauge.c
+@@ -410,9 +410,10 @@ static int max17048_get_soc(struct i2c_client *client)
+ 		soc = (data[0] * 100) + (data[1] * 100 / 256);
+ 	}
+ 
+-	dev_info(&client->dev,
+-		"%s : raw capacity (%d), data(0x%04x)\n",
+-		__func__, soc, (data[0]<<8) | data[1]);
++	// disable log spam
++	//dev_info(&client->dev,
++	//	"%s : raw capacity (%d), data(0x%04x)\n",
++	//	__func__, soc, (data[0]<<8) | data[1]);
+ 
+ 	return soc;
+ }
+diff --git a/drivers/battery/max77804k_charger.c b/drivers/battery/max77804k_charger.c
+index 376e2bd5cbf..7558a585e2d 100644
+--- a/drivers/battery/max77804k_charger.c
++++ b/drivers/battery/max77804k_charger.c
+@@ -343,7 +343,7 @@ static void max77804k_set_input_current(struct max77804k_charger_data *charger,
+ 			set_reg, 0x19);
+ 
+ #if defined(CONFIG_MACH_KLTE_CTC)
+-		pr_info("%s: qpnp_pon_set_wd_timer 2s\n", __func__);
++		pr_debug("%s: qpnp_pon_set_wd_timer 2s\n", __func__);
+ 		qpnp_pon_set_wd_timer(1, 1, 0x8);
+ 		msleep(10);
+ #endif
+@@ -352,7 +352,7 @@ static void max77804k_set_input_current(struct max77804k_charger_data *charger,
+ 
+ #if defined(CONFIG_MACH_KLTE_CTC)
+ 		msleep(10);
+-		pr_info("%s: qpnp_pon_set_wd_timer 18s\n", __func__);
++		pr_debug("%s: qpnp_pon_set_wd_timer 18s\n", __func__);
+ 		qpnp_pon_set_wd_timer(17, 1, 0xE);
+ #endif
+ 		goto exit;
+@@ -385,7 +385,7 @@ static void max77804k_set_input_current(struct max77804k_charger_data *charger,
+ 					set_current_reg = (MINIMUM_INPUT_CURRENT / charger->input_curr_limit_step);
+ 				max77804k_write_reg(charger->max77804k->i2c,
+ 						set_reg, set_current_reg);
+-				pr_info("%s: set_current_reg(0x%02x)\n", __func__, set_current_reg);
++				pr_debug("%s: set_current_reg(0x%02x)\n", __func__, set_current_reg);
+ 				chg_state = max77804k_get_charger_state(charger);
+ 				if ((chg_state != POWER_SUPPLY_STATUS_CHARGING) &&
+ 						(chg_state != POWER_SUPPLY_STATUS_FULL))
+@@ -436,7 +436,7 @@ static void max77804k_set_input_current(struct max77804k_charger_data *charger,
+ 			curr_step /= 2;
+ 			max77804k_write_reg(charger->max77804k->i2c,
+ 					set_reg, now_current_reg);
+-			pr_info("%s: now_current_reg(0x%02x)\n", __func__, now_current_reg);
++			pr_debug("%s: now_current_reg(0x%02x)\n", __func__, now_current_reg);
+ 			chg_state = max77804k_get_charger_state(charger);
+ 			if ((chg_state != POWER_SUPPLY_STATUS_CHARGING) &&
+ 					(chg_state != POWER_SUPPLY_STATUS_FULL))
+@@ -450,7 +450,7 @@ static void max77804k_set_input_current(struct max77804k_charger_data *charger,
+ 	}
+ 
+ set_input_current:
+-	pr_info("%s: reg_data(0x%02x), input(%d)\n",
++	pr_debug("%s: reg_data(0x%02x), input(%d)\n",
+ 		__func__, set_current_reg, cur);
+ 	max77804k_write_reg(charger->max77804k->i2c,
+ 		set_reg, set_current_reg);
+@@ -474,14 +474,14 @@ static int max77804k_get_input_current(struct max77804k_charger_data *charger)
+ 	if (charger->cable_type == POWER_SUPPLY_TYPE_WIRELESS) {
+ 		max77804k_read_reg(charger->max77804k->i2c,
+ 				MAX77804K_CHG_REG_CHG_CNFG_10, &reg_data);
+-		pr_info("%s: CHG_CNFG_10(0x%02x)\n", __func__, reg_data);
++		// pr_info("%s: CHG_CNFG_10(0x%02x)\n", __func__, reg_data);
+ 		/* AND operation for removing the formal 2bit  */
+ 		reg_data = reg_data & 0x3F;
+ 		charger->input_curr_limit_step = 20;
+ 	} else {
+ 		max77804k_read_reg(charger->max77804k->i2c,
+ 				MAX77804K_CHG_REG_CHG_CNFG_09, &reg_data);
+-		pr_info("%s: CHG_CNFG_09(0x%02x)\n", __func__, reg_data);
++		// pr_info("%s: CHG_CNFG_09(0x%02x)\n", __func__, reg_data);
+ 		/* AND operation for removing the formal 1bit  */
+ 		reg_data = reg_data & 0x7F;
+ 		if (charger->pmic_ver == 0x04)
+@@ -521,7 +521,7 @@ static void max77804k_set_topoff_current(struct max77804k_charger_data *charger,
+ 	/* the unit of timeout is second*/
+ 	timeout = timeout / 60;
+ 	reg_data |= ((timeout / 10) << 3);
+-	pr_info("%s: reg_data(0x%02x), topoff(%d)\n", __func__, reg_data, cur);
++	pr_debug("%s: reg_data(0x%02x), topoff(%d)\n", __func__, reg_data, cur);
+ 
+ 	max77804k_write_reg(charger->max77804k->i2c,
+ 		MAX77804K_CHG_REG_CHG_CNFG_03, reg_data);
+@@ -793,7 +793,7 @@ static int max77804k_get_health_state(struct max77804k_charger_data *charger)
+ 
+ 	reg_data = ((reg_data & MAX77804K_BAT_DTLS) >> MAX77804K_BAT_DTLS_SHIFT);
+ 
+-	pr_info("%s: bat_dtls(0x%x) int_mask(0x%x)\n", __func__, reg_data, chg_int_mask);
++	// pr_info("%s: bat_dtls(0x%x) int_mask(0x%x)\n", __func__, reg_data, chg_int_mask);
+ 	switch (reg_data) {
+ 	case 0x00:
+ 		pr_info("%s: No battery and the charger is suspended\n",
+@@ -864,7 +864,7 @@ static int max77804k_get_health_state(struct max77804k_charger_data *charger)
+ 					__func__, chg_cnfg_09, chg_cnfg_12);
+ 		}
+ 
+-		pr_info("%s: vbus_state : 0x%d, chg_dtls : 0x%d\n", __func__, vbus_state, chg_dtls);
++		// pr_info("%s: vbus_state : 0x%d, chg_dtls : 0x%d\n", __func__, vbus_state, chg_dtls);
+ 		/*  OVP is higher priority */
+ 		if (vbus_state == 0x02) { /*  CHGIN_OVLO */
+ 			pr_info("%s: vbus ovp\n", __func__);
+@@ -964,7 +964,7 @@ static int sec_chg_get_property(struct power_supply *psy,
+ #if defined(WPC_CHECK_CVPRM_FEATURE) || defined(CONFIG_BATTERY_SWELLING)
+ 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
+ 		val->intval = max77804k_get_charge_votage(charger);
+-		pr_info("%s: Float voltage : 0x%x\n", __func__, val->intval);
++		pr_debug("%s: Float voltage : 0x%x\n", __func__, val->intval);
+ 		break;
+ #endif
+ 	default:
+@@ -1215,7 +1215,7 @@ static int sec_chg_set_property(struct power_supply *psy,
+ 		pr_info("%s: Float voltage set to : 0x%x\n", __func__, reg_data);
+ 		break;
+ 	case  POWER_SUPPLY_PROP_CHARGING_ENABLED:
+-		pr_info("%s: charger enable(%d)\n", __func__, val->intval);
++		pr_debug("%s: charger enable(%d)\n", __func__, val->intval);
+ 		max77804k_set_charger_state(charger, val->intval);
+ 		charger->is_charging = val->intval;
+ 		break;
+diff --git a/drivers/battery/sec_battery.c b/drivers/battery/sec_battery.c
+index bd656f31acf..c15ae734d19 100644
+--- a/drivers/battery/sec_battery.c
++++ b/drivers/battery/sec_battery.c
+@@ -486,7 +486,7 @@ static bool sec_bat_check_vf_adc(struct sec_battery_info *battery)
+ 		(battery->check_adc_value >= battery->pdata->check_adc_min)) {
+ 		return true;
+ 	} else {
+-		dev_info(battery->dev, "%s: adc (%d)\n", __func__, battery->check_adc_value);
++		//dev_info(battery->dev, "%s: adc (%d)\n", __func__, battery->check_adc_value);
+ 		return false;
+ 	}
+ }
+@@ -655,8 +655,8 @@ static bool sec_bat_battery_cable_check(struct sec_battery_info *battery)
+ 		if (battery->check_count < battery->pdata->check_count)
+ 			battery->check_count++;
+ 		else {
+-			dev_err(battery->dev,
+-				"%s: Battery Disconnected\n", __func__);
++			//dev_err(battery->dev,
++			//	"%s: Battery Disconnected\n", __func__);
+ 			battery->present = false;
+ 			battery->health = POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
+ 
+@@ -697,7 +697,8 @@ static bool sec_bat_battery_cable_check(struct sec_battery_info *battery)
+ 		}
+ 	}
+ 
+-	dev_info(battery->dev, "%s: Battery Connected\n", __func__);
++	// disable log spam
++	// dev_info(battery->dev, "%s: Battery Connected\n", __func__);
+ 
+ 	if (battery->pdata->cable_check_type &
+ 		SEC_BATTERY_CABLE_CHECK_POLLING) {
+@@ -746,8 +747,8 @@ static bool sec_bat_ovp_uvlo_result(
+ 		battery->health = health;
+ 		switch (health) {
+ 		case POWER_SUPPLY_HEALTH_GOOD:
+-			dev_info(battery->dev, "%s: Safe voltage\n", __func__);
+-			dev_info(battery->dev, "%s: is_recharging : %d\n", __func__, battery->is_recharging);
++			//dev_info(battery->dev, "%s: Safe voltage\n", __func__);
++			//dev_info(battery->dev, "%s: is_recharging : %d\n", __func__, battery->is_recharging);
+ 			sec_bat_set_charging_status(battery,
+ 				POWER_SUPPLY_STATUS_CHARGING);
+ 			if (battery->siop_level != 100)
+@@ -914,8 +915,9 @@ static bool sec_bat_voltage_check(struct sec_battery_info *battery)
+ 	int recharge_condition_vcell = battery->pdata->recharge_condition_vcell;
+ 
+ 	if (battery->status == POWER_SUPPLY_STATUS_DISCHARGING) {
+-		dev_dbg(battery->dev,
+-			"%s: Charging Disabled\n", __func__);
++		// disable log spam
++		//dev_dbg(battery->dev,
++		//	"%s: Charging Disabled\n", __func__);
+ 		return true;
+ 	}
+ 
+@@ -1045,9 +1047,10 @@ static bool sec_bat_get_temperature_by_adc(
+ temp_by_adc_goto:
+ 	value->intval = temp;
+ 
+-	dev_info(battery->dev,
+-		"%s: Temp(%d), Temp-ADC(%d)\n",
+-		__func__, temp, temp_adc);
++	// disable log spam
++	//dev_info(battery->dev,
++	//	"%s: Temp(%d), Temp-ADC(%d)\n",
++	//	__func__, temp, temp_adc);
+ 
+ 	return true;
+ }
+@@ -1099,14 +1102,15 @@ static bool sec_bat_temperature(
+ 			battery->pdata->temp_low_threshold_normal;
+ 	}
+ 
+-	dev_info(battery->dev,
+-		"%s: HLT(%d) HLR(%d) HT(%d), HR(%d), LT(%d), LR(%d)\n",
+-		__func__, battery->temp_highlimit_threshold,
+-		battery->temp_highlimit_recovery,
+-		battery->temp_high_threshold,
+-		battery->temp_high_recovery,
+-		battery->temp_low_threshold,
+-		battery->temp_low_recovery);
++	// disable log spam
++	//dev_info(battery->dev,
++	//	"%s: HLT(%d) HLR(%d) HT(%d), HR(%d), LT(%d), LR(%d)\n",
++	//	__func__, battery->temp_highlimit_threshold,
++	//	battery->temp_highlimit_recovery,
++	//	battery->temp_high_threshold,
++	//	battery->temp_high_recovery,
++	//	battery->temp_low_threshold,
++	//	battery->temp_low_recovery);
+ 	return ret;
+ }
+ 
+@@ -1121,7 +1125,7 @@ static void sec_bat_swelling_check(struct sec_battery_info *battery, int tempera
+ 	psy_do_property(battery->pdata->charger_name, get,
+ 			POWER_SUPPLY_PROP_VOLTAGE_MAX, val);
+ 
+-	pr_info("%s: status(%d), swell_mode(%d:%d:%d), cv(%d)mV, temp(%d)\n",
++	pr_debug("%s: status(%d), swell_mode(%d:%d:%d), cv(%d)mV, temp(%d)\n",
+ 		__func__, battery->status, battery->swelling_mode,
+ 		battery->charging_block, (battery->current_event & SEC_BAT_CURRENT_EVENT_LOW_TEMP),
+ 		val.intval, temperature);
+@@ -1307,8 +1311,9 @@ static bool sec_bat_temperature_check(
+ 	int pre_health;
+ 
+ 	if (battery->status == POWER_SUPPLY_STATUS_DISCHARGING) {
+-		dev_dbg(battery->dev,
+-			"%s: Charging Disabled\n", __func__);
++		// disable log spam
++		//dev_dbg(battery->dev,
++		//	"%s: Charging Disabled\n", __func__);
+ 		return true;
+ 	}
+ 
+@@ -1711,7 +1716,7 @@ static bool sec_bat_time_management(
+ 	get_monotonic_boottime(&ts);
+ 
+ 	if(battery->charging_start_time == 0 || !battery->safety_timer_set) {
+-		pr_info("%s: Charging Disabled\n" ,__func__);
++		pr_debug("%s: Charging Disabled\n" ,__func__);
+ 		return true;
+ 	}
+ 
+@@ -1723,9 +1728,10 @@ static bool sec_bat_time_management(
+ 
+ 	battery->charging_passed_time = charging_time;
+ 
+-	dev_info(battery->dev,
+-		"%s: Charging Time : %ld secs\n", __func__,
+-		battery->charging_passed_time);
++	// disable log spam
++	//dev_info(battery->dev,
++	//	"%s: Charging Time : %ld secs\n", __func__,
++	//	battery->charging_passed_time);
+ 
+ 	switch (battery->status) {
+ 	case POWER_SUPPLY_STATUS_FULL:
+@@ -2083,11 +2089,12 @@ static bool sec_bat_fullcharged_check(
+ 	if (sec_bat_check_fullcharged(battery))
+ 		sec_bat_do_fullcharged(battery);
+ 
+-	dev_info(battery->dev,
+-		"%s: Charging Mode : %s\n", __func__,
+-		battery->is_recharging ?
+-		sec_bat_charging_mode_str[SEC_BATTERY_CHARGING_RECHARGING] :
+-		sec_bat_charging_mode_str[battery->charging_mode]);
++	// disable log spam
++	//dev_info(battery->dev,
++	//	"%s: Charging Mode : %s\n", __func__,
++	//	battery->is_recharging ?
++	//	sec_bat_charging_mode_str[SEC_BATTERY_CHARGING_RECHARGING] :
++	//	sec_bat_charging_mode_str[battery->charging_mode]);
+ 
+ 	return true;
+ }
+@@ -2108,7 +2115,7 @@ static void sec_bat_check_changed_soc(
+ 		if (battery->prev_reported_soc == value->intval) {
+ 			goto report;
+ 		} else {
+-			dev_info(battery->dev, "%s: prev_reported_soc = %d, soc = %d\n",
++			dev_dbg(battery->dev, "%s: prev_reported_soc = %d, soc = %d\n",
+ 					__func__, battery->prev_reported_soc, value->intval);
+ 		}
+ 		/* if soc have been chaged, only change soc by 1
+@@ -2248,7 +2255,7 @@ static void sec_bat_get_battery_info(
+ 	} else if ((battery->capacity != 100) &&
+ 		   ((c_ts.tv_sec - old_ts.tv_sec) >= 30)) {
+ 		battery->capacity++;
+-		pr_info("%s : forced full-charged sequence for the capacity(%d)\n",
++		pr_debug("%s : forced full-charged sequence for the capacity(%d)\n",
+ 			__func__, battery->capacity);
+ 		old_ts = c_ts;
+ 	}
+@@ -2261,19 +2268,20 @@ static void sec_bat_get_battery_info(
+ 	}
+ #endif
+ 
+-	dev_info(battery->dev,
+-		"%s:Vnow(%dmV),Inow(%dmA),Imax(%dmA),SOC(%d%%),Tbat(%d),is_hc_usb(%d)\n",
+-		__func__,
+-		battery->voltage_now, battery->current_now,
+-		battery->current_max, battery->capacity,
+-		battery->temperature, battery->is_hc_usb);
+-	dev_dbg(battery->dev,
+-		"%s,Vavg(%dmV),Vocv(%dmV),Tamb(%d),"
+-		"Iavg(%dmA),Iadc(%d)\n",
+-		battery->present ? "Connected" : "Disconnected",
+-		battery->voltage_avg, battery->voltage_ocv,
+-		battery->temper_amb,
+-		battery->current_avg, battery->current_adc);
++	// disable log spam
++	//dev_info(battery->dev,
++	//	"%s:Vnow(%dmV),Inow(%dmA),Imax(%dmA),SOC(%d%%),Tbat(%d),is_hc_usb(%d)\n",
++	//	__func__,
++	//	battery->voltage_now, battery->current_now,
++	//	battery->current_max, battery->capacity,
++	//	battery->temperature, battery->is_hc_usb);
++	//dev_dbg(battery->dev,
++	//	"%s,Vavg(%dmV),Vocv(%dmV),Tamb(%d),"
++	//	"Iavg(%dmA),Iadc(%d)\n",
++	//	battery->present ? "Connected" : "Disconnected",
++	//	battery->voltage_avg, battery->voltage_ocv,
++	//	battery->temper_amb,
++	//	battery->current_avg, battery->current_adc);
+ }
+ 
+ static void sec_bat_polling_work(struct work_struct *work)
+@@ -2560,8 +2568,9 @@ static void sec_bat_calculate_safety_time(struct sec_battery_info *battery)
+ 		battery->stop_timer = false;
+ 	}
+ 
+-	pr_info("%s : EXPIRED_TIME(%llu), IP(%d), CP(%d), CURR(%d), STANDARD(%d)\n",
+-		__func__, expired_time, input_power, charging_power, curr, battery->pdata->standard_curr);
++	// disable log spam
++	//pr_info("%s : EXPIRED_TIME(%llu), IP(%d), CP(%d), CURR(%d), STANDARD(%d)\n",
++	//	__func__, expired_time, input_power, charging_power, curr, battery->pdata->standard_curr);
+ 
+ 	if (curr == 0)
+ 		return;
+@@ -2569,7 +2578,8 @@ static void sec_bat_calculate_safety_time(struct sec_battery_info *battery)
+ 	expired_time *= battery->pdata->standard_curr;
+ 	do_div(expired_time, curr);
+ 
+-	pr_info("%s : CAL_EXPIRED_TIME(%llu) TIME NOW(%ld) TIME PREV(%ld)\n", __func__, expired_time, ts.tv_sec, battery->prev_safety_time);
++	// disable log spam
++	// pr_info("%s : CAL_EXPIRED_TIME(%llu) TIME NOW(%ld) TIME PREV(%ld)\n", __func__, expired_time, ts.tv_sec, battery->prev_safety_time);
+ 
+ 	if (expired_time <= ((ts.tv_sec - battery->prev_safety_time) * 1000))
+ 		expired_time = 0;
+@@ -2582,7 +2592,8 @@ static void sec_bat_calculate_safety_time(struct sec_battery_info *battery)
+ 
+ 	battery->expired_time = expired_time;
+ 	battery->prev_safety_time = ts.tv_sec;
+-	pr_info("%s : REMAIN_TIME(%ld) CAL_REMAIN_TIME(%ld)\n", __func__, battery->expired_time, battery->cal_safety_time);
++	// disable log spam
++	// pr_info("%s : REMAIN_TIME(%ld) CAL_REMAIN_TIME(%ld)\n", __func__, battery->expired_time, battery->cal_safety_time);
+ }
+ 
+ static void sec_bat_monitor_work(
+@@ -2672,13 +2683,14 @@ continue_monitor:
+ 	if (!battery->charging_block)
+ 		sec_bat_calculate_safety_time(battery);
+ 
+-	dev_info(battery->dev,
+-		"%s: Status(%s), Mode(%s), Health(%s), Cable(%d), Vendor(%s), level(%d%%)\n",
+-		__func__,
+-		sec_bat_status_str[battery->status],
+-		sec_bat_charging_mode_str[battery->charging_mode],
+-		sec_bat_health_str[battery->health],
+-		battery->cable_type, battery->pdata->vendor, battery->siop_level);
++	// disable log spam
++	//dev_info(battery->dev,
++	//	"%s: Status(%s), Mode(%s), Health(%s), Cable(%d), Vendor(%s), level(%d%%)\n",
++	//	__func__,
++	//	sec_bat_status_str[battery->status],
++	//	sec_bat_charging_mode_str[battery->charging_mode],
++	//	sec_bat_health_str[battery->health],
++	//	battery->cable_type, battery->pdata->vendor, battery->siop_level);
+ #if defined(CONFIG_SAMSUNG_BATTERY_ENG_TEST)
+ 	dev_info(battery->dev,
+ 			"%s: battery->stability_test(%d), battery->eng_not_full_status(%d)\n",
+@@ -2686,9 +2698,10 @@ continue_monitor:
+ #endif
+ 	if (battery->store_mode && battery->cable_type != POWER_SUPPLY_TYPE_BATTERY) {
+ 
+-		dev_info(battery->dev,
+-			"%s: @battery->capacity = (%d), battery->status= (%d), battery->store_mode=(%d)\n",
+-			__func__, battery->capacity, battery->status, battery->store_mode);
++		// disable log spam
++		//dev_info(battery->dev,
++		//	"%s: @battery->capacity = (%d), battery->status= (%d), battery->store_mode=(%d)\n",
++		//	__func__, battery->capacity, battery->status, battery->store_mode);
+ 
+ 		if ((battery->capacity >= 35) && (battery->status == POWER_SUPPLY_STATUS_CHARGING)) {
+ 			sec_bat_set_charging_status(battery,
+@@ -3965,7 +3978,7 @@ static int sec_bat_get_property(struct power_supply *psy,
+ 			if (battery->status == POWER_SUPPLY_STATUS_FULL &&
+ 				battery->capacity != 100) {
+ 				val->intval = POWER_SUPPLY_STATUS_CHARGING;
+-				pr_info("%s: forced full-charged sequence progressing\n", __func__);
++				pr_debug("%s: forced full-charged sequence progressing\n", __func__);
+ 			} else
+ #endif
+ 				val->intval = battery->status;
+diff --git a/drivers/battery/sec_fuelgauge.c b/drivers/battery/sec_fuelgauge.c
+index 262ad7be6cd..b6bf041b7d7 100644
+--- a/drivers/battery/sec_fuelgauge.c
++++ b/drivers/battery/sec_fuelgauge.c
+@@ -45,9 +45,10 @@ static void sec_fg_get_scaled_capacity(
+ 		0 : ((val->intval - fuelgauge->pdata->capacity_min) * 1000 /
+ 		(fuelgauge->capacity_max - fuelgauge->pdata->capacity_min));
+ 
+-	dev_info(&fuelgauge->client->dev,
+-		"%s: scaled capacity (%d.%d)\n",
+-		__func__, val->intval/10, val->intval%10);
++	// disable log spam
++	//dev_info(&fuelgauge->client->dev,
++	//	"%s: scaled capacity (%d.%d)\n",
++	//	__func__, val->intval/10, val->intval%10);
+ 
+ #if defined(CONFIG_MACH_KLIMT)|| defined(CONFIG_MACH_CHAGALL)
+ 	/* Reduce soc jump when battery is full
+diff --git a/drivers/fingerprint/fingerprint.h b/drivers/fingerprint/fingerprint.h
+index b15971924b2..38c9f143e64 100644
+--- a/drivers/fingerprint/fingerprint.h
++++ b/drivers/fingerprint/fingerprint.h
+@@ -33,9 +33,10 @@ enum {
+ 	SENSOR_EGIS,
+ };
+ 
+-#define SENSOR_STATUS_SIZE 5
+-static char sensor_status[SENSOR_STATUS_SIZE][8] ={"unknown", "failed",
+-	"viper", "raptor", "egis"};
++// this is now unused, because of commented code in vfs61xx.c: vfsspi_work_func_debug()
++// #define SENSOR_STATUS_SIZE 5
++// static char sensor_status[SENSOR_STATUS_SIZE][8] = {"unknown", "failed",
++//	"viper", "raptor", "egis"};
+ 
+ /* Fingerprint vendor check */
+ #undef ENABLE_VENDOR_CHECK
+diff --git a/drivers/fingerprint/vfs61xx.c b/drivers/fingerprint/vfs61xx.c
+index 7cdf0e2c0d3..1fab64d7624 100644
+--- a/drivers/fingerprint/vfs61xx.c
++++ b/drivers/fingerprint/vfs61xx.c
+@@ -1548,20 +1548,21 @@ static void vfsspi_work_func_debug(struct work_struct *work)
+ 					| gpio_get_value(g_data->ldo_pin);
+ 	}
+ 
+-	if (g_data->ocp_en)
+-		pr_info("%s r ocpen: %d, ldo: %d,"
+-			" sleep: %d, tz: %d, type: %s\n",
+-			__func__, gpio_get_value(g_data->ocp_en),
+-			ldo_value, gpio_get_value(g_data->sleepPin),
+-			g_data->tz_mode,
+-			sensor_status[g_data->sensortype+1]);
+-	else
+-		pr_info("%s r ldo: %d,"
+-			" sleep: %d, tz: %d, type: %s\n",
+-			__func__, ldo_value,
+-			gpio_get_value(g_data->sleepPin),
+-			g_data->tz_mode,
+-			sensor_status[g_data->sensortype+1]);
++	// disable log spam
++	//if (g_data->ocp_en)
++	//	pr_info("%s r ocpen: %d, ldo: %d,"
++	//		" sleep: %d, tz: %d, type: %s\n",
++	//		__func__, gpio_get_value(g_data->ocp_en),
++	//		ldo_value, gpio_get_value(g_data->sleepPin),
++	//		g_data->tz_mode,
++	//		sensor_status[g_data->sensortype+1]);
++	//else
++	//	pr_info("%s r ldo: %d,"
++	//		" sleep: %d, tz: %d, type: %s\n",
++	//		__func__, ldo_value,
++	//		gpio_get_value(g_data->sleepPin),
++	//		g_data->tz_mode,
++	//		sensor_status[g_data->sensortype+1]);
+ }
+ 
+ static void vfsspi_enable_debug_timer(void)
+diff --git a/drivers/input/touchscreen/synaptics/synaptics_i2c_rmi.c b/drivers/input/touchscreen/synaptics/synaptics_i2c_rmi.c
+index 8816236f40b..afba3a709ce 100644
+--- a/drivers/input/touchscreen/synaptics/synaptics_i2c_rmi.c
++++ b/drivers/input/touchscreen/synaptics/synaptics_i2c_rmi.c
+@@ -1746,7 +1746,7 @@ static int synaptics_rmi4_f12_abs_report(struct synaptics_rmi4_data *rmi4_data,
+ #endif
+ 
+ 			if (!rmi4_data->finger[finger].state) {
+-#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
++/*#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
+ 				dev_info(&rmi4_data->i2c_client->dev,
+ 						"[%d][P] 0x%02x, x = %d, y = %d, wx = %d, wy = %d |[%d]\n",
+ 						finger, finger_status, x, y, wx, wy, fingers_to_process);
+@@ -1754,22 +1754,22 @@ static int synaptics_rmi4_f12_abs_report(struct synaptics_rmi4_data *rmi4_data,
+ 				dev_info(&rmi4_data->i2c_client->dev,
+ 						"[%d][P] 0x%02x\n",
+ 						finger, finger_status);
+-#endif
++#endif*/
+ 			} else {
+ 				rmi4_data->finger[finger].mcount++;
+ 			}
+ 
+-#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
++/*#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
+ 			if (rmi4_data->debug_log & 0x2)
+ 				dev_info(&rmi4_data->i2c_client->dev,
+ 						"[%d] 0x%02x, x = %d, y = %d, wx = %d, wy = %d |[%d]\n",
+ 						finger, finger_status, x, y, wx, wy, fingers_to_process);
+-#endif
++#endif*/
+ 			touch_count++;
+ 		}
+ 
+ 		if (rmi4_data->finger[finger].state && (!finger_status)) {
+-#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
++/*#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
+ 			dev_info(&rmi4_data->i2c_client->dev, "[%d][R] 0x%02x M[%d], Ver[%02X%02X][%X/%d]\n",
+ 					finger, finger_status, rmi4_data->finger[finger].mcount,
+ 					rmi4_data->ic_revision_of_ic, rmi4_data->fw_version_of_ic, rmi4_data->lcd_id, system_rev);
+@@ -1777,7 +1777,7 @@ static int synaptics_rmi4_f12_abs_report(struct synaptics_rmi4_data *rmi4_data,
+ 			dev_info(&rmi4_data->i2c_client->dev, "[%d][R] 0x%02x M[%d], Ver[%02X%02X][%X/%d]\n",
+ 					finger, finger_status, rmi4_data->finger[finger].mcount,
+ 					rmi4_data->ic_revision_of_ic, rmi4_data->fw_version_of_ic, rmi4_data->lcd_id, system_rev);
+-#endif
++#endif*/
+ 			rmi4_data->finger[finger].mcount = 0;
+ 		}
+ 
+diff --git a/drivers/thermal/msm_thermal.c b/drivers/thermal/msm_thermal.c
+index 03c7eda5811..6e18c83bd71 100644
+--- a/drivers/thermal/msm_thermal.c
++++ b/drivers/thermal/msm_thermal.c
+@@ -53,7 +53,7 @@
+ 
+ static struct msm_thermal_data msm_thermal_info;
+ static struct delayed_work check_temp_work;
+-static struct delayed_work temp_log_work;
++// static struct delayed_work temp_log_work;
+ static bool core_control_enabled;
+ static uint32_t cpus_offlined;
+ static DEFINE_MUTEX(core_control_mutex);
+@@ -1385,30 +1385,30 @@ reschedule:
+ }
+ 
+ 
+-static void __ref msm_therm_temp_log(struct work_struct *work)
+-{
+-
+-	struct tsens_device tsens_dev;
+-	long temp =  0;
+-	int i, added = 0, ret = 0;
+-	uint32_t max_sensors = 0;
+-	char buffer[500];
+-
+-	if(!tsens_get_max_sensor_num(&max_sensors))
+-	{
+-		pr_info( "Debug Temp for Sensor: ");
+-		for(i=0;i<max_sensors;i++)
+-		{
+-			tsens_dev.sensor_num = i;
+-			tsens_get_temp(&tsens_dev, &temp);
+-			ret = sprintf(buffer + added, "(%d --- %ld)", i, temp);
+-			added += ret;						
+-		}
+-		pr_info("%s", buffer);
+-	}
+-	schedule_delayed_work(&temp_log_work,
+-				HZ*5); //For every 5 seconds log the temperature values of all the msm thermistors.
+-}
++//static void __ref msm_therm_temp_log(struct work_struct *work)
++//{
++//
++//	struct tsens_device tsens_dev;
++//	long temp =  0;
++//	int i, added = 0, ret = 0;
++//	uint32_t max_sensors = 0;
++//	char buffer[500];
++
++//	if(!tsens_get_max_sensor_num(&max_sensors))
++//	{
++//		pr_info( "Debug Temp for Sensor: ");
++//		for(i=0;i<max_sensors;i++)
++//		{
++//			tsens_dev.sensor_num = i;
++//			tsens_get_temp(&tsens_dev, &temp);
++//			ret = sprintf(buffer + added, "(%d --- %ld)", i, temp);
++//			added += ret;
++//		}
++//		pr_info("%s", buffer);
++//	}
++//	schedule_delayed_work(&temp_log_work,
++//				HZ*5); //For every 5 seconds log the temperature values of all the msm thermistors.
++//}
+ 
+ static int __ref msm_thermal_cpu_callback(struct notifier_block *nfb,
+ 		unsigned long action, void *hcpu)
+@@ -3363,7 +3363,7 @@ static int msm_thermal_dev_exit(struct platform_device *inp_dev)
+ 		kfree(thresh);
+ 		thresh = NULL;
+ 	}
+-	cancel_delayed_work_sync(&temp_log_work);
++	// cancel_delayed_work_sync(&temp_log_work);
+ 	return 0;
+ }
+ 
+@@ -3384,8 +3384,8 @@ static struct platform_driver msm_thermal_device_driver = {
+ 
+ int __init msm_thermal_device_init(void)
+ {
+-	INIT_DELAYED_WORK(&temp_log_work, msm_therm_temp_log);
+-	schedule_delayed_work(&temp_log_work, HZ*2);
++	// INIT_DELAYED_WORK(&temp_log_work, msm_therm_temp_log);
++	// schedule_delayed_work(&temp_log_work, HZ*2);
+ 
+ 	return platform_driver_register(&msm_thermal_device_driver);
+ }
+-- 
+2.19.1
+

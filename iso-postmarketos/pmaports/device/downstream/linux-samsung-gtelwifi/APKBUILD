@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/gtelwifi-dt_hw07_defconfig
+
+pkgname=linux-samsung-gtelwifi
+pkgver=3.10.17
+pkgrel=5
+pkgdesc="Samsung Galaxy Tab E 9.6 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-gtelwifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool linux-headers installkernel"
+
+# Source
+_repository="linux-samsung-sm-t560"
+_commit="e81e8d5094db8f10ff44cc95f55939c90df35e51"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix-recordmcount.patch
+	fix-dtb_qcom,msm-id.patch
+	sprdfb-check-for-buffering.patch
+	sprdfb-fix-swapped-colors.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+1d951c9e33d79250513665a617867816d81df866e869ba20664c9f4b2f05845e6ff7c667ba0ef11f9287109e6716d1b45164848a750e36202c4f95665759a2aa  linux-samsung-gtelwifi-e81e8d5094db8f10ff44cc95f55939c90df35e51.tar.gz
+f25a8ed914371359f3dd0a85e112acca3e3831531576b30411ec7c90c48687e425b3c0b496ebdc9da38f632dbf49af1660302f8daad68aee2838b55624b3f408  config-samsung-gtelwifi.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+32911549f0c89972d06af838954978ee90fb2eabacc1393c0bffa12deb9d80ddec5322f859df772d90afea733965bd669e85d5e90657d4f69995ae9fc25dd4f3  fix-recordmcount.patch
+e8137de3cc4d49d5447cad6c299f0f88c2d2e60e012168bc857f4898ebc1da5c88c679927227c8675211af079d5a56b5b1baef4a3dbc86cb4e921c14d3f93357  fix-dtb_qcom,msm-id.patch
+c985b4a320904c0c66fb976a4f66dd2671f21d7b86ea98c019684efc41b5801f4b9c23012f4aa37bc5ce3efd70a30523c9c78fcd6e5fbbcff172ff19d11a6579  sprdfb-check-for-buffering.patch
+6836001b24508d413a059f19b0c6f6f547037f68886c22159ad51be91d1a089e3d1d9ed79c3c62724648df7f810cd81d96a83f4a34368b373524b649e5539656  sprdfb-fix-swapped-colors.patch
+"

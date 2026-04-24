@@ -1,0 +1,36 @@
+maintainer=""
+pkgname=firmware-nokia-sparkler
+pkgver=20.00.17.01
+pkgrel=0
+pkgdesc="Firmware for Nokia 8000 4G"
+url="https://storage.abscue.de/private/zImage/$pkgname-$pkgver"
+arch="armv7"
+license="custom"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+subpackages="$pkgname-venus:venus_package $pkgname-wcnss-nv:wcnss_nv_package"
+source="$url/$pkgname.tar.gz"
+
+_fwsrc="$srcdir/firmware-nokia-sparkler"
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+venus_package() {
+	pkgdesc="Nokia 8000 4G video encoder/decoder firmware"
+
+	# venus.mbn already exists and doesn't differ from the file produced
+	# by pil-squasher
+	install -Dm644 "$_fwsrc"/venus.mbn -t "$subpkgdir/$_fwdir"/qcom/venus-3.0/
+}
+
+wcnss_nv_package() {
+	pkgdesc="Nokia 8000 4G WiFi/BT firmware configuration"
+	install -Dm644 "$_fwsrc"/wlan/prima/WCNSS_qcom_wlan_nv.bin -t \
+		"$subpkgdir/$_fwdir"/wlan/prima/
+}
+
+sha512sums="
+550af8ef37f2c2a3fec5a7fded1dc11f066391195eadcbc32ff19e063f4ae0c529ff5a1191ade1a57545f681e1bdf5fc1c6214061aab7a5b5d37fef7608a59b4  firmware-nokia-sparkler.tar.gz
+"

@@ -1,0 +1,78 @@
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=postmarketos-test
+pkgver=1.4.0
+pkgrel=0
+pkgdesc="Common test utilities for postmarketOS"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL2"
+depends="devicepkg-utils"
+# The _test split function will take files and prepare them for running
+# in the initramfs test for postmarketos-mkinitfs-hook-ci. The function
+# will match the suffix of the subpackage name and:
+# * sources with -files.files as mkinitfs include files
+# * sources with -test.sh as files to be executed in initramfs tests
+source="
+	00-bootrr-files.files
+	00-bootrr-test.sh
+	30-unl0kr-test.sh
+	90-suspend-test.sh
+"
+options="!check"
+
+# Tests that are common to all devices
+# TODO: more tests
+# maybe test cpu frequency scaling, thermals under load, etc.
+subpackages="
+	$pkgname-bootrr
+	$pkgname-suspend:_test
+	$pkgname-shell
+	$pkgname-unl0kr
+"
+
+package() {
+	mkdir -p $pkgdir
+}
+
+_test() {
+	# no install_if here, these tests are generic but should be enabled
+	# on a per-device basis. Depend on the relevant test in your devices
+	# pmtest subpackage
+	_testname=${subpkgname#postmarketos-test-}
+
+	_script="$srcdir"/*"$_testname"-test.sh
+	_files="$srcdir"/*"$_testname"-files.files
+
+	if [ -f $_script ]; then
+		install -Dm755 $_script \
+			-t "$subpkgdir"/usr/libexec/pmos-tests-initramfs/
+	fi
+	if [ -f $_files ]; then
+		install -Dm644 $_files \
+			-t "$subpkgdir"/usr/share/mkinitfs/files/
+	fi
+}
+
+bootrr() {
+	depends="bootrr"
+	_test
+}
+
+# Installs a "test" which just runs a shell on the console for debugging
+shell() {
+	mkdir -p "$subpkgdir"/usr/libexec/pmos-tests-initramfs
+	echo -e "#!/bin/sh\n\nexec sh" > "$subpkgdir"/usr/libexec/pmos-tests-initramfs/99-sh
+	chmod +x "$subpkgdir"/usr/libexec/pmos-tests-initramfs/99-sh
+}
+
+unl0kr() {
+	depends="unl0kr"
+	_test
+}
+sha512sums="
+bd0ed41c4dba232b6ac211ae58cad83b15a4408829cd8df0a866453b014c8d4b17900d9310e8a2a02248f6da8853bdd2b04ed96c250204def8e086c0ba15b9e7  00-bootrr-files.files
+f5568803fe5d0254da222e09e06a062f77a98cfa5f438c54c788f6a08d56ea1a7b85f75595ad46c2a173e95681df58552ae572eba30b3239d5e4c225b4c54a2a  00-bootrr-test.sh
+407180b49c1a05f12bd6ee6e59dca0a6e74fe7b01f195087dcf2865598c47827d0bb569afdba55defa2f9a16437230fa62aa64f35111508b906bcbf9537acba4  30-unl0kr-test.sh
+73d75e067f6bb99dab219e0154514841462dc171644756dcdfcb2daa039bd3052d61f35996608499fb0958042cc817ba0ac8196410c68e9133c2670d4cf36529  90-suspend-test.sh
+"

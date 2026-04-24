@@ -1,0 +1,88 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineage_gts210ltexx_defconfig
+
+pkgname=linux-samsung-gts210lte
+pkgver=3.10.9
+pkgrel=2
+pkgdesc="Samsung Galaxy Tab S2 9.7 LTE (SM-T815) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-gts210lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	openssl-dev
+	perl
+	xz
+	linux-headers
+"
+
+# Source
+_repository="android_kernel_samsung_universal5433"
+_commit="dc682c9aafeeab34db1423c50ff10d80a5c05fed"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/universal5433/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	fix-check-lxdialog.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	0001-scripts-dtc-Remove-redundant-YYLOC-global-declaratio.patch
+	0002-kernel-use-the-gnu89-standard-explicitly.patch
+	0003-usb-gadget-use-random-eth-address.patch
+	0004-Makefile-ignore-bundled-toolchain.patch
+	0005-muic-fix-Kconfig-issue.patch
+	0006-security-tima_uevent-fix-kconfig-issue.patch
+	0007-irqchip-exynos-combiner-fix-compilation-issue-when-A.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x347e \
+		--subtype 0x88668650 \
+		-o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *exynos5433-gts210*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+58dc7208a2a1228650ef8e80f223c273f757faadf2dc1e409856550cc0a5115c0f01413aa237c53840c35d0cf9b35b83f5cbf2ae56fa2ba1723b3261f5822796  linux-samsung-gts210lte-dc682c9aafeeab34db1423c50ff10d80a5c05fed.tar.gz
+360f09602254aab048c88914aba2a4b2d5865ec9d8fd084bcbea9aa34a454d42c05ef31384e7d3ce4c8703737a23914de486b6750382c6383f27f9feb3a8c4dc  config-samsung-gts210lte.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+034d33c90919befe0b49b1720025b419b385ecdf8f93a857fbb026d278d2f88f168661b0c8403aa51d7237e4a7261fc821b7a997b1182008fe0a39b43b442253  0001-scripts-dtc-Remove-redundant-YYLOC-global-declaratio.patch
+e18740dfd94a152366e355c71413b81bb08fabb3c596a3e345247a632a4dacdb745afbaf13517bc480af28794beeb4910aadd212c187eb098d6610d7206b0847  0002-kernel-use-the-gnu89-standard-explicitly.patch
+75e0a48d3c542a0f1db806fe60fffbc5d2d0e3726bdebeaafb97393bac7bf51ac7daf28201a191fe8b5e209bd16283531d81c9c36bef14a3e7892c68fe0515c1  0003-usb-gadget-use-random-eth-address.patch
+bd8c5f7433dd311a23a05c235441e7fa1831c0c3ec2b0924f03802017c4f0b69d4479e3add2e6ca058447629ce7bc1cb747eb66a9f52d036d2a9252980b6dc54  0004-Makefile-ignore-bundled-toolchain.patch
+38d9f79d3cabfb3a51dcace190b3c5f6cde15d9b2d92888e02e150b118c0fc6c93822a867b309042ae1fb8b10f0ab2c29c2d62fa8acb8c9cb7ae8bd11e2cbbea  0005-muic-fix-Kconfig-issue.patch
+6e7305c701f5a6b592d08e5cebe6b6c5682f9a3cc1b224fbb9609de34282591ba2d8edf74f0a2990e32bde7863d4dd771c2f9b6a017e189cc74aca9455535948  0006-security-tima_uevent-fix-kconfig-issue.patch
+3943b120f85f56e0c6d133f2d3f5124598c941b616776e461d551171940b64735992643eb98b6a023f8fddaeaeccfcf503cfcddbccbf37a6526a7146e9f593ce  0007-irqchip-exynos-combiner-fix-compilation-issue-when-A.patch
+"

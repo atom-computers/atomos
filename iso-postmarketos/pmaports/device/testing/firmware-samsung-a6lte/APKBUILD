@@ -1,0 +1,37 @@
+maintainer=""
+pkgname=firmware-samsung-a6lte
+pkgver=3
+pkgrel=2
+pkgdesc="Firmware files for Samsung Galaxy A6 (2018)"
+arch="aarch64"
+url="https://dumps.tadiphone.dev/dumps/samsung/a6lte"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+depends="linux-firmware-brcm"
+makedepends="
+	linux-firmware-brcm
+	zstd
+"
+
+# Source
+_raw_wifi_path="https://dumps.tadiphone.dev/dumps/samsung/a6lte/-/raw/a6ltejx-user-9-PPR1.180610.011-A600FJXS5BSL1-release-keys/vendor/etc/wifi"
+_install_wifi_path="/lib/firmware/postmarketos/wifi"
+source="
+	nvram.txt_c5::$_raw_wifi_path/nvram.txt_c5
+"
+
+package() {
+	mkdir -p "$pkgdir$_install_wifi_path"
+	unzstd < /lib/firmware/brcm/brcmfmac43456-sdio.bin.zst > "$pkgdir$_install_wifi_path/bcmdhd_apsta.bin_c5"
+	unzstd < /lib/firmware/brcm/brcmfmac43456-sdio.clm_blob.zst > "$pkgdir$_install_wifi_path/bcmdhd_clm.blob"
+	ln -s bcmdhd_apsta.bin_c5 "$pkgdir$_install_wifi_path/bcmdhd_apsta.bin_c5_blob"
+	ln -s bcmdhd_apsta.bin_c5 "$pkgdir$_install_wifi_path/bcmdhd_mfg.bin_c5"
+	ln -s bcmdhd_apsta.bin_c5 "$pkgdir$_install_wifi_path/bcmdhd_mfg.bin_c5_blob"
+	ln -s bcmdhd_apsta.bin_c5 "$pkgdir$_install_wifi_path/bcmdhd_sta.bin_c5"
+	ln -s bcmdhd_apsta.bin_c5 "$pkgdir$_install_wifi_path/bcmdhd_sta.bin_c5_blob"
+	install -Dm644 "$srcdir/nvram.txt_c5" -t "$pkgdir$_install_wifi_path"
+}
+
+sha512sums="
+b9e1e695cb01497400c0f0c3ccd0e7815a10258775bd89edda3ce89926cb1f9e4172b068553bce7120766ff673e265a9cbe54f94cca0f72496a04a216f4c9a0f  nvram.txt_c5
+"

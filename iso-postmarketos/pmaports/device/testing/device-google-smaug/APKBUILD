@@ -1,0 +1,47 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-google-smaug
+pkgdesc="Google Pixel C"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	depthcharge-tools
+	linux-google-smaug
+	postmarketos-base
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+makedepends="devicepkg-dev"
+source="
+	30-xusb-firmware.files
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT, USB and GPU firmware"
+	depends="linux-firmware-brcm linux-firmware-nvidia firmware-google-smaug"
+
+	# Firmware needed to boot from USB
+	install -Dm644 "$srcdir"/30-xusb-firmware.files \
+		"$subpkgdir"/usr/share/mkinitfs/files/30-xusb-firmware.files
+}
+
+sha512sums="
+80d1ff3ae3045cb071d0eb7ac53cebccfe363a9584ef806e7b79309231c58d00f89612423440526a08b14fc80e96162b8f429f453f662d4c438c787fa45ef122  30-xusb-firmware.files
+697c4edde3ee6577e7ff532340cd99f9bf0922b9ac89c77f8510fc871fa2e9da8e407098f87efcfe43024ddf191097c556860701fa8445ee995c2af187c46415  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+d883fa37ea89379aec31e518714adbef76d0c260929deb05c131c5df4c532344f3358a82cc39e81d06da821df81171709cd9dc20837795bee6834c34d4dfa47a  modules-initfs
+"

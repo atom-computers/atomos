@@ -1,0 +1,52 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=oem-intel
+pkgdesc="Intel device support"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	intel-ucode
+	linux-firmware-i915
+	linux-firmware-intel
+	sof-firmware
+"
+subpackages="
+	$pkgname-libva
+	$pkgname-vulkan
+"
+source="
+	00-oem-intel.modules
+	00-oem-intel-i915-firmware.files
+	"
+
+package() {
+	install -Dm644 00-oem-intel.modules \
+		-t "$pkgdir"/usr/share/mkinitfs/modules
+	install -Dm644 00-oem-intel-i915-firmware.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files
+}
+
+libva() {
+	pkgdesc="libva support for Intel devices"
+	install_if="$pkgname=$pkgver-r$pkgrel libva"
+	depends="intel-media-driver libva-intel-driver"
+
+	mkdir "$subpkgdir"
+}
+
+vulkan() {
+	pkgdesc="vulkan support for Intel devices"
+	install_if="$pkgname=$pkgver-r$pkgrel vulkan-loader"
+	depends="mesa-vulkan-intel"
+
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+48b8c0454c8c80e7ad0ebd139c01790eed3fbd4265bf4ce64882d354b091ac7f63084eaf2b00d1244a7a692c73fa900193724577f9a8d753fa8b6743fe1c8990  00-oem-intel.modules
+c17f5c505e0e280a9e51ac1b4264e7703b744fd3831d75ce95f41be4755ae4ccd24b7ca09ba1e236df499a5e748c64a0d2054c9d55d8c8c713fa8c5646ed9a3c  00-oem-intel-i915-firmware.files
+"

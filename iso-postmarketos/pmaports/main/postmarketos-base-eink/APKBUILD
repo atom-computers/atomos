@@ -1,0 +1,54 @@
+maintainer="Petr Hodina <phodina@protonmail.com>"
+pkgname=postmarketos-base-eink
+pkgver=1
+pkgrel=2
+pkgdesc="Base package with some opinionated default for e-ink devices"
+# It's worth emphasising the word "opinionated" here, e-ink has some
+# obvious differences compared to regular displays, there are cases
+# where it clearly makes sense to adjust default behaviour. However
+# not everyone may agree with these. It should be easy for the user to
+# override changes here easily, ideally without having to resort to a
+# terminal.
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+options="!check"
+source="
+	001-eink-gschema.override
+	01-postmarketos-base-eink-settings
+	02-pine64-pinenote-settings
+	83-backlight.rules
+"
+subpackages="
+	$pkgname-gnome
+	$pkgname-phosh
+"
+builddir="$srcdir/"
+
+package() {
+	mkdir -p "$pkgdir"
+	install -Dm644 "$srcdir"/83-backlight.rules \
+		"$pkgdir"/usr/lib/udev/rules.d
+}
+
+gnome() {
+	install -Dm644 "$srcdir"/01-postmarketos-base-eink-settings \
+		-t "$subpkgdir"/etc/dconf/db/local.d/
+	install -Dm644 "$srcdir"/02-pine64-pinenote-settings \
+		-t "$subpkgdir"/etc/dconf/db/local.d/
+}
+
+phosh() {
+# For now phosh hardcodes some colors (like making the quick settings white)
+# when using high contrast, so it's a better option than the postmarketOS-paper
+# theme for now
+	mkdir -p "$subpkgdir"
+	install -Dm644 "$srcdir"/001-eink-gschema.override \
+		"$pkgdir"/usr/share/glib-2.0/schemas/001-eink.gschema.override
+}
+
+sha512sums="235928ab88d2b941804c0e9d94a057f61f1d4b66f3bbb6f3001101bc53da2f69f867c6f8def1037e586e7d57105ca7c287ad2d2d1c6091beaf828d85a2c9bd49  001-eink-gschema.override
+7ad903eea8a2a970191f6569e1fe1ea5461ae83afb7b7f2bbcc106ed448fb35f07834bf832541960f601f3d507958a16257a2332f5e21aca2f00277fd1568c44  01-postmarketos-base-eink-settings
+cd8b019a106773d450ee1c7fbc02ce3141d6f43841ab73a3ac9ad92de5d54012d1f4b9a546f896e476e41f604a4fce1651d9e448d5bcc3a0c0b418a970dd1bad  02-pine64-pinenote-settings
+cc2bb8481fcae0c829b170150a109abd1d7d8ff96f58e538d91fce26fa105db981151be2e5ca9883ce3b41017d46673480c7201b8ee4d1a71b25c0efcb918fbe  83-backlight.rules
+"

@@ -1,0 +1,37 @@
+maintainer="Aboothahir U <aboothahirpkd@gmail.com>"
+pkgname=firmware-asus-x00td
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Asus Zenfone Max Pro M1"
+url="https://github.com/iAboothahir/firmware-asus-x00td"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+makedepends="qca-swiss-army-knife"
+
+_commit="7363f78b1c3bf041af7f890ded66c4905a249273"
+_muppets_commit="6e89e98d8d347b779ce1bcfdb42665e853314e09"
+
+source="
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	$pkgname-$_muppets_commit.tar.gz::https://github.com/TheMuppets/proprietary_vendor_asus_X00TD/archive/$_muppets_commit.tar.gz
+"
+
+builddir="src"
+_fwdir="/lib/firmware"
+
+package() {
+	ath10k-fwencoder --create \
+		--features=wowlan,no-nwifi-decap-4addr-padding,allows-mesh-bcast,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel  \
+		--set-wmi-op-version=tlv --set-htt-op-version=tlv \
+		--set-fw-api=5
+	install -Dm644 firmware-5.bin -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 $pkgname-$_commit/board-2.bin -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 proprietary_vendor_asus_X00TD-$_muppets_commit/proprietary/vendor/firmware/a512_zap.elf "$pkgdir/$_fwdir/postmarketos/a512_zap.mbn"
+}
+
+
+sha512sums="
+4c494fa9d66f5afd4bdd5acce4d693d21f76b75a8b7bd7349dbbc0a45919012e87f8743d0003648b69b611d5d5eb9a7bd7b3f94f381626907219278b996e9125  firmware-asus-x00td-7363f78b1c3bf041af7f890ded66c4905a249273.tar.gz
+973a0ea3b4996201681955e1a481777bbcc60dad309c9d492f834a62454a6d174f6b6dd7708965bf3127fd52d0807c577ef364b7b3bbe88c4b65b80ec15d9735  firmware-asus-x00td-6e89e98d8d347b779ce1bcfdb42665e853314e09.tar.gz
+"

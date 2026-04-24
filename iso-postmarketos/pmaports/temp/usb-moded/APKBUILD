@@ -1,0 +1,102 @@
+# Forked from Alpine to adjust for mainline
+# Co-Maintainer: Clayton Craft <craftyguy@postmarketos.org>
+maintainer="Dylan Van Assche <me@dylanvanassche.be>"
+pkgname=usb-moded
+_pkgver=0.86.0.69
+pkgver=9999$_pkgver
+pkgrel=1
+_commit_dbus_glib="d42176ae4763e5288ef37ea314fe58387faf2005"
+pkgdesc="A daemon activating a certain USB profile based on the usb cable connection status"
+url="https://github.com/sailfishos/usb-moded"
+arch="all"
+license="GPL-2.0-only"
+depends_dev="
+	eudev-dev
+	elogind-dev
+	glib-dev
+	gobject-introspection-dev
+	kmod-dev
+	libdsme-dev
+	sailfish-access-control
+	ssu-sysinfo-dev
+	"
+makedepends="$depends_dev
+	autoconf
+	automake
+	dbus-dev
+	libtool
+	"
+subpackages="
+	$pkgname-dev
+	$pkgname-openrc
+	$pkgname-systemd
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/sailfishos/usb-moded/archive/refs/tags/mer/${_pkgver%.*}+mer${_pkgver##*.}.tar.gz
+	https://github.com/sailfishos-mirror/dbus-glib/archive/$_commit_dbus_glib/dbus-glib-$_commit_dbus_glib.tar.gz
+	usb-moded.confd
+	usb-moded.initd
+	umtprd.conf
+	basename.patch
+	0001-dyn-config-Add-option-for-running-a-command-on-mode-.patch
+	0002-worker-generalize-MTP-daemon-to-FunctionFS-daemon.patch
+	0003-worker-only-check-daemon-running-in-FunctionFS-mode.patch
+	0004-configfs-Register-NCM-gadget-for-USB-networking.patch
+	0005-usb-moded-Allow-disabling-rescue-mode.patch
+	"
+options="!check" # No test suite available
+builddir="$srcdir/$pkgname-mer-${_pkgver%.*}-mer${_pkgver##*.}"
+
+prepare() {
+	default_prepare
+
+	# Fix invalid pkgconf version
+	sed -i 's/+mer/./' configure.ac
+
+	rmdir dbus-gmain
+	mv "$srcdir/dbus-glib-$_commit_dbus_glib" dbus-gmain
+}
+
+build() {
+	./autogen.sh
+
+	# --enable-systemd is required to build, otherwise it can't find sd-login.h
+	./configure \
+		--prefix=/usr \
+		--enable-connman \
+		--enable-ofono \
+		--enable-app-sync \
+		--enable-systemd
+	make
+}
+
+package() {
+	DESTDIR="$pkgdir" make install
+
+	install -Dm755 "$srcdir"/usb-moded.initd "$pkgdir"/etc/init.d/usb-moded
+	install -Dm644 "$srcdir"/usb-moded.confd "$pkgdir"/etc/conf.d/usb-moded
+
+	# The pkg-config & systemd-service file aren't installed automatically for some reason
+	install -Dm644 usb_moded.pc -t "$pkgdir"/usr/lib/pkgconfig/
+	install -Dm644 systemd/usb-moded.service -t "$pkgdir"/usr/lib/systemd/system/
+
+	install -dm 755 "$pkgdir"/usr/include/$pkgname
+	cp src/*.h src/*.xml "$pkgdir"/usr/include/$pkgname
+
+	# Install DBus policies
+	install -Dm644 debian/usb_moded.conf \
+		"$pkgdir"/usr/share/dbus-1/system.d/usb_moded.conf
+}
+
+sha512sums="
+55c8892c9f9c5a9cc6b526e8c1f9c55cd5f61922dbc52b1c85abb2850a00d1146c0d8e4f7a631bd0d7927e40908dae2541870bf1cc591b9d527ce29306051829  usb-moded-99990.86.0.69.tar.gz
+665cd6395ee0ea14086ba30188c62a72697b3f63484681e18fc7f54109c9aca162f2e33aa2fa4d45287c6c0b590e81ca310c143dac0232cd5887692cdaf51256  dbus-glib-d42176ae4763e5288ef37ea314fe58387faf2005.tar.gz
+cea86b540e8d181f684b39791b658dcce5210f3dd3d07d6cefdb172fa82ba8446ea60ac4c8aa40badcfc0e4a8cef12c33ff3eb437cc6dbebad3cca9884ef9bda  usb-moded.confd
+38f263a9f1c6711396b2672e53b297dbaa2f41222061da7eb90e2646e52f124b126b9bcedcec5b85e387518d455c132c37ce2196e5975f8e7732be240ead490d  usb-moded.initd
+912f0700c87883b55f631cfc3d76e172ff1c21aa57b0c18d1e7b9671ecd6254b1e7565816e3967c68caab196076bf7c8b848375c89185aa4466f4ca7f65231be  umtprd.conf
+8e15fcdcb5199c7c9deffc417035e2260aa7d4a437056f2ab9141c33220618da59324b87cbcebe9857d0269b170f98e2ea703c69b6543cbae237555cc6e297a4  basename.patch
+23980ebf109c01ad9be366ac35cd101608ed14a826c20e73a33fbeed856feef435ba29b34033a054e282075bcac18108f2d6e0ec8e81f41d97c3639fdd5fe23f  0001-dyn-config-Add-option-for-running-a-command-on-mode-.patch
+258a4004ebb85c01e7bb94f7b24a39d834b8699e6a035e04d3613800c8c2fdcc35290378866890ae1399919d6faddad8659c378c3022a5510375a4806b8911c5  0002-worker-generalize-MTP-daemon-to-FunctionFS-daemon.patch
+fa62cce99e91437bbb9cd88cc193c66b7cf4f988708fad8647e91b031f9d0a844f11dd469f364b214b9ca65358f696d7e7b546d7887d0f99f2b5dee4328c20d3  0003-worker-only-check-daemon-running-in-FunctionFS-mode.patch
+3a905d3038309e8a54e77ee601dc98f12c339fdd9c7ba5989d2edce5baf98fdb6d6cf092c3168da577b137a4b356edfb72bf2df7ef148fa778655934dcebe72c  0004-configfs-Register-NCM-gadget-for-USB-networking.patch
+595d3541ee2aadbc3857cc81ef4c2e393351c4a9ba26c7e20b2b098c2cec32d8c6643d4f491e3c6e16be6d509486a8313f5b5627b354ee12e11f89cc62af6598  0005-usb-moded-Allow-disabling-rescue-mode.patch
+"

@@ -1,0 +1,86 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/goyavewifi-dt_hw04_defconfig
+
+pkgname=linux-samsung-goyavewifi
+pkgver=3.10.17
+pkgrel=1
+pkgdesc="Samsung Galaxy Tab 3 Lite kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-goyavewifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-sprd
+	flex
+	linux-headers
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="linux"
+_commit="e90d994cb5fe2531ff35ee13fb624f4bba2c07cc"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pstglia/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	no-hardcoded-CROSS_COMPILE.patch
+	fix-dtb_qcom,msm-id.patch
+	fix-recordmcount.patch
+	sprdfb-check-for-buffering.patch
+	sprdfb-fix-swapped-colors.patch
+"
+#	force_devices-sc8830-objfile.patch
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-sprd -p "$_outdir/scripts/dtc/" \
+		-o "$_outdir/arch/$_carch/boot"/dt.img \
+		"$_outdir/arch/$_carch/boot/dts/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+80ca6746b5bb06539f18593733fd1c785f6d241c6c2aa026c6cf6d5e5865ffbfd887c4163e7de0db19bccde83ffbdeefaeddb9140366a1fafad591ef885f2415  linux-samsung-goyavewifi-e90d994cb5fe2531ff35ee13fb624f4bba2c07cc.tar.gz
+9b6005d51f9536a6a550fb31427d8a4ff9c05b4152442a718a833c94b3fec33c9675e1abf152780dbad900a2cbde8c18a89dacf94d85b1e48fce92284d67d0e8  config-samsung-goyavewifi.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+b3365e61eeb64b968d86cee41aa5edb909cc524cc0b5b0d972ba16b5bbb4266aa726f480c7d6c82a33d90fdead86f39ea5123404603a9c14fc972fd01c5f491c  no-hardcoded-CROSS_COMPILE.patch
+fb311072075f13d82742ff726fa0812447c22b29fb08f5bbdf05d6b1ca53e53b02324a81c2b858a63d076f4c033481a16af1fe4fb15fa3964715be20a6885018  fix-dtb_qcom,msm-id.patch
+32911549f0c89972d06af838954978ee90fb2eabacc1393c0bffa12deb9d80ddec5322f859df772d90afea733965bd669e85d5e90657d4f69995ae9fc25dd4f3  fix-recordmcount.patch
+fa11ab7040b83dad145a8f2ca3e5b17b3189b90ca43a8f64e63be4fcb4ba2debe8134b3e28f6f663bc8b7f1e72b1f3a68f342300eed45cb72de70cefba4fa0c2  sprdfb-check-for-buffering.patch
+6836001b24508d413a059f19b0c6f6f547037f68886c22159ad51be91d1a089e3d1d9ed79c3c62724648df7f810cd81d96a83f4a34368b373524b649e5539656  sprdfb-fix-swapped-colors.patch
+"

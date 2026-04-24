@@ -1,0 +1,11 @@
+--- a/Makefile	2019-04-03 14:12:27.611906000 +0500
++++ b/Makefile	2019-04-04 14:15:17.691566426 +0500
+@@ -193,7 +193,7 @@
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ ARCH		=arm
+-CROSS_COMPILE	=arm-eabi-
++#CROSS_COMPILE	=arm-eabi-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)

@@ -1,0 +1,61 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Contributor: Jenneron <jenneron@protonmail.com>
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+maintainer="Eric Anderson <ejona86@gmail.com>"
+pkgname=device-google-veyron
+pkgdesc="Google Veyron Chromebooks"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf>=1.2.7.1-r0
+	depthcharge-tools
+	linux-google-veyron
+	postmarketos-base
+	postmarketos-cros-common
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+# provides and replaces to switch old installations to this package
+provides="
+	device-google-veyron-fievel=$pkgver-r$pkgrel
+	device-google-veyron-jaq=$pkgver-r$pkgrel
+	device-google-veyron-jerry=$pkgver-r$pkgrel
+	device-google-veyron-mickey=$pkgver-r$pkgrel
+	device-google-veyron-mighty=$pkgver-r$pkgrel
+	device-google-veyron-minnie=$pkgver-r$pkgrel
+	device-google-veyron-speedy=$pkgver-r$pkgrel
+	device-google-veyron-tiger=$pkgver-r$pkgrel
+"
+replaces="
+	device-google-veyron-fievel
+	device-google-veyron-jaq
+	device-google-veyron-jerry
+	device-google-veyron-mickey
+	device-google-veyron-mighty
+	device-google-veyron-minnie
+	device-google-veyron-speedy
+	device-google-veyron-tiger
+"
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT firmware"
+	depends="linux-firmware-mrvl firmware-google-veyron-brcm"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+aa1e5318136f26709eb978639cfe3be264c36a757e0240eeb7c450f5596fb7b1fbb3c52f73ecd3dc67d6a48d9165c1e02e4d494a3e7ec93960b45027fc24eae5  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+be3e804fa538d9d377c637094dcf95e503e8a156fa71676a9e78abc0e290595dfdaa70b5642df721ebcdd3daa04d14e0c61d9bab6f78cb1dbd669404abc3a56d  modules-initfs
+"

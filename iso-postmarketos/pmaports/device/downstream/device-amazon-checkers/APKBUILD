@@ -1,0 +1,44 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="User0 <user0thenyancat@proton.me>"
+pkgname=device-amazon-checkers
+pkgdesc="Amazon Echo Show 5 1st Generation"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+
+# without the firmware package, the kernel seems to look for it for ~2 to ~3 mins,
+# therefore putting this in depends and not _pmb_recommends
+#
+# pulseaudio crashes the kernel
+depends="
+	firmware-amazon-checkers
+	linux-amazon-checkers
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+	!postmarketos-base-ui-audio-backend-pulseaudio
+"
+makedepends="devicepkg-dev"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+2140f496b44bedb47dc6c6bb8c50aa70bea4234d13e775e7d4ce9e88e7777793cf5248cb5b53e50eb458f1f5e6c1c4587684e9e4bdcee4bd3a4a0afce7e87533  deviceinfo
+c326cba8a4f7b26404da10d7c163dd562f837c0f40fe4a722c21d32ef3edb4d3b1a813f9fdb20aca2a1fa81635cb8e5d58864f7d89a3aa4bea58a42300721d0c  kernel-cmdline.conf
+36298b8b278a3bc09ede09680533a54dc68ba265d79c4d701a54375b2be133bd23d133733187637b5a3d4b364be7a0740a9530f117e575866a49bd3229e8c0ef  modules-load.conf
+"

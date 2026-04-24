@@ -1,0 +1,4 @@
+[org.mate.screensaver]
+embedded-keyboard-enabled=true
+embedded-keyboard-command='onboard -e -l Phone'
+picture-filename='/usr/share/wallpapers/postmarketos.jpg'

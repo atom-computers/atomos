@@ -1,0 +1,27 @@
+From 8004f0f13eb584a41e0e6b63f97cde84d22d74e5 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Sat, 9 Aug 2025 07:35:47 +0200
+Subject: [PATCH] configs: trats: increase env_size
+
+With 0x1000 it is too small after we pull in config_distro_bootcmd.h
+and its environment.
+---
+ configs/trats_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/trats_defconfig b/configs/trats_defconfig
+index f2d3908f6bc4..5f240b49dbc2 100644
+--- a/configs/trats_defconfig
++++ b/configs/trats_defconfig
+@@ -11,7 +11,7 @@ CONFIG_TARGET_TRATS=y
+ CONFIG_EXYNOS_ACE_SHA=y
+ CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
+ CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x447fff10
+-CONFIG_ENV_SIZE=0x1000
++CONFIG_ENV_SIZE=0x2000
+ CONFIG_ENV_OFFSET=0x7000
+ CONFIG_DEFAULT_DEVICE_TREE="exynos4210-trats"
+ CONFIG_SYS_MONITOR_LEN=262144
+-- 
+2.50.1
+

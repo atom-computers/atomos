@@ -1,0 +1,50 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-sony-leo
+pkgdesc="Sony Xperia Z3"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-sony-leo-adsp
+	firmware-sony-leo-modem
+	firmware-sony-leo-wifi
+	linux-postmarketos-qcom-msm8974
+	lk2nd-msm8974
+	mkbootimg
+	msm-modem
+	postmarketos-base
+	soc-qcom-msm8974
+	ta-service
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-openrc:openrc
+	"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		openrc
+		ta-service-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+5d19607c44a6076951ef6c21382f850d2c30680614d9bdf5c7d80216ca8aa87994d769ba1a1e214a9fcecf72bdb4d0c6b6dc7171b56d84d5dc124537cd31d7b3  deviceinfo
+"

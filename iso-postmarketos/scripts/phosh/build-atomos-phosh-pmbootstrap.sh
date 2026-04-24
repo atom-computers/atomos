@@ -32,8 +32,18 @@ if [ "${ATOMOS_SKIP_VENDOR_PHOSH_BUILD:-0}" = "1" ]; then
 fi
 
 PHOSH_DIR="${ATOMOS_PHOSH_SRC:-$ROOT_DIR/rust/phosh/phosh}"
-if [ ! -d "$PHOSH_DIR/.git" ]; then
-    echo "ERROR: Phosh fork tree missing at $PHOSH_DIR — run make build from iso-postmarketos/ (runs checkout-phosh) or: bash scripts/phosh/checkout-phosh.sh" >&2
+# Accept two layouts (matches scripts/phosh/checkout-phosh.sh):
+#   (a) Git working tree  -- $PHOSH_DIR/.git/ present.
+#   (b) Vendored snapshot -- plain source files committed into the atomos
+#       parent repo, no nested .git/. Required files for abuild: meson.build
+#       (project definition) and src/home.c (one of the AtomOS-patched files;
+#       also serves as a sanity gate that the tree is the phosh shell source
+#       rather than an unrelated directory).
+if [ ! -d "$PHOSH_DIR" ] || [ ! -f "$PHOSH_DIR/meson.build" ] || [ ! -f "$PHOSH_DIR/src/home.c" ]; then
+    echo "ERROR: Phosh fork tree missing or incomplete at $PHOSH_DIR" >&2
+    echo "       Expected either a git clone or a vendored snapshot with meson.build + src/home.c." >&2
+    echo "       Run: bash scripts/phosh/checkout-phosh.sh" >&2
+    echo "       (or ensure the AtomOS phosh source tree is present at $PHOSH_DIR)" >&2
     exit 1
 fi
 

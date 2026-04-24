@@ -1,0 +1,17 @@
+From: Martin Kunze <martin@martinkunze.com>
+Date: Tue, 22 Jul 2025 00:01:25 +0200
+
+This patch aims to fix all errors caused by missing semicolons
+
+--- a/kernel/power/tuxonice_ui.c
++++ a/kernel/power/tuxonice_ui.c
+@@ -462,7 +462,7 @@
+ 		switch (message_detail) {
+ 		case 0:
+-			say("If you continue booting, note that any image WILL NOT BE REMOVED")
++			say("If you continue booting, note that any image WILL NOT BE REMOVED");
+ 			/* TuxOnIce is unable to do so because the appropriate modules aren't loaded.
+ 			 * You should manually remove the image to avoid any possibility of corrupting
+ 			 * your filesystem(s) later.
+ 			 */
+ 			break;

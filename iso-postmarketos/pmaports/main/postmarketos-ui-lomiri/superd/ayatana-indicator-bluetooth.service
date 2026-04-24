@@ -1,0 +1,11 @@
+[Unit]
+Description=Ayatana Indicator Bluetooth Service
+PartOf=graphical-session.target
+PartOf=ayatana-indicators.target lomiri-indicators.target
+
+[Service]
+ExecStart=/usr/libexec/ayatana-indicator-bluetooth/ayatana-indicator-bluetooth-service
+Restart=on-failure
+
+[Install]
+WantedBy=ayatana-indicators.target lomiri-indicators.target

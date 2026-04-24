@@ -1,0 +1,29 @@
+From da446f42d69d35139b8caddb74677c7399a92139 Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Fri, 26 Oct 2018 19:31:15 +0300
+Subject: [PATCH 3/6] Fix xt_connbytes compile warning
+
+this netfilter option is needed for ubports
+---
+ net/netfilter/xt_connbytes.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/net/netfilter/xt_connbytes.c b/net/netfilter/xt_connbytes.c
+index e595e07a759..cf58b1977e0 100644
+--- a/net/netfilter/xt_connbytes.c
++++ b/net/netfilter/xt_connbytes.c
+@@ -26,7 +26,10 @@ connbytes_mt(const struct sk_buff *skb, struct xt_action_param *par)
+ 	u_int64_t what = 0;	/* initialize to make gcc happy */
+ 	u_int64_t bytes = 0;
+ 	u_int64_t pkts = 0;
+-	const struct nf_conn_counter *counters;
++	/* const struct nf_conn_counter *counters; */
++    /* warning: passing argument 1 of 'atomic64_read' discards 'const' qualifier from pointer target type */
++    /* warnings are treated as errors - remove constness */
++    struct nf_conn_counter *counters;
+ 
+ 	ct = nf_ct_get(skb, &ctinfo);
+ 	if (!ct)
+-- 
+2.21.0
+

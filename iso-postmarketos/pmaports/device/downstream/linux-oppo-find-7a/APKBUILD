@@ -1,0 +1,111 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_find7_defconfig
+
+pkgname=linux-oppo-find-7a
+pkgver=3.4.113
+pkgrel=7
+pkgdesc="OPPO Find 7a kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="oppo-find-7a"
+_abi_release=$pkgver
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc elfutils-libelf devicepkg-dev dtbtool xz"
+
+# Source
+_repository="android_kernel_oppo_msm8974"
+_commit="60e8a8df2d253b053cdac10a0ffd196b7b9c3925"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	0001-fix-video-argb-setting.patch
+	0002-mdss_fb.patch
+	0003_Makefile_fix_and_disable_ggc_warnings.patch
+	0004_3.4_android_CVE_d3752ba7de67976f5f09a7bb2b74d4298eb32f8b.patch
+	0005_wcd9xxx_warning_fix_28c6631f59b1091df33fcdc8441bdea2aa4033a8.patch
+	0006_mdss_stop_log_flood.patch
+	0007_get_task_warning.patch
+	0008_regcache_rbtree_node_warning.patch
+	0009_vos_mem_compare_warning.patch
+	0010_nfnl_cthelper_from_nlattr_warning.patch
+	0011_wlan_hdd_wmm_fix_warning.patch
+	0012_ion_warning_a4c4914ebf40413c38f955236a8e139085328778.patch
+	0013_mdss_mdp_pp_warning_e0ed96b93d2428834b23265903dfa3b6e1ccc431.patch
+"
+
+subpackages="$pkgname-dev"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+
+	make -j1 modules_install ARCH="$_carch" INSTALL_MOD_PATH="$pkgdir"
+}
+
+dev() {
+	pkgdesc="Headers and script for third party modules for $pkgname kernel"
+	depends="gmp-dev bash perl"
+	cd "$builddir"
+
+	local dir="$subpkgdir"/usr/src/linux-headers-$_abi_release
+	mkdir -p "$dir"
+	make -j1 headers_install ARCH="$_carch" INSTALL_HDR_PATH="$dir"
+
+	mkdir -p "$subpkgdir"/lib/modules/$_abi_release
+
+	install -Dm644 "$builddir"/Module.symvers \
+		"$subpkgdir"/lib/modules/$_abi_release/Module.symvers
+
+	ln -sf /usr/src/linux-headers-$_abi_release \
+		"$subpkgdir"/lib/modules/$_abi_release/build
+}
+
+sha512sums="
+e3fa1f9ab51a2b6213b9abaa3bb5e010fd2c41e98f572022fcfff66f17fc3639e1b29184b923c437ab4ed3411feb7e5667303304600fac3e929793c10a16daa2  linux-oppo-find-7a-60e8a8df2d253b053cdac10a0ffd196b7b9c3925.tar.gz
+55043e560968c069a42d5defeb41c65e7c30d6fee49c8576cd2002959852174c642543ecee8506209d4aff51488f219baf277a53bebed2a3a4b13bba3d47d7d9  config-oppo-find-7a.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+a48336bbfead6ad0c84d2fce0c40a3f5530aebdff356a6835cceaf59a50a6f860d2f8027703a92927955fbb18857ba78788e010d017bf67730f069b36e96fe87  0001-fix-video-argb-setting.patch
+5b3aabb59ae7a06c4c13668dde2033be477116626a423c4828e53330afebf8e07fc907a3add193f9dc263a6c9a80771475703e5d4c28a9bddd0597e2a8cd9b89  0002-mdss_fb.patch
+a4e9a5f901f741f9fdf1d6d077d445ba80ea84344203dd62cd97010b44da0f2754be93d11676f808600cd98f665abb01a450c3ab6c41483ab7f0a749562f62fb  0003_Makefile_fix_and_disable_ggc_warnings.patch
+b908cbc66e801ca03db4a41e6e3a27715a6d9c6d89f8dfc4fd991fbe8a626f536055421be0d807e803692396c0e738d3ec0bb8a8212ea21b4099436b164600ed  0004_3.4_android_CVE_d3752ba7de67976f5f09a7bb2b74d4298eb32f8b.patch
+2a8d2f0034629d3a9ea688e05592dcc129756e34bd9d330e1cd359661321dc21516f2c3e1a61fa68559abd879abe672e75bf2c2569c1806db669a4962f32df53  0005_wcd9xxx_warning_fix_28c6631f59b1091df33fcdc8441bdea2aa4033a8.patch
+cd3bd996d5f12a40dee0d7ce67189072b18827def2821e60d89a1c8aad076adaab84c379da696e9418ca89adc84d9d242f49873f2222e520b5c14e229eec19e7  0006_mdss_stop_log_flood.patch
+d6cc918e339974d2fc0bd92668f82f7dd339d5566fe7ab28a3a8b863992524fb10170a701ef0f0100fce6dfd1e500c272cc590b0a86705bf61902cda2740da6b  0007_get_task_warning.patch
+797807fc211415bc885d843c29628e0cba1cc347331bb0ad69cad20962dc91e045c43c449870c17ba370573425f09d67b4fb9553157814c49fad43ffef2e0c3a  0008_regcache_rbtree_node_warning.patch
+78ad23c9990ab04316b8576f45b35977fce8d37df3fa3a1989841e16c3d4eb98ec56056d4534f2281772ddc023c7b727d1495dcec7458422daaab5b6c3d462fa  0009_vos_mem_compare_warning.patch
+d55d47b737407c7b4842bbf0f126377cc59e2079e376d64708e18358a16c2e749e751df8b75be72cff3a613b4af36342f23d8a563845b3b84689ffc9b209270e  0010_nfnl_cthelper_from_nlattr_warning.patch
+2291830da4c7fbd1df86ad4bae3e4b6fd1254d23ad59854d6ce6d375be894f6c54ff5fd63478dea215367a361623662dbef495ca2c0e353bcdcc9c0d4e2357cd  0011_wlan_hdd_wmm_fix_warning.patch
+c58507768810803fa00f728d998d9f189d10df6a948945e5e6b43b547765cc528d93e0aac6ba0516a5e54bae3cbc69430374ec6e94f861b82a669b506d168a61  0012_ion_warning_a4c4914ebf40413c38f955236a8e139085328778.patch
+bb8dceda93d637978ebd255ce3fa68c1b65525ae27181d3e6bf438b76581fe3bbbec03ed55a3d2d0309072a763dfde544026715dfec34c537fff978cb5aaba28  0013_mdss_mdp_pp_warning_e0ed96b93d2428834b23265903dfa3b6e1ccc431.patch
+"

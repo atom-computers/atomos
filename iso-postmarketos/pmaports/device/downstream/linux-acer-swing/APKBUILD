@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/acer_a9_defconfig
+
+pkgname=linux-acer-swing
+pkgver=3.4.0
+pkgrel=4
+pkgdesc="Acer CloudMobile S500 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="acer-swing"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="swing_acer_s500_cloudmobile_kernel"
+_commit="a78584bb5d0cbc0373ef43ce05c9344d1464c08f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Alter0ne/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix_mdp4_parameter.patch
+	01_ftrace-gcc5-build-fix.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+fa2b351631356e7a529641f77af27b75fc3a9b5ebced8873c4968d6b9f8f34ee41d08501c1e41285ec16660a096f8a802763fad6bbf6247dc4bb40828a94f218  linux-acer-swing-a78584bb5d0cbc0373ef43ce05c9344d1464c08f.tar.gz
+36c6f7bf472c457847668e4e78235b226810f97766141e0cdf31b4efce77fbdb3ffa20e2ad35bfe706116307d46624038ee8d3c101a32a16e4ba16ac717c8a7f  config-acer-swing.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+bdb9414e022716df75c0b0f09379ea62c410c5b032ce9a5e02c0cd5bf67933b9fd0247386a22feeab4d7504eaec94caec2037d865a351a5f8bc3c3065c74c957  fix_mdp4_parameter.patch
+39b20200465d75373bec22092ef24298791e14941157cb9299bcbfac752c3d15ea998a470fea2cfb15b3b126cfef5f9430cf79faf0692d2bab5f3ca2e3e8d7f5  01_ftrace-gcc5-build-fix.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+"

@@ -1,0 +1,104 @@
+From 325c6138279aafbd21d424ae01c6f255bad02ac7 Mon Sep 17 00:00:00 2001
+From: Jun Nie <jun.nie@linaro.org>
+Date: Wed, 1 Oct 2025 21:59:13 +0800
+Subject: [PATCH 07/11] drm/msm/dsi: support DSC configurations with
+ slice_per_pkt > 1
+
+Some panels support multiple slice to be sent in a single DSC packet. And
+this feature is a must for specific panels, such as JDI LPM026M648C. Add a
+dsc_slice_per_pkt member into struct mipi_dsi_device and support the
+feature in msm mdss driver.
+
+Co-developed-by: Jonathan Marek <jonathan@marek.ca>
+Signed-off-by: Jonathan Marek <jonathan@marek.ca>
+Signed-off-by: Jun Nie <jun.nie@linaro.org>
+Signed-off-by: Junjie Cao <caojunjie650@gmail.com>
+---
+ drivers/gpu/drm/msm/dsi/dsi_host.c | 25 ++++++++++---------------
+ include/drm/drm_mipi_dsi.h         |  2 ++
+ 2 files changed, 12 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/gpu/drm/msm/dsi/dsi_host.c b/drivers/gpu/drm/msm/dsi/dsi_host.c
+index db6da99375a1..519410ec5197 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -166,6 +166,7 @@ struct msm_dsi_host {
+ 
+ 	struct drm_display_mode *mode;
+ 	struct drm_dsc_config *dsc;
++	unsigned int dsc_slice_per_pkt;
+ 
+ 	/* connected device info */
+ 	unsigned int channel;
+@@ -927,17 +928,10 @@ static void dsi_update_dsc_timing(struct msm_dsi_host *msm_host, bool is_cmd_mod
+ 	slice_per_intf = dsc->slice_count;
+ 
+ 	total_bytes_per_intf = dsc->slice_chunk_size * slice_per_intf;
+-	bytes_per_pkt = dsc->slice_chunk_size; /* * slice_per_pkt; */
++	bytes_per_pkt = dsc->slice_chunk_size * msm_host->dsc_slice_per_pkt;
+ 
+ 	eol_byte_num = total_bytes_per_intf % 3;
+-
+-	/*
+-	 * Typically, pkt_per_line = slice_per_intf * slice_per_pkt.
+-	 *
+-	 * Since the current driver only supports slice_per_pkt = 1,
+-	 * pkt_per_line will be equal to slice per intf for now.
+-	 */
+-	pkt_per_line = slice_per_intf;
++	pkt_per_line = slice_per_intf / msm_host->dsc_slice_per_pkt;
+ 
+ 	if (is_cmd_mode) /* packet data type */
+ 		reg = DSI_COMMAND_COMPRESSION_MODE_CTRL_STREAM0_DATATYPE(MIPI_DSI_DCS_LONG_WRITE);
+@@ -1088,12 +1082,8 @@ static void dsi_timing_setup(struct msm_dsi_host *msm_host, bool is_bonded_dsi)
+ 		else
+ 			/*
+ 			 * When DSC is enabled, WC = slice_chunk_size * slice_per_pkt + 1.
+-			 * Currently, the driver only supports default value of slice_per_pkt = 1
+-			 *
+-			 * TODO: Expand mipi_dsi_device struct to hold slice_per_pkt info
+-			 *       and adjust DSC math to account for slice_per_pkt.
+ 			 */
+-			wc = msm_host->dsc->slice_chunk_size + 1;
++			wc = msm_host->dsc->slice_chunk_size * msm_host->dsc_slice_per_pkt + 1;
+ 
+ 		dsi_write(msm_host, REG_DSI_CMD_MDP_STREAM0_CTRL,
+ 			DSI_CMD_MDP_STREAM0_CTRL_WORD_COUNT(wc) |
+@@ -1702,8 +1692,13 @@ static int dsi_host_attach(struct mipi_dsi_host *host,
+ 	msm_host->lanes = dsi->lanes;
+ 	msm_host->format = dsi->format;
+ 	msm_host->mode_flags = dsi->mode_flags;
+-	if (dsi->dsc)
++	if (dsi->dsc) {
+ 		msm_host->dsc = dsi->dsc;
++		msm_host->dsc_slice_per_pkt = dsi->dsc_slice_per_pkt;
++		/* for backwards compatibility, assume 1 if not set */
++		if (!msm_host->dsc_slice_per_pkt)
++			msm_host->dsc_slice_per_pkt = 1;
++	}
+ 
+ 	ret = dsi_dev_attach(msm_host->pdev);
+ 	if (ret)
+diff --git a/include/drm/drm_mipi_dsi.h b/include/drm/drm_mipi_dsi.h
+index 3aba7b380c8d..2ddec7931bd0 100644
+--- a/include/drm/drm_mipi_dsi.h
++++ b/include/drm/drm_mipi_dsi.h
+@@ -180,6 +180,7 @@ struct mipi_dsi_device_info {
+  * be set to the real limits of the hardware, zero is only accepted for
+  * legacy drivers
+  * @dsc: panel/bridge DSC pps payload to be sent
++ * @dsc_slice_per_pkt: number of DSC slices to be sent as in a single packet
+  */
+ struct mipi_dsi_device {
+ 	struct mipi_dsi_host *host;
+@@ -194,6 +195,7 @@ struct mipi_dsi_device {
+ 	unsigned long hs_rate;
+ 	unsigned long lp_rate;
+ 	struct drm_dsc_config *dsc;
++	unsigned int dsc_slice_per_pkt;
+ };
+ 
+ /**
+-- 
+2.52.0
+

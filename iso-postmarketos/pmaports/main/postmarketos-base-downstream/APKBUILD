@@ -1,0 +1,45 @@
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=postmarketos-base-downstream
+pkgver=2
+pkgrel=1
+pkgdesc="Base package for devices with downstream (vendor) kernels"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+install="$pkgname-msm-modem-openrc.post-install"
+subpackages="
+	$pkgname-disable-udev-v4l:disable_udev_v4l
+	$pkgname-lightdm
+	$pkgname-msm-modem-openrc:msm_modem_openrc
+"
+source="10-logind-check-graphical.conf"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+disable_udev_v4l() {
+	# On some devices the kernel panics or hangs when starting
+	# udev if camera firmware is missing and/or fails to load
+	pkgdesc="Package to disable udev video4linux rules"
+	replaces="eudev systemd-udevd"
+	mkdir -p "$subpkgdir"/usr/lib/udev/rules.d
+	ln -s /dev/null "$subpkgdir"/usr/lib/udev/rules.d/60-persistent-v4l.rules
+}
+
+lightdm() {
+	install_if="$pkgname=$pkgver-r$pkgrel lightdm"
+
+	install -Dm644 "$srcdir"/10-logind-check-graphical.conf \
+		-t "$subpkgdir"/usr/share/lightdm/lightdm.conf.d
+}
+
+msm_modem_openrc() {
+	default_openrc
+	install_if="$pkgname=$pkgver-r$pkgrel openrc msm-modem"
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+00addbea452dd3e2cb90e18793becc47d22118e6b99a79b76eb57db02aa8b00b133569beaea81cce4b39c9e556280c1d6ac8ab687016354e2d189734e38768cf  10-logind-check-graphical.conf
+"

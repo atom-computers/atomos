@@ -1,0 +1,13 @@
+Create a symlink to platform.h. Fixes errors regarding about a missing
+platform.h file.
+diff --git a/drivers/gud/gud-exynos7580/MobiCoreDriver/platform.h b/drivers/gud/gud-exynos7580/MobiCoreDriver/platform.h
+new file mode 120000
+index 00000000..526bc961
+--- /dev/null
++++ b/drivers/gud/gud-exynos7580/MobiCoreDriver/platform.h
+@@ -0,0 +1 @@
++platforms/EXYNOS_7580_STD/platform.h
+\ No newline at end of file
+-- 
+2.32.0
+

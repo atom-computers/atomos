@@ -1,0 +1,82 @@
+# Forked from Alpine to add systemd!
+maintainer="team/kde <bribbers@disroot.org>"
+pkgname=kscreenlocker
+_pkgver=6.6.4
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="Library and components for secure lock screen architecture"
+# armhf blocked by qt6-qtdeclarative -> ki18n
+arch="all !armhf"
+url="https://kde.org/plasma-desktop/"
+license="GPL-2.0-or-later AND (GPL-2.0-only OR GPL-3.0-only)"
+depends="linux-pam"
+depends_dev="
+	kcmutils-dev
+	kcrash-dev
+	kdeclarative-dev
+	kglobalaccel-dev
+	ki18n-dev
+	kidletime-dev
+	knotifications-dev
+	ksvg-dev
+	ktextwidgets-dev
+	kwayland-dev
+	kwindowsystem-dev
+	kxmlgui-dev
+	layer-shell-qt-dev
+	libkscreen-dev
+	libplasma-dev
+	libseccomp-dev
+	linux-pam-dev
+	qt6-qtbase-dev
+	solid-dev
+	systemd-dev
+	xcb-util-keysyms-dev
+	"
+makedepends="
+	$depends_dev
+	extra-cmake-modules
+	samurai
+	"
+checkdepends="xwayland-run"
+
+case "$_pkgver" in
+	*.90*) _rel=unstable;;
+	*) _rel=stable;;
+esac
+_repo_url="https://invent.kde.org/plasma/kscreenlocker.git"
+source="https://download.kde.org/$_rel/plasma/$_pkgver/kscreenlocker-$_pkgver.tar.xz
+	kde.pam
+	kde-fingerprint.pam
+	kde-smartcard.pam
+	"
+subpackages="$pkgname-dev $pkgname-lang"
+options="!check" # Requires running loginctl
+builddir="$srcdir/$pkgname-$_pkgver"
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib
+	cmake --build build
+}
+
+check() {
+	wlheadless-run -- ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	install -D -m644 "$srcdir"/kde.pam "$pkgdir"/etc/pam.d/kde
+	install -m644 "$srcdir"/kde-fingerprint.pam "$pkgdir"/etc/pam.d/kde-fingerprint
+	install -m644 "$srcdir"/kde-smartcard.pam "$pkgdir"/etc/pam.d/kde-smartcard
+}
+
+sha512sums="
+8228615778007332604b9b0cf0c3ed4e16739dc156c67bdb105d6a1a85e14a1fc614bef1412857967cf245b2b73ec4f2b1cb6799b914c0750fcfb0294d166bb4  kscreenlocker-6.6.4.tar.xz
+cdbc45fb74a3c43fb2302fe09bf2f9f644ca93693e0110cf748c403762236aaeea8284a8d21fc495014c69b6d5fe4789aaff7687ce9f03dda270490fa5042e2b  kde.pam
+fe2f244b73b5cccf4b7125b9e3cac0a35566840e4ba2f69937fd8053aa56af71ee43dcbfa9c0f79de9ebe31f656e98a5d38955f77560be5c3535b08215ad8789  kde-fingerprint.pam
+2ae866d25224ba345ea9d5ddb2fce668de5c51d1cfbb4d7a048c50107ccd6cffc3231a46855599c0ba3d62ff002a26e45b69d9029f88f4ab42661465a5e526c5  kde-smartcard.pam
+"

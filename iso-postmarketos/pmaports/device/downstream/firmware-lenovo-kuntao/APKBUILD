@@ -1,0 +1,25 @@
+pkgname=firmware-lenovo-kuntao
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for Lenovo P2"
+url="https://gitlab.com/raihan2000/$pkgname"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="009a366625c413aee2cc827ae94ed8ca75a3cebb"
+
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+_fwdir="/lib/firmware/qcom/msm8953/lenovo/kuntao"
+
+package() {
+	# GPU Firmware files
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+ebf5a43df59ec99ae63483cff1d0cfd25fa754e30910d8f9130bf43cc5c44278b5a23652585c44902fca943b022b858e3c6d55822aea45930a999dcce16285ee  firmware-lenovo-kuntao-009a366625c413aee2cc827ae94ed8ca75a3cebb.tar.gz
+"

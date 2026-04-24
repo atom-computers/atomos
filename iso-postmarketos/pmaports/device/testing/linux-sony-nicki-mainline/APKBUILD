@@ -1,0 +1,71 @@
+# Kernel config based on: arch/arm/configs/qcom_defconfig
+# APKBUILD based on linux-postmarketos-mainline
+# See: https://gitlab.postmarketos.org/postmarketOS/pmaports/issues/184
+
+_flavor=sony-nicki-mainline
+_config="config-$_flavor.$CARCH"
+
+maintainer=""
+pkgname=linux-$_flavor
+pkgver=5.3
+pkgrel=9
+arch="armv7"
+_carch="arm"
+pkgdesc="Sony Xperia M kernel fork, close to mainline"
+url="https://kernel.org/"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev openssl-dev file bison flex"
+options="!strip !check !tracedeps
+		pmb:cross-native
+"
+license="GPL-2.0-only"
+
+_repository="linux"
+_commit="ad6ab7f8c57896cb3829e6a80408e0912d6096c2"
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/konradybcio/$_repository/archive/$_commit.tar.gz
+	config-$_flavor.armv7
+	linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+	linux5.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+
+	cp "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	# V=1: workaround for pma#1990
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" \
+		CFLAGS_MODULE=-fno-pic V=1
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/"*zImage \
+			"$pkgdir/boot/vmlinuz"
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+
+}
+
+sha512sums="
+31e9ef9b3e956df38824865c291530fa5dda067bfea8b0169a3871d7876cfe192a42ae631e51a8a02f7c64319269c8af2688d8ae180805173bf2c1c84c390a59  linux-sony-nicki-mainline-ad6ab7f8c57896cb3829e6a80408e0912d6096c2.tar.gz
+0ba22a244b5416cf0bf0bbd0f0949f28679a30833906143800aed2cd87584dc2feeac296f99e4af2cae2d46673dbf6b12da41528aef05b94e6ffcd9e558bdf3c  config-sony-nicki-mainline.armv7
+27827877040007fc1c4c719f7e2e19e5c272d44972415cfc53feba0313d87e4074f8204bdb13cbc5fe21ea61bf595314b68f10c081e7b7bac3c888b60f008acf  linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+ee80928d83189a6b71f853c97551326e3ac74167dee3bda0ae85a034278ca69403bbfbbd9dfaf9f77426e46d7260e4fda8e8900649f1b6355bac62a8cda83776  linux5.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

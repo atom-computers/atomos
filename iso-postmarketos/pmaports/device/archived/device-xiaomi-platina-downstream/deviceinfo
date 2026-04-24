@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Xiaomi Mi 8 Lite"
+deviceinfo_manufacturer="Xiaomi"
+deviceinfo_codename="xiaomi-platina-downstream"
+deviceinfo_year="2018"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1080"
+deviceinfo_screen_height="2280"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_flash_fastboot_partition_vbmeta="vbmeta"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_sparse="true"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"
+
+# Xiaomi Communications Co., Ltd.
+deviceinfo_usb_idVendor="0x2717"
+# Mi/Redmi series (RNDIS)
+deviceinfo_usb_idProduct="0xff80"
+deviceinfo_usb_network_function="rndis_bam.rndis"

@@ -1,0 +1,12 @@
+diff --git a/arch/arm/boot/dts/sprd-scx35_goyavewifi_rev04.dts b/arch/arm/boot/dts/sprd-scx35_goyavewifi_rev04.dts
+index ca10ca5d..49e28ad2 100644
+--- a/arch/arm/boot/dts/sprd-scx35_goyavewifi_rev04.dts
++++ b/arch/arm/boot/dts/sprd-scx35_goyavewifi_rev04.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 4 0x20000>;
++	qcom,msm-id = <8830 2 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;

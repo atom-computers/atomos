@@ -1,0 +1,25 @@
+From 84df8c9171445d1b908a4b3e5d97bdf053d25a27 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@z3ntu.xyz>
+Date: Sat, 21 Sep 2019 22:40:55 +0200
+Subject: [PATCH 1/2] undefine DIAG_XPST
+
+---
+ arch/arm/mach-msm/include/mach/usbdiag.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-msm/include/mach/usbdiag.h b/arch/arm/mach-msm/include/mach/usbdiag.h
+index 4f9476ad4a6..d8f946f98ac 100644
+--- a/arch/arm/mach-msm/include/mach/usbdiag.h
++++ b/arch/arm/mach-msm/include/mach/usbdiag.h
+@@ -54,7 +54,7 @@
+ 	printk(KERN_DEBUG fmt, ## args)
+ 
+ /* #define SDQXDM_DEBUG */
+-#define DIAG_XPST 1
++/* #define DIAG_XPST 1 */
+ 
+ #define DIAG_LEGACY		"diag"
+ #define DIAG_MDM		"diag_mdm"
+-- 
+2.23.0
+

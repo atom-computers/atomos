@@ -1,0 +1,48 @@
+# Kernel config based on: arch/arm64/configs/
+
+pkgname=linux-leeco-x3
+pkgver=3.10.107
+pkgrel=1
+pkgdesc="LeEco Le 1s kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="leeco-x3"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="LeEco-Le1S-Kernel"
+_commit="e03ab790982ed578e565ea43e07079108e13eeea"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/WisniaPL/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+8e14a156543afcfeda239984bf65baba69a0e79ddc43b2984ea430a328fef0cc8304c189bdc510204cf2bb0ae6cbd3d90afe10526df4dfb9f11197327ed1e551  linux-leeco-x3-e03ab790982ed578e565ea43e07079108e13eeea.tar.gz
+11326c4fcc45ef15aefb03aab38a2f222ceb8fbc9c0d60f1ec0e64b828990479042a76dc7d16322d2804e3e5ed6c9772cacf959cf77d43b412b8825c2d6fcbb7  config-leeco-x3.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

@@ -1,0 +1,177 @@
+diff --git a/arch/arm/mach-mt8127/include/mach/hotplug.h b/arch/arm/mach-mt8127/include/mach/hotplug.h
+index fa139f2a..413b7dbc 100644
+--- a/arch/arm/mach-mt8127/include/mach/hotplug.h
++++ b/arch/arm/mach-mt8127/include/mach/hotplug.h
+@@ -11,7 +11,8 @@
+ #define HOTPLUG_LOG_WITH_XLOG                           1
+ #define HOTPLUG_LOG_WITH_PRINTK                         2
+ 
+-#define HOTPLUG_LOG_PRINT                               HOTPLUG_LOG_WITH_PRINTK
++// #define HOTPLUG_LOG_PRINT                               HOTPLUG_LOG_WITH_PRINTK
++#define HOTPLUG_LOG_PRINT                               HOTPLUG_LOG_NONE
+ 
+ #if (HOTPLUG_LOG_PRINT == HOTPLUG_LOG_NONE)
+ #define HOTPLUG_INFO(fmt, args...)                    
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index 5c5842d6..62de84f3 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -220,7 +220,7 @@ void __cpuinit __cpu_die(unsigned int cpu)
+ 		pr_err("CPU%u: cpu didn't die\n", cpu);
+ 		return;
+ 	}
+-	printk(KERN_NOTICE "CPU%u: shutdown\n", cpu);
++//	printk(KERN_NOTICE "CPU%u: shutdown\n", cpu);
+ 
+ 	/*
+ 	 * platform_cpu_kill() is generally expected to do the powering off
+@@ -356,7 +356,7 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
+ 	cpu_init();
+ 	aee_rr_rec_hoplug(cpu, 5, 0);
+ 
+-	printk("CPU%u: Booted secondary processor\n", cpu);
++//	printk("CPU%u: Booted secondary processor\n", cpu);
+ 
+ 	preempt_disable();
+ 	aee_rr_rec_hoplug(cpu, 6, 0);
+diff --git a/arch/arm/mach-mt8127/ca7_timer.c b/arch/arm/mach-mt8127/ca7_timer.c
+index c752bb1d..0ca334e4 100644
+--- a/arch/arm/mach-mt8127/ca7_timer.c
++++ b/arch/arm/mach-mt8127/ca7_timer.c
+@@ -289,7 +289,7 @@ static int __cpuinit generic_timer_setup(struct clock_event_device *clk)
+ {
+     struct clock_event_device **this_cpu_clk;
+ 
+-    pr_info("[ca7_timer]%s entry\n", __func__);
++//    pr_info("[ca7_timer]%s entry\n", __func__);
+     generic_timer_calibrate_rate();
+ 
+     write_cntp_ctl(0x0);
+diff --git a/arch/arm/mach-mt8127/mt-smp.c b/arch/arm/mach-mt8127/mt-smp.c
+index 4df773d2..1fbd14c9 100644
+--- a/arch/arm/mach-mt8127/mt-smp.c
++++ b/arch/arm/mach-mt8127/mt-smp.c
+@@ -127,7 +127,7 @@ void __cpuinit mt_platform_secondary_init(unsigned int cpu)
+ {
+     struct wd_api *wd_api = NULL;
+ 
+-    printk(KERN_INFO "Slave cpu init\n");
++//    printk(KERN_INFO "Slave cpu init\n");
+     HOTPLUG_INFO("platform_secondary_init, cpu: %d\n", cpu);
+ 
+     mt_gic_secondary_init();
+@@ -170,7 +170,7 @@ static void __cpuinit mt_wakeup_cpu(int cpu)
+     }
+     else
+     {
+-    	printk("mt_wakeup_cpu: not first boot!(%d)\n", cpu);
++//    	printk("mt_wakeup_cpu: not first boot!(%d)\n", cpu);
+         mt65xx_reg_sync_writel(virt_to_phys(mt_secondary_startup), BOOT_ADDR);        
+ 
+ #if defined(CONFIG_TRUSTONIC_TEE_SUPPORT) || defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT)
+@@ -189,7 +189,7 @@ int __cpuinit mt_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+     unsigned long timeout;
+ 
+-    printk(KERN_CRIT "Boot slave CPU\n");
++//    printk(KERN_INFO "Boot slave CPU\n");
+ 
+     atomic_inc(&hotplug_cpu_count);
+ 
+@@ -224,7 +224,7 @@ int __cpuinit mt_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ #if !defined (CONFIG_TRUSTONIC_TEE_SUPPORT)
+             mt_wakeup_cpu(cpu);
+ #else //#if !defined (CONFIG_TRUSTONIC_TEE_SUPPORT)
+-            printk("mt_wakeup_cpu: not first boot!(%d)\n", cpu);
++//            printk("mt_wakeup_cpu: not first boot!(%d)\n", cpu);
+ 			//mt65xx_reg_sync_writel(virt_to_phys(mt_secondary_startup), BOOT_ADDR);
+ 			// fixme, to replace SMC with parameter of ns_slave_boot_addr
+             mt_secure_call(MC_FC_SET_RESET_VECTOR, virt_to_phys(mt_secondary_startup), cpu, 0);
+diff --git a/arch/arm/mach-mt8127/mt_dbg.c b/arch/arm/mach-mt8127/mt_dbg.c
+index 3391891a..14ad42e1 100644
+--- a/arch/arm/mach-mt8127/mt_dbg.c
++++ b/arch/arm/mach-mt8127/mt_dbg.c
+@@ -71,7 +71,7 @@ regs_hotplug_callback(struct notifier_block *nfb, unsigned long action, void *hc
+ //        printk(KERN_ALERT "In hotplug callback\n");
+ 	int i;
+         unsigned int cpu = (unsigned int) hcpu;
+-        printk("regs_hotplug_callback cpu = %d\n", cpu);
++//        printk("regs_hotplug_callback cpu = %d\n", cpu);
+         switch (action) {
+         case CPU_ONLINE:
+ 	case CPU_ONLINE_FROZEN:
+diff --git a/drivers/misc/mediatek/wdk/wd_api.c b/drivers/misc/mediatek/wdk/wd_api.c
+index c382f7a7..b94fcf7a 100644
+--- a/drivers/misc/mediatek/wdk/wd_api.c
++++ b/drivers/misc/mediatek/wdk/wd_api.c
+@@ -88,7 +88,7 @@ static int wd_cpu_hot_plug_on_notify(int cpu)
+ 	int res = 0;
+ 	wk_cpu_update_bit_flag(cpu, 1);
+ 	mtk_wdt_restart(WD_TYPE_NOLOCK);	/* for KICK external wdt */
+-	printk("WD wd_cpu_hot_plug_on_notify kick ext wd\n");
++//	printk("WD wd_cpu_hot_plug_on_notify kick ext wd\n");
+ 
+ 	return res;
+ }
+diff --git a/drivers/misc/mediatek/wdk/wd_common_drv.c b/drivers/misc/mediatek/wdk/wd_common_drv.c
+index aecc3081..36ba4773 100644
+--- a/drivers/misc/mediatek/wdk/wd_common_drv.c
++++ b/drivers/misc/mediatek/wdk/wd_common_drv.c
+@@ -230,7 +230,7 @@ void kicker_cpu_bind(int cpu)
+ 		//kthread_bind(wk_tsk[cpu], cpu);
+ 		WARN_ON_ONCE(set_cpus_allowed_ptr(wk_tsk[cpu], cpumask_of(cpu)) < 0);
+ 		
+-		printk("[wdk]bind kicker thread[%d] to cpu[%d]\n",wk_tsk[cpu]->pid,cpu);
++//		printk("[wdk]bind kicker thread[%d] to cpu[%d]\n",wk_tsk[cpu]->pid,cpu);
+ 		wake_up_process(wk_tsk[cpu]);
+ 	}
+ }
+@@ -570,7 +570,7 @@ static int __cpuinit wk_cpu_callback(struct notifier_block *nfb, unsigned long a
+ 		mpcore_wdt_restart(WD_TYPE_NORMAL);
+ #endif
+ 
+-		printk("[WDK]cpu %d plug on kick wdt\n", hotcpu);
++//		printk("[WDK]cpu %d plug on kick wdt\n", hotcpu);
+ 		break;
+ #ifdef CONFIG_HOTPLUG_CPU
+ #ifdef CONFIG_LOCAL_WDT
+@@ -584,14 +584,14 @@ static int __cpuinit wk_cpu_callback(struct notifier_block *nfb, unsigned long a
+ 
+ 		mtk_wdt_restart(WD_TYPE_NORMAL);	/* for KICK external wdt */
+ #ifdef CONFIG_LOCAL_WDT
+-		printk("[WDK]cpu %d plug off kick local wdt\n", hotcpu);
++//		printk("[WDK]cpu %d plug off kick local wdt\n", hotcpu);
+ 		/* kick local wdt */
+ 		/* mpcore_wdt_restart(WD_TYPE_NORMAL); */
+ 		/* disable local watchdog */
+ 		mpcore_wk_wdt_stop();
+ #endif
+ 		wk_cpu_update_bit_flag(hotcpu, 0);
+-		printk("[WDK]cpu %d plug off, kick wdt\n", hotcpu);
++//		printk("[WDK]cpu %d plug off, kick wdt\n", hotcpu);
+ 		break;
+ #endif				/* CONFIG_HOTPLUG_CPU */
+ 	}
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index fb958294..43e3e69d 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -4197,12 +4197,12 @@ recheck:
+ 			return -EINVAL;
+ 	}
+ 
+-	if(rt_policy(policy)){                                                                                
+-		if (!check_mt_allow_rt((struct sched_param *)param)){
+-			printk("[RT_MONITOR]WARNNING [%d:%s] SET NOT ALLOW RT Prio [%d] for proc [%d:%s]\n", current->pid, current->comm, param->sched_priority, p->pid, p->comm);
+-			//dump_stack();
+-		}
+-	}
++//	if(rt_policy(policy)){                                                                                
++//		if (!check_mt_allow_rt((struct sched_param *)param)){
++//			printk("[RT_MONITOR]WARNNING [%d:%s] SET NOT ALLOW RT Prio [%d] for proc [%d:%s]\n", current->pid, current->comm, param->sched_priority, p->pid, p->comm);
++//			//dump_stack();
++//		}
++//	}
+ 
+ 	/*
+ 	 * Valid priorities for SCHED_FIFO and SCHED_RR are

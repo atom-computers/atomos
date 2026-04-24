@@ -1,0 +1,21 @@
+pkgname=firmware-samsung-i747m
+pkgver=1
+pkgrel=1
+_commit="15cea7e29a50a85f7cd5ce27e5ff865314467ca3"
+pkgdesc="Samsung Galaxy SIII i747m Firmware"
+url="https://github.com/Zerospeed8/device_samsung_d2att"
+arch="armhf"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/Zerospeed8/device_samsung_d2att/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/device_samsung_d2att-$_commit"
+
+package() {
+	# Wifi
+	install -Dm644 vendor/samsung/d2att/proprietary/etc/wifi/bcmdhd_sta.bin_b2 \
+		"$pkgdir/lib/firmware/postmarketos/bcmdhd_sta.bin_b2"
+	install -Dm644 vendor/samsung/d2att/proprietary/etc/wifi/nvram_net.txt \
+		"$pkgdir/lib/firmware/postmarketos/nvram_net.txt"
+}
+
+sha512sums="b212ab69c782e45e0ee1005bd952ed763437693e769f5309da482b8138a1357d070f60a11185c7c30e61a0841dde08153a4d5a78da3e51ab3aa8ebd5dfddeec7  firmware-samsung-i747m-15cea7e29a50a85f7cd5ce27e5ff865314467ca3.tar.gz"

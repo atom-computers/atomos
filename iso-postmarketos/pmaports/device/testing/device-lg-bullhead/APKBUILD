@@ -1,0 +1,31 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Petr Vorel <petr.vorel@gmail.com>"
+pkgname=device-lg-bullhead
+pkgdesc="Google Nexus 5X"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+depends="
+	firmware-lg-bullhead
+	linux-postmarketos-qcom-msm8994
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+c95ce54ae31244becaff0de886ec3e3eb3e61b0c6d8821777ae361a02ae4e1e240e72d050a5d4195fc12e09658b6f0ec9d4ec86b4189dee746d75c571b4b87ea  deviceinfo
+e9a2223fcb15391c52976e492648375a70f09fc1c7a5e876fd870d3091056d523f97d3e8fefc5113c3c3b0051ec163ed41d662bde8f0d5ed3c64c6075252e79c  kernel-cmdline.conf
+"

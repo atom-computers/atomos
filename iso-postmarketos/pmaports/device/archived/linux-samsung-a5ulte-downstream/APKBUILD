@@ -1,0 +1,73 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-a5ulte)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on:
+#   make msm8916_sec_defconfig VARIANT_DEFCONFIG=msm8916_sec_a5u_eur_defconfig SELINUX_DEFCONFIG=selinux_defconfig
+
+pkgname=linux-samsung-a5ulte-downstream
+pkgver=3.10.49
+pkgrel=2
+pkgdesc="Samsung Galaxy A5 (SM-A500FU) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-a5ulte-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool gcc4 linux-headers"
+
+# Compiler: GCC 4
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="linux-downstream"
+_commit="3b09f23015d2f0949d49fb81ea1f43c63a8be503"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/msm8916-mainline/$_repository/archive/$_commit.tar.gz
+	$_config
+	cpr-dump.patch
+	gpio-debug.patch
+	memshare-debug.patch
+	remove-gcc-wrapper.patch
+	samsung-usb-ethaddr.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="$CC" HOSTCC="$HOSTCC" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$pkgdir"/boot/dt.img "$_outdir/arch/$_carch/boot/"
+}
+
+sha512sums="
+9c87ec4b9d9f11843482f3828f0864ff575f673976fb251d560553d6ee39315d32f67d56c0e9d4839432ea7ce49a27629db83472d3d34df92440ef7e72ce0b6a  linux-samsung-a5ulte-downstream-3b09f23015d2f0949d49fb81ea1f43c63a8be503.tar.gz
+8eb744fa7bbc00df2359c9f13a6d9ccf8ea6fa3a9f6526a2c3ed1fb17b11cf82e03d63948734a93416bb1cb315b5926aeafcbbf7523ce596e8a5efc426fda5f0  config-samsung-a5ulte-downstream.armv7
+f040a1d7169b9ddb5baabb7de1838441e8608894dc6dc61ececb1acb4fe9851289934b37d74afb61addc01d7a1e4f1d2413f5e542c2a4aeb0c01f680797d37c6  cpr-dump.patch
+e9f809b6659375cd7e854821f9925faa263d287c06e44071017cd4afb32f79c47e63760c9c95b4f0c15b79b6b1af4a36911861104a7b56dea2195baf9e4f4685  gpio-debug.patch
+56083a8b290a7b1b1ffc9c8e3333db6d786a20d6e91ee400e895ecee8d31cccc75d809be13bcfe5cfb7d5b53a687b25281e8fd454cf420468ded3f77dcea9897  memshare-debug.patch
+4a09fdcf99a4716a4ced11b7d74b7867423e5f6fa6c62674e57f496a10647c0b704fd5f91c46711e363337b54d3b7917b6c685230568eab44b6303bd285a2b61  remove-gcc-wrapper.patch
+04f7df03f4c9e4b144c24c33b6fadc98381dacf891535ba18d791c250366550c59dba19418e47dbe575671e253d19a1e8076dd7f46743c0123e624a65366aaa6  samsung-usb-ethaddr.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

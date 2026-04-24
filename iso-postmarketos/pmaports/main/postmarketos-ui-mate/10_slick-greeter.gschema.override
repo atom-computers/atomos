@@ -1,0 +1,5 @@
+[x.dm.slick-greeter]
+background="/usr/share/wallpapers/postmarketos.jpg"
+draw-user-backgrounds=false
+onscreen-keyboard=true
+onscreen-keyboard-layout="/usr/share/onboard/layouts/Phone.onboard"

@@ -1,0 +1,58 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos8890-hero2lte_defconfig
+
+pkgname=linux-samsung-hero2lte
+pkgver=3.18.140
+pkgrel=3
+pkgdesc="Samsung Galaxy S7 edge kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-hero2lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool-exynos"
+
+# Source - use Ivan Meler's 3.18 upstream kernel
+_repository="android_kernel_samsung_herolte"
+_commit="4f50ed696fc6ec36d277ba1af73e98d34e7bc0d6"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ivanmeler/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-remove-android-defines.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Build dt image with exynos dtbtool
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype 0x217584da \
+		-o "arch/arm64/boot/dt.img" \
+		"arch/arm64/boot/dts/exynos8890-hero2lte_eur_open_08.dtb"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Copy the in-tree DTBH block image
+	install -Dm644 "$builddir/arch/arm64/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="28a447fca84c3c1bc95b505362a989964e652ff0c11a8f99e151225c4a29971c7698c846c7826552fcdc4acff799b3150e577892df88697776ce13cd0e76ac5f  linux-samsung-hero2lte-4f50ed696fc6ec36d277ba1af73e98d34e7bc0d6.tar.gz
+11cf3a6d9bf4f41ee8c7c9999bccf2d8d20469fd91d6cd6dca9c25f0ced6dfd6cb53aafac1896267004f52f186a67b5950e582928c1174a145b01b60bd800c65  config-samsung-hero2lte.aarch64
+66e27a174e12d56f5b77932985f0001b551c834d68b2a1bcc1d0b7d04e555757fc9137c182bd4cf5ffd57bf2cb0918d758dfe153a6140b77f02e7b9f33ecfb2c  01-remove-android-defines.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch"

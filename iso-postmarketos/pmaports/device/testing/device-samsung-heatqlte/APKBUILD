@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-heatqlte
+pkgdesc="Samsung Galaxy Ace 4 (SM-G357FZ)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader firmware-samsung-heatqlte-wcnss-nv"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+8b5d99e9001d13f078cd42defa6013c37c51e3924a5c4236626f7609365c1bfd7735b816af6bfc748073eae50b97c455d7620a0cad06f0254a02d91183ef0d16  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+ef54a1b54c229c8152050d902b9690675490347c0308ddd7053305a578bd1a641dbb3a86bf95b5c3f2c7d3136e6ddf5444bb53e91aa513d2707f7f239f2ed43e  modules-initfs
+"

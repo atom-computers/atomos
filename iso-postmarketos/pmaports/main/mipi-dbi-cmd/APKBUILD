@@ -1,0 +1,26 @@
+maintainer=""
+pkgname=mipi-dbi-cmd
+pkgver=0_git20220210
+pkgrel=1
+pkgdesc="Tool to create firmware files for the panel-mipi-dbi display driver"
+url="https://github.com/notro/panel-mipi-dbi"
+arch="noarch"
+license="CC0-1.0"
+depends="python3"
+options="!check"
+_repository="panel-mipi-dbi"
+_commit="374b15f78611c619c381c643c5b3a8b5d23f479b"
+source="
+	$url/archive/$_commit/$_repository-$_commit.tar.gz
+	0001-convert-to-python3.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+package() {
+	install -Dm755 "$builddir"/mipi-dbi-cmd "$pkgdir"/usr/bin/mipi-dbi-cmd
+}
+
+sha512sums="
+9046951fb2559272ce658c46043c6850751d4a3a96cbd43f2574075c5236af8619ed24da13bb9dba672fca4ee77f16e7f97d446d6679cceba04a3d4ae587c9be  panel-mipi-dbi-374b15f78611c619c381c643c5b3a8b5d23f479b.tar.gz
+0b96fc68d491a5d5f0a3d1ca3d985c7418c03c591a989ab306288db0ff942f47c7bc4a7e121b28b433c1c4dd6563577bbeead557ceebbe1aa2a4b8ea71e84544  0001-convert-to-python3.patch
+"

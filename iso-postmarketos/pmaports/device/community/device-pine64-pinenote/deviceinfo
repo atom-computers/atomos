@@ -1,0 +1,46 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Pine64 PineNote"
+deviceinfo_manufacturer="Pine64"
+deviceinfo_codename="pine64-pinenote"
+deviceinfo_year="2021"
+deviceinfo_dtb="rockchip/rk3566-pinenote-v1.2"
+deviceinfo_arch="aarch64"
+deviceinfo_drm="true"
+
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_screen_width="1404"
+deviceinfo_screen_height="1872"
+deviceinfo_getty="ttyS2;1500000"
+
+# initfs
+
+# Flash related
+deviceinfo_flash_method="rkdeveloptool"
+deviceinfo_flash_rk_partition_kernel="boot"
+deviceinfo_flash_rk_partition_rootfs="os1"
+
+# Partition table
+# pmbootstrap does not support flashing a partition table using rkdeveloptool, manual steps:
+# enable `write-partition-table` commands
+# > rkdeveloptool reboot-maskrom
+# > rkdeveloptool boot $chroot/usr/share/u-boot/pine64-pinenote/rk356x_spl_loader_v1.12.112.bin
+# >
+# write new GPT partition table
+# > rkdeveloptool write-partition-table partition_table.txt
+# >
+# deviceinfo_flash_rk_partition_table="partition-table.txt"
+
+# Bootloader
+# pmbootstrap does not support flashing u-boot using rkdeveloptool, manual steps:
+# > rkdeveloptool write-partition idbloader $chroot/usr/share/u-boot/pine64-pinenote/idbloader.img
+# > rkdeveloptool write-partition uboot $chroot/usr/share/u-boot/pine64-pinenote/uboot.img
+# >
+# deviceinfo_sd_embed_firmware="u-boot/pine64-pinenote/idbloader.img:64,u-boot/pine64-pinenote/u-boot.itb:16384"
+# deviceinfo_sd_embed_firmware_step_size="512
+
+deviceinfo_boot_filesystem="fat32"

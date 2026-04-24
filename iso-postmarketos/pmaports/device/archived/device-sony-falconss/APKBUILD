@@ -1,0 +1,33 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-falconss
+pkgdesc="Sony Xperia E1"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-falconss mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-sony-falconss"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+affee198d4ceae28f6f51ed92c7ff391949a46d3e5201da7b24cae9e826d8afc7487b2c63e3be6c4a9d35fa261a50010cf9d7400ea682df661fdb8c5a8e5565e  deviceinfo
+1f53415fd6401e46a614c5c02e812332b6b6a0e5ac3a6c31ede67a1cae527d99bfd164ca0189a667b3c9233d9cf4bcad85506cdbae629c7bbce2eb7fd74c1010  kernel-cmdline.conf
+"

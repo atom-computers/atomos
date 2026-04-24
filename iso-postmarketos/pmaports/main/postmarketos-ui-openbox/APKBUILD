@@ -1,0 +1,43 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="hexaheximal <hexaheximal@proton.me>"
+pkgname=postmarketos-ui-openbox
+pkgver=1
+pkgrel=2
+pkgdesc="(X11) A highly configurable and lightweight X11 window manager (keyboard required)"
+url="https://openbox.org/"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	dmenu-virtual
+	dnsmasq
+	elogind
+	openbox
+	tinydm
+	mesa-egl
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	postmarketos-artwork-wallpapers
+	xterm
+	xorg-server
+	"
+subpackages="$pkgname-openrc"
+options="!check"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		elogind-openrc
+		openrc
+		networkmanager-openrc
+		tinydm-openrc
+	"
+
+	mkdir -p "$subpkgdir"
+}

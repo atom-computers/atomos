@@ -1,0 +1,58 @@
+From 0675c1ad70a49437fe6711f7456dd14be29a9913 Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Thu, 20 Jun 2019 20:22:08 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: Add binding for charger
+
+MAX8922 is compatible with MAX8903's driver, which is very flexible. So
+we use it to detect the cable insertion and control the charging.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index 90f2a6eb9d77..b8f3916ec35b 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -853,8 +853,6 @@
+ 		i2c-gpio,delay-us = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		//interrupt-parent = <&gpio>;
+-		//interrupts = <TEGRA_GPIO(I, 5) IRQ_TYPE_LEVEL_HIGH>;
+ 
+ 		// Use 17040 as 17043 is compatible - no ALRT feature
+ 		max17043@36 {
+@@ -862,9 +860,28 @@
+ 			reg = <0x36>;
+ 			interrupt-parent = <&gpio>;
+ 			interrupts = <TEGRA_GPIO(I, 5) IRQ_TYPE_LEVEL_HIGH>;
++			power-supplies = <&usb_ta_charger>;
++			/* Fuel alert - not supported (for now?) */
++			//interrupt-parent = <&gpio>;
++			//interrupts = <TEGRA_GPIO(I, 5) IRQ_TYPE_LEVEL_HIGH>;
+ 		};
+ 	};
+ 
++	usb_ta_charger: max8922-charger {
++		compatible = "maxim,max8903";
++		chg-gpios = <&stmpegpio 16 GPIO_ACTIVE_LOW>;
++		cen-gpios = <&gpio TEGRA_GPIO(R, 3) GPIO_ACTIVE_HIGH>;
++		uok-gpios = <&gpio TEGRA_GPIO(T, 0) GPIO_ACTIVE_HIGH>;
++		/*
++		 * Original sources also use FSA9480 for USB charger
++		 * detection, but it's on extcon and not GPIO,
++		 * so skip it since dok (GPIO_TA_nCONNECTED) works fine.
++		 * (specified as uok since USB is detected)
++		 */
++
++		charger_supply: otg-vbus {};
++        };
++
+ 	i2c@7 {
+ 		compatible = "i2c-gpio";
+ 		sda-gpios = <&gpio TEGRA_GPIO(O, 4) (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+-- 
+2.22.0
+

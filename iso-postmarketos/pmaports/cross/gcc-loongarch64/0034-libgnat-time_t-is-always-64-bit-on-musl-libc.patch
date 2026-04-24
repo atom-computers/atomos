@@ -1,0 +1,25 @@
+From e5190522319c315efaf9a921737c05fae6a49e85 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?S=C3=B6ren=20Tempel?= <soeren+git@soeren-tempel.net>
+Date: Tue, 19 Jul 2022 14:54:07 +0200
+Subject: [PATCH] libgnat: time_t is always 64-bit on musl libc
+
+---
+ gcc/ada/libgnat/s-parame.ads | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gcc/ada/libgnat/s-parame.ads b/gcc/ada/libgnat/s-parame.ads
+index 98284a4d13e..0d14f116a10 100644
+--- a/gcc/ada/libgnat/s-parame.ads
++++ b/gcc/ada/libgnat/s-parame.ads
+@@ -101,7 +101,7 @@ package System.Parameters is
+    -- Characteristics of time_t type --
+    ------------------------------------
+ 
+-   time_t_bits : constant := Long_Integer'Size;
++   time_t_bits : constant := Long_Long_Integer'Size;
+    --  Number of bits in type time_t
+ 
+    ----------------------------------------------
+-- 
+2.50.1
+

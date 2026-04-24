@@ -1,0 +1,28 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy SL"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-i9003"
+deviceinfo_year="2011"
+deviceinfo_external_storage="true"
+deviceinfo_flash_method="heimdall-bootimg"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_screen_width="480"
+deviceinfo_screen_height="800"
+deviceinfo_dev_touchscreen="/dev/input/event2"
+
+# Offsets for the boot.img
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x1000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_pagesize="4096"
+
+# Heimdall related
+deviceinfo_flash_heimdall_partition_kernel="NORMALBOOT"

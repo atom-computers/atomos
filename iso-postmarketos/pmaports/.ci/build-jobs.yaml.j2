@@ -1,0 +1,141 @@
+image: registry.alpinelinux.org/img/alpine:3.23
+stages:
+  - build
+  - hardware tests
+
+variables:
+  CI_TRON_TEMPLATE_PROJECT: &ci-tron-template-project postmarketOS/ci-common
+  CI_TRON_JOB_TEMPLATE_PROJECT_URL: $CI_SERVER_URL/$CI_TRON_TEMPLATE_PROJECT
+  CI_TRON_JOB_TEMPLATE_COMMIT: &ci-tron-template-commit 1c70e34b7a610cda1d7f048f6b50ca9c10f52995
+
+include:
+  - project: *ci-tron-template-project
+    ref: *ci-tron-template-commit
+    file: '/ci-tron/common.yml'
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+
+.build:
+  # Create jobs, but do not run them unless this is
+  # overriden in jobs that extend it
+  stage: build
+  interruptible: true
+  before_script:
+    # upgrade is mostly needed for "qemu" runners that run edge based on a VM
+    # The other build jobs run natively in docker on latest alpine stable and
+    # those should always have whatever we need
+    - apk upgrade -U
+    - .ci/lib/gitlab_prepare_ci.sh
+  after_script:
+    - cp -r /home/pmos/.local/var/pmbootstrap/packages/ packages/ || true
+    - mkdir -p keys
+    - cp /home/pmos/.local/var/pmbootstrap/config_apk_keys/pmos@local*.pub keys/ || true
+    - .ci/lib/move_logs.sh $CI_PROJECT_DIR
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - packages/
+      - keys/
+  timeout: 10 h
+
+build:
+  extends: .build
+  parallel:
+    matrix:
+{% for arch in archs %}
+      - ARCH: {{ arch }}
+        TAG: {{ archtag[arch] }}
+{% endfor %}
+{% if archs|length == 0 %}
+      - ARCH: placeholder
+        TAG: shared
+{% endif %}
+  tags:
+    - $TAG
+  script:
+# Needed because gitlab fails if no jobs are ran:
+#  - https://gitlab.com/gitlab-org/gitlab/-/issues/368248
+{% if archs|length == 0 %}
+    - 'true'
+{% else %}
+    - .ci/build-$ARCH.sh
+{% endif %}
+
+# Hardware testing
+
+# Define here all the gitlab-ci snippets that could be common between the
+# different packages
+
+# Extends from this job if the target device needs a kernel and initramfs to
+# boot. This will not work if your device uses boot images.
+.device-boot-flow-separate-artifacts:
+  variables:
+    CI_TRON_KERNEL__URL: "glartifact://${CI_TRON__PMB_BUILD_JOB}/${CI_TRON__PMB_EXPORT_PATH}/vmlinuz"
+    CI_TRON_INITRAMFS__INITRAMFS__URL: "glartifact://${CI_TRON__PMB_BUILD_JOB}/${CI_TRON__PMB_EXPORT_PATH}/initramfs"
+
+# Extends from this job if the target device boots using fastboot and boot images
+.device-boot-flow-fastboot-image:
+  variables:
+    CI_TRON_FASTBOOT__BOOT_IMAGE__URL: "glartifact://${CI_TRON__PMB_BUILD_JOB}/${CI_TRON__PMB_EXPORT_PATH}/boot.img"
+
+# Include all the devices that need and can to be tested
+
+{% for device in devices_under_test %}
+prepare-{{ device.name }}:
+  stage: hardware tests
+  extends:
+    .pmos-ci-tron-build-boot-artifacts
+  {%- if device.has_kernel_variants %}
+  # Build all the boot artifacts for all the supported kernel variants in
+  # different jobs, but hide them behind a single job name so as not to pollute
+  # the pipeline.
+  parallel:
+    matrix:
+      - KERNEL_VARIANT:
+      {%- for kernel in device.kernel_variants %}
+        - {{ kernel }}
+      {%- endfor %}
+  {%- endif %}
+  needs:
+    - job: "build"
+      parallel:
+        matrix:
+          - ARCH: "{{ device.arch }}"
+            TAG: "{{ archtag[device.arch] }}"
+  variables:
+    DEVICE_NAME: {{ device.name }}
+    # NOTE: All the packages that may influence testing should have an
+    # `install-if postmarketos-mkinitfs-hook-ci`, so no need to add them here
+    INSTALL_PACKAGES: {{ device.pkgname }} {% if device.has_kernel_variants %}{{ device.pkgname }}-kernel-${KERNEL_VARIANT} {% endif %}postmarketos-mkinitfs-hook-ci
+
+.test-{{ device.name }}:
+  stage: hardware tests
+  {%- if device.has_kernel_variants %}
+  # Test all the kernels in different jobs, but hide them behind a single
+  # job name so as not to pollute the pipeline.
+  parallel:
+    matrix:
+      - KERNEL_VARIANT:
+      {%- for kernel in device.kernel_variants %}
+        - {{ kernel }}
+      {%- endfor %}
+  {%- endif %}
+  dependencies: []
+  needs:
+    - job: 'prepare-{{ device.name }}'
+      artifacts: false
+      {%- if device.has_kernel_variants %}
+      parallel:
+        matrix:
+          - KERNEL_VARIANT: $[[ matrix.KERNEL_VARIANT ]]
+      {%- endif %}
+  variables:
+    CI_TRON__PMB_BUILD_JOB: "prepare-{{ device.name }}{% if device.has_kernel_variants %}: [$KERNEL_VARIANT]{% endif %}"
+
+# Include the gitlab ci yml fragment, as found in
+# `device/$category/device-$devicename/gitlab-ci.yml.j2` which defines the jobs
+{{ device.gitlab_ci_fragment }}
+
+{% endfor %}

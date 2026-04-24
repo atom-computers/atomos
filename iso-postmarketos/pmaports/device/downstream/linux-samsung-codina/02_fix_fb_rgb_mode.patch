@@ -1,0 +1,25 @@
+Fix RGB mode
+--- a/arch/arm/mach-ux500/board-codina-mcde.c
++++ b/arch/arm/mach-ux500/board-codina-mcde.c
+@@ -279,7 +279,7 @@
+ 	.port = &port0,
+ 	.chnl_id = MCDE_CHNL_A,
+ 	.fifo = MCDE_FIFO_A,
+-	.default_pixel_format = MCDE_OVLYPIXFMT_RGBA8888,
++	.default_pixel_format = 5, // MCDE_something is defined as 5
+ 	.x_res_padding = 0,
+ 	.y_res_padding = 0,
+ 	.native_x_res = 480,
+@@ -313,11 +313,8 @@
+ 	mcde_dss_get_native_resolution(ddev, &width, &height);
+ 	virtual_height = height * 3;
+ 
+-
+ 	/* Create frame buffer */
+-	fbi = mcde_fb_create(ddev, width, height, width, virtual_height,
+-				ddev->default_pixel_format, FB_ROTATE_UR);
+-
++	fbi = mcde_fb_create(ddev, width, height,  width, virtual_height, ddev->default_pixel_format, FB_ROTATE_UR);
+ 	if (IS_ERR(fbi)) {
+ 		dev_warn(&ddev->dev,
+ 			"Failed to create fb for display %s\n", ddev->name);

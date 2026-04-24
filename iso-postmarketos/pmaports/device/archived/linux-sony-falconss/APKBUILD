@@ -1,0 +1,92 @@
+# Archived: Kernel does not build anymore
+# Kernel config based on: arch/arm/configs/msm8610_defconfig
+
+pkgname=linux-sony-falconss
+pkgver=3.4.0
+pkgrel=0
+pkgdesc="Kernel for Sony Xperia E1"
+arch="armv7"
+_carch="arm"
+_flavor="sony-falconss"
+url="https://github.com/Caio99BR-Deprecated/FalconSSKernel.git"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool lz4 gcc4"
+
+# Compiler: this kernel was only tested with GCC4. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="FalconSSKernel"
+_commit="0d2aaffd3f7c37537da0cc900c11bffd8dcfe8c2"
+_config="config-$_flavor.armv7"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Caio99BR-Deprecated/$_repository/archive/$_commit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	00_fix_return_address.patch
+	03_avoid_rpmb_read_during_boot.patch
+	05_fix_mdp3_ctrl_off.patch
+	06_fix_mdss_fb_rgb_mode.patch
+	07_fix_mdss_fb_refresh_rate.patch
+	linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		modules
+
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="
+bb1018e2d486f75f375e1b695ee4de56c482a0faf379c85db6e31d7bf7b950572d991e083c497193d2c68120ea792d617502e94afd57a9b5fa7c3874f4c4a895  linux-sony-falconss-0d2aaffd3f7c37537da0cc900c11bffd8dcfe8c2.tar.gz
+c8bf6f8ad558f01a6c131dc086bb324148a2b333c5d6c348d1dcf82f6e662746dde88e39edf98b8d93f22da5c1b87b3d61885aaa9f72f053c3a0918cb75bae72  config-sony-falconss.armv7
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+760fdff79df31754ebed59839f34fc8c5a61750471614ac93a01b1e13b2535e7ca1f879c0cad3e83ad92946586c91679ba853eac4fe454d7e948317c84d81941  03_avoid_rpmb_read_during_boot.patch
+fbc61e379403990167853f4c4fbdfa22d7e9661a7eedecf2a75eec2a8008991a82d0a61be844ab4b1c88383f3fa79b43eff10b1039e44ad5a758a173cbf6386b  05_fix_mdp3_ctrl_off.patch
+384ae0bf2f5d7e15b0b60655693fd600b52c0f5bfcaa4ba7336d0ebeb224e84b99b597f77d26a1249e14a4e7bbc1629be00556b393bb9dd2266cb4bd67c3cfea  06_fix_mdss_fb_rgb_mode.patch
+1f743d3e7f4ac7401167ea35edc7d7e113bd80824c4d53631d7500f33557ff486163f8244786c16506b2e21db6ccbcd8a0f7b26fcf4937efee50b62c074f9a22  07_fix_mdss_fb_refresh_rate.patch
+5e81c20b0b30c1ab09bd59f1e1b77fcce945a27de8144c68617ddc5e8f10e1f6fa8b1e4cd5d63e43511d61dace46fb26b14a6227a667b9718d44c8b81dbe6100  linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+"

@@ -1,0 +1,4 @@
+#!/bin/sh
+ADD_PARAMETERS="--quirk-no-chvt"
+SUSPEND_MODULES="brcmfmac"
+

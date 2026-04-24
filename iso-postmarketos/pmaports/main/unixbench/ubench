@@ -1,0 +1,7 @@
+#!/bin/sh -e
+export UB_RESULTDIR=`pwd`/ub-results
+export UB_TMPDIR=/var/tmp/unixbench
+mkdir -p $UB_RESULTDIR
+cd /usr/share/unixbench
+
+./Run $@ 2>/dev/null

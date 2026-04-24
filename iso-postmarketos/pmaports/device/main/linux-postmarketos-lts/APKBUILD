@@ -1,0 +1,136 @@
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=linux-postmarketos-lts
+pkgver=6.18.24
+pkgrel=0
+_kver=${pkgver%.*}
+pkgdesc="LTS Kernel"
+# armhf: pmbootstrap cannot dynamically choose a defconfig, so it ends up using multi_v7_defconfig which isn't correct
+# s390x: kconfigcheck is not ready for it yet
+arch="all !armhf !s390x"
+_flavor="lts"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:generic-kernel
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-immutable
+	pmb:kconfigcheck-rust
+	pmb:kconfigcheck-selinux
+	pmb:kconfigcheck-uefi
+	pmb:kconfigcheck-virt
+"
+makedepends="
+	bison
+	clang
+	clang-libclang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	sed
+	zstd
+"
+replaces="linux-lts"
+
+# powerpc boot wrapper patches:
+# Necessary for compilation without cross GCC in PATH, cherry-picked from
+# Nathan's fork, he does not have time to upstream them right now but would be
+# happy if someone else did:
+# https://lore.kernel.org/linuxppc-dev/aXs8sgAcci9FKKpx@luna/
+source="
+	linux-$_kver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kver.tar.xz
+
+	0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
+	0002-WIP-arch-powerpc-boot-Use-z-notext-for-pseries-image.patch
+	0003-WIP-arch-powerpc-boot-Add-z-norelro.patch
+
+	config-lts.aarch64
+	config-lts.armv7
+	config-lts.loongarch64
+	config-lts.ppc64le
+	config-lts.riscv64
+	config-lts.x86
+	config-lts.x86_64
+"
+builddir="$srcdir/linux-$_kver"
+_defconfig="defconfig"
+
+if [ "${pkgver%.0}" = "$pkgver" ]; then
+	# Prepend to apply first
+	source="patch-$pkgver.patch.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/patch-$pkgver.xz $source"
+fi
+
+case "$CARCH" in
+	aarch64*) _carch="arm64" ;;
+	arm*) _carch="arm" ;;
+	loongarch*) _carch="loongarch" ;;
+	ppc*) _carch="powerpc" ;;
+	riscv*) _carch="riscv" ;;
+	s390x) _carch="s390" ;;
+	x86) _carch="i386" ;;
+	x86_64) _carch="x86_64" ;;
+esac
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	local _install
+	case "$CARCH" in
+		arm*|aarch64|riscv*) _install="zinstall dtbs_install" ;;
+		*) _install="install" ;;
+	esac
+
+	make modules_install $_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+5fad8d9d0734e46254d5362fcef5cc41dabaff63f6ba28a75f3a0717ec948f55a895cc2dfb44ae0df15accfa3d18adb49f2b4a94d18ceaff9250a154fd97d1ac  patch-6.18.24.patch.xz
+88599ffdec96d150c1feb9b261ba93bb0301a9d0e1ad6bef7aeab1f5372cbfc57d8b43c7e902bd8f76921d1dbd8189663c142ea869e51d0e2b483b150ee00fe0  linux-6.18.tar.xz
+1f11df2480e9f691573283597160b4c806e492cdca4825f3acb3afb70bde43abfab487bcde1f5553b431a702a0039479d041b0ce7859970e706b5a51d2ad8fb0  0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
+26521a9c9ea769534095dc4e306babadc8bcbaf03d7faa523c377e41ba0f742ecd0490fa27791d895f729c3ae8845297dca59b4db2475e7f078e689c447430bc  0002-WIP-arch-powerpc-boot-Use-z-notext-for-pseries-image.patch
+302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0003-WIP-arch-powerpc-boot-Add-z-norelro.patch
+f5cb92a947fb0acecae05674734f050902f3eec989f028946568972aa7451f00e19ebbbc14c1afa9d081d1a0fa8f98d9a9521af5cb46fd16ca11f3259df3b139  config-lts.aarch64
+9a44bfb64ba931c102607ac1a386ccaf7b78ba578a9807417c4f27e4921dbde7e15bc789d1d02ee004fddf8faebff580b613a16687fc587654ebe00de41a4043  config-lts.armv7
+fa7d3fc5d7b4645560030fb0a4221a3c5d9ff062868bd7654967d3f34313b8511e16c8b1c71476695ae01a848537a546a8746a512e99f6617b5671cf8829d8aa  config-lts.loongarch64
+610a3bd96e9297bc6b4111eac99d9ee14dfe79bb944ff38040e994c724c2150281d583485b3d99f86a9418ed03c5b19213d8c48a53a310ff0bd6680673077a8f  config-lts.ppc64le
+c99b63d44c4739f3fa1d28206d6366de64a5745f5e09a424f044bca7f297e1f96a96c26776588fd31b207eef7615b3d058f12eab6309f0b8bb8d26a3319cdb55  config-lts.riscv64
+f1e6763498762c3e37496fa43693b1ee029fca3a39b39791aa8e0e5d4b0883414be6b2abc1e2fdffed7a51b8f7b1f8b7b96624505cc2351d6c37b3f0dc4bd954  config-lts.x86
+ed7bc1bdca31e34d69e3e1bff11c2e099b955b87d424288c643370086b323a83b4ef9e92edba18a6e2468ec205f79c4971c358e5a5c7ce8fbdcd3b195c5cac81  config-lts.x86_64
+"

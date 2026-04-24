@@ -1,0 +1,195 @@
+From 699bf0ac9e162d158eeea16a43a9efb32484aa6d Mon Sep 17 00:00:00 2001
+From: Paul Sajna <hello@paulsajna.com>
+Date: Tue, 29 Jul 2025 19:14:33 -0700
+Subject: [PATCH] add symbols for BlackBerry KEY2 keypad
+
+photo of keypad https://i5.walmartimages.com/asr/124528ca-7cf7-45bd-a894-f4b990d27acf.0298c9875736e2f63493862033537803.jpeg
+
+layer 5 on "sym" key, mapped as ralt https://i.imgur.com/DfDZh5y.png
+---
+ rules/0010-lists.part                      |  3 ++
+ rules/0040-evdev.model_keycodes.part       |  1 +
+ rules/0130-modellayout_symbols.part        |  1 +
+ rules/0160-modellayout1_symbols.part       |  1 +
+ rules/0180-modellayout2_symbols.part       |  1 +
+ rules/0200-modellayout3_symbols.part       |  1 +
+ rules/0270-evdev.modellayout_symbols1.part |  2 +
+ rules/base.xml                             |  6 +++
+ symbols/bbry_vndr/key2                     | 55 ++++++++++++++++++++++
+ symbols/us                                 |  7 +++
+ 10 files changed, 78 insertions(+)
+ create mode 100644 symbols/bbry_vndr/key2
+
+diff --git a/rules/0010-lists.part b/rules/0010-lists.part
+index 1e97585c..07202ec2 100644
+--- a/rules/0010-lists.part
++++ b/rules/0010-lists.part
+@@ -14,6 +14,9 @@
+ // Microsoft models (using MS geometry)
+ ! $msmodels = microsoft microsoft4000 microsoft7000 microsoftpro microsoftprousb microsoftprose microsoftsurface
+ 
++// BlackBerry devices and keyboards
++! $bbrymodels = key2
++
+ // Nokia devices and keyboards
+ ! $nokiamodels = nokiasu8w nokiarx44 nokiarx51
+ 
+diff --git a/rules/0040-evdev.model_keycodes.part b/rules/0040-evdev.model_keycodes.part
+index 62c21ffc..fec42fcc 100644
+--- a/rules/0040-evdev.model_keycodes.part
++++ b/rules/0040-evdev.model_keycodes.part
+@@ -2,4 +2,5 @@
+  $jollamodels	=	evdev+jolla(jolla)
+   olpc		=	evdev+olpc(olpc)
+   olpcm		=	evdev+olpc(olpcm)
++  key2      =   evdev+bbry_vndr/key2(us)
+   *		=	evdev
+diff --git a/rules/0130-modellayout_symbols.part b/rules/0130-modellayout_symbols.part
+index 819c740a..ba563e04 100644
+--- a/rules/0130-modellayout_symbols.part
++++ b/rules/0130-modellayout_symbols.part
+@@ -15,6 +15,7 @@
+   applealu_iso	us			=	macintosh_vndr/apple(alukbd)+macintosh_vndr/us(applealu_iso)
+  $applealu	$macvendorlayouts	=	macintosh_vndr/apple(alukbd)+macintosh_vndr/%l
+  $applealu	*			=	macintosh_vndr/apple(alukbd)+%l%(v)
++  key2		us			= bbry_vndr/key2(us)
+   nokiarx44	*			=	nokia_vndr/%m(%l)
+   nokiarx51	cz(qwerty)		=	nokia_vndr/%m(common)+nokia_vndr/%m(cz_qwerty)
+   nokiarx51	*			=	nokia_vndr/%m(common)+nokia_vndr/%m(%l%_v)
+diff --git a/rules/0160-modellayout1_symbols.part b/rules/0160-modellayout1_symbols.part
+index 2549a067..14bfd067 100644
+--- a/rules/0160-modellayout1_symbols.part
++++ b/rules/0160-modellayout1_symbols.part
+@@ -9,5 +9,6 @@
+  $applealu	*			=	macintosh_vndr/apple(alukbd)+%l[1]%(v[1])
+   nokiarx51	cz(qwerty)		=	nokia_vndr/%m(common)+nokia_vndr/%m(cz_qwerty)
+   nokiarx51	*			=	nokia_vndr/%m(common)+nokia_vndr/%m(%l[1]%_v[1])
++  key2		us			=	bbry_vndr/key2(us)
+  $thinkpads	br			=	pc+%l[1](thinkpad)
+   *		*			=	pc+%l[1]%(v[1])
+diff --git a/rules/0180-modellayout2_symbols.part b/rules/0180-modellayout2_symbols.part
+index cfab36a4..6db84c53 100644
+--- a/rules/0180-modellayout2_symbols.part
++++ b/rules/0180-modellayout2_symbols.part
+@@ -3,5 +3,6 @@
+  $applealu	$macvendorlayouts	=	+macintosh_vndr/%l[2]:2
+  nokiarx51	cz(qwerty)	=	+nokia_vndr/%m(cz_qwerty):2
+  nokiarx51	*		=	+nokia_vndr/%m(%l[2]%_v[2]):2
++ key2		us		=	+bbry_vndr/key2(us):2
+  $sun		$sun_custom	=	+sun_vndr/%l[2]:2
+   *		*		=	+%l[2]%(v[2]):2
+diff --git a/rules/0200-modellayout3_symbols.part b/rules/0200-modellayout3_symbols.part
+index cda6d308..b5c51ae5 100644
+--- a/rules/0200-modellayout3_symbols.part
++++ b/rules/0200-modellayout3_symbols.part
+@@ -3,5 +3,6 @@
+  $applealu	$macvendorlayouts	=	+macintosh_vndr/%l[3]:3
+  nokiarx51	cz(qwerty)	=	+nokia_vndr/%m(cz_qwerty):3
+  nokiarx51	*		=	+nokia_vndr/%m(%l[3]%_v[3]):3
++ key2		us			= +bbry_vndr/key2(us):3
+  $sun		$sun_custom	=	+sun_vndr/%l[3]:3
+   *		*		=	+%l[3]%(v[3]):3
+diff --git a/rules/0270-evdev.modellayout_symbols1.part b/rules/0270-evdev.modellayout_symbols1.part
+index 8ff2163a..857cd664 100644
+--- a/rules/0270-evdev.modellayout_symbols1.part
++++ b/rules/0270-evdev.modellayout_symbols1.part
+@@ -1 +1,3 @@
+ ! model		layout		=	symbols
++
++  key2      us          =   +bbry_vndr/key2(us)
+diff --git a/rules/base.xml b/rules/base.xml
+index f91ebaab..8b9458a4 100644
+--- a/rules/base.xml
++++ b/rules/base.xml
+@@ -3099,6 +3099,12 @@
+             <description>English (Dvorak, Macintosh, ISO)</description>
+           </configItem>
+         </variant>
++        <variant>
++          <configItem>
++            <name>key2</name>
++            <description>English (US, BlackBerry KEY 2)</description>
++          </configItem>
++        </variant>
+         <variant>
+           <configItem>
+             <name>norman</name>
+diff --git a/symbols/bbry_vndr/key2 b/symbols/bbry_vndr/key2
+new file mode 100644
+index 00000000..d5e80367
+--- /dev/null
++++ b/symbols/bbry_vndr/key2
+@@ -0,0 +1,55 @@
++partial alphanumeric_keys
++
++xkb_symbols "us" {
++	// I can't figure out how to make Level4 not Shift+Level3, so Level4,6,7,8 will be none, and Level5 will be the sym key
++	key.type = "EIGHT_LEVEL";
++	// 1. row
++	key <AD01>	{ [	q,		Q,		numbersign,	none,		asciitilde,			none,none,none] };
++	key <AD02>	{ [	w,		W,		1,		none,		grave,				none,none,none] };
++	key <AD03>	{ [	e,		E,		2,		none,		braceleft,			none,none,none] };
++	key <AD04>	{ [	r,		R,		3,		none,		braceright,			none,none,none] };
++	key <AD05>	{ [	t,		T,		parenleft,	none,		bracketleft,			none,none,none] };
++	key <AD06>	{ [	y,		Y,		parenright,	none,		bracketright,			none,none,none] };
++	key <AD07>	{ [	u,		U,		underscore,	none,		less,				none,none,none] };
++	key <AD08>	{ [	i,		I,		minus,          none,	        greater,			none,none,none] };
++	key <AD09>	{ [	o,		O,		plus,           none,	        asciicircum,			none,none,none] };
++	key <AD10>	{ [	p,		P,		at,		none,		percent, 			none,none,none] };
++
++	// 2. row
++	key <AC01>	{ [	a,		A,		asterisk,	none,		equal,				none,none,none] };
++	key <AC02>	{ [	s,		S,		4,		none,		division,			none,none,none] };
++	key <AC03>	{ [	d,		D,		5,		none,		plusminus,			none,none,none] };
++	key <AC04>	{ [	f,		F,		6,		none,		U2022,		 		none,none,none] };
++	key <AC05>	{ [	g,		G,		slash,		none,		backslash,			none,none,none] };
++	key <AC06>	{ [	h,		H,		colon,		none,		bar,				none,none,none] };
++	key <AC07>	{ [	j,		J,		semicolon,	none,		ampersand,			none,none,none] };
++	key <AC08>	{ [	k,		K,		apostrophe,	none,		leftdoublequotemark,		none,none,none] };
++	key <AC09>	{ [	l,		L,		quotedbl,	none,		rightdoublequotemark,		none,none,none] };
++
++	// 3. row
++	key <AB01>	{ [	z,		Z,		7,		none,		U00AB,		    		none,none,none] };
++	key <AB02>	{ [	x,		X,		8,		none,		U00BB,		    		none,none,none] };
++	key <AB03>	{ [	c,		C,		9,		none,		trademark,			none,none,none] };
++	key <AB04>	{ [	v,		V,		question,	none,		questiondown,			none,none,none] };
++	key <AB05>	{ [	b,		B,		exclam,		none,		exclamdown,			none,none,none] };
++	key <AB06>	{ [	n,		N,		comma,		none,		brokenbar,			none,none,none] };
++	key <AB07>	{ [	m,		M,		period,		none,		U00A7	,			none,none,none] };
++	// This key has a speaker symbol on it.	 It doesn't do anything in Android AFAICT, but let's make it mute
++	key <I442>	{ [	dollar,		EuroSign,	XF86AudioMute,	none,		dollar,				none,none,none] };
++
++	// 4. row
++	key <SPCE>	{ [	space,		none,		none,		none,		none,				none,none,none] };
++	// KEY_DICTATE (mic)
++	// there's no actual dictation option in freedesktop (xf86 keymap) AFAICT, so I'll make this mic mute I guess???
++	key <I594>	{ [ XF86AudioMicMute,	none,		0,		none,		none,				none,none,none] };
++	key <LALT>	{ [ ISO_Level3_Shift ] };
++	key <RALT> 	{ [ ISO_Level5_Shift ] };
++
++	include "level5(ralt_switch)"
++};
++
++partial modifier_keys 
++xkb_symbols "modifiers" {
++	modifier_map Mod3 { Alt_L };
++	modifier_map Mod5 { Alt_R };
++};
+diff --git a/symbols/us b/symbols/us
+index d9e65c3e..9e89be68 100644
+--- a/symbols/us
++++ b/symbols/us
+@@ -2260,3 +2260,10 @@ xkb_symbols "de_se_fi"  {
+ 
+     include "level3(ralt_switch)"
+ };
++
++partial alphanumeric_keys
++xkb_symbols "key2" {
++	name[Group1] = "English (US, BlackBerry KEY 2)";
++
++	include "bbry_vndr/key2(us)"
++};
+-- 
+2.51.0
+

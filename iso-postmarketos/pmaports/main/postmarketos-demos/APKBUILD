@@ -1,0 +1,22 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-demos
+pkgver=1.1.0
+pkgrel=0
+pkgdesc="Simple touch menu for a few demo programs"
+url="https://postmarketos.org"
+arch="all"
+license="GPL-3.0-or-later"
+depends="weston-xwayland dbus"
+makedepends="gtk+3.0-dev"
+source="https://gitlab.com/postmarketos/postmarketos-demos/-/archive/$pkgver/postmarketos-demos-$pkgver.tar.gz"
+options="!check" # No tests
+
+build() {
+	make
+}
+
+package() {
+	install -D -m755 postmarketos-demos \
+		"$pkgdir"/usr/bin/postmarketos-demos
+}
+sha512sums="6da813570faede9c23a80523518560b61f1612382652a4aa8cc4114f01d03308c4a495d62a549d2f8f98062a8a91c7274560afff07699ffb6a02e5e72a9ed1ca  postmarketos-demos-1.1.0.tar.gz"

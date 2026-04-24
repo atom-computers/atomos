@@ -1,0 +1,24 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="ASUS MeMO Pad 7 (ME176C(X))"
+deviceinfo_codename="asus-me176c"
+deviceinfo_manufacturer="ASUS"
+deviceinfo_year="2014"
+deviceinfo_arch="x86_64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="800"
+deviceinfo_screen_height="1280"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot-bootpart"
+
+# "ASUS Product Demo", contains mostly useless audio/video files for demo purposes...
+# With ~300 MB it is perfect as (second) EFI boot partition.
+deviceinfo_flash_fastboot_partition_kernel="APD"
+deviceinfo_boot_filesystem="fat32"

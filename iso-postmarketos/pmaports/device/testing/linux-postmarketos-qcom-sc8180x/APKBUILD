@@ -1,0 +1,55 @@
+maintainer=""
+pkgname=linux-postmarketos-qcom-sc8180x
+pkgver=6.6.0
+pkgrel=4
+pkgdesc="Mainline Kernel fork for Snadpragon 8cx 1st generation devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="${pkgname#linux-}"
+url="https://gitlab.com/sc8180x-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-uefi"
+makedepends="bash bison findutils flex installkernel openssl-dev perl"
+
+_commit="27c30b32783351f6ca31c619cbf42697e7208f3d"
+_config="config-$_flavor.$arch"
+# Source
+source="
+	linux-$_commit.tar.gz::https://gitlab.com/sc8180x-mainline/linux/-/archive/$_commit/linux-$commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+71a29d0e2dfc33ee264cba21b0af1bcf45b2b75a7152a7dd961d325af4e8abf076cb801d181527d65dceef173cadb2b6db3b0b8bdd1cd4afeb38ffce9a452c09  linux-27c30b32783351f6ca31c619cbf42697e7208f3d.tar.gz
+0d19720d457148549c8f980bd0b5d687351434cbbeb299a7de9610876df9a33f95fbff10e62d34c8fa16b18d2faa30a8127be21bc1e77b6c9e6835888acee656  config-postmarketos-qcom-sc8180x.aarch64
+"

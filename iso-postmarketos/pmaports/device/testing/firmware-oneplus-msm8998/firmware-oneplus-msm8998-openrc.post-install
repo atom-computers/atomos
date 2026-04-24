@@ -1,0 +1,3 @@
+#!/bin/sh
+# The Wi-Fi firmware will keep crashing if diag-router isn't running
+rc-update add diag-router boot

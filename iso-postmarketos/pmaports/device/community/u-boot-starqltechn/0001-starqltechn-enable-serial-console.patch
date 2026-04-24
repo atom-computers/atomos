@@ -1,0 +1,50 @@
+From f6c35ea176e29eda0e34c13a38d877af4124c25a Mon Sep 17 00:00:00 2001
+From: Dzmitry Sankouski <dsankouski@gmail.com>
+Date: Tue, 29 Nov 2022 17:25:37 +0300
+Subject: [PATCH 1/6] starqltechn: enable serial console
+
+Problem affected device boot, was fixed in
+f5ed6c9ccf3ec32a4bcc20835ee8fc378c342df9
+---
+ configs/starqltechn_defconfig | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/configs/starqltechn_defconfig b/configs/starqltechn_defconfig
+index 7955076d61..995a623305 100644
+--- a/configs/starqltechn_defconfig
++++ b/configs/starqltechn_defconfig
+@@ -9,7 +9,8 @@ CONFIG_IDENT_STRING="\nSamsung S9 SM-G9600"
+ CONFIG_SYS_LOAD_ADDR=0x80000000
+ CONFIG_FIT=y
+ CONFIG_FIT_VERBOSE=y
+-CONFIG_BOOTDELAY=0
++CONFIG_BOOTDELAY=5
++CONFIG_USE_PREBOOT=y
+ CONFIG_SAVE_PREV_BL_FDT_ADDR=y
+ CONFIG_SAVE_PREV_BL_INITRAMFS_START_ADDR=y
+ # CONFIG_DISPLAY_CPUINFO is not set
+@@ -20,17 +21,18 @@ CONFIG_SYS_PBSIZE=532
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_BMP=y
+ # CONFIG_NET is not set
+-# CONFIG_DM_STDIO is not set
+ CONFIG_CLK=y
+ CONFIG_MSM_GPIO=y
+ CONFIG_QCOM_PMIC_GPIO=y
+ CONFIG_PINCTRL=y
+ CONFIG_DM_PMIC=y
+ CONFIG_PMIC_QCOM=y
+-# CONFIG_REQUIRE_SERIAL_CONSOLE is not set
++CONFIG_REQUIRE_SERIAL_CONSOLE=y
++CONFIG_MSM_GENI_SERIAL=y
+ CONFIG_SPMI_MSM=y
+ CONFIG_VIDEO=y
+ CONFIG_SYS_WHITE_ON_BLACK=y
+ CONFIG_VIDEO_SIMPLE=y
+-CONFIG_VIDEO_DT_SIMPLEFB=y
++CONFIG_VIDEO_DT_SIMPLEFB=n
+ CONFIG_LMB_MAX_REGIONS=64
++CONFIG_BAUDRATE=921600
+-- 
+2.30.2
+

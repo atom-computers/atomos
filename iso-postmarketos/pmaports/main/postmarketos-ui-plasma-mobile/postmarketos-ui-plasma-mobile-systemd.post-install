@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Create missing display-manager.service alias if plasma-mobile service is
+# enabled and the alias is missing.
+if systemctl is-enabled -q plasma-mobile.service 2>/dev/null; then
+	if ! systemctl is-enabled -q display-manager.service 2>/dev/null; then
+        systemctl enable plasma-mobile.service
+    fi
+fi

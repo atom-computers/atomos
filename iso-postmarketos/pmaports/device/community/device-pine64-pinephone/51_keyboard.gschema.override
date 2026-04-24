@@ -1,0 +1,2 @@
+[org.gnome.desktop.input-sources]
+xkb-options=["lv3:ralt_switch"]

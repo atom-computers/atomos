@@ -1,0 +1,12 @@
+fix for drivers/tspdrv/tspdrv.c:43:20: fatal error: tspdrv.h: No such file or directory
+--- a/drivers/tspdrv/tspdrv.c	2017-12-02 09:07:35.000000000 +1300
++++ b/drivers/tspdrv/tspdrv.c	2018-07-26 15:02:55.056381629 +1200
+@@ -40,7 +40,7 @@
+ #include <linux/platform_device.h>
+ #include <asm/uaccess.h>
+ #include <asm/atomic.h>
+-#include <tspdrv.h>
++#include "tspdrv.h"
+ 
+ #define IMMVIBESPI_MULTIPARAM_SUPPORT
+

@@ -1,0 +1,85 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/vendor/kona_defconfig
+
+pkgname=linux-oneplus-instantnoodlep-downstream
+pkgver=4.19.272
+pkgrel=0
+pkgdesc="OnePlus 8 Pro kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="oneplus-instantnoodlep"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtc
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	xz
+"
+
+# Source
+_repository="android_kernel_oneplus_sm8250"
+_commit="28048669da64fdc5c7d9b1697531ed25d62ea9aa"
+_config="config-$_flavor.$arch"
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-comment-out-mgeneral-regs-only-flag.patch
+	0002-remove-inline-from-fn-usb-driver.patch
+	0003-remove-inline-techpack-dispay-driver.patch
+	0004-fix-enum-with-attempted-integer-subclass-syntax-issue.patch
+	0005-remove-inline-usb-driver-ax_get_stats.patch
+	0006-remove-inline-driver-lowmem_dbg.patch
+	0007-fix-variably-sized-array-initialization.patch
+	Suppress-error-about-static-buffer-overflow.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		V=1
+}
+
+package() {
+	downstreamkernel_package \
+		"$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	install -Dm644 "$_outdir/arch/arm64/boot/Image-dtb" \
+		"$pkgdir/boot/vmlinuz"
+
+	make O="$_outdir" \
+		ARCH="$_carch" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir" \
+		modules_install
+}
+
+sha512sums="
+8b291904ba7ea00fe32da7803415fa2e889cd2d964b454fb457923c2c462ab4ee02a843e6286f2a69f8530b4d09965ad21683b771c180124605bc7d15cfa07fb  linux-oneplus-instantnoodlep-downstream-28048669da64fdc5c7d9b1697531ed25d62ea9aa.tar.gz
+8f8e2c0e34229bc0958b711c6a6509e6ff1f3535146954ea927f023ce707d56cc548424732dd458556dd2851a7add584f78ccf67a9cefaf7d690f693f7639a1e  config-oneplus-instantnoodlep.aarch64
+bbd3790b58b1f0c28bac25cd50533fa9bb60d5727480ee3ff0063fbcc83c1b188d820cd7de736ca6bb67821b76071f54c46e5e5292a79e744af122bdc1a17ac0  0001-comment-out-mgeneral-regs-only-flag.patch
+37ff67b6aadcc8cf432c1e41d5ea9cecd882986df274a02ad7978401d86ef821809d6cb195881192626e5545e6b0668cb475ebe9cb42e583452e424854ddec78  0002-remove-inline-from-fn-usb-driver.patch
+c0524cdbe0e92af4a1a8b1e569d04c78fdab10e5e1ba09c3415439dfe3dacb2e89eef3cdf42fb77fe34155b872cd5871f8d2d0e2efd63918cdac6d93fae75b72  0003-remove-inline-techpack-dispay-driver.patch
+4487cb6b25eb08a55858bf21de9c9e26c55dafba4bd770259dc826fcee213215ebaae879b5c202e033d5bb014c5184f80455dd8bdadc0c608d7540d8b45fdda1  0004-fix-enum-with-attempted-integer-subclass-syntax-issue.patch
+39d4ab48c95369e6b1af8dc28301312096d9f2bc705266d9e0952f52f841dfe396ada2ff47afe01d88d7259aed8de339db29c87dc14496b4978da3a4b69f45fc  0005-remove-inline-usb-driver-ax_get_stats.patch
+a87b4f7065d9f34097bf2c283068b18c8e22a11394d54b8c941e243bada00e3f0fa2300f68192d13345a20ca360dedc84a006cbb4b86e43ace07c468fe498ee9  0006-remove-inline-driver-lowmem_dbg.patch
+c35ad50b595b4ac16551527dc585d6e9e47736ac216e512c91e73d8e5351d9516a197527f144df398687b198c1f3c008a6e629910740609ee24586ecc528ff6a  0007-fix-variably-sized-array-initialization.patch
+4e7a73a1c6e8424a34d317899525ca3d783de1a5e65cc0ecdf6334bbb233d165b476107e599cbd86868ed91a5a60d2ef0eff975861d61cb2c403b572314b4a94  Suppress-error-about-static-buffer-overflow.patch
+"

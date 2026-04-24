@@ -1,0 +1,11 @@
+#!/usr/sbin/nft -f
+table inet filter {
+	chain input {
+		iifname "docker*" accept comment "Allow incoming network traffic from Docker"
+	}
+
+	chain forward {
+		iifname "docker*" accept comment "Allow outgoing network traffic from Docker"
+		ct state {established, related} counter accept comment "accept established connections"
+	}
+}

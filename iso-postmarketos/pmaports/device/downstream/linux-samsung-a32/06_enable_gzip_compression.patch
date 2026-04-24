@@ -1,0 +1,12 @@
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 64c23a20f..7ef7559fd 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -102,6 +102,7 @@ config ARM64
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select HAVE_HW_BREAKPOINT if PERF_EVENTS
+ 	select HAVE_IRQ_TIME_ACCOUNTING
++	select HAVE_KERNEL_GZIP
+ 	select HAVE_MEMBLOCK
+ 	select HAVE_MEMBLOCK_NODE_MAP if NUMA
+ 	select HAVE_NMI if ACPI_APEI_SEA

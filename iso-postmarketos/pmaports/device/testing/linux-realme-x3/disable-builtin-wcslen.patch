@@ -1,0 +1,28 @@
+From 823246468ced0ba06f060c13c4b0db09a44512b9 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Tue, 3 Mar 2026 19:21:26 -0500
+Subject: [PATCH] disable-builtin-wcslen
+
+Backport 0af2f6be1b4281385b618cb86ad946eded089ac8
+
+---
+ Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index 79192a302..322ea1e7e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1005,6 +1005,9 @@ ifdef CONFIG_CC_IS_GCC
+ KBUILD_CFLAGS   += -fconserve-stack
+ endif
+ 
++# Ensure compilers do not transform certain loops into calls to wcslen()
++KBUILD_CFLAGS += -fno-builtin-wcslen
++
+ # change __FILE__ to the relative path from the srctree
+ KBUILD_CPPFLAGS += $(call cc-option,-fmacro-prefix-map=$(srctree)/=)
+ 
+-- 
+2.53.0
+

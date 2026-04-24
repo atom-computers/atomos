@@ -1,0 +1,36 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8916)
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-bq-piccolo
+pkgdesc="BQ Aquaris M5"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8939 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Video(/Modem) firmware"
+	depends="firmware-qcom-adreno-a420 msm-firmware-loader
+		 firmware-bq-piccolo-venus firmware-bq-piccolo-wcnss-nv"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+3a04cb52841a214d58bba6cc639de636bfbad3c376608e94063e45cf6659031ef3e1f303e5553ea19d2062de41eea91240ece462f662ee8b31534ba4ac80a95a  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+d7ba0b86dc573d0d57591399ec71c76169730b169546d1692910c3e04913100f8bfa534100dab8d5ad302d2a539fb64b040a6fb26979f41c8e7b76b596427afd  modules-initfs
+"

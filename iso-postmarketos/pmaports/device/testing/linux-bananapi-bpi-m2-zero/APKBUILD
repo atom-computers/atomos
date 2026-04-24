@@ -1,0 +1,68 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/sun8iw7p1smp_defconfig in downstream kernel for BPi M2 Zero
+maintainer="User0 <user0thenyancat@proton.me>"
+pkgname=linux-bananapi-bpi-m2-zero
+pkgver=7.0_rc1
+pkgrel=0
+pkgdesc="Banana Pi BPI-M2 Zero mainline kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="bananapi-bpi-m2-zero"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	findutils
+	postmarketos-installkernel
+	zstd
+"
+
+# Source
+_commit="7dff99b354601dd01829e1511711846e04340a69"
+_config="config-$_flavor.$arch"
+_repository="linux"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/torvalds/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/usr/share/dtb"
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+247b5e4f24eae35c3f3ffa6fcb0e56394c36f2cf065493b94e5399df22301a72063d8865d1a5052aec329a8241a5ed0bde13838ce4855e5c280ae125a05747d3  linux-bananapi-bpi-m2-zero-7dff99b354601dd01829e1511711846e04340a69.tar.gz
+0d76cf845a37168d14724bfa00148711af36b851ffe83eea677bf46c63604ea8a74b3654990711adb79a2559bb6f34046e2df7596e86203bd2aed71359948b2e  config-bananapi-bpi-m2-zero.armv7
+"

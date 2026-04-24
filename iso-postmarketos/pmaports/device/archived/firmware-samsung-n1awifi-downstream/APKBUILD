@@ -1,0 +1,46 @@
+# Archived: Downstream port, replaced by mainline port.
+pkgname=firmware-samsung-n1awifi-downstream
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Samsung n1awifi"
+url="https://github.com/exynos5420/android_vendor_samsung_n1a-common"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_n1awifi_commit="d5f5bda50338eaea89d31e95afd7be5080485c41"
+_n1awifi_url="https://github.com/exynos5420/android_vendor_samsung_n1a-common/raw/$_n1awifi_commit"
+
+_n1awifi_wifi_files="
+	bcmdhd_apsta.bin
+	bcmdhd_ibss.bin
+	bcmdhd_mfg.bin
+	bcmdhd_sta.bin
+	cred.conf
+	nvram_mfg.txt
+	nvram_net.txt
+"
+
+
+for _i in $_n1awifi_wifi_files; do
+	source="$source $pkgname-$_n1awifi_commit-$_i::$_n1awifi_url/proprietary/etc/wifi/$_i";
+done
+
+package() {
+	# Wifi
+	local file
+	for file in $_n1awifi_wifi_files; do
+		 install -Dm644 "$srcdir/$pkgname-$_n1awifi_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+sha512sums="
+f0adb03c36e5524c2aca1ec871861d7bc126302028455e0a4eca5b841261e3d50803eba2f82738483de21c6703b2c896e65930c09a6a16d3de61a63ca035844a  firmware-samsung-n1awifi-downstream-d5f5bda50338eaea89d31e95afd7be5080485c41-bcmdhd_apsta.bin
+9993d27fef9f62c43b8a4a75a9c2658022a39a40e65065329519fe8274114a1667d2a4f87ffca43bd043897e5ecaac293ef4929e449d0e8e7f5c3f07f5602536  firmware-samsung-n1awifi-downstream-d5f5bda50338eaea89d31e95afd7be5080485c41-bcmdhd_ibss.bin
+bff2e27222f3fea8fd0c9eef3b7f474531a8a1d22cc5742e8a20bade7ab8c6407ec2773e3d7a5346b54d8389e54d101fb4cdf049c35040b3806325a607346758  firmware-samsung-n1awifi-downstream-d5f5bda50338eaea89d31e95afd7be5080485c41-bcmdhd_mfg.bin
+b9344478874f94af33052e76116f2c24b577c4c8178a3c7fc8eb9bb6a1d8c3f497443a88cf1b94256ef3e17806541d7271784505ac16de2b322ccb5ddcec54d3  firmware-samsung-n1awifi-downstream-d5f5bda50338eaea89d31e95afd7be5080485c41-bcmdhd_sta.bin
+16ee43800bf7c05f550a14036ef1d648999568996854c72c1ef3965a8fd18eabfda284266fa2e2a0fee8c5fec01fd9a7e22b11b6723797742b5a6260e0b44096  firmware-samsung-n1awifi-downstream-d5f5bda50338eaea89d31e95afd7be5080485c41-cred.conf
+83b6d11dd5544d1a130a74464b0f30c7f5807ef586c26d2a216961e335bd0bedfaa725198f912f226fb267ca5742487938a8fc948cbc71f84682cd447d064ea0  firmware-samsung-n1awifi-downstream-d5f5bda50338eaea89d31e95afd7be5080485c41-nvram_mfg.txt
+1b94536a1dca06195787999e5788178e6eced88779911bd24418d77f07dccce3ffcd2a182c14f231b6a8ca7723f2b0fcf6c45cdd1d7d20966cce1bd7e98c3c40  firmware-samsung-n1awifi-downstream-d5f5bda50338eaea89d31e95afd7be5080485c41-nvram_net.txt
+"

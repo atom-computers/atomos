@@ -1,0 +1,37 @@
+From 491964e09df428b98ffe5cf617c8a50aaa694152 Mon Sep 17 00:00:00 2001
+From: Karl Chan <exkcmailist@inbox.lv>
+Date: Sun, 26 Nov 2023 11:46:30 +0800
+Subject: [PATCH] add 32bit supoort
+
+---
+ drivers/clk/qcom/Kconfig         |  1 -
+ drivers/pinctrl/qcom/Kconfig.msm |  1 -
+ 2 files changed, 2 deletions(-)
+
+diff --git a/drivers/clk/qcom/Kconfig b/drivers/clk/qcom/Kconfig
+index ad1acd9b7..cfc6444de 100644
+--- a/drivers/clk/qcom/Kconfig
++++ b/drivers/clk/qcom/Kconfig
+@@ -148,7 +148,6 @@ config IPQ_GCC_4019
+ 
+ config IPQ_GCC_5018
+ 	tristate "IPQ5018 Global Clock Controller"
+-	depends on ARM64 || COMPILE_TEST
+ 	help
+ 	  Support for global clock controller on ipq5018 devices.
+ 	  Say Y if you want to use peripheral devices such as UART, SPI,
+diff --git a/drivers/pinctrl/qcom/Kconfig.msm b/drivers/pinctrl/qcom/Kconfig.msm
+index 01dd7b134..b2c5904fb 100644
+--- a/drivers/pinctrl/qcom/Kconfig.msm
++++ b/drivers/pinctrl/qcom/Kconfig.msm
+@@ -24,7 +24,6 @@ config PINCTRL_IPQ4019
+ 
+ config PINCTRL_IPQ5018
+ 	tristate "Qualcomm Technologies, Inc. IPQ5018 pin controller driver"
+-	depends on ARM64 || COMPILE_TEST
+ 	help
+ 	  This is the pinctrl, pinmux, pinconf and gpiolib driver for
+ 	  the Qualcomm Technologies Inc. TLMM block found on the
+-- 
+GitLab
+

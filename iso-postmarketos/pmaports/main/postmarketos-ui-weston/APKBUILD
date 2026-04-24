@@ -1,0 +1,60 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Bart Ribbers <bribbers@disroot.org>"
+pkgname=postmarketos-ui-weston
+pkgver=6
+pkgrel=11
+pkgdesc="(Wayland) Reference compositor (demo, not a phone interface)"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	bluez
+	dnsmasq
+	elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	tinydm
+	tinydm-openrc
+	weston
+	weston-shell-desktop
+	weston-backend-drm
+	xorg-server
+	"
+_pmb_recommends="htop
+	postmarketos-artwork-wallpapers
+	postmarketos-demos
+	weston-clients
+	weston-terminal
+	weston-xwayland
+	xwayland
+	"
+subpackages="$pkgname-openrc"
+source="start_weston.sh weston.ini.default"
+options="!check pmb:drm" # Meta package, no test suite
+
+package() {
+	install -Dm755 "$srcdir"/start_weston.sh \
+		"$pkgdir"/usr/bin/start_weston.sh
+
+	install -Dm644 "$srcdir"/weston.ini.default \
+		"$pkgdir"/etc/xdg/weston/weston.ini.default
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		bluez-openrc
+		elogind-openrc
+		lightdm-openrc
+		openrc
+		networkmanager-openrc
+	"
+
+	mkdir -p "$subpkgdir"
+}
+sha512sums="
+6c9f4f6eeb179b067f1d08c84f35d6a705043432a92c3733491de3c240d48a85e95173e0b4e2f83b737761212a2aec365b1375c077c330735013c9cf36d4390e  start_weston.sh
+57d2dd91aa6bee6ab73122bf26906de183fceee9f6c28586ac803045344b10c4e3c7e9cd23cada86a585c42221505a2d23572e3d6d1fd757c1ed1c8e1b65644c  weston.ini.default
+"

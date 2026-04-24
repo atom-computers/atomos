@@ -1,0 +1,45 @@
+CPR (Core Power Reduction) is Qualcomm's implementation of AVS (Adaptive Voltage Scaling).
+Dynamic undervolting essentially. It depends on some calibration values encoded
+in fuses. This patch dumps the fuse values in the downstream kernel which is useful
+to check if the mainline driver is working correctly.
+
+diff --git a/drivers/regulator/cpr-regulator.c b/drivers/regulator/cpr-regulator.c
+index 8637d78c..880482b5 100644
+--- a/drivers/regulator/cpr-regulator.c
++++ b/drivers/regulator/cpr-regulator.c
+@@ -3350,6 +3350,26 @@ static int cpr_init_cpr_parameters(struct platform_device *pdev,
+ 	return 0;
+ }
+
++static void cpr_dump(struct cpr_regulator *cpr_vreg)
++{
++	int i;
++
++	cpr_info(cpr_vreg, "pvs_bin: %u, speed_bin: %u, pvs_version: %u\n",
++		 cpr_vreg->pvs_bin, cpr_vreg->speed_bin, cpr_vreg->pvs_version);
++
++	for (i = CPR_FUSE_CORNER_MIN; i <= cpr_vreg->num_fuse_corners; i++) {
++		cpr_info(cpr_vreg, "FUSE[%d]: pvs_corner_v: %u, cpr_fuse_target_quot: %u, cpr_fuse_ro_sel: %u, fuse_ceiling_volt: %u, fuse_floor_volt: %u, step_quotient: %u\n",
++			 i, cpr_vreg->pvs_corner_v[i], cpr_vreg->cpr_fuse_target_quot[i], cpr_vreg->cpr_fuse_ro_sel[i],
++			 cpr_vreg->fuse_ceiling_volt[i], cpr_vreg->fuse_floor_volt[i],
++			 cpr_vreg->step_quotient[i]);
++	}
++
++	for (i = CPR_CORNER_MIN; i <= cpr_vreg->num_corners; i++) {
++		cpr_info(cpr_vreg, "CORNER[%d]: ceiling_volt: %u, floor_volt: %u, last_volt: %u, open_loop_volt: %u, quot_adjust: %u\n",
++			 i, cpr_vreg->ceiling_volt[i], cpr_vreg->floor_volt[i], cpr_vreg->last_volt[i], cpr_vreg->open_loop_volt[i], cpr_vreg->quot_adjust[i]);
++	}
++}
++
+ static int cpr_init_cpr(struct platform_device *pdev,
+ 			       struct cpr_regulator *cpr_vreg)
+ {
+@@ -3411,6 +3431,8 @@ static int cpr_init_cpr(struct platform_device *pdev,
+ 	if (rc)
+ 		return rc;
+
++	cpr_dump(cpr_vreg);
++
+ 	/* Get and Init interrupt */
+ 	cpr_vreg->cpr_irq = platform_get_irq(pdev, 0);
+ 	if (!cpr_vreg->cpr_irq) {

@@ -1,0 +1,31 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-asus-sparrow-downstream
+pkgdesc="ASUS ZenWatch 2 (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-asus-sparrow-downstream
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+4945852133fff539967551344ddb80839a6369ef857c332fe444fc7b485eb09a4f3d089752267062b25683478a614cea046250a56f77b14317c83123c5b5dbb0  deviceinfo
+4b7f1842dbbd6ec2990d7ea259de3f801a33e38a82f747549249cedcb64aa37935e9452a5f50f6d0cc6ce38a1db8e9d6f77440a7c52f61cd353ea75b7f3e395a  kernel-cmdline.conf
+"

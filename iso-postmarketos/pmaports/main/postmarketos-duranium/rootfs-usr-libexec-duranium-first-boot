@@ -1,0 +1,69 @@
+#!/bin/sh
+set -e
+
+# Parse output from f0rmz UI
+# Sets: firstboot_username, firstboot_password
+get_firstboot_config() {
+    local output
+    # f0rmz emits 15/SIGTERM on success...
+    output=$(f0rmz -C /usr/share/duranium/f0rmz-firstboot.conf || true)
+    if [ -z "$output" ] || ! echo "$output" | grep -q "username="; then
+        echo "ERROR: running f0rmz configuration UI failed!" >&2
+        exit 1
+    fi
+
+    while IFS= read -r line; do
+        key="${line%%=*}"
+        value="${line#*=}"
+        case "$key" in
+        username) firstboot_username="$value" ;;
+        password) firstboot_password="$value" ;;
+        fde_passphrase) firstboot_fde_passphrase="$value" ;;
+        esac
+    done <<EOF
+$output
+EOF
+}
+
+get_luks_device() {
+    local dm_name
+    dm_name=$(findmnt -n -o SOURCE / | sed 's|/dev/mapper/||')
+    cryptsetup status "$dm_name" | awk '/device:/{print $2}'
+}
+
+get_firstboot_config
+
+useradd \
+    --comment "Default User" \
+    --create-home \
+    --user-group \
+    --shell /bin/sh \
+    --groups audio,input,netdev,plugdev,video,wheel,render \
+    "$firstboot_username"
+
+# set user password
+printf '%s:%s' "$firstboot_username" "$firstboot_password" | chpasswd
+
+# Keep this at the end so it can also act as the sentinel file for running the
+# first boot setup, e.g. if this is the first boot or the above operations are
+# interrupted
+printf '%s\n' "$firstboot_username" > /etc/default_user
+
+# Re-trigger generators after creating the default user, because some UIs
+# (plasma mobile, tinydm) are system daemons that run as the default user, and
+# the generator depends on /etc/default_user to work properly. It will have run
+# previously during first boot, before this firstboot app ran, and would have
+# used the wrong UID in the unit override it generated.
+systemctl daemon-reload
+
+if [ -z "$firstboot_fde_passphrase" ]; then
+    echo "No FDE passphrase given, not changing default/empty passphrase"
+    exit 0
+fi
+
+# replace empty LUKS passphrase slot with user's passphrase
+luks_dev=$(get_luks_device)
+systemd-run --pipe \
+    --property="SetCredential=cryptenroll.new-passphrase:${firstboot_fde_passphrase}" \
+    -- \
+    systemd-cryptenroll --unlock-key-file=/dev/null --wipe-slot=empty --password "$luks_dev"

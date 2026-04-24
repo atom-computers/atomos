@@ -1,0 +1,40 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-j7xelte)!
+pkgname=firmware-samsung-j7xelte-downstream
+pkgver=1
+pkgrel=0
+pkgdesc="Samsung Galaxy J7 (2016) Firmware"
+url="https://gitlab.com/android_samsung_universal7870"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+_commit="9cf17bec93940d68755158e69b9b3abdf3b4ece1"
+_repo="https://gitlab.com/android_samsung_universal7870/vendor/android_vendor_samsung_j7xelte/-/raw/$_commit/proprietary/vendor"
+_prefix=$pkgname-$_commit
+
+_files_etc="
+bcmdhd_sta.bin
+nvram.txt
+"
+
+for _file in $_files_etc; do
+	source="$source $_prefix-$_file::$_repo/etc/wifi/$_file"
+done
+
+source="$source $_prefix-mfc_fw.bin::$_repo/firmware/mfc_fw.bin"
+
+package() {
+	local file
+	for file in $_files_etc; do
+		install -Dm644 "$srcdir/$_prefix-$file" \
+		"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+	install -Dm644 "$srcdir/$_prefix-mfc_fw.bin" \
+		"$pkgdir/lib/firmware/postmarketos/mfc_fw.bin"
+
+}
+sha512sums="
+3a70de63fc0a842306fc05f66f75ac2fcf7b7726b1a195cf6746c49bb0b563e994c46f6f02c4ad3e3a14819cbc5d5ba930ef0ab720aa1cd2a4839a1d04bf0096  firmware-samsung-j7xelte-9cf17bec93940d68755158e69b9b3abdf3b4ece1-bcmdhd_sta.bin
+c34bb422662fcfb604ff0942a294d3b8ec360e07ca5b4a586472d42ec37ba60776e010f99f56ce511c5a1779c438605ec7a0fd965dece9b3b70b9e093d7913e3  firmware-samsung-j7xelte-9cf17bec93940d68755158e69b9b3abdf3b4ece1-nvram.txt
+1aef3df174f07204e59d099242cb2d0ad63d957583723bd9423be5d316c2aa426e9136bfedde8d3b3080b99fb608e6ffce9ca4f419080b79f9bf00732ec99d57  firmware-samsung-j7xelte-9cf17bec93940d68755158e69b9b3abdf3b4ece1-mfc_fw.bin
+"

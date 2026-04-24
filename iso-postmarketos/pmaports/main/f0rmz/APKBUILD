@@ -1,0 +1,72 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=f0rmz
+pkgver=3.4.2
+pkgrel=0
+_commit_lvgl=7f07a129e8d77f4984fff8e623fd5be18ff42e74
+pkgdesc="Framebuffer-based form wizard for the initramfs based on LVGL"
+url="https://gitlab.postmarketos.org/postmarketOS/buffybox"
+# x86: strange TEXTREL issue that only happens on this arch
+arch="all !x86"
+license="GPL-3.0-or-later"
+makedepends="
+	eudev-dev
+	inih-dev
+	libdrm-dev
+	libinput-dev
+	libxkbcommon-dev
+	linux-headers
+	meson
+	scdoc
+	"
+source="
+	https://gitlab.postmarketos.org/postmarketOS/buffybox/-/archive/$pkgver/buffybox-$pkgver.tar.gz
+	lvgl-$_commit_lvgl.tar.gz::https://github.com/lvgl/lvgl/archive/$_commit_lvgl.tar.gz
+	f0rmz.conf
+	f0rmz.files
+	10-fb-force-refresh.conf
+	"
+options="!check" # No tests
+subpackages="$pkgname-doc $pkgname-fbforcerefresh"
+builddir="$srcdir/buffybox-$pkgver"
+
+prepare() {
+	default_prepare
+	mkdir -p "$builddir/lvgl"
+	mv "$srcdir/lvgl-$_commit_lvgl"/* "$builddir/lvgl"
+
+}
+
+build() {
+	abuild-meson build
+	meson compile ${JOBS:+-j ${JOBS}} -C build
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C build
+	find "$pkgdir" -name "*buffyboard*" -exec rm "{}" \;
+	find "$pkgdir" -name "*unl0kr*" -exec rm "{}" \;
+
+	install -Dm644 "$srcdir"/f0rmz.conf -t "$pkgdir"/usr/share/f0rmz
+
+	touch f0rmz/f0rmz
+	install -Dm644 f0rmz/f0rmz -t \
+		"$pkgdir"/usr/share/mkinitfs-triggers
+
+	install -Dm644 "$srcdir"/f0rmz.files \
+		"$pkgdir"/usr/share/mkinitfs/files-extra/30-f0rmz.files
+}
+
+fbforcerefresh() {
+	pkgdesc="$pkgdesc (force refresh quirk)"
+
+	install -Dm644 "$srcdir"/10-fb-force-refresh.conf \
+		-t "$subpkgdir"/usr/share/f0rmz/f0rmz.conf.d/
+}
+
+sha512sums="
+b72ddf2811d169c4d6542b9f59d7ee6f94038ec6067d5d137cd7f16a005acfcf77687a5f2a5aa3052296ba0da16d7960cea9e083cb9f21f1dfc7b5174540ffcb  buffybox-3.4.2.tar.gz
+eec9a6c2d07f7bfbfd4865bfaaf9d60890532d900366f019424f83f104b20377056cdcecb720c46ad748f3e8a304c609ac99f7a77289d7e302b89aabb4adfb55  lvgl-7f07a129e8d77f4984fff8e623fd5be18ff42e74.tar.gz
+7155c2f95dcf3716c0f392cf5717e96f1414c383a1f7c2ed30a1f8518dfe0b17c3c0e0e93f6476a342504aa855404099e2f5444eeb099023491c9a9a26fa3d90  f0rmz.conf
+a7974c1ef4ba7050ab0e1d05d9a2ca15ef8bf1a638f21df6a5eb004003a8a33e34ecb2808e8b5125bc980d98b2c26f6ad66ee93b2ff2d3ee20045d8458b7cfcf  f0rmz.files
+f700af3145b79d1ef9edfb22982899b25cabfb212f9620dcbd3a2e6f44b5ad591e0a66056c6fcd66c3fde89a2b5f551e8a8fe2e65cf0e2a48adec57c027d7825  10-fb-force-refresh.conf
+"

@@ -1,0 +1,131 @@
+maintainer=""
+pkgname=firmware-xiaomi-raphael
+pkgver=20250908
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi 9T Pro / Redmi K20 Pro"
+arch="aarch64"
+_carch="arm64"
+subpackages="
+	$pkgname-adreno
+	$pkgname-adsp
+	$pkgname-ath10k
+	$pkgname-bluetooth
+	$pkgname-camera
+	$pkgname-cdsp
+	$pkgname-ipa
+	$pkgname-modem
+	$pkgname-slpi
+	$pkgname-touchscreen
+	$pkgname-venus
+	$pkgname-wlan
+	"
+
+url="https://github.com/dabao1955/pmos_firmware_xiaomi_raphael"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="cf9d303adda1cf25dad22cadc192f762f0a06a17"
+source="
+	https://github.com/dabao1955/pmos_firmware_xiaomi_raphael/archive/$_commit.tar.gz
+	30-gpu-firmware.files"
+builddir="$srcdir/pmos_firmware_xiaomi_raphael-$_commit"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+	install -Dm644 "$srcdir/30-gpu-firmware.files" \
+		"$pkgdir/usr/share/mkinitfs/files/30-gpu-firmware.files"
+}
+
+# Xiaomi raphael boots with secure boot, it can only load signed firmwares.
+adreno() {
+	pkgdesc="Xiaomi raphael adreno firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/a6* -t \
+		"$subpkgdir/lib/firmware/qcom/"
+}
+
+adsp() {
+	pkgdesc="Xiaomi raphael adsp firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/adsp* -t \
+		"$subpkgdir/lib/firmware/"
+}
+
+ath10k() {
+	pkgdesc="Xiaomi raphael ath10k firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/wlan/ath10k/board-2.bin -t \
+		"$subpkgdir/lib/firmware/ath10k/WCN3990/hw1.0/"
+
+	install -Dm644 "$builddir"/sm8150/raphael/wlan/ath10k/firmware-5.bin -t \
+		"$subpkgdir/lib/firmware/ath10k/WCN3990/hw1.0/"
+}
+
+
+bluetooth() {
+	pkgdesc="Xiaomi raphael adsp firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/crnv21.bin -t \
+		"$subpkgdir/lib/firmware/qca/"
+}
+
+camera() {
+	pkgdesc="Xiaomi raphael camera firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/CAMERA_ICP.elf -t \
+		"$subpkgdir/lib/firmware/"
+}
+
+cdsp() {
+	pkgdesc="Xiaomi raphael cdsp firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/cdsp* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/Xiaomi/raphael/"
+}
+ipa() {
+	pkgdesc="Xiaomi raphael ipa firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/ipa* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/Xiaomi/raphael/"
+}
+
+modem() {
+	pkgdesc="Xiaomi raphael modem firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/modem* -t \
+		"$subpkgdir/lib/firmware/"
+}
+
+
+slpi() {
+	pkgdesc="Xiaomi raphael slpi firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/slpi* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/Xiaomi/raphael/"
+}
+touchscreen() {
+	pkgdesc="Xiaomi raphael touchscreen firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/good* -t \
+		"$subpkgdir/lib/firmware/"
+}
+
+venus() {
+	pkgdesc="Xiaomi raphael venus firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/venus.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/Xiaomi/raphael/"
+}
+
+wlan() {
+	pkgdesc="Xiaomi raphael wlan firmware"
+
+	install -Dm644 "$builddir"/sm8150/raphael/wlanmdsp.mbn -t \
+		"$subpkgdir/lib/firmware/"
+}
+
+
+sha512sums="
+cc287812d92df8918134ebf6131c8591df15d0eebf962fe8433fb38abc114344f6b5f0a30589974c1516d73d7ee4e106d79c2c56fb9fa26de5850c554b6ab0fb  cf9d303adda1cf25dad22cadc192f762f0a06a17.tar.gz
+db9c8e7e6de67a1c0ca853af138b7218e7451f767268f8ec1f7131c8ef179fdd8d85e6ebccae3ff715bfa6d9ad7ec1bcf2cc2554fe442bb74bd5ecf65e1096fc  30-gpu-firmware.files
+"

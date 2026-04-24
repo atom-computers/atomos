@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=device-wileyfox-crackling
+pkgdesc="Wileyfox Swift"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	10-crackling-proximity.rules
+	"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+# Backwards compatibility for old kernel variant subpackages
+replaces="$pkgname-kernel-mainline $pkgname-kernel-mainline-modem"
+for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/10-crackling-proximity.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/10-crackling-proximity.rules
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		 firmware-wileyfox-crackling-wcnss-nv firmware-wileyfox-crackling-venus"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+1b605ed2010c8b2e57e002f0fa66394414a4d4317ab6140b88362b8ce738edfbcd5b23510b541283ef79fdac92117b5b4dbdb432978d569a1b87277d67d4cd82  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+31f926acffed502edca7d6a26c97c197970b842122df42a1ea5c63f2707b4375465eae77a754f5d58f556f55e1f5f421af21a92ca6165a3a4bacf55c5fbf7faf  modules-initfs
+a845e860cf43e58818bbffda62a9514e9a24527e14c485dd10944587b29dbf5864a1d3ec17d219c342512fac4bd6c25f5f0f4efb8883b8f383a79846759318ee  10-crackling-proximity.rules
+"

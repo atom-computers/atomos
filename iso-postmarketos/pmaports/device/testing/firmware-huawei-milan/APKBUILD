@@ -1,0 +1,23 @@
+maintainer="bzy-080408 <Bzy080408@outlook.com>"
+pkgname=firmware-huawei-milan
+pkgver=0
+pkgrel=1
+_commit="f417e07a32310ee4002ca67a3d57f9ba0a960297"
+pkgdesc="Firmware files for Huawei Maimang5 / G9 (Plus) / Nova (Plus)"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+source="milan-fw-$_commit.tar.gz::https://github.com/bzy-080408/postmarketos-vendor-huawei-milan/archive/$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/postmarketos-vendor-huawei-milan-$_commit/"
+_fwdir="/lib/firmware/qcom/msm8953/huawei/milan"
+
+package() {
+	# GPU firmwares
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+f04a54bd81e389001e95357ffe301a10285c54782f70bb8ac9aed30173a6c9594b3568649d287234769b413cc3f93dbc982b3c596d287947d4630eaf98954451  milan-fw-f417e07a32310ee4002ca67a3d57f9ba0a960297.tar.gz
+"

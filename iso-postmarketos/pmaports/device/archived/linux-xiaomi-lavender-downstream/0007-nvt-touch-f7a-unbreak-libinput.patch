@@ -1,0 +1,60 @@
+From 674e10330546921dca7308fad44f593741f8db23 Mon Sep 17 00:00:00 2001
+From: Danct12 <danct12@disroot.org>
+Date: Tue, 17 Mar 2020 10:16:31 +0700
+Subject: [PATCH] driver: touchscreen: nvt_touch_f7a: do not report
+ ABS_MT_TOUCH_MAJOR/ABS_MT_WIDTH_MAJOR
+
+It seems touchscreen chip can only report touch pressure from 0 to 255,
+which should be ABS_MT_PRESSURE according to
+https://www.kernel.org/doc/Documentation/input/multi-touch-protocol.txt.
+
+Do not set same values to ABS_MT_TOUCH_MAJOR/ABS_MT_WIDTH_MAJOR to avoid
+breaking libinput and software.
+
+Thanks @NotKit!
+
+Signed-off-by: Danct12 <danct12@disroot.org>
+---
+ drivers/input/touchscreen/nvt_touch_f7a/nt36xxx.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/input/touchscreen/nvt_touch_f7a/nt36xxx.c b/drivers/input/touchscreen/nvt_touch_f7a/nt36xxx.c
+index 9a3c1638b6a2..ad4dda241145 100644
+--- a/drivers/input/touchscreen/nvt_touch_f7a/nt36xxx.c
++++ b/drivers/input/touchscreen/nvt_touch_f7a/nt36xxx.c
+@@ -1030,7 +1030,7 @@ static void nvt_ts_work_func(struct work_struct *work)
+ 			input_report_abs(ts->input_dev, ABS_MT_POSITION_X, input_x);
+ 			input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, input_y);
+ #if ENABLE_TOUCH_SZIE
+-			input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, input_w);
++			//input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, input_w);
+ #endif
+ 			input_report_abs(ts->input_dev, ABS_MT_PRESSURE, input_p);
+ 
+@@ -1048,7 +1048,7 @@ static void nvt_ts_work_func(struct work_struct *work)
+ 		if (press_id[i] != 1) {
+ 			input_mt_slot(ts->input_dev, i);
+ #if ENABLE_TOUCH_SZIE
+-			input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0);
++			//input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0);
+ #endif
+ 			input_report_abs(ts->input_dev, ABS_MT_PRESSURE, 0);
+ 			input_mt_report_slot_state(ts->input_dev, MT_TOOL_FINGER, false);
+@@ -1427,7 +1427,7 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
+ 
+ #if TOUCH_MAX_FINGER_NUM > 1
+ #if ENABLE_TOUCH_SZIE
+-	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
++	//input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+ #endif
+ 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, 0, ts->abs_x_max-1, 0, 0);
+ 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y, 0, ts->abs_y_max-1, 0, 0);
+@@ -1708,7 +1708,7 @@ static int32_t nvt_ts_suspend(struct device *dev)
+ 	for (i = 0; i < ts->max_touch_num; i++) {
+ 		input_mt_slot(ts->input_dev, i);
+ #if ENABLE_TOUCH_SZIE
+-		input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0);
++		//input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0);
+ #endif
+ 		input_report_abs(ts->input_dev, ABS_MT_PRESSURE, 0);
+ 		input_mt_report_slot_state(ts->input_dev, MT_TOOL_FINGER, 0);

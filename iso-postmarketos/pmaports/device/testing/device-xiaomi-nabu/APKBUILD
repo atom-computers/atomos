@@ -1,0 +1,101 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Pan Ortiz <panjeoc@proton.me>"
+pkgname=device-xiaomi-nabu
+pkgdesc="Xiaomi Pad 5"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="
+	!check
+	!archcheck
+	!strip
+	"
+depends="
+	firmware-xiaomi-nabu
+	linux-postmarketos-qcom-sm8150
+	make-dynpart-mappings
+	mesa-vulkan-freedreno
+	mkbootimg
+	msm-modem
+	postmarketos-base
+	qbootctl
+	swclock-offset
+	tqftpserv
+"
+makedepends="devicepkg-dev"
+source="
+	HiFi.conf
+	nabu.pa
+	89-xiaomi_nabu.conf
+	XiaomiPad5.conf
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	30-gpu-firmware.files
+"
+
+subpackages="
+	$pkgname-audio
+	$pkgname-openrc
+"
+
+build() {
+	devicepkg_build	$startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install	-Dm644 "$srcdir/XiaomiPad5.conf" -c \
+		"$pkgdir/usr/share/alsa/ucm2/conf.d/sm8150/Xiaomi Pad 5.conf"
+
+	install -Dm644 "$srcdir"/89-xiaomi_nabu.conf -t \
+		"$pkgdir"/etc/pulse/daemon.conf.d
+
+	install -Dm644 "$srcdir"/nabu.pa -t \
+		"$pkgdir"/etc/pulse/default.pa.d
+
+	install	-Dm644 "$srcdir"/HiFi.conf -t \
+		"$pkgdir"/usr/share/alsa/ucm2/Xiaomi/nabu
+
+	install -Dm64 "$srcdir"/30-gpu-firmware.files -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="
+		qbootctl-openrc
+		tqftpserv-openrc
+		"
+	mkdir -p "$subpkgdir"
+}
+
+audio() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-base-ui-audio"
+	replaces="alsa-ucm-conf"
+	depends="
+		alsa-ucm-conf
+		postmarketos-base-ui-audio-backend-pipewire
+	"
+
+	amove "usr/share/alsa/ucm2/conf.d/sm8150/Xiaomi Pad 5.conf"
+	amove etc/pulse/daemon.conf.d
+	amove etc/pulse/default.pa.d
+	amove usr/share/alsa/ucm2/Xiaomi/nabu
+}
+
+sha512sums="
+f90cf78189f3ac63262d489c40223b95d387ec8613d481bf68343d539bd4005f8251bfd56ce03327025d37a4d8b1e3dc785660d6bd22a128484b83d51e5034f5  HiFi.conf
+d66d6f2129f8aef4449137a1506fb3b3a1275c98502238537ac4dd0c174145706bac971e7e100d3599c9b8aa9c62319c302884d39aad5ba99c9bdcbe1e54bc23  nabu.pa
+02e2600514fc29ab83d056ada3d1fb0b8a598dc47c9848aebdeef3f0f67bb78cd45c5b23d3158fb3a0826f47061161bbc7ee8cd9ac5c408c1de37cdbe5d8e9ba  89-xiaomi_nabu.conf
+7b0b16f02b59b74cef7d82ae4e33f8d0c4ea12515824abb3392891eb75c365d19efec685f6f6248b7fec1e2698caca741bba01687673914d0f9de188444e0b37  XiaomiPad5.conf
+3af6e4bc47fc891c141e5965cf284a066d87d6097d0f2b3e21eca2da6f14f4dfe2721d69b6b13b8bf8fdad9abcee97668e0426f00a64bc72bbee3a67baea8579  deviceinfo
+003e5228a2b2825f24cb8b4842e3c3f72b99225f0aef3cda5bb2de4e4beb5e1c84800ba48c6cf1b84fe042bd039912e67c545c00981b604db0c0f0bcb546f7c5  kernel-cmdline.conf
+74b5d3eeeca5e212f8f514dc3ee7ff5b4c6a8bb38cffb266ba332dc98eed5dba8031a327508afd9e67576c60d0ca34f16bbb8ad979ea04bb34ab711a0ec8dfe5  modules-initfs
+2b01237fc15baf4af6067f227a017983a319dff7aaec1fd23e71f201c3bc343eb90c2745acf6f0e109cdb52762b3db9a5e897fe3fe822592db6818e4903fda35  30-gpu-firmware.files
+"

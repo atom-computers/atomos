@@ -1,0 +1,77 @@
+# Forked from Alpine
+# systemd unit activation
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=gnome-keyring
+_pkgver=50.0
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="GNOME keyring"
+url="https://gitlab.gnome.org/GNOME/gnome-keyring"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-2.0-only LGPL-2.0-only"
+# the gcr binaries are needed for things to open the keyring via libsecret
+depends="gcr"
+makedepends="
+	gcr-dev
+	gobject-introspection-dev
+	gtk+3.0-dev
+	gtk-doc
+	intltool
+	libcap-ng-dev
+	libgcrypt-dev
+	libxslt
+	linux-pam-dev
+	meson
+	openssh-client
+	systemd-dev
+	"
+checkdepends="
+	dbus
+	python3
+	"
+provides="dbus:org.freedesktop.Secrets"
+# Highest priority of the bunch since it has the least deps
+provider_priority=500
+options="!check" # flaky
+subpackages="
+	$pkgname-doc
+	$pkgname-lang
+	$pkgname-pam
+	$pkgname-systemd
+	"
+source="https://download.gnome.org/sources/gnome-keyring/${_pkgver%.*}/gnome-keyring-$_pkgver.tar.xz"
+builddir="$srcdir/gnome-keyring-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Dsystemd=enabled \
+		. output
+	meson compile -C output
+}
+
+check() {
+	dbus-run-session \
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+pam() {
+	pkgdesc="PAM module for gnome-keyring"
+	depends=""
+	# Allows disabling installation of the PAM module via `apk add !gnome-keyring-pam`.
+	#
+	# See https://gitlab.alpinelinux.org/alpine/aports/-/issues/16999
+	install_if="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/lib/security/pam*
+}
+
+sha512sums="
+20786486655c2188d8d0eae129d1c14a61d995d55a2339b166aa914287cf5ddd29b67d6a2fbc9d4b3d73705459cd3d17c696369500e4a0f0d12087aac78a8c15  gnome-keyring-50.0.tar.xz
+"

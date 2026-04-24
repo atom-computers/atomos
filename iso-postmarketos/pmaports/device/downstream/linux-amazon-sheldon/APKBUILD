@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/sheldon_defconfig
+pkgname=linux-amazon-sheldon
+pkgver=4.4.121
+pkgrel=0
+pkgdesc="Amazon Fire TV Stick Lite kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-sheldon"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_amazon_mt8695"
+_commit="119f0dd3c04a91639cc80cf46371d724d84b1048"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mt8695/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+	proc-v7-fix.patch
+	head.s-fix.patch
+	piggy.gzip.s-fix.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+0efe1eb1751d2af6013d4dbe2bee69f84f83dede7a50db1a2de41daa987e31f6fc8df0e9780d3d0a9ae865ada0f0af55ba8e391e2c56024715a62911fa2c03ef  linux-amazon-sheldon-119f0dd3c04a91639cc80cf46371d724d84b1048.tar.gz
+a3f0998128a379802696ec56d5a734930ece813637837b2b5feefbcf5aec0ffebc38c5eac05349ee445ae4aca70612b39ddde8cb4c870c78381cb456d8191279  config-amazon-sheldon.armv7
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+f1218ddaf456e53945c647cc4e3459acc2a1ec33e20f746cf3d74950fcdbfe50e0eee6e9dadc386f4aecba1495e35f2f24f30325d7fcf1e51d9bd8d648072fad  proc-v7-fix.patch
+b396a1586f9746054f54534891baab8c9c20f49630f74ec99ce7c0f34fdf2f91b0891d747e7cc576be5695056a5453f6595b50e38718db84c4bde11d4dfa7c5f  head.s-fix.patch
+40aac5e96cc9e2c2b5d66665b60311a2eccd001669e98415e48e6f22be344fad01bc6ef6aa125854586a7f930a0623afcbc899accae38bf7dabd457b681fc5ec  piggy.gzip.s-fix.patch
+"

@@ -1,0 +1,52 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_payton_defconfig
+
+pkgname=linux-motorola-payton
+pkgver=4.4.219
+pkgrel=3
+pkgdesc="Motorola Moto X4 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-payton"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="android_kernel_motorola_msm8998"
+_commit="ce9ea8f125c7302ae9b2fec84f23a69271e957c3"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-virtual-terminal.patch
+	remove_bootloader_cmdline_opts.patch
+	mdss-panel-to-fb-var.patch
+	99_framebuffer.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		KBUILD_MODPOST_WARN=1
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="7e109d8e04706fe43c7eceaacc2c50371e35e9256c3eb2f3d3a4cceb2580df6a7a054852a31bf661810bd934cedab49179484417fd7ea762a254e3c66d6a9d5e  linux-motorola-payton-ce9ea8f125c7302ae9b2fec84f23a69271e957c3.tar.gz
+d22de90c546108161cde4d445ad14acd1989a9e0d024d6adc66ac297bdeebcaa36afc2b8ba69582f6f4514690d95235707e5fb4b0590645bd2b22a15d95909cf  config-motorola-payton.aarch64
+a62883a325d858eaff4e44e7e1f85f84803ee8360073f83f9657ba5bf1676618ff77e7e62971ecdfb661956ba081196bc2618179d4d7cafadf528d2aa00062cd  fix-virtual-terminal.patch
+9ce867c4254b537ef5d2485780c26b72da8a3a8767ba71557f3b48d6c550e0e14c8c3e575b31bf65d2878f08a8a4926e48a1c2f1be534bf80a7a57f58313b0fd  remove_bootloader_cmdline_opts.patch
+d5b868c64b8ebddcf74cb3aa478f30f0897af1e14e4fc42d977921104a6c568cc0bf36fc8a3b0f538cd3ca2ebf59244fdf23186a903259e5acc14d1c4ef4ccc3  mdss-panel-to-fb-var.patch
+d64746ff65de81cc894e33cd8f9b3bf0a5ee9e979d95f67a50a4c0bc7072aa459632841db4b64b68cfc01fa3503d2e8122d03f177932a5f0fbe0ddad5db3bb4d  99_framebuffer.patch"

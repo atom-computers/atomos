@@ -1,0 +1,64 @@
+maintainer="19atlas <warfarin@vern.cc>"
+pkgname=firmware-samsung-gtexswifi
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Samsung Galaxy Tab A 7.0"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_gtexswifi_commit="b65668464d13a608d74670fad197d351c71e3e0c"
+_gtexswifi_url="https://github.com/underscoremone/proprietary_vendor_samsung_gtexswifi/raw/$_gtexswifi_commit"
+
+_gtexswifi_wifi_config="
+	p2p_supplicant_overlay.conf
+	wpa_supplicant.conf
+	wpa_supplicant_overlay.conf
+"
+
+_gtexswifi_wifi_bin="
+	macloader
+	mfgloader
+	modem_control
+	modemd
+	wlandutservice
+"
+
+
+for _i in $_gtexswifi_wifi_config; do
+	source="$source $pkgname-$_gtexswifi_commit-$_i::$_gtexswifi_url/proprietary/etc/wifi/$_i";
+done
+
+for _t in $_gtexswifi_wifi_bin; do
+	source="$source $pkgname-$_gtexswifi_commit-$_t::$_gtexswifi_url/proprietary/bin/$_t";
+done
+
+package() {
+	# Wifi config
+	local file
+	for file in $_gtexswifi_wifi_config; do
+		 install -Dm644 "$srcdir/$pkgname-$_gtexswifi_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+
+	# Wifi binary
+	local binf
+	for binf in $_gtexswifi_wifi_bin; do
+		 install -Dm644 "$srcdir/$pkgname-$_gtexswifi_commit-$binf" \
+			"$pkgdir/lib/firmware/postmarketos/$binf"
+	done
+}
+
+
+sha512sums="
+7417855054694ed3b5f3898455bd1e08be213e4a14439c69b377e4e5417e248c35444db07fa8b374c697e4ba6c438310790ed89735dd8f9c7e7b7cba741e051c  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-p2p_supplicant_overlay.conf
+d60a3fab4a82851d4d72f5803664079b81c7f215cb73974e82b11495b77667617214fe1b86b501dc3cc03999a9d0e0a5c264bba90727fd8e9043f12e16ab5438  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-wpa_supplicant.conf
+684912af49751babb58aa7cdd210138a65176de633665911df63912b23e4e3f37f39be83e8a2640826699c587bb67bd4c640eaf03332b0583d004bebc8ca489a  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-wpa_supplicant_overlay.conf
+bb4dd97c1df8d1885813c388b168bee24c90373f97ac86aa9c22cc15da47eb7920957547a6aa6235bcd3a524d92e409717d97d3fc51b69fd3eaf42d5a2bac126  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-macloader
+e717eefadf931508ce606d0c1444114ce19c98a8d78dd30e80915a2ac210a636a1e80255f52a06e8fc32adc82aa78fd86b8b1538f3957946ae2a3c33b2798b4a  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-mfgloader
+c1ef6d646a8bd360608df5609e47c366b63f36f740eb44c81b6f3a54e775d6555bc54db44651727c65726e9787362fa1c0e54c05686c6936340ff6d573575106  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-modem_control
+2091555e75e499cfb50d240e26377a00a1f8201483f177b7f9d11f18e5ba6333471ddf0185e01818670e6f8f875255fa09991a2b3400616bc8085aef681e5ade  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-modemd
+b150bf1aba364a8b87fe0140f745d2fcb19de9ddecf1e952cb950d6d98f930f12862a6d2ce023ca1dc5e402e80e249f375bc033cc44466dc2050995f051be741  firmware-samsung-gtexswifi-b65668464d13a608d74670fad197d351c71e3e0c-wlandutservice
+"

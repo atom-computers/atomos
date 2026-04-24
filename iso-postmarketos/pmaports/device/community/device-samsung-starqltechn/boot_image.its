@@ -1,0 +1,80 @@
+/dts-v1/;
+
+/ {
+        description = "Samsung S9 SM-G9600 starqltechn FIT Image";
+        #address-cells = <1>;
+
+        images {
+                bootscript {
+                        description = "Boot script";
+                        data = /incbin/("bootscript.sh");
+                        type = "script";
+                        compression = "none";
+                        load = <0x90000000>;
+                        entry = <0x90000000>;
+                        hash {
+                                algo = "sha1";
+                        };
+                };
+                prebootscript {
+                        description = "Boot script";
+                        data = /incbin/("bootscript.sh");
+                        type = "script";
+                        compression = "none";
+                        load = <0x90000000>;
+                        entry = <0x90000000>;
+                        hash {
+                                algo = "sha1";
+                        };
+                };
+                kernel {
+                        description = "Kernel";
+                        data = /incbin/("vmlinuz");
+                        type = "kernel";
+                        arch = "arm64";
+                        os = "linux";
+                        compression = "gzip";
+                        load = <0x80000000>;
+                        entry = <0x80000000>;
+                        hash {
+                                algo = "sha1";
+                        };
+                };
+                fdt {
+                        description = "DTB";
+                        data = /incbin/("/boot/dtbs/qcom/sdm845-samsung-starqltechn.dtb");
+                        type = "flat_dt";
+                        arch = "arm64";
+                        compression = "none";
+                        load = <0x83700000>;
+                        entry = <0x83700000>;
+                        hash {
+                                algo = "sha1";
+                        };
+                };
+                initrd {
+                        description = "Initrd";
+                        compression = "none";
+                        data = /incbin/("initramfs");
+                        type = "ramdisk";
+                        arch = "arm64";
+                        os = "linux";
+                        hash {
+                                algo = "sha1";
+                        };
+                };
+        };
+
+        configurations {
+                default = "standard";
+                standard {
+                        description = "Standard Boot";
+                        kernel = "kernel";
+                        fdt = "fdt";
+                        ramdisk = "initrd";
+                        hash {
+                                algo = "sha1";
+                        };
+                };
+        };
+};

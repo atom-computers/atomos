@@ -1,0 +1,58 @@
+# Kernel config based on: arch/arm64/configs/lineageos_ether_defconfig
+
+pkgname=linux-nextbit-robin
+pkgver=3.10.108
+pkgrel=5
+pkgdesc="Nextbit Robin kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="nextbit-robin"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_nextbit_msm8992"
+_commit="8b8773362248bdba3224a1d92e76c5b9004519d6"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_psci_err.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+f2bffe51d021cbe7e5eb3f33486ee3544ca4477e4d21bfb2cffb5743e16dd24a02dbbb93daa45f43ed1825607b730fb39a1b7dace7b24f99a844dca577ba52ad  linux-nextbit-robin-8b8773362248bdba3224a1d92e76c5b9004519d6.tar.gz
+96b322eb6c6aba8584f9cafabedc539abd682dd1d332839e74ff8f227d4cf1328b2d67203442d4994b0bad3b1caee56c020f01a582d403e6bb27268b73365d03  config-nextbit-robin.aarch64
+8740861d5e125a5f9faa144e6fe6d7e6413250664547f217bf8a02e1bea77f9809582c952cdd3618fcbf150979faab57540ecc3370d6734cc82bbd62afdf15b1  01_psci_err.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

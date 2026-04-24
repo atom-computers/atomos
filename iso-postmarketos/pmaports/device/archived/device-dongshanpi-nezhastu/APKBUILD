@@ -1,0 +1,65 @@
+# Archived: linux-postmarketos-allwinner-d1 moved to archived
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-dongshanpi-nezhastu
+pkgdesc="DongshanPi NeZha STU"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="riscv64"
+# pmb:strict: avoid grub-related install error during build with pmbootstrap
+options="!check !archcheck pmb:strict"
+depends="
+	linux-postmarketos-allwinner-d1
+	postmarketos-base
+	u-boot-dongshanpi-nezhastu
+"
+makedepends="
+	devicepkg-dev
+	grub
+	grub-efi
+"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	grub-mkimage \
+		--prefix="/grub" \
+		--output="bootriscv64.efi" \
+		--format="riscv64-efi" \
+		--compression="xz" \
+		\
+		all_video \
+		cat \
+		configfile \
+		disk \
+		echo \
+		efi_gop \
+		fat \
+		ext2 \
+		gzio \
+		help \
+		iso9660 \
+		linux \
+		ls \
+		normal \
+		part_gpt \
+		part_msdos \
+		search \
+		search_label \
+		test \
+		true
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 bootriscv64.efi \
+		"$pkgdir"/boot/efi/boot/bootriscv64.efi
+}
+
+sha512sums="
+f7ac98412c568ec4454749d8982949a1303f93cd91748b9584539933bffc7b98386222a70d8d4b9ba6afba265dc4443ebb9f87dd31ca89c1a4566540d15a2afc  deviceinfo
+16d12823fa5b717a0053ac65c98e8be9e18d28b8b0092f40ca20a89b4e7e611763d0a2a83594d98f3735fc652a27286134e2cc4957f10bb57ca6384bac2c203e  kernel-cmdline.conf
+"

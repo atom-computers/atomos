@@ -1,0 +1,39 @@
+# Archived: Downstream port, replaced by mainline port.
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-n1awifi-downstream
+pkgdesc="Samsung Galaxy Note 10.1 (2014 edition)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-n1awifi-downstream
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for the Samsung Galaxy Note 10.1 (2014 edition)"
+	depends="firmware-samsung-n1awifi-downstream"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+f2568bebc8082830612e46da04b4fe643154437af118210fffd8bb225bdf1fb8b8c4ac36b6a9ce24ec2ce6961f06224a120eff27b32406432f58052a524a5d32  deviceinfo
+cb0731b5e71b427024bb47cd70aa48d3be409a89aa476f3fd4dea8e5b42ef87371a65bbe836bca7da04c0384178ad293b44da8a88557ad04fc57857bef502050  kernel-cmdline.conf
+"

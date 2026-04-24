@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/titan_defconfig
+
+pkgname=linux-motorola-titan
+pkgver=3.4.113
+pkgrel=17
+pkgdesc="Motorola Moto G 2014 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="motorola-titan"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool gcc6 xz coreutils"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_motorola_msm8226"
+_commit="22bc4ed7f4149f95c84634e6c1baccbbd16c5cc5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	00_fix_return_address.patch
+	02_mdss_fb_refresh_rate.patch
+	06_fix_mdss_fb_rgba_mode.patch
+	multiple-fixes-gcc-5.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+5e55db19f198fadf0f914c2726c034eeaf9a1f4ad5823a7e8a4e9be2664eb0279c91fb2f1c6a9292be2ac523e367551475ff40569676775a03a709ae50a3d0ec  linux-motorola-titan-22bc4ed7f4149f95c84634e6c1baccbbd16c5cc5.tar.gz
+61fedeb976031889daddca58401f531c9eaa79964a5abfa91ed54c96e429cc8c0acb427e2b6c3c262bbc65c2ba8426a192ff7df56e717d22050c1293b116165e  config-motorola-titan.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+a8c955bf718f155011e980f3d0948be98e1fee5649f418299a4851780543019daf7afa406aa7b0829375645107e4e6fbf241026b0cabe2b2ac895a47df83d2d8  02_mdss_fb_refresh_rate.patch
+5f0c30fc48fd0c8f9ca4e3d929dd15e982565e91b2e9e6b81df88c78c7fb646d3e99dfd6c9e02873caa1ca1e9cd6a7c03b97640fb80781cc78f5725122b65507  06_fix_mdss_fb_rgba_mode.patch
+4c13711fdcdce3ac0c4d30b79da7a331a9f32d46ad0b9572419b82d58db6eed76f728a340848d66a6378702749c56247439abb26fc1df0d3f5cfd1ef5b53acf9  multiple-fixes-gcc-5.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

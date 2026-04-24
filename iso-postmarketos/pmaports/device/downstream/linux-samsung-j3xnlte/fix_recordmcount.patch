@@ -1,0 +1,61 @@
+From 84f8a24ade96a8c1499823b160a0591199cf9d12 Mon Sep 17 00:00:00 2001
+From: Laura Abbott <labbott@redhat.com>
+Date: Fri, 8 Jul 2016 12:18:50 -0700
+Subject: [PATCH] ftrace/recordmcount: Work around for addition of metag magic
+ but not relocations
+
+commit b2e1c26f0b62531636509fbcb6dab65617ed8331 upstream.
+
+glibc recently did a sync up (94e73c95d9b5 "elf.h: Sync with the gabi
+webpage") that added a #define for EM_METAG but did not add relocations
+
+This triggers build errors:
+
+scripts/recordmcount.c: In function 'do_file':
+scripts/recordmcount.c:466:28: error: 'R_METAG_ADDR32' undeclared (first use in this function)
+  case EM_METAG:  reltype = R_METAG_ADDR32;
+                            ^~~~~~~~~~~~~~
+scripts/recordmcount.c:466:28: note: each undeclared identifier is reported only once for each function it appears in
+scripts/recordmcount.c:468:20: error: 'R_METAG_NONE' undeclared (first use in this function)
+     rel_type_nop = R_METAG_NONE;
+                    ^~~~~~~~~~~~
+
+Work around this change with some more #ifdefery for the relocations.
+
+Fedora Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=1354034
+
+Link: http://lkml.kernel.org/r/1468005530-14757-1-git-send-email-labbott@redhat.com
+
+Cc: James Hogan <james.hogan@imgtec.com>
+Fixes: 00512bdd4573 ("metag: ftrace support")
+Reported-by: Ross Burton <ross.burton@intel.com>
+Signed-off-by: Laura Abbott <labbott@redhat.com>
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ scripts/recordmcount.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/recordmcount.c b/scripts/recordmcount.c
+index e167592793a7..42396a74405d 100644
+--- a/scripts/recordmcount.c
++++ b/scripts/recordmcount.c
+@@ -33,10 +33,17 @@
+ #include <string.h>
+ #include <unistd.h>
+ 
++/*
++ * glibc synced up and added the metag number but didn't add the relocations.
++ * Work around this in a crude manner for now.
++ */
+ #ifndef EM_METAG
+-/* Remove this when these make it to the standard system elf.h. */
+ #define EM_METAG      174
++#endif
++#ifndef R_METAG_ADDR32
+ #define R_METAG_ADDR32                   2
++#endif
++#ifndef R_METAG_NONE
+ #define R_METAG_NONE                     3
+ #endif
+ 

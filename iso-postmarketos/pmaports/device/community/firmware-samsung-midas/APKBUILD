@@ -1,0 +1,78 @@
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=firmware-samsung-midas
+pkgver=8
+pkgrel=2
+pkgdesc="Samsung Galaxy Midas board firmware (m0, m3, t0lte, ...)"
+_commit="fdd8c44568a148c22fbf008de822ff4e27992da1"
+url="https://github.com/TheMuppets/proprietary_vendor_samsung"
+_armbian_commit="5ff122ef309a1ddabb4bf7f37c8347c43b314a61"
+_armbian_url="https://github.com/armbian/firmware"
+_androguide_commit="d5a8735a6ad1fff3091f100383ac004f411d7528"
+_androguide_url="https://raw.githubusercontent.com/Androguide/android_vendor_samsung"
+_vendor_bsp_uboot_commit="246091921433dd11c211a306f042d949ada38924"
+_vendor_bsp_uboot_url="https://github.com/dmarszk/exynos4_uboot"
+arch="armv7"
+license="proprietary"
+replaces="firmware-samsung-m0"
+subpackages="
+	$pkgname-bootloader
+	$pkgname-bluetooth
+	$pkgname-wifi
+	"
+source="
+	p4412_s_fwbl1.bin-$_vendor_bsp_uboot_commit::$_vendor_bsp_uboot_url/raw/$_vendor_bsp_uboot_commit/sd_fuse/p4412_s_fwbl1.bin
+	bcm4334.hcd-$_commit::$url/raw/$_commit/smdk4412-common/proprietary/bin/bcm4334.hcd
+	brcmfmac4334-sdio.samsung,i9300-$_armbian_commit.txt::$_armbian_url/raw/$_armbian_commit/brcm/brcmfmac4334-sdio.rockchip%2Crk3318-box.txt
+	brcmfmac4334-sdio.samsung,i9305-$_androguide_commit.txt::$_androguide_url/$_androguide_commit/smdk4412-common/proprietary/system/etc/wifi/nvram_net.txt
+	https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/brcm/brcmfmac4334-sdio.bin?id=dc9576448222cc1922462d58796ab1c62b523ada
+	"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+# subpackage with bl1 that does not check signature of next
+# bootloader, allowing open bootloaders like u-boot or xboot.
+# Not yet used by pmOS.
+bootloader() {
+	install -Dm644 "$srcdir"/p4412_s_fwbl1.bin-$_vendor_bsp_uboot_commit \
+		"$subpkgdir"/usr/share/u-boot/midas/bl1.bin
+}
+
+bluetooth() {
+	depends="$pkgname"
+	replaces="firmware-samsung-m0-mainline"
+
+	install -Dm644 "$srcdir"/bcm4334.hcd-$_commit \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/BCM4334B0.hcd
+}
+
+wifi() {
+	depends="$pkgname"
+	replaces="firmware-samsung-m0-mainline"
+
+	install -Dm644 "$srcdir"/brcmfmac4334-sdio.bin?id=dc9576448222cc1922462d58796ab1c62b523ada \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.bin
+
+	install -Dm644 "$srcdir"/brcmfmac4334-sdio.samsung,i9300-$_armbian_commit.txt \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,i9300.txt
+	install -Dm644 "$srcdir"/brcmfmac4334-sdio.samsung,i9305-$_androguide_commit.txt \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,i9305.txt
+	ln -s /lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,i9305.txt \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,n7100.txt
+	ln -s /lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,i9305.txt \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,n7105.txt
+	ln -s /lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,i9300.txt \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,n8010.txt
+	ln -s /lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,i9300.txt \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,n5110.txt
+}
+
+sha512sums="
+15cd879fc67829b06b99f5741a9a20affc444a0a36df277c0895fc8e7743cd7955b1fbacc9c1a1dd37c7ab0ea001cb68e5f446a7b8617aeef2cddaa1d6a7d990  p4412_s_fwbl1.bin-246091921433dd11c211a306f042d949ada38924
+cbed1dc60829161c7ac9649dcae67fc45204c1a25e8de320ad3bc4e9d5cae573fb8a4745f91355fa96d2d3d4124a9e707341fc5bd1b22705cb2efb16831e029f  bcm4334.hcd-fdd8c44568a148c22fbf008de822ff4e27992da1
+d5c83e1dcd67630e186ab484d150ca5c0af12810de62a46ec6e525b50dabf64a75f1231ef8d7c1d102fb76389210fdb952975460179ca767acd0ffdd869907d7  brcmfmac4334-sdio.samsung,i9300-5ff122ef309a1ddabb4bf7f37c8347c43b314a61.txt
+146aefcccd23d63e434bd7f7d0ac6d5975ad25e44362da10bc583ab9e38b18c53f6ce18890c9790ee88fbb8f6358085bb615d0595388ca43a322f7c819614049  brcmfmac4334-sdio.samsung,i9305-d5a8735a6ad1fff3091f100383ac004f411d7528.txt
+47861a5918003e1ce66a9c68a2da45adc97edc75bfa904e7e515138201d5c7070a9e1443bf33bed11c5645b64c26fc2c9a9a348a204585f191ee801d3255ae44  brcmfmac4334-sdio.bin?id=dc9576448222cc1922462d58796ab1c62b523ada
+"

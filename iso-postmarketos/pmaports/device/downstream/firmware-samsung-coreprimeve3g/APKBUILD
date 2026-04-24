@@ -1,0 +1,33 @@
+pkgname=firmware-samsung-coreprimeve3g
+pkgdesc="Firmware for Samsung Galaxy Core Prime"
+pkgver=0
+pkgrel=0
+url="https://github.com/diepquynh/android_vendor_samsung_coreprimeve3g"
+subpackages="$pkgname-wifi"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit_blob="f7fc9d689bad09561b30098f71db09c13b330573"
+source="
+$pkgname-blob-$_commit_blob.tar.gz::https://github.com/diepquynh/android_vendor_samsung_coreprimeve3g/archive/$_commit_blob.tar.gz
+"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wifi() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-aosp-broadcom-wlan"
+
+	cd "$srcdir"
+
+	install -Dm644 "android_vendor_samsung_coreprimeve3g-$_commit_blob/proprietary/etc/wifi/bcmdhd_mfg.bin" "$subpkgdir"/lib/firmware/postmarketos/bcm4343/bcmdhd_mfg.bin
+	install -Dm644 "android_vendor_samsung_coreprimeve3g-$_commit_blob/proprietary/etc/wifi/nvram_mfg.txt" "$subpkgdir"/lib/firmware/postmarketos/bcm4343/nvram_mfg.txt
+}
+
+sha512sums="
+cc389a8fc5a563252ef67e22746587ae027719c6636e7f0ee7091093bf740301956bb906a897d4f7c43d35631af04c90be8855764889b260fdf28a62bad4a4de  firmware-samsung-coreprimeve3g-blob-f7fc9d689bad09561b30098f71db09c13b330573.tar.gz
+"

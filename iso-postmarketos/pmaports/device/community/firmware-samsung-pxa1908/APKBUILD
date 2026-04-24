@@ -1,0 +1,50 @@
+maintainer="Duje Mihanović <duje@dujemihanovic.xyz>"
+pkgname=firmware-samsung-pxa1908
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for Samsung PXA1908 devices"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx pmb:cross-native !tracedeps"
+_repo="android_vendor_samsung_xcover3lte"
+_commit="6e324b43b32dc607327d89148dd5d83a14429ee6"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/xcover3/$_repo/archive/$_commit.tar.gz
+	sd8x-wlan.initd
+"
+_fw_files="sd8777_uapsta.bin WlanCalData_ext.conf txpwrlimit_cfg.bin bt_cal_data.conf"
+builddir="$srcdir/$_repo-$_commit"
+install="$pkgname-downstream-openrc.post-install"
+subpackages="
+	$pkgname-downstream:downstream
+	$pkgname-downstream-openrc:downstream_openrc
+	"
+
+package() {
+	cd "$builddir"/proprietary/etc/firmware/mrvl/
+	for _i in $_fw_files; do
+		install -Dm644 "$_i" \
+			-t "$pkgdir/usr/lib/firmware/postmarketos/mrvl"
+	done
+}
+
+downstream() {
+	pkgdesc="Stub to pull service for enabling WLAN"
+	depends="$pkgname"
+
+	mkdir "$subpkgdir"
+}
+
+downstream_openrc() {
+	pkgdesc="Service for enabling WLAN on downstream kernels"
+	depends="$pkgname-downstream"
+	install_if="$pkgname-downstream=$pkgver-r$pkgrel openrc"
+
+	install -Dm755 "$srcdir"/sd8x-wlan.initd "$subpkgdir"/etc/init.d/sd8x-wlan
+}
+
+sha512sums="
+c396170f11e13498bff588336761852d67571862b45e6d2795066c41a2ea992aec108990269eeaad727fb43bbcd8613a3dd44e92212d9f4a18e058389814e974  firmware-samsung-pxa1908-6e324b43b32dc607327d89148dd5d83a14429ee6.tar.gz
+2154bff78351256194cc6e42273bb90b0eef5db36e985abe36250279e7c1c51354b9d576a61648bdad2fdf467e7ac8f9533897b29ed9a9a696bd226bfb21abcf  sd8x-wlan.initd
+"

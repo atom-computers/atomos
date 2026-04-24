@@ -1,0 +1,35 @@
+From 5880cab67e4b3f6ab40fd6f3477bd16f6eb329cf
+From: Lukas F. Hartmann <lukas@mntre.com>
+Subject: WORKAROUND-meson-plane-disable-afbc-32x8
+Date:   Sat Mar 22 14:48:13 2025 +0100
+
+    meson_plane: disable AFBC 32x8 support
+    
+    Since mesa/panfrost has turned on 32x8 AFBC compression for Mali-G52 we are getting missed frames/syncs on our A311D MNT Reforms and Pocket Reforms. While the problem is investigated, we turn off this compression format in the display pipeline for this SoC, so we don't have to patch mesa.
+    
+    Debian bug: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1099032
+    Mesa bug: https://gitlab.freedesktop.org/mesa/mesa/-/issues/12718
+
+diff --git a/drivers/gpu/drm/meson/meson_plane.c b/drivers/gpu/drm/meson/meson_plane.c
+index b43ac61..ba6331f 100644
+--- a/drivers/gpu/drm/meson/meson_plane.c
++++ b/drivers/gpu/drm/meson/meson_plane.c
+@@ -508,18 +508,6 @@ static const uint64_t format_modifiers_afbc_g12a[] = {
+ 				AFBC_FORMAT_MOD_YTR |
+ 				AFBC_FORMAT_MOD_SPARSE |
+ 				AFBC_FORMAT_MOD_SPLIT),
+-	DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
+-				AFBC_FORMAT_MOD_SPARSE),
+-	DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
+-				AFBC_FORMAT_MOD_YTR |
+-				AFBC_FORMAT_MOD_SPARSE),
+-	DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
+-				AFBC_FORMAT_MOD_SPARSE |
+-				AFBC_FORMAT_MOD_SPLIT),
+-	DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
+-				AFBC_FORMAT_MOD_YTR |
+-				AFBC_FORMAT_MOD_SPARSE |
+-				AFBC_FORMAT_MOD_SPLIT),
+ 	DRM_FORMAT_MOD_LINEAR,
+ 	DRM_FORMAT_MOD_INVALID,
+ };

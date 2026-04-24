@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Max Buchholz <max.buchholz@gmx.de>
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+pkgname=device-sony-pioneer
+pkgdesc="Sony Xperia XA2"
+pkgver=4
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-ninges
+	linux-postmarketos-qcom-sdm660
+	mkbootimg
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+04bb2090bd19839587426b7081e21210133c4a9dab0519e0b5cad41d50fd440c64377459eb41b788dcfcc471c2d2bdf4a5205ab26947dc37e92b895da0a248c8  deviceinfo
+"

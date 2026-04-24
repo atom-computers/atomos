@@ -1,0 +1,63 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/alice_defconfig
+
+pkgname=linux-huawei-alice
+pkgver=3.10.108
+pkgrel=3
+pkgdesc="Huawei P8 Lite kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="huawei-alice"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_huawei_alice"
+_commit="202b1ab540532cdd7f73532061ff7d3f9ba54d3c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/DarkJoker360/$_repository/archive/$_commit.tar.gz
+	01_fix_types_include.patch
+	02_fix_undeclared_AID_INET.patch
+	03_fix_get_ro_secure.patch
+	04_fix_hisiwifi_makefiles.patch
+	05-change-wifi-cfg-path.patch
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+c5d6507ada8b1d3c97dd54a276c8e92760418468e43b0f545532582331a7e7df33963196ff7981bc697e7e5e5fcaffac61d2f9cbfcc0c44392810c40db1851bb  linux-huawei-alice-202b1ab540532cdd7f73532061ff7d3f9ba54d3c.tar.gz
+1c05b67b1dd8e42f7c26ce5d48d3194ce4e123b420643ce1f207e1b40b2e45134e280b78369633b9bfa2871b5cde6221f5083fa00b21fd252d1b85018ee3994d  01_fix_types_include.patch
+33599989d5088bb58bcbebe1b33f324fca130fac7f4938e848c07abafb119af9cebf94ef4acf786b5e43e9199a8200aa216a4238a0331d426861651204aea8c8  02_fix_undeclared_AID_INET.patch
+11e2825cec9fde87241b43993b956872c6686c5c76acef0332867c14fb3b6c4d64dc1d54d8dc6edb1e3375fd2369918912598a413f279a885f253630a658a4c6  03_fix_get_ro_secure.patch
+2a7f487903a7f97ae50acb42a35096d688b51285f62e36ce0a70110539ffb6b116cb9cf1796d6332fe78c1a2ff597ece2ffa551428e92610c97ef635d52c57fb  04_fix_hisiwifi_makefiles.patch
+c44e6b18f6fa87a779855ba2fbfdec9f7bbb254fcc8d50d086870b57d3dc05a2c2d095f9fead1549e206e1b2806b8d449af2ec01e951257c21c5ef0d3757ca03  05-change-wifi-cfg-path.patch
+382a70aec6f7bec6dbf50a2e67ead029a71a7f14cdac6a95d5b91f60f5ddde07d014a23e17227805f3bcce8e90d9403b98dd07aed92c0ed87f31fe167444ee7e  config-huawei-alice.aarch64
+"

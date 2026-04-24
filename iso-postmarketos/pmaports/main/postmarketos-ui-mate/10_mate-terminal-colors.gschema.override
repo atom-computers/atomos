@@ -1,0 +1,4 @@
+[org.mate.terminal.profile]
+use-theme-colors=false
+foreground-color='#DEDDDA'
+background-color='#000000'

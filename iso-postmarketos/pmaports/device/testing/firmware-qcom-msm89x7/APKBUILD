@@ -1,0 +1,33 @@
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=firmware-qcom-msm89x7
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware files for Qualcomm MSM89x7 devices"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_motorola_montana_commit="6d448297f0445b029ca450c092743aaba821e6ce"
+_motorola_cedric_commit="5d90d65c31a1d3da14900e553faeedf9af3de689"
+
+source="
+	firmware-motorola-montana-$_motorola_montana_commit.tar.gz::https://gitlab.com/DolphinChips/firmware-motorola-montana/-/archive/$_motorola_montana_commit/firmware-motorola-ocean-$_motorola_montana_commit.tar.gz
+	firmware-motorola-cedric-$_motorola_cedric_commit.tar.gz::https://github.com/Hacker1245/vendor_motorola_cedric/archive/$_motorola_cedric_commit/$_motorola_cedric_commit.tar.gz
+"
+
+_basefwdir="/lib/firmware"
+_fwdir="$_basefwdir/qcom/"
+
+package() {
+	motorola_montana_dir="$srcdir/firmware-motorola-montana-$_motorola_montana_commit"
+	install -Dm644 "$motorola_montana_dir/wlan/prima/WCNSS_qcom_wlan_nv.bin" -t "$pkgdir/$_fwdir/msm8937/motorola/montana"
+
+	motorola_cedric_dir="$srcdir/vendor_motorola_cedric-$_motorola_cedric_commit"
+	install -Dm644 "$motorola_cedric_dir/wlan/prima/WCNSS_qcom_wlan_nv.bin" -t "$pkgdir/$_fwdir/msm8937/motorola/cedric"
+}
+
+sha512sums="
+934b56f7ddca76c606704952559981c9c9a812bba4561a552820de92b620f5cf3f1d0631df1507a4f3f1db8e1edc71dee643d6f5f7668d50b5b66eecb3b2213e  firmware-motorola-montana-6d448297f0445b029ca450c092743aaba821e6ce.tar.gz
+24b769e23511ef0b2be67d812d231ec5060954bf77d166e5fbc312e2ed489378abb1729d5a5c157ce98024448f0408edaf983c37f7966b84b6e3de43ac31a961  firmware-motorola-cedric-5d90d65c31a1d3da14900e553faeedf9af3de689.tar.gz
+"

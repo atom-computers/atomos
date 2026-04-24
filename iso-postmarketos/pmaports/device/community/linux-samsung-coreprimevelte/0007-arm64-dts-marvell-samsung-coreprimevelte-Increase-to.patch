@@ -1,0 +1,35 @@
+From fa6ad6e2493c66a0ed760cf6ba741ec97d0ee828 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Duje=20Mihanovi=C4=87?= <duje@dujemihanovic.xyz>
+Date: Sun, 14 Dec 2025 13:13:11 +0100
+Subject: [PATCH 7/9] arm64: dts: marvell: samsung-coreprimevelte: Increase
+ touchscreen voltage
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The old 1.9V setting was found to be insufficient in certain
+environments (in my case cold ones), causing the touchscreen to register
+ghost touches and mostly ignore actual touches. Increase the voltage to
+2.5V to correct the issue.
+
+Signed-off-by: Duje Mihanović <duje@dujemihanovic.xyz>
+---
+ .../boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts     | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+index faeea5001364..fd16760f1072 100644
+--- a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
++++ b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+@@ -461,7 +461,7 @@ pmic@30 {
+ 
+ 		regulators {
+ 			ldo2: ldo2 {
+-				regulator-min-microvolt = <1900000>;
++				regulator-min-microvolt = <2500000>;
+ 				regulator-max-microvolt = <3100000>;
+ 			};
+ 
+-- 
+2.53.0
+

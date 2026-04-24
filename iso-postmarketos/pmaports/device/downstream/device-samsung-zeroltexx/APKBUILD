@@ -1,0 +1,48 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-zeroltexx
+pkgdesc="Samsung Galaxy S6 edge"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	postmarketos-base-downstream-disable-udev-v4l
+	linux-samsung-zeroltexx
+	mkbootimg
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-openrc
+	"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for the Samsung Galaxy S6 edge"
+	depends="firmware-samsung-zero"
+	mkdir "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	mkdir -p "$subpkgdir"
+}
+
+
+sha512sums="
+bfc031d9bf9bee6d1d20947275755d5b58a2d52b72f9af77a2cd16e65857fa8ebc33354a5c1f5276ba2bb8d8c37b50dfc489dee36b705f4e9ccbab972cd803a6  deviceinfo
+"

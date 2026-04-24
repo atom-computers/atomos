@@ -1,0 +1,22 @@
+# Archived: Kernel does not build anymore
+maintainer="Eli Riggs <eli@rje.li>"
+pkgname=firmware-xiaomi-willow
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Redmi Note 8t"
+url="https://github.com/Xiaomi-trinket-dev/vendor_xiaomi_sm6125-common"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps"
+
+_f="novatek_ts_tianma_fw.bin"
+_commit="ea359557ce79ff5233dea82cd155a6afec46a5d6"
+_url="$url/raw/$_commit/proprietary/vendor/firmware/"
+source="$pkgname-$_commit-$_f::$_url/$_f"
+
+package() {
+	install -Dm644 "$srcdir/$pkgname-$_commit-$_f" \
+		"$pkgdir/lib/firmware/postmarketos/$_f"
+}
+
+sha512sums="1cb8a1f87306ceaf09ca175ebad9fd7b3b06d8ca8e384ef58183cdbc67dfaeeab2872ab51f3e54e54428c3f0ec16aace51253b60498ff0b7a96bee13c1eb2544  firmware-xiaomi-willow-ea359557ce79ff5233dea82cd155a6afec46a5d6-novatek_ts_tianma_fw.bin"

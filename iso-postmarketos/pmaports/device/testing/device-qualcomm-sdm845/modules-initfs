@@ -1,0 +1,10 @@
+gpi
+i2c_qcom_geni
+phy-qcom-qusb2
+rmi_core
+rmi_i2c
+qcom_spmi_haptics
+edt-ft5x06
+focaltech_fts
+nt36xxx
+novatek_nvt_ts

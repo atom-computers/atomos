@@ -1,0 +1,75 @@
+P: /devices/LNXSYSTM:00/LNXSYBUS:00/PURI4543:00/leds/blue:status
+E: CURRENT_TAGS=:seat:
+E: FEEDBACKD_TYPE=led
+E: ID_FOR_SEAT=leds-acpi-PURI4543_00
+E: ID_PATH=acpi-PURI4543:00
+E: ID_PATH_TAG=acpi-PURI4543_00
+E: SUBSYSTEM=leds
+E: TAGS=:seat:
+A: brightness=0\n
+L: device=../../../PURI4543:00
+A: max_brightness=255\n
+A: pattern=
+A: power/async=disabled\n
+A: power/control=auto\n
+A: power/runtime_active_kids=0\n
+A: power/runtime_active_time=0\n
+A: power/runtime_enabled=disabled\n
+A: power/runtime_status=unsupported\n
+A: power/runtime_suspended_time=0\n
+A: power/runtime_usage=0\n
+A: repeat=-1\n
+A: trigger=none kbd-scrolllock kbd-numlock kbd-capslock kbd-kanalock kbd-shiftlock kbd-altgrlock kbd-ctrllock kbd-altlock kbd-shiftllock kbd-shiftrlock kbd-ctrlllock kbd-ctrlrlock disk-activity disk-read disk-write mtd nand-disk cpu cpu0 cpu1 cpu2 cpu3 cpu4 cpu5 cpu6 cpu7 panic usb-gadget usb-host BAT0-charging-or-full BAT0-charging BAT0-full BAT0-charging-blink-full-solid rc-feedback [pattern] AC-online audio-mute audio-micmute rfkill-any rfkill-none bluetooth-power phy2rx phy2tx phy2assoc phy2radio rfkill28 hci0-power rfkill52 r8169-0-200:00:link r8169-0-200:00:1Gbps r8169-0-200:00:100Mbps r8169-0-200:00:10Mbps\n
+
+P: /devices/LNXSYSTM:00/LNXSYBUS:00/PURI4543:00
+E: DRIVER=Librem EC ACPI Driver
+E: ID_VENDOR_FROM_DATABASE=Purism SPC
+E: MODALIAS=acpi:PURI4543:
+E: SUBSYSTEM=acpi
+L: driver=../../../../bus/acpi/drivers/Librem EC ACPI Driver
+A: hid=PURI4543\n
+A: modalias=acpi:PURI4543:\n
+A: path=\\_SB_.LIEC\n
+L: physical_node=../../../platform/PURI4543:00
+A: power/async=disabled\n
+A: power/control=auto\n
+A: power/runtime_active_kids=0\n
+A: power/runtime_active_time=0\n
+A: power/runtime_enabled=disabled\n
+A: power/runtime_status=unsupported\n
+A: power/runtime_suspended_time=0\n
+A: power/runtime_usage=0\n
+A: uid=0\n
+
+P: /devices/LNXSYSTM:00/LNXSYBUS:00
+E: ID_VENDOR_FROM_DATABASE=The Linux Foundation
+E: MODALIAS=acpi:LNXSYBUS:
+E: SUBSYSTEM=acpi
+A: hid=LNXSYBUS\n
+A: modalias=acpi:LNXSYBUS:\n
+A: path=\\_SB_\n
+A: power/async=disabled\n
+A: power/control=auto\n
+A: power/runtime_active_kids=0\n
+A: power/runtime_active_time=0\n
+A: power/runtime_enabled=disabled\n
+A: power/runtime_status=unsupported\n
+A: power/runtime_suspended_time=0\n
+A: power/runtime_usage=0\n
+
+P: /devices/LNXSYSTM:00
+E: ID_VENDOR_FROM_DATABASE=The Linux Foundation
+E: MODALIAS=acpi:LNXSYSTM:
+E: SUBSYSTEM=acpi
+A: hid=LNXSYSTM\n
+A: modalias=acpi:LNXSYSTM:\n
+A: path=\\\n
+A: power/async=disabled\n
+A: power/control=auto\n
+A: power/runtime_active_kids=0\n
+A: power/runtime_active_time=0\n
+A: power/runtime_enabled=disabled\n
+A: power/runtime_status=unsupported\n
+A: power/runtime_suspended_time=0\n
+A: power/runtime_usage=0\n
+

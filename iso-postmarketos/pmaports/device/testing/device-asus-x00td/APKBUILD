@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Aboothahir U <aboothahirpkd@gmail.com>"
+pkgname=device-asus-x00td
+pkgdesc="Asus ZenFone Max Pro M1"
+pkgver=7
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-asus-x00td
+	firmware-qcom-adreno-a530
+	linux-postmarketos-qcom-sdm660
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+210acc8d258d786013e420becaf5c93b80087ce361ee723aa1deee53c8044e57f7bf94451c16881fb23bc39ed9e1daac38bc1de3e50f5b217af2e61bf3fa34b4  deviceinfo
+063a4f0ecfba79d1d47bc7aaf621c3a6314be97b1565ec9e6a0ad19afad6c2ef262da024c7df25292fb18a9d576bec5a060b8c4210125ad292bcc1bf61f7dc82  modules-initfs
+"

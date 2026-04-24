@@ -1,0 +1,22 @@
+# Only use this gitlab-ci snippet if your package:
+#
+# * only requires a single runner
+# * has its runner tags definition found in ci-common's ci-tron/common.yml
+# * uses CI-tron as a bootloader
+#
+# If this is not the case, feel free to copy the content of this file into
+# your package's folder
+test-{{ device.name }}:
+  extends:
+    # Extended from jobs defined in ci-common's ci-tron/common.yml
+    - .pmos-ci-tron-runner-{{ device.name }}
+    - .pmos-ci-tron-initramfs-test
+
+    # Extended from build-jobs.yaml.j2
+    - .device-boot-flow-separate-artifacts
+    - .test-{{ device.name }}
+  variables:
+    # FIXME: cmdline is hardcoded here, but ideally would be built from
+    # fragments using generate-kernel-cmdline...
+    # See: https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/issues/317
+    CI_TRON_KERNEL_CMDLINE__DEVICEINFO: 'console=tty1 console=ttyS0,115200 pmos.force-partition-resize psi=1'

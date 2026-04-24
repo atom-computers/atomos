@@ -1,0 +1,55 @@
+maintainer=""
+pkgname=firmware-lenovo-yoga-5g
+pkgver=1
+pkgrel=2
+pkgdesc="Firmware files for Lenovo Yoga 5G"
+url="https://gitlab.com/jenneron/firmware-lenovo-yoga-5g"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="05db42d0c7f5f32917592cc3799be4d6c953815e"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/jenneron/firmware-lenovo-yoga-5g/-/archive/$_commit/firmware-lenovo-yoga-5g-$_commit.tar.gz
+	30-gpu-firmware.files
+	31-remoteproc-firmware.files
+"
+
+builddir="$srcdir/firmware-lenovo-yoga-5g-$_commit"
+
+package() {
+	_fwdir="$pkgdir/lib/firmware/qcom"
+	install -Dm644 a680_gmu.bin -t "$_fwdir"
+	install -Dm644 a680_sqe.fw -t "$_fwdir"
+
+	_fwdir="$pkgdir/lib/firmware/qca"
+	install -Dm644 crnv01.bin -t "$_fwdir"
+	install -Dm644 crbtfw01.tlv -t "$_fwdir"
+
+	_fwdir="$pkgdir/lib/firmware/qcom/sc8180x/LENOVO/82AK"
+	install -Dm644 adspr.jsn -t "$_fwdir"
+	install -Dm644 adspua.jsn -t "$_fwdir"
+	install -Dm644 battmgr.jsn -t "$_fwdir"
+	install -Dm644 cdspr.jsn -t "$_fwdir"
+	install -Dm644 modemuw.jsn -t "$_fwdir"
+	install -Dm644 qcadsp8180.mbn -t "$_fwdir"
+	install -Dm644 qccdsp8180.mbn -t "$_fwdir"
+	install -Dm644 qcdxkmsuc8180.mbn -t "$_fwdir"
+	install -Dm644 qcmpss8180_nm.mbn -t "$_fwdir"
+	install -Dm644 wlanmdsp.mbn -t "$_fwdir"
+
+	install -Dm644 "$srcdir"/30-gpu-firmware.files -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+
+	# While loading ADSP firmware which is responsible for VBUS supply,
+	# USB loses power for a short time. We need remoteproc firmware
+	# on initramfs stage to boot from USB.
+	install -Dm644 "$srcdir"/31-remoteproc-firmware.files -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+03a8c6bbee2e15ee551bdaf0ec2ffaf6ac6ce6de0d2349a9f55418593284cc5712c54ad6f1bc30531d5d4df6924da0d0e882434730056a73fd0ddb50d4e7b8d7  firmware-lenovo-yoga-5g-05db42d0c7f5f32917592cc3799be4d6c953815e.tar.gz
+eab3d7932f49deca4ab03c79f679c729dec29a2d17e08ea1d971a68b457bc45300a88f2b3b89e74a92fd26505472402d59aa251158fb46837ecebe32ea855f2a  30-gpu-firmware.files
+ddec9abe909c45c801773993c106ec4733bff09435ea88537f1f733a55a0704594aeab090b583ac05b2f6fedc40ffcaf3e9255dccfd8fc460ad6be445e939ef0  31-remoteproc-firmware.files
+"

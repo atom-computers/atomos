@@ -1,0 +1,4285 @@
+diff --git a/arch/arm/boot/dts/p6601.dts b/arch/arm/boot/dts/p6601.dts
+index cb6576f6..1f9bb20b 100644
+--- a/arch/arm/boot/dts/p6601.dts
++++ b/arch/arm/boot/dts/p6601.dts
+@@ -1,971 +1,3456 @@
++/dts-v1/;
++
++/ {
++	model = "MT6735";
++	compatible = "mediatek,MT6735";
++	interrupt-parent = < 0x01 >;
++	#address-cells = < 0x02 >;
++	#size-cells = < 0x02 >;
++
++	chosen {
++		bootargs = "console=tty0 console=ttyMT0,921600n1 root=/dev/ram initrd=0x44000000,0x300000 loglevel=8 androidboot.hardware=mt6735";
++	};
++
++	mtk-msdc.0 {
++		compatible = "simple-bus";
++		#address-cells = < 0x01 >;
++		#size-cells = < 0x01 >;
++		ranges = < 0x00 0x00 0x00 0xffffffff >;
++
++		msdc0@11230000 {
++			compatible = "mediatek,mt6735-mmc";
++			reg = < 0x11230000 0x10000 0x10000e84 0x02 >;
++			interrupts = < 0x00 0x4f 0x08 >;
++			status = "okay";
++			clocks = < 0x02 0x0e 0x03 0x0d 0x03 0x29 0x03 0x2b 0x03 0x2c >;
++			clock-names = "MSDC0-CLOCK\0MSDC0_PLL_SEL\0MSDC0_PLL_800M\0MSDC0_PLL_400M\0MSDC0_PLL_200M";
++			clk_src = [ 02 ];
++			bus-width = < 0x08 >;
++			max-frequency = < 0xbebc200 >;
++			cap-mmc-highspeed;
++			msdc-sys-suspend;
++			mmc-ddr-1_8v;
++			mmc-hs200-1_8v;
++			mmc-hs400-1_8v;
++			non-removable;
++			pinctl = < 0x04 >;
++			register_setting = < 0x05 >;
++			host_function = [ 00 ];
++			bootable;
++		};
++
++		msdc1@11240000 {
++			compatible = "mediatek,mt6735-mmc";
++			reg = < 0x11240000 0x10000 0x10000e84 0x02 >;
++			interrupts = < 0x00 0x50 0x08 >;
++			status = "okay";
++			clocks = < 0x02 0x0f >;
++			clock-names = "MSDC1-CLOCK";
++			clk_src = [ 02 ];
++			bus-width = < 0x04 >;
++			max-frequency = < 0xbebc200 >;
++			msdc-sys-suspend;
++			cap-sd-highspeed;
++			sd-uhs-sdr12;
++			sd-uhs-sdr25;
++			sd-uhs-sdr50;
++			sd-uhs-sdr104;
++			sd-uhs-ddr50;
++			pinctl = < 0x06 >;
++			pinctl_sdr104 = < 0x07 >;
++			pinctl_sdr50 = < 0x08 >;
++			pinctl_ddr50 = < 0x09 >;
++			register_setting = < 0x0a >;
++			host_function = [ 01 ];
++			cd_level = [ 00 ];
++			cd-gpios = < 0x0b 0x05 0x00 >;
++		};
++
++		msdc2@11250000 {
++			compatible = "mediatek,mt6735-mmc";
++			reg = < 0x11250000 0x10000 0x10000e84 0x02 >;
++			interrupts = < 0x00 0x51 0x08 >;
++			status = "disabled";
++			clocks = < 0x02 0x10 >;
++			clock-names = "MSDC2-CLOCK";
++		};
++
++		msdc3@11260000 {
++			compatible = "mediatek,mt6735-mmc";
++			reg = < 0x11260000 0x10000 0x10000e84 0x02 >;
++			interrupts = < 0x00 0x52 0x08 >;
++			status = "disabled";
++			clocks = < 0x02 0x11 >;
++			clock-names = "MSDC3-CLOCK";
++		};
++
++		default {
++			compatible = "mediatek, msdc1_ins-eint";
++		};
++	};
++
++	psci {
++		compatible = "arm,psci";
++		method = "smc";
++		cpu_suspend = < 0x84000001 >;
++		cpu_off = < 0x84000002 >;
++		cpu_on = < 0x84000003 >;
++		affinity_info = < 0x84000004 >;
++	};
++
++	mobicore {
++		compatible = "trustonic,mobicore";
++		interrupts = < 0x00 0xf8 0x01 >;
++	};
++
++	cpus {
++		#address-cells = < 0x01 >;
++		#size-cells = < 0x00 >;
++
++		cpu@000 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = < 0x00 >;
++			enable-method = "spin-table";
++			cpu-release-addr = < 0x00 0x40000200 >;
++			clock-frequency = "M|m";
++			linux,phandle = < 0x0c >;
++			phandle = < 0x0c >;
++		};
++
++		cpu@001 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = < 0x01 >;
++			enable-method = "spin-table";
++			cpu-release-addr = < 0x00 0x40000200 >;
++			clock-frequency = "M|m";
++			linux,phandle = < 0x0d >;
++			phandle = < 0x0d >;
++		};
++
++		cpu@002 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = < 0x02 >;
++			enable-method = "spin-table";
++			cpu-release-addr = < 0x00 0x40000200 >;
++			clock-frequency = "M|m";
++			linux,phandle = < 0x0e >;
++			phandle = < 0x0e >;
++		};
++
++		cpu@003 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = < 0x03 >;
++			enable-method = "spin-table";
++			cpu-release-addr = < 0x00 0x40000200 >;
++			clock-frequency = "M|m";
++			linux,phandle = < 0x0f >;
++			phandle = < 0x0f >;
++		};
++	};
++
++	reserved-memory {
++		#address-cells = < 0x02 >;
++		#size-cells = < 0x02 >;
++		ranges;
++
++		atf-reserved-memory@43000000 {
++			compatible = "mediatek,mt6735-atf-reserved-memory\0mediatek,mt6735m-atf-reserved-memory\0mediatek,mt6753-atf-reserved-memory";
++			no-map;
++			reg = < 0x00 0x43000000 0x00 0x30000 >;
++		};
++
++		ram_console-reserved-memory@43f00000 {
++			compatible = "mediatek,ram_console";
++			reg = < 0x00 0x43f00000 0x00 0x10000 >;
++		};
++
++		pstore-reserved-memory@43f10000 {
++			compatible = "mediatek,pstore";
++			reg = < 0x00 0x43f10000 0x00 0xe0000 >;
++		};
++
++		minirdump-reserved-memory@43ff0000 {
++			compatible = "mediatek,minirdump";
++			reg = < 0x00 0x43ff0000 0x00 0x10000 >;
++		};
++
++		reserve-memory-ccci_md1 {
++			compatible = "mediatek,reserve-memory-ccci_md1";
++			no-map;
++			size = < 0x00 0x3810000 >;
++			alignment = < 0x00 0x2000000 >;
++			alloc-ranges = < 0x00 0x40000000 0x00 0xc0000000 >;
++		};
++
++		consys-reserve-memory {
++			compatible = "mediatek,consys-reserve-memory";
++			no-map;
++			size = < 0x00 0x100000 >;
++			alignment = < 0x00 0x200000 >;
++		};
++	};
++
++	interrupt-controller@10220000 {
++		compatible = "mediatek,mt6735-gic";
++		#interrupt-cells = < 0x03 >;
++		#address-cells = < 0x00 >;
++		interrupt-controller;
++		reg = < 0x00 0x10221000 0x00 0x1000 0x00 0x10222000 0x00 0x1000 0x00 0x10200620 0x00 0x1000 >;
++		mediatek,wdt_irq = < 0xa0 >;
++		linux,phandle = < 0x01 >;
++		phandle = < 0x01 >;
++
++		gic-cpuif@0 {
++			compatible = "arm,gic-cpuif";
++			cpuif-id = < 0x00 >;
++			cpu = < 0x0c >;
++		};
++
++		gic-cpuif@1 {
++			compatible = "arm,gic-cpuif";
++			cpuif-id = < 0x01 >;
++			cpu = < 0x0d >;
++		};
++
++		gic-cpuif@2 {
++			compatible = "arm,gic-cpuif";
++			cpuif-id = < 0x02 >;
++			cpu = < 0x0e >;
++		};
++
++		gic-cpuif@3 {
++			compatible = "arm,gic-cpuif";
++			cpuif-id = < 0x03 >;
++			cpu = < 0x0f >;
++		};
++	};
++
++	clocks {
++
++		clk_null {
++			compatible = "fixed-clock";
++			#clock-cells = < 0x00 >;
++			clock-frequency = < 0x00 >;
++		};
++
++		clk26m {
++			compatible = "fixed-clock";
++			#clock-cells = < 0x00 >;
++			clock-frequency = < 0x18cba80 >;
++			linux,phandle = < 0x37 >;
++			phandle = < 0x37 >;
++		};
++
++		clk32k {
++			compatible = "fixed-clock";
++			#clock-cells = < 0x00 >;
++			clock-frequency = < 0x7d00 >;
++		};
++	};
++
++	soc {
++		compatible = "simple-bus";
++		#address-cells = < 0x01 >;
++		#size-cells = < 0x01 >;
++		ranges = < 0x00 0x00 0x00 0xffffffff >;
++
++		topckgen@10210000 {
++			compatible = "mediatek,mt6735-topckgen";
++			reg = < 0x10210000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x03 >;
++			phandle = < 0x03 >;
++		};
++
++		chipid@08000000 {
++			compatible = "mediatek,chipid";
++			reg = < 0x8000000 0x04 0x8000004 0x04 0x8000008 0x04 0x800000c 0x04 >;
++		};
++
++		dispte@0 {
++			compatible = "mediatek,DispTE_gpio";
++			pinctrl-names = "disptepin_default\0disptepin_cfg0\0disptepin_cfg1";
++			pinctrl-0 = < 0x10 >;
++			pinctrl-1 = < 0x11 >;
++			pinctrl-2 = < 0x12 >;
++			status = "okay";
++		};
++
++		infrasys@10000000 {
++			compatible = "mediatek,mt6735-infrasys";
++			reg = < 0x10000000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x1a >;
++			phandle = < 0x1a >;
++		};
++
++		scpsys@10000000 {
++			compatible = "mediatek,mt6735-scpsys";
++			reg = < 0x10000000 0x1000 0x10006000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x14 >;
++			phandle = < 0x14 >;
++		};
++
++		infracfg_ao@10000000 {
++			compatible = "mediatek,infracfg_ao";
++			reg = < 0x10000000 0x1000 >;
++		};
++
++		pwrap@10001000 {
++			compatible = "mediatek,PWRAP";
++			reg = < 0x10001000 0x1000 >;
++			interrupts = < 0x00 0xa3 0x04 >;
++		};
++
++		hacc@10008000 {
++			compatible = "mediatek,hacc";
++			reg = < 0x10008000 0x1000 >;
++			interrupts = < 0x00 0xae 0x08 >;
++		};
++
++		perisys@10002000 {
++			compatible = "mediatek,mt6735-perisys";
++			reg = < 0x10002000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x02 >;
++			phandle = < 0x02 >;
++		};
++
++		pericfg@10002000 {
++			compatible = "mediatek,pericfg";
++			reg = < 0x10002000 0x1000 >;
++		};
++
++		keypad@10003000 {
++			compatible = "mediatek,mt6735-keypad";
++			reg = < 0x10003000 0x1000 >;
++			interrupts = < 0x00 0xa4 0x02 >;
++			mediatek,kpd-key-debounce = < 0x400 >;
++			mediatek,kpd-sw-pwrkey = < 0x74 >;
++			mediatek,kpd-hw-pwrkey = < 0x08 >;
++			mediatek,kpd-sw-rstkey = < 0x66 >;
++			mediatek,kpd-hw-rstkey = < 0x11 >;
++			mediatek,kpd-use-extend-type = < 0x00 >;
++			mediatek,kpd-hw-map-num = < 0x48 >;
++			mediatek,kpd-hw-init-map = < 0x00 0x00 0x66 0x00 0x00 0x00 0x00 0x00 0x00 0x73 0x72 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 >;
++			mediatek,kpd-pwrkey-eint-gpio = < 0x00 >;
++			mediatek,kpd-pwkey-gpio-din = < 0x00 >;
++			mediatek,kpd-hw-dl-key0 = < 0x09 >;
++			mediatek,kpd-hw-dl-key1 = < 0x0a >;
++			mediatek,kpd-hw-dl-key2 = < 0x08 >;
++			mediatek,kpd-hw-recovery-key = < 0x09 >;
++			mediatek,kpd-hw-factory-key = < 0x0a >;
++			status = "okay";
++		};
++
++		apxgpt@10004000 {
++			compatible = "mediatek,mt6735-apxgpt";
++			reg = < 0x10004000 0x1000 >;
++			interrupts = < 0x00 0x98 0x08 >;
++			clock-frequency = < 0xc65d40 >;
++		};
++
++		eintc@10005000 {
++			compatible = "mediatek,mt-eic";
++			reg = < 0x10005000 0x1000 >;
++			interrupts = < 0x00 0x99 0x04 >;
++			#interrupt-cells = < 0x02 >;
++			interrupt-controller;
++			mediatek,max_eint_num = < 0xd5 >;
++			mediatek,mapping_table_entry = < 0x00 >;
++			linux,phandle = < 0x13 >;
++			phandle = < 0x13 >;
++
++			pmic@206 {
++				compatible = "mediatek, pmic-eint";
++				interrupt-parent = < 0x13 >;
++				interrupts = < 0xce 0x04 >;
++				debounce = < 0xce 0x3e8 >;
++			};
++		};
++
++		sleep@10006000 {
++			compatible = "mediatek,sleep";
++			reg = < 0x10006000 0x1000 >;
++			interrupts = < 0x00 0xa5 0x08 0x00 0xa6 0x08 0x00 0xa7 0x08 0x00 0xa8 0x08 >;
++		};
++
++		mdcldma@1000A000 {
++			compatible = "mediatek,mdcldma";
++			reg = < 0x1000a000 0x1000 0x1000b000 0x1000 0x1021a000 0x1000 0x1021b000 0x1000 0x1020a000 0x1000 0x1020b000 0x1000 >;
++			interrupts = < 0x00 0x91 0x04 0x00 0x8c 0x08 0x00 0xdd 0x02 >;
++			mediatek,md_id = < 0x00 >;
++			mediatek,cldma_capability = < 0x06 >;
++			mediatek,md_smem_size = < 0x10000 >;
++			clocks = < 0x14 0x01 >;
++			clock-names = "scp-sys-md1-main";
++			pinctrl-names = "default\0vsram_output_low\0vsram_output_high\0RFIC0_01_mode\0RFIC0_04_mode";
++			pinctrl-0 = < 0x15 >;
++			pinctrl-1 = < 0x16 >;
++			pinctrl-2 = < 0x17 >;
++			pinctrl-3 = < 0x18 >;
++			pinctrl-4 = < 0x19 >;
++		};
++
++		c2k_sdio {
++			compatible = "mediatek,mt6735-c2k_sdio";
++			interrupts = < 0x00 0xe6 0x08 >;
++		};
++
++		mcucfg@10200000 {
++			compatible = "mediatek,mcucfg";
++			reg = < 0x10200000 0x200 >;
++			interrupts = < 0x00 0x47 0x04 >;
++		};
++
++		cpuxgpt@10200000 {
++			compatible = "mediatek,mt6735-cpuxgpt";
++			reg = < 0x10200000 0x1000 >;
++			interrupts = < 0x00 0x40 0x04 0x00 0x41 0x04 0x00 0x42 0x04 0x00 0x43 0x04 0x00 0x44 0x04 0x00 0x45 0x04 0x00 0x46 0x04 0x00 0x47 0x04 >;
++		};
++
++		lastpc@10200000 {
++			compatible = "mediatek,mt6735-mcucfg";
++			reg = < 0x10200000 0x200 >;
++			interrupts = < 0x00 0x47 0x04 >;
++		};
++
++		emi@10203000 {
++			compatible = "mediatek,emi";
++			reg = < 0x10203000 0x1000 >;
++			interrupts = < 0x00 0x88 0x04 >;
++		};
++
++		sys_cirq@10204000 {
++			compatible = "mediatek,mt6735-sys_cirq";
++			reg = < 0x10204000 0x1000 >;
++			interrupts = < 0x00 0xe7 0x08 >;
++			mediatek,cirq_num = < 0x9f >;
++			mediatek,spi_start_offset = < 0x48 >;
++		};
++
++		m4u@10205000 {
++			cell-index = < 0x00 >;
++			compatible = "mediatek,m4u";
++			reg = < 0x10205000 0x1000 >;
++			interrupts = < 0x00 0x92 0x08 >;
++			clocks = < 0x1a 0x09 0x1b 0x01 0x1b 0x02 0x1c 0x01 0x1c 0x02 0x1d 0x01 0x1e 0x02 0x1e 0x01 >;
++			clock-names = "infra_m4u\0smi_common\0m4u_disp0_smi_larb0\0m4u_vdec0_vdec\0m4u_vdec1_larb\0m4u_img_image_larb2_smi\0m4u_venc_venc\0m4u_venc_larb";
++		};
++
++		efusec@10206000 {
++			compatible = "mediatek,efusec";
++			reg = < 0x10206000 0x1000 >;
++		};
++
++		devapc@10207000 {
++			compatible = "mediatek,devapc";
++			reg = < 0x10207000 0x1000 >;
++			interrupts = < 0x00 0x86 0x08 >;
++			clocks = < 0x1a 0x05 >;
++			clock-names = "devapc-main";
++		};
++
++		bus_dbg@10208000 {
++			compatible = "mediatek,bus_dbg-v1";
++			reg = < 0x10208000 0x1000 >;
++			interrupts = < 0x00 0x89 0x08 >;
++		};
++
++		apmixedsys@10209000 {
++			compatible = "mediatek,mt6735-apmixedsys";
++			reg = < 0x10209000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x36 >;
++			phandle = < 0x36 >;
++		};
++
++		apmixed@10209000 {
++			compatible = "mediatek,apmixed";
++			reg = < 0x10209000 0x1000 >;
++		};
++
++		fhctl@10209f00 {
++			compatible = "mediatek,fhctl";
++			reg = < 0x10209f00 0x100 >;
++		};
++
++		dramc_nao@1020e000 {
++			compatible = "mediatek,mt6735-dramc_nao";
++			reg = < 0x1020e000 0x1000 >;
++		};
++
++		cksys@10210000 {
++			compatible = "mediatek,cksys";
++			reg = < 0x10210000 0x1000 >;
++		};
++
++		syscfg_pctl_a@10211000 {
++			compatible = "mediatek,mt6735-pctl-a-syscfg\0syscon";
++			reg = < 0x00 0x9bceb8 0x00 0x3e8 >;
++			linux,phandle = < 0x1f >;
++			phandle = < 0x1f >;
++		};
++
++		pinctrl@10211000 {
++			compatible = "mediatek,mt6735-pinctrl";
++			reg = < 0x00 0x9bceb8 0x00 0x3e8 >;
++			mediatek,pctl-regmap = < 0x1f >;
++			pins-are-numbered;
++			gpio-controller;
++			#gpio-cells = < 0x02 >;
++			linux,phandle = < 0x0b >;
++			phandle = < 0x0b >;
++
++			ssw0default {
++				linux,phandle = < 0x65 >;
++				phandle = < 0x65 >;
++			};
++
++			ssw@1 {
++				linux,phandle = < 0x66 >;
++				phandle = < 0x66 >;
++
++				pins_cmd0_dat {
++					pins = < 0x805 >;
++				};
++
++				pins_cmd1_dat {
++					pins = < 0x904 >;
++				};
++			};
++
++			ssw@2 {
++				linux,phandle = < 0x67 >;
++				phandle = < 0x67 >;
++
++				pins_cmd0_dat {
++					pins = < 0x802 >;
++				};
++
++				pins_cmd1_dat {
++					pins = < 0x904 >;
++				};
++			};
++
++			ssw@3 {
++				linux,phandle = < 0x68 >;
++				phandle = < 0x68 >;
++
++				pins_cmd0_dat {
++					pins = < 0xa301 >;
++					slew-rate = < 0x01 >;
++				};
++
++				pins_cmd1_dat {
++					pins = < 0xa401 >;
++					slew-rate = < 0x01 >;
++				};
++
++				pins_cmd2_dat {
++					pins = < 0xa501 >;
++					slew-rate = < 0x00 >;
++					bias-pull-up = < 0x00 >;
++				};
++
++				pins_cmd3_dat {
++					pins = < 0xa001 >;
++					slew-rate = < 0x01 >;
++				};
++
++				pins_cmd4_dat {
++					pins = < 0xa101 >;
++					slew-rate = < 0x01 >;
++				};
++
++				pins_cmd5_dat {
++					pins = < 0xa201 >;
++					slew-rate = < 0x00 >;
++					bias-pull-up = < 0x00 >;
++				};
++			};
++
++			ssw@4 {
++				linux,phandle = < 0x69 >;
++				phandle = < 0x69 >;
++
++				pins_cmd0_dat {
++					pins = < 0xa304 >;
++				};
++
++				pins_cmd1_dat {
++					pins = < 0xa404 >;
++				};
++
++				pins_cmd2_dat {
++					pins = < 0xa504 >;
++				};
++
++				pins_cmd3_dat {
++					pins = < 0xa001 >;
++				};
++
++				pins_cmd4_dat {
++					pins = < 0xa101 >;
++				};
++
++				pins_cmd5_dat {
++					pins = < 0xa201 >;
++				};
++			};
++
++			vsram0default {
++				linux,phandle = < 0x15 >;
++				phandle = < 0x15 >;
++			};
++
++			vsram@1 {
++				linux,phandle = < 0x16 >;
++				phandle = < 0x16 >;
++
++				pins_cmd_dat {
++					pins = < 0x8c00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			vsram@2 {
++				linux,phandle = < 0x17 >;
++				phandle = < 0x17 >;
++
++				pins_cmd_dat {
++					pins = < 0x8c00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			clockbuf@1 {
++				linux,phandle = < 0x18 >;
++				phandle = < 0x18 >;
++
++				pins_cmd0_dat {
++					pins = < 0x6e01 >;
++				};
++
++				pins_cmd1_dat {
++					pins = < 0x6f01 >;
++				};
++
++				pins_cmd2_dat {
++					pins = < 0x7001 >;
++				};
++
++				pins_cmd3_dat {
++					pins = < 0x7101 >;
++				};
++
++				pins_cmd4_dat {
++					pins = < 0x7201 >;
++				};
++			};
++
++			clockbuf@2 {
++				linux,phandle = < 0x19 >;
++				phandle = < 0x19 >;
++
++				pins_cmd0_dat {
++					pins = < 0x6e04 >;
++				};
++
++				pins_cmd1_dat {
++					pins = < 0x6f04 >;
++				};
++
++				pins_cmd2_dat {
++					pins = < 0x7004 >;
++				};
++
++				pins_cmd3_dat {
++					pins = < 0x7104 >;
++				};
++
++				pins_cmd4_dat {
++					pins = < 0x7204 >;
++				};
++			};
++
++			uart0gpiodefault {
++				linux,phandle = < 0x22 >;
++				phandle = < 0x22 >;
++			};
++
++			uart0_rx_set@gpio74 {
++				linux,phandle = < 0x23 >;
++				phandle = < 0x23 >;
++
++				pins_cmd_dat {
++					pins = < 0x4a01 >;
++				};
++			};
++
++			uart0_rx_clear@gpio74 {
++				linux,phandle = < 0x24 >;
++				phandle = < 0x24 >;
++
++				pins_cmd_dat {
++					pins = < 0x4a00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			uart0_tx_set@gpio75 {
++				linux,phandle = < 0x25 >;
++				phandle = < 0x25 >;
++
++				pins_cmd_dat {
++					pins = < 0x4b01 >;
++				};
++			};
++
++			uart0_tx_clear@gpio75 {
++				linux,phandle = < 0x26 >;
++				phandle = < 0x26 >;
++
++				pins_cmd_dat {
++					pins = < 0x4b00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			uart1gpiodefault {
++				linux,phandle = < 0x27 >;
++				phandle = < 0x27 >;
++			};
++
++			uart1_rx_set@gpio76 {
++
++				pins_cmd_dat {
++					pins = < 0x4c01 >;
++				};
++			};
++
++			uart1_rx_clear@gpio76 {
++
++				pins_cmd_dat {
++					pins = < 0x4c00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			uart1_tx_set@gpio77 {
++				linux,phandle = < 0x28 >;
++				phandle = < 0x28 >;
++
++				pins_cmd_dat {
++					pins = < 0x4d01 >;
++				};
++			};
++
++			uart1_tx_clear@gpio77 {
++				linux,phandle = < 0x29 >;
++				phandle = < 0x29 >;
++
++				pins_cmd_dat {
++					pins = < 0x4d00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			uart2gpiodefault {
++				linux,phandle = < 0x2a >;
++				phandle = < 0x2a >;
++			};
++
++			uart2_rx_set@gpio57 {
++				linux,phandle = < 0x2b >;
++				phandle = < 0x2b >;
++
++				pins_cmd_dat {
++					pins = < 0x3901 >;
++				};
++			};
++
++			uart2_rx_clear@gpio57 {
++				linux,phandle = < 0x2c >;
++				phandle = < 0x2c >;
++
++				pins_cmd_dat {
++					pins = < 0x3900 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			uart2_tx_set@gpio58 {
++				linux,phandle = < 0x2d >;
++				phandle = < 0x2d >;
++
++				pins_cmd_dat {
++					pins = < 0x3a01 >;
++				};
++			};
++
++			uart2_tx_clear@gpio58 {
++				linux,phandle = < 0x2e >;
++				phandle = < 0x2e >;
++
++				pins_cmd_dat {
++					pins = < 0x3a00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			irtx_gpio_led_def@gpio19 {
++				linux,phandle = < 0x20 >;
++				phandle = < 0x20 >;
++
++				pins_cmd_dat {
++					pins = < 0x1300 >;
++					slew-rate = < 0x01 >;
++					bias-disable;
++					output-high;
++					input-schmitt-enable = < 0x00 >;
++				};
++			};
++
++			irtx_gpio_led_set@gpio19 {
++				linux,phandle = < 0x21 >;
++				phandle = < 0x21 >;
++
++				pins_cmd_dat {
++					pins = < 0x1302 >;
++				};
++			};
++
++			alspspincfg {
++				linux,phandle = < 0x90 >;
++				phandle = < 0x90 >;
++
++				pins_cmd_dat {
++					pins = < 0x3a00 >;
++					slew-rate = < 0x00 >;
++					bias-pull-up = < 0x00 >;
++				};
++			};
++
++			alspsdefaultcfg {
++				linux,phandle = < 0x8f >;
++				phandle = < 0x8f >;
++			};
++
++			magpincfg {
++				linux,phandle = < 0x93 >;
++				phandle = < 0x93 >;
++
++				pins_cmd_dat {
++					pins = < 0x3d00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			gyropincfg {
++				linux,phandle = < 0x92 >;
++				phandle = < 0x92 >;
++
++				pins_cmd_dat {
++					pins = < 0x3b00 >;
++					slew-rate = < 0x00 >;
++					bias-pull-down = < 0x00 >;
++				};
++			};
++
++			gyrodefaultcfg {
++				linux,phandle = < 0x91 >;
++				phandle = < 0x91 >;
++			};
++
++			redledpingcfg {
++				linux,phandle = < 0x8e >;
++				phandle = < 0x8e >;
++
++				pins_cmd_dat {
++					pins = < 0x800 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			hallpincfg {
++				linux,phandle = < 0x74 >;
++				phandle = < 0x74 >;
++
++				pins_cmd_dat {
++					pins = < 0x00 >;
++					slew-rate = < 0x00 >;
++					bias-pull-up = < 0x00 >;
++				};
++			};
++
++			halldefaultcfg {
++				linux,phandle = < 0x73 >;
++				phandle = < 0x73 >;
++			};
++
++			flashlightpincfg0 {
++				linux,phandle = < 0x6b >;
++				phandle = < 0x6b >;
++
++				pins_cmd_dat {
++					pins = < 0x2a00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			flashlightpincfg1 {
++				linux,phandle = < 0x6c >;
++				phandle = < 0x6c >;
++
++				pins_cmd_dat {
++					pins = < 0x2a00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			flashlightpinen0 {
++				linux,phandle = < 0x6d >;
++				phandle = < 0x6d >;
++
++				pins_cmd_dat {
++					pins = < 0x2b00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			flashlightpinen1 {
++				linux,phandle = < 0x6e >;
++				phandle = < 0x6e >;
++
++				pins_cmd_dat {
++					pins = < 0x2b00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			flashlightpinext10 {
++				linux,phandle = < 0x6f >;
++				phandle = < 0x6f >;
++
++				pins_cmd_dat {
++					pins = < 0x300 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			flashlightpinext11 {
++				linux,phandle = < 0x70 >;
++				phandle = < 0x70 >;
++
++				pins_cmd_dat {
++					pins = < 0x300 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			flashlightpinext20 {
++				linux,phandle = < 0x71 >;
++				phandle = < 0x71 >;
++
++				pins_cmd_dat {
++					pins = < 0x400 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			flashlightpinext21 {
++				linux,phandle = < 0x72 >;
++				phandle = < 0x72 >;
++
++				pins_cmd_dat {
++					pins = < 0x400 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			flashlighdefaultcfg {
++				linux,phandle = < 0x6a >;
++				phandle = < 0x6a >;
++			};
++
++			disptepincfg0 {
++				linux,phandle = < 0x11 >;
++				phandle = < 0x11 >;
++
++				pins_cmd_dat {
++					pins = < 0x9200 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			disptepincfg1 {
++				linux,phandle = < 0x12 >;
++				phandle = < 0x12 >;
++
++				pins_cmd_dat {
++					pins = < 0x9200 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			disptedefaultcfg {
++				linux,phandle = < 0x10 >;
++				phandle = < 0x10 >;
++			};
++
++			audiodefault {
++				linux,phandle = < 0x38 >;
++				phandle = < 0x38 >;
++			};
++
++			extamppullhigh {
++				linux,phandle = < 0x39 >;
++				phandle = < 0x39 >;
++
++				pins_cmd_dat {
++					pins = < 0x1300 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			extamppulllow {
++				linux,phandle = < 0x3a >;
++				phandle = < 0x3a >;
++
++				pins_cmd_dat {
++					pins = < 0x1300 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			eint0default {
++				linux,phandle = < 0x58 >;
++				phandle = < 0x58 >;
++			};
++
++			eint@0 {
++				linux,phandle = < 0x59 >;
++				phandle = < 0x59 >;
++
++				pins_cmd_dat {
++					pins = < 0xa00 >;
++					slew-rate = < 0x00 >;
++					bias-disable;
++				};
++			};
++
++			eintoutput0 {
++				linux,phandle = < 0x5a >;
++				phandle = < 0x5a >;
++
++				pins_cmd_dat {
++					pins = < 0xa00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			eintoutput1 {
++				linux,phandle = < 0x5b >;
++				phandle = < 0x5b >;
++
++				pins_cmd_dat {
++					pins = < 0xa00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			rstoutput0 {
++				linux,phandle = < 0x5c >;
++				phandle = < 0x5c >;
++
++				pins_cmd_dat {
++					pins = < 0x3e00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			rstoutput1 {
++				linux,phandle = < 0x5d >;
++				phandle = < 0x5d >;
++
++				pins_cmd_dat {
++					pins = < 0x3e00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			cam0@0 {
++				linux,phandle = < 0x41 >;
++				phandle = < 0x41 >;
++
++				pins_cmd_dat {
++					pins = < 0x2c00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			cam0@1 {
++				linux,phandle = < 0x42 >;
++				phandle = < 0x42 >;
++
++				pins_cmd_dat {
++					pins = < 0x2c00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			cam0@2 {
++				linux,phandle = < 0x43 >;
++				phandle = < 0x43 >;
++
++				pins_cmd_dat {
++					pins = < 0x700 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			cam0@3 {
++				linux,phandle = < 0x44 >;
++				phandle = < 0x44 >;
++
++				pins_cmd_dat {
++					pins = < 0x700 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			cam1@0 {
++				linux,phandle = < 0x45 >;
++				phandle = < 0x45 >;
++
++				pins_cmd_dat {
++					pins = < 0xb00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			cam1@1 {
++				linux,phandle = < 0x46 >;
++				phandle = < 0x46 >;
++
++				pins_cmd_dat {
++					pins = < 0xb00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			cam1@2 {
++				linux,phandle = < 0x47 >;
++				phandle = < 0x47 >;
++
++				pins_cmd_dat {
++					pins = < 0xc00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			cam1@3 {
++				linux,phandle = < 0x48 >;
++				phandle = < 0x48 >;
++
++				pins_cmd_dat {
++					pins = < 0xc00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			cam@0 {
++				linux,phandle = < 0x49 >;
++				phandle = < 0x49 >;
++
++				pins_cmd_dat {
++					pins = < 0x5300 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			cam@1 {
++				linux,phandle = < 0x4a >;
++				phandle = < 0x4a >;
++
++				pins_cmd_dat {
++					pins = < 0x5300 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			cam@2 {
++				linux,phandle = < 0x4b >;
++				phandle = < 0x4b >;
++
++				pins_cmd_dat {
++					pins = < 0x4e00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			cam@3 {
++				linux,phandle = < 0x4c >;
++				phandle = < 0x4c >;
++
++				pins_cmd_dat {
++					pins = < 0x4e00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			cam2@0 {
++				linux,phandle = < 0x4d >;
++				phandle = < 0x4d >;
++
++				pins_cmd_dat {
++					pins = < 0x5000 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			cam2@1 {
++				linux,phandle = < 0x4e >;
++				phandle = < 0x4e >;
++
++				pins_cmd_dat {
++					pins = < 0x5000 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			camdefault {
++				linux,phandle = < 0x40 >;
++				phandle = < 0x40 >;
++			};
++
++			default {
++				linux,phandle = < 0x53 >;
++				phandle = < 0x53 >;
++			};
++
++			gpslna@0 {
++				linux,phandle = < 0x54 >;
++				phandle = < 0x54 >;
++
++				pins_cmd_dat {
++					pins = < 0x4f00 >;
++					slew-rate = < 0x00 >;
++					bias-disable;
++					output-low;
++				};
++			};
++
++			gpslna@1 {
++				linux,phandle = < 0x55 >;
++				phandle = < 0x55 >;
++
++				pins_cmd_dat {
++					pins = < 0x4f00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			gpslna@2 {
++				linux,phandle = < 0x56 >;
++				phandle = < 0x56 >;
++
++				pins_cmd_dat {
++					pins = < 0x4f00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			mmc0@default {
++				linux,phandle = < 0x04 >;
++				phandle = < 0x04 >;
++
++				pins_cmd {
++					drive-strength = [ 02 ];
++				};
++
++				pins_dat {
++					drive-strength = [ 02 ];
++				};
++
++				pins_clk {
++					drive-strength = [ 02 ];
++				};
++
++				pins_rst {
++					drive-strength = [ 02 ];
++				};
++
++				pins_ds {
++					drive-strength = [ 02 ];
++				};
++			};
++
++			mmc0@register_default {
++				dat0rddly = [ 00 ];
++				dat1rddly = [ 00 ];
++				dat2rddly = [ 00 ];
++				dat3rddly = [ 00 ];
++				dat4rddly = [ 00 ];
++				dat5rddly = [ 00 ];
++				dat6rddly = [ 00 ];
++				dat7rddly = [ 00 ];
++				datwrddly = [ 00 ];
++				cmdrrddly = [ 00 ];
++				cmdrddly = [ 00 ];
++				cmd_edge = [ 01 ];
++				rdata_edge = [ 01 ];
++				wdata_edge = [ 01 ];
++				ett-hs200-cells = < 0x0c >;
++				ett-hs200-default = < 0xb0 0x380 0x00 0xb0 0x7c00 0x00 0xb4 0x38 0x01 0x04 0x02 0x00 0xf0 0x1f0000 0x07 0xf0 0x7c00000 0x0b 0xb4 0x07 0x01 0xf0 0x1f 0x0b 0x04 0x400 0x00 0xf8 0x1f000000 0x07 0xf0 0x1f00 0x09 0x04 0x04 0x00 >;
++				ett-hs400-cells = < 0x08 >;
++				ett-hs400-default = < 0xb0 0x380 0x00 0xb0 0x7c00 0x00 0x188 0x7c 0x02 0x188 0x1f000 0x10 0xb4 0x38 0x01 0x04 0x02 0x00 0xf0 0x1f0000 0x06 0xf0 0x7c00000 0x06 >;
++				linux,phandle = < 0x05 >;
++				phandle = < 0x05 >;
++			};
++
++			mmc1@default {
++				linux,phandle = < 0x06 >;
++				phandle = < 0x06 >;
++
++				pins_cmd {
++					drive-strength = [ 03 ];
++				};
++
++				pins_dat {
++					drive-strength = [ 03 ];
++				};
++
++				pins_clk {
++					drive-strength = [ 03 ];
++				};
++			};
++
++			mmc1@sdr104 {
++				linux,phandle = < 0x07 >;
++				phandle = < 0x07 >;
++
++				pins_cmd {
++					drive-strength = [ 02 ];
++				};
++
++				pins_dat {
++					drive-strength = [ 02 ];
++				};
++
++				pins_clk {
++					drive-strength = [ 03 ];
++				};
++			};
++
++			mmc1@sdr50 {
++				linux,phandle = < 0x08 >;
++				phandle = < 0x08 >;
++
++				pins_cmd {
++					drive-strength = [ 02 ];
++				};
++
++				pins_dat {
++					drive-strength = [ 02 ];
++				};
++
++				pins_clk {
++					drive-strength = [ 03 ];
++				};
++			};
++
++			mmc1@ddr50 {
++				linux,phandle = < 0x09 >;
++				phandle = < 0x09 >;
++
++				pins_cmd {
++					drive-strength = [ 02 ];
++				};
++
++				pins_dat {
++					drive-strength = [ 02 ];
++				};
++
++				pins_clk {
++					drive-strength = [ 03 ];
++				};
++			};
++
++			mmc1@register_default {
++				dat0rddly = [ 00 ];
++				dat1rddly = [ 00 ];
++				dat2rddly = [ 00 ];
++				dat3rddly = [ 00 ];
++				datwrddly = [ 00 ];
++				cmdrrddly = [ 00 ];
++				cmdrddly = [ 00 ];
++				cmd_edge = [ 01 ];
++				rdata_edge = [ 01 ];
++				wdata_edge = [ 01 ];
++				linux,phandle = < 0x0a >;
++				phandle = < 0x0a >;
++			};
++
++			state_ven_high {
++				linux,phandle = < 0x5e >;
++				phandle = < 0x5e >;
++
++				pins_cmd_dat {
++					pins = < 0x400 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			state_ven_low {
++				linux,phandle = < 0x5f >;
++				phandle = < 0x5f >;
++
++				pins_cmd_dat {
++					pins = < 0x400 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			state_rst_high {
++				linux,phandle = < 0x60 >;
++				phandle = < 0x60 >;
++
++				pins_cmd_dat {
++					pins = < 0x300 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			state_rst_low {
++				linux,phandle = < 0x61 >;
++				phandle = < 0x61 >;
++
++				pins_cmd_dat {
++					pins = < 0x300 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			state_eint_high {
++				linux,phandle = < 0x62 >;
++				phandle = < 0x62 >;
++
++				pins_cmd_dat {
++					pins = < 0x100 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			state_eint_low {
++				linux,phandle = < 0x63 >;
++				phandle = < 0x63 >;
++
++				pins_cmd_dat {
++					pins = < 0x100 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			state_irq_init {
++				linux,phandle = < 0x64 >;
++				phandle = < 0x64 >;
++
++				pins_cmd_dat {
++					pins = < 0x200 >;
++					slew-rate = < 0x00 >;
++					bias-pull-down = < 0x00 >;
++				};
++			};
++
++			fp_rst_high {
++				linux,phandle = < 0x75 >;
++				phandle = < 0x75 >;
++
++				pins_cmd_dat {
++					pins = < 0x1400 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++
++			fp_rst_low {
++				linux,phandle = < 0x76 >;
++				phandle = < 0x76 >;
++
++				pins_cmd_dat {
++					pins = < 0x1400 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			eint@9 {
++				linux,phandle = < 0x77 >;
++				phandle = < 0x77 >;
++
++				pins_cmd_dat {
++					pins = < 0x900 >;
++					slew-rate = < 0x00 >;
++					bias-disable;
++				};
++			};
++
++			eint_in_low {
++				linux,phandle = < 0x78 >;
++				phandle = < 0x78 >;
++
++				pins_cmd_dat {
++					pins = < 0x900 >;
++					slew-rate = < 0x00 >;
++					bias-pull-down = < 0x00 >;
++				};
++			};
++
++			eint_in_float {
++				linux,phandle = < 0x79 >;
++				phandle = < 0x79 >;
++
++				pins_cmd_dat {
++					pins = < 0x900 >;
++					slew-rate = < 0x00 >;
++					bias-disable;
++				};
++			};
++
++			miso_pull_up {
++				linux,phandle = < 0x7a >;
++				phandle = < 0x7a >;
++
++				pins_cmd_dat {
++					pins = < 0x4300 >;
++					slew-rate = < 0x00 >;
++					bias-pull-up = < 0x00 >;
++				};
++			};
++
++			miso_pull_disable {
++				linux,phandle = < 0x7b >;
++				phandle = < 0x7b >;
++
++				pins_cmd_dat {
++					pins = < 0x4301 >;
++					bias-disable;
++				};
++			};
++
++			usb_default {
++				linux,phandle = < 0x30 >;
++				phandle = < 0x30 >;
++			};
++
++			iddig_irq_init {
++				linux,phandle = < 0x31 >;
++				phandle = < 0x31 >;
++
++				pins_cmd_dat {
++					pins = < 0x3603 >;
++					slew-rate = < 0x00 >;
++					bias-pull-up = < 0x00 >;
++				};
++			};
++
++			drvvbus_init {
++				linux,phandle = < 0x32 >;
++				phandle = < 0x32 >;
++
++				pins_cmd_dat {
++					pins = < 0x4c00 >;
++					slew-rate = < 0x01 >;
++					bias-pull-up = < 0x00 >;
++					output-low;
++				};
++			};
++
++			drvvbus_low {
++				linux,phandle = < 0x33 >;
++				phandle = < 0x33 >;
++
++				pins_cmd_dat {
++					pins = < 0x4c00 >;
++					slew-rate = < 0x01 >;
++					output-low;
++				};
++			};
++
++			drvvbus_high {
++				linux,phandle = < 0x34 >;
++				phandle = < 0x34 >;
++
++				pins_cmd_dat {
++					pins = < 0x4c00 >;
++					slew-rate = < 0x01 >;
++					output-high;
++				};
++			};
++		};
++
++		gpio {
++			compatible = "mediatek,gpio_usage_mapping";
++			GPIO_FDD_BAND_SUPPORT_DETECT_2ND_PIN = < 0x61 >;
++			GPIO_FDD_BAND_SUPPORT_DETECT_1ST_PIN = < 0x62 >;
++			GPIO_SIM2_SCLK = < 0xa0 >;
++			GPIO_SIM2_SRST = < 0xa1 >;
++			GPIO_SIM2_SIO = < 0xa2 >;
++			GPIO_SIM1_SCLK = < 0xa3 >;
++			GPIO_SIM1_SRST = < 0xa4 >;
++			GPIO_SIM1_SIO = < 0xa5 >;
++		};
++
++		gpio@10211000 {
++			compatible = "mediatek,gpio";
++			reg = < 0x10211000 0x1000 >;
++		};
++
++		toprgu@10212000 {
++			compatible = "mediatek,mt6735-rgu";
++			reg = < 0x10212000 0x1000 >;
++			interrupts = < 0x00 0x80 0x02 >;
++		};
++
++		ddrphy@10213000 {
++			compatible = "mediatek,mt6735-ddrphy";
++			reg = < 0x10213000 0x1000 >;
++		};
++
++		dramc@10214000 {
++			compatible = "mediatek,mt6735-dramc";
++			reg = < 0x10214000 0x1000 >;
++			clocks = < 0x1a 0x02 >;
++			clock-names = "infra-cqdma";
++		};
++
++		gcpu@10216000 {
++			compatible = "mediatek,gcpu";
++			reg = < 0x10216000 0x1000 >;
++			interrupts = < 0x00 0x96 0x08 >;
++		};
++
++		gce@10217000 {
++			compatible = "mediatek,gce";
++			reg = < 0x10217000 0x1000 >;
++			interrupts = < 0x00 0x97 0x08 0x00 0x94 0x08 >;
++			disp_mutex_reg = < 0x14014000 0x1000 >;
++			g3d_config_base = < 0x13000000 0x00 0xffff0000 >;
++			mmsys_config_base = < 0x14000000 0x01 0xffff0000 >;
++			disp_dither_base = < 0x14010000 0x02 0xffff0000 >;
++			mm_na_base = < 0x14020000 0x03 0xffff0000 >;
++			imgsys_base = < 0x15000000 0x04 0xffff0000 >;
++			vdec_gcon_base = < 0x16000000 0x05 0xffff0000 >;
++			venc_gcon_base = < 0x17000000 0x06 0xffff0000 >;
++			conn_peri_base = < 0x18000000 0x07 0xffff0000 >;
++			topckgen_base = < 0x10000000 0x08 0xffff0000 >;
++			kp_base = < 0x10010000 0x09 0xffff0000 >;
++			scp_sram_base = < 0x10020000 0x0a 0xffff0000 >;
++			infra_na3_base = < 0x10030000 0x0b 0xffff0000 >;
++			infra_na4_base = < 0x10040000 0x0c 0xffff0000 >;
++			scp_base = < 0x10050000 0x0d 0xffff0000 >;
++			mcucfg_base = < 0x10200000 0x0e 0xffff0000 >;
++			gcpu_base = < 0x10210000 0x0f 0xffff0000 >;
++			usb0_base = < 0x11200000 0x10 0xffff0000 >;
++			usb_sif_base = < 0x11210000 0x11 0xffff0000 >;
++			audio_base = < 0x11220000 0x12 0xffff0000 >;
++			msdc0_base = < 0x11230000 0x13 0xffff0000 >;
++			msdc1_base = < 0x11240000 0x14 0xffff0000 >;
++			msdc2_base = < 0x11250000 0x15 0xffff0000 >;
++			msdc3_base = < 0x11260000 0x16 0xffff0000 >;
++			pwm_sw_base = < 0x1100e000 0x63 0xfffff000 >;
++			mdp_rdma0_sof = < 0x00 >;
++			mdp_rsz0_sof = < 0x01 >;
++			mdp_rsz1_sof = < 0x02 >;
++			dsi0_te_event = < 0x03 >;
++			mdp_wdma_sof = < 0x04 >;
++			mdp_wrot_sof = < 0x05 >;
++			disp_ovl0_sof = < 0x06 >;
++			disp_rdma0_sof = < 0x07 >;
++			disp_rdma1_sof = < 0x08 >;
++			disp_wdma0_sof = < 0x09 >;
++			disp_ccorr_sof = < 0x0a >;
++			disp_color_sof = < 0x0b >;
++			disp_aal_sof = < 0x0c >;
++			disp_gamma_sof = < 0x0d >;
++			disp_dither_sof = < 0x0e >;
++			disp_pwm0_sof = < 0x10 >;
++			mdp_rdma0_frame_done = < 0x11 >;
++			mdp_rsz0_frame_done = < 0x12 >;
++			mdp_rsz1_frame_done = < 0x13 >;
++			mdp_tdshp_frame_done = < 0x14 >;
++			mdp_wdma_frame_done = < 0x15 >;
++			mdp_wrot_write_frame_done = < 0x16 >;
++			mdp_wrot_read_frame_done = < 0x17 >;
++			disp_ovl0_frame_done = < 0x18 >;
++			disp_rdma0_frame_done = < 0x19 >;
++			disp_rdma1_frame_done = < 0x1a >;
++			disp_wdma0_frame_done = < 0x1b >;
++			disp_ccorr_frame_done = < 0x1c >;
++			disp_color_frame_done = < 0x1d >;
++			disp_aal_frame_done = < 0x1e >;
++			disp_gamma_frame_done = < 0x1f >;
++			disp_dither_frame_done = < 0x20 >;
++			disp_dpi0_frame_done = < 0x22 >;
++			stream_done_0 = < 0x23 >;
++			stream_done_1 = < 0x24 >;
++			stream_done_2 = < 0x25 >;
++			stream_done_3 = < 0x26 >;
++			stream_done_4 = < 0x27 >;
++			stream_done_5 = < 0x28 >;
++			stream_done_6 = < 0x29 >;
++			stream_done_7 = < 0x2a >;
++			stream_done_8 = < 0x2b >;
++			stream_done_9 = < 0x2c >;
++			buf_underrun_event_0 = < 0x2d >;
++			buf_underrun_event_1 = < 0x2e >;
++			mdp_tdshp_sof = < 0x2f >;
++			isp_frame_done_p2_2 = < 0x41 >;
++			isp_frame_done_p2_1 = < 0x42 >;
++			isp_frame_done_p2_0 = < 0x43 >;
++			isp_frame_done_p1_1 = < 0x44 >;
++			isp_frame_done_p1_0 = < 0x45 >;
++			camsv_2_pass1_done = < 0x46 >;
++			camsv_1_pass1_done = < 0x47 >;
++			seninf_cam1_2_3_fifo_full = < 0x48 >;
++			seninf_cam0_fifo_full = < 0x49 >;
++			venc_done = < 0x81 >;
++			jpgenc_done = < 0x82 >;
++			jpgdec_done = < 0x83 >;
++			venc_mb_done = < 0x84 >;
++			venc_128byte_cnt_done = < 0x85 >;
++			apxgpt2_count = < 0x10004028 >;
++			clocks = < 0x1a 0x02 >;
++			clock-names = "GCE";
++		};
++
++		cqdma@10217c00 {
++			compatible = "mediatek,cqdma";
++			reg = < 0x10217c00 0xc00 >;
++			interrupts = < 0x00 0x97 0x08 >;
++			nr_channel = < 0x01 >;
++		};
++
++		mcu_biu@10300000 {
++			compatible = "mediatek,mt6735-mcu_biu";
++			reg = < 0x10300000 0x8000 >;
++		};
++
++		cpu_dbgapb@0x10810000 {
++			compatible = "mediatek,mt6735-dbg_debug";
++			num = < 0x04 >;
++			reg = < 0x10810000 0x1000 0x10910000 0x1000 0x10a10000 0x1000 0x10b10000 0x1000 >;
++		};
++
++		adc_hw@11001000 {
++			compatible = "mediatek,mt6735-auxadc";
++			reg = < 0x11001000 0x1000 >;
++			interrupts = < 0x00 0x4c 0x02 >;
++			clocks = < 0x02 0x1c >;
++			clock-names = "auxadc-main";
++
++			adc_channel@ {
++				compatible = "mediatek,adc_channel";
++				mediatek,temperature0 = < 0x00 >;
++				mediatek,temperature1 = < 0x01 >;
++				mediatek,adc_fdd_rf_params_dynamic_custom_ch = < 0x0c >;
++				status = "okay";
++			};
++		};
++
++		dbgapb_base@1011a000 {
++			compatible = "mediatek,dbgapb_base";
++			reg = < 0x1011a000 0x100 >;
++		};
++
++		dma@11000000 {
++			compatible = "mediatek,ap_dma";
++			reg = < 0x11000000 0x1000 >;
++			interrupts = < 0x00 0x72 0x08 >;
++		};
++
++		btif_tx@11000880 {
++			compatible = "mediatek,btif_tx";
++			reg = < 0x11000880 0x80 >;
++			interrupts = < 0x00 0x71 0x08 >;
++		};
++
++		btif_rx@11000900 {
++			compatible = "mediatek,btif_rx";
++			reg = < 0x11000900 0x80 >;
++			interrupts = < 0x00 0x72 0x08 >;
++		};
++
++		irtx@11011000 {
++			compatible = "mediatek,irtx";
++			reg = < 0x11011000 0x1000 >;
++			interrupts = < 0x00 0x7c 0x04 >;
++			pwm_ch = < 0x00 >;
++			clock-frequency = < 0x18cba80 >;
++			clock-div = < 0x01 >;
++			clocks = < 0x02 0x1e >;
++			clock-names = "clk-irtx-main";
++			pinctrl-names = "irtx_gpio_default\0irtx_gpio_led_set";
++			pinctrl-0 = < 0x20 >;
++			pinctrl-1 = < 0x21 >;
++			status = "okay";
++		};
++
++		irtx-pwm {
++			compatible = "mediatek,irtx-pwm";
++			pwm_ch = < 0x02 >;
++			pwm_data_invert = < 0x00 >;
++		};
++
++		irlearning-spi {
++			compatible = "mediatek,irlearning-spi";
++			spi_clock = < 0x67f3540 >;
++			spi_data_invert = < 0x00 >;
++			spi_cs_invert = < 0x01 >;
++		};
++
++		apuart0@11002000 {
++			cell-index = < 0x00 >;
++			compatible = "mediatek,mt6735-uart";
++			reg = < 0x11002000 0x1000 0x11000380 0x1000 0x11000400 0x80 >;
++			interrupts = < 0x00 0x5b 0x08 0x00 0x67 0x08 0x00 0x68 0x08 >;
++			clock-frequency = < 0x18cba80 >;
++			clock-div = < 0x01 >;
++			clocks = < 0x02 0x12 0x02 0x0d >;
++			clock-names = "uart0-main\0uart-apdma";
++			pinctrl-names = "uart0_gpio_default\0uart0_rx_set\0uart0_rx_clear\0uart0_tx_set\0uart0_tx_clear";
++			pinctrl-0 = < 0x22 >;
++			pinctrl-1 = < 0x23 >;
++			pinctrl-2 = < 0x24 >;
++			pinctrl-3 = < 0x25 >;
++			pinctrl-4 = < 0x26 >;
++			status = "okay";
++		};
++
++		apuart1@11003000 {
++			cell-index = < 0x01 >;
++			compatible = "mediatek,mt6735-uart";
++			reg = < 0x11003000 0x1000 0x11000480 0x80 0x11000500 0x80 >;
++			interrupts = < 0x00 0x5c 0x08 0x00 0x69 0x08 0x00 0x6a 0x08 >;
++			clock-frequency = < 0x18cba80 >;
++			clock-div = < 0x01 >;
++			clocks = < 0x02 0x13 >;
++			clock-names = "uart1-main";
++			pinctrl-names = "uart1_gpio_default\0uart1_tx_set\0uart1_tx_clear";
++			pinctrl-0 = < 0x27 >;
++			pinctrl-1 = < 0x28 >;
++			pinctrl-2 = < 0x29 >;
++			status = "okay";
++		};
++
++		apuart2@11004000 {
++			cell-index = < 0x02 >;
++			compatible = "mediatek,mt6735-uart";
++			reg = < 0x11004000 0x1000 0x11000580 0x80 0x11000600 0x80 >;
++			interrupts = < 0x00 0x5d 0x08 0x00 0x6b 0x08 0x00 0x6c 0x08 >;
++			clock-frequency = < 0x18cba80 >;
++			clock-div = < 0x01 >;
++			clocks = < 0x02 0x14 >;
++			clock-names = "uart2-main";
++			pinctrl-names = "uart2_gpio_default\0uart2_rx_set\0uart2_rx_clear\0uart2_tx_set\0uart2_tx_clear";
++			pinctrl-0 = < 0x2a >;
++			pinctrl-1 = < 0x2b >;
++			pinctrl-2 = < 0x2c >;
++			pinctrl-3 = < 0x2d >;
++			pinctrl-4 = < 0x2e >;
++			status = "okay";
++		};
++
++		apuart3@11005000 {
++			cell-index = < 0x03 >;
++			compatible = "mediatek,mt6735-uart";
++			reg = < 0x11005000 0x1000 0x11000680 0x80 0x11000700 0x80 >;
++			interrupts = < 0x00 0x5e 0x08 0x00 0x6d 0x08 0x00 0x6e 0x08 >;
++		};
++
++		pwm@11006000 {
++			compatible = "mediatek,pwm";
++			reg = < 0x11006000 0x1000 >;
++			interrupts = < 0x00 0x4d 0x08 >;
++			clocks = < 0x02 0x0a 0x02 0x03 0x02 0x04 0x02 0x05 0x02 0x06 0x02 0x07 >;
++			clock-names = "PWM-main\0PWM1-main\0PWM2-main\0PWM3-main\0PWM4-main\0PWM5-main";
++		};
++
++		devapc_ao@10007000 {
++			compatible = "mediatek,devapc_ao";
++			reg = < 0x10007000 0x1000 >;
++		};
++
++		i2c@11007000 {
++			compatible = "mediatek,mt6735-i2c";
++			cell-index = < 0x00 >;
++			reg = < 0x11007000 0x1000 >;
++			interrupts = < 0x00 0x54 0x08 0x00 0x63 0x08 >;
++			def_speed = < 0x64 >;
++			clocks = < 0x02 0x18 0x02 0x0d >;
++			clock-names = "i2c0-main\0i2c0-dma";
++			clock-frequency = < 0x3520 >;
++			clock-div = < 0x01 >;
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++
++			camera_main@10 {
++				compatible = "mediatek,camera_main";
++				reg = < 0x10 >;
++				status = "okay";
++			};
++
++			camera_main_af@0c {
++				compatible = "mediatek,camera_main_af";
++				reg = < 0x0c >;
++				status = "okay";
++			};
++
++			camera_sub@3c {
++				compatible = "mediatek,camera_sub";
++				reg = < 0x3c >;
++				status = "okay";
++			};
++		};
++
++		i2c@11008000 {
++			compatible = "mediatek,mt6735-i2c";
++			cell-index = < 0x01 >;
++			reg = < 0x11008000 0x1000 >;
++			interrupts = < 0x00 0x55 0x08 0x00 0x64 0x08 >;
++			def_speed = < 0x64 >;
++			clocks = < 0x02 0x19 0x02 0x0d >;
++			clock-names = "i2c1-main\0i2c1-dma";
++			clock-frequency = < 0x3520 >;
++			clock-div = < 0x01 >;
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++
++			cap_touch@5d {
++				compatible = "mediatek,cap_touch";
++				reg = < 0x5d >;
++				status = "okay";
++			};
++
++			i2c_lcd_bias@3e {
++				compatible = "mediatek,i2c_lcd_bias";
++				reg = < 0x3e >;
++				status = "okay";
++			};
++
++			cap_touch@38 {
++				compatible = "mediatek,ft6xxx_touch";
++				reg = < 0x38 >;
++				status = "okay";
++			};
++		};
++
++		i2c@11009000 {
++			compatible = "mediatek,mt6735-i2c";
++			cell-index = < 0x02 >;
++			reg = < 0x11009000 0x1000 >;
++			interrupts = < 0x00 0x56 0x08 0x00 0x65 0x08 >;
++			def_speed = < 0x64 >;
++			clocks = < 0x02 0x1a 0x02 0x0d >;
++			clock-names = "i2c2-main\0i2c2-dma";
++			clock-frequency = < 0x3520 >;
++			clock-div = < 0x01 >;
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++
++			msensor@0d {
++				compatible = "mediatek,msensor";
++				reg = < 0x0d >;
++				status = "okay";
++			};
++
++			gyro@68 {
++				compatible = "mediatek,gyro";
++				reg = < 0x68 >;
++				status = "okay";
++			};
++
++			gsensor@4c {
++				compatible = "mediatek,gsensor";
++				reg = < 0x4c >;
++				status = "okay";
++			};
++
++			alsps@60 {
++				compatible = "mediatek,alsps";
++				reg = < 0x60 >;
++				status = "okay";
++			};
++
++			nfc@28 {
++				compatible = "mediatek,nfc";
++				reg = < 0x28 >;
++				status = "okay";
++			};
++
++			strobe_main@67 {
++				compatible = "mediatek,strobe_main";
++				reg = < 0x67 >;
++				status = "okay";
++			};
++		};
++
++		therm_ctrl@1100b000 {
++			compatible = "mediatek,mt6735-therm_ctrl";
++			reg = < 0x1100b000 0x1000 >;
++			interrupts = < 0x00 0x4e 0x08 >;
++			clocks = < 0x02 0x02 >;
++			clock-names = "therm-main";
++		};
++
++		ptp_fsm@1100b000 {
++			compatible = "mediatek,ptp_fsm_v1";
++			reg = < 0x1100b000 0x1000 >;
++			interrupts = < 0x00 0x7d 0x08 >;
++		};
+ 
+-/dts-v1/;
++		btif@1100c000 {
++			compatible = "mediatek,btif";
++			reg = < 0x1100c000 0x1000 >;
++			interrupts = < 0x00 0x5a 0x08 >;
++			clocks = < 0x02 0x17 0x02 0x0d >;
++			clock-names = "btifc\0apdmac";
++		};
+ 
+-#include "mt6735.dtsi"
+-#include "cust.dtsi"
++		apuart4@1100D000 {
++			cell-index = < 0x04 >;
++			compatible = "mediatek,mt6735-uart";
++			reg = < 0x1100d000 0x1000 0x11000780 0x80 0x11000800 0x80 >;
++			interrupts = < 0x00 0x5f 0x08 0x00 0x6f 0x08 0x00 0x70 0x08 >;
++			clock-frequency = < 0x18cba80 >;
++			clock-div = < 0x01 >;
++			clocks = < 0x02 0x16 >;
++			clock-names = "uart4-main";
++		};
+ 
+-/ {
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
++		spi@1100a000 {
++			compatible = "mediatek,mt6735-spi";
++			cell-index = < 0x00 >;
++			spi-padmacro = < 0x00 >;
++			reg = < 0x1100a000 0x1000 >;
++			interrupts = < 0x00 0x76 0x08 >;
++			clocks = < 0x02 0x1d >;
++			clock-names = "spi-main";
++			clock-frequency = < 0x67f3540 >;
++			clock-div = < 0x01 >;
++		};
+ 
+-	led0:led@0 {
+-		compatible = "mediatek,red";
+-		led_mode = <3>;
+-		data = <2>;
+-		pwm_config = <0 0 0 0 0>;
+-	};
+-	led1:led@1 {
+-		compatible = "mediatek,green";
+-		led_mode = <3>;
+-		data = <1>;
+-		pwm_config = <0 0 0 0 0>;
+-	};
+-	led2:led@2 {
+-		compatible = "mediatek,blue";
+-		led_mode = <0>;
+-		data = <1>;
+-		pwm_config = <0 0 0 0 0>;
+-	};
+-	led3:led@3 {
+-		compatible = "mediatek,jogball-backlight";
+-		led_mode = <0>;
+-		data = <1>;
+-		pwm_config = <0 0 0 0 0>;
+-	};
+-	led4:led@4 {
+-		compatible = "mediatek,keyboard-backlight";
+-		led_mode = <0>;
+-		data = <1>;
+-		pwm_config = <0 0 0 0 0>;
+-	};
+-	led5:led@5 {
+-		compatible = "mediatek,button-backlight";
+-		led_mode = <0>;
+-		data = <1>;
+-		pwm_config = <0 0 0 0 0>;
+-	};
+-	led6:led@6 {
+-		compatible = "mediatek,lcd-backlight";
+-		led_mode = <5>;
+-		data = <1>;
+-		pwm_config = <0 0 0 0 0>;
+-	};
+-	vibrator0:vibrator@0 {
+-		compatible = "mediatek,vibrator";
+-		vib_timer = <25>;
+-		vib_limit = <9>;
+-		vib_vol= <5>;
+-	};
+- /* sensor standardization */
+-		cust_accel@0 {
+-		compatible				= "mediatek,mpu6050g";
+-		i2c_num				= <2>;
+-		i2c_addr				= <0x68 0 0 0>;
+-		direction				= <6>;
+-		power_id				= <0xffff>;
+-		power_vol				= <0>;
+-		firlen					= <0>;
+-		is_batch_supported			= <0>;
+-		};
+-                //BEGIN <bma222e> <DATA20160309> <bma222e config> limi.zhang
+-		cust_accel1@0 {
+-		compatible				= "mediatek,bma222e_new";
+-		i2c_num				= <2>;
+-		i2c_addr				= <0x18 0 0 0>;
+-		direction				= <7>;
+-		power_id				= <0xffff>;
+-		power_vol				= <0>;
+-		firlen					= <0>;
+-		is_batch_supported			= <0>;
+-		};
+-                //END <bma222e> <DATA20160309> <bma222e config> limi.zhang
+-		cust_alsps@0 {
+-		compatible				= "mediatek,LTR553";
+-		i2c_num					= <2>;
+-		i2c_addr				= <0x23 0 0 0>;
+-		polling_mode_ps			= <0>;
+-		polling_mode_als		= <1>;
+-		power_id				= <0xffff>;
+-		power_vol				= <0>;
+-/* Total has 15 level*/
+-		als_level	= <2 16 32 64 613 1400 2238 3253 4401 5606 6844 8196 65535 65535 65535>;
+-/*  Total has 16 range*/
+-		als_value	= <18 50 95 190 1000 1700 1920 2900 5745 8500 10243 10243 10243 10243 10243 10243>;
+-		ps_threshold_high		=  <0x167>;
+-		ps_threshold_low		=  <0x74>;
+-		is_batch_supported_ps	= <0>;
+-		is_batch_supported_als	= <0>;
+-		};
+-		cust_mag@0 {
+-		compatible				= "mediatek,akm09911";
+-		i2c_num				= <2>;
+-		i2c_addr				= <0x0C 0 0 0>;
+-		direction				= <6>;
+-		power_id				= <0xffff>;
+-		power_vol				= <0>;
+-		is_batch_supported	= <0>;
+-		};
+-
+-		cust_gyro@0 {
+-		compatible				= "mediatek,mpu6050gy";
+-		i2c_num				= <2>;
+-		i2c_addr				= <0x69 0 0 0>;
+-		direction				= <6>;
+-		power_id				= <0xffff>;
+-		power_vol				= <0>;
+-		firlen					= <0>;
+-		is_batch_supported	= <0>;
++		i2c@1100f000 {
++			compatible = "mediatek,mt6735-i2c";
++			cell-index = < 0x03 >;
++			reg = < 0x1100f000 0x1000 >;
++			interrupts = < 0x00 0x57 0x08 0x00 0x66 0x08 >;
++			def_speed = < 0x64 >;
++			clocks = < 0x02 0x1b 0x02 0x0d >;
++			clock-names = "i2c3-main\0i2c3-dma";
++			clock-frequency = < 0x3520 >;
++			clock-div = < 0x01 >;
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
+ 		};
+-};
+ 
+-&bat_comm {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&red_led_pins_default>;
+-};
+-/* sensor gpio standization */
+-&pio {
+-	alsps_intpin_cfg: alspspincfg {
++		usb20@11200000 {
++			compatible = "mediatek,mt6735-usb20";
++			cell-index = < 0x00 >;
++			reg = < 0x11200000 0x10000 0x11210000 0x10000 >;
++			interrupts = < 0x00 0x48 0x08 >;
++			mode = < 0x02 >;
++			multipoint = < 0x01 >;
++			num_eps = < 0x10 >;
++			clocks = < 0x02 0x0b >;
++			clock-names = "usb0";
++			vusb33-supply = < 0x2f >;
++			iddig_gpio = < 0x36 0x03 >;
++			drvvbus_gpio = < 0x4c 0x00 >;
++			pinctrl-names = "usb_default\0iddig_irq_init\0drvvbus_init\0drvvbus_low\0drvvbus_high";
++			pinctrl-0 = < 0x30 >;
++			pinctrl-1 = < 0x31 >;
++			pinctrl-2 = < 0x32 >;
++			pinctrl-3 = < 0x33 >;
++			pinctrl-4 = < 0x34 >;
++			status = "okay";
++		};
+ 
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO58__FUNC_GPIO58>;
+-			slew-rate = <0>;
+-			bias-pull-up = <00>;
++		audiosys@11220000 {
++			compatible = "mediatek,mt6735-audiosys";
++			reg = < 0x11220000 0x10000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x35 >;
++			phandle = < 0x35 >;
+ 		};
+-	};
+ 
+-	alsps_intpin_default: alspsdefaultcfg {
++		audio@11220000 {
++			compatible = "mediatek,audio";
++			reg = < 0x11220000 0x10000 >;
++			interrupts = < 0x00 0x90 0x08 >;
++		};
+ 
+-	};
++		mt_soc_dl1_pcm@11220000 {
++			compatible = "mediatek,mt-soc-dl1-pcm";
++			reg = < 0x11220000 0x1000 >;
++			interrupts = < 0x00 0x90 0x08 >;
++			clocks = < 0x35 0x01 0x35 0x02 0x35 0x08 0x35 0x09 0x35 0x07 0x35 0x03 0x35 0x04 0x35 0x06 0x35 0x05 0x35 0x0a 0x1a 0x06 0x03 0x19 0x03 0x1a 0x03 0x21 0x03 0x4b 0x03 0x12 0x03 0x33 0x36 0x08 0x36 0x09 0x37 >;
++			clock-names = "aud_afe_clk\0aud_i2s_clk\0aud_dac_clk\0aud_dac_predis_clk\0aud_adc_clk\0aud_apll22m_clk\0aud_apll24m_clk\0aud_apll1_tuner_clk\0aud_apll2_tuner_clk\0aud_tml_clk\0aud_infra_clk\0aud_mux1_clk\0aud_mux2_clk\0top_ad_apll1_clk\0top_whpll_audio_clk\0top_mux_audio_int\0top_sys_pll1_d4\0apmixed_apll1_clk\0apmixed_apll2_clk\0top_clk26m_clk";
++			audclk-gpio = < 0x8f 0x00 >;
++			audmiso-gpio = < 0x90 0x00 >;
++			audmosi-gpio = < 0x91 0x00 >;
++			vowclk-gpio = < 0x94 0x00 >;
++			i2s1clk-gpio = < 0x50 0x00 >;
++			i2s1dat-gpio = < 0x4e 0x00 >;
++			i2s1mclk-gpio = < 0x09 0x00 >;
++			i2s1ws-gpio = < 0x4f 0x00 >;
++			pinctrl-names = "default\0extamp-pullhigh\0extamp-pulllow";
++			pinctrl-0 = < 0x38 >;
++			pinctrl-1 = < 0x39 >;
++			pinctrl-2 = < 0x3a >;
++			gpio_extspkamp = < 0x0b 0x13 0x00 >;
++			status = "okay";
++		};
+ 
+-	mag_resetpin_cfg: magpincfg {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO61__FUNC_GPIO61>;
+-			slew-rate = <1>;
+-			output-high;
++		mfgsys@13000000 {
++			compatible = "mediatek,mt6735-mfgsys";
++			reg = < 0x13000000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x3b >;
++			phandle = < 0x3b >;
+ 		};
+-	};
+ 
+-	gyro_intpin_cfg: gyropincfg {
++		g3d_config@13000000 {
++			compatible = "mediatek,g3d_config";
++			reg = < 0x13000000 0x1000 >;
++		};
+ 
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO59__FUNC_GPIO59>;
+-			slew-rate = <0>;
+-			bias-pull-down = <00>;
++		mali@13040000 {
++			compatible = "arm,malit720\0arm,mali-t72x\0arm,malit7xx\0arm,mali-midgard";
++			reg = < 0x13040000 0x4000 >;
++			interrupts = < 0x00 0xd4 0x08 0x00 0xd3 0x08 0x00 0xd2 0x08 >;
++			interrupt-names = "JOB\0MMU\0GPU";
++			clock-frequency = < 0x1ad27480 >;
++			clocks = < 0x3b 0x01 0x1b 0x01 0x14 0x05 0x14 0x04 >;
++			clock-names = "mfg-main\0mfg-smi-common\0mtcmos-mfg\0mtcmos-display";
+ 		};
+-	};
+ 
+-	gyro_intpin_default: gyrodefaultcfg {
++		mmsys@14000000 {
++			compatible = "mediatek,mt6735-mmsys";
++			reg = < 0x14000000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x1b >;
++			phandle = < 0x1b >;
++		};
+ 
+-	};
++		mmsys_config@14000000 {
++			compatible = "mediatek,mmsys_config";
++			reg = < 0x14000000 0x1000 >;
++			interrupts = < 0x00 0xcd 0x08 >;
++			clocks = < 0x1b 0x03 >;
++			clock-names = "CAM_MDP";
++		};
+ 
+-	red_led_pins_default: redledpingcfg{
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO8__FUNC_GPIO8>;
+-			slew-rate = <1>;
+-			output-high;
++		mdp_rdma@14001000 {
++			compatible = "mediatek,mdp_rdma";
++			reg = < 0x14001000 0x1000 >;
++			interrupts = < 0x00 0xbb 0x08 >;
++			clocks = < 0x1b 0x04 >;
++			clock-names = "MDP_RDMA";
+ 		};
+-	};
+ 
++		mdp_rsz0@14002000 {
++			compatible = "mediatek,mdp_rsz0";
++			reg = < 0x14002000 0x1000 >;
++			interrupts = < 0x00 0xbc 0x08 >;
++			clocks = < 0x1b 0x05 >;
++			clock-names = "MDP_RSZ0";
++		};
+ 
+-};
+-&alsps {
+-	pinctrl-names = "pin_default", "pin_cfg";
+-	pinctrl-0 = <&alsps_intpin_default>;
+-	pinctrl-1 = <&alsps_intpin_cfg>;
+-	status = "okay";
++		mdp_rsz1@14003000 {
++			compatible = "mediatek,mdp_rsz1";
++			reg = < 0x14003000 0x1000 >;
++			interrupts = < 0x00 0xbd 0x08 >;
++			clocks = < 0x1b 0x06 >;
++			clock-names = "MDP_RSZ1";
++		};
+ 
+-};
++		mdp_wdma@14004000 {
++			compatible = "mediatek,mdp_wdma";
++			reg = < 0x14004000 0x1000 >;
++			interrupts = < 0x00 0xbf 0x08 >;
++			clocks = < 0x1b 0x08 >;
++			clock-names = "MDP_WDMA";
++		};
+ 
+-&mag {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&mag_resetpin_cfg>;
+-	status = "okay";
+-};
++		mdp_wrot@14005000 {
++			compatible = "mediatek,mdp_wrot";
++			reg = < 0x14005000 0x1000 >;
++			interrupts = < 0x00 0xc0 0x08 >;
++			clocks = < 0x1b 0x09 >;
++			clock-names = "MDP_WROT";
++		};
+ 
+-&pio {
+-	hall_intpin_cfg: hallpincfg {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO0__FUNC_GPIO0>;
+-			slew-rate = <0>;
+-			bias-pull-up = <00>;
++		mdp_tdshp@14006000 {
++			compatible = "mediatek,mdp_tdshp";
++			reg = < 0x14006000 0x1000 >;
++			interrupts = < 0x00 0xbe 0x08 >;
++			clocks = < 0x1b 0x07 >;
++			clock-names = "MDP_TDSHP";
+ 		};
+-	};
+-	hall_intpin_default: halldefaultcfg {
+-	};
+ 
+-};
+-&tinno_hall {
+-	pinctrl-names = "pin_default", "pin_cfg";
+-	pinctrl-0 = <&hall_intpin_default>;
+-	pinctrl-1 = <&hall_intpin_cfg>;
+-	status = "okay";
+-};
++		dispsys@14007000 {
++			compatible = "mediatek,mt6735-dispsys";
++			reg = < 0x14007000 0x1000 0x00 0x00 0x14008000 0x1000 0x14009000 0x1000 0x1400a000 0x1000 0x1400b000 0x1000 0x1400c000 0x1000 0x1400d000 0x1000 0x1400e000 0x1000 0x1400f000 0x1000 0x00 0x00 0x1100e000 0x1000 0x00 0x00 0x14014000 0x1000 0x14011000 0x1000 0x14012000 0x1000 0x14000000 0x1000 0x14015000 0x1000 0x14016000 0x1000 0x14017000 0x1000 0x10206000 0x1000 0x10210000 0x1000 0x10211a70 0x0c 0x10211974 0x0c 0x10211b70 0x0c 0x10206044 0x0c 0x10206514 0x0c 0x10206558 0x0c 0x102100a0 0x1000 0x10209270 0x1000 0x10209274 0x1000 0x00 0x00 0x10209000 0x1000 >;
++			interrupts = < 0x00 0xc1 0x08 0x00 0x00 0x08 0x00 0xc2 0x08 0x00 0xc3 0x08 0x00 0xc4 0x08 0x00 0xc5 0x08 0x00 0xc6 0x08 0x00 0xc7 0x08 0x00 0xc8 0x08 0x00 0xc9 0x08 0x00 0x00 0x08 0x00 0x75 0x08 0x00 0x00 0x08 0x00 0xba 0x08 0x00 0xcb 0x08 0x00 0xcc 0x08 0x00 0xcd 0x08 0x00 0xb0 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 0x00 0x00 0x08 >;
++			clocks = < 0x1b 0x01 0x1b 0x02 0x1b 0x0b 0x1b 0x0c 0x1b 0x0d 0x1b 0x0e 0x1b 0x0f 0x1b 0x10 0x1b 0x11 0x1b 0x12 0x1b 0x13 0x1b 0x14 0x1b 0x15 0x1b 0x16 0x1b 0x17 0x02 0x01 0x03 0x16 0x03 0x3c 0x03 0x3d 0x03 0x4d 0x03 0x1d 0x03 0x45 0x03 0x3a 0x03 0x22 0x14 0x04 >;
++			clock-names = "DISP0_SMI_COMMON\0DISP0_SMI_LARB0\0DISP0_DISP_OVL0\0DISP0_DISP_RDMA0\0DISP0_DISP_RDMA1\0DISP0_DISP_WDMA0\0DISP0_DISP_COLOR\0DISP0_DISP_CCORR\0DISP0_DISP_AAL\0DISP0_DISP_GAMMA\0DISP0_DISP_DITHER\0DISP1_DSI_ENGINE\0DISP1_DSI_DIGITAL\0DISP1_DPI_ENGINE\0DISP1_DPI_PIXEL\0DISP_PWM\0MUX_DPI0\0TVDPLL_CK\0TVDPLL_D2\0DPI_CK\0MUX_DISPPWM\0UNIVPLL2_D4\0SYSPLL4_D2_D8\0AD_SYS_26M_CK\0DISP_MTCMOS_CLK";
++		};
+ 
+-&gyro {
+-	pinctrl-names = "pin_default", "pin_cfg";
+-	pinctrl-0 = <&gyro_intpin_default>;
+-	pinctrl-1 = <&gyro_intpin_cfg>;
+-	status = "okay";
++		lcm_mode {
++			compatible = "mediatek,lcm_mode";
++		};
+ 
+-};
+-/* sensor end */
+-&pio {
+-	flash_light_pin_cfg_output0: flashlightpincfg0 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO42__FUNC_GPIO42>;
+-			slew-rate = <1>;
+-			output-low;
++		smi_larb0@14015000 {
++			compatible = "mediatek,smi_larb0";
++			reg = < 0x14015000 0x1000 >;
+ 		};
+-	};
+-	flash_light_pin_cfg_output1: flashlightpincfg1 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO42__FUNC_GPIO42>;
+-			slew-rate = <1>;
+-			output-high;
++
++		smi_common@14016000 {
++			compatible = "mediatek,smi_common";
++			reg = < 0x14016000 0x1000 0x14015000 0x1000 0x16010000 0x1000 0x15001000 0x1000 0x17001000 0x1000 >;
++			clocks = < 0x1b 0x01 0x1b 0x02 0x1d 0x01 0x1c 0x01 0x1c 0x02 0x1e 0x01 0x1e 0x02 0x14 0x08 0x14 0x07 0x14 0x06 0x14 0x04 >;
++			clock-names = "smi-common\0smi-larb0\0img-larb2\0vdec0-vdec\0vdec1-larb\0venc-larb\0venc-venc\0mtcmos-ven\0mtcmos-vde\0mtcmos-isp\0mtcmos-dis";
+ 		};
+-	};
+-	flash_light_pin_en_output0: flashlightpinen0 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO43__FUNC_GPIO43>;
+-			slew-rate = <1>;
+-			output-low;
++
++		met_smi@14016000 {
++			compatible = "mediatek,met_smi";
++			reg = < 0x14016000 0x1000 0x14015000 0x1000 0x16010000 0x1000 0x15001000 0x1000 0x17001000 0x1000 >;
++			clocks = < 0x1b 0x01 0x1b 0x02 0x1d 0x01 0x1c 0x01 0x1c 0x02 0x1e 0x01 0x1e 0x02 >;
++			clock-names = "smi-common\0smi-larb0\0img-larb2\0vdec0-vdec\0vdec1-larb\0venc-larb\0venc-venc";
+ 		};
+-	};
+-	flash_light_pin_en_output1: flashlightpinen1 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO43__FUNC_GPIO43>;
+-			slew-rate = <1>;
+-			output-high;
++
++		imgsys@15000000 {
++			compatible = "mediatek,mt6735-imgsys";
++			reg = < 0x15000000 0x1000 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x1d >;
++			phandle = < 0x1d >;
+ 		};
+-	};
+-	flash_light_pin_ext1_output0: flashlightpinext10 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO3__FUNC_GPIO3>;
+-			slew-rate = <1>;
+-			output-low;
++
++		ispsys@15000000 {
++			compatible = "mediatek,mt6735-ispsys";
++			reg = < 0x15004000 0x9000 0x1500d000 0x1000 0x15000000 0x10000 0x10215000 0x3000 0x10211000 0x1000 >;
++			interrupts = < 0x00 0xb7 0x08 0x00 0xb8 0x08 0x00 0xb9 0x08 0x00 0xce 0x08 0x00 0xcf 0x08 >;
++			clocks = < 0x14 0x04 0x14 0x06 0x1b 0x01 0x1d 0x02 0x1d 0x03 0x1d 0x04 0x1d 0x05 0x1d 0x06 0x1d 0x01 >;
++			clock-names = "CG_SCP_SYS_DIS\0CG_SCP_SYS_ISP\0CG_DISP0_SMI_COMMON\0CG_IMAGE_CAM_SMI\0CG_IMAGE_CAM_CAM\0CG_IMAGE_SEN_TG\0CG_IMAGE_SEN_CAM\0CG_IMAGE_CAM_SV\0CG_IMAGE_LARB2_SMI";
+ 		};
+-	};
+-	flash_light_pin_ext1_output1: flashlightpinext11 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO3__FUNC_GPIO3>;
+-			slew-rate = <1>;
+-			output-high;
++
++		smi_larb2@15001000 {
++			compatible = "mediatek,smi_larb2";
++			reg = < 0x15001000 0x1000 >;
++			interrupts = < 0x00 0xb2 0x08 >;
+ 		};
+-	};
+-	flash_light_pin_ext2_output0: flashlightpinext20 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO4__FUNC_GPIO4>;
+-			slew-rate = <1>;
+-			output-low;
++
++		kd_camera_hw1@15008000 {
++			compatible = "mediatek,camera_hw";
++			reg = < 0x15008000 0x1000 >;
++			vcama-supply = < 0x3c >;
++			vcamd-supply = < 0x3d >;
++			vcamaf-supply = < 0x3e >;
++			vcamio-supply = < 0x3f >;
++			clocks = < 0x03 0x08 0x03 0x3f 0x03 0x44 >;
++			clock-names = "TOP_CAMTG_SEL\0TOP_UNIVPLL_D26\0TOP_UNIVPLL2_D2";
++			vcama_main2-supply = < 0x3c >;
++			vcama_sub-supply = < 0x3c >;
++			vcamaf_main2-supply = < 0x3e >;
++			vcamaf_sub-supply = < 0x3e >;
++			vcamd_main2-supply = < 0x3d >;
++			vcamd_sub-supply = < 0x3d >;
++			vcamio_main2-supply = < 0x3f >;
++			vcamio_sub-supply = < 0x3f >;
++			status = "okay";
++			pinctrl-names = "default\0cam0_rst0\0cam0_rst1\0cam0_pnd0\0cam0_pnd1\0cam1_rst0\0cam1_rst1\0cam1_pnd0\0cam1_pnd1\0cam_ldo0_0\0cam_ldo0_1\0sub_cam_avdd_0\0sub_cam_avdd_1\0sub_cam_dvdd_0\0sub_cam_dvdd_1";
++			pinctrl-0 = < 0x40 >;
++			pinctrl-1 = < 0x41 >;
++			pinctrl-2 = < 0x42 >;
++			pinctrl-3 = < 0x43 >;
++			pinctrl-4 = < 0x44 >;
++			pinctrl-5 = < 0x45 >;
++			pinctrl-6 = < 0x46 >;
++			pinctrl-7 = < 0x47 >;
++			pinctrl-8 = < 0x48 >;
++			pinctrl-9 = < 0x49 >;
++			pinctrl-10 = < 0x4a >;
++			pinctrl-11 = < 0x4b >;
++			pinctrl-12 = < 0x4c >;
++			pinctrl-13 = < 0x4d >;
++			pinctrl-14 = < 0x4e >;
+ 		};
+-	};
+-	flash_light_pin_ext2_output1: flashlightpinext21 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO4__FUNC_GPIO4>;
+-			slew-rate = <1>;
+-			output-high;
++
++		kd_camera_hw2@15008000 {
++			compatible = "mediatek,camera_hw2";
++			reg = < 0x15008000 0x1000 >;
+ 		};
+-	};
+-	flash_light_pin_default: flashlighdefaultcfg {
+-	};
+ 
+-};
+-/*DISPTE START*/
+-&pio {
+-	dispte_pin_cfg_output0: disptepincfg0 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO146__FUNC_GPIO146>;
+-			slew-rate = <1>;
+-			output-low;
++		fdvt@1500b000 {
++			compatible = "mediatek,fdvt";
++			reg = < 0x1500b000 0x1000 >;
++			interrupts = < 0x00 0xd0 0x08 >;
++			clocks = < 0x14 0x04 0x14 0x06 0x1b 0x01 0x1d 0x08 >;
++			clock-names = "FD-SCP_SYS_DIS\0FD-SCP_SYS_ISP\0FD-MM_DISP0_SMI_COMMON\0FD-IMG_IMAGE_FD";
+ 		};
+-	};
+-	dispte_pin_cfg_output1: disptepincfg1 {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO146__FUNC_GPIO146>;
+-			slew-rate = <1>;
+-			output-high;
++
++		vdecsys@16000000 {
++			compatible = "mediatek,mt6735-vdecsys";
++			reg = < 0x16000000 0x1000 >;
++			interrupts = < 0x00 0xb3 0x08 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x1c >;
++			phandle = < 0x1c >;
+ 		};
+-	};
+-	dispte_pin_default: disptedefaultcfg {
+-	};
+-};
+-&dispte {
+-	pinctrl-names = "disptepin_default", "disptepin_cfg0", "disptepin_cfg1";
+-	pinctrl-0 = <&dispte_pin_default>;
+-	pinctrl-1 = <&dispte_pin_cfg_output0>;
+-	pinctrl-2 = <&dispte_pin_cfg_output1>;
+-	status = "okay";
+-};
+-/*DISPTE END*/
+-&flash_light {
+-	pinctrl-names = "flashlightpin_default", "flashlightpin_cfg0", "flashlightpin_cfg1","flashlightpin_en0","flashlightpin_en1"
+-			 ,"flashlightpin_ext10","flashlightpin_ext11","flashlightpin_ext20","flashlightpin_ext21";
+-	pinctrl-0 = <&flash_light_pin_default>;
+-	pinctrl-1 = <&flash_light_pin_cfg_output0>;
+-	pinctrl-2 = <&flash_light_pin_cfg_output1>;
+-	pinctrl-3 = <&flash_light_pin_en_output0>;
+-	pinctrl-4 = <&flash_light_pin_en_output1>;
+-	pinctrl-5 = <&flash_light_pin_ext1_output0>;
+-	pinctrl-6 = <&flash_light_pin_ext1_output1>;
+-	pinctrl-7 = <&flash_light_pin_ext2_output0>;
+-	pinctrl-8 = <&flash_light_pin_ext2_output1>;
+-	status = "okay";
+-};
+-/* AUDIO GPIO standardization */
+-&audgpio {
+-	pinctrl-names = "default", "extamp-pullhigh", "extamp-pulllow";
+-	pinctrl-0 = <&AUD_pins_default>;
+-
+-	pinctrl-1 = <&AUD_pins_extamp_pullhigh>;
+-	pinctrl-2 = <&AUD_pins_extamp_pulllow>;
+-	gpio_extspkamp = <&pio 19 0>;//yangliang add for ext pa mode-2;
+-	status = "okay";
+-};
+-&pio {
+-	AUD_pins_default: audiodefault {
+-	};
+ 
+-	AUD_pins_extamp_pullhigh: extamppullhigh {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO19__FUNC_GPIO19>;/*GPIO_extamp_PIN*/
+-			slew-rate = <1>;
+-			output-high;
++		vdec_gcon@16000000 {
++			compatible = "mediatek,mt6735-vdec_gcon";
++			reg = < 0x16000000 0x1000 >;
++			interrupts = < 0x00 0xb3 0x08 >;
++			clocks = < 0x1b 0x01 0x1c 0x01 0x1c 0x02 0x1e 0x02 0x1e 0x01 0x03 0x06 0x03 0x32 0x03 0x33 0x14 0x07 0x14 0x08 0x14 0x04 >;
++			clock-names = "MT_CG_DISP0_SMI_COMMON\0MT_CG_VDEC0_VDEC\0MT_CG_VDEC1_LARB\0MT_CG_VENC_VENC\0MT_CG_VENC_LARB\0MT_CG_TOP_MUX_VDEC\0MT_CG_TOP_SYSPLL1_D2\0MT_CG_TOP_SYSPLL1_D4\0MT_SCP_SYS_VDE\0MT_SCP_SYS_VEN\0MT_SCP_SYS_DIS";
+ 		};
+-	};
+-	AUD_pins_extamp_pulllow: extamppulllow {
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO19__FUNC_GPIO19>;/*GPIO_extamp_PIN*/
+-			slew-rate = <1>;
+-			output-low;
++
++		smi_larb1@16010000 {
++			compatible = "mediatek,smi_larb1";
++			reg = < 0x16010000 0x1000 >;
++			interrupts = < 0x00 0xb1 0x08 >;
+ 		};
+-	};
+-};
+-/* AUDIO end */
+-&accdet {
+-		accdet-mic-vol = <7>;
+-		//headset-mode-setting = <0x500 0x200 1 0x1F0 0x800 0x800 0x20>;//yangliang mask and add for insert hph-pop according to mtk20160418
+-		headset-mode-setting = <0x500 0x500 1 0x3F0 0x800 0x800 0x20>; 
+-		accdet-plugout-debounce = <20>;
+-		/*1:ACC mode, 2:low cost without in bias, 6:low cost with in bias*/
+-		accdet-mic-mode = <6>;
+-		/*0--MD_MAX--UP_MAX--DW_MAX*/
+-		headset-three-key-threshold = <0 80 220 500>;
+-		/*0--MD_MAX--VOICE_MAX--UP_MAX--DW_MAX*/
+-		headset-four-key-threshold = <0 58 121 192 450>;
+-};
+-&touch {
+-	tpd-resolution = <720 1280>;
+-	use-tpd-button = <0>;
+-	tpd-key-num = <3>;
+-	tpd-key-local= <139 172 158 0>;
+-	tpd-key-dim-local = <90 883 100 40 230 883 100 40 370 883 100 40 0 0 0 0>;
+-	tpd-max-touch-num = <5>;
+-	tpd-filter-enable = <0>;
+-	tpd-filter-pixel-density = <124>;
+-	tpd-filter-custom-prameters = <0 0 0 0 0 0 0 0 0 0 0 0>;
+-	tpd-filter-custom-speed = <0 0 0>;
+-	pinctrl-names = "default", "state_eint_as_int", "state_eint_output0", "state_eint_output1",
+-		"state_rst_output0", "state_rst_output1";
+-	pinctrl-0 = <&CTP_pins_default>;
+-	pinctrl-1 = <&CTP_pins_eint_as_int>;
+-	pinctrl-2 = <&CTP_pins_eint_output0>;
+-	pinctrl-3 = <&CTP_pins_eint_output1>;
+-	pinctrl-4 = <&CTP_pins_rst_output0>;
+-	pinctrl-5 = <&CTP_pins_rst_output1>;
+-	status = "okay";
+-};
+ 
+-&mtkfb {
+-	reg = <0x7f000000 0x1000000>;
+-};
++		vdec@16020000 {
++			compatible = "mediatek,mt6735-vdec";
++			reg = < 0x16020000 0x10000 >;
++			interrupts = < 0x00 0xb3 0x08 >;
++		};
+ 
++		vencsys@17000000 {
++			compatible = "mediatek,mt6735-vencsys";
++			reg = < 0x17000000 0x1000 >;
++			interrupts = < 0x00 0xb4 0x08 >;
++			#clock-cells = < 0x01 >;
++			linux,phandle = < 0x1e >;
++			phandle = < 0x1e >;
++		};
+ 
+-&pio {
+-	CTP_pins_default: eint0default {
+-	};
+-	CTP_pins_eint_as_int: eint@0 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO10__FUNC_GPIO10>;
+-			slew-rate = <0>;
+-			bias-disable;
++		venc_gcon@17000000 {
++			compatible = "mediatek,mt6735-venc_gcon";
++			reg = < 0x17000000 0x1000 >;
++			interrupts = < 0x00 0xb4 0x08 >;
+ 		};
+-	};
+-	CTP_pins_eint_output0: eintoutput0 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO10__FUNC_GPIO10>;
+-			slew-rate = <1>;
+-			output-low;
++
++		smi_larb3@17001000 {
++			compatible = "mediatek,smi_larb3";
++			reg = < 0x17001000 0x1000 >;
++			interrupts = < 0x00 0xca 0x08 >;
+ 		};
+-	};
+-	CTP_pins_eint_output1: eintoutput1 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO10__FUNC_GPIO10>;
+-			slew-rate = <1>;
+-			output-high;
++
++		venc@17002000 {
++			compatible = "mediatek,mt6735-venc";
++			reg = < 0x17002000 0x1000 >;
++			interrupts = < 0x00 0xb4 0x08 >;
+ 		};
+-	};
+-	CTP_pins_rst_output0: rstoutput0 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO62__FUNC_GPIO62>;
+-			slew-rate = <1>;
+-			output-low;
++
++		jpgenc@17003000 {
++			compatible = "mediatek,jpgenc";
++			reg = < 0x17003000 0x1000 >;
++			interrupts = < 0x00 0xb5 0x08 >;
++			clocks = < 0x14 0x04 0x1b 0x01 0x14 0x08 0x1e 0x01 0x1e 0x03 >;
++			clock-names = "disp-mtcmos\0disp-smi\0venc-mtcmos\0venc-larb\0venc-jpgenc";
+ 		};
+-	};
+-	CTP_pins_rst_output1: rstoutput1 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO62__FUNC_GPIO62>;
+-			slew-rate = <1>;
+-			output-high;
++
++		jpgdec@17004000 {
++			compatible = "mediatek,jpgdec";
++			reg = < 0x17004000 0x1000 >;
++			interrupts = < 0x00 0xd1 0x08 >;
++			clocks = < 0x14 0x04 0x1b 0x01 0x14 0x08 0x1e 0x01 0x1e 0x04 >;
++			clock-names = "disp-mtcmos\0disp-smi\0venc-mtcmos\0venc-larb\0venc-jpgdec";
+ 		};
+-	};
+-};
+-/* TOUCH end */
+-&i2c1 {
+-	cap_touch@38 {
+-		compatible = "mediatek,ft6xxx_touch";
+-		reg = <0x38>;
+-		status = "okay";
+-	};
+ 
+-};
+-/* CAMERA GPIO standardization */
+-&pio {
+-	camera_pins_cam0_rst0: cam0@0 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO44__FUNC_GPIO44>;/*GPIO_CAMERA_CMRST_PIN*/
+-			slew-rate = <1>; /*direction 0:in, 1:out*/
+-			output-low;/*direction out used only. output_low or high*/
++		btcvsd@18000000 {
++			compatible = "mediatek,audio_bt_cvsd";
++			offset = < 0x700 0x800 0xfd0 0xfd4 0xfd8 >;
++			reg = < 0x10000000 0x1000 0x18000000 0x10000 0x18080000 0x8000 >;
++			interrupts = < 0x00 0xe4 0x08 >;
+ 		};
+-	};
+-	camera_pins_cam0_rst1: cam0@1 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO44__FUNC_GPIO44>;/*GPIO_CAMERA_CMRST_PIN*/
+-			slew-rate = <1>;
+-			output-high;
++
++		consys@18070000 {
++			compatible = "mediatek,mt6735-consys";
++			reg = < 0x18070000 0x200 0x10212000 0x100 0x10000000 0x2000 0x10006000 0x1000 >;
++			interrupts = < 0x00 0xe3 0x08 0x00 0xe1 0x08 >;
++			clocks = < 0x14 0x03 0x1a 0x0b >;
++			clock-names = "conn\0bus";
++			vcn18-supply = < 0x4f >;
++			vcn28-supply = < 0x50 >;
++			vcn33_bt-supply = < 0x51 >;
++			vcn33_wifi-supply = < 0x52 >;
++			pinctrl-names = "default\0gps_lna_state_init\0gps_lna_state_oh\0gps_lna_state_ol";
++			pinctrl-0 = < 0x53 >;
++			pinctrl-1 = < 0x54 >;
++			pinctrl-2 = < 0x55 >;
++			pinctrl-3 = < 0x56 >;
++			status = "okay";
+ 		};
+-	};
+-	camera_pins_cam0_pnd0: cam0@2 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO7__FUNC_GPIO7>;/*GPIO_CAMERA_CMPDN_PIN*/
+-			slew-rate = <1>;
+-			output-low;
++
++		wifi@180f0000 {
++			compatible = "mediatek,wifi";
++			reg = < 0x180f0000 0x5c >;
++			interrupts = < 0x00 0xe2 0x08 >;
++			clocks = < 0x02 0x0d >;
++			clock-names = "wifi-dma";
+ 		};
+-	};
+-	camera_pins_cam0_pnd1: cam0@3 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO7__FUNC_GPIO7>;/*GPIO_CAMERA_CMPDN_PIN*/
+-			slew-rate = <1>;
+-			output-high;
++
++		mdc2k@3a00b01c {
++			compatible = "mediatek,mdc2k";
++			reg = < 0x3a00b01c 0x10 0x1021c800 0x300 0x1021d800 0x300 >;
++			interrupts = < 0x00 0xe5 0x02 >;
++			clocks = < 0x14 0x02 >;
++			clock-names = "scp-sys-md2-main";
+ 		};
+-	};
+-	camera_pins_cam1_rst0: cam1@0 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO11__FUNC_GPIO11>;/*GPIO_CAMERA_CMRST1_PIN*/
+-			slew-rate = <1>; /*direction 0:in, 1:out*/
+-			output-low;/*direction out used only. output_low or high*/
++
++		mtkfb@7f000000 {
++			compatible = "mediatek,mtkfb";
++			reg = < 0x7f000000 0x1000000 >;
+ 		};
+-	};
+-	camera_pins_cam1_rst1: cam1@1 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO11__FUNC_GPIO11>;/*GPIO_CAMERA_CMRST1_PIN*/
+-			slew-rate = <1>;
+-			output-high;
++
++		mt_soc_ul1_pcm {
++			compatible = "mediatek,mt_soc_pcm_capture";
+ 		};
+-	};
+-	camera_pins_cam1_pnd0: cam1@2 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO12__FUNC_GPIO12>;/*GPIO_CAMERA_CMPDN1_PIN*/
+-			slew-rate = <1>;
+-			output-low;
++
++		mt_soc_voice_md1 {
++			compatible = "mediatek,mt_soc_pcm_voice_md1";
+ 		};
+-	};
+-	camera_pins_cam1_pnd1: cam1@3 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO12__FUNC_GPIO12>;/*GPIO_CAMERA_CMPDN1_PIN*/
+-			slew-rate = <1>;
+-			output-high;
++
++		mt_soc_hdmi_pcm {
++			compatible = "mediatek,mt_soc_pcm_hdmi";
+ 		};
+-	};
+-	camera_pins_cam_ldo0_0: cam@0 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO83__FUNC_GPIO83>;
+-			slew-rate = <1>;
+-			output-low;
++
++		mt_soc_uldlloopback_pcm {
++			compatible = "mediatek,mt_soc_pcm_uldlloopback";
+ 		};
+-	};
+-	camera_pins_cam_ldo0_1: cam@1 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO83__FUNC_GPIO83>;
+-			slew-rate = <1>;
+-			output-high;
++
++		mt_soc_i2s0_pcm {
++			compatible = "mediatek,mt_soc_pcm_dl1_i2s0";
+ 		};
+-	};
+-	camera_pins_sub_cam_avdd_0: cam@2 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO78__FUNC_GPIO78>;
+-			slew-rate = <1>;
+-			output-low;
++
++		mt_soc_mrgrx_pcm {
++			compatible = "mediatek,mt_soc_pcm_mrgrx";
+ 		};
+-	};
+-	camera_pins_sub_cam_avdd_1: cam@3 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO78__FUNC_GPIO78>;
+-			slew-rate = <1>;
+-			output-high;
++
++		mt_soc_mrgrx_awb_pcm {
++			compatible = "mediatek,mt_soc_pcm_mrgrx_awb";
+ 		};
+-	};
+-	camera_pins_sub_cam_dvdd_0: cam2@0 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO80__FUNC_GPIO80>;
+-			slew-rate = <1>;
+-			output-low;
++
++		mt_soc_fm_i2s_pcm {
++			compatible = "mediatek,mt_soc_pcm_fm_i2s";
+ 		};
+-	};
+-	camera_pins_sub_cam_dvdd_1: cam2@1 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO80__FUNC_GPIO80>;
+-			slew-rate = <1>;
+-			output-high;
++
++		mt_soc_fm_i2s_awb_pcm {
++			compatible = "mediatek,mt_soc_pcm_fm_i2s_awb";
+ 		};
+-	};
+-	camera_pins_default: camdefault {
+ 
+-	};
+-};
++		mt_soc_i2s0dl1_pcm {
++			compatible = "mediatek,mt_soc_pcm_dl1_i2s0Dl1";
++		};
+ 
+-&kd_camera_hw1 {
+-	pinctrl-names = "default", "cam0_rst0", "cam0_rst1", "cam0_pnd0", "cam0_pnd1",
+-	"cam1_rst0", "cam1_rst1", "cam1_pnd0", "cam1_pnd1",
+-	"cam_ldo0_0", "cam_ldo0_1","sub_cam_avdd_0","sub_cam_avdd_1","sub_cam_dvdd_0","sub_cam_dvdd_1";
+-	pinctrl-0 = <&camera_pins_default>;
+-	pinctrl-1 = <&camera_pins_cam0_rst0>;
+-	pinctrl-2 = <&camera_pins_cam0_rst1>;
+-	pinctrl-3 = <&camera_pins_cam0_pnd0>;
+-	pinctrl-4 = <&camera_pins_cam0_pnd1>;
+-	pinctrl-5 = <&camera_pins_cam1_rst0>;
+-	pinctrl-6 = <&camera_pins_cam1_rst1>;
+-	pinctrl-7 = <&camera_pins_cam1_pnd0>;
+-	pinctrl-8 = <&camera_pins_cam1_pnd1>;
+-	pinctrl-9 = <&camera_pins_cam_ldo0_0>;
+-	pinctrl-10 = <&camera_pins_cam_ldo0_1>;
+-	pinctrl-11 = <&camera_pins_sub_cam_avdd_0>;
+-	pinctrl-12 = <&camera_pins_sub_cam_avdd_1>;
+-	pinctrl-13 = <&camera_pins_sub_cam_dvdd_0>;
+-	pinctrl-14 = <&camera_pins_sub_cam_dvdd_1>;
+-	status = "okay";
++		mt_soc_dl1_awb_pcm {
++			compatible = "mediatek,mt_soc_pcm_dl1_awb";
++		};
+ 
+-};
+-/* CAMERA GPIO end */
++		mt_soc_voice_md1_bt {
++			compatible = "mediatek,mt_soc_pcm_voice_md1_bt";
++		};
+ 
+-/* CONSYS GPIO standardization */
+-&pio {
+-	consys_pins_default: default {
++		mt_soc_voip_bt_out {
++			compatible = "mediatek,mt_soc_pcm_dl1_bt";
++		};
+ 
+-	};
++		mt_soc_voip_bt_in {
++			compatible = "mediatek,mt_soc_pcm_bt_dai";
++		};
+ 
+-	gpslna_pins_init: gpslna@0 {
++		mt_soc_tdmrx_pcm {
++			compatible = "mediatek,mt_soc_tdm_capture";
++		};
+ 
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO79__FUNC_GPIO79>;
+-			slew-rate = <0>;
+-			bias-disable;
+-			output-low;
++		mt_soc_fm_mrgtx_pcm {
++			compatible = "mediatek,mt_soc_pcm_fmtx";
+ 		};
+-	};
+ 
+-	gpslna_pins_oh: gpslna@1 {
++		mt_soc_ul2_pcm {
++			compatible = "mediatek,mt_soc_pcm_capture2";
++		};
+ 
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO79__FUNC_GPIO79>;
+-			slew-rate = <1>;
+-			output-high;
++		mt_soc_i2s0_awb_pcm {
++			compatible = "mediatek,mt_soc_pcm_i2s0_awb";
+ 		};
+-	};
+ 
+-	gpslna_pins_ol: gpslna@2 {
++		mt_soc_voice_md2 {
++			compatible = "mediatek,mt_soc_pcm_voice_md2";
++		};
+ 
+-	    pins_cmd_dat {
+-			pins = <PINMUX_GPIO79__FUNC_GPIO79>;
+-			slew-rate = <1>;
+-			output-low;
++		mt_soc_routing_pcm {
++			compatible = "mediatek,mt_soc_pcm_routing";
++			i2s1clk-gpio = < 0x07 0x06 >;
++			i2s1dat-gpio = < 0x05 0x06 >;
++			i2s1mclk-gpio = < 0x09 0x06 >;
++			i2s1ws-gpio = < 0x06 0x06 >;
+ 		};
+-	};
+ 
+-};
++		mt_soc_voice_md2_bt {
++			compatible = "mediatek,mt_soc_pcm_voice_md2_bt";
++		};
+ 
+-&consys {
+-	pinctrl-names = "default", "gps_lna_state_init", "gps_lna_state_oh", "gps_lna_state_ol";
+-	pinctrl-0 = <&consys_pins_default>;
+-	pinctrl-1 = <&gpslna_pins_init>;
+-	pinctrl-2 = <&gpslna_pins_oh>;
+-	pinctrl-3 = <&gpslna_pins_ol>;
+-	status = "okay";
++		mt_soc_hp_impedance_pcm {
++			compatible = "mediatek,Mt_soc_pcm_hp_impedance";
++		};
+ 
+-};
+-/* CONSYS end */
+-
+-/* mmc start */
+-&mmc0 {
+-		clk_src = /bits/ 8 <MSDC50_CLKSRC_400MHZ>;
+-		bus-width = <8>;
+-		max-frequency = <200000000>;
+-		cap-mmc-highspeed;
+-		msdc-sys-suspend;
+-		mmc-ddr-1_8v;
+-		mmc-hs200-1_8v;
+-		mmc-hs400-1_8v;
+-		non-removable;
+-		pinctl = <&mmc0_pins_default>;
+-		register_setting = <&mmc0_register_setting_default>;
+-		host_function = /bits/ 8 <MSDC_EMMC>;
+-		bootable;
+-		status = "okay";
+-};
++		mt_soc_codec_name {
++			compatible = "mediatek,mt_soc_codec_63xx";
++		};
+ 
+-&mmc1 {
+-		clk_src = /bits/ 8 <MSDC30_CLKSRC_200MHZ>;
+-		bus-width = <4>;
+-		max-frequency = <200000000>;
+-		msdc-sys-suspend;
+-		cap-sd-highspeed;
+-		sd-uhs-sdr12;
+-		sd-uhs-sdr25;
+-		sd-uhs-sdr50;
+-		sd-uhs-sdr104;
+-		sd-uhs-ddr50;
+-		pinctl = <&mmc1_pins_default>;
+-		pinctl_sdr104 = <&mmc1_pins_sdr104>;
+-		pinctl_sdr50 = <&mmc1_pins_sdr50>;
+-		pinctl_ddr50 = <&mmc1_pins_ddr50>;
+-		register_setting = <&mmc1_register_setting_default>;
+-		host_function = /bits/ 8 <MSDC_SD>;
+-		cd_level = /bits/ 8 <MSDC_CD_LOW>;
+-		cd-gpios = <&pio 5 0>;
+-		status = "okay";
+-};
++		mt_soc_dummy_pcm {
++			compatible = "mediatek,mt_soc_pcm_dummy";
++		};
+ 
+-&pio {
+-	mmc0_pins_default: mmc0@default {
+-			pins_cmd {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_dat {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_clk {
+-				drive-strength = /bits/ 8 <2>;
++		mt_soc_codec_dummy_name {
++			compatible = "mediatek,mt_soc_codec_dummy";
++		};
++
++		mt_soc_routing_dai_name {
++			compatible = "mediatek,mt_soc_dai_routing";
++		};
++
++		mt_soc_dai_name {
++			compatible = "mediatek,mt_soc_dai_stub";
++		};
++
++		mt_soc_offload_gdma {
++			compatible = "mediatek,mt_soc_pcm_offload_gdma";
++		};
++
++		mt_soc_dl2_pcm {
++			compatible = "mediatek,mt_soc_pcm_dl2";
++		};
++
++		touch {
++			compatible = "mediatek,mt6735-touch";
++			vtouch-supply = < 0x57 >;
++			interrupt-parent = < 0x13 >;
++			interrupts = < 0x0a 0x02 >;
++			debounce = < 0x0a 0x00 >;
++			status = "okay";
++			tpd-resolution = < 0x2d0 0x500 >;
++			use-tpd-button = < 0x00 >;
++			tpd-key-num = < 0x03 >;
++			tpd-key-local = < 0x8b 0xac 0x9e 0x00 >;
++			tpd-key-dim-local = < 0x5a 0x373 0x64 0x28 0xe6 0x373 0x64 0x28 0x172 0x373 0x64 0x28 0x00 0x00 0x00 0x00 >;
++			tpd-max-touch-num = < 0x05 >;
++			tpd-filter-enable = < 0x00 >;
++			tpd-filter-pixel-density = < 0x7c >;
++			tpd-filter-custom-prameters = < 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 >;
++			tpd-filter-custom-speed = < 0x00 0x00 0x00 >;
++			pinctrl-names = "default\0state_eint_as_int\0state_eint_output0\0state_eint_output1\0state_rst_output0\0state_rst_output1";
++			pinctrl-0 = < 0x58 >;
++			pinctrl-1 = < 0x59 >;
++			pinctrl-2 = < 0x5a >;
++			pinctrl-3 = < 0x5b >;
++			pinctrl-4 = < 0x5c >;
++			pinctrl-5 = < 0x5d >;
++		};
++
++		accdet {
++			compatible = "mediatek,mt6735-accdet";
++			interrupt-parent = < 0x13 >;
++			interrupts = < 0x06 0x08 >;
++			debounce = < 0x06 0x3e800 >;
++			status = "okay";
++			accdet-mic-vol = < 0x07 >;
++			headset-mode-setting = < 0x500 0x500 0x01 0x3f0 0x800 0x800 0x20 >;
++			accdet-plugout-debounce = < 0x14 >;
++			accdet-mic-mode = < 0x06 >;
++			headset-three-key-threshold = < 0x00 0x50 0xdc 0x1f4 >;
++			headset-four-key-threshold = < 0x00 0x3a 0x79 0xc0 0x1c2 >;
++		};
++
++		nfc {
++			compatible = "mediatek,nfc-gpio-v2";
++			gpio-ven = < 0x04 >;
++			gpio-rst = < 0x03 >;
++			gpio-eint = < 0x01 >;
++			gpio-irq = < 0x02 >;
++			pinctrl-names = "default\0ven_high\0ven_low\0rst_high\0rst_low\0eint_high\0eint_low\0irq_init";
++			pinctrl-0 = < 0x53 >;
++			pinctrl-1 = < 0x5e >;
++			pinctrl-2 = < 0x5f >;
++			pinctrl-3 = < 0x60 >;
++			pinctrl-4 = < 0x61 >;
++			pinctrl-5 = < 0x62 >;
++			pinctrl-6 = < 0x63 >;
++			pinctrl-7 = < 0x64 >;
++			status = "okay";
++		};
++
++		gps {
++			compatible = "mediatek,mt3326-gps";
++		};
++
++		simswitch {
++			compatible = "mediatek,sim_switch";
++			pinctrl-names = "default\0hot_plug_mode1\0hot_plug_mode2\0two_sims_bound_to_md1\0sim1_md3_sim2_md1";
++			pinctrl-0 = < 0x65 >;
++			pinctrl-1 = < 0x66 >;
++			pinctrl-2 = < 0x67 >;
++			pinctrl-3 = < 0x68 >;
++			pinctrl-4 = < 0x69 >;
++		};
++
++		ccci_off {
++			compatible = "mediatek,ccci_off";
++			clocks = < 0x14 0x01 >;
++			clock-names = "scp-sys-md1-main";
++		};
++
++		timer {
++			compatible = "arm,armv8-timer";
++			interrupts = < 0x01 0x0d 0x08 0x01 0x0e 0x08 0x01 0x0b 0x08 0x01 0x0a 0x08 >;
++			clock-frequency = < 0xc65d40 >;
++		};
++
++		mhall {
++			compatible = "mediatek, mhall-eint";
++			interrupt-parent = < 0x13 >;
++			interrupts = < 0x00 0x08 >;
++			debounce = < 0x00 0x3e8 >;
++			status = "okay";
++		};
++
++		flashlight@0 {
++			compatible = "mediatek,strobe_gpio";
++			pinctrl-names = "flashlightpin_default\0flashlightpin_cfg0\0flashlightpin_cfg1\0flashlightpin_en0\0flashlightpin_en1\0flashlightpin_ext10\0flashlightpin_ext11\0flashlightpin_ext20\0flashlightpin_ext21";
++			pinctrl-0 = < 0x6a >;
++			pinctrl-1 = < 0x6b >;
++			pinctrl-2 = < 0x6c >;
++			pinctrl-3 = < 0x6d >;
++			pinctrl-4 = < 0x6e >;
++			pinctrl-5 = < 0x6f >;
++			pinctrl-6 = < 0x70 >;
++			pinctrl-7 = < 0x71 >;
++			pinctrl-8 = < 0x72 >;
++			status = "okay";
++		};
++
++		dsi_te_1 {
++			compatible = "mediatek, dsi_te-eint";
++			interrupt-parent = < 0x13 >;
++			interrupts = < 0x93 0x01 >;
++			debounce = < 0x93 0x00 >;
++			status = "okay";
++		};
++
++		hall@0 {
++			compatible = "mediatek, hall";
++			pinctrl-names = "pin_default\0pin_cfg";
++			pinctrl-0 = < 0x73 >;
++			pinctrl-1 = < 0x74 >;
++			status = "okay";
++		};
++
++		fp@0 {
++			compatible = "mediatek,fingerprint";
++			vfp-supply = < 0x57 >;
++			vfp_mv = < 0xaf0 >;
++			interrupt-parent = < 0x13 >;
++			interrupts = < 0x09 0x01 >;
++			debounce = < 0x09 0x00 >;
++			pinctrl-names = "fp_default\0fp_rst_high\0fp_rst_low\0eint_as_int\0eint_in_low\0eint_in_float\0miso_pull_up\0miso_pull_disable";
++			pinctrl-0 = < 0x53 >;
++			pinctrl-1 = < 0x75 >;
++			pinctrl-2 = < 0x76 >;
++			pinctrl-3 = < 0x77 >;
++			pinctrl-4 = < 0x78 >;
++			pinctrl-5 = < 0x79 >;
++			pinctrl-6 = < 0x7a >;
++			pinctrl-7 = < 0x7b >;
++			status = "okay";
++		};
++
++		mt_pmic_regulator {
++			compatible = "mediatek,mt_pmic";
++
++			buck_regulators {
++				compatible = "mediatek,mt_pmic_buck_regulators";
++
++				buck_vpa {
++					regulator-name = "vpa";
++					regulator-min-microvolt = < 0x7a120 >;
++					regulator-max-microvolt = < 0x37b1d0 >;
++					regulator-ramp-delay = < 0xc350 >;
++					regulator-enable-ramp-delay = < 0xb4 >;
++				};
++
++				buck_vproc {
++					regulator-name = "vproc";
++					regulator-min-microvolt = < 0x927c0 >;
++					regulator-max-microvolt = < 0x154456 >;
++					regulator-ramp-delay = < 0x186a >;
++					regulator-enable-ramp-delay = < 0xb4 >;
++					regulator-always-on;
++					regulator-boot-on;
++				};
++
++				buck_vcore1 {
++					regulator-name = "vcore1";
++					regulator-min-microvolt = < 0x927c0 >;
++					regulator-max-microvolt = < 0x154456 >;
++					regulator-ramp-delay = < 0x186a >;
++					regulator-enable-ramp-delay = < 0xb4 >;
++					regulator-always-on;
++					regulator-boot-on;
++				};
++
++				buck_vsys22 {
++					regulator-name = "vsys22";
++					regulator-min-microvolt = < 0x124f80 >;
++					regulator-max-microvolt = < 0x1e6c16 >;
++					regulator-ramp-delay = < 0x186a >;
++					regulator-enable-ramp-delay = < 0xb4 >;
++					regulator-always-on;
++					regulator-boot-on;
++				};
++
++				buck_vlte {
++					regulator-name = "vlte";
++					regulator-min-microvolt = < 0x927c0 >;
++					regulator-max-microvolt = < 0x154456 >;
++					regulator-ramp-delay = < 0x186a >;
++					regulator-enable-ramp-delay = < 0xb4 >;
++					regulator-always-on;
++					regulator-boot-on;
++				};
+ 			};
+-			pins_rst {
+-				drive-strength = /bits/ 8 <2>;
++
++			ldo_regulators {
++				compatible = "mediatek,mt_pmic_ldo_regulators";
++
++				ldo_vaux18 {
++					regulator-name = "vaux18";
++					regulator-min-microvolt = < 0x1b7740 >;
++					regulator-max-microvolt = < 0x1b7740 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-boot-on;
++					linux,phandle = < 0x7c >;
++					phandle = < 0x7c >;
++				};
++
++				ldo_vtcxo_0 {
++					regulator-name = "vtcxo_0";
++					regulator-min-microvolt = < 0x2ab980 >;
++					regulator-max-microvolt = < 0x2ab980 >;
++					regulator-enable-ramp-delay = < 0x6e >;
++					regulator-boot-on;
++					linux,phandle = < 0x7d >;
++					phandle = < 0x7d >;
++				};
++
++				ldo_vtcxo_1 {
++					regulator-name = "vtcxo_1";
++					regulator-min-microvolt = < 0x2ab980 >;
++					regulator-max-microvolt = < 0x2ab980 >;
++					regulator-enable-ramp-delay = < 0x6e >;
++					linux,phandle = < 0x7e >;
++					phandle = < 0x7e >;
++				};
++
++				ldo_vaud28 {
++					regulator-name = "vaud28";
++					regulator-min-microvolt = < 0x2ab980 >;
++					regulator-max-microvolt = < 0x2ab980 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-boot-on;
++					linux,phandle = < 0x7f >;
++					phandle = < 0x7f >;
++				};
++
++				ldo_vcn28 {
++					regulator-name = "vcn28";
++					regulator-min-microvolt = < 0x2ab980 >;
++					regulator-max-microvolt = < 0x2ab980 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					linux,phandle = < 0x50 >;
++					phandle = < 0x50 >;
++				};
++
++				ldo_vcama {
++					regulator-name = "vcama";
++					regulator-min-microvolt = < 0x16e360 >;
++					regulator-max-microvolt = < 0x2ab980 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x3c >;
++					phandle = < 0x3c >;
++				};
++
++				ldo_vcn33_bt {
++					regulator-name = "vcn33_bt";
++					regulator-min-microvolt = < 0x325aa0 >;
++					regulator-max-microvolt = < 0x36ee80 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					linux,phandle = < 0x51 >;
++					phandle = < 0x51 >;
++				};
++
++				ldo_vcn33_wifi {
++					regulator-name = "vcn33_wifi";
++					regulator-min-microvolt = < 0x325aa0 >;
++					regulator-max-microvolt = < 0x36ee80 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					linux,phandle = < 0x52 >;
++					phandle = < 0x52 >;
++				};
++
++				ldo_vusb33 {
++					regulator-name = "vusb33";
++					regulator-min-microvolt = < 0x325aa0 >;
++					regulator-max-microvolt = < 0x325aa0 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-boot-on;
++					linux,phandle = < 0x2f >;
++					phandle = < 0x2f >;
++				};
++
++				ldo_vefuse {
++					regulator-name = "vefuse";
++					regulator-min-microvolt = < 0x1b7740 >;
++					regulator-max-microvolt = < 0x2191c0 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					linux,phandle = < 0x80 >;
++					phandle = < 0x80 >;
++				};
++
++				ldo_vsim1 {
++					regulator-name = "vsim1";
++					regulator-min-microvolt = < 0x19f0a0 >;
++					regulator-max-microvolt = < 0x200b20 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x81 >;
++					phandle = < 0x81 >;
++				};
++
++				ldo_vsim2 {
++					regulator-name = "vsim2";
++					regulator-min-microvolt = < 0x19f0a0 >;
++					regulator-max-microvolt = < 0x200b20 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x82 >;
++					phandle = < 0x82 >;
++				};
++
++				ldo_vemc_3v3 {
++					regulator-name = "vemc_3v3";
++					regulator-min-microvolt = < 0x1b7740 >;
++					regulator-max-microvolt = < 0x325aa0 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-boot-on;
++					linux,phandle = < 0x83 >;
++					phandle = < 0x83 >;
++				};
++
++				ldo_vmch {
++					regulator-name = "vmch";
++					regulator-min-microvolt = < 0x2c4020 >;
++					regulator-max-microvolt = < 0x325aa0 >;
++					regulator-enable-ramp-delay = < 0x2c >;
++					regulator-boot-on;
++					linux,phandle = < 0x84 >;
++					phandle = < 0x84 >;
++				};
++
++				ldo_vtref {
++					regulator-name = "vtref";
++					regulator-min-microvolt = < 0x1b7740 >;
++					regulator-max-microvolt = < 0x1b7740 >;
++					regulator-enable-ramp-delay = < 0xf0 >;
++					linux,phandle = < 0x85 >;
++					phandle = < 0x85 >;
++				};
++
++				ldo_vmc {
++					regulator-name = "vmc";
++					regulator-min-microvolt = < 0x1b7740 >;
++					regulator-max-microvolt = < 0x325aa0 >;
++					regulator-enable-ramp-delay = < 0x2c >;
++					regulator-boot-on;
++					linux,phandle = < 0x86 >;
++					phandle = < 0x86 >;
++				};
++
++				ldo_vcamaf {
++					regulator-name = "vcamaf";
++					regulator-min-microvolt = < 0x124f80 >;
++					regulator-max-microvolt = < 0x325aa0 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x3e >;
++					phandle = < 0x3e >;
++				};
++
++				ldo_vio28 {
++					regulator-name = "vio28";
++					regulator-min-microvolt = < 0x2ab980 >;
++					regulator-max-microvolt = < 0x2ab980 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-boot-on;
++					linux,phandle = < 0x87 >;
++					phandle = < 0x87 >;
++				};
++
++				ldo_vgp1 {
++					regulator-name = "vgp1";
++					regulator-min-microvolt = < 0x124f80 >;
++					regulator-max-microvolt = < 0x325aa0 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x57 >;
++					phandle = < 0x57 >;
++				};
++
++				ldo_vibr {
++					regulator-name = "vibr";
++					regulator-min-microvolt = < 0x124f80 >;
++					regulator-max-microvolt = < 0x325aa0 >;
++					regulator-enable-ramp-delay = < 0x2c >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x88 >;
++					phandle = < 0x88 >;
++				};
++
++				ldo_vcamd {
++					regulator-name = "vcamd";
++					regulator-min-microvolt = < 0xdbba0 >;
++					regulator-max-microvolt = < 0x16e360 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x3d >;
++					phandle = < 0x3d >;
++				};
++
++				ldo_vrf18_0 {
++					regulator-name = "vrf18_0";
++					regulator-min-microvolt = < 0x1bd8e8 >;
++					regulator-max-microvolt = < 0x1bd8e8 >;
++					regulator-enable-ramp-delay = < 0xdc >;
++					linux,phandle = < 0x89 >;
++					phandle = < 0x89 >;
++				};
++
++				ldo_vrf18_1 {
++					regulator-name = "vrf18_1";
++					regulator-min-microvolt = < 0x124f80 >;
++					regulator-max-microvolt = < 0x1bd8e8 >;
++					regulator-enable-ramp-delay = < 0xdc >;
++					linux,phandle = < 0x8a >;
++					phandle = < 0x8a >;
++				};
++
++				ldo_vio18 {
++					regulator-name = "vio18";
++					regulator-min-microvolt = < 0x1b7740 >;
++					regulator-max-microvolt = < 0x1b7740 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-boot-on;
++					linux,phandle = < 0x8b >;
++					phandle = < 0x8b >;
++				};
++
++				ldo_vcn18 {
++					regulator-name = "vcn18";
++					regulator-min-microvolt = < 0x1b7740 >;
++					regulator-max-microvolt = < 0x1b7740 >;
++					regulator-enable-ramp-delay = < 0x2c >;
++					linux,phandle = < 0x4f >;
++					phandle = < 0x4f >;
++				};
++
++				ldo_vcamio {
++					regulator-name = "vcamio";
++					regulator-min-microvolt = < 0x124f80 >;
++					regulator-max-microvolt = < 0x1b7740 >;
++					regulator-enable-ramp-delay = < 0xdc >;
++					regulator-default-on = < 0x00 >;
++					status = "okay";
++					linux,phandle = < 0x3f >;
++					phandle = < 0x3f >;
++				};
++
++				ldo_vsram {
++					regulator-name = "vsram";
++					regulator-min-microvolt = < 0xaae60 >;
++					regulator-max-microvolt = < 0x16caf6 >;
++					regulator-enable-ramp-delay = < 0xdc >;
++					regulator-ramp-delay = < 0x186a >;
++					regulator-boot-on;
++					linux,phandle = < 0x8c >;
++					phandle = < 0x8c >;
++				};
++
++				ldo_vm {
++					regulator-name = "vm";
++					regulator-min-microvolt = < 0x12ebc0 >;
++					regulator-max-microvolt = < 0x177fa0 >;
++					regulator-enable-ramp-delay = < 0x108 >;
++					regulator-boot-on;
++					linux,phandle = < 0x8d >;
++					phandle = < 0x8d >;
++				};
+ 			};
+-			pins_ds {
+-				drive-strength = /bits/ 8 <2>;
++
++			regulators_supply {
++				compatible = "mediatek,mt_pmic_regulator_supply";
++				vaux18-supply = < 0x7c >;
++				vtcxo_0-supply = < 0x7d >;
++				vtcxo_1-supply = < 0x7e >;
++				vaud28-supply = < 0x7f >;
++				vefuse-supply = < 0x80 >;
++				vsim1-supply = < 0x81 >;
++				vsim2-supply = < 0x82 >;
++				vemc_3v3-supply = < 0x83 >;
++				vmch-supply = < 0x84 >;
++				vtref-supply = < 0x85 >;
++				vmc-supply = < 0x86 >;
++				vio28-supply = < 0x87 >;
++				vibr-supply = < 0x88 >;
++				vrf18_0-supply = < 0x89 >;
++				vrf18_1-supply = < 0x8a >;
++				vio18-supply = < 0x8b >;
++				vsram-supply = < 0x8c >;
++				vm-supply = < 0x8d >;
+ 			};
+-	};
++		};
+ 
+-	mmc0_register_setting_default: mmc0@register_default {
+-		dat0rddly      = /bits/ 8 <0>;
+-		dat1rddly      = /bits/ 8 <0>;
+-		dat2rddly      = /bits/ 8 <0>;
+-		dat3rddly      = /bits/ 8 <0>;
+-		dat4rddly      = /bits/ 8 <0>;
+-		dat5rddly      = /bits/ 8 <0>;
+-		dat6rddly      = /bits/ 8 <0>;
+-		dat7rddly      = /bits/ 8 <0>;
+-		datwrddly      = /bits/ 8 <0>;
+-		cmdrrddly      = /bits/ 8 <0>;
+-		cmdrddly       = /bits/ 8 <0>;
+-		cmd_edge = /bits/ 8 <MSDC_SMPL_FALLING>;
+-		rdata_edge = /bits/ 8 <MSDC_SMPL_FALLING>;
+-		wdata_edge = /bits/ 8 <MSDC_SMPL_FALLING>;
++		bat_meter {
++			compatible = "mediatek,bat_meter";
++			r_bat_sense = < 0x04 >;
++			r_i_sense = < 0x04 >;
++			r_charger_1 = < 0x14a >;
++			r_charger_2 = < 0x27 >;
++			temperature_t0 = < 0x6e >;
++			temperature_t1 = < 0x00 >;
++			temperature_t2 = < 0x19 >;
++			temperature_t3 = < 0x32 >;
++			temperature_t = < 0xff >;
++			fg_meter_resistance = < 0x00 >;
++			q_max_pos_50 = < 0x5f3 >;
++			q_max_pos_25 = < 0x5d1 >;
++			q_max_pos_0 = < 0x4f8 >;
++			q_max_neg_10 = < 0x4a5 >;
++			q_max_pos_50_h_current = < 0x5e7 >;
++			q_max_pos_25_h_current = < 0x5b6 >;
++			q_max_pos_0_h_current = < 0x332 >;
++			q_max_neg_10_h_current = < 0x95 >;
++			oam_d5 = < 0x01 >;
++			change_tracking_point = < 0x01 >;
++			cust_tracking_point = < 0x01 >;
++			cust_r_sense = < 0x44 >;
++			cust_hw_cc = < 0x00 >;
++			aging_tuning_value = < 0x67 >;
++			cust_r_fg_offset = < 0x00 >;
++			ocv_board_compesate = < 0x00 >;
++			r_fg_board_base = < 0x3e8 >;
++			r_fg_board_slope = < 0x3e8 >;
++			car_tune_value = < 0x56 >;
++			current_detect_r_fg = < 0x0a >;
++			minerroroffset = < 0x3e8 >;
++			fg_vbat_average_size = < 0x12 >;
++			r_fg_value = < 0x0a >;
++			cust_poweron_delta_capacity_tolrance = < 0x1e >;
++			cust_poweron_low_capacity_tolrance = < 0x05 >;
++			cust_poweron_max_vbat_tolrance = < 0x5a >;
++			cust_poweron_delta_vbat_tolrance = < 0x1e >;
++			cust_poweron_delta_hw_sw_ocv_capacity_tolrance = < 0x0a >;
++			fixed_tbat_25 = < 0x00 >;
++			vbat_normal_wakeup = < 0xe10 >;
++			vbat_low_power_wakeup = < 0xdac >;
++			normal_wakeup_period = < 0x1518 >;
++			low_power_wakeup_period = < 0x12c >;
++			close_poweroff_wakeup_period = < 0x1e >;
++			rbat_pull_up_r = < 0x4204 >;
++			rbat_pull_up_volt = < 0x708 >;
++			batt_temperature_table_num = < 0x11 >;
++			batt_temperature_table = < 0xffffffec 0x10a8d 0xfffffff1 0xd192 0xfffffff6 0xa60a 0xfffffffb 0x8464 0x00 0x6a53 0x05 0x5605 0x0a 0x4606 0x0f 0x3952 0x14 0x2f31 0x19 0x2710 0x1e 0x207b 0x23 0x1b24 0x28 0x16ca 0x2d 0x1335 0x32 0x1041 0x37 0xdcf 0x3c 0xbc6 >;
++			battery_profile_t0_num = < 0x64 >;
++			battery_profile_t0 = < 0x00 0x1002 0x02 0xfe5 0x03 0xfd5 0x05 0xfc8 0x07 0xfb7 0x08 0xf9d 0x0a 0xf79 0x0c 0xf6a 0x0d 0xf62 0x0f 0xf5c 0x11 0xf56 0x13 0xf4e 0x14 0xf46 0x16 0xf3d 0x17 0xf36 0x19 0xf2d 0x1b 0xf22 0x1d 0xf1a 0x1e 0xf10 0x20 0xf06 0x22 0xefe 0x23 0xef6 0x25 0xeef 0x27 0xee9 0x28 0xee6 0x2a 0xee0 0x2c 0xede 0x2d 0xedb 0x2f 0xed9 0x31 0xed6 0x32 0xed3 0x34 0xed4 0x36 0xed3 0x37 0xed0 0x39 0xed0 0x3b 0xece 0x3c 0xecd 0x3e 0xecb 0x40 0xec9 0x41 0xec7 0x43 0xec5 0x45 0xec0 0x46 0xebc 0x48 0xeb7 0x4a 0xeb3 0x4c 0xeae 0x4d 0xea7 0x4f 0xe9e 0x51 0xe96 0x52 0xe8d 0x54 0xe87 0x56 0xe83 0x57 0xe80 0x59 0xe7b 0x5b 0xe76 0x5c 0xe70 0x5e 0xe5e 0x60 0xe3f 0x61 0xe1c 0x62 0xdf7 0x62 0xdd1 0x63 0xdae 0x63 0xd90 0x64 0xd73 0x64 0xd5b 0x64 0xd43 0x64 0xd2d 0x64 0xd1d 0x64 0xd0d 0x64 0xd00 0x64 0xcf5 0x64 0xceb 0x64 0xce4 0x64 0xcdd 0x64 0xcd8 0x64 0xcd3 0x64 0xccb 0x64 0xcc7 0x64 0xcc3 0x64 0xcbc 0x64 0xcb8 0x64 0xcb3 0x64 0xcab 0x64 0xca7 0x64 0xca1 0x64 0xc99 0x64 0xc92 0x64 0xc8e 0x64 0xc89 0x64 0xc82 0x64 0xc7c 0x64 0xc71 0x64 0xc63 0x64 0xc55 0x64 0xc46 0x64 0xc35 0x64 0xc2a 0x64 0xc17 0x64 0xc17 0x64 0xcc6 >;
++			battery_profile_t1_num = < 0x64 >;
++			battery_profile_t1 = < 0x00 0xfd0 0x02 0xfa8 0x03 0xf95 0x05 0xf89 0x06 0xf7e 0x08 0xf78 0x09 0xf74 0x0b 0xf6f 0x0d 0xf6c 0x0e 0xf65 0x10 0xf5f 0x11 0xf58 0x13 0xf52 0x14 0xf4a 0x16 0xf42 0x18 0xf3a 0x19 0xf34 0x1b 0xf2a 0x1c 0xf20 0x1e 0xf14 0x1f 0xf09 0x21 0xeff 0x23 0xef7 0x24 0xef0 0x26 0xeea 0x27 0xee7 0x29 0xee0 0x2a 0xedd 0x2c 0xedb 0x2e 0xed6 0x2f 0xed4 0x31 0xed1 0x32 0xed0 0x34 0xece 0x35 0xece 0x37 0xecc 0x39 0xecc 0x3a 0xecb 0x3c 0xecb 0x3d 0xec9 0x3f 0xec9 0x40 0xec8 0x42 0xec6 0x43 0xec3 0x45 0xec1 0x47 0xebe 0x48 0xeb9 0x4a 0xeb6 0x4b 0xeb2 0x4d 0xeac 0x4e 0xea4 0x50 0xe9e 0x52 0xe96 0x53 0xe8c 0x55 0xe82 0x56 0xe7c 0x58 0xe77 0x59 0xe75 0x5b 0xe73 0x5d 0xe70 0x5e 0xe69 0x60 0xe4e 0x61 0xe11 0x63 0xdcd 0x63 0xd93 0x64 0xd5a 0x64 0xd23 0x64 0xcf3 0x64 0xcc6 0x64 0xca6 0x64 0xc88 0x64 0xc77 0x64 0xc64 0x64 0xc57 0x64 0xc4e 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 0x64 0xc41 >;
++			battery_profile_t2_num = < 0x64 >;
++			battery_profile_t2 = < 0x00 0x1045 0x01 0x1035 0x03 0x1028 0x04 0x1019 0x05 0x100e 0x07 0x1002 0x08 0xff6 0x09 0xff1 0x0b 0xfed 0x0c 0xfe3 0x0d 0xfcf 0x0f 0xfb9 0x10 0xfa6 0x11 0xf99 0x13 0xf8f 0x14 0xf87 0x15 0xf83 0x17 0xf80 0x18 0xf7c 0x19 0xf76 0x1b 0xf6d 0x1c 0xf67 0x1d 0xf5e 0x1f 0xf58 0x20 0xf50 0x22 0xf49 0x23 0xf42 0x24 0xf3a 0x26 0xf32 0x27 0xf26 0x28 0xf19 0x2a 0xf0d 0x2b 0xf03 0x2c 0xefc 0x2e 0xef5 0x2f 0xef0 0x30 0xeec 0x32 0xee6 0x33 0xee4 0x34 0xedf 0x36 0xedb 0x37 0xed9 0x38 0xed4 0x3a 0xed2 0x3b 0xecf 0x3c 0xecd 0x3e 0xeca 0x3f 0xec8 0x40 0xec6 0x42 0xec5 0x43 0xec3 0x44 0xec3 0x46 0xec1 0x47 0xebf 0x48 0xebc 0x4a 0xeb9 0x4b 0xeb5 0x4c 0xeb1 0x4e 0xead 0x4f 0xea8 0x50 0xea3 0x52 0xe9d 0x53 0xe95 0x54 0xe8c 0x56 0xe85 0x57 0xe7a 0x58 0xe71 0x5a 0xe6f 0x5b 0xe6e 0x5c 0xe6c 0x5e 0xe6a 0x5f 0xe64 0x61 0xe43 0x62 0xe03 0x63 0xdaa 0x64 0xd13 0x64 0xc87 0x64 0xc5c 0x64 0xc38 0x64 0xc0f 0x64 0xbf7 0x64 0xbe1 0x64 0xbd5 0x64 0xbd2 0x64 0xbcf 0x64 0xbbd 0x64 0xbb6 0x64 0xbb0 0x64 0xba5 0x64 0xb9d 0x64 0xb9e 0x64 0xb9f 0x64 0xb90 0x64 0xb86 0x64 0xb85 0x64 0xb83 0x64 0xb80 0x64 0xb7b 0x64 0xb78 0x64 0xb73 >;
++			battery_profile_t3_num = < 0x64 >;
++			battery_profile_t3 = < 0x00 0x1055 0x01 0x1047 0x03 0x1038 0x04 0x102b 0x05 0x101f 0x07 0x1012 0x08 0x1007 0x09 0xffa 0x0b 0xfee 0x0c 0xfe3 0x0d 0xfd8 0x0e 0xfd1 0x10 0xfc4 0x11 0xfb6 0x12 0xfaa 0x14 0xfa1 0x15 0xf9b 0x16 0xf92 0x18 0xf89 0x19 0xf81 0x1a 0xf77 0x1c 0xf70 0x1d 0xf67 0x1e 0xf5f 0x1f 0xf59 0x21 0xf50 0x22 0xf49 0x23 0xf42 0x25 0xf3b 0x26 0xf35 0x27 0xf2f 0x29 0xf27 0x2a 0xf1b 0x2b 0xf0b 0x2d 0xf00 0x2e 0xef9 0x2f 0xef3 0x30 0xeec 0x32 0xee8 0x33 0xee4 0x34 0xee0 0x36 0xedb 0x37 0xed8 0x38 0xed5 0x3a 0xed2 0x3b 0xecf 0x3c 0xecb 0x3e 0xec9 0x3f 0xec6 0x40 0xec3 0x42 0xec2 0x43 0xec0 0x44 0xebf 0x45 0xebc 0x47 0xeb7 0x48 0xeaf 0x49 0xea9 0x4b 0xea7 0x4c 0xea2 0x4d 0xe9e 0x4f 0xe99 0x50 0xe94 0x51 0xe91 0x53 0xe8c 0x54 0xe83 0x55 0xe7c 0x56 0xe73 0x58 0xe69 0x59 0xe61 0x5a 0xe60 0x5c 0xe60 0x5d 0xe5e 0x5e 0xe5c 0x60 0xe50 0x61 0xe23 0x62 0xde1 0x64 0xd7e 0x64 0xccf 0x64 0xc45 0x64 0xc09 0x64 0xbde 0x64 0xbc4 0x64 0xba6 0x64 0xba0 0x64 0xb8c 0x64 0xb83 0x64 0xb7e 0x64 0xb78 0x64 0xb7b 0x64 0xb6e 0x64 0xb6d 0x64 0xb6a 0x64 0xb66 0x64 0xb5e 0x64 0xb58 0x64 0xb51 0x64 0xb4b 0x64 0xb41 0x64 0xb39 0x64 0xb3c >;
++			r_profile_t0_num = < 0x64 >;
++			r_profile_t0 = < 0x361 0x1002 0x361 0xfe5 0x37d 0xfd5 0x393 0xfc8 0x3bb 0xfb7 0x3ff 0xf9d 0x4b0 0xf79 0x53a 0xf6a 0x55f 0xf62 0x56c 0xf5c 0x580 0xf56 0x58c 0xf4e 0x594 0xf46 0x58a 0xf3d 0x594 0xf36 0x58f 0xf2d 0x58a 0xf22 0x591 0xf1a 0x594 0xf10 0x594 0xf06 0x591 0xefe 0x58f 0xef6 0x58c 0xeef 0x587 0xee9 0x591 0xee6 0x591 0xee0 0x5aa 0xede 0x5bc 0xedb 0x5b9 0xed9 0x5cb 0xed6 0x5d0 0xed3 0x5e6 0xed4 0x5eb 0xed3 0x5fd 0xed0 0x5ff 0xed0 0x60c 0xece 0x607 0xecd 0x61b 0xecb 0x634 0xec9 0x64a 0xec7 0x659 0xec5 0x668 0xec0 0x675 0xebc 0x67c 0xeb7 0x690 0xeb3 0x69a 0xeae 0x6ae 0xea7 0x6c5 0xe9e 0x6d1 0xe96 0x6e5 0xe8d 0x6fc 0xe87 0x715 0xe83 0x73d 0xe80 0x771 0xe7b 0x7ad 0xe76 0x7da 0xe70 0x820 0xe5e 0x84b 0xe3f 0x7f3 0xe1c 0x797 0xdf7 0x73d 0xdd1 0x6ea 0xdae 0x695 0xd90 0x657 0xd73 0x60e 0xd5b 0x5d5 0xd43 0x5a8 0xd2d 0x573 0xd1d 0x558 0xd0d 0x53a 0xd00 0x517 0xcf5 0x512 0xceb 0x4ef 0xce4 0x4e5 0xcdd 0x4ec 0xcd8 0x4c9 0xcd3 0x4d8 0xccb 0x4ae 0xcc7 0x4bf 0xcc3 0x4ae 0xcbc 0x4b0 0xcb8 0x4c2 0xcb3 0x4cc 0xcab 0x472 0xca7 0x4ce 0xca1 0x4db 0xc99 0x483 0xc92 0x48d 0xc8e 0x415 0xc89 0x492 0xc82 0x49f 0xc7c 0x53c 0xc71 0x558 0xc63 0x58f 0xc55 0x5af 0xc46 0x5fd 0xc35 0x555 0xc2a 0x675 0xc17 0x675 0xc17 0x675 0xc17 >;
++			r_profile_t1_num = < 0x64 >;
++			r_profile_t1 = < 0x279 0xfd0 0x279 0xfa8 0x2a6 0xf95 0x2ad 0xf89 0x2bc 0xf7e 0x2c9 0xf78 0x2d8 0xf74 0x2ec 0xf6f 0x2f1 0xf6c 0x2fb 0xf65 0x2fb 0xf5f 0x300 0xf58 0x30f 0xf52 0x307 0xf4a 0x30c 0xf42 0x316 0xf3a 0x316 0xf34 0x319 0xf2a 0x31e 0xf20 0x30a 0xf14 0x30a 0xf09 0x302 0xeff 0x30a 0xef7 0x302 0xef0 0x311 0xeea 0x31b 0xee7 0x311 0xee0 0x325 0xedd 0x32a 0xedb 0x32f 0xed6 0x332 0xed4 0x343 0xed1 0x346 0xed0 0x348 0xece 0x361 0xece 0x35f 0xecc 0x370 0xecc 0x37d 0xecb 0x38c 0xecb 0x3a0 0xec9 0x3a5 0xec9 0x3c0 0xec8 0x3c5 0xec6 0x3de 0xec3 0x3eb 0xec1 0x409 0xebe 0x415 0xeb9 0x42e 0xeb6 0x44a 0xeb2 0x459 0xeac 0x479 0xea4 0x4a1 0xe9e 0x4b8 0xe96 0x4e0 0xe8c 0x50f 0xe82 0x535 0xe7c 0x57d 0xe77 0x5b9 0xe75 0x618 0xe73 0x66b 0xe70 0x6d1 0xe69 0x717 0xe4e 0x747 0xe11 0x730 0xdcd 0x698 0xd93 0x618 0xd5a 0x58a 0xd23 0x521 0xcf3 0x4b0 0xcc6 0x44c 0xca6 0x424 0xc88 0x3d4 0xc77 0x3e8 0xc64 0x3bb 0xc57 0x36e 0xc4e 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 0x3c0 0xc41 >;
++			r_profile_t2_num = < 0x64 >;
++			r_profile_t2 = < 0xfa 0x1045 0xfa 0x1035 0xf3 0x1028 0xf0 0x1019 0xfa 0x100e 0xfa 0x1002 0xf8 0xff6 0x102 0xff1 0x111 0xfed 0x116 0xfe3 0x107 0xfcf 0x109 0xfb9 0x107 0xfa6 0x10c 0xf99 0x107 0xf8f 0x10c 0xf87 0x11b 0xf83 0x120 0xf80 0x122 0xf7c 0x127 0xf76 0x120 0xf6d 0x127 0xf67 0x127 0xf5e 0x12a 0xf58 0x12a 0xf50 0x127 0xf49 0x12a 0xf42 0x12a 0xf3a 0x125 0xf32 0x11b 0xf26 0x10e 0xf19 0xff 0xf0d 0xf3 0xf03 0xf0 0xefc 0xf0 0xef5 0xee 0xef0 0xee 0xeec 0xeb 0xee6 0xf3 0xee4 0xf5 0xedf 0xf5 0xedb 0xfd 0xed9 0xf3 0xed4 0xf8 0xed2 0xfa 0xecf 0xff 0xecd 0xfd 0xeca 0x102 0xec8 0x102 0xec6 0x104 0xec5 0x102 0xec3 0x109 0xec3 0x10c 0xec1 0x10e 0xebf 0x109 0xebc 0x109 0xeb9 0x111 0xeb5 0x111 0xeb1 0x10e 0xead 0x113 0xea8 0x116 0xea3 0x116 0xe9d 0x116 0xe95 0x113 0xe8c 0x11d 0xe85 0x11d 0xe7a 0x111 0xe71 0x11d 0xe6f 0x12f 0xe6e 0x13e 0xe6c 0x154 0xe6a 0x16d 0xe64 0x170 0xe43 0x189 0xe03 0x1ca 0xdaa 0x23f 0xd13 0x42e 0xc87 0x3a5 0xc5c 0x35f 0xc38 0x33e 0xc0f 0x2c6 0xbf7 0x297 0xbe1 0x280 0xbd5 0x23a 0xbd2 0x247 0xbcf 0x28f 0xbbd 0x23f 0xbb6 0x2a3 0xbb0 0x276 0xba5 0x299 0xb9d 0x262 0xb9e 0x210 0xb9f 0x2a1 0xb90 0x2bf 0xb86 0x24e 0xb85 0x1d9 0xb83 0x2b5 0xb80 0x2d5 0xb7b 0x1e3 0xb78 0x1e0 0xb73 >;
++			r_profile_t3_num = < 0x64 >;
++			r_profile_t3 = < 0x8a 0x1055 0x8a 0x1047 0x8a 0x1038 0x8c 0x102b 0x8c 0x101f 0x8f 0x1012 0x8f 0x1007 0x8f 0xffa 0x8c 0xfee 0x8f 0xfe3 0x91 0xfd8 0x9b 0xfd1 0x99 0xfc4 0x9b 0xfb6 0x9b 0xfaa 0x9b 0xfa1 0xa0 0xf9b 0xa3 0xf92 0xa3 0xf89 0xaa 0xf81 0xa3 0xf77 0xad 0xf70 0xad 0xf67 0xaf 0xf5f 0xb4 0xf59 0xb2 0xf50 0xb2 0xf49 0xb4 0xf42 0xb4 0xf3b 0xbe 0xf35 0xbe 0xf2f 0xbe 0xf27 0xb4 0xf1b 0x9e 0xf0b 0x91 0xf00 0x8f 0xef9 0x8c 0xef3 0x8a 0xeec 0x8a 0xee8 0x8f 0xee4 0x91 0xee0 0x91 0xedb 0x91 0xed8 0x96 0xed5 0x99 0xed2 0x99 0xecf 0x9e 0xecb 0x9b 0xec9 0xa0 0xec6 0xa0 0xec3 0xa0 0xec2 0xa3 0xec0 0xa8 0xebf 0xa3 0xebc 0x9e 0xeb7 0x94 0xeaf 0x91 0xea9 0x96 0xea7 0x94 0xea2 0x96 0xe9e 0x96 0xe99 0x94 0xe94 0x9b 0xe91 0x9e 0xe8c 0x96 0xe83 0x9b 0xe7c 0x99 0xe73 0x96 0xe69 0x8f 0xe61 0x96 0xe60 0xa0 0xe60 0xa8 0xe5e 0xb4 0xe5c 0xb4 0xe50 0xaa 0xe23 0xbc 0xde1 0xcd 0xd7e 0x12c 0xccf 0x35a 0xc45 0x30f 0xc09 0x28d 0xbde 0x212 0xbc4 0x203 0xba6 0x1ca 0xba0 0x1f2 0xb8c 0x1db 0xb83 0x1b8 0xb7e 0x1a9 0xb78 0x17f 0xb7b 0x19f 0xb6e 0x14a 0xb6d 0x140 0xb6a 0x145 0xb66 0x181 0xb5e 0x154 0xb58 0x161 0xb51 0x166 0xb4b 0x16d 0xb41 0x181 0xb39 0x140 0xb3c >;
++		};
+ 
+-		ett-hs200-cells = <12>;
+-		ett-hs200-default = <OFFSET_MSDC_PATCH_BIT0	MSDC_PB0_INT_DAT_LATCH_CK_SEL 0x0
+-			OFFSET_MSDC_PATCH_BIT0	MSDC_PB0_CKGEN_MSDC_DLY_SEL   0x0
+-			OFFSET_MSDC_PATCH_BIT1	MSDC_PB1_CMD_RSP_TA_CNTR      0x1
+-			OFFSET_MSDC_IOCON		MSDC_IOCON_RSPL               0x0
+-			OFFSET_MSDC_PAD_TUNE0	MSDC_PAD_TUNE0_CMDRDLY        0x7
+-			OFFSET_MSDC_PAD_TUNE0	MSDC_PAD_TUNE0_CMDRRDLY       0xb
+-			OFFSET_MSDC_PATCH_BIT1		MSDC_PB1_WRDAT_CRCS_TA_CNTR   0x1
+-			OFFSET_MSDC_PAD_TUNE0	MSDC_PAD_TUNE0_DATWRDLY       0xb
+-			OFFSET_MSDC_IOCON			MSDC_IOCON_W_D0SPL            0x0
+-			OFFSET_MSDC_DAT_RDDLY0		MSDC_DAT_RDDLY0_D0            0x7
+-			OFFSET_MSDC_PAD_TUNE0	MSDC_PAD_TUNE0_DATRRDLY       0x9
+-			OFFSET_MSDC_IOCON		MSDC_IOCON_R_D_SMPL           0x0>;
++		BAT_NOTIFY {
++			compatible = "mediatek,bat_notify";
++		};
+ 
+-		ett-hs400-cells = <8>;
+-		ett-hs400-default = <OFFSET_MSDC_PATCH_BIT0	MSDC_PB0_INT_DAT_LATCH_CK_SEL	0x0
+-			OFFSET_MSDC_PATCH_BIT0		MSDC_PB0_CKGEN_MSDC_DLY_SEL		0x0
+-			OFFSET_EMMC50_PAD_DS_TUNE	MSDC_EMMC50_PAD_DS_TUNE_DLY1	0x2
+-			OFFSET_EMMC50_PAD_DS_TUNE	MSDC_EMMC50_PAD_DS_TUNE_DLY3	0x10
+-			OFFSET_MSDC_PATCH_BIT1			MSDC_PB1_CMD_RSP_TA_CNTR	0x1
+-			OFFSET_MSDC_IOCON		MSDC_IOCON_RSPL				0x0
+-			OFFSET_MSDC_PAD_TUNE0			MSDC_PAD_TUNE0_CMDRDLY		0x6
+-			OFFSET_MSDC_PAD_TUNE0		MSDC_PAD_TUNE0_CMDRRDLY		0x6>;
++		bat_comm {
++			compatible = "mediatek,battery";
++			stop_charging_in_takling = < 0x01 >;
++			talking_recharge_voltage = < 0xed8 >;
++			talking_sync_time = < 0x3c >;
++			mtk_temperature_recharge_support = < 0x01 >;
++			max_charge_temperature = < 0x32 >;
++			max_charge_temperature_minus_x_degree = < 0x2f >;
++			min_charge_temperature = < 0x00 >;
++			min_charge_temperature_plus_x_degree = < 0x06 >;
++			err_charge_temperature = < 0xff >;
++			v_pre2cc_thres = < 0xd48 >;
++			v_cc2topoff_thres = < 0xfd2 >;
++			recharging_voltage = < 0x100e >;
++			charging_full_current = < 0x64 >;
++			config_usb_if = < 0x00 >;
++			usb_charger_current_suspend = < 0x00 >;
++			usb_charger_current_unconfigured = < 0x1b58 >;
++			usb_charger_current_configured = < 0xc350 >;
++			usb_charger_current = < 0xc350 >;
++			ac_charger_current = < 0x13880 >;
++			non_std_ac_charger_current = < 0xc350 >;
++			charging_host_charger_current = < 0xfde8 >;
++			apple_0_5a_charger_current = < 0xc350 >;
++			apple_1_0a_charger_current = < 0xfde8 >;
++			apple_2_1a_charger_current = < 0x13880 >;
++			bat_low_temp_protect_enable = < 0x00 >;
++			v_charger_enable = < 0x00 >;
++			v_charger_max = < 0x1964 >;
++			v_charger_min = < 0x1130 >;
++			onehundred_percent_tracking_time = < 0x0a >;
++			npercent_tracking_time = < 0x14 >;
++			sync_to_real_tracking_time = < 0x3c >;
++			v_0percent_tracking = < 0xd7a >;
++			high_battery_voltage_support = < 0x00 >;
++			pinctrl-names = "default";
++			pinctrl-0 = < 0x8e >;
++		};
+ 	};
+ 
+-	mmc1_pins_default: mmc1@default {
+-			pins_cmd {
+-				drive-strength = /bits/ 8 <3>;
+-			};
+-			pins_dat {
+-				drive-strength = /bits/ 8 <3>;
+-			};
+-			pins_clk {
+-				drive-strength = /bits/ 8 <3>;
+-			};
++	vcorefs {
++		compatible = "mediatek,mt6735-vcorefs";
++		clocks = < 0x03 0x01 0x03 0x30 0x03 0x33 >;
++		clock-names = "mux_axi\0syspll_d5\0syspll1_d4";
+ 	};
+ 
+-	mmc1_pins_sdr104: mmc1@sdr104 {
+-			pins_cmd {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_dat {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_clk {
+-				drive-strength = /bits/ 8 <3>;
+-			};
++	rf_clock_buffer {
++		compatible = "mediatek,rf_clock_buffer";
++		mediatek,clkbuf-quantity = < 0x04 >;
++		mediatek,clkbuf-config = < 0x02 0x01 0x01 0x01 >;
++		status = "okay";
+ 	};
+ 
+-	mmc1_pins_sdr50: mmc1@sdr50 {
+-			pins_cmd {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_dat {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_clk {
+-				drive-strength = /bits/ 8 <3>;
+-			};
++	hwmsensor {
++		compatible = "mediatek,hwmsensor";
+ 	};
+ 
+-	mmc1_pins_ddr50: mmc1@ddr50 {
+-			pins_cmd {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_dat {
+-				drive-strength = /bits/ 8 <2>;
+-			};
+-			pins_clk {
+-				drive-strength = /bits/ 8 <3>;
+-			};
++	gsensor {
++		compatible = "mediatek,gsensor";
+ 	};
+ 
+-	mmc1_register_setting_default: mmc1@register_default {
+-				dat0rddly      = /bits/ 8 <0>;
+-				dat1rddly      = /bits/ 8 <0>;
+-				dat2rddly      = /bits/ 8 <0>;
+-				dat3rddly      = /bits/ 8 <0>;
+-				datwrddly      = /bits/ 8 <0>;
+-				cmdrrddly      = /bits/ 8 <0>;
+-				cmdrddly       = /bits/ 8 <0>;
+-				cmd_edge = /bits/ 8 <MSDC_SMPL_FALLING>;
+-				rdata_edge = /bits/ 8 <MSDC_SMPL_FALLING>;
+-				wdata_edge = /bits/ 8 <MSDC_SMPL_FALLING>;
++	als_ps {
++		compatible = "mediatek,als_ps";
++		pinctrl-names = "pin_default\0pin_cfg";
++		pinctrl-0 = < 0x8f >;
++		pinctrl-1 = < 0x90 >;
++		status = "okay";
+ 	};
+-};
+-/* mmc end */
+ 
+-/* NFC GPIO standardization */
+-&pio {
+-	nfc_default: default {
++	m_acc_pl {
++		compatible = "mediatek,m_acc_pl";
++	};
+ 
++	m_alsps_pl {
++		compatible = "mediatek,m_alsps_pl";
+ 	};
+ 
+-	nfc_ven_high: state_ven_high {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO4__FUNC_GPIO4>;
+-			slew-rate = <1>;
+-			output-high;
+-		};
++	m_batch_pl {
++		compatible = "mediatek,m_batch_pl";
+ 	};
+ 
+-	nfc_ven_low: state_ven_low {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO4__FUNC_GPIO4>;
+-			slew-rate = <1>;
+-			output-low;
+-		};
++	batchsensor {
++		compatible = "mediatek,batchsensor";
+ 	};
+ 
+-	nfc_rst_high: state_rst_high {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO3__FUNC_GPIO3>;
+-			slew-rate = <1>;
+-			output-high;
+-		};
++	gyroscope {
++		compatible = "mediatek,gyroscope";
++		interrupt-parent = < 0x13 >;
++		interrupts = < 0x3b 0x08 >;
++		debounce = < 0x3b 0x00 >;
++		status = "okay";
++		pinctrl-names = "pin_default\0pin_cfg";
++		pinctrl-0 = < 0x91 >;
++		pinctrl-1 = < 0x92 >;
+ 	};
+ 
+-	nfc_rst_low: state_rst_low {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO3__FUNC_GPIO3>;
+-			slew-rate = <1>;
+-			output-low;
+-		};
++	m_gyro_pl {
++		compatible = "mediatek,m_gyro_pl";
+ 	};
+ 
+-	nfc_eint_high: state_eint_high {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO1__FUNC_GPIO1>;
+-			slew-rate = <1>;
+-			output-high;
+-		};
++	barometer {
++		compatible = "mediatek,barometer";
+ 	};
+ 
+-	nfc_eint_low: state_eint_low {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO1__FUNC_GPIO1>;
+-			slew-rate = <1>;
+-			output-low;
+-		};
++	m_baro_pl {
++		compatible = "mediatek,m_baro_pl";
+ 	};
+ 
+-	nfc_irq_init: state_irq_init {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO2__FUNC_GPIO2>;
+-			slew-rate = <0>;
+-			bias-pull-down = <00>;
+-		};
++	msensor {
++		compatible = "mediatek,msensor";
++		pinctrl-names = "default";
++		pinctrl-0 = < 0x93 >;
++		status = "okay";
+ 	};
+-};
+ 
+-&nfc {
+-	pinctrl-names = "default", "ven_high", "ven_low", "rst_high", "rst_low", "eint_high", "eint_low", "irq_init";
+-	pinctrl-0 = <&nfc_default>;
+-	pinctrl-1 = <&nfc_ven_high>;
+-	pinctrl-2 = <&nfc_ven_low>;
+-	pinctrl-3 = <&nfc_rst_high>;
+-	pinctrl-4 = <&nfc_rst_low>;
+-	pinctrl-5 = <&nfc_eint_high>;
+-	pinctrl-6 = <&nfc_eint_low>;
+-	pinctrl-7 = <&nfc_irq_init>;
+-	status = "okay";
+-};
+-/* NFC end */
++	m_mag_pl {
++		compatible = "mediatek,m_mag_pl";
++	};
+ 
+-/* Fingerprint GPIO standardization */
+-&pio {
+-	fp_default: default {
++	orientation {
++		compatible = "mediatek,orientation";
+ 	};
+ 
+-	fp_rst_high: fp_rst_high {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO20__FUNC_GPIO20>;
+-			slew-rate = <1>;
+-			output-high;
+-		};
++	als {
++		compatible = "mediatek, als-eint";
++		interrupt-parent = < 0x13 >;
++		interrupts = < 0x3a 0x08 >;
++		debounce = < 0x3a 0x00 >;
++		status = "okay";
+ 	};
+ 
+-	fp_rst_low: fp_rst_low {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO20__FUNC_GPIO20>;
+-			slew-rate = <1>;
+-			output-low;
+-		};
++	audio_switch {
++		compatible = "mediatek,audio_switch";
+ 	};
+ 
++	gse_1 {
++		compatible = "mediatek, gse_1-eint";
++		status = "disabled";
++	};
+ 
+-	fp_eint_as_int: eint@9 {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO9__FUNC_GPIO9>;
+-			slew-rate = <0>;
+-			bias-disable;
+-		};
++	ext_buck_oc {
++		compatible = "mediatek, ext_buck_oc-eint";
++		status = "disabled";
+ 	};
+-	fp_eint_in_low: eint_in_low {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO9__FUNC_GPIO9>;
+-			slew-rate = <0>;
+-			bias-pull-down = <00>;
++
++	trusty {
++		compatible = "android,trusty-smc-v1";
++		ranges;
++		#address-cells = < 0x02 >;
++		#size-cells = < 0x02 >;
++
++		irq {
++			compatible = "android,trusty-irq-v1";
+ 		};
+-	};
+-	fp_eint_in_float: eint_in_float {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO9__FUNC_GPIO9>;
+-			slew-rate = <0>;
+-			bias-disable;
++
++		log {
++			compatible = "android,trusty-log-v1";
+ 		};
+-	};
+-	fp_miso_pull_up: miso_pull_up {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO67__FUNC_GPIO67>;
+-			slew-rate = <0>;
+-			bias-pull-up = <00>;
++
++		virtio {
++			compatible = "android,trusty-virtio-v1";
+ 		};
+ 	};
+-	fp_miso_pull_disable: miso_pull_disable {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO67__FUNC_SPI_MIA>;
+-			bias-disable;
+-		};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = < 0x00 0x40000000 0x00 0x80000000 >;
+ 	};
+-};
+ 
+-&fp {
+-	pinctrl-names = "fp_default", "fp_rst_high", "fp_rst_low","eint_as_int", "eint_in_low", "eint_in_float", "miso_pull_up", "miso_pull_disable";
+-	pinctrl-0 = <&fp_default>;
+-	pinctrl-1 = <&fp_rst_high>;
+-	pinctrl-2 = <&fp_rst_low>;
+-	pinctrl-3 = <&fp_eint_as_int>;
+-	pinctrl-4 = <&fp_eint_in_low>;
+-	pinctrl-5 = <&fp_eint_in_float>;
+-	pinctrl-6 = <&fp_miso_pull_up>;
+-	pinctrl-7 = <&fp_miso_pull_disable>;
+-	status = "okay";
+-};
++	led@0 {
++		compatible = "mediatek,red";
++		led_mode = < 0x03 >;
++		data = < 0x02 >;
++		pwm_config = < 0x00 0x00 0x00 0x00 0x00 >;
++	};
+ 
+-/* Fingerprint end */
++	led@1 {
++		compatible = "mediatek,green";
++		led_mode = < 0x03 >;
++		data = < 0x01 >;
++		pwm_config = < 0x00 0x00 0x00 0x00 0x00 >;
++	};
+ 
+-/* USB GPIO Kernal Standardization start */
+-&pio {
+-	usb_default: usb_default {
++	led@2 {
++		compatible = "mediatek,blue";
++		led_mode = < 0x00 >;
++		data = < 0x01 >;
++		pwm_config = < 0x00 0x00 0x00 0x00 0x00 >;
+ 	};
+ 
+-	gpio54_mode1_iddig: iddig_irq_init {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO54__FUNC_IDDIG>;
+-			slew-rate = <0>;
+-			bias-pull-up = <00>;
+-		};
++	led@3 {
++		compatible = "mediatek,jogball-backlight";
++		led_mode = < 0x00 >;
++		data = < 0x01 >;
++		pwm_config = < 0x00 0x00 0x00 0x00 0x00 >;
+ 	};
+ 
+-	gpio76_mode2_drvvbus: drvvbus_init {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO76__FUNC_GPIO76>;
+-			slew-rate = <1>;
+-			bias-pull-up = <00>;
+-			output-low;
+-		};
++	led@4 {
++		compatible = "mediatek,keyboard-backlight";
++		led_mode = < 0x00 >;
++		data = < 0x01 >;
++		pwm_config = < 0x00 0x00 0x00 0x00 0x00 >;
+ 	};
+ 
+-	gpio76_mode2_drvvbus_low: drvvbus_low {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO76__FUNC_GPIO76>;
+-			slew-rate = <1>;
+-			output-low;
+-		};
++	led@5 {
++		compatible = "mediatek,button-backlight";
++		led_mode = < 0x00 >;
++		data = < 0x01 >;
++		pwm_config = < 0x00 0x00 0x00 0x00 0x00 >;
+ 	};
+ 
+-	gpio76_mode2_drvvbus_high: drvvbus_high {
+-		pins_cmd_dat {
+-			pins = <PINMUX_GPIO76__FUNC_GPIO76>;
+-			slew-rate = <1>;
+-			output-high;
+-		};
++	led@6 {
++		compatible = "mediatek,lcd-backlight";
++		led_mode = < 0x05 >;
++		data = < 0x01 >;
++		pwm_config = < 0x00 0x00 0x00 0x00 0x00 >;
+ 	};
+-};
+ 
+-&usb0 {
+-	iddig_gpio = <54 3>;
+-	pinctrl-names = "usb_default", "iddig_irq_init", "drvvbus_init", "drvvbus_low", "drvvbus_high";
+-	pinctrl-0 = <&usb_default>;
+-	pinctrl-1 = <&gpio54_mode1_iddig>;
+-	pinctrl-2 = <&gpio76_mode2_drvvbus>;
+-	pinctrl-3 = <&gpio76_mode2_drvvbus_low>;
+-	pinctrl-4 = <&gpio76_mode2_drvvbus_high>;
+-	status = "okay";
++	vibrator@0 {
++		compatible = "mediatek,vibrator";
++		vib_timer = < 0x19 >;
++		vib_limit = < 0x09 >;
++		vib_vol = < 0x05 >;
++	};
++
++	cust_accel@0 {
++		compatible = "mediatek,mpu6050g";
++		i2c_num = < 0x02 >;
++		i2c_addr = < 0x68 0x00 0x00 0x00 >;
++		direction = < 0x06 >;
++		power_id = < 0xffff >;
++		power_vol = < 0x00 >;
++		firlen = < 0x00 >;
++		is_batch_supported = < 0x00 >;
++	};
++
++	cust_accel1@0 {
++		compatible = "mediatek,bma222e_new";
++		i2c_num = < 0x02 >;
++		i2c_addr = < 0x18 0x00 0x00 0x00 >;
++		direction = < 0x07 >;
++		power_id = < 0xffff >;
++		power_vol = < 0x00 >;
++		firlen = < 0x00 >;
++		is_batch_supported = < 0x00 >;
++	};
++
++	cust_alsps@0 {
++		compatible = "mediatek,LTR553";
++		i2c_num = < 0x02 >;
++		i2c_addr = < 0x23 0x00 0x00 0x00 >;
++		polling_mode_ps = < 0x00 >;
++		polling_mode_als = < 0x01 >;
++		power_id = < 0xffff >;
++		power_vol = < 0x00 >;
++		als_level = < 0x02 0x10 0x20 0x40 0x265 0x578 0x8be 0xcb5 0x1131 0x15e6 0x1abc 0x2004 0xffff 0xffff 0xffff >;
++		als_value = < 0x12 0x32 0x5f 0xbe 0x3e8 0x6a4 0x780 0xb54 0x1671 0x2134 0x2803 0x2803 0x2803 0x2803 0x2803 0x2803 >;
++		ps_threshold_high = < 0x167 >;
++		ps_threshold_low = < 0x74 >;
++		is_batch_supported_ps = < 0x00 >;
++		is_batch_supported_als = < 0x00 >;
++	};
++
++	cust_mag@0 {
++		compatible = "mediatek,akm09911";
++		i2c_num = < 0x02 >;
++		i2c_addr = < 0x0c 0x00 0x00 0x00 >;
++		direction = < 0x06 >;
++		power_id = < 0xffff >;
++		power_vol = < 0x00 >;
++		is_batch_supported = < 0x00 >;
++	};
++
++	cust_gyro@0 {
++		compatible = "mediatek,mpu6050gy";
++		i2c_num = < 0x02 >;
++		i2c_addr = < 0x69 0x00 0x00 0x00 >;
++		direction = < 0x06 >;
++		power_id = < 0xffff >;
++		power_vol = < 0x00 >;
++		firlen = < 0x00 >;
++		is_batch_supported = < 0x00 >;
++	};
+ };
+-/* USB GPIO Kernal Standardization end */

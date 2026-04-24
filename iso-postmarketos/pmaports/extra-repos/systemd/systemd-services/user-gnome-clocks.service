@@ -1,0 +1,11 @@
+[Unit]
+Description=GNOME clocks
+
+[Service]
+Type=dbus
+BusName=org.gnome.clocks
+ExecStart=/usr/bin/gnome-clocks -b
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

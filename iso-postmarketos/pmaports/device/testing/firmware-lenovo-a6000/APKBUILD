@@ -1,0 +1,27 @@
+maintainer=""
+pkgname=firmware-lenovo-a6000
+pkgver=1
+pkgrel=3
+pkgdesc="Firmware for Lenovo A6000"
+url="https://github.com/jenneron/vendor_lenovo_a6000"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="ea5312f4fbfec01883f2b2413f637691823820c2"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="Lenovo a6000 WiFi/BT firmware configuration"
+	cd "$srcdir/vendor_lenovo_a6000-$_commit"
+	install -Dm644 WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="f1b3b1e62cd44b2df0f3c6ecfefdd27636346324c88f7912887937770db401648e1b5ec61c5b689fa1816f2edb18781109e2e7c9d60998958229db5740b50fcf  firmware-lenovo-a6000-ea5312f4fbfec01883f2b2413f637691823820c2.tar.gz"

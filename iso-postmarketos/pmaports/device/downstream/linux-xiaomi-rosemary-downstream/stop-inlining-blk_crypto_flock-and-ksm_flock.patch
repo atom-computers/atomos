@@ -1,0 +1,72 @@
+Fixes the following build errors under GCC 11:
+
+  In file included from ../block/blk-crypto.c:14:
+  ../block/blk-crypto.c: In function 'blk_crypto_flock':
+  ../include/linux/keyslot-manager.h:101:13: error: inlining failed in call to 'always_inline' 'ksm_flock': function body not available
+    101 | inline void ksm_flock(struct keyslot_manager *ksm, unsigned int flags);
+        |             ^~~~~~~~~
+  ../block/blk-crypto.c:310:9: note: called from here
+    310 |         ksm_flock(ksm, flags);
+        |         ^~~~~~~~~~~~~~~~~~~~~
+
+  In file included from ../drivers/md/dm.c:27:
+  ../drivers/md/dm.c: In function 'dm_derive_raw_secret_callback':
+  ../include/linux/blk-crypto.h:35:13: error: inlining failed in call to 'always_inline' 'blk_crypto_flock': function body not available
+     35 | inline void blk_crypto_flock(struct keyslot_manager *ksm, unsigned int flags);
+        |             ^~~~~~~~~~~~~~~~
+  ../drivers/md/dm.c:2120:17: note: called from here
+   2120 |                 blk_crypto_flock(dev->bdev->bd_queue->ksm, SINGLE_DEPTH_NESTING);
+        |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---
+diff --git a/block/blk-crypto.c b/block/blk-crypto.c
+index f15ed0b70ecd..703700d9bf9d 100644
+--- a/block/blk-crypto.c
++++ b/block/blk-crypto.c
+@@ -305,7 +305,7 @@ int blk_crypto_evict_key(struct request_queue *q,
+ }
+ EXPORT_SYMBOL_GPL(blk_crypto_evict_key);
+ 
+-inline void blk_crypto_flock(struct keyslot_manager *ksm, unsigned int flags)
++void blk_crypto_flock(struct keyslot_manager *ksm, unsigned int flags)
+ {
+ 	ksm_flock(ksm, flags);
+ }
+diff --git a/block/keyslot-manager.c b/block/keyslot-manager.c
+index 1ce66f66af20..95afcd9c4874 100644
+--- a/block/keyslot-manager.c
++++ b/block/keyslot-manager.c
+@@ -681,7 +681,7 @@ EXPORT_SYMBOL_GPL(keyslot_manager_derive_raw_secret);
+  * detection, set another lock sub-class could avoid it.
+  *
+  */
+-inline void ksm_flock(struct keyslot_manager *ksm, unsigned int flags)
++void ksm_flock(struct keyslot_manager *ksm, unsigned int flags)
+ {
+ 	ksm->lock_flags = flags;
+ }
+diff --git a/include/linux/blk-crypto.h b/include/linux/blk-crypto.h
+index 43d0dbbeb70f..30ba27226a22 100644
+--- a/include/linux/blk-crypto.h
++++ b/include/linux/blk-crypto.h
+@@ -32,7 +32,7 @@ int blk_crypto_start_using_mode(enum blk_crypto_mode_num crypto_mode,
+ int blk_crypto_evict_key(struct request_queue *q,
+ 			 const struct blk_crypto_key *key);
+ 
+-inline void blk_crypto_flock(struct keyslot_manager *ksm, unsigned int flags);
++void blk_crypto_flock(struct keyslot_manager *ksm, unsigned int flags);
+ 
+ 
+ #else /* CONFIG_BLK_INLINE_ENCRYPTION */
+diff --git a/include/linux/keyslot-manager.h b/include/linux/keyslot-manager.h
+index e247be8a5d43..dfb1d97d8fb6 100644
+--- a/include/linux/keyslot-manager.h
++++ b/include/linux/keyslot-manager.h
+@@ -98,7 +98,7 @@ int keyslot_manager_derive_raw_secret(struct keyslot_manager *ksm,
+ 				      unsigned int wrapped_key_size,
+ 				      u8 *secret, unsigned int secret_size);
+ 
+-inline void ksm_flock(struct keyslot_manager *ksm, unsigned int flags);
++void ksm_flock(struct keyslot_manager *ksm, unsigned int flags);
+ 
+ #endif /* CONFIG_BLK_INLINE_ENCRYPTION */
+ 

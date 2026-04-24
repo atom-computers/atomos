@@ -1,0 +1,12 @@
+This patch is the supplementation of linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch.
+
+diff --git a/arch/arm/boot/compressed/piggy.xzkern.S b/arch/arm/boot/compressed/piggy.xzkern.S
+index d7e69cffbc0a..cfea81ae8f4b 100644
+--- a/arch/arm/boot/compressed/piggy.xzkern.S
++++ b/arch/arm/boot/compressed/piggy.xzkern.S
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata, "a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.xzkern"

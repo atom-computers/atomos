@@ -1,0 +1,36 @@
+This patch fixes strace not working (SIGSEGV) on many binaries, see:
+https://gitlab.com/postmarketOS/pmaports/-/issues/378
+
+From 2270177312f60fd22ff29810621220cf99ee979c Mon Sep 17 00:00:00 2001
+From: M1cha <sigmaepsilon92@gmail.com>
+Date: Mon, 1 Jun 2015 11:48:39 +0200
+Subject: [PATCH] ptrace: fix ptrace defect cause by a merge fail
+
+this bug was introduced with I9493f28c30356a10eccb320e0a2d1a141388af9a
+
+Signed-off-by: M1cha <sigmaepsilon92@gmail.com>
+---
+ arch/arm/kernel/ptrace.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/arch/arm/kernel/ptrace.c b/arch/arm/kernel/ptrace.c
+index b8fb09cb0bdd..6524a06fe68b 100644
+--- a/arch/arm/kernel/ptrace.c
++++ b/arch/arm/kernel/ptrace.c
+@@ -935,13 +935,6 @@ asmlinkage int syscall_trace(int why, struct pt_regs *regs, int scno)
+ 	ip = regs->ARM_ip;
+ 	regs->ARM_ip = why;
+ 
+-	/*
+-	 * IP is used to denote syscall entry/exit:
+-	 * IP = 0 -> entry, =1 -> exit
+-	 */
+-	ip = regs->ARM_ip;
+-	regs->ARM_ip = why;
+-
+ 	/* the 0x80 provides a way for the tracing parent to distinguish
+ 	   between a syscall stop and SIGTRAP delivery */
+ 	ptrace_notify(SIGTRAP | ((current->ptrace & PT_TRACESYSGOOD)
+-- 
+2.29.1
+

@@ -1,0 +1,221 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-duranium
+pkgver=5
+pkgrel=0
+pkgdesc="Configuration for building and booting immutable postmarketOS images"
+url="https://wiki.postmarketos.org/wiki/Duranium_(Immutable_postmarketOS)"
+options="!check"  # no tests
+depends="
+	coldbrew
+	e2fsprogs
+	erofs-utils
+	f0rmz
+	postmarketos-base
+	postmarketos-base-systemd
+	shadow
+	shadow-subids
+	systemd-efistub
+	tar
+"
+# x86: f0rmz
+# armhf: linux-stable, systemd
+# ppc64le s390x: EFI
+arch="noarch !x86 !armhf !ppc64le !s390x"
+license="GPL-3.0-or-later"
+subpackages="
+	$pkgname-initramfs
+	$pkgname-sysext-dev-tools:sysext_dev_tools
+"
+
+_source644="
+	etc/crypttab
+	usr/lib/modprobe.d/no-firmware.conf
+	usr/lib/repart.d/00-esp.conf
+	usr/lib/repart.d/10-usr-verity.conf
+	usr/lib/repart.d/11-usr.conf
+	usr/lib/repart.d/20-usr-verity.conf
+	usr/lib/repart.d/21-usr.conf
+	usr/lib/repart.d/30-root.conf
+	usr/lib/systemd/confext.conf
+	usr/lib/systemd/initrd-preset/80-duranium.preset
+	usr/lib/systemd/system-preset/80-duranium.preset
+	usr/lib/systemd/system/duranium-firstboot.service
+	usr/lib/systemd/system/getty@.service.d/wait-firstboot.conf
+	usr/lib/systemd/system/initramfs-buffyboard.service
+	usr/lib/systemd/system/initramfs-confext.service
+	usr/lib/systemd/system/initramfs-telnetd.service
+	usr/lib/systemd/system/initramfs-unudhcpd.service
+	usr/lib/systemd/system/initramfs-usb-gadget.service
+	usr/lib/systemd/system/mount-subpartitions.service
+	usr/lib/systemd/system/systemd-confext.service.d/mutable.conf
+	usr/lib/systemd/system/systemd-cryptsetup@.service.d/factory-reset-ordering.conf
+	usr/lib/systemd/system/unl0kr-agent.path.d/plymouth-handoff.conf
+	usr/lib/systemd/system/unl0kr-agent.service.d/conflicts-console.conf
+	usr/lib/systemd/system/unl0kr-agent.service.d/plymouth-handoff.conf
+	usr/lib/sysupdate.d/10-usr-verity.transfer
+	usr/lib/sysupdate.d/11-usr.transfer
+	usr/lib/sysupdate.d/20-uki.transfer
+	usr/lib/sysupdate.d/50-dev-tools-sysext.transfer
+	usr/lib/sysupdate.d/51-dev-tools-confext.transfer
+	usr/lib/sysupdate.d/dev-tools.feature
+	usr/lib/sysusers.d/10-pmos-user.conf
+	usr/lib/tmpfiles.d/duranium.conf
+	usr/lib/udev/rules.d/90-udisks-ignore-verity-hack.rules
+	usr/share/duranium/f0rmz-firstboot.conf
+"
+
+_source755="
+	usr/bin/duranium-set-channel
+	etc/profile.d/99-local-bin.sh
+	usr/libexec/duranium/first-boot
+	usr/libexec/duranium/mount-subpartitions
+	usr/libexec/duranium/usb-gadget-setup
+"
+
+# Avoid filename based checksum conflicts by including the whole path:
+# https://gitlab.alpinelinux.org/alpine/abuild/-/issues/10013
+flatpath() {
+	local i
+	for i in $@; do
+		echo "rootfs-$i" | sed s./.-.g
+	done
+}
+source="
+	$(flatpath $_source440 $_source600 $_source644 $_source755)
+	dev-gpt-auto-root-no-timeout.conf
+"
+
+package() {
+	for i in $_source644; do
+		install -Dm644 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source755; do
+		install -Dm755 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+}
+
+initramfs() {
+	# musl-utils: for ldconfig.service
+	# scanelf: for ldconfig.service
+	# util-linux-login: for sulogin in emergency/debug shell
+	depends="
+		buffyboard
+		busybox-extras
+		device-mapper
+		device-mapper-udev
+		e2fsprogs
+		musl-utils
+		postmarketos-bootsplash
+		scanelf
+		unl0kr-agent
+		unudhcpd
+		util-linux-login
+	"
+
+	amove etc/crypttab
+	amove usr/lib/modprobe.d/no-firmware.conf
+	amove usr/lib/systemd/initrd-preset/80-duranium.preset
+	amove usr/lib/systemd/system/initramfs-buffyboard.service
+	amove usr/lib/systemd/system/initramfs-telnetd.service
+	amove usr/lib/systemd/system/initramfs-unudhcpd.service
+	amove usr/lib/systemd/system/initramfs-usb-gadget.service
+	amove usr/lib/systemd/system/initramfs-confext.service
+	amove usr/lib/systemd/system/mount-subpartitions.service
+	amove usr/lib/systemd/system/systemd-cryptsetup@.service.d/factory-reset-ordering.conf
+	amove usr/lib/systemd/system/unl0kr-agent.path.d/plymouth-handoff.conf
+	amove usr/lib/systemd/system/unl0kr-agent.service.d/conflicts-console.conf
+	amove usr/lib/systemd/system/unl0kr-agent.service.d/plymouth-handoff.conf
+
+	amove usr/libexec/duranium/mount-subpartitions
+	amove usr/libexec/duranium/usb-gadget-setup
+
+	# mask plymouth password agent, since we use unl0kr for prompting
+	mkdir -p "$subpkgdir/etc/systemd/system"
+	ln -s /dev/null "$subpkgdir/etc/systemd/system/systemd-ask-password-plymouth.path"
+
+	# normally this would be just another flatpath file but trying to get abuild
+	# to work with a file that has \ in the name is torture.
+	install -Dm644 "$srcdir"/dev-gpt-auto-root-no-timeout.conf \
+		"$subpkgdir"/usr/lib/systemd/system/dev-gpt\\x2dauto\\x2droot.device.d/no-timeout.conf
+}
+
+sysext_dev_tools() {
+	description="meta package for Duranium Developer Tools system extension"
+	depends="
+		android-tools
+		android-udev-rules
+
+		devpod
+		distrobox
+		podman
+
+		libvirt-client
+		libvirt-common-drivers
+		libvirt-daemon
+		libvirt-qemu
+		qemu
+		qemu-img
+		qemu-modules
+		qemu-system-aarch64
+		qemu-system-arm
+		qemu-system-i386
+		qemu-system-loongarch64
+		qemu-system-ppc64
+		qemu-system-riscv64
+		qemu-system-x86_64
+	"
+
+	case "$CARCH" in
+	x86_64|riscv64)
+		depends="$depends ovmf" ;;
+	aarch64)
+		depends="$depends aavmf" ;;
+	loongarch64)
+		depends="$depends edk2-loongarch64" ;;
+	esac
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+ac441c8a690b89a92c2d7db37145e54d918bb9838a45cf76d20de82d46848a80477a8035d9cbaa39fb6ea4747c2762789f71736aa11a78e3adcca0c339dc5677  rootfs-etc-crypttab
+ce3f39aa5ed95065306a42bbab6b405bcb90446e206c25509bda64ed2866d80d5168ac225baeb2a50a66e17cbb9b32f26b4a5ec1e042b5f0bf40f6907f4e4d82  rootfs-usr-lib-modprobe.d-no-firmware.conf
+b0f320f2ea81c29fa9030abac998e725e098c74bb2ffb76ee2711da4c88615ad46a0e5359b98198648879551781580a0128b57a2ef1ca6a3e03448b01f533065  rootfs-usr-lib-repart.d-00-esp.conf
+b2076a208e389605b8c5d3ad7ae2413c70b303a90f94ca7e330cc02b7a2ae6602b78d7b8d95ed22d1326ebcac5549f41c41dd752a259e625e0641b5499800628  rootfs-usr-lib-repart.d-10-usr-verity.conf
+191113460d1329ebd1b247ce2d84666812180b1bebc3599e19c8745a3eb3ebcee338981002de1af23832a76888caeb92fa829d9ab9d9547bc719e464440fc4f7  rootfs-usr-lib-repart.d-11-usr.conf
+730aa98894ec4586d5a97b2faed5ec30ae6679b9ebf4e6dd7e1d4f039279691040232ba30d0f88b4a2696131618b17753d0d8262b88d4ff6f1f120cbd0d22acd  rootfs-usr-lib-repart.d-20-usr-verity.conf
+d88e87fb22b8efdc2617e8a3d52102032ce2b0dbde0e7d40a8d7679f507acc9cea271faa7004f96611631dfa0351cd5175dc1574f907176c9e4ebc5561b9a6d6  rootfs-usr-lib-repart.d-21-usr.conf
+84036b008042766e89bc02ecb7d77b52f80973a385a21faa1fbb2348ff0c216c302e29bd52c6cb40e5e547ad58aa955e06a9e94bd2ca0c512903a200f44c9a63  rootfs-usr-lib-repart.d-30-root.conf
+16984590f17c25be2f45444d8035c8c3a9035e3f52219a3e57e5bab93325acf0fdd50e03cd8a99da44c2adf4fd6234da73de63393582bff456bb128501da6211  rootfs-usr-lib-systemd-confext.conf
+5125928c8267306a62c1a7756001dbfb0251ea1a6765cb662c7a2a768a139ce5285f8dfe4ac1ae3ccb4ac34fb8dbe9bce7f98a2ef42e5be1d83be40cee2d87f0  rootfs-usr-lib-systemd-initrd-preset-80-duranium.preset
+cd106f732dcbe2251136ad33fb24d08dc96aad2f9a2c9da27ed60e113c61cfac0ca51907388f0112b5b0d7285164f18a0068bfb7d0941a0cac040e7becc48c63  rootfs-usr-lib-systemd-system-preset-80-duranium.preset
+09dd75ce4d6790af5156fadea0b948b13a5f36ab1162c45b4a58a5c6b4061d6871610cc3384252422b28bfd7836b95cd7ca857277113abacc0083ecdd6cfff1f  rootfs-usr-lib-systemd-system-duranium-firstboot.service
+16fc787401e1fbbd1421257781270d2be6cb879ab9cc99412044df25af72c5525567f7b7f1066f022c0b7e03dd33c62f2d871fed9e9121ed309564c207795c38  rootfs-usr-lib-systemd-system-getty@.service.d-wait-firstboot.conf
+786a057e3f1eab37773b5255a5abde060b6bc6f42fd2cdaa82ce678263db6177ca30b49decb795293a4a0ccaf02346684acd0469cc8222898c43768376f2218d  rootfs-usr-lib-systemd-system-initramfs-buffyboard.service
+ef4bd401dd86ff0a56362b6441f01a1aa9c3612bcb4fe53c024365cf1c99c2614f1221b0ca2caf231970f4e48bf320d86667dca7caae39d3c40c27b3741adf9c  rootfs-usr-lib-systemd-system-initramfs-confext.service
+4f303c5d7cb7054e8bb6e109aa3f4337098b19a6b5a8c6b0b1e1033889d8b1f85a87a0086b67f6f9c62fc93aeca0c59e50def12fff33b79fb7819657b5b820ec  rootfs-usr-lib-systemd-system-initramfs-telnetd.service
+7620e15cebb92c06a662bea095122793b8928b37c8b73fb060f2c882ac9c40419cc3e9eacafab2d04f8089a6fd32c1aa46f9247c54ee60adca87a796262bc37a  rootfs-usr-lib-systemd-system-initramfs-unudhcpd.service
+9c0eb915c09fc3d8de3a1a486f3e2202be05b11ba924d13349a70d93355ca0c72fe2417504e4b7e0c74aa1bb7f5ae77e3497f09dd67e48c0b8f2432f382f2f38  rootfs-usr-lib-systemd-system-initramfs-usb-gadget.service
+221844a2fe5af2c9c675d7d7c118f3db82afbf8b28db77ea049db74813b62881fe40ada30630f5fd777c6503e2936e22251be75e278635274fe6ac08eba8e56b  rootfs-usr-lib-systemd-system-mount-subpartitions.service
+16c5f02640b527470ee4060dab0a3e0491ff751d631c30f2ce83858c1cf81f0980b687e9473f74fc96185356cb63bcf14008d3891f0c98ac105aee9711cdf9f5  rootfs-usr-lib-systemd-system-systemd-confext.service.d-mutable.conf
+101b1af9f26fe57f8be1f0353d8146724aaad4c80e790b85559e0d7ce10a1b9169429b112fc17dafde4902e26617ced00b3540a3999c50b606f3ff7564759464  rootfs-usr-lib-systemd-system-systemd-cryptsetup@.service.d-factory-reset-ordering.conf
+612e50282c0ceb7676d8e62853e99bd693103fc59098d8ac91173538ff1c3fa8b69d3eebeaa6390df7c8f9cc62fddae1ca2d35d07d97e60b40b660bc62bf049b  rootfs-usr-lib-systemd-system-unl0kr-agent.path.d-plymouth-handoff.conf
+b1aa826b83fbb5d606b5dc37a4db67a7233519e0ac953325395dd7f3b7e303d206f6297e51a749d07ee173ccbc4ccf055e92888e38345783d4f4c7687a6a9870  rootfs-usr-lib-systemd-system-unl0kr-agent.service.d-conflicts-console.conf
+017fe2d6298842b24498000c98e851b441da4edf91cadf2bfc0542a46364f105eda9a5ca772c87e7bd4749e101833fdb43604081b7ab26ebea426559f9de418e  rootfs-usr-lib-systemd-system-unl0kr-agent.service.d-plymouth-handoff.conf
+32e12f098b1be89980c1b93020d7959dc45bc4371c5ac8f55406f80589b0c6ca1c8744e32a6594c985b56e551e98d8dbf6efb2c701c3ac5c681367ae81ee7560  rootfs-usr-lib-sysupdate.d-10-usr-verity.transfer
+177d975fb333f5703627cf389f32c6168903098734bf66feecf3b9b03a1cbb13239f3807d7a6cea5b26f0ee36c50a422b933732e3b9a6a4cac7def6bed57be59  rootfs-usr-lib-sysupdate.d-11-usr.transfer
+4ffb2be01cb033c1282b6661052250937e1ac457cec3900b075d0dcdf59de7dcb2eb927c39db0e96468a90b03fed0a4e6db0d99f62d714c31a29d4684e79751f  rootfs-usr-lib-sysupdate.d-20-uki.transfer
+4699b75e545ccf3b539f9fb418841106f69879e5bcc9faef6918296d0c89b2fec5e3f85c7742acf4b6b5b6eb91006d38375041b78263913fd41bebab4746dee3  rootfs-usr-lib-sysupdate.d-50-dev-tools-sysext.transfer
+fe0a3a0be13d4b4a8d632859cc54f95d69021f1f100debe5565beb55d909fff8bbf2f0bd561e27c67540356fb7f16bc41eab68830ab6a72fcd6d39e6c01afebb  rootfs-usr-lib-sysupdate.d-51-dev-tools-confext.transfer
+89a7bddc6ebe2fd4a41355bbdc7418382e96f10d4e9e9748405f534a549bc64280f543fae16c4aa60f30830f3679d94a87357c941dff83f5134eb5ac4b654706  rootfs-usr-lib-sysupdate.d-dev-tools.feature
+fa1c3dd727fd20d16d18695d58dd10ec335d64ece00152346c84ae750ed5ade8faf5ba11747135d79972dd1a3f4f1ab496ae9425ebcf7232a4203ca9396fa7e0  rootfs-usr-lib-sysusers.d-10-pmos-user.conf
+fc4bf2b78e25b3f04add2ef7fbcfe70f24f8a865526ea817252a6bc4585755d40873909c4a1eb37acc86f93424f7de0bc2add29265eb2e5df69764ae0018fd76  rootfs-usr-lib-tmpfiles.d-duranium.conf
+ede57bf8696dce4ee295dc2a1dfe31dec415e7ce994600ce3bf7386ac1ad63797a6c5a88434ca0cc854cdad6618647845126b1f8757c48f83ce308d394b8c68d  rootfs-usr-lib-udev-rules.d-90-udisks-ignore-verity-hack.rules
+7f2b98edc7b485129ea862c5c852422e8996ffe0a2bdae3160b6c94667b4e345a1792164e3143d58cb1a51c3c6981381ad7610d709aba210bb61a0c883455476  rootfs-usr-share-duranium-f0rmz-firstboot.conf
+619368ffc9dd1fd9c0f662c0bb8f407a6514c8b12611511d715f705874e3be24201b5046e631c476bd70d661ca45576df8fb10aa86cf11a7de9a79289b7a7806  rootfs-usr-bin-duranium-set-channel
+765797421f9123cdcf85e1496d01884cce1c8c304d15369b7eee32a8fc5abcd860dc5856c0d493f1cd3c6ad2a0ccdc4d6ba7d2ae356f0fc824dc16cdb84ebf37  rootfs-etc-profile.d-99-local-bin.sh
+6661a981a3c2e549f0f1a12d4777f662eb88aa581608529f6e75a5d448b78fcb709812a4291d5708da840ba72d6cbf48375485d3ecd900d252efd2eb4a9e170c  rootfs-usr-libexec-duranium-first-boot
+bb3ec1693f88a61563876cd069b49351861a31c15b1795702031e5beb4e89cefe302644c1ea9d0bb74746aa97007664c1782857900e2b85dd71182e95efd66ae  rootfs-usr-libexec-duranium-mount-subpartitions
+9912109374399bf6df4d45c05baff5b3c424e05380b81b2be5b55e28e95f07bda71b5a4f7345a40498c1b11df465a9f4410e740d119ab98543ce28b75c53eb0f  rootfs-usr-libexec-duranium-usb-gadget-setup
+ca5b767d4bbc5857c2282124fee3082fafaca8e735ab2077112060e67a37afdb521c28c81fc3b548f114e857aaa702169ee77fab8b7b37c44b5233c83a94afd4  dev-gpt-auto-root-no-timeout.conf
+"

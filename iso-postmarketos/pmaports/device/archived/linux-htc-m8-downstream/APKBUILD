@@ -1,0 +1,70 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Kernel config based on: arch/arm/configs/m8_defconfig
+
+pkgname=linux-htc-m8-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="HTC One M8 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-m8"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_htc_msm8974"
+_commit="1e7a57485c90cb838cffe022831e6bec4a599548"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-fix-video-argb-setting.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	psmouse_base.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool --dt-tag "htc,project-id" -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+3f826c698af5839fd83e9204d8d4c28db35a0e8c174c0cef005acea5fa53b2463fb0d984f2d1c99e8608ecd9698fb59e954f2e7218688f75a97fee735b7b9856  linux-htc-m8-downstream-1e7a57485c90cb838cffe022831e6bec4a599548.tar.gz
+604982fa0431ffb62659ab6ff22efac1e167eb6830011d62e5f86a0f2d5e8f3579eb6752592b94650414f7cd3b5d0d73279a79b212846e3b10a70e48ef6e7423  config-htc-m8.armv7
+35cdbf82daef7a421a92ee3b95cc57d1c77ac62d3957bb2ea60021817381348a7c9dd4119becaae2faa8ace7e21fb40d417b9ca1c0affc46947ea52625bd9127  0001-fix-video-argb-setting.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+f7e31cfe422696922aec52002e56c58103183966edee3bb8e1995d33f8d37b07c32280a8ecc213874e358a6ff367418556a4542fba7e3c17e4b8e82e05c3a543  psmouse_base.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

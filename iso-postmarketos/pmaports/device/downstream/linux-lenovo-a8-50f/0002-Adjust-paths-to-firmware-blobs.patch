@@ -1,0 +1,73 @@
+From d32ffe089007df301704e4d6acfce3919f371638 Mon Sep 17 00:00:00 2001
+From: Oreeeee <oree3ee@gmail.com>
+Date: Sat, 18 Oct 2025 04:03:24 +0200
+Subject: [PATCH 2/3] Adjust paths to firmware blobs
+
+This patch changes the relevant proprietary wireless firmware blobs
+paths to match postmarketOS conventions.
+---
+ .../conn_soc/common/core/include/wmt_conf.h   |  2 +-
+ .../fmradio/mt6627/pub/mt6627_fm_lib.c        | 20 +++++++++----------
+ .../misc/mediatek/wmt_ccci/wmt_cfg_parser.h   |  2 +-
+ 3 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/misc/mediatek/connectivity/conn_soc/common/core/include/wmt_conf.h b/drivers/misc/mediatek/connectivity/conn_soc/common/core/include/wmt_conf.h
+index 7ad0fca5..0dd30b3f 100755
+--- a/drivers/misc/mediatek/connectivity/conn_soc/common/core/include/wmt_conf.h
++++ b/drivers/misc/mediatek/connectivity/conn_soc/common/core/include/wmt_conf.h
+@@ -33,7 +33,7 @@
+ ********************************************************************************
+ */
+ #define CUST_CFG_WMT "WMT_SOC.cfg"
+-#define CUST_CFG_WMT_PREFIX "/system/etc/firmware/"
++#define CUST_CFG_WMT_PREFIX "/lib/firmware/postmarketos/"
+ 
+ /*******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+diff --git a/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c b/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c
+index fa958cf3..652a4c1c 100755
+--- a/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c
++++ b/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c
+@@ -31,16 +31,16 @@ extern fm_cust_cfg mt6627_fm_config;
+ /* #define MT6627_FM_ROM_PATH "/etc/firmware/mt6627/mt6627_fm_rom.bin" */
+ 
+ static struct fm_patch_tbl mt6627_patch_tbl[5] = {
+-	{FM_ROM_V1, "/etc/firmware/mt6627/mt6627_fm_v1_patch.bin",
+-	 "/etc/firmware/mt6627/mt6627_fm_v1_coeff.bin", NULL, NULL},
+-	{FM_ROM_V2, "/etc/firmware/mt6627/mt6627_fm_v2_patch.bin",
+-	 "/etc/firmware/mt6627/mt6627_fm_v2_coeff.bin", NULL, NULL},
+-	{FM_ROM_V3, "/etc/firmware/mt6627/mt6627_fm_v3_patch.bin",
+-	 "/etc/firmware/mt6627/mt6627_fm_v3_coeff.bin", NULL, NULL},
+-	{FM_ROM_V4, "/etc/firmware/mt6627/mt6627_fm_v4_patch.bin",
+-	 "/etc/firmware/mt6627/mt6627_fm_v4_coeff.bin", NULL, NULL},
+-	{FM_ROM_V5, "/etc/firmware/mt6627/mt6627_fm_v5_patch.bin",
+-	 "/etc/firmware/mt6627/mt6627_fm_v5_coeff.bin", NULL, NULL},
++	{FM_ROM_V1, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v1_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v1_coeff.bin", NULL, NULL},
++	{FM_ROM_V2, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v2_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v2_coeff.bin", NULL, NULL},
++	{FM_ROM_V3, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v3_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v3_coeff.bin", NULL, NULL},
++	{FM_ROM_V4, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v4_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v4_coeff.bin", NULL, NULL},
++	{FM_ROM_V5, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v5_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v5_coeff.bin", NULL, NULL},
+ };
+ 
+ static struct fm_hw_info mt6627_hw_info = {
+diff --git a/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h b/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
+index 54aea826..4dea8714 100755
+--- a/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
++++ b/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
+@@ -56,7 +56,7 @@ extern unsigned int wmtCcciLogLvl;
+ #endif
+ 
+ #define WMT_CFG_FILE "WMT_SOC.cfg"
+-#define WMT_CFG_FILE_PREFIX "/system/etc/firmware/"
++#define WMT_CFG_FILE_PREFIX "/lib/firmware/postmarketos/"
+ 
+ /*******************************************************************************
+ *                             D A T A   T Y P E S
+-- 
+2.51.0
+

@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=device-bananapi-bpi-cm4-cm4io
+pkgdesc="BananaPi BPI-CM4IO Baseboard with BPI-CM4"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base u-boot-amlogic-bananapi-bpi-cm4-cm4io soc-amlogic-aarch64 linux-postmarketos-amlogic"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="vdec firmware"
+	depends="linux-firmware-meson"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+049a0a937e5401d27eb03af06e0e4d3e900283a107feac32840ae080a174e6dfe21ab88cc54596571d1a06df6ef9ee372daca9f531ba26efe6f5927b93a5315b  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+52948c2884a6f6384e12b7a598f70878526d0d3293c214425170145231144ec7de805c038641741a4a5d75b50e554f6a3fa3769784a674217ed032f9b6a233c8  modules-initfs
+"

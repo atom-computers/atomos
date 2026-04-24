@@ -1,0 +1,11 @@
+[Unit]
+Description=USB Moded Tethering Mode
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=usb-moded-tethering-mode up
+ExecStop=usb-moded-tethering-mode down
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+# very simple init sequence using standard commands only
+# downstream uses something similar, but without the "invert" command for some reason
+command 0x36 0xd8 # rotate
+command 0x3a 0x05 # 16-bit pixel format
+command 0x35 0x00
+command 0x21 # invert
+command 0x11 # exit sleep mode
+delay 120
+command 0x29 # display on

@@ -1,0 +1,25 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-xcover4lte
+pkgdesc="Samsung Galaxy Xcover 4"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-xcover4lte mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+b6f00b65aa326d1dfaee19e7713abec78a1457585816f64f2a11821a2a8703afd946a4ed8d40ffe57f89a50fc15a9c1263e7c9ac33238ca2b8340ce628d156d7  deviceinfo
+"

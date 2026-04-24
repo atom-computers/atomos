@@ -1,0 +1,50 @@
+diff --git a/drivers/clk/qcom/mdss/mdss_pll_trace.h b/drivers/clk/qcom/mdss/mdss_pll_trace.h
+index cd4fda6c7..1c7225a46 100644
+--- a/drivers/clk/qcom/mdss/mdss_pll_trace.h
++++ b/drivers/clk/qcom/mdss/mdss_pll_trace.h
+@@ -112,5 +112,5 @@ TRACE_EVENT(mdss_pll_trace_counter,
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/clk/qcom/mdss
+ #include <trace/define_trace.h>
+diff --git a/drivers/gpu/msm/adreno_trace.h b/drivers/gpu/msm/adreno_trace.h
+index bf5e79883..bf72623ca 100644
+--- a/drivers/gpu/msm/adreno_trace.h
++++ b/drivers/gpu/msm/adreno_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE adreno_trace
+ 
+diff --git a/drivers/gpu/msm/kgsl_events.c b/drivers/gpu/msm/kgsl_events.c
+index 47582daf8..097e3dbaa 100644
+--- a/drivers/gpu/msm/kgsl_events.c
++++ b/drivers/gpu/msm/kgsl_events.c
+@@ -15,7 +15,7 @@
+ #include <linux/list.h>
+ #include <linux/workqueue.h>
+ #include <linux/debugfs.h>
+-#include <kgsl_device.h>
++#include "kgsl_device.h"
+ 
+ #include "kgsl_debugfs.h"
+ #include "kgsl_trace.h"
+diff --git a/drivers/gpu/msm/kgsl_trace.h b/drivers/gpu/msm/kgsl_trace.h
+index b40a16122..3be17d574 100644
+--- a/drivers/gpu/msm/kgsl_trace.h
++++ b/drivers/gpu/msm/kgsl_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE kgsl_trace
+ 

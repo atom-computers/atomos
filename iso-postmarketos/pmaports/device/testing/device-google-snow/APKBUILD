@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=device-google-snow
+pkgdesc="Samsung Chromebook"
+pkgver=11
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-postmarketos-exynos5
+	postmarketos-base
+	postmarketos-cros-common
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	ucm/HiFi.conf
+	ucm/Snow-I2S-MAX98090.conf
+	sway/foot/foot.ini
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-sway
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Alsa UCM configs
+	install -Dm644 "$srcdir"/Snow-I2S-MAX98090.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Snow-I2S-MAX980/Snow-I2S-MAX98090.conf
+	install -Dm644 "$srcdir"/HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Snow-I2S-MAX980/HiFi.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT and MFC firmware"
+	depends="linux-firmware-mrvl linux-firmware-s5p-mfc"
+	mkdir "$subpkgdir"
+}
+
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sway"
+	install -Dm644 "$srcdir"/foot.ini \
+		"$subpkgdir"/etc/skel/.config/foot/foot.ini
+}
+
+sha512sums="
+34354aa7561009dc859d4c59b60139b31c5157c4a063080ee903fe8553e3be0878e5c25c63ec2908df8e44a75e1014c783c66fe2a054058af8c717485f29b726  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+e12a68f919182cb4e6812a5dd13fce8dc15266d2ac16aa5f0a31034f111cb403c020ebaaa4d94309f4baf2f71379327c57c08029e27c506d152695e9a2b04b2b  modules-initfs
+8a8f593694528a9323ef4a0aff7e9c6ad45608957eb042d425663f682885c2f95eb01db4fe87b7c43a90de48f3e5f8b10cab4b13c547b5b0d31b924fcb083cad  HiFi.conf
+b163535da7626e3866faa45768c3888f69f90c98d694650e16a7594a03eb91391e166931eb487901217d983bb2dc4e49b99a2a5531740a7d87f8f4f5c3d0cf59  Snow-I2S-MAX98090.conf
+61c56cf84cf88371a2238845db1f8283c7eb7b417dec8c51d71e51fb96899bb026c0ee22dc94a43537a56477fb0db59de960949add4b0ce90552a1286e6afe69  foot.ini
+"

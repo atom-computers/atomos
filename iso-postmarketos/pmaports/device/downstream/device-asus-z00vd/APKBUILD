@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-asus-z00vd
+pkgdesc="ASUS Zenfone Go"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-asus-z00vd mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+367e2957ba54f26aee7f52d88e36c1bb8a05284c7dbd17688aa7e691c61c5bd822c37855425ace3112be7b72d733ea1eb94db6d26ad5f8823ad9a1f9fe00b240  deviceinfo
+0d61d841c6f2aaff3a807a10d1df7000be0aa4de263e49e944b8304950b48727966e40f39dcc5418001b3a4c71205d5f2f919334d4fcb609130b478e7b6b44d0  kernel-cmdline.conf
+"

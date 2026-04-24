@@ -1,0 +1,51 @@
+# Archived: Kernel does not build anymore
+# Kernel config based on: arch/arm/configs/jenad_defconfig
+
+pkgname=linux-samsung-s6500d
+pkgver=3.4.105
+pkgrel=7
+pkgdesc="Samsung Galaxy Mini 2 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="samsung-s6500d"
+url="https://github.com/Shadowofleaf/android_kernel_samsung_msm7x27a/"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_samsung_msm7x27a"
+_commit="d70eebdb55d7011c82ce64fe5eae2fdcbfd4e425"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Shadowofleaf/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="a46d52f79597fc3a8ded036fbdcc4cdbb96ba1582fb1349002183c1e23598da10da2faede1a251f55705ae6e8e54232797866f4c03acc2b1ace1664b315dd216  linux-samsung-s6500d-d70eebdb55d7011c82ce64fe5eae2fdcbfd4e425.tar.gz
+570a96234fa3fd53f471883df3af4349d2f1ba5d3bb2b97f6aaa99f2f4d65871c31c8f45a15b7372f1f39974b3a87efadaf62b7b9086bd95c379bd468cd709ad  config-samsung-s6500d.armhf
+c40eaa11547f5bc2b1ff965506bdfe3015ff16e4b5ad9ccb3b8134ceafd1d32407c4ef2b213e02e036ce1e9bdcbfe768dff7d4b054bec77705a176c1f783b6f5  00_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch"

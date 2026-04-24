@@ -1,0 +1,32 @@
+diff --git a/drivers/huawei_platform/connectivity/hisi/hisiwifi/Makefile b/drivers/huawei_platform/connectivity/hisi/hisiwifi/Makefile
+index c4961e6f..e0301abb 100755
+--- a/drivers/huawei_platform/connectivity/hisi/hisiwifi/Makefile
++++ b/drivers/huawei_platform/connectivity/hisi/hisiwifi/Makefile
+@@ -1,7 +1,5 @@
+ #Makefile for Hisilicon Wi-Fi Chip Hi1101
+ 
+-CFLAGS =
+-
+ EXTRA_CFLAGS = $(CFLAGS)  \
+            -DARP_OFFLOAD_SUPPORT \
+ 	       -D__ROAM__ \
+@@ -15,7 +13,6 @@ EXTRA_CFLAGS += -DWMM_OPT_FOR_AUTH
+ EXTRA_CFLAGS += -DHCC_DEBUG
+ 
+ #change wanrings to error,must warning clean!
+-EXTRA_CFLAGS += -Werror
+ 
+ #android4.2 cross-compile support module must add the follow options!
+ #EXTRA_CFLAGS += -DMODULE -fno-pic
+diff --git a/drivers/huawei_platform/connectivity/hisi/hw-pm/Makefile b/drivers/huawei_platform/connectivity/hisi/hw-pm/Makefile
+index c646ce24..5bb9f7d8 100755
+--- a/drivers/huawei_platform/connectivity/hisi/hw-pm/Makefile
++++ b/drivers/huawei_platform/connectivity/hisi/hw-pm/Makefile
+@@ -1,7 +1,5 @@
+ #Makefile for Hisilicon Wi-Fi Chip Hi1101
+ 
+-CFLAGS =
+-
+ EXTRA_CFLAGS = $(CFLAGS)  \
+ 		   -DHi110X_VERSION_ROM \
+ 

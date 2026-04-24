@@ -1,0 +1,92 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-pine64-dontbeevil
+pkgver=2
+pkgrel=1
+pkgdesc="PINE64 PinePhone Don't be evil devkit"
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+subpackages="
+	$pkgname-kernel-longts:kernel_longts
+	$pkgname-kernel-shortts:kernel_shortts
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-openrc
+	$pkgname-sensorfw
+	$pkgname-x11
+"
+depends="postmarketos-base u-boot-sunxi u-boot-tools ofono"
+makedepends="
+	devicepkg-dev
+	u-boot-tools
+"
+source="
+	deviceinfo
+	modules-initfs
+	sensorfw/90-dontbeevil.conf
+	uboot-script.cmd
+	xorg.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n postmarketos -d "$srcdir"/uboot-script.cmd "$srcdir"/boot.scr
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	depends="
+		libinput
+		xf86-input-libinput
+		xf86-video-fbdev"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-framebuffer.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi and Bluetooth firmware"
+	depends="linux-firmware-rtlwifi linux-firmware-rtl_bt"
+	mkdir "$subpkgdir"
+}
+
+kernel_shortts() {
+	pkgdesc="Short touch cable version"
+	depends="linux-postmarketos-allwinner"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_longts() {
+	pkgdesc="Long touch cable version"
+	depends="linux-postmarketos-allwinner"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	mkdir -p "$subpkgdir"
+}
+
+sensorfw() {
+	install_if="$pkgname=$pkgver-r$pkgrel sensorfw"
+
+	install -Dm644 -t "$subpkgdir"/etc/sensorfw/sensord.conf.d \
+		"$srcdir"/90-dontbeevil.conf
+}
+
+
+sha512sums="
+c84b1e4cb9a2045c6f172e90f9596ac50ce7eda3f5a4055beef87744e1e57d49d68b435fe481ea5c939cf991dbf6d697026d484f648e46d45b129d898c9192fc  deviceinfo
+c240c7ff7bd0ec0561eacc1927e678b3955086c951548633e1ee5284283e005f0c7fb4c4472f40529cba552cce076294fdfae97f35a338592b3a6961da4a7a3f  modules-initfs
+967e3a43c7e91ed37fc932a7c580cd168ca11d8ec7f60ff60ece7f286e5144f27faead95162fa7d571a2317ed0da970fd86f5bc9ed0235a25c0be9182d42d64d  90-dontbeevil.conf
+38a4819c128e739589d39b1b13c834f17ffdbbabfe7babe0b6aeead516b07befb09a344cdec233337e25497d2b18e23792955d33a99561861020149e8e153555  uboot-script.cmd
+f86ef35730b89bcc8160c08db7a7fcd0970adf60c0b77af68bac397de49c0d1783e6b8db1762380c9bf874aff2d030c6f44ecb75c803d69e79ede11376409369  xorg.conf
+"

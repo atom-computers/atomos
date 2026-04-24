@@ -1,0 +1,28 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Beelink gt1 (Ultimate)"
+deviceinfo_manufacturer="Beelink"
+deviceinfo_codename="beelink-gt1"
+deviceinfo_dtb="amlogic/meson-gxm-gt1-ultimate"
+deviceinfo_year="2016"
+deviceinfo_arch="aarch64"
+deviceinfo_partition_type="msdos"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="desktop"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1920"
+deviceinfo_screen_height="1080"
+
+# Bootloader related
+deviceinfo_sd_embed_firmware_step_size="512"
+deviceinfo_sd_embed_firmware="u-boot/beelink-gt1/u-boot.bin.sd-stripped.bin:1"
+deviceinfo_boot_part_start="4096"
+deviceinfo_generate_extlinux_config="true"
+# Close to mainline kernel options
+
+# Alpine kernel options
+

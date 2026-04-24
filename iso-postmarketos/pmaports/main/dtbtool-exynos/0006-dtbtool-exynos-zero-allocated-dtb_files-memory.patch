@@ -1,0 +1,32 @@
+From 57cee5fd7352f5db17eab51e7b26054327b7126c Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 30 Jun 2025 16:28:00 +0200
+Subject: [PATCH] dtbtool-exynos: zero allocated dtb_files memory
+
+To check if an element of dtb_files is already allocated, we later
+use:
+
+if (dtb_files[i]) { ... }
+
+If memory has not been zero'ed then this check might or might not
+succeed, as we have no idea what garbage values are inside the memory.
+---
+ dtbtool-exynos.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/dtbtool-exynos.c b/dtbtool-exynos.c
+index 9bc10e1ce94b..806b00f8f62e 100644
+--- a/dtbtool-exynos.c
++++ b/dtbtool-exynos.c
+@@ -357,6 +357,8 @@ int main(int argc, char **argv)
+ 	dtb_files = malloc(sizeof(char*) * DTB_MAX);
+ 	if (!dtb_files)
+ 		error("failed to allocate memory");
++	else
++		memset(dtb_files, 0, sizeof(char*) * DTB_MAX);
+ 
+ 	while (argc > 0) {
+ 		argc--;
+-- 
+2.50.0
+

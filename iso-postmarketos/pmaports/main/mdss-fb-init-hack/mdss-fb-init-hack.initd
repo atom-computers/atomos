@@ -1,0 +1,26 @@
+#!/sbin/openrc-run
+
+cmd=/sbin/mdss-fb-hack
+pid=/run/mdss-fb-hack.pid
+
+depend() {
+        after bootmisc
+}
+
+start() {
+        ebegin "Starting mdss-fb hack"
+        start-stop-daemon --start --exec $cmd --background \
+                --pidfile $pid --make-pidfile
+        eend $?
+}
+
+stop() {
+        ebegin "Stopping mdss-fb hack"
+        start-stop-daemon --stop --exec $cmd
+        eend $?
+}
+
+restart() {
+        stop
+        start
+}

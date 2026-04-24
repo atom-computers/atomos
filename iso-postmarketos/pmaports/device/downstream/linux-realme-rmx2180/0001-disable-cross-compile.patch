@@ -1,0 +1,22 @@
+From 3eb87458240e769b9c774b91ef45a88f12ade8b2 Mon Sep 17 00:00:00 2001
+From: faveoled <faveoled@yandex.com>
+Date: Thu, 8 Jan 2026 12:20:00 +0000
+Subject: [PATCH] Disable cross compile
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index c64123bb1..6bdbde288 100755
+--- a/Makefile
++++ b/Makefile
+@@ -255,7 +255,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ ARCH		?= $(SUBARCH)
+-CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
++CROSS_COMPILE	?=
+ 
+ 
+ # Architecture as present in compile.h

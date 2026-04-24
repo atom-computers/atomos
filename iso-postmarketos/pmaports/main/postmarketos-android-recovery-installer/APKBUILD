@@ -1,0 +1,34 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-android-recovery-installer
+pkgver=1.0.7
+pkgrel=1
+pkgdesc="TWRP compatible postmarketOS installer script"
+arch="all"
+url="https://postmarketos.org"
+license="GPL-3.0-or-later"
+# multipath-tools: kpartx
+depends="busybox-extras lddtree cryptsetup multipath-tools device-mapper parted util-linux zip e2fsprogs tar"
+source="https://gitlab.com/postmarketos/postmarketos-android-recovery-installer/-/archive/$pkgver/postmarketos-android-recovery-installer-$pkgver.tar.gz"
+options="!check" # No tests
+
+build() {
+	gcc -static -o disable-warning disable-warning.c
+}
+
+package() {
+	install -Dm755 build_zip.sh \
+		"$pkgdir"/usr/bin/build-recovery-zip
+	install -Dm644 update-binary \
+		"$pkgdir"/var/lib/postmarketos-android-recovery-installer/META-INF/com/google/android/update-binary
+	install -Dm755 pmos_chroot \
+		"$pkgdir"/var/lib/postmarketos-android-recovery-installer/pmos_chroot
+	install -Dm755 disable-warning \
+		"$pkgdir"/var/lib/postmarketos-android-recovery-installer/disable-warning
+	for file in pmos_install pmos_install_functions pmos_setpw pmos_install_part; do
+		install -Dm755 $file \
+			"$pkgdir"/var/lib/postmarketos-android-recovery-installer/chroot/bin/$file
+	done
+}
+sha512sums="
+22481d26d78388eb67278a1ddd699abc3ca1c5df3c9f1d386d3fb95076e50d9209c8388d5700a6da5e476ac96023d55624c27b427767ee65775c24369dc11313  postmarketos-android-recovery-installer-1.0.7.tar.gz
+"

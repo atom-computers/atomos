@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/msm8939_defconfig
+maintainer="Newbyte <newbyte@disroot.org>"
+_flavor="postmarketos-qcom-msm8939"
+pkgname=linux-$_flavor
+pkgver=5.15_git20220114
+pkgrel=2
+pkgdesc="Mainline kernel fork for Qualcomm MSM8939 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/msm8939-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	"
+provides="linux-huawei-kiwi=$pkgver-r$pkgrel" # for backwards compatibility
+replaces="linux-huawei-kiwi"
+
+_repository="linux"
+_tag="5.15-v1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_tag.tar.gz::$url/-/archive/$_tag/linux-$_tag.tar.gz
+	36dfdf11af49d3c009c711fb16f5c6e7a274505d.patch::https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/patch/?id=36dfdf11af49d3c009c711fb16f5c6e7a274505d
+	6eea4ace62fa6414432692ee44f0c0a3d541d97a.patch::https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/patch/?id=6eea4ace62fa6414432692ee44f0c0a3d541d97a
+	$_config
+"
+builddir="$srcdir/$_repository-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+sha512sums="
+9bd3481d6c9ecc213e9fa37b88366130b8b74b2eaa8625294031ee883232e5e20b3b47053dad8642eeb8fb1bad79cb70232ba6be46476fb2b81ee1576890b5a8  linux-postmarketos-qcom-msm8939-5.15-v1.tar.gz
+c2f8cd37d3b25eafde1fbb1ceecec6bcf49b76e8e1a3dce05686acf05f632cec6d7a49ae4ccb56df75cd65b2f741a44d52d5e8890fd977def1df8c06fa42ca27  36dfdf11af49d3c009c711fb16f5c6e7a274505d.patch
+e542ad376c7c6cffbae640c04eae57240b2f60616c3ae19f0e4e9f38d8eabbe297c7caa5fc1b5f3f55291f71f727974f7f0c09c476a4869ccf6f483eb17871b2  6eea4ace62fa6414432692ee44f0c0a3d541d97a.patch
+9ee8133743394f48a91d2871c67816d5f2968dc4b8b3a4d238a5d56e86afa74151b23b02fdf88845eb33da913c97db4da1d547f30d835ae5556e54af14d58cf3  config-postmarketos-qcom-msm8939.aarch64
+"

@@ -1,0 +1,78 @@
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "common" {
+	key <LFSH> {
+		type[Group1] = "ONE_LEVEL",
+		symbols[Group1] = [	Shift_L	]
+	};
+	modifier_map Shift { Shift_L };
+	key <LWIN>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	Control_L	] }; // Now defined as KEY_LEFTCTRL
+	modifier_map Control { Control_L };
+
+	// Currently defined as KEY_FN
+	include "level3(ralt_switch)"
+
+	key.type = "THREE_LEVEL";
+
+	// 1. row
+	key <AD01>	{ [	q,		Q,	1	] };
+	key <AD02>	{ [	w,		W,	2	] };
+	key <AD03>	{ [	e,		E,	3	] };
+	key <AD04>	{ [	r,		R,	4	] };
+	key <AD05>	{ [	t,		T,	5	] };
+	key <AD06>	{ [	y,		Y,	6	] };
+	key <AD07>	{ [	u,		U,	7	] };
+	key <AD08>	{ [	i,		I,	8	] };
+	key <AD09>	{ [	o,		O,	9	] };
+	key <AD10>	{ [	p,		P,	0	] };
+	key <BKSP>	{ [	BackSpace,	Delete,	BackSpace	] };
+
+	// 2. row
+	key <AC01>	{ [	a,		A,	exclam	] };
+	key <AC02>	{ [	s,		S,	at	] };
+	key <AC03>	{ [	d,		D,	numbersign	] };
+	key <AC04>	{ [	f,		F,	dollar	] };
+	key <AC05>	{ [	g,		G,	percent	] };
+	key <AC06>	{ [	h,		H,	ampersand	] };
+	key <AC07>	{ [	j,		J,	asterisk	] };
+	key <AC08>	{ [	k,		K,	parenleft	] };
+	key <AC09>	{ [	l,		L,	parenright	] };
+	key <AC09>	{ [	l,		L,	parenright	] };
+	key <UP>	{ [	Up,		Up,	Prior	] };
+	key <KPEN>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	KP_Enter	] };
+
+	// 3. row
+	// Shift is defined as modifier above
+	key <AB01>	{ [	z,		Z,	plus	] };
+	key <AB02>	{ [	x,		X,	minus	] };
+	key <AB03>	{ [	c,		C,	underscore	] };
+	key <AB04>	{ [	v,		V,	semicolon	] };
+	key <AB05>	{ [	b,		B,	colon	] };
+	key <AB06>	{ [	n,		N,	apostrophe	] };
+	key <AB07>	{ [	m,		M,	quotedbl	] };
+	key <LEFT>	{ [	Left,		Left,	Home	] };
+	key <RTRN>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	Return	] }; // KEY_OK in kernel for now, unable to catch this here
+	key <RGHT>	{ [	Right,		Right,	End	] };
+
+	// 4. row
+	// Alt is defined as modifier above
+	// Ctrl is defined as modifier above
+	key <RWIN>	{ [	Tab,	Tab,	XF86ApplicationRight	] }; // Now defined as KEY_TAB
+	key <AB08>	{ [	comma,		less,	equal	] };
+	key <SPCE>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	space	] };
+	key <AB09>	{ [	period,		greater,	backslash	] };
+	key <I222>	{ [	question,	bar,	slash	] };
+	key <DOWN>	{ [	Down,	Down,	Next	] };
+	key <I158>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	XF86WWW	] };
+	key <SPCE>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	space	] };
+
+	// 4 keys that are placed on sides of the keyboard and at the bottom of the screen
+	key <I147>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	XF86MenuKB	] };
+	key <I180>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	XF86HomePage	] }; // Now defined as KEY_HOME, needs to be KEY_HOMEPAGE
+	key <I225>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	XF86Search	] };
+	key <I166>	{ [	XF86Back,	XF86Back,	Escape	] };
+
+	// Other 3 buttons on the sides of the phone
+	key <VOL->	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	XF86AudioLowerVolume	] };
+	key <VOL+>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	XF86AudioRaiseVolume	] };
+	key <POWR>	{ type[Group1] = "ONE_LEVEL", symbols[Group1] = [	XF86PowerOff	] };
+};

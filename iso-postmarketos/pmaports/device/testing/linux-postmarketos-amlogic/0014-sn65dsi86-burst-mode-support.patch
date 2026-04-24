@@ -1,0 +1,22 @@
+From 6d6b45ed6cdf1ed5c2efcd05019cea4a1df0a962 Mon Sep 17 00:00:00 2001
+From: "Lukas F. Hartmann" <lukas@mntre.com>
+Date: Sun, 9 Jul 2023 23:02:51 +0200
+Subject: [PATCH 16/21] sn65dsi86-burst-mode-support
+
+---
+ drivers/gpu/drm/bridge/ti-sn65dsi86.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/gpu/drm/bridge/ti-sn65dsi86.c
++++ b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+@@ -722,6 +722,10 @@ static int ti_sn_attach_host(struct auxi
+ 	dsi->lanes = 4;
+ 	dsi->format = MIPI_DSI_FMT_RGB888;
+ 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO;
++	if (of_property_read_bool(pdata->dev->of_node, "burst-mode")) {
++		dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_BURST;
++		printk(KERN_DEBUG "ti_sn65dsi86: burst mode enabled\n");
++	};
+ 
+ 	/* For i.MX8MP / Samsung DSIM Host, don't guess the HS rate, but read it from DTS */
+ 	if (of_device_is_compatible(pdata->host_node, "fsl,imx8mp-mipi-dsim")) {

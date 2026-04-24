@@ -1,0 +1,34 @@
+#!/sbin/openrc-run
+
+name=$RC_SVCNAME
+description="Sets up rockchip_ebc ebc.wbf waveform from waveform partition"
+error_log=/var/log/pinenote/$RC_SVCNAME.log
+
+start() {
+        # Check for the file existence
+        if [ -s "/lib/firmware/rockchip/ebc.wbf" ] && [ -s "/lib/firmware/rockchip/custom_wf.bin" ]; then
+                einfo "No need to init waveform"
+                unset -f start
+                return 0
+        fi
+
+        ebegin "Extracting waveform"
+        cd /tmp
+        /usr/libexec/pinenote/waveform_extract.sh  2>&1 | tee -a "$error_log"
+        /usr/libexec/pinenote/wbf_to_custom.py /lib/firmware/rockchip/ebc.wbf  2>&1 | tee -a "$error_log"
+        mv custom_wf.bin /lib/firmware/rockchip/.
+
+        einfo "Regenerating initramfs"
+        /usr/sbin/mkinitfs  2>&1 | tee -a "$error_log"
+
+        einfo "Reloading rockchip_ebc"
+        modprobe -r rockchip_ebc
+        modprobe rockchip_ebc
+        eend $?
+}
+
+start_pre() {
+        checkpath --directory --owner root:root --mode 0775 \
+                /lib/firmware/rockchip \
+                /var/log/pinenote
+}

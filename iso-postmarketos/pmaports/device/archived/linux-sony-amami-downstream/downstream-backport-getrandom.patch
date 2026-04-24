@@ -1,0 +1,127 @@
+diff --git a/arch/arm/include/asm/unistd.h b/arch/arm/include/asm/unistd.h
+index 43876245..32640c43 100644
+--- a/arch/arm/include/asm/unistd.h
++++ b/arch/arm/include/asm/unistd.h
+@@ -15,7 +15,17 @@
+ 
+ #include <uapi/asm/unistd.h>
+ 
+-#define __NR_syscalls  (384)
++/*
++ * This may need to be greater than __NR_last_syscall+1 in order to
++ * account for the padding in the syscall table
++ */
++#define __NR_syscalls  (388)
++
++/*
++ * *NOTE*: This is a ghost syscall private to the kernel.  Only the
++ * __kuser_cmpxchg code in entry-armv.S should be aware of its
++ * existence.  Don't ever use this from user code.
++ */
+ #define __ARM_NR_cmpxchg		(__ARM_NR_BASE+0x00fff0)
+ 
+ #define __ARCH_WANT_STAT64
+diff --git a/arch/arm/include/uapi/asm/unistd.h b/arch/arm/include/uapi/asm/unistd.h
+index 86f5789d..ea1f4a74 100644
+--- a/arch/arm/include/uapi/asm/unistd.h
++++ b/arch/arm/include/uapi/asm/unistd.h
+@@ -408,15 +408,9 @@
+ #define __NR_finit_module		(__NR_SYSCALL_BASE+379)
+ #define __NR_sched_setattr		(__NR_SYSCALL_BASE+380)
+ #define __NR_sched_getattr		(__NR_SYSCALL_BASE+381)
+-/* Reserve for later
+ #define __NR_renameat2			(__NR_SYSCALL_BASE+382)
+-*/
+ #define __NR_seccomp			(__NR_SYSCALL_BASE+383)
+-
+-/*
+- * This may need to be greater than __NR_last_syscall+1 in order to
+- * account for the padding in the syscall table
+- */
++#define __NR_getrandom			(__NR_SYSCALL_BASE+384)
+ 
+ /*
+  * The following SWIs are ARM private.
+diff --git a/arch/arm/kernel/calls.S b/arch/arm/kernel/calls.S
+index b75c9688..7b866d48 100644
+--- a/arch/arm/kernel/calls.S
++++ b/arch/arm/kernel/calls.S
+@@ -391,9 +391,9 @@
+ 		CALL(sys_finit_module)
+ /* 380 */	CALL(sys_sched_setattr)
+ 		CALL(sys_sched_getattr)
+-		CALL(sys_ni_syscall)		/* reserved sys_renameat2     */
++		CALL(sys_ni_syscall)
+ 		CALL(sys_seccomp)
+-
++		CALL(sys_getrandom)
+ #ifndef syscalls_counted
+ .equ syscalls_padding, ((NR_syscalls + 3) & ~3) - NR_syscalls
+ #define syscalls_counted
+diff --git a/arch/x86/syscalls/syscall_32.tbl b/arch/x86/syscalls/syscall_32.tbl
+index 531bb142..fc853fb1 100644
+--- a/arch/x86/syscalls/syscall_32.tbl
++++ b/arch/x86/syscalls/syscall_32.tbl
+@@ -361,3 +361,4 @@
+ 352	i386	sched_getattr		sys_sched_getattr
+ # 353	i386	renameat2		sys_renameat2
+ 354	i386	seccomp			sys_seccomp
++355	i386	getrandom		sys_getrandom
+diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
+index 1c7aebc4..c16897e6 100644
+--- a/arch/x86/syscalls/syscall_64.tbl
++++ b/arch/x86/syscalls/syscall_64.tbl
+@@ -324,6 +324,7 @@
+ 315	common	sched_getattr		sys_sched_getattr
+ # 316	common	renameat2		sys_renameat2
+ 317	common	seccomp			sys_seccomp
++318	common	getrandom		sys_getrandom
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/drivers/char/random.c b/drivers/char/random.c
+index b020ebf4..2b58738d 100644
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -681,7 +681,7 @@ retry:
+ 			r->entropy_total = 0;
+ 			if (r == &nonblocking_pool) {
+ 				prandom_reseed_late();
+-				wake_up_interruptible(&urandom_init_wait);
++				wake_up_all(&urandom_init_wait);
+ 				pr_notice("random: %s pool is initialized\n",
+ 					  r->name);
+ 			}
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index a981ef05..46e2889d 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -759,6 +759,9 @@ asmlinkage long sys_linkat(int olddfd, const char __user *oldname,
+ 			   int newdfd, const char __user *newname, int flags);
+ asmlinkage long sys_renameat(int olddfd, const char __user * oldname,
+ 			     int newdfd, const char __user * newname);
++asmlinkage long sys_renameat2(int olddfd, const char __user *oldname,
++			      int newdfd, const char __user *newname,
++			      unsigned int flags);
+ asmlinkage long sys_futimesat(int dfd, const char __user *filename,
+ 			      struct timeval __user *utimes);
+ asmlinkage long sys_faccessat(int dfd, const char __user *filename, int mode);
+diff --git a/include/uapi/linux/random.h b/include/uapi/linux/random.h
+index 8ae57842..d5066b6f 100644
+--- a/include/uapi/linux/random.h
++++ b/include/uapi/linux/random.h
+@@ -42,6 +42,14 @@ struct rand_pool_info {
+ 
+ /* Exported functions */
+ 
++/*
++ * Flags for getrandom(2)
++ *
++ * GRND_NONBLOCK	Don't block and return EAGAIN instead
++ * GRND_RANDOM		Use the /dev/random pool instead of /dev/urandom
++ */
++#define GRND_NONBLOCK	0x0001
++#define GRND_RANDOM	0x0002
+ 
+ /*
+  * Flags for getrandom(2)

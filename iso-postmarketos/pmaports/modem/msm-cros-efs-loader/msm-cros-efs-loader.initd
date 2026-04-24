@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+
+name="EFS loader"
+description="Load EFS on Chrome OS devices"
+
+depend() {
+	before rmtfs
+}
+
+start() {
+	ebegin "Starting msm-cros-efs-loader"
+	/usr/sbin/msm-cros-efs-loader
+	eend $?
+}

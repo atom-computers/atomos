@@ -1,0 +1,27 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-tulip-downstream
+pkgdesc="Sony Xperia M4 Aqua"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-tulip mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+8beb8a48a081649037472e29849cd9e7977b82ef60e80189df4e4c590bc85679e4b8f62ca70dff616896d911de20605ee3358d6613a4238a2c4183e3ad9659b2  deviceinfo
+90bd491c0f60806d9d7ebecb996de9067707d9a32d4ec2ce4f9e17330a677d03c43d4d989712e5dea7888f5301a959e7344ef079b644bad350c0fbbbe6c61d5d  kernel-cmdline.conf
+"

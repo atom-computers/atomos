@@ -1,0 +1,73 @@
+From 045a0ead25e17b86ef97379534403da7d64ac1a1 Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Sat, 17 May 2025 13:50:52 +0200
+Subject: [PATCH 4/5] [configfs] Register NCM gadget for USB networking
+
+USB networking is also possible via the NCM gadget instead of
+RNDIS which is considered insecure [1], but remains supported
+in usb-moded.
+
+[1] https://lore.kernel.org/lkml/20221123124620.1387499-1-gregkh@linuxfoundation.org/t/
+---
+ src/usb_moded-configfs.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/usb_moded-configfs.c b/src/usb_moded-configfs.c
+index abfdd54..bcd1755 100644
+--- a/src/usb_moded-configfs.c
++++ b/src/usb_moded-configfs.c
+@@ -54,6 +54,7 @@
+ 
+ #define DEFAULT_FUNCTION_MASS_STORAGE    "mass_storage.usb0"
+ #define DEFAULT_FUNCTION_RNDIS           "rndis_bam.rndis"
++#define DEFAULT_FUNCTION_NCM             "ncm.usb0"
+ #define DEFAULT_FUNCTION_MTP             "ffs.mtp"
+ 
+ #define DEFAULT_RNDIS_CTRL_WCEIS         "wceis"
+@@ -126,6 +127,7 @@ static gchar *GADGET_CTRL_SERIAL       = 0;
+ 
+ static gchar *FUNCTION_MASS_STORAGE    = 0;
+ static gchar *FUNCTION_RNDIS           = 0;
++static gchar *FUNCTION_NCM             = 0;
+ static gchar *FUNCTION_MTP             = 0;
+ 
+ static gchar *RNDIS_CTRL_WCEIS         = 0;
+@@ -236,6 +238,9 @@ static void configfs_read_configuration(void)
+         configfs_get_conf("function_rndis",
+                           DEFAULT_FUNCTION_RNDIS);
+ 
++    FUNCTION_NCM =
++        configfs_get_conf("function_ncm",
++                          DEFAULT_FUNCTION_NCM);
+     FUNCTION_MTP =
+         configfs_get_conf("function_mtp",
+                           DEFAULT_FUNCTION_MTP);
+@@ -806,6 +811,7 @@ configfs_init(void)
+     configfs_register_function(FUNCTION_MTP);
+ 
+     /* Prep: developer_mode */
++    configfs_register_function(FUNCTION_NCM);
+     configfs_register_function(FUNCTION_RNDIS);
+     if( (text = mac_read_mac()) ) {
+         configfs_write_file(RNDIS_CTRL_ETHADDR, text);
+@@ -848,6 +854,8 @@ configfs_quit(void)
+         FUNCTION_MASS_STORAGE = 0;
+     g_free(FUNCTION_RNDIS),
+         FUNCTION_RNDIS = 0;
++    g_free(FUNCTION_NCM),
++        FUNCTION_NCM = 0;
+     g_free(FUNCTION_MTP),
+         FUNCTION_MTP = 0;
+ 
+@@ -955,6 +963,8 @@ configfs_map_function(const char *func)
+         func = FUNCTION_MASS_STORAGE;
+     else if( !strcmp(func, "rndis") )
+         func = FUNCTION_RNDIS;
++    else if( !strcmp(func, "ncm") )
++        func = FUNCTION_NCM;
+     else if( !strcmp(func, "mtp") )
+         func = FUNCTION_MTP;
+     else if( !strcmp(func, "ffs") ) // existing config files ...
+-- 
+2.49.0
+

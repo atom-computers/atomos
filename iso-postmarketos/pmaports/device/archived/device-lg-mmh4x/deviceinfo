@@ -1,0 +1,28 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="LG K40 (AT&T)"
+deviceinfo_manufacturer="LG"
+deviceinfo_codename="lg-mmh4x"
+deviceinfo_year="2019"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1440"
+
+# Bootloader related
+deviceinfo_flash_method="mtkclient"
+deviceinfo_flash_mtkclient_partition_kernel="boot_a"
+deviceinfo_flash_mtkclient_partition_rootfs="userdata"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_flash_offset_base="0x40000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x11b00000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x07880000"

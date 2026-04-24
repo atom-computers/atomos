@@ -1,0 +1,27 @@
+From c042a1c5c29acfd5819b28b770ffb1a5ddd9e456 Mon Sep 17 00:00:00 2001
+From: ryang <decatf@gmail.com>
+Date: Sat, 26 May 2018 13:14:21 -0400
+Subject: [PATCH] HACK: Fix wm8994 Kconfig
+
+(cherry picked from commit 2bca457e1d53d6312afd21c902f55f768ef75a2e)
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ sound/soc/codecs/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
+index e730d47ac85b..81f6174ab405 100644
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -1331,7 +1331,7 @@ config SND_SOC_WM8993
+ 	tristate
+ 
+ config SND_SOC_WM8994
+-	tristate
++	tristate "Wolfson Microelectronics WM8994 codec driver"
+ 
+ config SND_SOC_WM8995
+ 	tristate
+-- 
+2.22.0
+

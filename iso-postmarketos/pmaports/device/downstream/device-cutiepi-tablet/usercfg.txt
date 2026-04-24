@@ -1,0 +1,51 @@
+# to take advantage of your high speed sd card
+dtparam=sd_overclock=100
+
+# have a properly sized image
+disable_overscan=1
+
+# for sound over HDMI
+#hdmi_drive=2
+
+# rotate the HDMI display
+# 0 => no rotation
+# 1 => 90 degrees clockwise
+# 2 => 180 degrees clockwise
+# 3 => 270 degrees clockwise
+#display_hdmi_rotate=0
+
+# Uncomment some or all of these to enable the optional hardware interfaces
+#dtparam=i2c_arm=on
+#dtparam=i2s=on
+#dtparam=spi=on
+
+# Enable audio (loads snd_bcm2835)
+#?dtparam=audio=on
+
+# custom CVT mode for HDMI
+# see https://www.raspberrypi.org/documentation/configuration/config-txt/video.md
+#hdmi_group=2
+#hdmi_mode=87
+#hdmi_cvt 800 480 60 6 0 0 0
+
+# Automatically enable Bluetooth without having to use btattach
+# Note that the Pi's Bluetooth interface is connected via hardware UART;
+# if you intend to use it for other purposes (for example, serial debugging)
+# comment out the line below.
+#?dtparam=krnbt=on
+
+[cm4]
+dtoverlay=dwc2,dr_mode=host
+otg_mode=1
+avoid_warnings=2
+dtparam=i2c_arm=on
+dtoverlay=cutiepi-panel
+enable_uart=1
+dtoverlay=uart1
+dtoverlay=i2c5,pins_10_11
+dtoverlay=mpu6050-i2c5,interrupt=27
+
+
+dtoverlay=ov5647
+#?start_x=1
+gpu_mem=256

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Run default boot animation again during shutdown
+echo 1 > /sys/bus/i2c/devices/0-003f/boot_animation

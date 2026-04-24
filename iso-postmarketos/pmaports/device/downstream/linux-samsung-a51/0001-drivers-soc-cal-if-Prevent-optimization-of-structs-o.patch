@@ -1,0 +1,89 @@
+From ddf630c03f250c23478afe638a62777a564f674c Mon Sep 17 00:00:00 2001
+From: John Vincent Corcega <kamusta@tenseventyseven.xyz>
+Date: Mon, 2 Dec 2024 17:46:42 +0000
+Subject: [PATCH] drivers: soc: cal-if: Prevent optimization of structs on
+ fvmap_copy_from_sram
+
+Newer versions of Clang tend to apply heavier optimizations than GCC, especially if -mcpu is set. Because we are applying optimizations to the LITTLE core (see b92e1e70898f515646142736df8d72c43e97e251) kernel panics during boot, citing inability to access memory regions on fvmap_init.
+
+<6>[    0.664609]  [0:      swapper/0:    1] fvmap_init:fvmap initialize 0000000000000000
+<0>[    0.664625]  [0:      swapper/0:    1] Unable to handle kernel paging request at virtual address ffffff800b2f2402
+<2>[    0.664640]  [0:      swapper/0:    1] sec_debug_set_extra_info_fault = KERN / 0xffffff800b2f2402
+<6>[    0.664657]  [0:      swapper/0:    1] search_item_by_key: (FTYPE) extra_info is not ready
+<2>[    0.664666]  [0:      swapper/0:    1] set_item_val: fail to find FTYPE
+<6>[    0.664680]  [0:      swapper/0:    1] search_item_by_key: (FAULT) extra_info is not ready
+<2>[    0.664688]  [0:      swapper/0:    1] set_item_val: fail to find FAULT
+<6>[    0.664702]  [0:      swapper/0:    1] search_item_by_key: (PC) extra_info is not ready
+<2>[    0.664710]  [0:      swapper/0:    1] set_item_val: fail to find PC
+<6>[    0.664724]  [0:      swapper/0:    1] search_item_by_key: (LR) extra_info is not ready
+<2>[    0.664732]  [0:      swapper/0:    1] set_item_val: fail to find LR
+<1>[    0.664746]  [0:      swapper/0:    1] Mem abort info:
+<1>[    0.664760]  [0:      swapper/0:    1]   Exception class = DABT (current EL), IL = 32 bits
+<1>[    0.664774]  [0:      swapper/0:    1]   SET = 0, FnV = 0
+<1>[    0.664787]  [0:      swapper/0:    1]   EA = 0, S1PTW = 0
+<1>[    0.664799]  [0:      swapper/0:    1] Data abort info:
+<1>[    0.664814]  [0:      swapper/0:    1]   ISV = 0, ISS = 0x00000021
+<1>[    0.664828]  [0:      swapper/0:    1]   CM = 0, WnR = 0
+<1>[    0.664842]  [0:      swapper/0:    1] swapper pgtable: 4k pages, 39-bit VAs, pgd = ffffff800a739000
+<1>[    0.664856]  [0:      swapper/0:    1] [ffffff800b2f2402] *pgd=000000097cdfe003, *pud=000000097cdfe003, *pmd=00000009742a9003, *pte=00e800000204b707
+<0>[    0.664884]  [0:      swapper/0:    1] Internal error: Oops: 96000021 [#1] PREEMPT SMP
+<4>[    0.664899]  [0:      swapper/0:    1] Modules linked in:
+<0>[    0.664916]  [0:      swapper/0:    1] Process swapper/0 (pid: 1, stack limit = 0xffffff80081a8000)
+<0>[    0.664936]  [0:      swapper/0:    1] debug-snapshot: core register saved(CPU:0)
+<0>[    0.664950]  [0:      swapper/0:    1] L2ECTLR_EL1: 0000000000000007
+<0>[    0.664959]  [0:      swapper/0:    1] L2ECTLR_EL1 valid_bit(30) is NOT set (0x0)
+<0>[    0.664978]  [0:      swapper/0:    1] CPUMERRSR: 0000000008000001, L2MERRSR: 0000000010200c00
+<0>[    0.664992]  [0:      swapper/0:    1] CPUMERRSR valid_bit(31) is NOT set (0x0)
+<0>[    0.665006]  [0:      swapper/0:    1] L2MERRSR valid_bit(31) is NOT set (0x0)
+<0>[    0.665020]  [0:      swapper/0:    1] debug-snapshot: context saved(CPU:0)
+<6>[    0.665088]  [0:      swapper/0:    1] debug-snapshot: item - log_kevents is disabled
+<6>[    0.665112]  [0:      swapper/0:    1] TIF_FOREIGN_FPSTATE: 0, FP/SIMD depth 0, cpu: 0
+<4>[    0.665130]  [0:      swapper/0:    1] CPU: 0 PID: 1 Comm: swapper/0 Not tainted 4.14.113 - Fresh Core-user #1
+<4>[    0.665144]  [0:      swapper/0:    1] Hardware name: Samsung A50 LTN OPEN rev04 board based on Exynos9610 (DT)
+<4>[    0.665160]  [0:      swapper/0:    1] task: ffffffc8f4ce8000 task.stack: ffffff80081a8000
+<4>[    0.665180]  [0:      swapper/0:    1] PC is at fvmap_init+0xac/0x2c8
+<4>[    0.665195]  [0:      swapper/0:    1] LR is at fvmap_init+0x70/0x2c8
+<4>[    0.665211]  [0:      swapper/0:    1] pc : [<ffffff80085e12b8>] lr : [<ffffff80085e127c>] pstate: 20400145
+<4>[    0.665225]  [0:      swapper/0:    1] sp : ffffff80081abb80
+<4>[    0.665238]  [0:      swapper/0:    1] x29: ffffff80081abbb0 x28: 0000000000000000
+<4>[    0.665256]  [0:      swapper/0:    1] x27: ffffff8009efc000 x26: 0000000000000000
+<4>[    0.665273]  [0:      swapper/0:    1] x25: ffffff800b2e5970 x24: ffffff8008fa7222
+<4>[    0.665291]  [0:      swapper/0:    1] x23: ffffff800b2e5a60 x22: ffffff8009efb000
+<4>[    0.665307]  [0:      swapper/0:    1] x21: ffffffc8f3480000 x20: ffffff800b2e0000
+<4>[    0.665324]  [0:      swapper/0:    1] x19: ffffff800b2f2400 x18: 0000000000000000
+<4>[    0.665341]  [0:      swapper/0:    1] x17: ffffff8009bff23c x16: 0000000000000000
+<4>[    0.665358]  [0:      swapper/0:    1] x15: 00000000000000c6 x14: 0000000000000054
+<4>[    0.665375]  [0:      swapper/0:    1] x13: 000000000000d7b8 x12: 0000000000000000
+<4>[    0.665392]  [0:      swapper/0:    1] x11: 0000000000000000 x10: ffffffc8f3480000
+<4>[    0.665409]  [0:      swapper/0:    1] x9 : ffffff800b2f2400 x8 : 0000000000000000
+<4>[    0.665426]  [0:      swapper/0:    1] x7 : 5b20205d39303634 x6 : ffffffc0117d09b7
+<4>[    0.665443]  [0:      swapper/0:    1] x5 : 0000000000000001 x4 : 000000000000000c
+<4>[    0.665459]  [0:      swapper/0:    1] x3 : 0000000000000a30 x2 : ffffffffffffffce
+<4>[    0.665476]  [0:      swapper/0:    1] x1 : 000000000b040000 x0 : 000000000000000a
+
+Since we need these optimizations for performance reasons, the only way to resolve this is to solve the issue. Samsung already did something similar to cal-if before.
+
+We only needed to make fvmap_header/header volatile and has been tested to work.
+
+Signed-off-by: John Vincent <git@tensevntysevn.cf>
+Change-Id: Ic419135d4a80cbe15f0fa71dc59cc6efa73d6141
+---
+ drivers/soc/samsung/cal-if/fvmap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/samsung/cal-if/fvmap.c b/drivers/soc/samsung/cal-if/fvmap.c
+index a7bedd15eb..770d500e84 100644
+--- a/drivers/soc/samsung/cal-if/fvmap.c
++++ b/drivers/soc/samsung/cal-if/fvmap.c
+@@ -268,7 +268,7 @@ static void check_percent_margin(struct rate_volt_header *head, unsigned int num
+ 
+ static void fvmap_copy_from_sram(void __iomem *map_base, void __iomem *sram_base)
+ {
+-	struct fvmap_header *fvmap_header, *header;
++	volatile struct fvmap_header *fvmap_header, *header;
+ 	struct rate_volt_header *old, *new;
+ 	struct clocks *clks;
+ 	struct pll_header *plls;
+-- 
+2.34.1
+

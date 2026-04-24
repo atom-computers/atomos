@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Doni Halim <donihaalim@gmail.com>"
+pkgname=device-zte-b860hv5
+pkgdesc="ZTE ZXV10 B860HV5"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	linux-postmarketos-amlogic
+	u-boot-amlogic-s905x2-tv
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+7beaf4e1017c6108f6391e1457dca702b3df214215cca5e99589a402ff92f7d5b4a78383d83194f29e3841c92dcd95e6cab3887539e961de044e755301ffede8  deviceinfo
+424adb87a3a61aa5101b970e79734e16a7707fdef2cbe964a250c1767ca970a7b9b942ce94b06f336c9f21600a2d4a486c6b117c11d84ff6f177dd0911e22521  kernel-cmdline.conf
+cbd7012fcb2db0f11f694ffa621e4c47447f6b36690366da35a16918b20e58a0324cfd07eb3ed7165887e099100286098d19ae131bd62ac8b3a088780f59a1d8  modules-initfs
+"

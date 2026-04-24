@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-herolte
+pkgdesc="Samsung Galaxy S7"
+pkgver=4
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	postmarketos-base-downstream
+	linux-samsung-herolte
+	mkbootimg
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for the Samsung Galaxy S7"
+	depends="firmware-samsung-hero"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+1e9ab4175edad97af7813b9b5cf5c7a8485628cca884cca8f421be448481d457d9c96b9084de55f7ac7ced390d20759ea6d1b7fee0d7c8aad2bb412c04bb2045  deviceinfo
+cb0731b5e71b427024bb47cd70aa48d3be409a89aa476f3fd4dea8e5b42ef87371a65bbe836bca7da04c0384178ad293b44da8a88557ad04fc57857bef502050  kernel-cmdline.conf
+5a7be3cb8835ffb3783fcd4539de04f7f006c726ac9aea35cdca9e90b2877dc36cf4e314851bf9078f4b2dac061b7265866792d92a79f5232c56a0e17f7910b1  initfs-hook.sh
+"

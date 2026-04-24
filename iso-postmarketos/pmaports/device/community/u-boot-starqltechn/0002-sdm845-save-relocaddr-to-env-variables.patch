@@ -1,0 +1,29 @@
+From 22865c8e1872c7ff634232b0174b7cf5adb10bbd Mon Sep 17 00:00:00 2001
+From: Dzmitry Sankouski <dsankouski@gmail.com>
+Date: Tue, 29 Nov 2022 21:45:48 +0300
+Subject: [PATCH 2/6] sdm845: save relocaddr to env variables
+
+KASLR address is needed to boot fully functional Android.
+KASLR is set by primary bootloader, and since u-boot is used
+as a secondary bootloader(replacing kernel) on sdm845 platform,
+KASLR may be found by comparing memory chunks at relocaddr over
+supposed KASLR range.
+---
+ arch/arm/mach-snapdragon/init_sdm845.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-snapdragon/init_sdm845.c b/arch/arm/mach-snapdragon/init_sdm845.c
+index 5f53c21947..1f22aee7f6 100644
+--- a/arch/arm/mach-snapdragon/init_sdm845.c
++++ b/arch/arm/mach-snapdragon/init_sdm845.c
+@@ -77,6 +77,7 @@ __weak int misc_init_r(void)
+ 	} else {
+ 		env_set("key_power", "0");
+ 	}
++	env_set_hex("relocaddr", gd->relocaddr);
+ 
+ 	return 0;
+ }
+-- 
+2.30.2
+

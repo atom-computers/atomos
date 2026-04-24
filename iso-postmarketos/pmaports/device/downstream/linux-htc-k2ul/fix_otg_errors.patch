@@ -1,0 +1,19 @@
+diff -Naur a/drivers/usb/otg/msm_otg.c b/drivers/usb/otg/msm_otg.c
+--- a/drivers/usb/otg/msm_otg.c	2013-11-29 03:09:34.000000000 +0100
++++ b/drivers/usb/otg/msm_otg.c	2019-05-26 01:27:37.680546290 +0200
+@@ -2374,13 +2374,8 @@
+ 				!test_bit(B_SESS_VLD, &motg->inputs)) {
+ 			if (motg->connect_type != CONNECT_TYPE_NONE) {
+ 				motg->connect_type = CONNECT_TYPE_NONE;
+-				queue_work(motg->usb_wq, &motg->notifier_work);
+-			}
+-
+-			if (check_htc_mode_status() != NOT_ON_AUTOBOT) {
+-				htc_mode_enable(0);
+-				android_switch_default();
+-			}
++				queue_work(motg->usb_wq, &motg->notifier_work);}
++			
+ 			USBH_INFO("!id  || id_a/b || !b_sess_vld\n");
+ 			motg->chg_state = USB_CHG_STATE_UNDEFINED;
+ 			motg->chg_type = USB_INVALID_CHARGER;

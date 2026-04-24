@@ -1,0 +1,69 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineage_k3gxx_defconfig
+
+pkgname=linux-samsung-k3gxx
+pkgver=3.10.9
+pkgrel=0
+pkgdesc="Samsung Galaxy S5 (International 3G) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-k3gxx"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	openssl-dev
+	perl
+	linux-headers
+"
+
+# Source
+_repository="android_kernel_samsung_k3gxx"
+_commit="2f78dde45cd08d9f1f7f047c81ffb237f7ab9b56"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *k3g*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+cee8e8a1fcca8dcdc9083baaa4df3bd5f93f8a24c33bc29b7615b9e04a3b27baad673b978f5f661dfaaa0bc548f02cdbc623f9bd039cab3ecbcdc7cf295cabf0  linux-samsung-k3gxx-2f78dde45cd08d9f1f7f047c81ffb237f7ab9b56.tar.gz
+f2b588987e839713fd058cc05ed4d137be78823f8ad84fbbd1728ae5200c04e8108196f1a59025d66fbfcbdda1598585c495cb7015503c63a4644aeabece1543  config-samsung-k3gxx.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+"

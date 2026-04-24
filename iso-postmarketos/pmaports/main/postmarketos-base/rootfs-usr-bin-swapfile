@@ -1,0 +1,95 @@
+#!/bin/sh
+#################################################################################
+# Copyright 2017 Clayton Craft <clayton@craftyguy.net>
+#
+# This file is part of postmarketos-base
+#
+# postmarketos-base is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# postmarketos-base is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this postmarketos-base.  If not, see <http://www.gnu.org/licenses/>.
+#################################################################################
+
+# $1 = swap file location
+function remove_old_swap() {
+	local _swap_file=$1
+	swapoff ${_swap_file} 2>/dev/null
+	rm ${_swap_file}
+	if [ -e ${_swap_file} ]; then
+		echo "Unable to remove old swap file!"
+		exit 1
+	fi
+}
+
+# $1 = swap file location
+# $2 = swap file size
+function make_swap() {
+	local _swap_file=$1
+	local _swap_size=$2
+
+	# Allocate space on disk for swap
+	fallocate -l ${_swap_size}M ${_swap_file}
+
+	# Set correct file permissions for swap file
+	chown root:root ${_swap_file}
+	chmod 600 ${_swap_file}
+
+	#format swap file
+	mkswap ${_swap_file} 1>/dev/null
+}
+
+if [ "$(id -u)" != "0" ]; then
+	echo "This script can only be run as root"
+	exit 1
+fi
+
+config=/etc/conf.d/swapfile
+if [ ! -f ${config} ]; then
+	echo "Unable to find config at: ${config}"
+	exit 1
+fi
+
+# deviceinfo is a pmOS-specific thing, but it's not *required*
+. /usr/share/misc/source_deviceinfo
+source /etc/conf.d/swapfile
+
+# Configure swap size. Size is in MB
+# If size in config is unset then use value from deviceinfo,
+# or default to 0 if neither is set
+if [ -z "${swap_size}" ]; then
+	if [ -n "${deviceinfo_swap_size_recommended}" ]; then
+		swap_size=${deviceinfo_swap_size_recommended}
+	else
+		swap_size=0
+	fi
+fi
+
+if [ "${swap_size}" == "0" ]; then
+	echo "Configured swap file size is 0, skipping creation."
+	exit 0
+fi
+
+swap_file="${swap_file:-/swapfile}"
+
+echo "Setting up swap file of size ${swap_size}MB at ${swap_file}..."
+
+# Clean up old swap file
+if [ -f ${swap_file} ]; then
+	remove_old_swap ${swap_file}
+fi
+
+# Create swap file
+make_swap ${swap_file} ${swap_size}
+
+# Activate swap file
+swapon ${swap_file}
+
+echo "Successfully activated swap file!"
+exit 0

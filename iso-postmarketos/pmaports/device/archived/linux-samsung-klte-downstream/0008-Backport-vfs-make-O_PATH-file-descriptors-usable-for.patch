@@ -1,0 +1,44 @@
+From 091953048fe830be1fe4d0c8fb0a825e73edd1df Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Tue, 12 Mar 2019 15:05:27 +0300
+Subject: [PATCH 6/6] Backport: vfs: make O_PATH file descriptors usable for
+ 'fstat()'
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We already use them for openat() and friends, but fstat() also wants to
+be able to use O_PATH file descriptors.  This should make it more
+directly comparable to the O_SEARCH of Solaris.
+
+Note that you could already do the same thing with "fstatat()" and an
+empty path, but just doing "fstat()" directly is simpler and faster, so
+there is no reason not to just allow it directly.
+
+See also commit 332a2e1, which did the same thing for fchdir, for
+the same reasons.
+
+Reported-by: ольга крыжановская <olga.kryzhanovska@gmail.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: stable@kernel.org    # O_PATH introduced in 3.0+
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ fs/stat.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/stat.c b/fs/stat.c
+index 88b36c77076..17b7a1b8771 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -58,7 +58,7 @@ EXPORT_SYMBOL(vfs_getattr);
+ int vfs_fstat(unsigned int fd, struct kstat *stat)
+ {
+ 	int fput_needed;
+-	struct file *f = fget_light(fd, &fput_needed);
++	struct file *f = fget_raw_light(fd, &fput_needed);
+ 	int error = -EBADF;
+ 
+ 	if (f) {
+-- 
+2.21.0
+

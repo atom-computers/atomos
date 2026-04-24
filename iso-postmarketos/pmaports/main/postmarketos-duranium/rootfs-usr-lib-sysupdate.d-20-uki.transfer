@@ -1,0 +1,19 @@
+[Transfer]
+ProtectVersion=%A
+
+[Source]
+Type=url-file
+Path=https://duranium.postmarketos.org/images/%M_%W_%w/
+MatchPattern=%M_%W_%w_@v.efi
+
+[Target]
+Type=regular-file
+Path=/EFI/Linux
+PathRelativeTo=boot
+MatchPattern=%M_%W_%w_@v+@l-@d.efi \
+             %M_%W_%w_@v+@l.efi \
+             %M_%W_%w_@v.efi
+Mode=0600
+TriesLeft=3
+TriesDone=0
+InstancesMax=2

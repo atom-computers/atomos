@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineage_s3ve3gxx_defconf
+
+pkgname=linux-samsung-s3ve3g
+pkgver=3.4.113
+pkgrel=8
+pkgdesc="Samsung Galaxy S III Neo kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-s3ve3g"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool xz"
+
+# Source
+_repository="android_kernel_samsung_msm8226"
+_commit="011bada1b7d038d703f4819176cfdf59b3e34e20"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+	0001-remove-Unified-Sysfs-for-GPU-kernel-option.patch
+	0002-always-reserve-framebuffer-memory.patch
+	0003-fix-video-argb-setting.patch
+	0004-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	0005-alternative-patch-to-fix-refresh-rate.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+c2984fc0707e00a718c486f31491921c5112ec0c13d4d9d5032f77765859fa4f1989bdcedd8763bb26b6fbbaeae8cef388b1f71ee36e558b1f13950fa5b56071  linux-samsung-s3ve3g-011bada1b7d038d703f4819176cfdf59b3e34e20.tar.gz
+5051684c890dd31742d554c890e956aec4ffb39903d5b3db422aaaf86c4af3a034b0f40227074e145155e6c186cf73c997ea762974760c48508c785af17a7e08  config-samsung-s3ve3g.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+25217ec622dbcb811c9a7375c6e360f313e58c8433a300c9a9afd3f17712ec0d322e16501c72c49fef9e38a2d3a69718401bf4269977fccd075a4a57d8458c5d  linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+472f2aacb61f66a253113bce3846cb132ce73cf98df4b08245184ac96857f8d3657e80c5ecdabfc04f61ea0971a0e4d2c64dc5886f6c949b560e018e855a5a95  0001-remove-Unified-Sysfs-for-GPU-kernel-option.patch
+99710981a40c5ce465fc6de9c438349224c52a4175a0bcbec95bd4d860a44abfa0d59151e94b85a40f049aadff66cb02b74ea84c51424ec5b19b76b17edb5b20  0002-always-reserve-framebuffer-memory.patch
+ff4ebae2d4e9d3c78849d9f00879d91a4d554ae68eebe9853388154686f9bd48de1c68e586c855204e6bff61972d2fbc77c5b1c9c6f9ff66e101bc2d04cb5e29  0003-fix-video-argb-setting.patch
+9b7fc59035714badcecb5138da4b58d2bda5b8260a04cbad9e1baa57ec6cdebfeea1752744e551a2341e164da78c119564892b43c823aded2f50f2417bbc47ce  0004-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+2f8305cd137e5fbc888d3c81201976ae2819275715dde8ee6f63845a0d36021566af8e78ab765e084b6def1bb10cfc4dde1714a472ea4fab8a9c95e7bee9e2c5  0005-alternative-patch-to-fix-refresh-rate.patch
+"

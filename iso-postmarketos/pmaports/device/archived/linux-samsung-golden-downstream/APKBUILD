@@ -1,0 +1,76 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Kernel config based on: arch/arm/configs/golden_android_defconfig
+
+pkgname=linux-samsung-golden-downstream
+pkgver=3.0.31
+pkgrel=0
+pkgdesc="Samsung Galaxy SIII mini kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-golden"
+url="https://kernel.org"
+license="GPL-2.0-or-later"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_golden"
+_commit="2662dc4f65ef3ad5eeb4222d3aad5dd418a04510"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/NovaFusion/$_repository/archive/$_commit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	00_fix_makefile.patch
+	01_fix_return_address.patch
+	03_fix_rndis.patch
+	04_fix_bcma.patch
+	05_change_dhd_firmware_path.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="
+318586c486d831719d678e7645c073146b6d2cfc60ac0b8b54ddc6e545723d207d46a7acd78d944e7a855e3a5181fa8ccf863d9dd0c10129a6814e9e7e70a2fa  linux-samsung-golden-downstream-2662dc4f65ef3ad5eeb4222d3aad5dd418a04510.tar.gz
+d0843c5606a0d207e73bbe952a548f7374ca099c40448a097318d96068df7da3c4ce7f1abdb10015b6ddd5f422f202578229a44f070af5953d50d924d3f9ddce  config-samsung-golden.armv7
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+1b3ffbfd511af7a81590e0004bcf45b89592d6bf38cc3dd48af1e227f879426894eede34376ac708e56e84217af6ff22ee16526b3e64905ef30f0d101bbcbc29  00_fix_makefile.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  01_fix_return_address.patch
+6585c67450f1ef6d0c165ce4cb5c64f64d779147d1390558bf72cd40da5a33d53de6fd3c67e5ab864c14b3f67602bbe3060eea07c85b19bb82a0735024b369eb  03_fix_rndis.patch
+31fe10c659d59fd086b49c20412a27cc6241e650cda1200efe86cedfc5d9ac380a3c7ff931161a40b26ab49b6e3fa04d27316efd66fba6605a5e35ef526b41e4  04_fix_bcma.patch
+3665c85be5fb7931f6e83fa98a6c4ab876f97949cfbbe04bdcfe1175ed5ef6fdb3c12558d678d30f6c60f5fa5e79cf7aa8fe1910e4bd36ee1ba0f20cef9163ea  05_change_dhd_firmware_path.patch
+"

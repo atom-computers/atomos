@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-htc-ace
+pkgver=3
+pkgrel=0
+pkgdesc="HTC Desire HD"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="postmarketos-base linux-htc-ace mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware $pkgname-udev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	initfs-hook.sh
+	90-android-touch-dev.rules
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-aosp-broadcom-wlan"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+6541e469b72c90d950728302b47f4af69900e47f428240b20cf5f855cd8e1f45112e1e2a12800b3acd100ac2b75ee226c6f65ac3df3a743e4be101e068e5df4d  deviceinfo
+c123aad8ab2fbeb15ac6e057704f7320b2d18b48588ac70021b5f755524985243d02dd340b1a97499e6f49ecc4cca69220f9b127a4fcb50ac7523b4a63d38490  kernel-cmdline.conf
+3ce2d134aa59677e25a160b5985c552fbf048b237169bbeb85e2b8824f734627064b51c097036db10eee0254064d45d804d17372dffcd1ba246938968fe1e225  initfs-hook.sh
+ab8fb357bb45ba44723f1ecb01a10db26f8f74b605499673e1ba90c69a9b11a1555983ce90235e3b636d75461c81c81eea0f8318ded06b72dad17f924d8b9901  90-android-touch-dev.rules
+"

@@ -1,0 +1,38 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-hisense-m470bsa
+pkgdesc="Hisense Sero 7 Pro"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-hisense-m470bsa mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-load.conf pointercal"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi Firmware"
+	depends="firmware-hisense-m470bsa"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+184e54982c641f3454a575b6ec37ac2388fffec93c69b8e8fbc4e43c221927b7c80521dbfad83c4740916c83c8d7e3f37c60de5164a869bd03c9f43d4ebc058f  deviceinfo
+c2ddf5b681d5f26cf9887f83d2202ff1f1ab415479d5d627966759ba19376a6d368e3fce2ebae02d2cbcf7abf06155ce774643cb0c6dd3b7af3a5748ea36ae8f  kernel-cmdline.conf
+6a53747e22b530dcd52ca523017edf422b36bcd6616d7b0df0ba23f50de0f91dff63913ec6aab5051eebc131879c235cfb724aacefc90a10b94a1790985144ec  modules-load.conf
+8fcb7330a660995bb1aabf3fd2f3a3536fed79e9369bda115874151e84651839c59d134ac3ca0919eff0770ac51c934b252e7d544a26c076614f7f1d10bfd016  pointercal
+"

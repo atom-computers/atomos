@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/gts4lvwifi_defconfig
+
+pkgname=linux-samsung-gts4lvwifi
+pkgver=4.9.337
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab S5e (SM-T720) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-gts4lvwifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_samsung_sdm670"
+_commit="16026dfb9b4c9e5c0c560203983a75aabe62b05d"
+_config="config-$_flavor.aarch64"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-check-lxdialog.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+8fc2f9597a3b6131ae27bff7621aaa8f41324b7fe27b96090e43d0fe002e1e5d134471697e889be719cc47be0786410230e9bed77d94cb32c6a54e8fcaeab29b  linux-samsung-gts4lvwifi-16026dfb9b4c9e5c0c560203983a75aabe62b05d.tar.gz
+923f64be32e2f358a40526501f8479b33bc1dd3099383601c3f2aadb602bf760759e2336a01c4ca17d33e2be45c347fc38fbe9954d278316144462d5b32cd0df  config-samsung-gts4lvwifi.aarch64
+f748320ebe3e630b37977b6ea9f09498251cbf27368a7851b0a514853df6ad85da90cd282f62de1fbe95c551d91db82279be13611867263f4bc8aac3398aef82  fix-check-lxdialog.patch
+"

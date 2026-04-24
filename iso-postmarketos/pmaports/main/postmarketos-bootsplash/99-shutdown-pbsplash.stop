@@ -1,0 +1,22 @@
+#!/bin/sh
+
+VT=7
+
+# Retrieve device name
+. /usr/share/misc/source_deviceinfo
+
+# Do not show splash if framebuffer is disabled
+if [ "$deviceinfo_no_framebuffer" = "true" ]; then
+	return;
+fi
+
+# Do not show splash if PMOS_NOSPLASH is set
+if grep -q PMOS_NOSPLASH /proc/cmdline; then
+	return;
+fi
+
+# Run on separate VT to avoid interference of display managers
+chvt "$VT"
+
+# Run splash
+pbsplash -s /usr/share/pbsplash/pmos-logo-text.svg -b "Linux $(uname -r) | $deviceinfo_codename" -m "Shutting down..." &

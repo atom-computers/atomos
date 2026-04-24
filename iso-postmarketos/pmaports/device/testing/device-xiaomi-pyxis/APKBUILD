@@ -1,0 +1,75 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+pkgname=device-xiaomi-pyxis
+pkgdesc="Xiaomi Mi 9 Lite"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sdm670
+	firmware-xiaomi-pyxis
+	hexagonrpcd
+	linux-firmware-ath10k
+	linux-firmware-qca
+	linux-firmware-qcom
+	linux-postmarketos-qcom-sdm670
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-pd-mapper
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+install="$pkgname-openrc.post-install"
+source="
+	81-libssc-xiaomi-pyxis.rules
+	deviceinfo
+	hexagonrpcd.confd
+	kernel-cmdline.conf
+	modules-initfs
+	no-hexagonrpcd-on-suspend.sh
+"
+
+subpackages="
+	$pkgname-openrc
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	replaces="$pkgname-nonfree-firmware"
+	devicepkg_package $startdir $pkgname
+
+	# Sensors depend on ADSP firmware and the sensors registry served over FastRPC.
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf
+	install -Dm644 "$srcdir"/81-libssc-xiaomi-pyxis.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-xiaomi-pyxis.rules
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="hexagonrpcd-openrc openrc"
+
+	# The FastRPC service is only enabled when non-free firmware is installed.
+	install -Dm755 "$srcdir"/no-hexagonrpcd-on-suspend.sh \
+		-t "$subpkgdir"/usr/libexec/elogind/system-sleep
+}
+
+sha512sums="
+41676f77528046ed5eb87b11daea228a9280d3f54e1cdb6e4f645b77fa51cdbffb3355cff289804763dd102bb4a4fff8052d1c4391b44ad55031c83cff3e00af  81-libssc-xiaomi-pyxis.rules
+9166f9e440549a2fb2950a42b8e344b9cf5e1fafabec492941e839498d2839b25f49ff326abd66bd9c2f13fb89ab59e80ed4b642c87d37bb642b822dc7ee1b58  deviceinfo
+7b9cae334ac9f7467002ee43f3ffef7c174e28683082fdf71e292d3ecd23e341d6b65dcbe9084da28eaf2fab00b45cf1e1bdf836afce39908c697f47f60a2dd8  hexagonrpcd.confd
+a9879d2e6c109c7b9ba9263703e88bd6664a63c340d25fa16fda465df5a57b819d0e7182ea505d6d0c8d831dda658d65040f9b9b079dc1afe0127b9dd4abb7e0  kernel-cmdline.conf
+06dfc9f41ab196406300acddd411c95f8ba47f49be01a291b4a33767d56b88a16741306223ec767930b71ab08aab82a29f0dacbde2bb45c32de1728b6cb35b14  modules-initfs
+2972005a9cf6ca57061965075593dddfa8ee479bc6c21cd41851b1a14768cb1cddbd31a17975ae17adc36d40d294ccbc6bf83defbd69fc7b363f638d8564fbbc  no-hexagonrpcd-on-suspend.sh
+"

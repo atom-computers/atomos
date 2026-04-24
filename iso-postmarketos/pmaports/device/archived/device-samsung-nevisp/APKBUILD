@@ -1,0 +1,36 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Théo Friberg <fsmnarmosta@posteo.net>"
+pkgname=device-samsung-nevisp
+pkgdesc="Samsung Galaxy Fame GT-S6810P"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-nevisp mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for wifi."
+	depends="firmware-samsung-nevisp"
+	mkdir "$subpkgdir"
+}
+sha512sums="
+17871538615c3020e77eb491dc4d70994a88ff3c1feb47877a6b44c5e5df1f8a4c3374d74f19692ff137409d38a85c1ddf9fae207f484727396790f1336a1fbf  deviceinfo
+acc557999ae3143a8aff0f601c8240f9d94da271fff0ddc6ee0e47358daa57c871cbaa532b0af42db30f030930b7ae8b4f190bbf53070b6abe5e29789e157316  kernel-cmdline.conf
+0aa06f2147be0ce89fb1ae418abff809ffa8de677afce4e3b29926ccea66f776065d2bb95675a8692230e40e57ec2ce657d9b3f79be56f1db35f4a724a3484f9  modules-load.conf
+"

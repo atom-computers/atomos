@@ -1,0 +1,30 @@
+diff -Naur a/arch/arm/include/asm/ftrace.h b/arch/arm/include/asm/ftrace.h
+--- a/arch/arm/include/asm/ftrace.h	2013-11-29 03:09:28.000000000 +0100
++++ b/arch/arm/include/asm/ftrace.h	2019-05-25 23:47:19.735062444 +0200
+@@ -38,7 +38,7 @@
+ 
+ #else
+ 
+-extern inline void *return_address(unsigned int level)
++static inline void *return_address(unsigned int level)
+ {
+ 	return NULL;
+ }
+diff -Naur a/arch/arm/kernel/return_address.c b/arch/arm/kernel/return_address.c
+--- a/arch/arm/kernel/return_address.c	2013-11-29 03:09:29.000000000 +0100
++++ b/arch/arm/kernel/return_address.c	2019-05-25 23:45:57.148013069 +0200
+@@ -62,11 +62,8 @@
+ #warning "TODO: return_address should use unwind tables"
+ #endif
+ 
+-void *return_address(unsigned int level)
+-{
+-	return NULL;
+-}
+ 
+-#endif 
++
++#endif /* if defined(CONFIG_FRAME_POINTER) && !defined(CONFIG_ARM_UNWIND) / else */
+ 
+ EXPORT_SYMBOL_GPL(return_address);
+

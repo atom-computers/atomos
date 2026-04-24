@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-i9105p
+pkgdesc="Samsung Galaxy S2 Plus"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-i9105p
+	linux-samsung-i9105p
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+1b7e7bb99b2fb3e81d3b92f3438a629b0de759ea17c126ec777cb0defc0a91603b5f28556486de0f17e5404102bb9ffe98e9a508beb9aef4d6c5de292f145fc6  deviceinfo
+25fa984f7b83d08252e0341ec9a6b41d17d3301e0b0d25260c6ba8322279bb247efdc5b8e9e056c76713df593b99de00daaa2471426539147c6d15b914cba449  kernel-cmdline.conf
+af036fe35011db078379dbb2e8c16c86546f0a4fcb3d1bcee3502bb1ea5b38f3ec5a9fa8cd1ca8ed8b89592a7f572d6072781289845303e0bf85fc2de4ead9fb  modules-load.conf
+"

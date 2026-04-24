@@ -1,0 +1,25 @@
+From d3c48515dedef5d59b138d007136b76b58091f44 Mon Sep 17 00:00:00 2001
+From: Pangwalla <pangwalla@protonmail.com>
+Date: Wed, 1 Mar 2023 22:10:32 -0500
+Subject: [PATCH] fix enum with attempted integer subclass syntax issue
+
+---
+ techpack/display/oplus/oplus_display_panel.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/techpack/display/oplus/oplus_display_panel.h b/techpack/display/oplus/oplus_display_panel.h
+index 30aae7ccb5b1..c201acb07f50 100644
+--- a/techpack/display/oplus/oplus_display_panel.h
++++ b/techpack/display/oplus/oplus_display_panel.h
+@@ -53,7 +53,7 @@ static struct cdev panel_cdev;
+ 
+ #define APOLLO_BACKLIGHT_LENS 4096*19
+ 
+-enum APOLLO_BL_ID : int {
++enum APOLLO_BL_ID {
+ 	APOLLO_BL_4096 = 4096,
+ 	APOLLO_BL_8192 = 8192,
+ 	APOLLO_BL_14336 = 14336,
+-- 
+2.39.2
+

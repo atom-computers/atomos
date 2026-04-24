@@ -1,0 +1,113 @@
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+
+# !!! systemd split func got upstreamed into Alpine !!!
+#     New services must go to upstream packages
+
+# If you want to work on upstreaming the legacy services to
+# Alpine, please take a look at
+# https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items/4099
+# and get in chat.
+
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=systemd-services
+pkgver=122
+pkgrel=0
+pkgdesc="Systemd service files"
+url="https://postmarketos.org"
+# armhf: pmb#2618
+arch="noarch !armhf"
+options="!check"
+license="BSD-3-Clause"
+
+makedepends="systemd-dev"
+
+subpackages="
+	dnsmasq-systemd:_service
+	gnome-clocks-systemd:_service
+	httpd-systemd:_service
+	nginx-systemd:_service
+	openssh-server-pam-systemd:_service
+	tinydm-systemd:_service
+	transmission-daemon-systemd:_service
+"
+_dnsmasq_sources="sysusers.d/dnsmasq.conf"  # From: https://src.fedoraproject.org/rpms/dnsmasq/blob/rawhide/f/dnsmasq-systemd-sysusers.conf
+_gnome_clocks_sources="user/gnome-clocks.service" # Similar to https://gitlab.gnome.org/guidog/gnome-clocks/-/commits/phosh
+_httpd_sources="system/httpd.service" # https://gitlab.archlinux.org/archlinux/packaging/packages/apache/-/blob/main/httpd.service + path adjustments
+_nginx_sources="system/nginx.service" # Based on arch's service: https://gitlab.archlinux.org/archlinux/packaging/packages/nginx/-/blob/main/nginx.service
+_openssh_server_pam_sources="
+	system/sshd.service
+	system/sshd@.service
+	system/sshdgenkeys.service
+	sysusers.d/sshd.conf
+"
+_tinydm_sources="system/tinydm.service system-generators/tinydm-user-override"  # see issue tinydm#11
+_transmission_daemon_sources="system/transmission-daemon.service"  # Based on https://github.com/transmission/transmission/blob/main/daemon/transmission-daemon.service.in
+
+flatpath() {
+	local i
+	for i in $@; do
+		echo "$i" | sed s./.-.g
+	done
+}
+
+source="$(flatpath \
+	$_dnsmasq_sources \
+	$_gnome_clocks_sources \
+	$_httpd_sources \
+	$_nginx_sources \
+	$_openssh_server_pam_sources \
+	$_tinydm_sources \
+	$_transmission_daemon_sources \
+)"
+
+_service() {
+	local name=$(echo ${subpkgname%%-systemd})
+	local n=$(echo ${subpkgname%-systemd} | sed s/-/_/g)
+	install_if="$pkgname=$pkgver-r$pkgrel $name systemd"
+
+	for f in $(eval "echo \$_${n}_sources"); do
+		prefix="$subpkgdir"
+		# If the path starts with a systemd subdir, install it under /usr/lib/systemd
+		# if it's some other default dir, install at specifc path
+		# otherwise treat it as a full path
+		mode=644
+		if echo "user system" | grep -q "${f%%/*}"; then
+			prefix="$prefix/usr/lib/systemd"
+		elif echo "tmpfiles.d" | grep -q "${f%%/*}"; then
+			prefix="$prefix/usr/lib"
+		elif echo "sysusers.d" | grep -q "${f%%/*}"; then
+			prefix="$prefix/usr/lib"
+		elif echo "user-environment-generators system-environment-generators" | grep -q "${f%%/*}"; then
+			prefix="$prefix/usr/lib/systemd"
+			mode=755
+		elif echo "user-generators system-generators" | grep -q "${f%%/*}"; then
+			prefix="$prefix/usr/lib/systemd"
+			mode=755
+		fi
+		install -Dm$mode "$srcdir/$(flatpath "$f")" "$prefix/$f"
+	done
+
+	# NOTE: we do not call default_systemd because it generates an incorrect
+	# install_if.
+	# See: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/6334#note_474497
+	depends="systemd"
+	pkgdesc="$pkgdesc (systemd files)"
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+sha512sums="
+97887423ad5b8344786912899553cd2f2033da6a79104a9ad59ebda813505ee05bef19c9e6f46af5ecee62dd0d436773a9a0d10bad759cd92aad3f53b95e62a2  sysusers.d-dnsmasq.conf
+bc7987a001d2076788d904f1ea6d3e97a2ab905ee55302ffb90402133c2b9fb760d7ad94e06971d811b9d905048e164cb78355f8cd087219b5b8ff6dab2fbd9c  user-gnome-clocks.service
+666ba094bff47aa67b4e4431929516af355f90ffc1fd60429dcd20b337c3c17d2d62a71c289496217282f0819bc8deba8db5cc5b2915b692defa14d19532a8d1  system-httpd.service
+9cba2f9fc043d8cfb09ce7bcc6bef13194f6708bd0b82b2a360304a66a344d38b7f2641bdbeb0ce85ef9390e0f2ea34feef9d7d2c066ca8e0bd8d1f6108ce1e0  system-nginx.service
+fa445c4a53214524baed4e9c52a5463592a074f88a5a286eacb60d0907c0545f725afde23abd68cf611067add80c2ccb289a381fc5ff6a5f654ea49c81f02fe8  system-sshd.service
+6f1db26dbbcf96a5e14996cc468f1911c51a46fc3f70552af3591c0dfaaa043135d137d435818a2a2cce656f09fa305337c3c86121a5109dc20f0326a2e0ec15  system-sshd@.service
+c0badea3905c1d53d213fbfe11d25b556a2e484fe77eb50e9f4d42e25b67b56a0804e7d8e1b7731cd280cbb3525b4c60311817609381e2308d9f2dfb7c0d7072  system-sshdgenkeys.service
+4a6d716a907a730675505bfc4ac38598f9c4e7d962fa9cdeea51dbbaa6afec80d1b82b98627c37c164dc5cdcc7f68118104e3adb73d985f32a24f1941766c5af  sysusers.d-sshd.conf
+23f854fa2d0e0cb4de54db8605e549bb32061470ea7fa8ac16d474149be635e2b20a815c4ea8088e583693d7f515651ad2872b45f3b38a762f686b977d4fc49d  system-tinydm.service
+7a11c25c767de73a5c9fbf6d35c36da8200a5aa464c1a59880e443d60ea3ba3bb08ff3408ff2a087373bfe23b6ddcb6249aacd173c36d0a857dda5267954b47c  system-generators-tinydm-user-override
+6b8346e94a078db1a81a77f7d3ea8cbd83e0f4f435806c3b36c3c16d06fa25d2b7774615acc82d1fb5e066fe5bc24c088038e2154f46812c2354d002871037ae  system-transmission-daemon.service
+"

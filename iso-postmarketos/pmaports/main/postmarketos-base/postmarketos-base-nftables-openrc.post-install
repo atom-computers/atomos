@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+rc-update -q add nftables default
+
+exit 0

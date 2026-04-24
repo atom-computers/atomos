@@ -1,0 +1,110 @@
+#!/bin/sh
+
+verbose=
+board=
+device=
+dryrun=
+imagedir=
+
+get_defaults() {
+	if [ -z "$board" -a -e /sys/firmware/devicetree/base/compatible ]; then
+		case "$(cat /sys/firmware/devicetree/base/compatible 2>/dev/null)" in
+		pine64,pinenote*) board=pinenote ;;
+		esac
+	fi
+
+	if [ -z "$device" ]; then
+		case "$board" in
+		pinenote) device=/dev/mmcblk0 ;;
+		esac
+	fi
+
+	if [ -z "$imagedir" ]; then
+		imagedir="$(realpath $(dirname $0))"
+		[ -f "$imagedir/README.txt" ] || imagedir="/usr/share/u-boot"
+	fi
+}
+
+die() {
+	echo "ERROR: $@"
+	exit 1
+}
+
+usage() {
+	get_defaults
+
+	cat <<EOF
+usage: $0 [-n,--dry-run] [-i,--imagedir <imagedir>] [-b|--board <board-type>] [-d|--device <device>]
+
+options:
+
+ -b,--board <board>       Specify the board type: pinenote
+                          (current default: ${board:-none})
+
+ -d,--device <device>     Specify the device where to install u-boot
+                          (current default: ${device:-none})
+
+ -i,--imagedir <imagedir> Specify u-boot image directory
+                          (current default: ${imagedir:-none})
+
+ -n,--dry-run             Print commands but don't execute them
+
+EOF
+}
+
+while [ $# -gt 0 ]; do
+	opt="$1"
+	shift
+	case "$opt" in
+	-b|--board)
+		case "$1" in
+		pinenote) board="pinenote" ;;
+		*) usage; exit 1;;
+		esac
+		shift
+		;;
+	-d|--device)
+		device="$1"
+		shift
+		;;
+	-i|--imagedir)
+		imagedir="$1"
+		shift
+		;;
+	-n|--dry-run)
+		dryrun="echo"
+		;;
+        --)
+                break
+                ;;
+        -*)
+                usage
+                exit 1
+                ;;
+        esac
+done
+
+get_defaults
+if [ -z "$board" -o -z "$device" -o -z "$imagedir" -o  ! -e "$imagedir" ]; then
+	usage
+	exit 1
+fi
+
+if [ -z "$dryrun" ]; then
+	echo "Updating $board u-boot in $device in 3 seconds..."
+	sleep 3
+fi
+
+(
+set -e
+case "$board" in
+pinenote)
+	[ -e "$imagedir/pine64-pinenote/" ] || die "pinenote images not installed, apk add u-boot-pine64-pinenote"
+	$dryrun dd if=$imagedir/pine64-pinenote/idbloader.img of=$device seek=64 status=none
+	$dryrun dd if=$imagedir/pine64-pinenote/u-boot.itb of=$device seek=16384 status=none
+	;;
+esac
+$dryrun sync
+) || die "U-Boot installation in $device failed"
+
+[ -z "$dryrun" ] && echo "Completed successfully."

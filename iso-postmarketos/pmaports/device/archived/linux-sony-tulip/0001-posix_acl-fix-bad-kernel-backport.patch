@@ -1,0 +1,73 @@
+From 1ba38a9c3b87617b1bdb84a550eb958205921165 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@z3ntu.xyz>
+Date: Mon, 8 Feb 2021 20:48:11 +0100
+Subject: [PATCH] posix_acl: fix bad kernel backport
+
+Commit 5cbad1e5b459 ("posix_acl: Clear SGID bit when setting file
+permissions") adds the function posix_acl_update_mode and commit
+3fc3cd1732ae ("BACKPORT: posix_acl: Clear SGID bit when setting file
+permissions") adds the same function a second time.
+
+The default config didn't have the necessary kconfig option enabled so
+this wasn't discovered before.
+---
+ fs/posix_acl.c            | 31 -------------------------------
+ include/linux/posix_acl.h |  3 ---
+ 2 files changed, 34 deletions(-)
+
+diff --git a/fs/posix_acl.c b/fs/posix_acl.c
+index aad3aa23cb0c..35cc1f40b82d 100644
+--- a/fs/posix_acl.c
++++ b/fs/posix_acl.c
+@@ -455,34 +455,3 @@ posix_acl_chmod(struct posix_acl **acl, gfp_t gfp, umode_t mode)
+ 	return err;
+ }
+ EXPORT_SYMBOL(posix_acl_chmod);
+-
+-/**
+- * posix_acl_update_mode  -  update mode in set_acl
+- *
+- * Update the file mode when setting an ACL: compute the new file permission
+- * bits based on the ACL.  In addition, if the ACL is equivalent to the new
+- * file mode, set *acl to NULL to indicate that no ACL should be set.
+- *
+- * As with chmod, clear the setgit bit if the caller is not in the owning group
+- * or capable of CAP_FSETID (see inode_change_ok).
+- *
+- * Called from set_acl inode operations.
+- */
+-int posix_acl_update_mode(struct inode *inode, umode_t *mode_p,
+-			  struct posix_acl **acl)
+-{
+-	umode_t mode = inode->i_mode;
+-	int error;
+-
+-	error = posix_acl_equiv_mode(*acl, &mode);
+-	if (error < 0)
+-		return error;
+-	if (error == 0)
+-		*acl = NULL;
+-	if (!in_group_p(inode->i_gid) &&
+-	    !capable_wrt_inode_uidgid(inode, CAP_FSETID))
+-		mode &= ~S_ISGID;
+-	*mode_p = mode;
+-	return 0;
+-}
+-EXPORT_SYMBOL(posix_acl_update_mode);
+diff --git a/include/linux/posix_acl.h b/include/linux/posix_acl.h
+index ee38f1dead2b..2ae0bba45f12 100644
+--- a/include/linux/posix_acl.h
++++ b/include/linux/posix_acl.h
+@@ -96,9 +96,6 @@ extern struct posix_acl *get_posix_acl(struct inode *, int);
+ extern int set_posix_acl(struct inode *, int, struct posix_acl *);
+ 
+ #ifdef CONFIG_FS_POSIX_ACL
+-extern int posix_acl_update_mode(struct inode *, umode_t *,
+-		struct posix_acl **);
+-
+ static inline struct posix_acl **acl_by_type(struct inode *inode, int type)
+ {
+ 	switch (type) {
+-- 
+2.30.0
+

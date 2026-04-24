@@ -1,0 +1,5 @@
+# Default is to use /dev/rtc0, which uses the S3C RTC on Samsung
+# Manta, and somehow does not work.
+# Use /dev/rtc1 instead, which uses the MAX77686 RTC, and works
+# without issues.
+clock_args="-f /dev/rtc1"

@@ -1,0 +1,38 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-welcome
+pkgver=0.9.1
+pkgrel=0
+pkgdesc="postmarketOS welcome app"
+url="https://gitlab.postmarketos.org/postmarketOS/postmarketos-welcome"
+arch="all"
+license="GPL-3.0-or-later"
+makedepends="
+	desktop-file-utils
+	glib-dev
+	gtk4.0-dev
+	libadwaita-dev
+	meson
+	"
+source="
+	https://gitlab.postmarketos.org/postmarketOS/postmarketos-welcome/-/archive/$pkgver/postmarketos-welcome-$pkgver.tar.bz2
+	org.postmarketos.Welcome.desktop
+	"
+options="!check" # No tests
+replaces="postmarketos-welcome-gtk3"
+provides="postmarketos-welcome-gtk3=$pkgver-r$pkgrel"
+
+build() {
+	abuild-meson . output
+	meson compile ${JOBS:+-j ${JOBS}} -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install -C output
+	install -Dm644 "$srcdir"/org.postmarketos.Welcome.desktop \
+		"$pkgdir"/etc/xdg/autostart/org.postmarketos.Welcome.desktop
+}
+
+sha512sums="
+f9b6bed5459522661ec004aecb86c7ec0fc96c47c9b35c1d90213fbc51c6964dad8f561628e430df1bc23b806c5f181929f6bd2fbfcc4020689ababec46c66dc  postmarketos-welcome-0.9.1.tar.bz2
+abf57cca997ef78cd6f71e370433e1776b80ab6a55c471eb5ce97008aedfec3e01e120dd8449899e4c15edf90e3679a6b3d62a64937b84d00762433680749ad1  org.postmarketos.Welcome.desktop
+"

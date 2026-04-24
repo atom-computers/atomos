@@ -1,0 +1,8 @@
+# udev rules file
+# All device names can be read from weston's logfile
+
+# Touchscreen (use 'weston-calibrator' to calibrate)
+SUBSYSTEM=="input", ATTRS{name}=="clearpad", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1" \
+ENV{WL_CALIBRATION}="1.013786 0.035310 -24.920929 -0.008370 0.990421 12.094299"
+

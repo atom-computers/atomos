@@ -1,0 +1,34 @@
+# Based on arch/arm/boot/dts/argon/spi-panel-gc9305-v2-qvga-cmd from
+# the downstream kernel, which is:
+# Copyright (c) 2017, The Linux Foundation. All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 and
+# only version 2 as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+command 0x36 0x00
+command 0x3a 0x55 # format: 65K 16bit
+command 0x35 0x00 # TE v-blanking
+command 0xb2 0x0c 0x0c 0x00 0x33 0x33 # porch setting
+command 0xb7 0x75 # gate control VGH VGL
+command 0xbb 0x34 # Vcoms setting 1.4v
+command 0xc0 0x2c # LCM control
+command 0xc2 0x01 # VDV VRH COMMAND ENABLE
+command 0xc3 0x0d # VRH SET
+command 0xc4 0x20 # VDV SET
+command 0xc6 0xef # frame rate
+command 0x44 0x00 0x00 # SET TEARING SCAN LINE
+command 0xd0 0xa4 0xa1 # power control 1
+
+# gamma
+command 0xe0 0xd0 0x02 0x09 0x0d 0x0e 0x19 0x30 0x51 0x43 0x09 0x14 0x13 0x18 0x21
+command 0xe1 0xd0 0x02 0x09 0x0d 0x0d 0x18 0x32 0x46 0x42 0x09 0x13 0x13 0x17 0x21
+
+command 0x11 # sleep out
+delay 120
+command 0x29 # display on

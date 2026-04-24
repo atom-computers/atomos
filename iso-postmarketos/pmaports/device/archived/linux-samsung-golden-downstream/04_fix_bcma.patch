@@ -1,0 +1,50 @@
+diff -ruN '--from-file=android_kernel_samsung_golden-2662dc4f65ef3ad5eeb4222d3aad5dd418a04510' android_kernel_samsung_golden-2662dc4f65ef3ad5eeb4222d3aad5dd418a04510/include/linux/bcma/bcma.h tmp-kernel/include/linux/bcma/bcma.h
+--- ./include/linux/bcma/bcma.h	2017-05-20 10:01:01.000000000 +0100
++++ ./include/linux/bcma/bcma.h	2018-04-21 02:21:45.736705185 +0100
+@@ -181,38 +181,38 @@
+ 	struct bcma_drv_pci drv_pci;
+ };
+ 
+-extern inline u32 bcma_read8(struct bcma_device *core, u16 offset)
++static inline u32 bcma_read8(struct bcma_device *core, u16 offset)
+ {
+ 	return core->bus->ops->read8(core, offset);
+ }
+-extern inline u32 bcma_read16(struct bcma_device *core, u16 offset)
++static inline u32 bcma_read16(struct bcma_device *core, u16 offset)
+ {
+ 	return core->bus->ops->read16(core, offset);
+ }
+-extern inline u32 bcma_read32(struct bcma_device *core, u16 offset)
++static inline u32 bcma_read32(struct bcma_device *core, u16 offset)
+ {
+ 	return core->bus->ops->read32(core, offset);
+ }
+-extern inline
++static inline
+ void bcma_write8(struct bcma_device *core, u16 offset, u32 value)
+ {
+ 	core->bus->ops->write8(core, offset, value);
+ }
+-extern inline
++static inline
+ void bcma_write16(struct bcma_device *core, u16 offset, u32 value)
+ {
+ 	core->bus->ops->write16(core, offset, value);
+ }
+-extern inline
++static inline
+ void bcma_write32(struct bcma_device *core, u16 offset, u32 value)
+ {
+ 	core->bus->ops->write32(core, offset, value);
+ }
+-extern inline u32 bcma_aread32(struct bcma_device *core, u16 offset)
++static inline u32 bcma_aread32(struct bcma_device *core, u16 offset)
+ {
+ 	return core->bus->ops->aread32(core, offset);
+ }
+-extern inline
++static inline
+ void bcma_awrite32(struct bcma_device *core, u16 offset, u32 value)
+ {
+ 	core->bus->ops->awrite32(core, offset, value);

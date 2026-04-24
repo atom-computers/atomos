@@ -1,0 +1,58 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Kernel config based on: arch/arm/configs/cyanogenmod_ouya_defconfig
+
+pkgname=linux-ouya-ouya-downstream
+pkgver=3.1.10
+pkgrel=0
+pkgdesc="Ouya kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="ouya-ouya"
+url="https://github.com/milaq/android_kernel_boxer8_ouya"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="gcc6 perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+# Compiling with GCC6
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_boxer8_ouya"
+_commit="49f035e65e689f8c227bac7a6c4ecf89ad9158af"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/milaq/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+7e29ed39c61693d85d344b6eb6180920431364124e8a261f28804585e7362ddbb3ad43c9610bed1ce83b1de7957261e450862081f53de98a5873b5a8aad1748e  linux-ouya-ouya-downstream-49f035e65e689f8c227bac7a6c4ecf89ad9158af.tar.gz
+03a85d594e950af5352c5cc98d42e30c17c195a3437863452e63851bce244875656707b8ead0402eeb4be476d56bcc712b221ab628081d3ce74e50fdf710c14f  config-ouya-ouya.armv7
+6b7ecfd0939b920f263492484e8d60ff30c55614a750f5efd813a699729e65916e31b106e18bd6ea9858b37753403a6428f3a8d993c18b2459685aa29c1f2055  00_fix_return_address.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

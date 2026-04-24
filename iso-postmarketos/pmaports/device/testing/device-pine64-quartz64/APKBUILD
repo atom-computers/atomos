@@ -1,0 +1,53 @@
+maintainer="Petr Hodina <phodina@protonmail.com>"
+pkgname=device-pine64-quartz64
+pkgdesc="Pine64 Quartz64"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware
+$pkgname-kernel-a:kernel_a
+$pkgname-kernel-b:kernel_b"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi, Bluetooth and display firmware"
+	depends="linux-firmware-brcm"
+	mkdir "$subpkgdir"
+}
+
+kernel_a() {
+	pkgdesc="Quartz64 Model A"
+	depends="u-boot-pine64-quartz64-a linux-postmarketos-rockchip"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_b() {
+	pkgdesc="Quartz64 Model B"
+	depends="u-boot-pine64-quartz64-b linux-postmarketos-rockchip"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+58af670fed835baa19cef2f0d5b369c5188f3b1e3fef6e5202e9070c4dad97c1053e2960ce2bff3f0a85c3289a59d88d95cc5849380410c30ba9387df3521186  deviceinfo
+6375f74ddc0d2149064f4e2eb2e3bd19d643ee8785c80a6971e458f04f9ccfbdc5b13a2e7576ad18983f6a98bf905007fefb4c22099a634989a3e2fa76b3c780  kernel-cmdline.conf
+7ab2de793a3eb1f4e813d138c179858d5d808bd3de7ee25ef42375aedd26265d76f54ec2bc6bc4bdf808ba5adfa25eaaeb1ee378d32dd32b07fcf786604cceec  modules-initfs
+"

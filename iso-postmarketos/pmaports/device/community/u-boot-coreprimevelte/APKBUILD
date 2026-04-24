@@ -1,0 +1,48 @@
+maintainer="Duje Mihanović <duje@dujemihanovic.xyz>"
+pkgname=u-boot-coreprimevelte
+pkgver=2026.04
+_pkgver=v${pkgver/_/-}-pxa1908
+pkgrel=0
+pkgdesc="U-Boot for Samsung Galaxy Core Prime VE LTE"
+url="https://gitlab.com/legolivesmatter/u-boot"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+makedepends="$depends_dev bash bc dtc python3-dev gzip swig bison flex
+	     openssl-dev gnutls-dev pxa-mkbootimg py3-setuptools u-boot-tools vboot-utils"
+source="
+	$pkgname-$_pkgver.tar.gz::$url/-/archive/$_pkgver/u-boot-$_pkgver.tar.gz
+	0001-switch-to-UEFI.patch
+"
+builddir="$srcdir/u-boot-$_pkgver/"
+options="!check"
+
+build() {
+	unset LDFLAGS
+	make ARCH=arm coreprimevelte_defconfig
+	make ARCH=arm CC="${CC:-gcc}"
+}
+
+package() {
+	mkdir -p "$pkgdir/usr/share/u-boot/coreprimevelte/"
+
+	install -Dm644 "$builddir/u-boot.bin" \
+		-t "$pkgdir/usr/share/u-boot/coreprimevelte/"
+
+	pxa1908-dtbTool -p "$builddir"/scripts/dtc/ \
+		-o "$builddir"/dt.img \
+		"$builddir"/dts/upstream/src/arm64/marvell/mmp/
+	install -Dm644 "$builddir"/dt.img \
+		-t "$pkgdir"/boot/
+
+	gzip -c "$pkgdir"/usr/share/u-boot/coreprimevelte/u-boot.bin \
+		> u-boot.bin.gz
+	mkimage -A arm64 -C gzip -O linux -a 1000000 -e 1000000 \
+		-d u-boot.bin.gz \
+		"$pkgdir"/usr/share/u-boot/coreprimevelte/u-boot.uImage
+}
+
+sha512sums="
+18bb1568e687772bdd301da093c4d370f089d9378566c6f3b8d329c4d4221dc8907afc8caa85b2da5aef13ed32edff98853dfada9d198d052fbdffa5ed51433d  u-boot-coreprimevelte-v2026.04-pxa1908.tar.gz
+11ebd1eac0295d010bcf55ade5d2c22614c157747632571fe6ab4658fffbcb381b0e30849c4e7f81d176156424d08265e8872f170c3e762fe0c94e50183b696a  0001-switch-to-UEFI.patch
+"

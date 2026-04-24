@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_gtowifi_defconfig
+
+pkgname=linux-samsung-gtowifi
+pkgver=4.9.277
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab A 8.0 (2019) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-gtowifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	clang
+"
+
+# Source
+_repository="android_kernel_samsung_sdm429"
+_commit="3f81a222c8f21e664476ac1ef2368a72dcb6cb53"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-xorg-mdss-update-fb-info.patch
+	99_framebuffer.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+26a915c3bc0793a85a0da5b81664bf7f29b0e74b1181e9006e9785d8bc72e56048c2df0a3390707e3635e95af420556d1b38e5b0c451af477ae9c15f0ee93634  linux-samsung-gtowifi-3f81a222c8f21e664476ac1ef2368a72dcb6cb53.tar.gz
+271c7185a7b05f09e2fc8938826508130fc9f1c010c38abd52bf0aaa5d26518ffbc929ffb14338fe9e72b78ddd2d80c79574f6de5b1249a8a6ad4ed4b5e8d98c  config-samsung-gtowifi.aarch64
+e11a1ca524a05a5fe8b845937dbc57ee38c52e0a1a979d8e7be0ac53df22f84dfb424205ee7f541acfca3daba3e9f5d49bb4b9e9bb482eb354de14eb28bd0094  fix-xorg-mdss-update-fb-info.patch
+741a46c6679172639568df96614b12a543563895ddee79051d88d28742b26d9c725f1d03dc208152c46e87b8b58240a3e206877da9a6a72035095e0f43458a72  99_framebuffer.patch
+"

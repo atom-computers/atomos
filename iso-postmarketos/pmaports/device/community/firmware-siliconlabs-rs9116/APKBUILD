@@ -1,0 +1,22 @@
+# Co-Maintainer: Newbyte <newbyte@postmarketos.org>
+# Contributor: Clayton Craft <clayton@craftyguy.net>
+maintainer="Alistair Francis <alistair@alistair23.me>"
+pkgname=firmware-siliconlabs-rs9116
+pkgver=2.5.1
+pkgrel=0
+pkgdesc="Firmware for the SiliconLabs RS9116 Wifi/BT adapter"
+url="https://github.com/SiliconLabs/RS911X-nLink-OSD"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-$pkgver.tar.gz::https://github.com/SiliconLabs/RS911X-nLink-OSD/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/RS911X-nLink-OSD-$pkgver"
+
+package() {
+	install -Dm644 Firmware/pmemdata_wlan_bt_classic \
+		"$pkgdir"/lib/firmware/postmarketos/pmemdata_wlan_bt_classic
+}
+
+sha512sums="
+e14a6cbdb6233de2b2ea87f02fd05cf6103d23c4859429e5a589cd5880910b90ddf2fe85c916bffce0182f944febdae52201708f1fbf80d8fb3299ce8e16ac1d  firmware-siliconlabs-rs9116-2.5.1.tar.gz
+"

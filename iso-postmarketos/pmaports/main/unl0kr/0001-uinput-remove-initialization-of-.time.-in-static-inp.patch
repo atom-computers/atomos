@@ -1,0 +1,47 @@
+From 6329d62aacbc97f5beb8d617402a1f8b898210d1 Mon Sep 17 00:00:00 2001
+From: Clayton Craft <clayton@craftyguy.net>
+Date: Tue, 3 Mar 2026 09:16:24 -0800
+Subject: [PATCH] uinput: remove initialization of .time.* in static
+ input_event
+
+time.tv_usec and tv_sec are apparently not available any more on 32-bit
+archs, possibly due to some year 2038 thing?
+
+../buffyboard/uinput_device.c:35:8: error: 'struct input_event' has no member named 'time'
+   35 |       .time.tv_usec = 0,
+      |        ^~~~
+
+This works around it by removing the explicit initialization of these
+members of the input_event struct, since static int/float vars in C are
+automatically initialized to 0.
+---
+ buffyboard/uinput_device.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/buffyboard/uinput_device.c b/buffyboard/uinput_device.c
+index f014e02..cc39ed2 100644
+--- a/buffyboard/uinput_device.c
++++ b/buffyboard/uinput_device.c
+@@ -25,17 +25,9 @@
+ 
+ static int fd = -1;
+ static struct input_event events[2] = {
+-    { .time.tv_sec = 0,
+-      .time.tv_usec = 0,
+-      .type = EV_KEY,
+-      .code = 0,
+-      .value = 0
+-    },
+-    { .time.tv_sec = 0,
+-      .time.tv_usec = 0,
+-      .type = EV_SYN,
++    { .type = EV_KEY },
++    { .type = EV_SYN,
+       .code = SYN_REPORT,
+-      .value = 0
+     }
+ };
+ 
+-- 
+2.53.0
+

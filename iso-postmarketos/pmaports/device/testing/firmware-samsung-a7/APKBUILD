@@ -1,0 +1,33 @@
+maintainer=""
+pkgname=firmware-samsung-a7
+pkgver=1
+pkgrel=2
+_name="Samsung Galaxy A7 (2015)"
+pkgdesc="Firmware for $_name"
+url="https://postmarketos.org"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-WCNSS_qcom_wlan_nv.bin.base64::https://pastebin.com/raw/qqXtjvd0"
+builddir="$srcdir"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	base64 -d $pkgname-WCNSS_qcom_wlan_nv.bin.base64 > WCNSS_qcom_wlan_nv.bin
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="$_name WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+345f9191982cdf632c1c111e26b700c01223d5b1ea64d7fdc1e8b37196a058f0807c7e74af3e52963d0316ad46b559793451cb8d8324a1ee31c0348637252ed7  firmware-samsung-a7-WCNSS_qcom_wlan_nv.bin.base64
+"

@@ -1,0 +1,93 @@
+From c48b66954daf6d454d435a3a744862c372b21b16 Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Tue, 24 Jun 2025 22:44:41 +0700
+Subject: [PATCH 1/7] drivers: leds: ktd2692: Guard function calls under
+ `CONFIG_VIDEO_EXYNOS_FIMC_IS2`
+
+Fixes compilation issues when `CONFIG_VIDEO_EXYNOS_FIMC_IS2` is disabled.
+
+Signed-off-by: Hendra Manudinata <manoedinata@daunscape.tech>
+---
+ drivers/leds/leds-ktd2692.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/leds/leds-ktd2692.c b/drivers/leds/leds-ktd2692.c
+index 4c2038a8..b75e0910 100755
+--- a/drivers/leds/leds-ktd2692.c
++++ b/drivers/leds/leds-ktd2692.c
+@@ -24,7 +24,9 @@
+ 
+ //#define DEBUG_LED_TIME
+ 
++#ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS2
+ extern struct class *camera_class; /*sys/class/camera*/
++#endif
+ struct device *ktd2692_dev;
+ 
+ struct ktd2692_platform_data *global_ktd2692data = NULL;
+@@ -176,6 +178,7 @@ static int ktd2692_write_data(unsigned data)
+ 	return err;
+ }
+ 
++#ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS2
+ #ifdef CONFIG_LEDS_SUPPORT_FRONT_FLASH
+ int ktd2692_led_set_front_flash_brightness(int brightness)	/*For control brightness of front flash led*/
+ {
+@@ -281,6 +284,7 @@ int ktd2692_led_mode_ctrl(int mode)
+ 	return ret;
+ }
+ #endif
++#endif /* CONFIG_VIDEO_EXYNOS_FIMC_IS2 */
+ 
+ ssize_t ktd2692_store(struct device *dev,
+ 			struct device_attribute *attr, const char *buf,
+@@ -360,6 +364,7 @@ ssize_t ktd2692_show(struct device *dev,
+ {
+ 	return sprintf(buf, "%d\n", global_ktd2692data->sysfs_input_data);
+ }
++#ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS2
+ #ifdef CONFIG_LEDS_SUPPORT_FRONT_FLASH
+ static DEVICE_ATTR(front_flash, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH,
+ 	ktd2692_show, ktd2692_store);
+@@ -369,6 +374,7 @@ static DEVICE_ATTR(front_torch_flash, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH,
+ static DEVICE_ATTR(rear_flash, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH,
+ 	ktd2692_show, ktd2692_store);
+ #endif
++#endif /* CONFIG_VIDEO_EXYNOS_FIMC_IS2 */
+ 
+ static int ktd2692_parse_dt(struct device *dev,
+                                 struct ktd2692_platform_data *pdata)
+@@ -423,6 +429,7 @@ static int ktd2692_probe(struct platform_device *pdev)
+ 
+ 	LED_INFO("KTD2692_LED Probed\n");
+ 
++#ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS2
+ #ifdef CONFIG_LEDS_SUPPORT_FRONT_FLASH
+ 	if( led_dev == NULL) {
+ 		led_dev = device_create(camera_class, NULL, 3, NULL, "flash");
+@@ -452,12 +459,14 @@ static int ktd2692_probe(struct platform_device *pdev)
+ 				dev_attr_rear_flash.attr.name);
+ 	}
+ #endif
++#endif /* CONFIG_VIDEO_EXYNOS_FIMC_IS2 */
+ 	spin_lock_init(&pdata->int_lock);
+ 
+ 	return 0;
+ }
+ static int __devexit ktd2692_remove(struct platform_device *pdev)
+ {
++#ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS2
+ #ifdef CONFIG_LEDS_SUPPORT_FRONT_FLASH
+ 	device_remove_file(led_dev, &dev_attr_front_flash);
+ 	device_remove_file(led_dev, &dev_attr_front_torch_flash);
+@@ -466,6 +475,7 @@ static int __devexit ktd2692_remove(struct platform_device *pdev)
+ 	device_destroy(camera_class, 0);
+ 	class_destroy(camera_class);
+ #endif
++#endif /* CONFIG_VIDEO_EXYNOS_FIMC_IS2 */
+ 
+ 	return 0;
+ }
+-- 
+2.43.0
+

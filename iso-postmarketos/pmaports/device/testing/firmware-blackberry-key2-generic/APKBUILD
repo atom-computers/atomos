@@ -1,0 +1,36 @@
+
+maintainer="Paul Sajna <sajattack@postmarketos.org>"
+pkgname=firmware-blackberry-key2-generic
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for BlackBerry KEY2 and KEY2 LE"
+url="https://gitlab.com/sajattack/linux-firmware-ath10k-blackberry"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+depends="msm-firmware-loader"
+makedepends="qca-swiss-army-knife"
+
+# Sources
+_repo=linux-firmware-ath10k-blackberry
+_commit="9f6c9123514d7aed3bb822e0dbdab8fcc40de18a"
+source="$_repo-$_commit.tar.gz::$url/-/archive/$_commit/$_repo-$_commit.tar.gz"
+_fwdir="/lib/firmware"
+builddir="$srcdir/$_repo-$_commit"
+
+build() {
+	# Create board-2.bin
+	ath10k-bdencoder -c board-2.json -o board-2.bin
+
+	# Create firmware-5.bin
+	ath10k-fwencoder --create 	--features=wowlan,no-nwifi-decap-4addr-padding,allows-mesh-bcast,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel --set-wmi-op-version=tlv --set-htt-op-version=tlv --set-fw-api=5
+}
+
+package() {
+	install -D -m644 board-2.bin "$pkgdir"/$_fwdir/ath10k/WCN3990/hw1.0/board-2.bin
+	install -D -m644 firmware-5.bin "$pkgdir"/$_fwdir/ath10k/WCN3990/hw1.0/firmware-5.bin
+}
+
+sha512sums="
+93db5a729f642b156a037a89e7a0e920fed573f5e4cc6e461439ab2df1d5b2a57abb8856de9681402e68e051af1960cf5b7d4cb735e0d91ed632a5e16bfb4c4e  linux-firmware-ath10k-blackberry-9f6c9123514d7aed3bb822e0dbdab8fcc40de18a.tar.gz
+"

@@ -1,0 +1,17 @@
+diff --git a/usr/u8500_initramfs.list b/usr/u8500_initramfs.list
+index 35e8d68..bc8c3c5 100644
+--- a/usr/u8500_initramfs.list
++++ b/usr/u8500_initramfs.list
+@@ -24,10 +24,8 @@ nod /dev/block/mmcblk1p1 600 0 0 b 179 19
+ slink /init /stage1/init 777 0 0
+ dir /proc 755 0 0
+ dir /stage1 755 0 0
+-file /stage1/busybox source/usr/u8500_initramfs_files/busybox 755 0 0
+-file /stage1/init source/usr/u8500_initramfs_files/init 755 0 0
++file /stage1/busybox usr/u8500_initramfs_files/busybox 755 0 0
++file /stage1/init usr/u8500_initramfs_files/init 755 0 0
+ dir /sys 755 0 0
+ dir /mnt 755 0 0
+ dir /mnt/.lfs 755 0 0
+-file /stage1/boot.cpio ../../ramdisk.cpio 644 0 0
+-file /stage1/recovery.cpio ../../ramdisk-recovery.cpio 644 0 0

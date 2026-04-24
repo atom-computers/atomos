@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# The service "osclock" is a dummy service simply providing "clock".
+# This avoids other services that need "clock" to call the service
+# "hwclock".
+#
+# The service "swclock-offset-boot" needs to run after the sysfs has
+# been mounted. As the sysfs is mounted in runlevel sysinit, assigning
+# the service to runlevel boot is enough to keep the order.
+#
+# Before installation of the package "swclock-offset", the system time
+# might jump back and forth. Because of this, OpenRC can get confused
+# whether the cached dependency tree is old or new. To avoid this
+# uncertainty, an update of the dependency tree cache is triggered here.
+
+# replace service hwclock by osclock
+rc-update -q del hwclock boot
+rc-update -q add osclock boot
+
+# assign swclock-offset services to runlevels
+rc-update -q add swclock-offset-boot boot
+rc-update -q add swclock-offset-shutdown shutdown
+
+# update dependency tree cache
+rc-update -q --update

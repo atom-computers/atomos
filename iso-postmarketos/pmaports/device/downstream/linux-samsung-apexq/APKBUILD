@@ -1,0 +1,61 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogen_apexq_defconfig
+
+pkgname=linux-samsung-apexq
+pkgver=3.4.104
+pkgrel=5
+pkgdesc="Samsung Galaxy S Relay 4G kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="samsung-apexq"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="xz perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_samsung_d2"
+_commit="3795379ed3f846bf17908ff29576a93caff5d1d7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-fix-video-argb-setting.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	make ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" INSTALL_MOD_PATH="$pkgdir" \
+		modules_install
+}
+
+sha512sums="
+04c629c36182d580e3410c35bc14a0899c1610a1535fe3832d1de441c0051a6fc78c5166933cc33036000fad45b80acddc4043c3aeae994e3e4f5eefe80215d3  linux-samsung-apexq-3795379ed3f846bf17908ff29576a93caff5d1d7.tar.gz
+95e1811a65edd963d46cd7d5f8d6afa2db1ee15e2af6b4a6af3c64c71f856d334c4ac83d7ec4725b465dacceac2f26fb895658ebde2650e0dd444dcc1efabadc  config-samsung-apexq.armhf
+edad59ee6defca3359fb3f1ba5cb6b933721bcc91a08dd21c842723d891545a8f08da1793623c79064c6a7e75daa434bb4fe052a56bc4e870f9f1efca165565a  01-fix-video-argb-setting.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

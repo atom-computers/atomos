@@ -1,0 +1,26 @@
+diff --git a/drivers/staging/Kconfig b/drivers/staging/Kconfig
+index 8744f944ede9..e224887bd891 100644
+--- a/drivers/staging/Kconfig
++++ b/drivers/staging/Kconfig
+@@ -106,4 +106,12 @@ source "drivers/staging/hikey9xx/Kconfig"
+ 
+ source "drivers/staging/rtl8723cs/Kconfig"
+ 
++config RTL8723DS
++	tristate "Realtek RTL8723DS SDIO WiFi driver"
++	depends on WLAN && MMC && CFG80211
++	select WIRELESS_EXT
++	select WEXT_PRIV
++	help
++	  Help message of RTL8723DS
++
+ endif # STAGING
+diff --git a/drivers/staging/Makefile b/drivers/staging/Makefile
+index 90ea2bf5ff76..72c9957832d3 100644
+--- a/drivers/staging/Makefile
++++ b/drivers/staging/Makefile
+@@ -43,3 +43,4 @@ obj-$(CONFIG_QLGE)		+= qlge/
+ obj-$(CONFIG_WFX)		+= wfx/
+ obj-y				+= hikey9xx/
+ obj-$(CONFIG_RTL8723CS)		+= rtl8723cs/
++obj-$(CONFIG_RTL8723DS)		+= rtl8723ds/

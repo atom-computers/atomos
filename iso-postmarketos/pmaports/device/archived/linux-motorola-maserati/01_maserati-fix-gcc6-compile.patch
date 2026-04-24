@@ -1,0 +1,79 @@
+From 51a1339a3206ed275b8021958a9a8d237322f9fa Mon Sep 17 00:00:00 2001
+From: NeKit <nekit1000@gmail.com>
+Date: Sun, 10 Dec 2017 14:41:20 +0300
+Subject: [PATCH] Fix compile errors with gcc6 on postmarketOS
+
+Change-Id: I1f426c864a0377b33b27da5cc6476f6ff888b6cb
+---
+ arch/arm/include/asm/ftrace.h    | 2 +-
+ arch/arm/kernel/return_address.c | 5 -----
+ include/linux/i2c/twl.h          | 2 +-
+ scripts/mod/elf.h                | 5 -----
+ 4 files changed, 2 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/include/asm/ftrace.h b/arch/arm/include/asm/ftrace.h
+index f89515adac6..2bb8cac28b9 100644
+--- a/arch/arm/include/asm/ftrace.h
++++ b/arch/arm/include/asm/ftrace.h
+@@ -45,7 +45,7 @@ void *return_address(unsigned int);
+ 
+ #else
+ 
+-extern inline void *return_address(unsigned int level)
++static inline void *return_address(unsigned int level)
+ {
+ 	return NULL;
+ }
+diff --git a/arch/arm/kernel/return_address.c b/arch/arm/kernel/return_address.c
+index 0b13a72f855..8bf0a5abec9 100644
+--- a/arch/arm/kernel/return_address.c
++++ b/arch/arm/kernel/return_address.c
+@@ -62,11 +62,6 @@ void *return_address(unsigned int level)
+ #warning "TODO: return_address should use unwind tables"
+ #endif
+ 
+-void *return_address(unsigned int level)
+-{
+-	return NULL;
+-}
+-
+ #endif /* if defined(CONFIG_FRAME_POINTER) && !defined(CONFIG_ARM_UNWIND) / else */
+ 
+ EXPORT_SYMBOL_GPL(return_address);
+diff --git a/include/linux/i2c/twl.h b/include/linux/i2c/twl.h
+index 947543a0fba..ec7c8855117 100644
+--- a/include/linux/i2c/twl.h
++++ b/include/linux/i2c/twl.h
+@@ -735,7 +735,7 @@ static inline int twl4030_remove_script(u8 flags) { return -EINVAL; }
+ #ifdef CONFIG_TWL6030_POWER
+ extern void twl6030_power_init(struct twl4030_power_data *power_data);
+ #else
+-extern inline void twl6030_power_init(struct twl4030_power_data *power_data) { }
++static inline void twl6030_power_init(struct twl4030_power_data *power_data) { }
+ #endif
+ 
+ struct twl4030_codec_audio_data {
+diff --git a/scripts/mod/elf.h b/scripts/mod/elf.h
+index aba4d0c4c1c..f898d3ee28b 100644
+--- a/scripts/mod/elf.h
++++ b/scripts/mod/elf.h
+@@ -22,8 +22,6 @@
+ 
+ /* #include <features.h> */
+ 
+-__BEGIN_DECLS
+-
+ /* Standard ELF types.  */
+ 
+ #include <stdint.h>
+@@ -2507,7 +2505,4 @@ typedef Elf32_Addr Elf32_Conflict;
+ /* Keep this the last entry.  */
+ #define R_V850_NUM		25
+ 
+-
+-__END_DECLS
+-
+ #endif	/* elf.h */
+-- 
+2.13.2
+

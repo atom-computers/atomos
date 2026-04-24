@@ -1,0 +1,3 @@
+[org.gnome.desktop.wm.keybindings]
+switch-input-source=['<Control>space']
+switch-input-source-backward=['<Shift><Control>space']

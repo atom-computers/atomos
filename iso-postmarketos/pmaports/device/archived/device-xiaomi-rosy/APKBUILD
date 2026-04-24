@@ -1,0 +1,37 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+# Reference: <https://postmarketos.org/devicepkg>
+
+pkgname=device-xiaomi-rosy
+pkgdesc="Xiaomi Redmi 5"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-rosy
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8953
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+cf25127dd6e592edba6bd9eeef5086bdf0434b3ac971c6e5d14ddd6f310358de903f2fcfcba3661413e1dc8b09130e2451bf0e35bbdd2eddc66192209e9788cb  deviceinfo
+ddc4e788c7cf62a1f0d6228f3bb59b89cba8f30c06d99c945477b0c1931721aefa3dc77e9f90ae3f0ad78979b9c7b228984e0bfd961b3e5eac62961830682939  modules-initfs
+"

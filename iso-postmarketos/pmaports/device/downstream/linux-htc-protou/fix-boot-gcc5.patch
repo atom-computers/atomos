@@ -1,0 +1,25 @@
+diff --git a/include/linux/unaligned/le_byteshift.h b/include/linux/unaligned/le_byteshift.h
+index be376fb79..ab14cb194 100644
+--- a/include/linux/unaligned/le_byteshift.h
++++ b/include/linux/unaligned/le_byteshift.h
+@@ -5,17 +5,17 @@
+ 
+ static inline u16 __get_unaligned_le16(const u8 *p)
+ {
+-	return p[0] | p[1] << 8;
++	return p[0] + (p[1] << 8);
+ }
+ 
+ static inline u32 __get_unaligned_le32(const u8 *p)
+ {
+-	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
++	return p[0] + (p[1] << 8) + (p[2] << 16) + (p[3] << 24);
+ }
+ 
+ static inline u64 __get_unaligned_le64(const u8 *p)
+ {
+-	return (u64)__get_unaligned_le32(p + 4) << 32 |
++	return ((u64)__get_unaligned_le32(p + 4) << 32) +
+ 	       __get_unaligned_le32(p);
+ }
+ 

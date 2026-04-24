@@ -1,0 +1,26 @@
+--- a/Makefile
++++ b/Makefile
+@@ -243,13 +243,8 @@
+ 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
+ 	  else echo sh; fi ; fi)
+ 
+-ifdef CONFIG_CCACHE
+-HOSTCC       = ccache gcc
+-HOSTCXX      = ccache g++
+-else
+ HOSTCC       = gcc
+ HOSTCXX      = g++
+-endif
+ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+ HOSTCXXFLAGS = -O2
+ 
+@@ -426,7 +421,7 @@
+ 		   -fno-strict-aliasing -fno-common \
+ 		   -Werror-implicit-function-declaration \
+ 		   -Wno-format-security \
+-		   -fno-delete-null-pointer-checks -Wno-array-bounds -Wno-maybe-uninitialized
++		   -fno-delete-null-pointer-checks
+-KBUILD_AFLAGS_KERNEL := -Wa,-mimplicit-it=thumb
++KBUILD_AFLAGS_KERNEL :=
+ KBUILD_CFLAGS_KERNEL :=
+ KBUILD_AFLAGS   := -D__ASSEMBLY__

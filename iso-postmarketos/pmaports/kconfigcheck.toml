@@ -1,0 +1,689 @@
+# pmaports CI and "pmbootstrap kconfig check" use this file to ensure our
+# kernels have certain kernel config options set. Which categories are checked
+# depends on options="pmb:kconfigcheck-…" in the linux APKBUILD. If no such
+# option is set, see the default in ["category:default".">=0.0.0"."all"] below.
+
+[aliases]
+# Devices with options="pmb:kconfigcheck-community" in the device APKBUILD will
+# check for the following categories. A CI check ensures that all devices in
+# device/main and device/community dirs have this option. Devices in testing
+# may also have "pmb:kconfigcheck-community", but it may be removed when
+# modifying the required options and adjusting the devices in testing is too
+# much effort. Device maintainers may fix it up afterwards and add it back.
+community = [
+	"category:default",
+	"category:community_various",
+	"category:containers",
+	"category:debug",
+	"category:filesystems",
+	"category:hardening",
+	"category:immutable",
+	"category:input",
+	"category:iwd",
+	"category:netboot",
+	"category:netmount",
+	"category:nftables",
+	"category:usb",
+	"category:usb_gadgets",
+	"category:waydroid",
+	"category:wine",
+	"category:wireguard",
+	"category:zram",
+]
+
+# Format for rule sections:
+#   ["category:<NAME>"."<KERNEL_VERSION>"."<ARCHITECTURES>"]
+# Implemented value types:
+# - tristate (e.g. 'ANDROID_PARANOID_NETWORK = n'):
+#   - y: built-in, preferred but module is OK
+#   - m: module, preferred but built-in is OK
+#   - n: disabled
+# - list (e.g. 'ANDROID_BINDER_DEVICES = ["binder", "hwbinder"]'):
+#   - each element of the array must be contained in the kernel config string,
+#     in any order. The example above would accept the following in the config:
+#       CONFIG_ANDROID_BINDER_DEVICES="hwbinder,vndbinder,binder"
+# - string (e.g. 'LSM = "lockdown,yama,loadpin,safesetid,integrity"'):
+#   - the value in the kernel config must be the same as the given string. Use
+#     this e.g. if the order of the elements is important.
+
+# default: all devices must satisfy these
+["category:default".">=0.0.0"."all"]
+ANDROID_PARANOID_NETWORK = "n"
+BLK_DEV_INITRD = "y"
+CGROUPS = "y" # also required for: containers
+CRYPTO_CBC = "y"
+CRYPTO_AES = "y"
+CRYPTO_XTS = "y"
+DEVTMPFS = "y"
+DM_CRYPT = "y"
+FB = "y"
+INPUT_EVDEV = "m"
+KINETO_GAN = "n"
+PFT = "n"
+SEC_RESTRICT_ROOTING = "n"
+SYN_COOKIES = "y"
+SYSVIPC = "y"
+TMPFS_POSIX_ACL = "y"
+USE_VFB = "n"
+VT = "y"
+["category:default".">=4.3.0"."all"]
+DRM_FBDEV_EMULATION = "y"
+["category:default".">=2.6.0"."all"]
+BINFMT_ELF = "y"
+["category:default".">=3.10.0"."all"]
+# Note: MUST be =y else we're unable to run our initramfs's init script
+BINFMT_SCRIPT = "y"
+["category:default".">=4.0.0"."all"]
+UEVENT_HELPER = "y"
+USER_NS = "y" # also required for: containers
+["category:default"."<4.7.0"."all"]
+DEVPTS_MULTIPLE_INSTANCES = "y"
+["category:default"."<4.14.0"."all"]
+SAMSUNG_TUI = "n"
+TZDEV = "n"
+["category:default"."<5.2.0"."armhf armv7 x86"]
+LBDAF = "y"
+["category:default".">=5.2.0"."all"]
+# Provide a proper dummy null console to improve compatibility
+# on devices that like to coerce console=null
+NULL_TTY = "m"
+# MODULE_COMPRESS was added after the individual compression algorithm options
+["category:default".">=6.12.0"."all"]
+MODULE_COMPRESS = "y"
+["category:default".">=6.2.0"."all"]
+# MODULE_COMPRESS_ZSTD exists since 5.13, but since kernels prior to 6.2 cannot
+# decompress it, we would break devices with split initramfs which use busybox
+# modprobe, so we only enforce it on 6.2 or newer
+MODULE_COMPRESS_ZSTD = "y"
+# MODULE_DECOMPRESS exists since 5.17, but can only decompress zstd since 6.2
+MODULE_DECOMPRESS = "y"
+["category:default".">=5.19.0"."all"]
+FW_LOADER_COMPRESS = "y"
+FW_LOADER_COMPRESS_ZSTD = "y"
+["category:default".">=4.20.0"."all"]
+# required for systemd-oomd
+PSI = "y"
+PSI_DEFAULT_DISABLED = "n"
+UDMABUF = "y"
+["category:default".">=5.14.0"."all"]
+# systemd (kernel version is "recommended baseline")
+BPF = "y"
+BPF_JIT = "y"
+BPF_LSM = "y"
+IPC_NS = "y"
+KPROBES = "y"
+KPROBE_EVENTS = "y"
+NET_NS = "y"
+PID_NS = "y"
+SECURITY = "y"
+SECURITYFS = "y"
+USER_NS = "y"
+UTS_NS = "y"
+
+["category:netmount".">=2.6.0"."all"]
+CACHEFILES = "m"
+CRYPTO_CAMELLIA = "m"
+CRYPTO_CTS = "y"
+CRYPTO_HMAC = "y"
+CRYPTO_SHA256 = "y"
+CRYPTO_SHA512 = "y"
+FSCACHE = "y"
+NFS_FS = "m"
+NFS_FSCACHE = "y"
+NFS_V3 = "m"
+NFS_V4 = "m"
+NFSD = "m"
+RPCSEC_GSS_KRB5 = "m"
+["category:netmount".">=3.1.0"."all"]
+CRYPTO_CMAC = "m"
+["category:netmount".">=3.10.0 <7.0"."all"]
+CRYPTO_AES_TI = "m"
+["category:netmount".">=3.10.0"."aarch64"]
+CRYPTO_AES_ARM64_CE_BLK = "y"
+["category:netmount".">=4.14.0"."all"]
+RPCSEC_GSS_KRB5_ENCTYPES_AES_SHA1 = "y"
+RPCSEC_GSS_KRB5_ENCTYPES_AES_SHA2 = "y"
+RPCSEC_GSS_KRB5_ENCTYPES_CAMELLIA = "y"
+
+# waydroid: android compatibility layer
+["category:waydroid".">=0.0.0"."all"]
+ANDROID_BINDERFS = "n"
+ANDROID_BINDER_DEVICES = ["binder", "hwbinder", "vndbinder"]
+ANDROID_BINDER_IPC = "y"
+ANDROID_BINDER_IPC_SELFTEST = "n"
+BLK_DEV_LOOP = "y"
+BPF_SYSCALL = "y"
+BRIDGE = "m"
+BRIDGE_VLAN_FILTERING = "y"
+CGROUP_BPF = "y"
+FUSE_FS = "m"
+IP_NF_MANGLE = "m"
+NETFILTER_XTABLES = "m"
+NETFILTER_XT_MATCH_COMMENT = "m"
+SQUASHFS = "m"
+SQUASHFS_XATTR = "y"
+SQUASHFS_XZ = "y"
+TMPFS_XATTR = "y"
+TUN = "m"
+VETH = "m"
+VLAN_8021Q = "m"  # prerequisite for bridge
+["category:waydroid".">=3.5"."all"]
+CROSS_MEMORY_ATTACH = "y"
+["category:waydroid"."<5.18"."all"]
+ASHMEM = "y"
+["category:waydroid".">=6.9"."all"]
+IP_NF_IPTABLES_LEGACY = "m"
+["category:waydroid".">=6.17"."all"]
+NETFILTER_XTABLES_LEGACY = "y"
+
+# iwd: modern inet wireless daemon
+# Obtained from 'grep ADD_MISSING src/main.c' in iwd.git
+["category:iwd".">=0.0.0"."all"]
+ASYMMETRIC_KEY_TYPE = "y"
+ASYMMETRIC_PUBLIC_KEY_SUBTYPE = "y"
+CRYPTO_CMAC = "m"
+CRYPTO_DES = "m"
+CRYPTO_ECB = "y"
+CRYPTO_HMAC = "y"
+CRYPTO_MD4 = "m"  # Needed for EAP MSCHAPV2 authentication
+CRYPTO_MD5 = "y"
+CRYPTO_SHA1 = "y"
+CRYPTO_SHA256 = "y"
+CRYPTO_SHA512 = "y"
+CRYPTO_USER_API_HASH = "m"
+CRYPTO_USER_API_SKCIPHER = "m"
+KEYS = "y"
+KEY_DH_OPERATIONS = "y"
+PKCS7_MESSAGE_PARSER = "y"
+PKCS8_PRIVATE_KEY_PARSER = "m"
+X509_CERTIFICATE_PARSER = "y"
+RFKILL = "m"
+
+# nftables: firewall, not related to nft scams
+["category:nftables".">=3.13.0"."all"]
+NETFILTER = "y"
+NF_CONNTRACK = "m"
+NF_TABLES = "m"
+NF_TABLES_INET = "y"
+NFT_CT = "m"
+NFT_LOG = "m"
+NFT_LIMIT = "m"
+NFT_MASQ = "m"
+NFT_NAT = "m"
+NFT_REJECT = "m"
+NF_TABLES_IPV4 = "y"
+NF_REJECT_IPV4 = "m"
+IP_NF_IPTABLES = "m"
+IP_NF_FILTER = "m"
+IP_NF_TARGET_REJECT = "m"
+IP_NF_NAT = "m"
+NF_TABLES_IPV6 = "y"
+NF_REJECT_IPV6 = "m"
+IP6_NF_IPTABLES = "m"
+IP6_NF_FILTER = "m"
+IP6_NF_TARGET_REJECT = "m"
+IP6_NF_NAT = "m"
+["category:nftables".">=3.13.0 <5.17"."all"]
+NFT_COUNTER = "y"
+["category:nftables".">=6.9"."all"]
+IP_NF_IPTABLES_LEGACY = "m"
+IP6_NF_IPTABLES_LEGACY = "m"
+["category:nftables".">=6.17"."all"]
+NETFILTER_XTABLES_LEGACY = "y"
+
+# containers: lxc, docker, etc.
+["category:containers".">=0.0.0"."all"]
+NAMESPACES = "y"
+NET_NS = "y"
+PID_NS = "y"
+IPC_NS = "y"
+UTS_NS = "y"
+CGROUP_CPUACCT = "y"
+CGROUP_DEVICE = "y"
+CGROUP_FREEZER = "y"
+CGROUP_SCHED = "y"
+CPUSETS = "y"
+KEYS = "y"
+VETH = "m"
+BRIDGE = "m"  # (also needed for waydroid)
+BRIDGE_NETFILTER = "m"
+IP_NF_FILTER = "m"
+IP_NF_MANGLE = "m" # Needed for docker
+IP_NF_TARGET_MASQUERADE = "m"
+IP6_NF_MANGLE = "m" # Needed for docker
+NETFILTER_XT_MATCH_ADDRTYPE = "m"
+NETFILTER_XT_MATCH_CONNTRACK = "m"
+NETFILTER_XT_MATCH_IPVS = "m"
+NETFILTER_XT_MARK = "m"
+NETFILTER_XT_TARGET_CHECKSUM = "m"  # Needed for lxc
+IP_NF_RAW = "m" # Needed for docker
+IP_NF_NAT = "m"
+IP6_NF_RAW = "m" # Needed for docker
+NF_NAT = "m"
+POSIX_MQUEUE = "y"
+MD = "y" # Required for BLK_DEV_DM
+BLK_DEV_DM = "y"  # Storage Drivers
+DUMMY = "m"  # Network Drivers
+BLK_CGROUP = "y"  # Optional section
+BLK_DEV_THROTTLING = "y"  # Optional section
+CGROUP_PERF = "y"  # Optional section
+NET_SCHED = "y" # Required by NET_CLS_CGROUP
+NET_CLS_CGROUP = "m"  # Optional section
+FAIR_GROUP_SCHED = "y"  # Optional section
+IP_NF_TARGET_REDIRECT = "m"  # Optional section
+IP_VS = "m"  # Optional section
+IP_VS_NFCT = "y"  # Optional section
+IP_VS_PROTO_TCP = "y"  # Optional section
+IP_VS_PROTO_UDP = "y"  # Optional section
+IP_VS_RR = "m"  # Optional section
+EXT4_FS_POSIX_ACL = "y"  # Optional section
+EXT4_FS_SECURITY = "y"  # Optional section
+["category:containers".">=3.2"."all"]
+CFS_BANDWIDTH = "y"  # Optional section
+["category:containers".">=3.3"."all"]
+CHECKPOINT_RESTORE = "y"  # Needed for lxc
+["category:containers".">=3.6"."all"]
+MEMCG = "y"
+DM_THIN_PROVISIONING = "m"  # Storage Drivers
+SWAP = "y"
+["category:containers".">=3.6"."x86 x86_64"]
+HUGETLB_PAGE = "y"
+CGROUP_HUGETLB = "y"  # Optional section
+["category:containers".">=3.6 <6.1_rc1"."all"]
+MEMCG_SWAP = "y"
+["category:containers".">=3.7 <5.0"."all"]
+NF_NAT_IPV4 = "y"  # Needed for lxc
+NF_NAT_IPV6 = "y"  # Needed for lxc
+["category:containers".">=3.7"."all"]
+VXLAN = "m"  # Network Drivers
+IP6_NF_TARGET_MASQUERADE = "m"  # Needed for lxc and docker
+["category:containers".">=3.9"."all"]
+BRIDGE_VLAN_FILTERING = "y"  # Network Drivers (also for waydroid)
+MACVLAN = "m"  # Network Drivers
+["category:containers".">=3.13"."all"]
+NFT_COMPAT = "m"
+NFT_CT = "m"  # Docker (optional)
+NFT_NAT = "m"  # Docker (optional)
+NF_TABLES = "m"  # Docker (optional)
+["category:containers".">=3.14"."all"]
+CGROUP_NET_PRIO = "y"  # Optional section
+["category:containers".">=3.17"."all"]
+IP6_NF_NAT = "m" # Needed for docker
+["category:containers".">=3.18"."all"]
+OVERLAY_FS = "m"  # Storage Drivers
+NFT_MASQ = "m"  # Docker (optional)
+["category:containers".">=3.19"."all"]
+IPVLAN = "m"  # Network Drivers
+SECCOMP = "y"  # Optional section
+["category:containers".">=4.4"."all"]
+CGROUP_PIDS = "y"  # Optional section
+["category:containers".">=4.10"."all"]
+CGROUP_BPF = "y" # Needed for docker
+NFT_FIB_IPV4 = "m"  # Docker (optional)
+NFT_FIB_IPV6 = "m"  # Docker, optional
+NFT_FIB = "m"  # Docker (optional)
+["category:containers".">=6.9"."all"]
+IP6_NF_FILTER = "m" # Needed for docker
+
+# zram: RAM disk with on-the-fly compression
+["category:zram".">=0.0.0"."all"]
+ZRAM = "y"
+ZSMALLOC = "y"
+SWAP = "y"
+
+["category:zram"."<6.12"."all"]
+CRYPTO_ZSTD = "y"
+
+["category:zram".">=6.12"."all"]
+ZRAM_BACKEND_842 = "y"
+ZRAM_BACKEND_DEFLATE = "y"
+ZRAM_BACKEND_LZ4 = "y"
+ZRAM_BACKEND_LZ4HC = "y"
+ZRAM_BACKEND_LZO = "y"
+ZRAM_BACKEND_ZSTD = "y"
+
+# netboot: https://postmarketos.org/netboot
+["category:netboot".">=0.0.0"."all"]
+BLK_DEV_NBD = "m"
+["category:netboot".">=6.0"."all"]
+BLK_DEV_UBLK = "m"
+
+# wireguard: VPN software, also includes options for wg-quick
+["category:wireguard".">=5.6_rc1"."all"]
+WIREGUARD = "m"
+IP_ADVANCED_ROUTER = "y"
+IP_MULTIPLE_TABLES = "y"
+IPV6_MULTIPLE_TABLES = "y"
+NF_TABLES = "m"
+NF_TABLES_IPV4 = "y"
+NF_TABLES_IPV6 = "y"
+NFT_CT = "m"
+NFT_FIB = "m"
+NFT_FIB_IPV4 = "m"
+NFT_FIB_IPV6 = "m"
+NF_CONNTRACK_MARK = "y"
+
+# filesystems
+["category:filesystems".">=0.0.0"."all"]
+# Note: These are builtin, not modules, because it reduces the overall
+# vmlinuz+initramfs size for devices with small boot partitions.
+# See: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/7136#note_505237
+BTRFS_FS = "y"
+BTRFS_FS_POSIX_ACL = "y"
+EXFAT_FS = "m"
+EXT4_FS = "y"
+F2FS_FS = "y"
+UDF_FS = "m"
+XFS_FS = "m"
+["category:filesystems".">=5.4"."all"]
+EROFS_FS = "m"
+EROFS_FS_ZIP = "y"
+["category:filesystems".">=5.16"."all"]
+EROFS_FS_ZIP_LZMA = "y"
+["category:filesystems".">=6.6"."all"]
+EROFS_FS_ZIP_DEFLATE = "y"
+["category:filesystems".">=6.10"."all"]
+EROFS_FS_ZIP_ZSTD = "y"
+
+# usb_gadgets
+["category:usb_gadgets".">=0.0.0"."all"]
+# disable legacy gadgets
+USB_ETH = "n"
+USB_FUNCTIONFS = "n"
+USB_MASS_STORAGE = "n"
+USB_G_SERIAL = "n"
+# enable configfs gadgets
+USB_GADGET = "y" # Required by USB_CONFIGFS_*
+USB_CONFIGFS = "m" # Required by USB_CONFIGFS_*
+USB_F_FS = "m"  # FunctionFS USB support
+USB_CONFIGFS_ACM = "y"  # Serial gadget for debug-shell
+USB_CONFIGFS_MASS_STORAGE = "y"  # Mass storage gadget for debug-shell
+USB_CONFIGFS_NCM = "y"  # USB networking via NCM
+USB_CONFIGFS_RNDIS = "y"  # USB networking via RNDIS (legacy)
+USB_CONFIGFS_F_FS = "y"  # FunctionFS support in ConfigFS
+
+# community_various: Various options that were not categorized properly due to
+# inflexibility of previous kconfigcheck related code. We should move these to
+# proper categories above and/or invent new categories with meaningful names.
+# >> Do not add more here!! <<
+["category:community_various".">=0.0.0"."all"]
+BINFMT_MISC = "m"  # register binary formats
+NETWORK_FILESYSTEMS = "y"  # Required by CIFS
+CIFS = "m"  # mount SMB shares
+LEDS_TRIGGER_PATTERN = "m"  # feedbackd
+LEDS_TRIGGER_TIMER = "m"  # hfd-service
+NETFILTER_ADVANCED = "y" # Required by NETFILTER_XT_MATCH_MARK
+NETFILTER_XT_MATCH_MARK = "m"  # e.g. HashiCorp Nomad
+NETFILTER_XT_MATCH_MULTIPORT = "m"  # e.g. HashiCorp Nomad
+NETFILTER_XT_MATCH_STATISTIC = "m"  # kube-proxy
+NETFILTER_XT_MATCH_TCPMSS = "m"  # change MTU e.g. for Wireguard
+NETFILTER_XT_TARGET_TCPMSS = "m"  # change MTU e.g. for Wireguard
+# TODO = Depends on SUSPEND which is not enabled for some devices
+# PM_WAKELOCKS = "y"  # Sxmo
+CPU_FREQ = "y"
+CPU_FREQ_GOV_SCHEDUTIL = "y" # Required by UCLAMP_TASK
+UCLAMP_TASK = "y"  # Scheduler hints
+UCLAMP_TASK_GROUP = "y"  # Scheduler hints
+RT_GROUP_SCHED = "n"  # https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/2652
+DM_INTEGRITY = "m"  # Device-mapper integrity target
+
+# uefi: proper modern booting
+["category:uefi".">=0.0.0"."aarch64 armv7 armhf loongarch64 riscv64 x86 x86_64"]
+EFI_STUB = "y"
+EFI = "y"
+DMI = "y"
+PSTORE = "y"
+EFI_ESRT = "y"
+EFI_VARS_PSTORE = "y"
+EFI_RUNTIME_WRAPPERS = "y"
+VFAT_FS = "y"
+NLS_ASCII = "y"
+["category:uefi".">=0.0.0"."x86_64"]
+EFI_MIXED = "y"
+["category:uefi".">=0.0.0"."aarch64 armv7"]
+EFI_GENERIC_STUB = "y"
+EFI_PARAMS_FROM_FDT = "y"
+["category:uefi".">=6.1.0"."aarch64 riscv64"]
+# Required EFI booting compressed kernels on this arch
+EFI_ZBOOT = "y"
+# Devices that used to run windows may still want to access
+# the windows partition (e.g. to retrieve firmware on WoA)
+["category:uefi".">=5.15"."aarch64 x86_64"]
+NTFS3_FS = "m"
+
+["category:input".">=0.0.0"."all"]
+BT = "m" # Required by BT_HIDP
+BT_HIDP = "m"  # Bluetooth HID
+GPIOLIB = "y" # Required by a couple of HID configs
+HIDRAW = "y"  # /dev/hidraw* support
+INPUT_MISC = "y" # Required by INPUT_UINPUT
+INPUT_UINPUT = "y"  # buffyboard
+INPUT_JOYSTICK = "y" # Required by CONFIG_JOYSTICK_XPAD_FF
+JOYSTICK_XPAD = "m"  # Xbox controller
+JOYSTICK_XPAD_FF = "y"  # Xbox controller force-feedback
+JOYSTICK_XPAD_LEDS = "y"  # Xbox controller LEDs
+UHID = "m"  # User-space HID, e.g. Bluetooth
+USB_ANNOUNCE_NEW_DEVICES = "y"  # dmesg messages when connecting device
+USB_HIDDEV = "y"  # /dev/usb/hiddevX support
+USB_PRINTER = "m"  # printers
+# All the special HID drivers that Fedora kernel enables
+HID_A4TECH = "m"
+HID_ACCUTOUCH = "m"
+HID_ACRUX_FF = "y"
+HID_ACRUX = "m"
+HID_ALPS = "m"
+HID_APPLEIR = "m"
+HID_APPLE = "m"
+HID_AUREAL = "m"
+HID_BATTERY_STRENGTH = "y"
+HID_BELKIN = "m"
+HID_BETOP_FF = "m"
+HID_BIGBEN_FF = "m"
+HID_CHERRY = "m"
+HID_CHICONY = "m"
+HID_CMEDIA = "m"
+HID_CORSAIR = "m"
+HID_COUGAR = "m"
+HID_CP2112 = "m"
+HID_CREATIVE_SB0540 = "m"
+HID_CYPRESS = "m"
+HID_DRAGONRISE = "m"
+HID_ELAN = "m"
+HID_ELECOM = "m"
+HID_ELO = "m"
+HID_EMS_FF = "m"
+HID_EZKEY = "m"
+HID_FT260 = "m"
+HID_GEMBIRD = "m"
+HID_GENERIC = "m"
+HID_GFRM = "m"
+HID_GLORIOUS = "m"
+HID_GREENASIA = "m"
+HID_GT683R = "m"
+HID_GYRATION = "m"
+HID_HOLTEK = "m"
+HID_ICADE = "m"
+HID_ITE = "m"
+HID_JABRA = "m"
+HID_KENSINGTON = "m"
+HID_KEYTOUCH = "m"
+HID_KYE = "m"
+HID_LCPOWER = "m"
+HID_LED = "m"
+HID_LETSKETCH = "m"
+LEDS_CLASS_MULTICOLOR = "m" # Required by HID_LOGITECH
+HID_LOGITECH_DJ = "m"
+HID_LOGITECH_HIDPP = "m"
+HID_LOGITECH = "m"
+HID_MACALLY = "m"
+HID_MAGICMOUSE = "m"
+HID_MALTRON = "m"
+HID_MAYFLASH = "m"
+HID_MCP2221 = "m"
+HID_MEGAWORLD_FF = "m"
+HID_MICROSOFT = "m"
+HID_MONTEREY = "m"
+HID_MULTITOUCH = "m"
+HID_NINTENDO = "m"
+HID_NTI = "m"
+HID_NTRIG = "m"
+HID_ORTEK = "m"
+HID_PANTHERLORD = "m"
+HID_PENMOUNT = "m"
+HID_PETALYNX = "m"
+HID_PICOLCD_BACKLIGHT = "y"
+LCD_CLASS_DEVICE = "m" # Required by HID_PICOLCD_LCD
+HID_PICOLCD_LCD = "y"
+HID_PICOLCD_LEDS = "y"
+HID_PICOLCD = "m"
+HID_PID = "y"
+HID_PLANTRONICS = "m"
+HID_PLAYSTATION = "m"
+HID_PRIMAX = "m"
+HID_PRODIKEYS = "m"
+HID_PXRC = "m"
+HID_RAZER = "m"
+HID_RETRODE = "m"
+HID_RMI = "m"
+HID_ROCCAT = "m"
+HID_SAITEK = "m"
+HID_SAMSUNG = "m"
+HID_SEMITEK = "m"
+IIO = "y" # Required by HID_SENSOR_*
+HID_SENSOR_ACCEL_3D = "m"
+HID_SENSOR_ALS = "m"
+HID_SENSOR_CUSTOM_INTEL_HINGE = "m"
+HID_SENSOR_DEVICE_ROTATION = "m"
+HID_SENSOR_GYRO_3D = "m"
+HID_SENSOR_HUB = "m"
+HID_SENSOR_HUMIDITY = "m"
+HID_SENSOR_IIO_COMMON = "m"
+HID_SENSOR_IIO_TRIGGER = "m"
+HID_SENSOR_INCLINOMETER_3D = "m"
+HID_SENSOR_MAGNETOMETER_3D = "m"
+HID_SENSOR_TEMP = "m"
+HID_SIGMAMICRO = "m"
+HID_SMARTJOYPLUS = "m"
+HID_SONY = "m"
+HID_SPEEDLINK = "m"
+HID_STEAM = "m"
+HID_STEELSERIES = "m"
+HID_SUNPLUS = "m"
+HID_THINGM = "m"
+HID_THRUSTMASTER = "m"
+HID_TIVO = "m"
+HID_TOPRE = "m"
+HID_TOPSEED = "m"
+HID_TWINHAN = "m"
+HID_U2FZERO = "m"
+HID_UCLOGIC = "m"
+HID_UDRAW_PS3 = "m"
+HID_VIEWSONIC = "m"
+HID_VIVALDI = "m"
+HID_WACOM = "m"
+HID_WALTOP = "m"
+HID_WIIMOTE = "m"
+HID_XIAOMI = "m"
+HID_XINMO = "m"
+HID_ZEROPLUS = "m"
+HID_ZYDACRON = "m"
+["category:input".">=0.0.0"."x86 x86_64"]
+HID_LENOVO = "m"
+["category:input".">=6.3"."all"]
+HID_EVISION = "m"
+HID_SUPPORT = "y"
+["category:input".">=6.5"."all"]
+HID_NVIDIA_SHIELD = "m"
+["category:input".">=6.6"."all"]
+HID_GOOGLE_STADIA_FF = "m"
+["category:input".">=6.10"."all"]
+HID_WINWING = "m"
+["category:input".">=6.12"."all"]
+SPI = "y" # Required by HID_GOODIX_SPI
+HID_GOODIX_SPI = "m"
+
+["category:usb".">=0.0.0"."all"]
+DRM = "y" # Dependency of DRM_UDL
+DRM_UDL = "m"  # DisplayLink - connecting displays via USB
+SND_USB_AUDIO = "m"  # USB audio devices
+SND_USB_AUDIO_MIDI_V2 = "y" # USB MIDI devices
+USB_SERIAL = "m" # USB serial consoles
+USB_SERIAL_CP210X = "m"  # USB serial console
+USB_SERIAL_SIMPLE = "m" # USB serial console
+USB_STORAGE = "m"  # USB mass storage devices
+USB_UAS = "m"  # USB Attached SCSI (faster storage access)
+USB_USBNET = "m"  # USB Ethernet
+USB_RTL8152 = "m"  # USB Ethernet
+USB_NET_RNDIS_HOST = "m"  # USB Ethernet via RNDIS
+
+["category:virt".">=0.0.0"."all"]
+HW_RANDOM_VIRTIO = "m"
+["category:virt".">=0.0.0"."aarch64 loongarch64 ppc64le riscv64 s390x x86 x86_64"]
+KVM = "y"
+VIRTUALIZATION = "y"
+
+["category:debug".">=0.0.0"."all"]
+FTRACE = "y" # Required by DEBUG_FTRACE
+FUNCTION_TRACER = "y" # Required by DEBUG_FTRACE
+DYNAMIC_DEBUG = "y"  # Enable debug dynamically
+DYNAMIC_FTRACE = "y"  # Enable function tracing dynamically
+
+# Device specific settings to prevent regressions
+["category:librem5".">=0.0.0"."aarch64"]
+RS9116_FLASH_MODE = "n"  # pma!2059
+["category:pinephonepro".">=0.0.0"."aarch64"]
+LEDS_GROUP_MULTICOLOR = "y"  # pma!5991
+
+# Required for immutable image booting
+["category:immutable".">=0.0.0"."aarch64 armv7 armhf loongarch64 riscv64 x86 x86_64"]
+EFIVAR_FS = "m"
+["category:immutable".">=0.0.0"."all"]
+DM_VERITY = "m"
+
+["category:hardening".">=0.0.0"."all"]
+SECURITY_DMESG_RESTRICT = "y"
+
+# In 6.18+, CFI_CLANG is CFI
+["category:hardening".">=6.18_rc1"."x86_64 aarch64 armv7 riscv64"]
+CFI = "y"
+CFI_PERMISSIVE = "n"
+# All older versions use CFI_CLANG
+["category:hardening".">=6.10.0 <6.18_rc1"."armv7"]
+CFI_CLANG = "y"
+CFI_PERMISSIVE = "n"
+["category:hardening".">=6.6.0 <6.18_rc1"."riscv64"]
+CFI_CLANG = "y"
+CFI_PERMISSIVE = "n"
+["category:hardening".">=6.1.0 <6.18_rc1"."x86_64"]
+CFI_CLANG = "y"
+CFI_PERMISSIVE = "n"
+["category:hardening".">=5.13.0 <6.18_rc1"."aarch64"]
+CFI_CLANG = "y"
+CFI_PERMISSIVE = "n"
+["category:hardening".">=5.13.0 <6.1_rc1"."aarch64"]
+LTO_CLANG_THIN = "y" # Required for CFI pre-6.1
+["category:hardening".">=6.12.0"."x86_64 aarch64 armv7 riscv64"]
+CFI_ICALL_NORMALIZE_INTEGERS = "y" # Required for CFI with Rust
+
+# Shadow Call Stack is currently only implemented on arm64 and riscv
+["category:hardening".">=5.8.0"."aarch64"]
+SHADOW_CALL_STACK = "y"
+["category:hardening".">=6.7.0"."riscv64"]
+SHADOW_CALL_STACK = "y"
+
+["category:rust".">=6.1.0"."all"]
+DEBUG_INFO_BTF = "n" # Conflicts with LTO when Rust is enabled
+DEBUG_INFO_BTF_MODULES = "n" # Conflicts with LTO when Rust is enabled
+
+# SELinux support, separate from hardening to keep it opt-in for now
+["category:selinux".">=0.0.0"."all"]
+DEFAULT_SECURITY_SELINUX = "y"
+AUDIT = "y" # Required by SELinux
+SECURITY_NETWORK = "y" # Required by SELinux
+SECURITY_SELINUX = "y"
+SECURITY_SELINUX_BOOTPARAM = "y"
+LSM = "landlock,lockdown,yama,loadpin,safesetid,selinux,smack,tomoyo,ipe,bpf"
+
+# Wine / Proton support
+["category:wine".">=6.14.0"."all"]
+NTSYNC = "m"

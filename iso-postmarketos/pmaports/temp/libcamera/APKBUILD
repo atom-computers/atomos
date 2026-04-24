@@ -1,0 +1,186 @@
+# Forked from Alpine for temporary downstream patches
+maintainer="Robert Mader <robert.mader@collabora.com>"
+pkgname=libcamera
+_pkgver=0.7.0
+pkgver=9999$_pkgver
+pkgrel=1
+pkgdesc="Linux camera framework"
+url="https://libcamera.org/"
+arch="all"
+license="LGPL-2.1-or-later AND GPL-2.0-or-later"
+# upstream calls 'date' with a non-POSIX option so we pull in coreutils
+makedepends="
+	coreutils
+	doxygen
+	eudev-dev
+	glib-dev
+	gnutls-dev
+	graphviz
+	gst-plugins-bad-dev
+	gtest-dev
+	libevent-dev
+	libpisp-dev
+	libunwind-dev
+	libyuv-dev
+	linux-headers
+	meson
+	py3-jinja2
+	py3-ply
+	py3-pybind11-dev
+	py3-sphinx
+	py3-sphinxcontrib-doxylink
+	py3-yaml
+	python3-dev
+	qt6-qtbase-dev
+	qt6-qttools-dev
+	yaml-dev
+	"
+subpackages="
+	$pkgname-dbg
+	$pkgname-dev
+	qcam
+	$pkgname-gstreamer
+	$pkgname-v4l2
+	$pkgname-tools
+	py3-$pkgname:py3
+	"
+_tuning_files="
+	hi846.yaml
+	imx355.yaml
+	imx363.yaml
+	imx371.yaml
+	imx376.yaml
+	imx858.yaml
+	s5k3l6xx.yaml
+	s5kjn1.yaml
+	"
+source="https://gitlab.freedesktop.org/camera/libcamera/-/archive/v$_pkgver/libcamera-v$_pkgver.tar.gz
+	0001-libcamera-simple-Enable-softISP-for-the-Pinephone.patch
+	0002-libcamera-simple-Skip-hwISP-formats-if-swISP-is-acti.patch
+	0003-RFC-egl-Implement-DMABuf-import-for-input-buffers.patch
+	qcam.desktop
+	$_tuning_files
+	"
+builddir="$srcdir/$pkgname-v$_pkgver"
+# gstreamer tests fail
+# manual strip because ipa .sign files depend on the file contents- have to re-sign after strip
+options="!strip !check"
+
+case "$CARCH" in
+arm*|aarch64)
+	subpackages="$subpackages $pkgname-raspberrypi"
+	;;
+esac
+
+case "$CARCH" in
+ppc64le|s390x|riscv64|loongarch64)
+	# doesn't install any ipa
+	;;
+*)
+	depends="$pkgname-ipa=$pkgver-r$pkgrel"
+	subpackages="$subpackages $pkgname-ipa"
+	;;
+esac
+
+build() {
+	abuild-meson \
+		-Dpipelines=auto,virtual \
+		-Dv4l2=true \
+		-Dwerror=false \
+		-Ddocumentation=disabled \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test -C output --print-errorlogs
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+	install -Dm644 -t "$pkgdir"/usr/share/applications "$srcdir"/qcam.desktop
+
+	# manual strip first..
+	scanelf --recursive \
+		--nobanner \
+		--etype "ET_DYN,ET_EXEC" \
+		--format "%F" \
+		"$pkgdir" \
+		| while read -r file; do
+			strip "$file"
+	done
+}
+
+ipa() {
+	depends=""
+	amove usr/lib/libcamera
+	amove usr/share/libcamera/ipa
+
+	for _tuning_file in $_tuning_files; do
+		install -Dm644 -t "$subpkgdir"/usr/share/libcamera/ipa/simple \
+			"$srcdir"/"$_tuning_file"
+	done
+
+	# then sign ipa's
+	local ipa
+	for ipa in "$subpkgdir"/usr/lib/libcamera/ipa/ipa*.so; do
+		msg "signing $ipa"
+		"$builddir"/src/ipa/ipa-sign.sh \
+			"$(find "$builddir"/output -type f -iname "*ipa-priv-key.pem")" \
+			"$ipa" \
+			"$ipa".sign
+	done
+}
+
+qcam() {
+	depends=""
+	amove usr/bin/qcam
+
+	amove usr/share/applications/qcam.desktop
+}
+
+gstreamer() {
+	depends=""
+	amove usr/lib/gstreamer-1.0
+}
+
+v4l2() {
+	depends=""
+	amove usr/libexec/libcamera/v4l2-compat.so
+}
+
+raspberrypi() {
+	depends=""
+	amove usr/share/libcamera/ipa/rpi
+	amove usr/libexec/libcamera/raspberrypi_ipa_proxy
+	amove usr/share/libcamera/pipeline/rpi/vc4
+}
+
+tools() {
+	depends=""
+	amove usr/bin/cam
+	amove usr/bin/lc-compliance
+}
+
+py3() {
+	pkgdesc="$pkgname (python bindings)"
+	depends="python3"
+
+	amove usr/lib/python*
+}
+
+sha512sums="
+3d34792d3fd6a75a84150921b66875e4f8c5b8771e1218618fb58bee32d76b9e2b23226ef7ec850cdcd41b5bdd08ab41f61d4d69fca619a488c5ac0f1dcb283b  libcamera-v0.7.0.tar.gz
+e94ba31d69cad9ca9f9d895a253e849ac79b73bafea58987c078f9144049896138f61f3ea63a4c00de44e5a480622aed0bebe1b062d6c52757ce5f62f3a642f3  0001-libcamera-simple-Enable-softISP-for-the-Pinephone.patch
+1850f847a5a8597b78c5bf2cd88e9012531634ac7141925edf52f49fbca8c3b432a1e8d4270971741adbca150ed9928a86f86cdcb6f4ed04f5488ab21002074d  0002-libcamera-simple-Skip-hwISP-formats-if-swISP-is-acti.patch
+4ba352092bc5ed0b982efe854a7a079c363497b54b5ef5693975bd2c4d1ca0c134fb3278b60d9d77f5a87039ba2b165b5786497b7e1d74343580f2ecdc0a7049  0003-RFC-egl-Implement-DMABuf-import-for-input-buffers.patch
+22167a4eceb6d1b40b0b7c45fdf116c71684f5340de7f767535cb8e160ad9d2ae0f00cb3d461f73a344520a48a4641cf46226841d78bee06bfbfd2a91337f754  qcam.desktop
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  hi846.yaml
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  imx355.yaml
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  imx363.yaml
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  imx371.yaml
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  imx376.yaml
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  imx858.yaml
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  s5k3l6xx.yaml
+2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  s5kjn1.yaml
+"

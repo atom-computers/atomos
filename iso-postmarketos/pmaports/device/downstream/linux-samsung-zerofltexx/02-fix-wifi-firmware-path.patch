@@ -1,0 +1,35 @@
+--- a/drivers/net/wireless/bcmdhd4358/dhd.h
++++ b/drivers/net/wireless/bcmdhd4358/dhd.h
+@@ -1468,13 +1468,7 @@
+ extern int dhdpcie_set_suspend_resume(struct pci_dev *dev, bool state);
+ #endif /* DHD_USE_IDLECOUNT && BCMPCIE */
+ 
+-#ifdef DHD_LEGACY_FILE_PATH
+-#define PLATFORM_PATH   "/data/"
+-#elif defined(PLATFORM_SLP)
+-#define PLATFORM_PATH   "/opt/etc/"
+-#else
+-#define PLATFORM_PATH   "/data/misc/conn/"
+-#endif /* DHD_LEGACY_FILE_PATH */
++#define PLATFORM_PATH "/lib/firmware/postmarketos/"
+ 
+ /*
+  * Enable this macro if you want to track the calls to wake lock
+--- a/drivers/net/wireless/bcmdhd4359/dhd.h
++++ b/drivers/net/wireless/bcmdhd4359/dhd.h
+@@ -1830,14 +1830,8 @@
+ 
+ extern bool dhd_query_bus_erros(dhd_pub_t *dhdp);
+ 
+-#ifdef DHD_LEGACY_FILE_PATH
+-#define PLATFORM_PATH	"/data/"
+-#elif defined(PLATFORM_SLP)
+-#define PLATFORM_PATH	"/opt/etc/"
+-#else
+-#define PLATFORM_PATH	"/data/misc/conn/"
+-#endif /* DHD_LEGACY_FILE_PATH */
++#define PLATFORM_PATH	"/lib/firmware/postmarketos/"
+ 
+ /*
+  * Enable this macro if you want to track the calls to wake lock
+

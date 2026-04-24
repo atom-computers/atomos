@@ -1,0 +1,62 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+maintainer="omame <me@omame.xyz>"
+pkgname=linux-samsung-j6primelte
+pkgver=3.18.124
+pkgrel=4
+pkgdesc="Samsung Galaxy J6+ kernel (LineageOS 18.1)"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-j6primelte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_samsung_msm8917"
+_commit="f7e2c1efe869135a768cb5dfcdf452adecb6e0f3"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/samsung-msm8937-devs/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	samsung_defex_lsm_use_relative_path.patch
+	fix_framebuffer_invalid_argument.patch"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+		-pkeyopt rsa_keygen_pubexp:65537 | openssl pkcs8 -topk8 \
+		-nocrypt -outform der > \
+		$builddir/security/samsung/defex_lsm/cert/pubkey_user.der
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+c321711852dfdbc1b36cb507c57e11fb72d3bef2f62d99b1ee84939eaf6b34bb8821a85afaaf0a2477af39d6128f889f15d8fd06f98030d98ed123eb15a627d5  linux-samsung-j6primelte-f7e2c1efe869135a768cb5dfcdf452adecb6e0f3.tar.gz
+8dcda81717d0464041dcb6c8d3786b1577ddd848e36bb0eccc17545b2a5d60e5dc42e3ece77d66aa9c51790417f1b7148273f919d490cfa4ed6b270df8aed5f6  config-samsung-j6primelte.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+1be8126e7a3e38827536eb5dc22fce6a713322a1e564abaac571a240844f13d8fde7f9e5d0b4c803c2a2f9fef9d2d35b3a57448a944270cc8f105112ee65acb9  samsung_defex_lsm_use_relative_path.patch
+28de7c1a4c386b1db4c5660ee686992aae6fea5fb4740c3bf327157e1093e0521c255ebd07ea226c1b4248004a35ab5ed022317d8fdac4e053d0b361827e768b  fix_framebuffer_invalid_argument.patch
+"

@@ -1,0 +1,21 @@
+pkgname=firmware-htc-k2ul
+pkgver=1
+pkgrel=1
+_commit="c822f224447f013232ec72061610e454f6e63167"
+pkgdesc="Firmware files for HTC One SV"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/Hacker1245/firmware-htc-k2ul/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/firmware-htc-k2ul-$_commit"
+
+package() {
+	install -dm755 "$pkgdir"/lib/firmware/postmarketos
+	find . -type f |
+	while read -r _i; do
+		install -D -m644 "$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+sha512sums="73ae3529ecc7cd881774c11e7e6b7672646b80138fec27824b89071386a4d3f79bf0559e2f91c6a93285f0bd65a90a5509669bf400db7a0ab66babe25a202a56  firmware-htc-k2ul-c822f224447f013232ec72061610e454f6e63167.tar.gz"

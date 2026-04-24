@@ -1,0 +1,26 @@
+# Archived: the only maintainter don't want to maintain this package anymore
+maintainer=""
+pkgname=firmware-linksys-jamaica
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Linksys EA9350 V3"
+url="https://gitlab.com/exkc/ea9350v3-firmware/"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_repository="ea9350v3-firmware"
+_commit="1cfb1036e46c31fb0d5d98e5514f2fecc46827ed"
+source="$url/-/archive/$_commit/$_repository-$_commit.tar.gz"
+
+package() {
+	install -Dm644 "$srcdir"/$_repository-$_commit/firmware/*.bin  \
+		-t "$pkgdir"/lib/firmware/postmarketos
+	install -Dm644 "$srcdir"/$_repository-$_commit/firmware/IPQ5018/*  \
+		-t "$pkgdir"/lib/firmware/postmarketos/IPQ5018
+	install -Dm644 "$srcdir"/$_repository-$_commit/firmware/qcn9000/*  \
+		-t "$pkgdir"/lib/firmware/postmarketos/qcn9000
+}
+
+sha512sums="
+b64251c64c7b85dcec30154b203a5c8591782d4ebfa5b3b025d49a34ed61a9a0301db889a625fc39564ae4bb32caae00891b2ca9d3f097646002bb18b58eb943  ea9350v3-firmware-1cfb1036e46c31fb0d5d98e5514f2fecc46827ed.tar.gz
+"

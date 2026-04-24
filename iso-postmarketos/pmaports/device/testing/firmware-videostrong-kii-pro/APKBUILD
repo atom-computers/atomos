@@ -1,0 +1,28 @@
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=firmware-videostrong-kii-pro
+pkgver=1
+pkgrel=0
+pkgdesc="Nonfree firmware for the VideoStrong KII Pro (Wi-Fi, BT, vdec)"
+url="https://github.com/LibreELEC/brcmfmac_sdio-firmware"
+arch="aarch64"
+license="proprietary"
+depends="linux-firmware-meson linux-firmware-brcm"
+_commit="c70355f9ec6d015b91a5c3199aa08b433e2f7caf"
+source="
+	$pkgname-$_commit.zip::https://github.com/LibreELEC/brcmfmac_sdio-firmware/archive/$_commit.zip
+"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/"
+
+package() {
+	cd "$srcdir/brcmfmac_sdio-firmware-$_commit"
+	# Wi-Fi
+	install -Dm644 "brcmfmac4335-sdio.txt" "$pkgdir/lib/firmware/brcm/brcmfmac4335-sdio.txt"
+	ln -s "$pkgdir/lib/firmware/brcm/brcmfmac4335-sdio.bin" "$pkgdir/lib/firmware/brcm/brcmfmac4335-sdio.videostrong,kii-pro.bin"
+	ln -s "$pkgdir/lib/firmware/brcm/brcmfmac4335-sdio.txt" "$pkgdir/lib/firmware/brcm/brcmfmac4335-sdio.videostrong,kii-pro.txt"
+	# Bluetooth
+	install -Dm644 "BCM4335A0.hcd" "$pkgdir/lib/firmware/brcm/BCM4335A0.hcd"
+}
+sha512sums="
+d5833029c386ca041a1968538d2ed78dbe81014ba97eddb678594444c5a4db8ab77cedc4dbe034852683cac02b2570a5b791ba3f3d263ad80234bdb58110c21d  firmware-videostrong-kii-pro-c70355f9ec6d015b91a5c3199aa08b433e2f7caf.zip
+"

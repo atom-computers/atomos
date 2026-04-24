@@ -1,0 +1,91 @@
+
+maintainer="Paul Sajna <sajattack@postmarketos.org>"
+pkgname=device-blackberry-key2-generic
+pkgdesc="BlackBerry KEY2"
+pkgver=2
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-blackberry-key2-generic
+	kbd
+	linux-postmarketos-qcom-sdm660
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+	systemd-boot
+	xkeyboard-config
+"
+makedepends="
+	devicepkg-dev
+	kbd
+"
+
+subpackages="
+	$pkgname-sway
+	$pkgname-x11
+"
+
+source="
+	10-initfs-keymap.sh
+	10-initfs-keymap.files
+	40-xkb.conf
+	deviceinfo
+	etc-sway-config.d-key2.conf
+	keymaps/us-key2.map
+	keypad.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	# Keymap
+	cd "$srcdir"
+	mkdir keymaps
+	for i in ../keymaps/*.map; do
+		gzip -ck "$i" > keymaps/"${i%.*}.map.gz"
+		loadkeys -b $i > keymaps/"${i%.*}.bmap"
+		gzip keymaps/"${i%.*}.bmap"
+	done
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	# Keymap
+	install -D -m644 "$srcdir"/keymaps/us-key2.map.gz \
+		"$pkgdir"/usr/share/kbd/keymaps/us/us-key2.map.gz
+	install -D -m644 "$srcdir"/keymaps/us-key2.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/us/us-key2.bmap.gz
+	install -Dm644 "$srcdir"/10-initfs-keymap.files \
+		"$pkgdir"/usr/share/mkinitfs/files/10-initfs-keymap.files
+	install -Dm644 "$srcdir"/10-initfs-keymap.sh \
+		"$pkgdir"/usr/share/mkinitfs/hooks/10-initfs-keymap.sh
+	install -Dm644 "$srcdir"/keypad.conf \
+		"$pkgdir"/usr/lib/modules-load.d/keypad.conf
+}
+
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel sway"
+	install -D -m644 "$srcdir"/etc-sway-config.d-key2.conf \
+		"$subpkgdir"/etc/sway/config.d/key2.conf
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -D -m644 "$srcdir"/40-xkb.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/40-xkb.conf
+}
+
+sha512sums="
+ab91ae3241d058edc507cd4551477e04918735bd2b56e193fac29daf7d5a3c6110eab7c4e92bdc4dad8e04519ad3187c8f16a92692367c869cdf50c87d56bb4b  10-initfs-keymap.sh
+2edc79d25b71ab931113d9fac9ff244123e540b7faedae64ecefa987f16f9c30d4a891993c68c792b8d28c8ef41d62d50871b37cda46c03b68eb2a4609be0880  10-initfs-keymap.files
+8b3c8701e4561ec37c11244b38d85a99b26290a5b50c12a8eb59dd0ca1c7b6330744f7efba9e51669bb5ee2ddddcda55c39a2cfc14d646ebe9c2309f876e1ff1  40-xkb.conf
+50d45e83270089d66c4369da5582609284acf41d25306731084917bead61752921cb6aa284c6e19a017cfef514dd8b0184ede4cf50532941124db18acacc15fb  deviceinfo
+1c1f23a6a7fc6f46d9b1f7ff463a3a65ec8f9a84e4a18bee8adf756fc1b2c5365fcb3b5473553752eecb7e21613081e337d3e132beadba5647e257fcd4645b74  etc-sway-config.d-key2.conf
+8d5d99c1ffb0a3bbc132708894247f14aee6d80d7f9ac78d8a93a5ccef9ba8a32b8b0e5af6fe596a08aca6f9eaa1d78e05f35fe7d350c27a770b5de81d2d2aba  us-key2.map
+eadabfc07e465ce7acdd11428fb86b7c8dc5210779c7511b3e6dbe325332a1402f847392401172940cf23c4aab670629e47c6b67dbd76c8cdba9495cd9000ddb  keypad.conf
+b72b5cfa1fdd7597bf1765556688f505f31db24e650f6f95a4f0ebddd7ac091e32a31a3f3eb324243cd48fd5d7e7f866e0eac1a2a27f238078e492eb6c106470  modules-initfs
+"

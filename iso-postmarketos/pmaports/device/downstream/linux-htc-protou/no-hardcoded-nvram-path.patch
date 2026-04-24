@@ -1,0 +1,14 @@
+Avoid hardcoded NVRAM path so that the kernel configuration parameter
+CONFIG_BCMDHD_NVRAM_PATH is used.
+
+diff --git a/drivers/net/wireless/bcmdhd_4330/dhd_linux.c b/drivers/net/wireless/bcmdhd_4330/dhd_linux.c
+--- a/drivers/net/wireless/bcmdhd_4330/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd_4330/dhd_linux.c
+@@ -3623,7 +3623,6 @@ dhd_bus_start(dhd_pub_t *dhdp)
+ 		dhd_os_sdlock(dhdp);
+ #endif 
+ 
+-	sprintf(nv_path, "/etc/calibration");
+ 	printf("%s: fw_path=%s, nv_path=%s\n", __FUNCTION__, fw_path, nv_path);
+ 
+ 	

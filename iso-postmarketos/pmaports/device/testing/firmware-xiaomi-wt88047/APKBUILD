@@ -1,0 +1,32 @@
+maintainer=""
+pkgname=firmware-xiaomi-wt88047
+pkgver=9.2.5.0
+pkgrel=5
+pkgdesc="Firmware for Xiaomi Redmi 2"
+url="https://androidfilehost.com/?w=files&flid=303434"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="wt88047-WCNSS_qcom_wlan_nv.bin.base64::https://pastebin.com/raw/bntm8Z7m"
+builddir="$srcdir"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	base64 -d wt88047-WCNSS_qcom_wlan_nv.bin.base64 > WCNSS_qcom_wlan_nv.bin
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="Xiaomi Redmi 2 WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+cab8578bf8b20ff83035a10598ebb673619e5409683799a5d6d04496b7f4b4e0f54a635b29efe2007137adf089d24134339c69214fdfa06a9d2ff052c39b9e59  wt88047-WCNSS_qcom_wlan_nv.bin.base64
+"

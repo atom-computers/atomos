@@ -1,0 +1,36 @@
+From be5d7277194f9d21d8e3bccb4e1f1cdeba9dbd07 Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Wed, 14 Jul 2021 15:04:34 +0300
+Subject: [PATCH 7/7] qpnp-fg-gen4: reduce dmesg spamming
+
+Remove annoying messages:
+FG: soc_work_fn: adjust_soc: s 100 r 260253 i 0 v 4350 t 357 cc 368 m 0xfd
+
+Signed-off-by: Alexey Min <alexey.min@gmail.com>
+---
+ drivers/power/supply/qcom/qpnp-fg-gen4.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/power/supply/qcom/qpnp-fg-gen4.c b/drivers/power/supply/qcom/qpnp-fg-gen4.c
+index 0aa056efec03..e208aa245b6e 100644
+--- a/drivers/power/supply/qcom/qpnp-fg-gen4.c
++++ b/drivers/power/supply/qcom/qpnp-fg-gen4.c
+@@ -6090,6 +6090,7 @@ static void soc_work_fn(struct work_struct *work)
+ 	if (rc < 0)
+ 		pr_err("failed to get cycle count, rc=%d\n", rc);
+ 
++#if 0
+ 	pr_info("adjust_soc: s %d r %d i %d v %d t %d cc %d m 0x%02x\n",
+ 			soc,
+ 			esr_uohms,
+@@ -6098,6 +6099,7 @@ static void soc_work_fn(struct work_struct *work)
+ 			temp,
+ 			cycle_count,
+ 			msoc);
++#endif
+ 
+ 	if (temp < 450 && fg->last_batt_temp >= 450) {
+ 		/* follow the way that fg_notifier_cb use wake lock */
+-- 
+2.40.1
+

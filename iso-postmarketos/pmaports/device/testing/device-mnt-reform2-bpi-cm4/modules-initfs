@@ -1,0 +1,7 @@
+meson_drm
+meson_dw_hdmi
+display_connector
+pwm_meson
+pwm_bl
+panel_edp
+ti_sn65dsi86

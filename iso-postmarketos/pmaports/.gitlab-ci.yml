@@ -1,0 +1,269 @@
+---
+
+# global settings
+image: alpine:latest
+after_script:
+  - .ci/lib/move_logs.sh $CI_PROJECT_DIR
+stages:
+  - lint
+  - prepare
+  - build
+  - autoupdate
+  - test
+  - deploy
+variables:
+  # Default of 20 is pretty small, sometimes MRs have >20 commits in them. 100
+  # seems like a reasonable balance. If this is too low, git merge-base (from ci/
+  # common.py) can fail
+  GIT_DEPTH: 100
+  # So that anything that runs install_pmbootstrap and tries to import pmb module
+  # can find it.
+  PYTHONPATH: "/tmp/pmbootstrap"
+
+# This defines the rules for when a pipeline should run.
+workflow:
+  rules:
+    # Run for merge requests
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # Some things have to run in the default branch
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # Run scheduled pipeline for autoupdate or manually triggered pipeline
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+
+# Some packages have their own yaml files defining tests. All of these should contain
+# only jobs which extend the .package-test job!
+include: "**/.gitlab-ci.yml"
+
+# device documentation
+wiki:
+  stage: lint
+  rules:
+    - if: &mr_rule $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - .ci/**/*
+        - .ci/build-jobs.yaml.j2
+        - .gitlab-ci.yml
+        - device/*/device-*/*
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/wiki.sh
+
+# testcases linting
+ruff:
+  stage: lint
+  rules:
+    - if: *mr_rule
+      changes:
+        - .ci/*
+        - .ci/*/*
+        - .ci/build-jobs.yaml.j2
+        - .gitlab-ci.yml
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/ruff.sh
+
+# testcases typechecking
+mypy:
+  stage: lint
+  rules:
+    - if: *mr_rule
+      changes:
+        - .ci/**/*
+        - .gitlab-ci.yml
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/mypy.sh
+
+# shellcheck and various grep checks
+shellcheck-grep:
+  stage: lint
+  rules:
+    - if: *mr_rule
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/shellcheck.sh
+    - .ci/grep.sh
+
+editor-config:
+  stage: lint
+  rules:
+    - if: *mr_rule
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/ec.sh
+
+# aports checks (generic)
+pytest-commits:
+  stage: lint
+  rules:
+    - if: *mr_rule
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/pytest.sh
+    - .ci/check-changed-versions.sh
+  artifacts:
+    when: on_failure
+    paths:
+      - log.txt
+      - log_testsuite_pmaports.txt
+      - pmbootstrap.cfg
+    expire_in: 1 week
+
+# APKBUILD linting
+aport-lint:
+  stage: lint
+  rules:
+    - if: *mr_rule
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/apkbuild-lint.sh
+  allow_failure: true
+
+# deviceinfo linting
+dint:
+  stage: lint
+  rules:
+    - if: *mr_rule
+      changes:
+        - .ci/**/*
+        - .gitlab-ci.yml
+        - device/*/device-*/deviceinfo
+        - deviceinfo_schema.toml
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/dint.sh
+  allow_failure:
+    exit_codes:
+      - 2  # returned by dint on non-fatal warning
+
+# kernel kconfig check
+kernel-kconfig:
+  stage: lint
+  rules:
+    - if: *mr_rule
+      changes:
+        - kconfigcheck.toml
+      allow_failure: true
+    - if: *mr_rule
+      changes:
+        - device/*/linux-*/config-*
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/kconfig.sh
+
+# Verify checksums
+verify-checksums:
+  stage: lint
+  rules:
+    - if: *mr_rule
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/verify-checksums.sh
+
+# MR settings
+# (Checks for "Allow commits from members who can merge to the target branch")
+mr-settings:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - apk -q add python3
+  script:
+    - wget -q "https://gitlab.postmarketos.org/postmarketOS/ci-common/-/raw/main/check_mr_settings.py"
+    - python3 ./check_mr_settings.py
+
+# Calculate build of changed aports using a dynamic downstream pipelines:
+# https://docs.gitlab.com/ci/pipelines/downstream_pipelines/#dynamic-child-pipelines
+# For those to work, we need two jobs:
+# * First one (this one) that generates a valid yaml file with the job yaml as
+#   an artifact
+# * Second one (build-jobs) that has a "trigger" key with the yaml file from
+#   which to trigger pipelines
+# To avoid reworking the whole CI file, for now we are re-using this same file
+# to trigger the downstream pipeline. In that case, $CI_PIPELINE_SOURCE will
+# be set to "parent_pipeline", and only the jobs that extend .build will run
+generate-build-jobs:
+  stage: prepare
+  before_script:
+    - .ci/lib/gitlab_prepare_ci.sh
+  needs: []
+  script:
+    - wget "https://gitlab.postmarketos.org/postmarketOS/ci-common/-/raw/main/install_pmbootstrap.sh"
+    - sh ./install_pmbootstrap.sh py3-jinja2
+
+    # HACK: Make the pmb library happy to use the currently-cloned pmaports repo
+    - mkdir -p /root/.local/var/pmbootstrap/cache_git/ && ln -s $PWD /root/.local/var/pmbootstrap/cache_git/pmaports
+
+    - .ci/lib/generate_build_jobs.py
+
+  artifacts:
+    paths:
+      - .ci/build-jobs.yaml
+  rules:
+    - if: *mr_rule
+
+build-jobs:
+  stage: build
+  trigger:
+    include:
+      - artifact: .ci/build-jobs.yaml
+        job: generate-build-jobs
+    strategy: depend
+    forward:
+      # So that we don't have to duplicate GIT_DEPTH
+      pipeline_variables: true
+  rules:
+    - if: *mr_rule
+
+build-docs:
+  stage: build
+  before_script:
+    - adduser -D build
+  script:
+    - .ci/build-docs.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - .ci/build-docs.sh
+        - deviceinfo_schema.toml
+        - docs/**
+
+deploy-docs:
+  stage: deploy
+  trigger:
+    project: postmarketOS/docs.postmarketos.org
+    strategy: depend
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PROJECT_NAMESPACE == "postmarketOS"
+      changes:
+        - deviceinfo_schema.toml
+        - docs/**
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+
+auto-update:
+  stage: autoupdate
+  rules:
+    # This variable is set in the scheduled pipeline configuration. It should be a space separated list of
+    # package names to update.
+    - if: $AUTOUPDATE_PACKAGES != null && $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+  before_script:
+    - .ci/lib/gitlab_prepare_ci.sh
+  script:
+    - .ci/autoupdate.sh "$AUTOUPDATE_PACKAGES"
+  after_script:
+    - .ci/lib/move_logs.sh $CI_PROJECT_DIR
+  artifacts:
+    when: on_failure
+    paths:
+      - log.txt
+      - log_testsuite_pmaports.txt
+      - pmbootstrap.cfg
+
+# Template for package test jobs defined per-package
+.package-test:
+  stage: test
+  rules:
+    - if: *mr_rule
+  before_script:
+    - .ci/lib/gitlab_prepare_ci.sh

@@ -1,0 +1,72 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/merge_hi6250_defconfig
+pkgname=linux-huawei-berlin
+pkgver=4.4.174
+pkgrel=0
+pkgdesc="Huawei Honor 6X kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="huawei-berlin"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtc
+	findutils
+	flex
+	openssl-dev
+	perl
+	xz
+"
+
+# Source
+_repository="labyrinth_kernel_prague"
+_commit="f148d781c3d6bad4bae8d1c4073e233abeca9c96"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Dil3mm4/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_remove_wireguard.patch
+	02_fix_undeclared_AID_INET.patch
+	03_fix_dtc.patch
+	04_make_rdr_hisi_adapter_compileable.patch
+	05-disable-huawei-bfmr.patch
+	06-change-bfgx-and-wifi-cfg-paths.patch
+	07-fix-p2p.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+457975f60727cb0d6e0a62a2706fc37431480f47635b8deed178843d71a8ae9f0893f33e84b0b41dbfe33e47c7b4b05aa99efbc57fa4411bdbf48395b3340f3e  linux-huawei-berlin-f148d781c3d6bad4bae8d1c4073e233abeca9c96.tar.gz
+e5df13cbd10d067ef208a573f6bb2579f5f1069b7b7b6fc00e9e12e050bf8c5240e50a7d951d29d65fa8b45728de6e694e0dfd3f976e6501d62412eae81b51e1  config-huawei-berlin.aarch64
+16e092ed5f22db789c8f6531c2ac082ae13e82fcfa0d3fb8bc85dca7b563e484bc70b4144cc96882df75c26f005d45122277b3e7e4e83cb478860c62123ecf63  01_remove_wireguard.patch
+c02310ae289c85b7a3f85e3f4a95795ca048d6201bcfd227d1b17618b2643d2df2b65477b162463c1c02a0df8ad70915d9dd63c83edcfb7c3b3c9bd1bdebd9ca  02_fix_undeclared_AID_INET.patch
+3c7120bf70cdf508f2d5c919d1e0fa9e716882e3774e146ab953e9708f353d0e71af5325e0e9c881601aa90d6f131892b2f7e8b9bd774b4f993d17da189e5141  03_fix_dtc.patch
+cdc60b6c829df3b014226b9cb506ed71cf005cf5fec8d4339b54a23f052465501aaa4983ec00f33ef301db2e6a70b24a30439b3f6ce8f7c00348c05d3132ec3f  04_make_rdr_hisi_adapter_compileable.patch
+6e420722576111a7ba49f265a66de632631c13d1bdb67553916d2156149226526daedc8298d83a38115c0a7189497cdb92b0daa0a263a92e6093f575e855a6e5  05-disable-huawei-bfmr.patch
+ebba6534c200dd174e0ea8915c88e7fe4cf5a5ffb59b21ab4dcf25a64bfd3ba8b9be027e1c29f7c39aa86f659431e1819371fe7d3bd78ccbd8aab82ff164671f  06-change-bfgx-and-wifi-cfg-paths.patch
+71b3783d21eff6b43aec7b97d16e64696bd39ac191984254fb77d28db17f5f940beb3e3f0516468d698f6e10e936b8d38aa97f7e39004a3a17491de454ecdccb  07-fix-p2p.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"

@@ -1,0 +1,13 @@
+diff --git a/drivers/video/fbdev/exynos/decon_7870/decon-int_drv.c b/drivers/video/fbdev/exynos/decon_7870/decon-int_drv.c
+index 15e7e22b..29f1dc49 100644
+--- a/drivers/video/fbdev/exynos/decon_7870/decon-int_drv.c
++++ b/drivers/video/fbdev/exynos/decon_7870/decon-int_drv.c
+@@ -335,7 +335,7 @@ static u32 wincon(u32 bits_per_pixel, u32 transp_length)
+ 	case 32:
+ 		if (transp_length > 0) {
+ 			data |= WINCON_BLD_PIX;
+-			data |= WINCON_BPPMODE_ABGR8888;
++			data |= WINCON_BPPMODE_ARGB8888;
+ 		} else {
+ 			data |= WINCON_BPPMODE_XRGB8888;
+ 		}

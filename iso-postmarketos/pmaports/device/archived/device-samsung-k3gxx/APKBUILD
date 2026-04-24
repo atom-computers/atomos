@@ -1,0 +1,31 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-k3gxx
+pkgdesc="Samsung Galaxy S5 (International 3G)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-k3gxx
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+ad82f8b122b110b1022934ffb3104785c761714c13728da8767285dc5c73229dadf7d39b27abfe4b8b39e370026375dcdef74c70814199ebdb931022ea4e763d  deviceinfo
+615a6d5385dca88deddca7d1fe2149ddb3a71bc16f8a8f4f76451abedcf371a91a63bf9f2687cac422b5d9a8c3d59a19686b034d58f67c0c033dae6b7c80eb48  kernel-cmdline.conf
+"

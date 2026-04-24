@@ -1,0 +1,27 @@
+From 7041266a29e9681fc13034f345cdcc269d672f83 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Fri, 11 May 2012 23:57:15 +0200
+Subject: [PATCH] security: fixed to build with ANDROID_PARANOID_NETWORK
+ disabled
+
+---
+ security/commoncap.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/security/commoncap.c b/security/commoncap.c
+index ccfe568b396fb..8bfbd13497467 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -88,10 +88,12 @@ EXPORT_SYMBOL(cap_netlink_recv);
+ int cap_capable(struct task_struct *tsk, const struct cred *cred,
+ 		struct user_namespace *targ_ns, int cap, int audit)
+ {
++#ifdef CONFIG_ANDROID_PARANOID_NETWORK
+ 	if (cap == CAP_NET_RAW && in_egroup_p(AID_NET_RAW))
+ 		return 0;
+ 	if (cap == CAP_NET_ADMIN && in_egroup_p(AID_NET_ADMIN))
+ 		return 0;
++#endif
+ 
+ 	for (;;) {
+ 		/* The creator of the user namespace has all caps. */

@@ -1,0 +1,25 @@
+From 6060a61a28db987c10f8bc1ff9781455ea4ba220 Mon Sep 17 00:00:00 2001
+From: Snejp <bartosz.dudziak@snejp.pl>
+Date: Thu, 4 Jun 2020 15:07:31 +0200
+Subject: [PATCH 5/5] alternative patch to fix refresh rate
+
+---
+ drivers/video/msm/mdss/mdss_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index 2898eede..26855ce7 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -1433,7 +1433,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 	var->left_margin = panel_info->lcdc.h_back_porch;
+ 	var->right_margin = panel_info->lcdc.h_front_porch;
+ 	var->hsync_len = panel_info->lcdc.h_pulse_width;
+-	var->pixclock = panel_info->clk_rate / 1000;
++	var->pixclock = 1000000 / 60;
+ 
+ 	/* id field for fb app  */
+ 
+-- 
+2.25.1
+

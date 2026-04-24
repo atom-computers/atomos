@@ -1,0 +1,35 @@
+From 8408cd19e74734bede629af90a64f5555a1588d4 Mon Sep 17 00:00:00 2001
+From: Jami Kettunen <jami.kettunen@protonmail.com>
+Date: Sat, 25 Jun 2022 18:35:38 +0300
+Subject: [PATCH] Revert "[ALPS04791965] dtc: remove prebuilt dtc_overlay"
+
+dtc should be provided by the OS environment, not a dynamic x86_64 glibc
+linked binary in the kernel tree.
+
+FIXME: cannot build with CONFIG_BUILD_ARM64_DTB_OVERLAY_IMAGE=y
+-> unpatched host dtc version doesn't seem to support dtbo creation properly
+   while the in-tree one is a dynamically linked x86_64 glibc binary!
+
+This reverts commit 5d47795d913f849911d491f2fb132e9e6297df33.
+---
+ scripts/Makefile.lib    |   2 +-
+ scripts/dtc/dtc_overlay | Bin 333600 -> 0 bytes
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+ delete mode 100755 scripts/dtc/dtc_overlay
+
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index b442d12ff2fe..5fe57a7d5320 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -312,7 +312,7 @@ $(obj)/%.dtb.S: $(obj)/%.dtb
+ quiet_cmd_dtc = DTC     $@
+ cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
+ 	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
+-	$(srctree)/scripts/dtc/dtc_overlay -@ -O dtb -o $@ -b 0 \
++	$(DTC) -@ -O dtb -o $@ -b 0 \
+ 		$(addprefix -i,$(dir $<) $(DTC_INCLUDE)) $(DTC_FLAGS) \
+ 		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
+ 	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
+-- 
+2.36.1
+

@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-raspberry-pi0
+pkgdesc="Raspberry Pi Zero"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armhf"
+options="!check !archcheck"
+depends="postmarketos-base raspberrypi-bootloader linux-rpi bluetooth-raspberry-pi"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-openrc $pkgname-udev"
+source="deviceinfo kernel-cmdline.conf modules-initfs usercfg.txt 95-vchiq-permissions.rules"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/usercfg.txt "$pkgdir"/boot/usercfg.txt
+	install -Dm644 "$srcdir"/95-vchiq-permissions.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/95-vchiq-permissions.rules
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+d9ccff6f2bd2f5dfd91e6c6a2f9b536a866dc70537fe5ae421299b72d16316e0a8342757cedbbc636baceb26cb9140c26bcad67f743092a54a7e69052de1a032  deviceinfo
+a2aaf8bcd162084b41c6df3c67c99110c94d203a5824b17b0b0a8b3e226c17def074580ab3066ca9292b69a94ed37cefea01f49d32cbe67f102ebbe63a01398b  kernel-cmdline.conf
+09540960017460809c091457ba9f96b0d12c8a12ef300b77017651bf1492e66440244502ccf22fb8c58d0362751366ef1acf1c5a60b0698c1dda530f0945c17f  modules-initfs
+ce4c85de4e95fc6b5298ba442a6cc27f242ce5b2136e1ef5c2d5b3747716107e6d5d37e7a6d9f95a65d5970b3562950cc9ffb3d104743e4240b7754c395ae054  usercfg.txt
+7e5505cb07d5b4a81bd28443d508336b5c547356538f1c06f91ed93ad0d7d456d4f74f1d24df5a2e08c17e74f0a66607352ac4874e967e9a91dfec9522d2d58d  95-vchiq-permissions.rules
+"

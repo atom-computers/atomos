@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-medion-kai
+pkgdesc="Lenovo Medion Lifetab S9714"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-medion-kai mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo
+	nvram_4330.txt
+	modules-load.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-aosp-broadcom-wlan"
+	mkdir "$subpkgdir"
+	install -D -m644 "$srcdir"/nvram_4330.txt \
+		"$subpkgdir"/lib/firmware/postmarketos/bcmdhd/bcm4330/nvram_4330.txt
+}
+
+sha512sums="
+f1a26ace8b7295b285cad585461596d51bf4a55d02330e88b87e56cd23b51d4e863084ac8fca6c311b46c78b7d4e2f646695e5b3020cfb2126809d6e3a3358dc  deviceinfo
+0024476dd9309982bcb90ceed8a6600f6ae3b13a2c7b4b5e8b0063e1d817ac76f65c8e6ca43ae0a176b9dd9a5f48d9ffc07f76d71bba34c51f352c8d1ae9eff6  nvram_4330.txt
+0ccd4cdc19fefb4c91fe5e11344e72a57c88e4f361240df7dcb26e2ee810c83e3ae84e70baf80bbcfa03e47151bd4729503ad8833b50ecd9a84de5a4c4c008dc  modules-load.conf
+"

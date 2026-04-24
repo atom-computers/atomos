@@ -1,0 +1,48 @@
+diff -ru a/include/net/net_namespace.h b/include/net/net_namespace.h
+--- a/include/net/net_namespace.h	2021-05-03 18:16:44.000000000 -0400
++++ b/include/net/net_namespace.h	2021-07-23 09:30:57.134066982 -0400
+@@ -114,18 +114,21 @@
+ /* Init's network namespace */
+ extern struct net init_net;
+ 
+-#ifdef CONFIG_NET
++#ifdef CONFIG_NET_NS
+ extern struct net *copy_net_ns(unsigned long flags,
+ 		struct user_namespace *user_ns, struct net *net_ns);
+ 
+-#else /* CONFIG_NET */
++#else /* CONFIG_NET_NS */
++#include <linux/sched.h>
++#include <linux/nsproxy.h>
+ static inline struct net *copy_net_ns(unsigned long flags,
+-		struct user_namespace *user_ns, struct net *net_ns)
++		struct user_namespace *user_ns, struct net *old_net)
+ {
+-	/* There is nothing to copy so this is a noop */
+-	return net_ns;
++       if (flags & CLONE_NEWNET)
++               return ERR_PTR(-EINVAL);
++       return old_net;
+ }
+-#endif /* CONFIG_NET */
++#endif /* CONFIG_NET_NS */
+ 
+ 
+ extern struct list_head net_namespace_list;
+diff -ru a/net/core/net_namespace.c b/net/core/net_namespace.c
+--- a/net/core/net_namespace.c	2021-05-03 18:16:44.000000000 -0400
++++ b/net/core/net_namespace.c	2021-07-23 09:29:03.454038112 -0400
+@@ -353,13 +353,6 @@
+ }
+ 
+ #else
+-struct net *copy_net_ns(unsigned long flags, struct net *old_net)
+-{
+-	if (flags & CLONE_NEWNET)
+-		return ERR_PTR(-EINVAL);
+-	return old_net;
+-}
+-
+ struct net *get_net_ns_by_fd(int fd)
+ {
+ 	return ERR_PTR(-EINVAL);

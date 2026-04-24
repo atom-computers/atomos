@@ -1,0 +1,54 @@
+From 7a30026cccdf446246b39c3d4bb1fc5c26f2b5bf Mon Sep 17 00:00:00 2001
+From: TAKIZAWA Fumiya <takizawa.fumiya34@gmail.com>
+Date: Sun, 10 May 2020 00:00:14 +0900
+Subject: [PATCH 3/6] Revert "tty: add tty_port_set_policy function"
+
+This reverts commit 115aa3ef849b1c34cdc2f61c5aac3df22a8e1964.
+
+This is a workaround for a crash when CONFIG_VT=y
+---
+ drivers/tty/tty_port.c | 10 ----------
+ include/linux/tty.h    |  2 --
+ 2 files changed, 12 deletions(-)
+
+diff --git a/drivers/tty/tty_port.c b/drivers/tty/tty_port.c
+index 9f06fc11bc5f..482f33f20043 100644
+--- a/drivers/tty/tty_port.c
++++ b/drivers/tty/tty_port.c
+@@ -16,7 +16,6 @@
+ #include <linux/bitops.h>
+ #include <linux/delay.h>
+ #include <linux/module.h>
+-#include <uapi/linux/sched.h>
+ 
+ void tty_port_init(struct tty_port *port)
+ {
+@@ -599,12 +598,3 @@ int tty_port_open(struct tty_port *port, struct tty_struct *tty,
+ }
+ 
+ EXPORT_SYMBOL(tty_port_open);
+-
+-int tty_port_set_policy(struct tty_port *port, int policy, int sched_priority)
+-{
+-	struct sched_param param = { .sched_priority = sched_priority };
+-
+-	return sched_setscheduler(port->worker_thread, policy, &param);
+-}
+-EXPORT_SYMBOL_GPL(tty_port_set_policy);
+-
+diff --git a/include/linux/tty.h b/include/linux/tty.h
+index 99165b4e6a7b..812cdd8cff22 100644
+--- a/include/linux/tty.h
++++ b/include/linux/tty.h
+@@ -580,8 +580,6 @@ static inline int tty_port_users(struct tty_port *port)
+ {
+ 	return port->count + port->blocked_open;
+ }
+-extern int tty_port_set_policy(struct tty_port *port, int policy,
+-			       int sched_priority);
+ 
+ extern int tty_register_ldisc(int disc, struct tty_ldisc_ops *new_ldisc);
+ extern int tty_unregister_ldisc(int disc);
+-- 
+2.26.2
+

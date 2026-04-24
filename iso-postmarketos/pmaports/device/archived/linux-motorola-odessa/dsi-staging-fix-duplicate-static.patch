@@ -1,0 +1,12 @@
+---
+ drivers/gpu/drm/msm/dsi-staging/dsi_display_mot_ext.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff a/drivers/gpu/drm/msm/dsi-staging/dsi_display_mot_ext.c b/drivers/gpu/drm/msm/dsi-staging/dsi_display_mot_ext.c
+--- a/drivers/gpu/drm/msm/dsi-staging/dsi_display_mot_ext.c
++++ b/drivers/gpu/drm/msm/dsi-staging/dsi_display_mot_ext.c
+@@ -40,1 +40,1 @@
+-static static struct alarm *g_wakeup_timer = NULL;
++static struct alarm *g_wakeup_timer = NULL;
+-- 
+

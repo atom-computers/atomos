@@ -1,0 +1,14 @@
+# This file defines some mount points that are used by Android 7.1
+# Its contents should be appended to device's default /etc/fstab file.
+
+# Android specific mount points:
+
+# Userdata partition (Android apps and user files live here)
+# Use this as storage, unless you've installed postmarketOS to userdata partition
+/dev/mmcblk0p26     /mnt/data            ext4    noauto,rw,nosuid,nodev,noatime    0 0
+
+# Other:
+/dev/mmcblk0p24     /mnt/cache           ext4    noauto,rw,nosuid,nodev,noatime    0 0
+/dev/mmcblk0p1      /mnt/firmware        vfat    noauto,ro,shortname=lower         0 0
+/dev/mmcblk0p2      /mnt/firmware-modem  vfat    noauto,ro,shortname=lower         0 0
+/dev/mmcblk0p12     /mnt/efs             ext4    noauto,ro,nosuid,nodev,noatime    0 0

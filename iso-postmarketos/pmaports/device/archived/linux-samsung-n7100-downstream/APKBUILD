@@ -1,0 +1,65 @@
+# Archived: Downstream kernel, only for testing. Use linux-postmarketos-exynos4.
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_n7100_defconfig
+
+pkgname=linux-samsung-n7100-downstream
+pkgver=3.0.64
+pkgrel=1
+pkgdesc="Samsung Galaxy Note II kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="samsung-n7100"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_smdk4412"
+_commit="5790cd7defee9cb6f9b392af4e3569e51230917a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/bigbiff/$_repository/archive/$_commit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	extdsp_inline.patch
+	fimc_lite.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+02dc37618cee9366ad34ca3e435253323d19cc687d6f25dc15fef1ba8ef9b637f96231ce05991979ff250b8f547fde6c54d64eaa8a9d3369d4a896339524bb98  linux-samsung-n7100-downstream-5790cd7defee9cb6f9b392af4e3569e51230917a.tar.gz
+a9a66b82d0595388dcf44d56248e9cce2042507731c81fd5dc272667d380479436164800b7f367664ce6d725ea58ef19db706fafcccd12d8907265bb3494c179  config-samsung-n7100.armhf
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+54b345e988b20078260c859d047fc67eec4de0a82cc4c7a19537dac3a797cfc7adbcd41f2af51814d7a6b5d93c5825078381aa7207b5db0cc2b671e495682140  extdsp_inline.patch
+fe682960d8d8534e14712a4d2bf9e41abed34ec3a29dcaace0fc1115cda08f6bc4c83cd130413d92cda2091be711e3ded91767c30f080a6d9cf7952f068f052c  fimc_lite.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

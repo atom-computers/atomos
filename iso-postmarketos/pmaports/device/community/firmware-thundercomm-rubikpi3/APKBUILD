@@ -1,0 +1,29 @@
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=firmware-thundercomm-rubikpi3
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Thundercomm Rubik Pi 3"
+url="https://github.com/rubikpi-ai/meta-rubikpi"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native textrels"
+_repo="meta-rubikpi"
+_commit="8a9ac7927f48a5c28a7e052d3ee22fe045f83fd0"
+source="
+	$_repo-$_commit.tar.gz::https://github.com/rubikpi-ai/meta-rubikpi/archive/$_commit/$_repo-$_commit.tar.gz
+	30-initramfs-$pkgname.files
+"
+builddir="$srcdir/$_repo-$_commit"
+
+package() {
+	install -Dm644 recipes-firmware/firmware/files/renesas_usb_fw.mem -t \
+		"$pkgdir"/lib/firmware
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+34b9ecf72788ee915da6aa1baa244b9774f69650ba457dd32d55a3ca4ddb692d6f132e18bca78b4c8a2123222001b9d91113cf9dde914aa652df343ef370d649  meta-rubikpi-8a9ac7927f48a5c28a7e052d3ee22fe045f83fd0.tar.gz
+0308101dcdec32537319ae8c8fb8626877de0c28a05f6f9f5a662be0a78bb4459dab682242dce0b35b3937500dbc055eadce68fe855862be2afa3690a07550ca  30-initramfs-firmware-thundercomm-rubikpi3.files
+"

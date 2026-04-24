@@ -1,0 +1,53 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="19atlas <warfarin@vern.cc>"
+pkgname=device-samsung-gtexswifi
+pkgdesc="Samsung Galaxy Tab A 7.0"
+pkgver=3
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+replaces="
+	soc-sprd-audio
+	pulseaudio
+"
+depends="
+	linux-samsung-gtexswifi
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+	postmarketos-base-downstream
+	soc-sprd-audio-sc8830
+"
+_pmb_recommends="firmware-samsung-gtexswifi"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	00-fbdev-rotate-UD.conf
+"
+
+subpackages="$pkgname-x11"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+
+	# Touch fix
+	install -Dm644 "$srcdir"/00-fbdev-rotate-UD.conf \
+		-t "$subpkgdir"/usr/share/X11/xorg.conf.d
+}
+
+sha512sums="
+9b4075cd16e7af34563f8dd3f30acf836cdadc8e4259eb03ddc26daa52f363cc55f891c9eb8229acfb54bb7f3a2ac9e2c65a43db96ea7848df13d652edfd677a  deviceinfo
+e2ca0c3f3d7aa7f325fa52a926c93ce3fd4adda8d4e76dcd7a70a4ab20a3cb3f21fe00cf827633cb2148a1fd61ee8960a0544fbbeb1b425ef74538ab236a138a  kernel-cmdline.conf
+c6b9e5fa2bb88e3fab5bb445643de91543006568d55d02afb2192a3fece1a87cbf55f9484f4ee3455db3b16370596511bd5bdfbb7b92bcc786d41b254bc88525  00-fbdev-rotate-UD.conf
+"

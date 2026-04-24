@@ -1,0 +1,8 @@
+gpi
+qcom-spmi-rradc
+qcom_pmi8998_charger
+qcom_fg
+i2c_qcom_geni
+rmi_core
+rmi_i2c
+qcom_spmi_haptics

@@ -1,0 +1,106 @@
+maintainer=""
+_flavor=asus-flo
+_config="config-$_flavor.armv7"
+pkgname=linux-$_flavor
+pkgver=4.11.12
+pkgrel=5
+arch="armv7"
+pkgdesc="Upstream stable kernel with patches for Nexus 7 2013 WIFI"
+url="https://git.linaro.org/people/john.stultz/flo.git/log/?h=flo-v4.11"
+makedepends="xz perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev"
+options="!strip !check !tracedeps pmb:cross-native"
+source="$pkgname-$pkgver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$pkgver.tar.xz
+	$_config
+	00_Collapse_usb_support_into_one_node.patch
+	01_Add_regulator_tweaks_and_wcnss_entry_to_support_wifi.patch
+	02_Avoid_sending_high_rates_to_downstream_clocks_during_set_rate.patch
+	03_Support_devicetree_binding.patch
+	04_Summit_SMB345_charger_IC.patch
+	05_Add_smb345_charger_node.patch
+	06_Modify_the_elants_i2c_driver_to_not_immediately_fail_on_Nexus7.patch
+	07_Get_touchpanel_working_on_flo.patch
+	08_Add_mac_address.patch
+	09_Make_of_dma_deconfigure()_public.patch
+	10_Split_of_configure_dma()_into_mask_and_ops_configuration.patch
+	11_Configure_dma_operations_at_probe_time.patch
+	12_Handle_IOMMU_lookup_failure_with_deferred_probing_or_error.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+	"
+license="GPL2"
+_abi_release=$pkgver
+_carch="arm"
+
+_ksrcdir="$srcdir/linux-$pkgver"
+
+prepare() {
+	local _patch_failed=
+	cd "$_ksrcdir"
+	# first apply patches in specified order
+	for i in $source; do
+		case $i in
+		*.patch)
+			msg "Applying $i..."
+			if ! patch -s -p1 -N -i "$srcdir"/$i; then
+				echo $i >>failed
+				_patch_failed=1
+			fi
+			;;
+		esac
+	done
+
+	if ! [ -z "$_patch_failed" ]; then
+		error "The following patches failed:"
+		cat failed
+		return 1
+	fi
+
+	mkdir -p "$srcdir"/build
+	cp "$srcdir"/$_config "$srcdir"/build/.config
+	make -C "$_ksrcdir" O="$srcdir"/build ARCH="$_carch" \
+	silentoldconfig
+}
+
+build() {
+	cd "$srcdir"/build
+	unset LDFLAGS
+
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-Alpine" \
+		CFLAGS_MODULE=-fno-pic \
+		zImage modules qcom-apq8064-asus-nexus7-flo.dtb
+}
+
+package() {
+	cd "$srcdir/build/arch/arm/boot"
+	cat zImage dts/qcom-apq8064-asus-nexus7-flo.dtb > zImage-dtb
+
+	install -Dm644 "$srcdir/build/arch/arm/boot/zImage-dtb" \
+		"$pkgdir/boot/vmlinuz"
+
+	install -D "$srcdir/build/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	cd "$srcdir"/build
+	unset LDFLAGS
+
+	echo "--[ Installing modules ]--"
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-Alpine" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 modules_install
+}
+sha512sums="92a40984e2706e18c392dcd9b8d64261c138a228de335fe63501ceae3d89adaff7d211e3fd849f859ce3869292ff7bffc935aefe40e1abaf457d2e3210b4f4ef  linux-asus-flo-4.11.12.tar.xz
+04b442ec9fc1b1c5974b5eb44b23affd627f51f359636c428885497bfb897d42e5815dfe7e93f57624aed07d641782ca4c3fa5061317a04c468d2c010a8929d5  config-asus-flo.armv7
+c79d93af715c59188c7fccbb0402623b599b2e9fed944bb444d0ea2279e4086fc2b9f9e30aac468331b0a25150e537cd1647dd5cb6f47b53bf0af573cf6c7c67  00_Collapse_usb_support_into_one_node.patch
+f11d7351873aecc73c612fa3d6f9411c6f777bdb502dc9ba918cd824fbb36596c476b164fb9cf7eac2fa1c9484fa21b78ec8d03c13f959933cb5c1e30ed54754  01_Add_regulator_tweaks_and_wcnss_entry_to_support_wifi.patch
+303b25b44280dfbaa4b85f6dbeabc7752956b69fa7b85a1d837947ef490327a1228789bf57077d90e7c669b2f79d35c927ca423d4bbffeecdf7c1369af1120fb  02_Avoid_sending_high_rates_to_downstream_clocks_during_set_rate.patch
+412f1d3245831b37a0fe95622fae7af607b0df364317f828f0c5bba06c616efc78aff5d58de8d0ebe7b0f55032dbc7d5a807220e56ba676b47b25176c7e3d583  03_Support_devicetree_binding.patch
+ebd987d3cc0c5515e042c7bc8bd89d8b951d0cd4a0fb74a3dd45333698812e299d0f9477988740d00417e6e84e21a97a67a7496f3c18dc5c13f3cf36044dceb9  04_Summit_SMB345_charger_IC.patch
+0e2baf625cab807f645110b2a10f7e6c5eceac78433cedbe644b87bcdd0a4e71768107623b8a2a7b52033af1db6414f460f79ebcb71373300d720469cc90cdab  05_Add_smb345_charger_node.patch
+b86e56c653f0426a0d2a4fb500a11bdce7739b48d053ff584bd6ee1e560fc7f7759cc8fe12c96da182e6ef126e0c687015f771d7b9c4a61c5f08a5a55b8eeb0a  06_Modify_the_elants_i2c_driver_to_not_immediately_fail_on_Nexus7.patch
+957b3c317364c5f4973a09b18837101137fff6dfd97254fda1d9fc255e0e2277341cefd2cc9582dc275e2ec7c81fcaa3d7b544eed6c72cdfc4c04f5de80aa960  07_Get_touchpanel_working_on_flo.patch
+7dcc9de43ed0e9f433f73e78999b9533f0e1d48ede06bebe32ac621513a49f6900dd80bb7c2ca06f67421b3826e5624f20e0e2fa3c0150efe7933895f21942df  08_Add_mac_address.patch
+cc7fb2d646c1d602b507fa2d6ce77458e794e27d624ed0097cc35ce0486e71e4dd4cec96cdb8aaf5800126ec172efd30e1fd4706754eddb48a952d587284af32  09_Make_of_dma_deconfigure()_public.patch
+e031b821cce7a561752aeb6837c93b97438c1bc1e81efa3bdda931ad552b515ffc89872b3df300ba8704bccd672a73af22974b49493e1f7ad5a8c652e43158af  10_Split_of_configure_dma()_into_mask_and_ops_configuration.patch
+38a539a97d8dd00be1ec2ab7bdb72caafe16865cba4b7a7152cf6b78ce0c9cf6206163f3edfd3a8371098a422647fbd3e83b2d89692e7d0675a51f4cad279e44  11_Configure_dma_operations_at_probe_time.patch
+25e9f71f038e1ef41c31a472f49487b63604668610232bec3842460dd67955c70158982744e51cf96143f0c5d2402b99bb86aec1d5e3bd9841ca5c11087a0b1b  12_Handle_IOMMU_lookup_failure_with_deferred_probing_or_error.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch"

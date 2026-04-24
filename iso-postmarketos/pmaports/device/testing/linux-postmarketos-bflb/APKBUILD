@@ -1,0 +1,53 @@
+maintainer=""
+pkgname=linux-postmarketos-bflb
+pkgver=6.2.0_git20230310
+pkgrel=2
+pkgdesc="Mainline kernel for Bouffalolab BL808 platform"
+arch="riscv64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native"
+makedepends="bash bison findutils flex openssl-dev perl postmarketos-installkernel"
+
+# Source
+_commit="467fe3369eda1d2f09426e8be15eb10dcf9d7a4a"
+_carch="riscv"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/openbouffalo/linux/archive/$_commit.tar.gz
+	$_config
+	"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+41ffc9aa2f55b4466aacba702277bb8232df808e3968a94a361e451e606fcd3a72df711825e1c47a3f526779bb472a3c1f607e335065034e456e76aeb3ce484b  linux-postmarketos-bflb-467fe3369eda1d2f09426e8be15eb10dcf9d7a4a.tar.gz
+56995bffffdf758a5ddada77c1ba23dcddcca3f29539d782d1b8b33a48c8c988487eaa0bdd1ba7a2680b464ad078883a25e4d8ef0f93abc5cb533339320eac33  config-postmarketos-bflb.riscv64
+"

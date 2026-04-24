@@ -74,7 +74,7 @@ pmb_exec() {
 	fi
 }
 
-echo "=== RESYNC: rootfs -> /home/pmos/rootfs/${PROFILE_NAME}.img (post-install mutations) ==="
+echo "=== RESYNC: rootfs -> /home/pmos/rootfs/{${PROFILE_NAME},${PMOS_DEVICE}}.img (post-install mutations; exact filename resolved inside chroot) ==="
 
 # Inner script runs as root inside the native chroot (default for `pmbootstrap chroot`).
 # Do NOT use --output stdout here: that mode is for streaming a binary payload (see export.sh
@@ -87,9 +87,35 @@ echo "=== RESYNC: rootfs -> /home/pmos/rootfs/${PROFILE_NAME}.img (post-install 
 # Do not put a `#` comment between backslash-continued lines here.
 # shellcheck disable=SC2016
 read -r -d '' ATOMOS_RESYNC_INNER <<'ATOMOS_RESYNC_INNER_SCRIPT' || true
-IMG_COMBINED="/home/pmos/rootfs/${PROFILE_NAME}.img"
-IMG_BOOT="/home/pmos/rootfs/${PROFILE_NAME}-boot.img"
-IMG_ROOT="/home/pmos/rootfs/${PROFILE_NAME}-root.img"
+# pmbootstrap 3.9 names the install disk image after PMOS_DEVICE (e.g.
+# qemu-aarch64.img) on QEMU profiles, not PROFILE_NAME (arm64-virt.img).
+# We must probe both in the same fallback order that scripts/export/export.sh
+# uses (PROFILE_NAME.img first, then PMOS_DEVICE.img), otherwise resync
+# silently finds nothing and the exported image ships pmbootstrap's
+# install-time rootfs with none of our post-install customizations -
+# exactly the "apk policy phosh shows stock 0.54.0-r0 on the booted
+# guest" symptom.
+PROFILE_IMG="/home/pmos/rootfs/${PROFILE_NAME}.img"
+PROFILE_BOOT="/home/pmos/rootfs/${PROFILE_NAME}-boot.img"
+PROFILE_ROOT="/home/pmos/rootfs/${PROFILE_NAME}-root.img"
+DEVICE_IMG="/home/pmos/rootfs/${PMOS_DEVICE}.img"
+DEVICE_BOOT="/home/pmos/rootfs/${PMOS_DEVICE}-boot.img"
+DEVICE_ROOT="/home/pmos/rootfs/${PMOS_DEVICE}-root.img"
+
+IMG_COMBINED=""
+IMG_BOOT=""
+IMG_ROOT=""
+if [ -f "$PROFILE_IMG" ]; then
+    IMG_COMBINED="$PROFILE_IMG"
+elif [ -f "$PROFILE_BOOT" ] && [ -f "$PROFILE_ROOT" ]; then
+    IMG_BOOT="$PROFILE_BOOT"
+    IMG_ROOT="$PROFILE_ROOT"
+elif [ -f "$DEVICE_IMG" ]; then
+    IMG_COMBINED="$DEVICE_IMG"
+elif [ -f "$DEVICE_BOOT" ] && [ -f "$DEVICE_ROOT" ]; then
+    IMG_BOOT="$DEVICE_BOOT"
+    IMG_ROOT="$DEVICE_ROOT"
+fi
 
 log() { printf "%s\n" "$*" >&2; }
 
@@ -223,16 +249,22 @@ sync_split() {
 	BOOT_MNTED=1
 }
 
-if [ -f "${IMG_COMBINED}" ]; then
+if [ -n "${IMG_COMBINED}" ] && [ -f "${IMG_COMBINED}" ]; then
 	log "atomos: resync rootfs -> combined disk image ${IMG_COMBINED}"
 	sync_combined "${IMG_COMBINED}"
-elif [ -f "${IMG_BOOT}" ] && [ -f "${IMG_ROOT}" ]; then
+elif [ -n "${IMG_BOOT}" ] && [ -n "${IMG_ROOT}" ] && [ -f "${IMG_BOOT}" ] && [ -f "${IMG_ROOT}" ]; then
 	log "atomos: resync rootfs -> split images ${IMG_BOOT} + ${IMG_ROOT}"
 	sync_split
 else
-	log "ERROR: no disk image found. Expected one of:"
-	log "  ${IMG_COMBINED}"
-	log "  ${IMG_BOOT} + ${IMG_ROOT}"
+	log "ERROR: no disk image found. Probed (in priority order):"
+	log "  ${PROFILE_IMG} (exists: $( [ -f "$PROFILE_IMG" ] && echo yes || echo no ))"
+	log "  ${PROFILE_BOOT} + ${PROFILE_ROOT} (exist: $( [ -f "$PROFILE_BOOT" ] && echo yes || echo no ) + $( [ -f "$PROFILE_ROOT" ] && echo yes || echo no ))"
+	log "  ${DEVICE_IMG} (exists: $( [ -f "$DEVICE_IMG" ] && echo yes || echo no ))"
+	log "  ${DEVICE_BOOT} + ${DEVICE_ROOT} (exist: $( [ -f "$DEVICE_BOOT" ] && echo yes || echo no ) + $( [ -f "$DEVICE_ROOT" ] && echo yes || echo no ))"
+	log "This is the filename-convention mismatch that silently ships a"
+	log "stock rootfs when PMOS_DEVICE != PROFILE_NAME (e.g. arm64-virt"
+	log "profile uses PMOS_DEVICE=qemu-aarch64 and pmbootstrap names the"
+	log "install image qemu-aarch64.img, not arm64-virt.img)."
 	exit 4
 fi
 

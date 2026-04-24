@@ -1,0 +1,6 @@
+#!/bin/sh -e
+
+for service in cgroups dbus haveged chronyd rfkill; do
+	rc-update -q add $service default
+done
+exit 0

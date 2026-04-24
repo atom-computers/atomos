@@ -1,0 +1,21 @@
+# /etc/inittab
+
+::sysinit:/bin/mount -a
+::sysinit:/bin/loadkmap < /etc/keymap.bmap
+
+::once:/sbin/udevd
+::once:/bin/udevadm trigger --type=devices --action=add
+::once:/bin/udevadm settle
+::respawn:/usr/sbin/pb-discover
+
+# Set up getty on framebuffer console
+tty1::respawn:/bin/getty -nl /usr/sbin/petitboot-nc 38400 tty1
+
+# Put a getty on the USB serial port
+ttyGS0::respawn:/bin/getty -nl /usr/sbin/petitboot-nc 115200 ttyGS0
+
+# Stuff to do for the 3-finger salute
+::ctrlaltdel:/bin/reboot
+
+# Stuff to do before rebooting
+::shutdown:/bin/umount -a

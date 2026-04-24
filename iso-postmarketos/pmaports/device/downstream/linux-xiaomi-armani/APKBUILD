@@ -1,0 +1,82 @@
+# Kernel config based on: arch/arm/configs/lineageos_armani_defconfig
+
+pkgname=linux-xiaomi-armani
+pkgver=3.4.0
+pkgrel=7
+pkgdesc="Redmi 1S kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="xiaomi-armani"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_xiaomi_armani"
+_commit="0d17d5761449b14f31d00044e95753f3a6ad23b2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	01_smd_private.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_qdsp6v2.patch
+	04_mdss_mdp_trace.patch
+	05_q6voice.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+
+	# External modules install
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="
+360bf588a670cb7cd67b431c0f7cddb622d0364b3c5a0f0b9b6dd63d8b5dd7d365d6e075a1ce0652d13ce6a9d26cfb85d7b68eeb506d8e8e22aa667f57cdf0b2  linux-xiaomi-armani-0d17d5761449b14f31d00044e95753f3a6ad23b2.tar.gz
+3be78ca641b8632e9de60d5d002798c70a8131cbda4bdaae34c7a968ddb5398f4bd5a2bc22af3caafc0dfd58bd35d50a0ed5efab637dfee52ea938c49c73f90a  config-xiaomi-armani.armhf
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+39892cc41e484c51dccc29cadea475aaf99772bafb19231086b614b9eaee520843cd9361c89a6780229961e0ebf4bbf0e115d0e30f8302944b78091fcf7900e7  01_smd_private.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+1465b7f08dd4d7956c6651da3767648db085f4af8014fd3b24547626ba608734a0c6d8e86ffe086d81817c29f0d8e284e21a3ba50f51cd94ab42935bc124ad30  03_qdsp6v2.patch
+8dd3c227af5c379eedecdabe64a481de3e8241431b5d3d3984ffad65ee74706860115eb1b797afe05f6c360f6696bcb7165fa7d634a4a7a147d98f45cbb5246d  04_mdss_mdp_trace.patch
+4e7484eaa142e013c9aee12053d91a65983f7629d2b923566d4431143fa0529988dbc28b01dee21336995090ce8127b2ba79208bf61df359632bfeebae9c6618  05_q6voice.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

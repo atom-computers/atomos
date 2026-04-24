@@ -1,0 +1,37 @@
+From 952fc6a1b5f2781b1077f84e5efdb0fd308cf09d Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 30 Jun 2025 16:46:08 +0200
+Subject: [PATCH] dtbtool-exynos: remove fail goto
+
+It is only called in one place, so it is not necessary.
+---
+ dtbtool-exynos.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/dtbtool-exynos.c b/dtbtool-exynos.c
+index 46437c17c4eb..2164aae18159 100644
+--- a/dtbtool-exynos.c
++++ b/dtbtool-exynos.c
+@@ -429,14 +429,14 @@ int main(int argc, char **argv)
+ 	if (fd < 0)
+ 		fail("could not create output file '%s': %s", dt_img, strerror(errno));
+ 
+-	if (write(fd, dt_data, dt_size) != dt_size) goto fail;
++	if (write(fd, dt_data, dt_size) != dt_size) {
++		unlink(dt_img);
++		close(fd);
++		fail("failed writing '%s': %s", dt_img, strerror(errno));
++	}
+ 
+ 	close(fd);
+ 
+ 	return 0;
+ 
+-fail:
+-	unlink(dt_img);
+-	close(fd);
+-	fail("failed writing '%s': %s", dt_img, strerror(errno));
+ }
+-- 
+2.50.0
+

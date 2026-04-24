@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="User0 <user0thenyancat@proton.me>"
+pkgname=device-samsung-loganrelte
+pkgdesc="Samsung Galaxy Ace 3 LTE"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8227
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+605e36d96e28f1208f7dc34eea926bc0828144a88434a2a2c8581173a3fe8f799ce1e6571d9b3a9987649fc08bf77e618afb6d1872b0fe934bf369dd5b1bca6f  deviceinfo
+003e5228a2b2825f24cb8b4842e3c3f72b99225f0aef3cda5bb2de4e4beb5e1c84800ba48c6cf1b84fe042bd039912e67c545c00981b604db0c0f0bcb546f7c5  kernel-cmdline.conf
+d4552ba82b860350c798ee35cbeee37d3dabd597094ce7f675a80086d0932dbd7612c0bd919b697fdc04d557b490970518f8574ee6824c5c6ad4954ec5a845e7  modules-load.conf
+"

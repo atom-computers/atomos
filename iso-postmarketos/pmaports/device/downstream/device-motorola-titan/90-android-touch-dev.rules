@@ -1,0 +1,8 @@
+# udev rules file
+# All device names can be read from weston's logfile
+
+# Touchscreen (use 'weston-calibrator' to calibrate)
+SUBSYSTEM=="input", ATTRS{name}=="synaptics_dsx_i2c", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1" \
+ENV{WL_CALIBRATION}="1.058484 -0.016513 -7.906464 0.020550 0.998119 -34.100464"
+

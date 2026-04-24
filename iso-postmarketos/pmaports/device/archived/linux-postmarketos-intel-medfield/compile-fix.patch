@@ -1,0 +1,14 @@
+diff --git a/drivers/gpu/drm/gma500/mdfld_dsi_dbi.c b/drivers/gpu/drm/gma500/mdfld_dsi_dbi.c
+index 62d794259707..18aeb75abcf1 100644
+--- a/drivers/gpu/drm/gma500/mdfld_dsi_dbi.c
++++ b/drivers/gpu/drm/gma500/mdfld_dsi_dbi.c
+@@ -574,7 +574,7 @@ static int __dbi_panel_power_on(struct mdfld_dsi_config *dsi_config,
+ 
+ 	/*after entering dstb mode, need reset*/
+ 	if (p_funcs && p_funcs->reset)
+-		p_funcs->reset(dev, dsi_config);
++		p_funcs->reset(dev, dsi_config->pipe);
+ 
+ 	/* after reset keep in LP11 8ms */
+ 	mdfld_get_data_line_LP11_status(dsi_config);
+

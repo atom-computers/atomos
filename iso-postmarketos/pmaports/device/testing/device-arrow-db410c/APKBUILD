@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=device-arrow-db410c
+pkgdesc="Arrow DragonBoard 410c"
+pkgver=7
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Video firmware"
+	depends="firmware-qcom-adreno-a300 firmware-qcom-db410c-modem
+		 firmware-qcom-db410c-wcnss firmware-qcom-db410c-wcnss-nv
+		 firmware-qcom-msm8916-venus"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+2113140e98aa4e040e576653920de3f5e77d946d237d912c3431251cdaaca9d224ea4adacd1c6d54b64fdd8d66cda73b53dd36c8de7aa11ca71ff43c6c3db9d9  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+ccd6758cb4954eb0a96c7fb15e732e8147414f8edc498d9faf7d04ddef85d817733669ec1a6003e623e8392f3f6bb85f71160efe4e82f27e300d58aa6f5c8549  modules-initfs
+"

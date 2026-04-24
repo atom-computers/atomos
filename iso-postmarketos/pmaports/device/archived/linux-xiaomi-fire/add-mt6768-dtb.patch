@@ -1,0 +1,8 @@
+--- a/arch/arm64/boot/dts/mediatek/Makefile	2024-02-12 20:15:23.410216868 +0300
++++ b/arch/arm64/boot/dts/mediatek/Makefile	2024-02-12 20:16:30.621493436 +0300
+@@ -1,4 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtb-$(CONFIG_ARCH_MEDIATEK) += auto2712p1v1-ivi-boot.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += auto2712p1v1-ivi-nand-boot.dtb
+-
++dtb-$(CONFIG_ARCH_MEDIATEK) += mt6768.dtb

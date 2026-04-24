@@ -1,0 +1,25 @@
+From 6afa08808e2e76f56fcd9665deab93b19d42151c Mon Sep 17 00:00:00 2001
+From: Yuval Adam <_@yuv.al>
+Date: Mon, 11 Sep 2017 09:37:12 +0300
+Subject: [PATCH] Fix mdp3_ctrl_off
+
+---
+ drivers/video/msm/mdss/mdp3_ctrl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdp3_ctrl.c b/drivers/video/msm/mdss/mdp3_ctrl.c
+index 28ac7fe5..91aba12a 100644
+--- a/drivers/video/msm/mdss/mdp3_ctrl.c
++++ b/drivers/video/msm/mdss/mdp3_ctrl.c
+@@ -1771,7 +1771,7 @@ int mdp3_ctrl_init(struct msm_fb_data_type *mfd)
+ 		splash_mismatch = 1;
+ 
+ 	mdp3_interface->on_fnc = mdp3_ctrl_on;
+-	mdp3_interface->off_fnc = mdp3_ctrl_off;
++	mdp3_interface->off_fnc = NULL;
+ 	mdp3_interface->do_histogram = NULL;
+ 	mdp3_interface->cursor_update = NULL;
+ 	mdp3_interface->dma_fnc = mdp3_ctrl_pan_display;
+-- 
+2.14.1
+

@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-nokia-argon
+pkgdesc="Nokia 8110 4G"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="GPL-2.0-only"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8909
+	soc-qcom-msm8916-rproc
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+makedepends="devicepkg-dev mipi-dbi-cmd"
+_panel="nokia,argon-gc9305-v2-panel"
+source="
+	00-nokia-argon-display.files
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	$_panel.txt
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkdir -p "$builddir"
+	mipi-dbi-cmd "$builddir"/"$_panel".bin \
+			"$srcdir"/"$_panel".txt
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	# Package display init sequence
+	install -Dm644 "$builddir"/"$_panel".bin -t \
+			"$pkgdir"/lib/firmware/
+	install -Dm644 "$srcdir"/00-nokia-argon-display.files -t \
+			"$pkgdir"/usr/share/mkinitfs/files/
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="
+		firmware-qcom-adreno-a300
+		msm-firmware-loader
+		firmware-nokia-argon-venus
+		firmware-nokia-argon-wcnss-nv
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+66302bb5d83c4ba155ff62405fb9a374ab76e1912411310b1ad75e00c216b6868da4e2b6f3987c97146389aa44b2b2c26f0ca0819566be45c9d0d2dd1d3b72f1  00-nokia-argon-display.files
+ef4587f749b941761cb7838d9e21e0bd9436693a4a8bd38ac5d7cae6e9ceb2c1e7358d5fe9a34b23d6ff484c81079533eaee6c3e609d8bc685902ff150e1e79d  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+749fa5911f53f65c1a18a8768d374d1ea39ef47ed61146a5f79d669250788501434a059cfff65b83cb54eb7273841686b4a3a04f20aaec6ec7f742e14623c8bc  modules-initfs
+dd82fd4732694a24c91339b5c5fbb0bf485b3b2da3c17c11b72a02e90e9827c367504c99894556dd8273f927408cdb187325e5f3b9ea9e4a82e3cb3798cb2816  nokia,argon-gc9305-v2-panel.txt
+"

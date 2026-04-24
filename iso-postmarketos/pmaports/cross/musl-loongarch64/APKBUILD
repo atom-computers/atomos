@@ -1,0 +1,63 @@
+# Automatically generated aport, do not edit!
+# Generator: pmbootstrap aportgen musl-loongarch64
+
+# Stub for apkbuild-lint
+if [ -z "$(type -t arch_to_hostspec)" ]; then
+	arch_to_hostspec() { :; }
+fi
+
+maintainer=""
+pkgname=musl-loongarch64
+pkgver=1.2.6
+pkgrel=2
+arch="x86_64"
+subpackages="musl-dev-loongarch64:package_dev"
+
+_arch="loongarch64"
+_mirror="http://dl-4.alpinelinux.org/alpine/"
+
+url="https://musl-libc.org"
+license="MIT"
+options="!check !strip"
+pkgdesc="the musl library (lib c) implementation for $_arch"
+
+_target="$(arch_to_hostspec $_arch)"
+
+source="
+	musl-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-$pkgver-r$pkgrel.apk
+	musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-dev-$pkgver-r$pkgrel.apk
+"
+
+package() {
+	mkdir -p "$pkgdir/usr/$_target"
+	cd "$pkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+}
+package_dev() {
+	mkdir -p "$subpkgdir/usr/$_target"
+	cd "$subpkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+
+	# symlink everything from /usr/$_target/usr/*
+	# to /usr/$_target/* so the cross-compiler gcc does not fail
+	# to build.
+	for _dir in include lib; do
+		mkdir -p "$subpkgdir/usr/$_target/$_dir"
+		cd "$subpkgdir/usr/$_target/usr/$_dir"
+		for i in *; do
+			cd "$subpkgdir/usr/$_target/$_dir"
+			ln -s /usr/$_target/usr/$_dir/$i $i
+		done
+	done
+}
+
+sha512sums="
+112265a3a4c20cbc03a67fe23c69338332e127d51d3a4ad137547fcc8554a8878425f74f46765a032ba1c36c2782a1f3dcf3102e7bbb3c93a671fb85eba4e000  musl-1.2.6-r2-loongarch64-edge.apk
+45a0953693e6eaa3434e799bc79608dccedfb711cf816ac7dc1bb7ab15ed4a934dfbd0b2ad0b286ac8b8b00f901b99c8e4b06b9f7e50fb69e2d96cc83bbc0304  musl-dev-1.2.6-r2-loongarch64-edge.apk
+"

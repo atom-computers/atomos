@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# This script was originally taken from
+# https://gitlab.alpinelinux.org/alpine/aports/-/blob/master/main/installkernel/installkernel
+# and modified to suit the postmarketOS requirements for installing kernel binary:
+# We don't support flavors - kernel is always installed as "vmlinuz"
+
+set -e
+
+if [ $# -eq 3 ] || [ $# -eq 4 ]; then
+	kernelversion="$1"
+	bootimage="$2"
+	mapfile="$3"
+	destdir="${4:-/boot}"
+else
+	echo "Usage: installkernel <version> <image> <System.map> <directory>"
+	exit 1
+fi
+
+mapdir=$(dirname "$mapfile")
+config="$mapdir"/.config
+
+# backup previous files as ".old"
+for i in vmlinuz System.map config; do
+	if [ -e "$destdir"/$i ]; then
+		cp "$destdir"/$i "$destdir"/$i.old
+	fi
+done
+
+echo "Installing kernel ${kernelversion} files to ${destdir}"
+
+cp "$bootimage" "$destdir"/vmlinuz
+cp "$mapfile" "$destdir"/System.map
+cp "$config" "$destdir"/config
+
+exit 0

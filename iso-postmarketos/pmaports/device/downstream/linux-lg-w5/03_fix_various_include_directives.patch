@@ -1,0 +1,28 @@
+diff --git a/sound/soc/codecs/msm8x10-wcd-tables.c b/sound/soc/codecs/msm8x10-wcd-tables.c
+index 7e0263d4..9167dd83 100644
+--- a/sound/soc/codecs/msm8x10-wcd-tables.c
++++ b/sound/soc/codecs/msm8x10-wcd-tables.c
+@@ -10,7 +10,7 @@
+  * GNU General Public License for more details.
+  */
+ 
+-#include <msm8x10_wcd_registers.h>
++#include "msm8x10_wcd_registers.h"
+ #include "msm8x10-wcd.h"
+ 
+ const u8 msm8x10_wcd_reg_readable[MSM8X10_WCD_CACHE_SIZE] = {
+diff --git a/sound/soc/msm/msm8x10.c b/sound/soc/msm/msm8x10.c
+index 5e666f0f..e69d0fef 100644
+--- a/sound/soc/msm/msm8x10.c
++++ b/sound/soc/msm/msm8x10.c
+@@ -26,7 +26,7 @@
+ #include <sound/jack.h>
+ #include <asm/mach-types.h>
+ #include <mach/socinfo.h>
+-#include <qdsp6v2/msm-pcm-routing-v2.h>
++#include "qdsp6v2/msm-pcm-routing-v2.h"
+ #include <sound/q6afe-v2.h>
+ #include <linux/module.h>
+ #include <mach/gpiomux.h>
+
+

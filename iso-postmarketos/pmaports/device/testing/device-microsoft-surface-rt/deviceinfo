@@ -1,0 +1,19 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Microsoft Surface RT"
+deviceinfo_manufacturer="Microsoft"
+deviceinfo_codename="microsoft-surface-rt"
+deviceinfo_year="2012"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+deviceinfo_dtb="tegra30-microsoft-surface-rt-efi"
+deviceinfo_generate_grub_config="true"
+deviceinfo_boot_filesystem="fat32"

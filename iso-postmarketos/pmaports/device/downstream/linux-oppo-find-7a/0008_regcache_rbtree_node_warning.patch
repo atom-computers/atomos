@@ -1,0 +1,11 @@
+--- android_kernel_oppo_msm8974/drivers/base/regmap/regcache-rbtree.c.orig	2019-07-02 22:24:34.527751000 +0200
++++ android_kernel_oppo_msm8974/drivers/base/regmap/regcache-rbtree.c	2019-08-13 15:43:15.121024959 +0200
+@@ -31,7 +31,7 @@ struct regcache_rbtree_node {
+ 	void *block;
+ 	/* number of registers available in the block */
+ 	unsigned int blklen;
+-} __attribute__ ((packed));
++};
+ 
+ struct regcache_rbtree_ctx {
+ 	struct rb_root root;

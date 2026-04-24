@@ -1,0 +1,110 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Archived: Downstream port, only for testing. Use mainline port (linux-postmarketos-exynos7870)!
+
+pkgname=linux-samsung-j6lte-downstream
+pkgver=3.18.14
+pkgrel=0
+pkgdesc="Samsung Galaxy J6 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j6lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	findutils
+	flex
+	gcc4
+	openssl-dev
+	perl
+"
+
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="j6lte"
+_commit="03b26fe4bd3726b2940df395716ffc316cdff5ac"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/YJPrakash/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	replace-Sun-Solaris-style-flag-on-section-xz-supplementation.patch
+	replace-Sun-Solaris-style-flag-on-section.patch
+	03-fix-Makefile-path.patch
+	arm64-dts-Add-dtbs_install-make-target.patch
+	02-fix-video-argb-setting.patch
+	firmware-paths-fix.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	export ANDROID_MAJOR_VERSION=o
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	export ANDROID_MAJOR_VERSION=o
+	mkdir -p "$_outdir/init/"
+	mkdir -p "$_outdir/firmware/"
+	cp init/vmm.elf "$_outdir/init/vmm.elf"
+	cp firmware/gnss_firmware.bin "$_outdir/firmware/gnss_firmware.bin"
+	cp -r firmware/tsp_stm "$_outdir/firmware/"
+	cp -r firmware/tsp_zinitix "$_outdir/firmware/"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		"$_outdir/arch/$_carch/boot/dts/exynos7870-j6lte_cis_ser_00.dtb" \
+		"$_outdir/arch/$_carch/boot/dts/exynos7870-j6lte_cis_ser_02.dtb"
+}
+
+package() {
+	export ANDROID_MAJOR_VERSION=o
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	mkdir -p "$pkgdir"/boot
+	make modules_install dtbs_install \
+		O="$_outdir" \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$_outdir"/include/config/kernel.release \
+	"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+
+
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+
+}
+
+sha512sums="
+44719f2fead8c8419cb0ff2595c5325ade53b8639e13f0fa59d599e4470cf911fd2c442af2fef3529c8875a62d2469ecbfc5ef52ac4c61e1495ff335afea9412  linux-samsung-j6lte-downstream-03b26fe4bd3726b2940df395716ffc316cdff5ac.tar.gz
+bb230864207ff6788a0db645d62035b51de10c0ed8057f1b61c79e46453f7bbb143c45b2bc879e936b4be0b801d5437d52316bddfc17f11a2d9d12c397a25bb9  config-samsung-j6lte.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+a6b6c781dd23f9a45a1605456d8c9af3ec6b5c389acd2b5d4c32280dcb59118996d794165bea2005dbdd9415297e5060bcac7579f908f7d65406a862b743fed5  replace-Sun-Solaris-style-flag-on-section-xz-supplementation.patch
+7114216a2c7bf59ae208d7744b9b0b98ac6f2d833f778b228c80cbb4a0f8b0cefc9da9f6944b0ff494f64d4e89b29cb4d0e296190764e5a84cd6fa2c7ff047e6  replace-Sun-Solaris-style-flag-on-section.patch
+08d278ab861e99f09fae27e79ae0af4a919ef0584fe168c4585a2467175d757341ac062a1fad29035f5f9ff14d61bef2f7ac69433751b02b10cbbbb9e5a51abd  03-fix-Makefile-path.patch
+8455103d13d579f6eb9b1c6b83b91e73618960bd857d33a90df506a5ccc093a7dccb5361c0d4178caea388592f2968eebe331b597c8004225ed87b8e835c562f  arm64-dts-Add-dtbs_install-make-target.patch
+5bd204239a5daff9f990757178398707ae5ec64f823ed9ec72a8d50ebe6d5f0a3cc9743e0d775094da4b3a7566f1ccceb56f39f3b0234d08ca05e537d86271ec  02-fix-video-argb-setting.patch
+d42c2c81538a101c9263925743d91b9bc0b915988ab37a53bf8111993a30c94f5f6c80bd220fec5964a4cfb448cf8e5e876f365a4c5eccdbf4150a22a844bea3  firmware-paths-fix.patch
+"

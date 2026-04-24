@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Enable swclock OpenRC service
+rc-update -q add swclock boot
+
+exit 0

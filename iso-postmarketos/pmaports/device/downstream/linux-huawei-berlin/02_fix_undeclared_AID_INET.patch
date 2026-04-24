@@ -1,0 +1,14 @@
+diff --git a/net/core/sock.c b/net/core/sock.c
+index 98568723..bad3dac7 100644
+--- a/net/core/sock.c
++++ b/net/core/sock.c
+@@ -141,9 +141,7 @@
+ #include <net/tcp.h>
+ #endif
+ 
+-#ifdef CONFIG_ANDROID_PARANOID_NETWORK
+ #include <linux/android_aid.h>
+-#endif
+ 
+ #include <net/busy_poll.h>
+ 

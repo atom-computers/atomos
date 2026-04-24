@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Only display this message if none of the `oem-*` packages are installed
+if ! grep -Ex "oem-\b(\?|amd|intel)" /etc/apk/world 2>/dev/null; then
+	echo "* NOTE: This package no longer automatically installs OEM-specific drivers and firmware."
+	echo "* You will likely need to install one or both of these manually, depending on your hardware."
+	echo "* For AMD: apk add oem-amd"
+	echo "* For Intel: apk add oem-intel"
+fi

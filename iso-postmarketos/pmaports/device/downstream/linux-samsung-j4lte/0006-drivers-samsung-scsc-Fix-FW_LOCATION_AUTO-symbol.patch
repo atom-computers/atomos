@@ -1,0 +1,28 @@
+From d4853927ccf5f532903110fe181aa7ba05dee7b9 Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Tue, 24 Jun 2025 22:44:51 +0700
+Subject: [PATCH 6/7] drivers: samsung: scsc: Fix FW_LOCATION_AUTO symbol
+
+It should be `bool`, since it's a selection.
+
+Signed-off-by: Hendra Manudinata <manoedinata@daunscape.tech>
+---
+ drivers/misc/samsung/scsc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/misc/samsung/scsc/Kconfig b/drivers/misc/samsung/scsc/Kconfig
+index 9456d70b..e11e3197 100644
+--- a/drivers/misc/samsung/scsc/Kconfig
++++ b/drivers/misc/samsung/scsc/Kconfig
+@@ -13,7 +13,7 @@ config SCSC_CORE_FW_LOCATION
+ 	  Select the FW location, when CONFIG_SCSC_CORE_FW_LOCATION_AUTO=n
+ 
+ config SCSC_CORE_FW_LOCATION_AUTO
+-	string "SCSC FW location auto select"
++	bool "SCSC FW location auto select"
+ 	default y
+ 	---help---
+ 	  Select the FW location (Android N/O) automatically
+-- 
+2.43.0
+

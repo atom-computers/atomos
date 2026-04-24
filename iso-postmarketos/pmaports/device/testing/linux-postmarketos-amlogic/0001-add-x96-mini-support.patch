@@ -1,0 +1,70 @@
+From e6ba4e61b5545439b8a59c99a119ec3a7a3edb61 Mon Sep 17 00:00:00 2001
+From: "@exkc" <@exkc>
+Date: Thu, 30 Mar 2023 21:11:41 +0800
+Subject: [PATCH 2/4] add x96-mini support
+
+---
+ arch/arm64/boot/dts/amlogic/Makefile          |  1 +
+ .../dts/amlogic/meson-gxl-s905w-x96-mini.dts  | 38 +++++++++++++++++++
+ 2 files changed, 39 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/amlogic/meson-gxl-s905w-x96-mini.dts
+
+diff --git a/arch/arm64/boot/dts/amlogic/Makefile b/arch/arm64/boot/dts/amlogic/Makefile
+index 8b9b9a6a8c7e..fb7aa1a7d966 100644
+--- a/arch/arm64/boot/dts/amlogic/Makefile
++++ b/arch/arm64/boot/dts/amlogic/Makefile
+@@ -46,6 +46,7 @@ dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905d-vero4k-plus.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905w-jethome-jethub-j80.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905w-p281.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905w-tx3-mini.dtb
++dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905w-x96-mini.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905x-hwacom-amazetv.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905x-khadas-vim.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905x-libretech-cc-v2.dtb
+diff --git a/arch/arm64/boot/dts/amlogic/meson-gxl-s905w-x96-mini.dts b/arch/arm64/boot/dts/amlogic/meson-gxl-s905w-x96-mini.dts
+new file mode 100644
+index 000000000000..26b364de3191
+--- /dev/null
++++ b/arch/arm64/boot/dts/amlogic/meson-gxl-s905w-x96-mini.dts
+@@ -0,0 +1,38 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2023 Karl Chan <exxxxkc@getgoogleoff.me>.
++ * Based on meson-gxl-s905w-tx3-mini.dts:
++ *
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/leds/common.h>
++
++#include "meson-gxl-s905x.dtsi"
++#include "meson-gx-p23x-q20x.dtsi"
++
++/ {
++	compatible = "amediatech,x96-mini", "amlogic,s905w", "amlogic,meson-gxl";
++	model = "Shenzhen Amediatech Technology Co., X96 Mini";
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x0 0x0 0x40000000>; /* 1 GiB or 2 GiB */
++	};
++	
++	leds {
++		compatible = "gpio-leds";
++
++		led-0 {
++			label = "x96-mini:blue:power";
++			gpios = <&gpio GPIODV_24 GPIO_ACTIVE_HIGH>;
++			default-state = "on";
++		};
++	};
++
++};
++
++&usb {
++	dr_mode = "host";
++};
+-- 
+2.41.0
+

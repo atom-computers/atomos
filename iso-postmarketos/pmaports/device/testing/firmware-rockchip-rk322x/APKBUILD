@@ -1,0 +1,34 @@
+maintainer="leap123 <leap123@canaglie.org>"
+pkgname=firmware-rockchip-rk322x
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for Rockchip RK3228/RK3229 devices from ilmich's LibreELEC port"
+url="https://github.com/ilmich/rkbin"
+arch="armv7"
+license="proprietary"
+makedepends="coreutils"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+# source
+_commit="84f2356cf510319665874daf29df9ad8a94ac7e4"
+source="rkbin-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+_fwdir="/lib/firmware/postmarketos"
+builddir="$srcdir/rkbin-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+	install -Dm644 firmware/wifi/ssv6051-sw.bin -t "$pkgdir/$_fwdir"
+	install -Dm644 firmware/wifi/ssv6051-wifi.cfg -t "$pkgdir/$_fwdir"
+	install -Dm644 firmware/wifi/brcmfmac43342-sdio.bin -t "$pkgdir/$_fwdir"/brcm
+	install -Dm644 firmware/wifi/brcmfmac43342-sdio.txt -t "$pkgdir/$_fwdir"/brcm
+	install -Dm644 firmware/wifi/eagle_fw_ate_config_v19.bin -t "$pkgdir/$_fwdir"
+	install -Dm644 firmware/wifi/eagle_fw_first_init_v19.bin -t "$pkgdir/$_fwdir"
+	install -Dm644 firmware/wifi/eagle_fw_second_init_v19.bin -t "$pkgdir/$_fwdir"
+	install -Dm644 firmware/bluetooth/rtl8723cs_xx_config.bin -t "$pkgdir/$_fwdir"/rtl_bt
+	install -Dm644 firmware/bluetooth/rtl8723cs_xx_fw.bin -t "$pkgdir/$_fwdir"/rtl_bt
+}
+
+sha512sums="
+c4d3e07b435b0e706ba83149ab2973ce1beb6c1064ccf5db6189f6ca100a5285a5dc5260c5ec26d1e22fba0aa7d46ccc9a594f0b66f356560bd8ab2486e4ac24  rkbin-84f2356cf510319665874daf29df9ad8a94ac7e4.tar.gz
+"

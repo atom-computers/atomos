@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+pkgname=device-xiaomi-whyred
+pkgdesc="Xiaomi Redmi Note 5 Pro"
+pkgver=5
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-whyred
+	linux-postmarketos-qcom-sdm660
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+2f65dfc22fe8bbc65405e8105b52fec6584489e7178454df213dda901953597836b77f2e54ee7855b0647ecb3c0b45e498283d60a8cb799a4a9f6feb3b831c3a  deviceinfo
+e57cd0ba1f95f87dda67f0b9c0cad951df1663f115ed65c999ffd3c5c4f2db3dea152f4ea86a3f7a0a6ad4958697551b4c94a2c7850568e0f5814703c921577c  modules-initfs
+"

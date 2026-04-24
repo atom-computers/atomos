@@ -1,0 +1,3 @@
+SUBSYSTEM=="input", ATTRS{name}=="ft5x06_i2c", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1"
+

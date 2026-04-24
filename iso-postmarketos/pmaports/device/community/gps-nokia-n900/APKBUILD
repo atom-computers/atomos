@@ -1,0 +1,23 @@
+maintainer="Danct12 <danct12@disroot.org>"
+pkgname=gps-nokia-n900
+pkgver=0.3.2
+pkgrel=1
+pkgdesc="GPS support for Nokia N900"
+url="https://github.com/maemo-leste/gps-nokia-n900"
+arch="armv7"
+license="GPL-3.0-only"
+makedepends="linux-headers"
+source="$pkgname-$pkgver.tar.gz::https://github.com/maemo-leste/gps-nokia-n900/archive/refs/tags/$pkgver.tar.gz"
+options="!check"
+
+build() {
+	make
+}
+
+package() {
+	install -D -m755 "$builddir"/gps-nokia-n900 -t "$pkgdir"/usr/bin/
+}
+
+sha512sums="
+46eaea4c96be2d0ce4bd4aac5bdcec18ef4e4f7a65fa41354ffb259f90725157f6b3c7ac606c0a311c2d181f1b14f857f33284c8de5874cd1e5ace4a566c839d  gps-nokia-n900-0.3.2.tar.gz
+"

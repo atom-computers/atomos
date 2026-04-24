@@ -1,0 +1,80 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Eric Anderson <ejona86@gmail.com>"
+pkgname=device-asus-flo
+pkgver=7
+pkgrel=0
+pkgdesc="Google Nexus 7 2013 (flo)"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="postmarketos-base mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-mainline-old:kernel_mainline_old
+	$pkgname-kernel-next:kernel_next
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-udev
+"
+source="deviceinfo kernel-cmdline.conf kernel-cmdline-workaround.conf 90-android-touch-dev.rules wpa_supplicant.conf pointercal"
+
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/wpa_supplicant.conf \
+		"$pkgdir"/etc/wpa_supplicant/wpa_supplicant.conf
+	# Feed the whacky bootloader that eats 26 characters.
+	# Must sort before 00-base.conf
+	install -D -m644 "$srcdir/kernel-cmdline-workaround.conf" \
+		"$pkgdir/usr/lib/kernel-cmdline.d/00-aaa-$pkgname-workaround.conf"
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+kernel_mainline_old() {
+	pkgdesc="Old 4.11 mainline kernel, GPU works somehow"
+	depends="linux-asus-flo"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_next() {
+	pkgdesc="Unstable next kernel (linux-next)"
+	depends="linux-next"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel from Alpine Linux (linux-stable)"
+	depends="linux-stable"
+	provides="$pkgname-kernel-edge=$pkgver-r$pkgrel"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long term support (LTS) kernel from Alpine Linux (linux-lts)"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-asus-flo"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+56aeb6716e2306b89df858d12b71aa682629876ef41d8a9d8d246ab5bca0cb73143fd65adbb517eef6029912d7ab1590703f6991dc61c4f924a408aded420afe  deviceinfo
+18f40d7308eb327de4b8ea5552fef3874e6f3f2e2da7dba4244e954ce866ed8658a6809177488aca6387149c0014782d5a10634881f72301fbefbe3743702faa  kernel-cmdline.conf
+ebc11da9dbafca1b7052ff58d1782e9e48508e3f338656e817f42e6da40cbed198ee9ec3093909012733b82ca26b0f9b07e3f1aea63500a90855823aa31ee465  kernel-cmdline-workaround.conf
+5ac89b627f52d2f1103c3329bd905cdbb906cae5bb332d52e6805d7971fbcc0faabe1fd9d2beb7c6de4e4487c05047eaa17852dbf9e114ee3c5d4b0d57d73859  90-android-touch-dev.rules
+3278921cc1617d10fdd13dfbeaf213cda0078d069e727acd8cfac10bd8ade6f373be1e22fd1e4b50ae71cd2eae09f7d6aad5de42338d9ea9f8c1a34f0b60cb69  wpa_supplicant.conf
+cf913217b41a3dde8bc2a16a5bc82013c85679de0e81db1cfc36f2409ea034fec430082ddcb207c16746453601cf8381300b049cd2fb131f1916dc7dbcc247e3  pointercal
+"

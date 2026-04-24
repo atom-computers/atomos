@@ -1,0 +1,32 @@
+pkgname=firmware-zte-kis3
+pkgver=0.1
+pkgrel=0
+_commit="57eba5854572da5f1fbd29360080622c9fdc70a3"
+pkgdesc="Firmware files for ZTE Open C / Kis3"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://github.com/mtheunis/vendor_zte_kis3/archive/$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_zte_kis3-$_commit"
+
+package() {
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07
+		wcnss.b08 wcnss.b09 wcnss.mdt"
+	for _i in $_files; do
+		install -D -m644 wifi/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	_files="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin
+		WCNSS_hw_wlan_nv.bin"
+	for _i in $_files; do
+		install -D -m644 wifi/wlan/prima/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="
+0b46f9174d1f313cc4f7a925d6f08a2409810cd658b79136b69f9fad8de56c4bfcbd95be7c663106083afb27dacfacb6f3335fc62988c34ff6280f22a563f3f2  firmware-zte-kis3-57eba5854572da5f1fbd29360080622c9fdc70a3.tar.gz
+"

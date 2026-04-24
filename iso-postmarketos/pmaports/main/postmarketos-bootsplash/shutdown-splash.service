@@ -1,0 +1,11 @@
+[Unit]
+Description=Displays shutdown splash
+DefaultDependencies=no
+Before=halt.target shutdown.target reboot.target
+
+[Service]
+RemainAfterExit=yes
+ExecStart=-/usr/bin/pbsplash -s /usr/share/pbsplash/pmos-logo-text.svg -b "Shutting down..."
+
+[Install]
+WantedBy=halt.target shutdown.target reboot.target

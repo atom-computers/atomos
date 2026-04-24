@@ -1,0 +1,20 @@
+--- a/drivers/misc/mediatek/video/mt6768/videox/primary_display.c	2024-02-12 12:22:54.865660409 +0300
++++ b/drivers/misc/mediatek/video/mt6768/videox/primary_display.c	2024-02-12 19:56:55.926758389 +0300
+@@ -8636,7 +8636,7 @@
+ 		} else {
+ 			_cmdq_insert_wait_frame_done_token_mira(cmdq_handle_lcm_cmd);
+ 			disp_lcm_set_lcm_cmd(pgc->plcm, cmdq_handle_lcm_cmd, lcm_cmd,
+-				lcm_count, level);
++				lcm_count, &level);
+ 			_cmdq_flush_config_handle_mira(cmdq_handle_lcm_cmd, 1);
+ 		}
+ 		DISPCHECK("[CMD]%s ret=%d\n", __func__, ret);
+@@ -8648,7 +8648,7 @@
+ 		_cmdq_insert_wait_frame_done_token_mira(cmdq_handle_lcm_cmd);
+ 
+ 		disp_lcm_set_lcm_cmd(pgc->plcm, cmdq_handle_lcm_cmd, lcm_cmd,
+-			lcm_count, level);
++			lcm_count, &level);
+ 		cmdqRecSetEventToken(cmdq_handle_lcm_cmd,
+ 			CMDQ_SYNC_TOKEN_CONFIG_DIRTY);
+ 		mmprofile_log_ex(ddp_mmp_get_events()->primary_set_cmd,

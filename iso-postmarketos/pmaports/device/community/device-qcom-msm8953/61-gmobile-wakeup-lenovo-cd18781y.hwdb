@@ -1,0 +1,18 @@
+###########################################################
+# Lenovo
+###########################################################
+
+# Lenovo ThinkSmart View (CD-18781Y)
+# This device has no other keys but the volume keys.
+# As there currently is no other method of waking up the screen,
+# ensure that these keys can be used to wake up the display.
+#
+# This can possibly be removed when the proximity sensor works and can
+# be used to wake up the screen, like is done on the vendor's
+# Android OS.
+
+gmobile:name:gpio-keys:dt:lenovo,cd-18781y*
+ GM_WAKEUP_KEY_115=1
+
+gmobile:name:pm8941_resin:dt:lenovo,cd-18781y*
+ GM_WAKEUP_KEY_114=1

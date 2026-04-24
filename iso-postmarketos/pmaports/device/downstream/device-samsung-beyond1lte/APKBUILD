@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-beyond1lte
+pkgdesc="Samsung Galaxy S10"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-beyond1lte
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for Galaxy S10"
+	depends="firmware-samsung-beyond1lte"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+e42caee5dc8bbd3807c505993b79b00e8a813c2f408604e3975f7729cd6946ee061cffc54595edce300d0d1f2c09893d1b056ad00d9b060ab50f9dbb72d10ee3  deviceinfo
+cb0731b5e71b427024bb47cd70aa48d3be409a89aa476f3fd4dea8e5b42ef87371a65bbe836bca7da04c0384178ad293b44da8a88557ad04fc57857bef502050  kernel-cmdline.conf
+03deb65563f4b4421491643854927e88b2d5880b8b19ee6baa4d3fa1ec3f7d7a1c2977fd2c3c41270254efea6fa0c5fdae0a382e7c427d5a3bf6fad34c25375e  initfs-hook.sh
+"

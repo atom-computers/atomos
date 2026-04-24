@@ -1,0 +1,7 @@
+# udev rules file
+# All device names can be read from weston's logfile
+# Use default calibration for now.
+SUBSYSTEM=="input", ATTRS{name}=="synaptics_dsx", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1" \
+ENV{ID_INPUT_TOUCHPAD}="" ENV{ID_INPUT_KEY}="" \
+ENV{LIBINPUT_CALIBRATION_MATRIX}="1 0 0 0 1 0"

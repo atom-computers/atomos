@@ -1,0 +1,58 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_zanin_defconfig
+# from repository <https://github.com/samshit-bcm/android_kernel_zanin>
+
+pkgname=linux-samsung-zanin
+pkgver=3.0.101
+pkgrel=4
+pkgdesc="Samsung Galaxy Chat kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-zanin"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_rhea"
+_commit="8224116dca7de79d181c0761468f569e6ac3505e"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/bcm216xx/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	00_fix_return_address.patch
+	03_fix_paranoid_network_disabled.patch
+	04_fix_undefined_reference_to_to_state.patch
+	05_usb_gadget_set_random_rndis_host_MAC_address.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="1c62313451ff2a04ab9259a4b2c954388a360f45f20af90d05e9cfe73d31f49fc4847f24c1742c89a45f1646e1d27999fc6f5bd224baba7046b07ab324e7baae  linux-samsung-zanin-8224116dca7de79d181c0761468f569e6ac3505e.tar.gz
+23a1290ea63cc2f955e9027fdcf319fa636fcc8ea7c893eb980bd22d78ba72b339fa70a34fe9b9d7772b7780dad9ec973ed391577da0f9b007712470a169bd2c  config-samsung-zanin.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+df62e03666313bb03d9a455eac875f170a55d378b6e56b847c1c6ff1ce5cfafcfdf1d7605754ca3c684840ea00357f9ec4c6621f6ff77377132a484b9258f6f7  03_fix_paranoid_network_disabled.patch
+bbe9bfd32c887f2af09c96e0d5bad15276b12edb7012d4bd4bb7c374c84a94bf5820310c6dda0238fa6f95cda6d2e1244a4583435fae2b8d19082d9d48629360  04_fix_undefined_reference_to_to_state.patch
+612947ab3f10ab60f06c3fe8fa87e5eba4675b577dc589b1d5d8f400ab8f3e7f1f97dee8d5b38b53d2485b4f1219a66ee292541e24a46daf6254e88cd8fe039f  05_usb_gadget_set_random_rndis_host_MAC_address.patch"

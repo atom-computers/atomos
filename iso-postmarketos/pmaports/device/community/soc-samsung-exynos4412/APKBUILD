@@ -1,0 +1,29 @@
+maintainer="Newbyte <newbyte@disroot.org>"
+pkgname=soc-samsung-exynos4412
+pkgdesc="Common package for Samsung Exynos 4412 devices"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="armv7"
+options="!check !archcheck !tracedeps"
+subpackages="
+	$pkgname-cameraflash
+"
+source="
+	60-flashlight.rules
+"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+cameraflash() {
+	# Rear camera flash udev rules
+	install -Dm644 "$srcdir"/60-flashlight.rules \
+		-t "$subpkgdir"/usr/lib/udev/rules.d
+}
+
+sha512sums="
+9170da7ac869254644f2fc8d914102f2c16e917dbeb53e33b96c76936711d0540f55fa5c2526d73d5fe244500bc2728bc9d629e2524cf52c573d11e833aee666  60-flashlight.rules
+"

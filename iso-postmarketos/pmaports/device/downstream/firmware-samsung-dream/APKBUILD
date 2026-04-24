@@ -1,0 +1,44 @@
+pkgname=firmware-samsung-dream
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for the Samsung Galaxy S8/S8+"
+url="https://github.com/exynos8895/android_vendor_samsung_universal8895-common"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+# Wifi files
+_commit="2c1ff7083c728465386a1978279aa79d1dec086d"
+_wifi_files="bcmdhd_sta.bin_b0 bcmdhd_clm.blob nvram.txt_r02j_b0 nvram.txt_murata_r033_b0"
+
+for _file in $_wifi_files; do
+	source="$source $pkgname-$_commit-$_file::$url/raw/$_commit/proprietary/vendor/etc/wifi/$_file"
+done
+
+# MFC firmware
+_dream_commit=93628a0046096a65873aceaef1f8edf23097121a
+_url=https://github.com/exynos8895/android_vendor_samsung_dreamlte
+_dream_files=mfc_fw.bin
+for _file in $_dream_files; do
+	source="$source $pkgname-$_dream_commit-$_file::$_url/raw/$_dream_commit/proprietary/vendor/firmware/$_file"
+done
+
+package() {
+	local file
+	for file in $_wifi_files; do
+		 install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+	for file in $_dream_files; do
+		 install -Dm644 "$srcdir/$pkgname-$_dream_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+
+sha512sums="
+64ee00df378c92fed8750dea1773107a1cbb1678bdcd481569f4af0f6b8f78a82fe0d886ea02be44f7df4ddfeaee763cf7407b4fa769f4a5e78b0e7b9ed2492c  firmware-samsung-dream-2c1ff7083c728465386a1978279aa79d1dec086d-bcmdhd_sta.bin_b0
+4f38b161ffdf720ddf8d82c831b0f0c3902668d78e9a078a04e92038000e49dcca9b0a792fb76f219a49f365351c9865c663f17607684a26f2ed933bf997f077  firmware-samsung-dream-2c1ff7083c728465386a1978279aa79d1dec086d-bcmdhd_clm.blob
+ee72ac08334406d5d4166a879e6830613b7740f258ac421f7d6a353bd966cfa177fc9864732791121f73bc5169f64148ff07d3bb4687cca4e45341fc7e447868  firmware-samsung-dream-2c1ff7083c728465386a1978279aa79d1dec086d-nvram.txt_r02j_b0
+1c1867c8b10c485be10ed3f93fec9e41382e0f99611863581f5231d4dae1c192bd5a65f0d22dad56b9c264ef48cbfa9ff033de8e8bca1dc57e35a3c5616209a5  firmware-samsung-dream-2c1ff7083c728465386a1978279aa79d1dec086d-nvram.txt_murata_r033_b0
+1cd97a8a3b1ef56667576667e912419e061bfe7a533e4220e4bc8b74f944e1065cd4f8f41d6b8fa96f6878c8106a679dfab31d5143b0a22a90b214b5d1596adb  firmware-samsung-dream-93628a0046096a65873aceaef1f8edf23097121a-mfc_fw.bin
+"

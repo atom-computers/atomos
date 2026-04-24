@@ -1,0 +1,49 @@
+# Co-Maintainer: exkc <exxxxkc@getgoogleoff.me>
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=soc-amlogic-aarch64
+pkgdesc="Common package for devices using an Amlogic AArch64 SoC"
+pkgver=3
+pkgrel=2
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+makedepends="u-boot-tools"
+subpackages="
+	$pkgname-boot:boot
+	$pkgname-xorg:x11
+"
+source="
+	s905_autoscript.cmd
+	xorg.conf
+"
+provides="soc-amlogic-s905=$pkgver-r$pkgrel"
+replaces="soc-amlogic-s905"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+boot() {
+	pkgdesc="Script for chainloading modern U-Boot from legacy U-Boot on Amlogic TV Boxes"
+	mkdir -p "$subpkgdir/boot"
+	# Required if installing to an SD card
+	mkimage -A arm64 -O linux -T script -C none -a 0 -e 0 -n "S905 autoscript" \
+		-d "$srcdir/s905_autoscript.cmd" "$subpkgdir/boot/s905_autoscript"
+	mkimage -A arm64 -O linux -T script -C none -a 0 -e 0 -n "AML_autoscript" \
+		-d "$srcdir/s905_autoscript.cmd" "$subpkgdir/boot/aml_autoscript"
+}
+
+x11() {
+	pkgdesc="X11 configuration for Amlogic AArch64-based devices"
+	# Shamelessly taken from Armbian.
+	# https://github.com/armbian/build/blob/master/config/sources/families/include/meson64_common.inc
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/11-meson.conf
+}
+
+sha512sums="
+fbb3bd2198fd5d95454059b5394484172c27836b54b4a3bb7dc11c65af11aafe615eaed491bdbea34173b12c102eb2319cb491dbcdfff10bdb0ec2c3b31861c3  s905_autoscript.cmd
+72267e7bb0e3cd4a7c89d51c046c3a9c93d7ff9fe23a24357088fc94d45c6cc314cf12c8475421eadc507937ebc1ca9b1b9afdec0c78cf39977ebdd5f5eab24d  xorg.conf
+"

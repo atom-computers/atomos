@@ -1,0 +1,66 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Yassine Oudjana (Tooniis) <y.oudjana@protonmail.com>"
+_flavor="postmarketos-qcom-msm8996"
+pkgname=linux-$_flavor
+pkgver=6.19.5
+pkgrel=0
+pkgdesc="Kernel close to mainline with extra patches for Qualcomm MSM8996 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/msm8996-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	installkernel
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+	zstd
+"
+
+# Source
+_tag=v${pkgver//_/-}-msm8996
+source="
+	linux-$_tag.tar.gz::$url/-/archive/$_tag/linux-$_tag.tar.gz
+	config-$_flavor.$arch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+}
+sha512sums="
+dd30dd113ad9f0b4ab3771ea655de2becce7ddaf5066d2f860b7bb1eb78573137313191d9da740b152348f9f89894ace2bb94fb195e340f7b6dabedeebbc929f  linux-v6.19.5-msm8996.tar.gz
+6a1e3a18fb454378ef5569a6951426d118144985c9028e663f46d28cde6784723296601d3756176045e22d706a9195938804c6a82f02fcf548e18d2e66c35b27  config-postmarketos-qcom-msm8996.aarch64
+"

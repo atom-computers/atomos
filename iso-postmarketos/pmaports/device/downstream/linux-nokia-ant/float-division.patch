@@ -1,0 +1,13 @@
+diff --git a/drivers/misc/mediatek/eccci/hif/net_speed_monitor.c b/drivers/misc/mediatek/eccci/hif/net_speed_monitor.c
+index 9cbb21987..a5b51f9f4 100644
+--- a/drivers/misc/mediatek/eccci/hif/net_speed_monitor.c
++++ b/drivers/misc/mediatek/eccci/hif/net_speed_monitor.c
+@@ -262,7 +262,7 @@ static int get_speed_str(u64 speed, char buf[], int size)
+ 		rem = do_div(speed, 1000);
+ 		ret = snprintf(buf, size, "%llu.%03lluGbps", speed, rem);
+ 	} else if (speed >= 1000000LL) {
+-		speed = speed / 1000LL;
++		speed = do_div(speed, 1000LL);
+ 		rem = do_div(speed, 1000);
+ 		ret = snprintf(buf, size, "%llu.%03lluMbps", speed, rem);
+ 	} else if (speed >= 1000LL) {

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Enable openrc service to load wlan module for wifi functionality
+rc-update add wlanarmani default || true

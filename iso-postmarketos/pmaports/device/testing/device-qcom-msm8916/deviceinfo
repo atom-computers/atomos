@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Qualcomm msm8916-based device"
+deviceinfo_manufacturer="Qualcomm"
+deviceinfo_codename="qcom-msm8916"
+deviceinfo_year="2015"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_external_storage="true"
+deviceinfo_getty="ttyMSM0;115200"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+
+# extlinux.conf
+deviceinfo_dtb_extlinux="qcom/msm8*16-* qcom/msm8*39-* qcom/apq8016-* apq8039-*"
+deviceinfo_generate_extlinux_config_extlinux="true"
+deviceinfo_boot_filesystem_extlinux="ext2"
+
+# EFI
+deviceinfo_boot_filesystem_efi="fat32"
+
+# lk2nd does not support GPT for subpartitions/SD cards yet
+deviceinfo_partition_type="msdos"

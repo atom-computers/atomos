@@ -1,0 +1,54 @@
+From e31e485e7b453cd6cddf5a0a137b9c98bc797ea5 Mon Sep 17 00:00:00 2001
+From: Matthias Klose <doko@ubuntu.com>
+Date: Tue, 14 Aug 2018 15:15:39 +0000
+Subject: [PATCH] backport: re PR tree-optimization/86724 (Compilation error
+ with new isl 0.20 (missing includes))
+
+2018-08-14  Matthias Klose  <doko@ubuntu.com>
+
+        Backport from mainline
+        2018-08-01  Richard Biener  <rguenther@suse.de>
+
+        PR bootstrap/86724
+        * graphite.h: Include isl/id.h and isl/space.h to allow build
+        with ISL 0.20.
+
+From-SVN: r263539
+---
+ gcc/ChangeLog  | 9 +++++++++
+ gcc/graphite.h | 2 ++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/gcc/ChangeLog b/gcc/ChangeLog
+index c7f61504757..4aaaeac328a 100644
+--- a/gcc/ChangeLog
++++ b/gcc/ChangeLog
+@@ -1,3 +1,12 @@
++2018-08-14  Matthias Klose  <doko@ubuntu.com>
++
++	Backport from mainline
++	2018-08-01  Richard Biener  <rguenther@suse.de>
++
++	PR bootstrap/86724
++	* graphite.h: Include isl/id.h and isl/space.h to allow build
++	with ISL 0.20.
++
+ 2018-08-10  Segher Boessenkool  <segher@kernel.crashing.org>
+ 
+ 	Backport from mainline
+diff --git a/gcc/graphite.h b/gcc/graphite.h
+index 578fa1a6d98..431d0ed0a5e 100644
+--- a/gcc/graphite.h
++++ b/gcc/graphite.h
+@@ -40,6 +40,8 @@ along with GCC; see the file COPYING3.  If not see
+ #ifdef HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS
+ /* isl 0.15 or later.  */
+ #include <isl/schedule_node.h>
++#include <isl/id.h>
++#include <isl/space.h>
+ 
+ #else
+ /* isl 0.14 or 0.13.  */
+-- 
+2.27.0
+

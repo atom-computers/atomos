@@ -1,0 +1,55 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-codina-tmo
+pkgdesc="Samsung Galaxy Exhibit (SGH-T599)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-stericsson"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-kwin
+	$pkgname-phosh
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	kwin.sh
+	phoc.ini
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT firmware"
+	depends="firmware-samsung-u8500"
+	mkdir "$subpkgdir"
+}
+
+kwin() {
+	install_if="$pkgname kwin"
+	install -Dm644 "$srcdir"/kwin.sh "$subpkgdir"/etc/profile.d/kwin.sh
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+			"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+b73038973a465a303421d02ccfb74dfe2c2b0ace4bd186622f4d0e390ae1fb49a6a18a3b7960ac245332f22f23fcd47c499846906e97439c0c14fdbc1bdd2808  deviceinfo
+447fd07a0896a72af0cf69708be98f92311ac9b5c1c75ae8a131bf55be3f2d6a82bedc9b2373bc2589a09b1049ad22f8eff7d6cb012e1759df11e83fada01eb2  kernel-cmdline.conf
+685ec71484a932c59f83f1039d4d18a010a5849342e96d9e15ae8ce64374aac15073f9c51d7d9f270c60e70d2ea15c685b8f528cdc40f991b093b9227cba6a48  kwin.sh
+95576332f1ad579d30359df9a3efcc3f478c56688509b5c470a70e8ae41466dbb397fb6db7578b5c54e13795ab8cf869b5c63ba775951817a8bb3d4c682bdfd5  phoc.ini
+"

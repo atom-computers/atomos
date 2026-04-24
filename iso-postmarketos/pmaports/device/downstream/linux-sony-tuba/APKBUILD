@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/tubass_defconfig
+
+pkgname=linux-sony-tuba
+pkgver=3.18.35
+pkgrel=4
+pkgdesc="Sony Xperia XA kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="sony-tuba"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source: backup of https://github.com/SonyCustoms/kernel_sony_tuba_stock
+_repository="kernel_sony_tuba_stock"
+_commit="2896e082fcb08c44aec2b4503c9a45d710299721"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/oturpe/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	disable_drvgen_add_generated_cust_dtsi.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+6cedadbe54e2572aa7ca2606c1c1e2d88b82fa9ac77e0381c737b14bef68bed863f70a2dbe9e2e144323428be5319ae272aecaae8aaeec7adf05152bbdc7e1aa  linux-sony-tuba-2896e082fcb08c44aec2b4503c9a45d710299721.tar.gz
+4a37179c005068784836dd52a6a6c91918bce0f3408bd1bfe7a1cfc7d348b5165dc924111d6ac38f95bad243bf085075f17e621b7d6a3598d5cdb1e97450a8ac  config-sony-tuba.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+c3b514d1732b159b477451e0bc358fed86e9e48c21bc1db84dcf7dda36dcec406199cf05102f0b509a9cdbabc0249d9d12ebceff7439bb605ac860f877857ea0  disable_drvgen_add_generated_cust_dtsi.patch
+"

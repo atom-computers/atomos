@@ -1,0 +1,59 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Kernel config based on: arch/arm64/configs/lineageos_h815_defconfig
+
+pkgname=linux-lg-h815-downstream
+pkgver=3.10.84
+pkgrel=0
+pkgdesc="LG G4 (h815) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lg-h815"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lge_msm8992"
+_commit="aad745da91abbdf8bacda189aebf22db048604f5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-powerlevel.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+48a3345de582a6e4ba7fc2f87ffd423750bb8a1878ce386b8504306a49294e01e6c4c7511d2c178d8c9fb228c288782fe64f606df381843f144986d1cd467ad7  linux-lg-h815-downstream-aad745da91abbdf8bacda189aebf22db048604f5.tar.gz
+2d75e94dfb31541487ad0977b8b491e60a314110360ff421df5a6ecd204f9f4c804aafed022703eb1c4efc25a1a730cea66089a5ecd59935861c17eb06052a59  config-lg-h815.aarch64
+337fe3e03580bbe73e5c20420981c11bf7c71e67270a828df309e6f08a573c3ce0d5cdd68efe5552abb4635d4ba1788df80e81745204955fedaf5731144ea994  fix-powerlevel.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

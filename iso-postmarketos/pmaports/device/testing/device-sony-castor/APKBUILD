@@ -1,0 +1,45 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-sony-castor
+pkgver=5
+pkgrel=0
+pkgdesc="Sony Xperia Z2 Tablet"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	linux-postmarketos-qcom-msm8974
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8974
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf modules-initfs modules-load.conf"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi, GPU firmware"
+	depends="
+		linux-firmware-brcm
+		linux-firmware-cypress
+		firmware-qcom-adreno-a330
+		firmware-sony-castor
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+05df2b2380d814f7a97d3b9c9776ea28f3f7dd34b0d36c09de2eb8ec555979bcfcc39f8fbfcdbd292074a24565d2fbb54d8d01d1df38012a374aeac8e2c8b385  deviceinfo
+a5016e76357e8a37c06f05f28fa3171e09dd5346dc13d6abc01edbcc34b8ddd138589ed9684d8c4d5d8387fbe68a7df2ff8db5dfd5bad092741a251897a225a0  kernel-cmdline.conf
+fd639faebbee2c0c2c227710678376e0d039b7d96a62103f7ba7e6304d7060023f09064918e93a125465d20d125c0334225680521a7aeae5a43d77d7360c180c  modules-initfs
+d8ce60ea7acaabf627ddca2f0887a4cda46f313b7aaf7934bef2fef8a6e0798ccefab849e4571e4e3fcd06ae34c1a6efe3b58b401e2e443416f6200e6d4ea769  modules-load.conf
+"

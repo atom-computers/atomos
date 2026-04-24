@@ -1,0 +1,4 @@
+#!/bin/sh
+# Enable openrc service to load wlan module for wifi functionality
+rc-update add load-wlan-module default
+exit 0

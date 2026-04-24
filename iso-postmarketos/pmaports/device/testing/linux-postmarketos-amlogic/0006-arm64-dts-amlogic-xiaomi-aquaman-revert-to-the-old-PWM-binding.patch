@@ -1,0 +1,19 @@
+Revert to the old bindings in the aquaman DTS to make it work on current stable releases
+
+To be removed on the next stable release, 6.15.
+
+---
+diff --git a/arch/arm64/boot/dts/amlogic/meson-gxl-s805y-xiaomi-aquaman.dts b/arch/arm64/boot/dts/amlogic/meson-gxl-s805y-xiaomi-aquaman.dts
+index cac15b89c..bd960cb67 100644
+--- a/arch/arm64/boot/dts/amlogic/meson-gxl-s805y-xiaomi-aquaman.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-gxl-s805y-xiaomi-aquaman.dts
+@@ -236,6 +236,9 @@ &pwm_ef {
+ 	status = "okay";
+ 	pinctrl-0 = <&pwm_e_pins>;
+ 	pinctrl-names = "default";
++	clocks = <&clkc CLKID_FCLK_DIV4>;
++	clock-names = "clkin0";
++
+ };
+ 
+ /*

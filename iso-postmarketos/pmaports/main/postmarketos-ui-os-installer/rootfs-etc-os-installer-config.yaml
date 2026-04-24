@@ -1,0 +1,86 @@
+%YAML 1.2
+---
+distribution_name: 'postmarketOS'
+
+internet:
+  connection_required: yes
+  checker_url: 'http://networkcheck.postmarketos.org'
+
+scripts:
+  prepare: /etc/os-installer/scripts/prepare.sh
+  install: /etc/os-installer/scripts/install.sh
+  configure: /etc/os-installer/scripts/configure.sh
+
+welcome_page:
+  logo    : '/etc/os-installer/distro.svg'
+  text    : "Let's install postmarketOS!"
+  usage   : yes
+
+disk:
+  min_size: 5 # GB
+  # We don't support installing to a partition, so don't give users the option
+  # to select a single partition
+  partition_ok: no
+
+disk_encryption:
+  offered: yes
+  forced: no
+  min_length: 1
+  confirmation: yes
+
+desktop:
+  - name        : 'GNOME'
+    description : 'Simple desktop that can be personalized with extensions.'
+    image_path  : '/etc/os-installer/desktops/gnome.png'
+    keyword     : 'gnome'
+  - name        : 'KDE Plasma'
+    description : 'Configurable desktop that is similar to Windows.'
+    image_path  : '/etc/os-installer/desktops/kde.png'
+    keyword     : 'plasma-desktop'
+  - name        : 'COSMIC'
+    description : 'Modern desktop built from scratch by System76.'
+    image_path  : '/etc/os-installer/desktops/cosmic.png'
+    keyword     : 'cosmic'
+  - name        : 'Xfce'
+    description : 'Lightweight desktop with focus on modularity.'
+    image_path  : '/etc/os-installer/desktops/xfce.png'
+    keyword     : 'xfce4'
+  - name        : 'Console'
+    description : 'Console environment for headless devices such as servers.'
+    image_path  : '/etc/os-installer/desktops/console.png'
+    keyword     : 'console'
+
+user:
+  request_username: True
+  provide_autologin: False  # FIXME
+  min_password_length: 1
+  password_confirmation: yes
+
+# gnome-initial-setup can handle user and locale setup.
+# These settings allow to disable these pages.
+skip_user: no
+skip_region: no
+
+# additional_software:
+#   - name           : 'Firefox'
+#     description    : 'Popular Web Browser from Mozilla'
+#     icon_path      : '/etc/os-installer/icons/firefox.png'
+#     keyword        : 'firefox'
+#     suggested      : yes
+
+# additional_features:
+#   - name           : 'Dummy Feature'
+#     description    : 'Does not do anything'
+#     keyword        : 'dummy'
+#   - name           : 'Snapshots'
+#     description    : 'Snapshots allow restoring a previous state of your system'
+#     icon_path      : '/etc/os-installer/icons/snapshot.svg'
+#     keyword        : 'snapshots'
+#     suggested      : yes
+
+failure_help_url: 'https://wiki.postmarketos.org'
+
+commands:
+  browser: 'firefox'
+  disks: 'gnome-disks'
+  wifi: 'gnome-control-center wifi'

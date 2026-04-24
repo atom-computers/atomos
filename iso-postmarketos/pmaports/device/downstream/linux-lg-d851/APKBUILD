@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_d851_defconfig
+
+pkgname=linux-lg-d851
+pkgver=3.4.113
+pkgrel=4
+pkgdesc="LG G3 (T-Mobile) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="lg-d851"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev dtbtool elfutils-dev flex gmp-dev installkernel linux-headers openssl-dev perl sed xz gcc6"
+
+# Compiler: GCC 6 (doesn't compile successfully with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lge_g3"
+_commit="e9173c6249c1a965b5e0c3a73c4b232f0d19b080"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+ce7447b654bc3a50c7ebb2e97807b60ea738bca31ceef768804592134f6d313f999e203604b269664bacd46be585ff26131d4a9e12c2edef376cc0e825977d1f  linux-lg-d851-e9173c6249c1a965b5e0c3a73c4b232f0d19b080.tar.gz
+e58145e04a8fc26857393cc87c743b495682b1e5f1368d997e1a94d454463f105021472be4ffc719237cbfc71e00033e771f74e89c8ec4afe1b9cc1b0e24dc43  config-lg-d851.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+"

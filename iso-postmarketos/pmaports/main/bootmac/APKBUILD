@@ -1,0 +1,29 @@
+maintainer="Dylan Van Assche <me@dylanvanassche.be>"
+pkgname=bootmac
+pkgver=0.7.1
+pkgrel=0
+pkgdesc="Configure MAC addresses at boot"
+url="https://gitlab.postmarketos.org/postmarketOS/bootmac"
+arch="all"
+license="GPLv3-or-later"
+source="https://gitlab.postmarketos.org/postmarketOS/bootmac/-/archive/v$pkgver/bootmac-v$pkgver.tar.gz"
+depends="bluez-btmgmt bluez-deprecated"
+makedepends="meson"
+options="!check"
+subpackages="$pkgname-systemd"
+builddir="$srcdir/$pkgname-v$pkgver"
+
+build() {
+	abuild-meson \
+		-Dsystemd_units=true \
+		output .
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+1831fa7c7f1e485ee272bcc1ed800de51f368dc5a024e572b1e5d8a9085f7ac73bb05ad13f41d0691859b634625c76c810cda815eeb558f24e67884924532ad5  bootmac-v0.7.1.tar.gz
+"

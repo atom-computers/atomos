@@ -1,0 +1,41 @@
+From 0edf0a40522c7918724db6bc777f35999c013be1 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Sun, 10 Aug 2025 08:30:07 +0200
+Subject: [PATCH] trats: clk: enable most of CLK_GATE_BLOCK
+
+Without these individual bits linux hangs when initialising different
+nodes, specifically when reading clk values.
+
+BIT_BLOCK_CLK_LCD0 is needed for mdma1 (dma-controller@12850000).
+BIT_BLOCK_CLK_MFC is needed for mfc_l (sysmmu@13620000).
+BIT_BLOCK_CLK_TV is needed for sysmmu_tv (sysmmu@12e20000).
+BIT_BLOCK_CLK_CAM is needed for sysmmu_fimc0 (sysmmu@11a20000).
+BIT_BLOCK_CLK_LCD1 is needed for sysmmu_fimd1 (sysmmu@12220000).
+BIT_BLOCK_CLK_G3D is needed by touchscreen, without it linux hangs
+after ~35 s when setting up touchscreen.
+---
+ board/samsung/trats/setup.h | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/board/samsung/trats/setup.h b/board/samsung/trats/setup.h
+index 739bdf95f8c6..744c4b900e60 100644
+--- a/board/samsung/trats/setup.h
++++ b/board/samsung/trats/setup.h
+@@ -609,7 +609,13 @@
+ 					  | (CLK_EN << BIT_PERIL_CLK_SLIMBUS)))
+ #define CLK_GATE_IP_PERIR_VAL		(CLK_GATE_IP_PERIR_ALL_DIS \
+ 					| ~((CLK_EN << BIT_PERIR_CLK_KEYIF)))
+-#define CLK_GATE_BLOCK_VAL		CLK_GATE_BLOCK_ALL_DIS
++#define CLK_GATE_BLOCK_VAL		(CLK_GATE_BLOCK_ALL_DIS \
++					  | (CLK_EN << BIT_BLOCK_CLK_LCD0)\
++					  | (CLK_EN << BIT_BLOCK_CLK_MFC)\
++					  | (CLK_EN << BIT_BLOCK_CLK_TV)\
++					  | (CLK_EN << BIT_BLOCK_CLK_CAM)\
++					  | (CLK_EN << BIT_BLOCK_CLK_LCD1)\
++					  | (CLK_EN << BIT_BLOCK_CLK_G3D))
+ 
+ /* PS_HOLD: Data Hight, Output En */
+ #define BIT_DAT				8
+-- 
+2.50.1
+

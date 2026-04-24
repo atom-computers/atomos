@@ -1,0 +1,119 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Jakko <jahau@rocketmail.com>"
+pkgname=postmarketos-ui-mate
+pkgver=9
+pkgrel=2
+pkgdesc="(X11) MATE Desktop Environment, fork of GNOME2 (stylus recommended)"
+url="http://mate-desktop.org/"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	bluez
+	dbus-x11
+	dnsmasq
+	elogind
+	font-dejavu
+	gtk+2.0
+	lightdm
+	lightdm-settings
+	mate-desktop-environment
+	mesa-egl
+	onboard
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	postmarketos-artwork-wallpapers
+	slick-greeter
+	unclutter-xfixes
+	xorg-server
+	"
+_pmb_recommends="
+	alsa-plugins-pulse
+	blueman
+	gvfs
+	mate-tweak
+	network-manager-applet
+	"
+subpackages="$pkgname-openrc"
+source="
+	10_caja-single-click.gschema.override
+	10_mate-font-size.gschema.override
+	10_mate-panel-clock.gschema.override
+	10_mate-panel-layout.gschema.override
+	10_mate-panel-workspace-switcher.gschema.override
+	10_mate-terminal-colors.gschema.override
+	10_mate-window-buttons.gschema.override
+	10_onboard.gschema.override
+	10_screensaver.gschema.override
+	10_slick-greeter.gschema.override
+	10_system-background.gschema.override
+	70-lightdm-pmos.conf
+	gtk.css
+	mate-terminal-maximized.desktop
+	onboard-autostart.desktop
+	pmOS-panel.layout
+	"
+options="!check pmb:systemd"
+
+package() {
+	install -Dm644 -t "$pkgdir"/etc/skel/.config/autostart \
+		"$srcdir"/onboard-autostart.desktop
+
+	install -Dm644 -t "$pkgdir"/etc/skel/.config/gtk-3.0 \
+		"$srcdir"/gtk.css
+
+	install -Dm755 -t "$pkgdir"/etc/skel/Desktop \
+		"$srcdir"/mate-terminal-maximized.desktop
+
+	install -Dm644 -t "$pkgdir"/usr/share/glib-2.0/schemas \
+		"$srcdir"/10_caja-single-click.gschema.override \
+		"$srcdir"/10_mate-font-size.gschema.override \
+		"$srcdir"/10_mate-panel-clock.gschema.override \
+		"$srcdir"/10_mate-panel-layout.gschema.override \
+		"$srcdir"/10_mate-panel-workspace-switcher.gschema.override \
+		"$srcdir"/10_mate-terminal-colors.gschema.override \
+		"$srcdir"/10_mate-window-buttons.gschema.override \
+		"$srcdir"/10_onboard.gschema.override \
+		"$srcdir"/10_screensaver.gschema.override \
+		"$srcdir"/10_slick-greeter.gschema.override \
+		"$srcdir"/10_system-background.gschema.override
+
+	install -Dm644 -t "$pkgdir"/usr/share/lightdm/lightdm.conf.d \
+		"$srcdir"/70-lightdm-pmos.conf
+
+	install -Dm644 -t "$pkgdir"/usr/share/mate-panel/layouts \
+		"$srcdir"/pmOS-panel.layout
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		bluez-openrc
+		elogind-openrc
+		lightdm-openrc
+		networkmanager-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+c69d44f1c69e3880ba822a4b98bc59f4049f7b8e228bec31076b9d3fa510e8e205ecf7e3e4b7b00fb28b39a447a55126aaede7e5e5741350aff2a37172b77659  10_caja-single-click.gschema.override
+7052d73fbcf2dd205a25efb346ce72e76b40f70d0e16d5c95b6a9c65cdf56a640dd7185cd6306b309621b579da4a2f3838f4132408316cb8422f9d38328b14e6  10_mate-font-size.gschema.override
+55474e1c663205bb1dd2a6ed17e128a05fd75d25dff3aafe417a038b43b9c975b4720a55f7c6b6388c875ffdd703bac84fd0e4e9dfa78bae0434841b1f33cac1  10_mate-panel-clock.gschema.override
+f2195bb331959b99f25f6328446f7644edbfa7d24758bb2bc48a627ce9aa0f768e8bd0478be9ba05560b72812490402bd2ab76be2eb27ca60fd755e6ad0f1d60  10_mate-panel-layout.gschema.override
+c2ddff42da4880fbf8c4b0a1dc6fb4698af90f4fc44796e893f79e1ffeaffe3425898785a896e903a1289cefcebfd38a55919d0efc3cff9ddf4fa0ea82462f76  10_mate-panel-workspace-switcher.gschema.override
+edef87a2b88a09d023dd51e8b32e2fc1cc9f5bec4a00b88b4f2adfb844ae2dc72747ef8891fc8a08652ae563fb1b914fba214c28a93e77de76b489a5fb50a96c  10_mate-terminal-colors.gschema.override
+4e91b44aad0b9d290b0c76bfa1fd1eabc6aa3b06a4e96068cc67c54de75bb3ba495b0fe46db58eb304f2fc63eea4d26d2618ca191f66f1dde98efe5a418bd1b6  10_mate-window-buttons.gschema.override
+114d77e6e7c11fc87244fc7c179244274c8f8711f111fcb1b9774ef6b226bd2bea01f85395da130f53670a870cfe571babd7f1c233ba85e1ef5a056ab65bd0b7  10_onboard.gschema.override
+fe6a37a1e22fbf29a8b6de3b3e137bc19becd6d80d391ad1a0c7908cb996dd9982c88ef55b84fd258a81263e37d47df5a81566ce7c337886ae4c0d7a83d640aa  10_screensaver.gschema.override
+7ce4ee56bbff8052ceb14f52e010ae48290589f45dfd0afbb240bf95abac1bd02e7a75a22776f90a1c96b59286ec4d8b6cbe18881550f4488b589cbf2b12bfc8  10_slick-greeter.gschema.override
+b4eded3d1aba2086d53507d434da6f2d5aae24fa49c7a8619abb1d81f87898d7a6d813be777a285ce988d78db236bea7507e7868c39fe020e5d23c230dd36242  10_system-background.gschema.override
+c11a66b639570ecad51b97c127898afc3f123e2de95ea2a788abc51a45c23c82dbf1022224c15a88691656a8065874d6f396aee0df64e93e1966a82b32d6a31c  70-lightdm-pmos.conf
+4532cf5c4cb687947c922d75cc942f26d4a695762a6b90cf53fddab84f2185799b7ee04c95b5e2263655e68a9a111967d92062ef5eb99b4122068c8585cf43a1  gtk.css
+adff2ad4dbd82debd3be32e521c8d70f8ea7a05c4942f1f72b28146149f93fcda7c0569d4be80b61fb3a46aa3d3312629c06f0ae112515efb8e735b19d9a1d53  mate-terminal-maximized.desktop
+d598b806bf749e0fedfdaeb51aa035b3877fedf4adc123ce2e50aef20f3cc6727b520a379aa26e88f9a2fe0f1fb96c4682895bb49c6a9cf4b5a5fd963ea93747  onboard-autostart.desktop
+eb6269566be4114be04fb27ced5c3233b361478f3e63a777deb109723658876b41644bf39446dc40c062e0e618c33baff627f7066f699d0a3d6c811a4466c84b  pmOS-panel.layout
+"

@@ -1,0 +1,85 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=device-qemu-aarch64
+pkgver=16
+pkgrel=0
+pkgdesc="Simulated device in QEMU (aarch64)"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	postmarketos-base
+	postmarketos-qemu-common
+	systemd-boot
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-pmtest
+	"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+mce() {
+	pkgdesc="Prevents screen blanking for UI's using mce (Glacier, Asteroid)"
+	install_if="$pkgname=$pkgver-r$pkgrel mce"
+	install -Dm644 "$srcdir"/mce-display-blanking.conf \
+		"$subpkgdir"/etc/mce/50display-blanking.conf
+}
+
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sway"
+	depends="postmarketos-ui-sway-logo-key-alt"
+	mkdir "$subpkgdir"
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -Dm644 "$srcdir"/resolution-qemu-X11.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-resolution-qemu-X11.conf
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel (recommended, best balance between stability and features)"
+	depends="linux-postmarketos-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long-term maintainance kernel (most stability, not all security fixes & new features)"
+	depends="linux-postmarketos-lts linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Upstream development kernel (regular breakage, latest features)"
+	depends="linux-postmarketos-mainline linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+pmtest() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+	depends="postmarketos-test-unl0kr"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+0713e4371fc4f3db5e2715cd89a958b6c5dff9c6b71e24810715ba9827a2088c5b33411bfbdddff9f989a3d3c7f7b4019532f1189fa5b2bc1721ebf5b134adca  deviceinfo
+fb390f6dadd302f9747a305947a2002375fba56a7584206d30fd8fc723c10494786b49f9cc3fa14a3109ed140341dcd9cc6c2b8ccb4e011911b83a871eaa721d  kernel-cmdline.conf
+"

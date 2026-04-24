@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rc-update add nvme-powersave boot
+rc-update add sysfsconf default
+
+exit 0

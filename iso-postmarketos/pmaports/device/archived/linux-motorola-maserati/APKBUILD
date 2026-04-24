@@ -1,0 +1,112 @@
+# Archived: Kernel does not build anymore
+# Kernel config based on: arch/arm/configs/mapphone_mmi_defconfig
+
+pkgname=linux-motorola-maserati
+pkgver=3.0.8
+pkgrel=5
+pkgdesc="Motorola Droid 4 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="motorola-maserati"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_motorola_omap4-common"
+_commit="2a348afc315c4ab32c4a1c8cb2c7e2ad0cedaec3"
+_config="config-$_flavor.$arch"
+
+_wlan_repository="android_hardware_ti_wlan"
+_wlan_commit="f75d24a45f68dfeabda86d2e8416990d796f9a7e"
+
+_hardware_repository="android_hardware_ti_omap4"
+_hardware_commit="0f456ee3a0d8cc79b708a11b505a9e376d467a2b"
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/NotKit/$_repository/archive/$_commit.tar.gz
+	$_wlan_repository-$_wlan_commit.tar.gz::https://github.com/LineageOS/$_wlan_repository/archive/$_wlan_commit.tar.gz
+	$_hardware_repository-$_hardware_commit.tar.gz::https://github.com/LineageOS/$_hardware_repository/archive/$_hardware_commit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	01_maserati-fix-gcc6-compile.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_wlan_builddir="$srcdir/$_wlan_repository-$_wlan_commit/mac80211/compat_wl12xx"
+_pvr_builddir="$srcdir/$_hardware_repository-$_hardware_commit/pvr-source/eurasiacon"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+
+	# Workaround to get the Makefile working outside of a git repository
+	cd "$_wlan_builddir"
+	mkdir -p .git/refs/tags
+	touch .git/HEAD .git/index .git/refs/tags
+	sed -i "s/\$(shell git describe --dirty)/$_wlan_commit/g" drivers/net/wireless/wl12xx/Makefile
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	cd "$_wlan_builddir"
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		KBUILD_NOPEDANTIC=1 \
+		KERNEL_DIR="$builddir" KLIB="$builddir" KLIB_BUILD="$builddir"
+
+	cd "$_pvr_builddir/build/linux2/omap4430_android"
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		TARGET_SGX=540 BUILD=release PLATFORM_VERSION=4.0 \
+		KERNELDIR="$builddir"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	make modules_install \
+		ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir"
+
+	cd "$_wlan_builddir"
+	for _module in "compat/compat.ko" "net/mac80211/mac80211.ko" \
+		"net/wireless/cfg80211.ko" "drivers/net/wireless/wl12xx/wl12xx.ko" \
+		"drivers/net/wireless/wl12xx/wl12xx_spi.ko" \
+		"drivers/net/wireless/wl12xx/wl12xx_sdio.ko"; do
+			install -Dm644 "$_module" "$pkgdir/lib/modules/$pkgver/kernel/$_module"
+			${CROSS_COMPILE}strip --strip-unneeded \
+				"$pkgdir/lib/modules/$pkgver/kernel/$_module"
+	done
+
+	cd "$_pvr_builddir/binary2_omap4430_android_release/target/kbuild"
+	install -Dm644 "pvrsrvkm.ko" \
+		"$pkgdir/lib/modules/$pkgver/pvrsrvkm_sgx540_120.ko"
+	${CROSS_COMPILE}strip --strip-unneeded \
+		"$pkgdir/lib/modules/$pkgver/pvrsrvkm_sgx540_120.ko"
+
+	depmod -b "$pkgdir" $pkgver
+}
+
+sha512sums="0cb163100dad093b56c208c17c021a8aa3a4ae133468701d4ece2fc7342661db8e118795a00fbc2d7921743039c00976ff0e361e41a68f8280bf6b630857b680  linux-motorola-maserati-2a348afc315c4ab32c4a1c8cb2c7e2ad0cedaec3.tar.gz
+961568d8f2cf2325292176f30542431e145594dacb817e87ecfab1b7c8d95fa93e61babca9779851c2d5b9bb8d9566f84665d96f22845e4a6602d9e314d8d785  android_hardware_ti_wlan-f75d24a45f68dfeabda86d2e8416990d796f9a7e.tar.gz
+a27237cff59b13740d4107bcfcac706ba5dfc204f51e39fb5b72fb1fbb1fb0ac13fc1a9c694dfc48c0883d359ff11fd7a67ca1e3f277bd086b5c63160fe0824c  android_hardware_ti_omap4-0f456ee3a0d8cc79b708a11b505a9e376d467a2b.tar.gz
+7fe833790e0bced3b3be5d0065e69a8329a1d62b2237a537c528996b58486af47fe33b22eef696c017fce65c28f6725397aec05fe5544ad1c0575dedd9c0f25c  config-motorola-maserati.armhf
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+2058e228141f9f102b6842859ac6ebba4834e035ddfffa0f6e748e709ed7c54514abfb70ed8ad31f1a424e194a4d5873ca69df0762b6c5953e94495242edc419  01_maserati-fix-gcc6-compile.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch"

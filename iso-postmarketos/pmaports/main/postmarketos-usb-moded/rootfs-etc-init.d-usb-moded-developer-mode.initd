@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+
+description="USB Moded Developer Mode"
+command="usb-moded-developer-mode"
+command_args="up"
+
+stop() {
+    usb-moded-developer-mode down
+}

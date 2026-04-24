@@ -1,0 +1,26 @@
+From 4e60f940452ca7ae8651d3560c0ac1b368375c3b Mon Sep 17 00:00:00 2001
+From: Dzmitry Sankouski <dsankouski@gmail.com>
+Date: Thu, 1 Dec 2022 20:07:36 +0300
+Subject: [PATCH 3/6] input: do not override console, when stdin and device
+ name not defined
+
+---
+ drivers/input/input.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/input/input.c b/drivers/input/input.c
+index a4341e8c7c..a4eeba13a5 100644
+--- a/drivers/input/input.c
++++ b/drivers/input/input.c
+@@ -671,7 +671,7 @@ int input_stdio_register(struct stdio_dev *dev)
+ 	error = stdio_register(dev);
+ #if !defined(CONFIG_SPL_BUILD) || CONFIG_IS_ENABLED(ENV_SUPPORT)
+ 	/* check if this is the standard input device */
+-	if (!error && strcmp(env_get("stdin"), dev->name) == 0) {
++	if (0) {
+ 		/* reassign the console */
+ 		if (OVERWRITE_CONSOLE ||
+ 				console_assign(stdin, dev->name))
+-- 
+2.30.2
+

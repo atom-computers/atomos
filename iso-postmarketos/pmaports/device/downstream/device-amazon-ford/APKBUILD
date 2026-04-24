@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-amazon-ford
+pkgdesc="Amazon Fire 7 (2015)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-amazon-ford
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-udev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	90-android-touch-dev.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+}
+
+sha512sums="
+a6ba4b4ec558c88e8b98af1382b33bfd0d6b8eefb2dabf9140a36cdd53849d8e7dc4805303d6a802b504e09f68ca548f4286ddec72379a3cd1d1a9126dd7764b  deviceinfo
+9dbe50f298f56ce5b2045d668ea5e4a411e11ece54f5afbcf34446c19aea71b77504cc75da8ae5a34ffacdbe943071245cd9fafa29d8c155992d22eb01685825  kernel-cmdline.conf
+f3d0b7d44f549100b3402fb287e80654279ae962a6b7721f3dc676324bdcf5c104391f9e4f3c5eac5733eff0ad467aa959a5f66553e7668c08124a1609ed3145  90-android-touch-dev.rules
+"

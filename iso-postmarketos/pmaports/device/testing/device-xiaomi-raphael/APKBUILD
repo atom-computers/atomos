@@ -1,0 +1,75 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-xiaomi-raphael
+pkgdesc="Xiaomi Mi 9T Pro / Redmi K20 Pro"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+_carch="arm64"
+options="!check !archcheck"
+depends="
+	linux-xiaomi-raphael
+	mkbootimg
+	postmarketos-base
+	mesa-vulkan-freedreno
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for GPU, WiFi, etc."
+	depends="
+		firmware-xiaomi-raphael
+		firmware-xiaomi-raphael-adreno
+		firmware-xiaomi-raphael-adsp
+		firmware-xiaomi-raphael-ath10k
+		firmware-xiaomi-raphael-bluetooth
+		firmware-xiaomi-raphael-camera
+		firmware-xiaomi-raphael-cdsp
+		firmware-xiaomi-raphael-ipa
+		firmware-xiaomi-raphael-slpi
+		firmware-xiaomi-raphael-modem
+		firmware-xiaomi-raphael-touchscreen
+		firmware-xiaomi-raphael-venus
+		firmware-xiaomi-raphael-wlan
+		linux-firmware-ath10k
+		linux-firmware-qcom
+		msm-modem
+		pd-mapper
+		tqftpserv
+"
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="openrc"
+
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+5a4790e6c3c1070a19ffc2cfb18e49905c420ced11317cd468c0f4db4767c9b57290d1fadd822005d185f7cbc75b9bf362db401d552d9c0af53cf2de6f2df461  deviceinfo
+42d3a47ebc8109fc3bf1ac03ddae6254ca9bc7b0a64f58cfe652b30a40bdceddf09fd65a46fddeda0138d8b52dbccc2425da06f7705373f4a4ab0babaa35b150  kernel-cmdline.conf
+d81350bb2c594d1c922b4eaa5f7ddd94ff5c52d915b6b34e01be2fddc5d624dea77343fab9b168acf889b55daa80a5deace6b81366d579816d5cc73b543a6826  modules-initfs
+"

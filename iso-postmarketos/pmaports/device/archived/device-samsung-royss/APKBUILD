@@ -1,0 +1,35 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-royss
+pkgdesc="Samsung Galaxy Young"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-royss mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	fb.modes
+	initfs-hook.sh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	install -Dm644 "$srcdir"/fb.modes "$pkgdir"/etc/fb.modes
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+3f1379d05e6f766d2741229d9a2fe363a36d9ec1cf71c943421a18fcf5c80be093dd6b70f263572596f87e3ee9d1bb4fe966b592300ccfaefed9c62b27dffae8  deviceinfo
+c0a7343c947294930c720bf0f04d3a79487432374d986728cf599de798475318e5a1e8be3ca0272b7f56857d76620264545a491192e8d94b7c2c59d02c58d8d5  kernel-cmdline.conf
+b246f5832618356e4519e6cac15b3700a219eba625a16799e80acf85f62e33bf3c110c35f63007479e1caf2ff8a87f169a3dcdc6ba0980fa0ac5781d63cbd40d  fb.modes
+b3d8e6d90b9996c444738f3bda1fa2afc411cfab9506f20f72bb7b16ca03f4db844138e4443c27d00f4ae809d9b28f4313c5c54512524aa86300efbb54907725  initfs-hook.sh
+"

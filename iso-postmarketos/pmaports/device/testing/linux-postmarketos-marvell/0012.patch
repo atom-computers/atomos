@@ -1,0 +1,154 @@
+From c9f0b0b0a076923a136aea4b948aee8737c35189 Mon Sep 17 00:00:00 2001
+From: Doug Brown <doug@schmorgal.com>
+Date: Tue, 30 Aug 2022 21:34:34 -0700
+Subject: [PATCH] drm/armada: fix DT support to work with panels
+
+Add the necessary setup to create a simple encoder and connect it to a
+bridge (which may be automatically created to hook up to a panel).
+
+This also required removing the "armada_add_endpoints" call, because it
+would never find the panel so binding would never occur.
+
+Signed-off-by: Doug Brown <doug@schmorgal.com>
+---
+ drivers/gpu/drm/armada/armada_crtc.c | 36 ++++++++++++++++++++++++----
+ drivers/gpu/drm/armada/armada_crtc.h |  2 ++
+ drivers/gpu/drm/armada/armada_drv.c  |  7 ------
+ 3 files changed, 34 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/gpu/drm/armada/armada_crtc.c b/drivers/gpu/drm/armada/armada_crtc.c
+index 46372e2fc47c76..daff098127c56f 100644
+--- a/drivers/gpu/drm/armada/armada_crtc.c
++++ b/drivers/gpu/drm/armada/armada_crtc.c
+@@ -15,6 +15,8 @@
+ #include <drm/drm_atomic_helper.h>
+ #include <drm/drm_probe_helper.h>
+ #include <drm/drm_vblank.h>
++#include <drm/drm_bridge.h>
++#include <drm/drm_simple_kms_helper.h>
+ 
+ #include "armada_crtc.h"
+ #include "armada_drm.h"
+@@ -913,6 +915,7 @@ static int armada_drm_crtc_create(struct drm_device *drm, struct device *dev,
+ 	struct armada_private *priv = drm_to_armada_dev(drm);
+ 	struct armada_crtc *dcrtc;
+ 	struct drm_plane *primary;
++	struct drm_bridge *bridge;
+ 	void __iomem *base;
+ 	int ret;
+ 
+@@ -929,6 +932,28 @@ static int armada_drm_crtc_create(struct drm_device *drm, struct device *dev,
+ 	if (dev != drm->dev)
+ 		dev_set_drvdata(dev, dcrtc);
+ 
++	/* Create a simple encoder for this CRTC to use */
++	ret = drm_simple_encoder_init(drm, &dcrtc->encoder, DRM_MODE_ENCODER_NONE);
++	if (ret < 0) {
++		DRM_ERROR("failed to create Armada encoder\n");
++		goto err_crtc;
++	}
++	dcrtc->encoder.possible_crtcs = 0x1;
++
++	/* Find a bridge to connect */
++	bridge = devm_drm_of_get_bridge(dev, dev->of_node, 0, 0);
++	if (IS_ERR(bridge) && (PTR_ERR(bridge) != -ENODEV)) {
++		ret = PTR_ERR(bridge);
++		goto err_encoder;
++	}
++
++	/* Attach the bridge to the encoder */
++	ret = drm_bridge_attach(&dcrtc->encoder, bridge, NULL, 0);
++	if (ret < 0) {
++		DRM_ERROR("failed to attach Armada bridge\n");
++		goto err_encoder;
++	}
++
+ 	dcrtc->variant = variant;
+ 	dcrtc->base = base;
+ 	dcrtc->num = drm->mode_config.num_crtc;
+@@ -954,12 +979,12 @@ static int armada_drm_crtc_create(struct drm_device *drm, struct device *dev,
+ 	ret = devm_request_irq(dev, irq, armada_drm_irq, 0, "armada_drm_crtc",
+ 			       dcrtc);
+ 	if (ret < 0)
+-		goto err_crtc;
++		goto err_encoder;
+ 
+ 	if (dcrtc->variant->init) {
+ 		ret = dcrtc->variant->init(dcrtc, dev);
+ 		if (ret)
+-			goto err_crtc;
++			goto err_encoder;
+ 	}
+ 
+ 	/* Ensure AXI pipeline is enabled */
+@@ -972,13 +997,13 @@ static int armada_drm_crtc_create(struct drm_device *drm, struct device *dev,
+ 	primary = kzalloc(sizeof(*primary), GFP_KERNEL);
+ 	if (!primary) {
+ 		ret = -ENOMEM;
+-		goto err_crtc;
++		goto err_encoder;
+ 	}
+ 
+ 	ret = armada_drm_primary_plane_init(drm, primary);
+ 	if (ret) {
+ 		kfree(primary);
+-		goto err_crtc;
++		goto err_encoder;
+ 	}
+ 
+ 	ret = drm_crtc_init_with_planes(drm, &dcrtc->crtc, primary, NULL,
+@@ -998,6 +1023,8 @@ static int armada_drm_crtc_create(struct drm_device *drm, struct device *dev,
+ 
+ err_crtc_init:
+ 	primary->funcs->destroy(primary);
++err_encoder:
++	drm_encoder_cleanup(&dcrtc->encoder);
+ err_crtc:
+ 	kfree(dcrtc);
+ 
+@@ -1043,6 +1070,7 @@ armada_lcd_unbind(struct device *dev, struct device *master, void *data)
+ {
+ 	struct armada_crtc *dcrtc = dev_get_drvdata(dev);
+ 
++	drm_encoder_cleanup(&dcrtc->encoder);
+ 	armada_drm_crtc_destroy(&dcrtc->crtc);
+ }
+ 
+diff --git a/drivers/gpu/drm/armada/armada_crtc.h b/drivers/gpu/drm/armada/armada_crtc.h
+index b21267d1745f14..80f3e94e253482 100644
+--- a/drivers/gpu/drm/armada/armada_crtc.h
++++ b/drivers/gpu/drm/armada/armada_crtc.h
+@@ -6,6 +6,7 @@
+ #define ARMADA_CRTC_H
+ 
+ #include <drm/drm_crtc.h>
++#include <drm/drm_encoder.h>
+ 
+ struct armada_gem_object;
+ 
+@@ -35,6 +36,7 @@ struct armada_variant;
+ 
+ struct armada_crtc {
+ 	struct drm_crtc		crtc;
++	struct drm_encoder		encoder;
+ 	const struct armada_variant *variant;
+ 	void			*variant_data;
+ 	unsigned		num;
+diff --git a/drivers/gpu/drm/armada/armada_drv.c b/drivers/gpu/drm/armada/armada_drv.c
+index f3f52fbeae9025..532de779b8d200 100644
+--- a/drivers/gpu/drm/armada/armada_drv.c
++++ b/drivers/gpu/drm/armada/armada_drv.c
+@@ -265,13 +265,6 @@ static int armada_drm_probe(struct platform_device *pdev)
+ 
+ 			drm_of_component_match_add(dev, &match, component_compare_of, np);
+ 		}
+-
+-		for_each_compatible_node(np, NULL, "marvell,armada-lcdc") {
+-			if (!of_device_is_available(np))
+-				continue;
+-
+-			armada_add_endpoints(dev, &match, np);
+-		}
+ 	}
+ 
+ 	return component_master_add_with_match(&pdev->dev, &armada_master_ops,

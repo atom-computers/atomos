@@ -1,0 +1,25 @@
+pkgname=firmware-samsung-santos10wifi
+pkgver=0.1
+pkgrel=0
+_commit="22fdeccf3db554b50ebba1877d6e71085511114f"
+pkgdesc="Samsung Galaxy Tab 3 10.1 Wi-Fi Firmware"
+url="https://github.com/santos10-dev/proprietary_vendor_samsung_santos10-common"
+arch="x86"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/santos10-dev/proprietary_vendor_samsung_santos10-common/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/proprietary_vendor_samsung_santos10-common-$_commit"
+
+package() {
+	# Wi-Fi
+	install -Dm644 proprietary/vendor/firmware/bcmdhd_sta.bin_b2 \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_sta.bin_b2
+	install -Dm644 proprietary/vendor/firmware/nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_net.txt
+
+	# Misc
+	install -Dm644 proprietary/vendor/firmware/fw_sst_08e7.bin \
+		"$pkgdir"/lib/firmware/postmarketos/fw_sst_08e7.bin
+}
+
+sha512sums="d0cf1081ed1e0f6e2c9c9d94bc34b8094054909d5c5580304f8cbd3d69d9712c2875e1a90da2f51837e5d67d6849cd0719b35b301ba37d0d5fdee228e8e62258  firmware-samsung-santos10wifi-22fdeccf3db554b50ebba1877d6e71085511114f.tar.gz"

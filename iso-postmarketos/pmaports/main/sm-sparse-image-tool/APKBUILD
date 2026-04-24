@@ -1,0 +1,25 @@
+maintainer="Enrico Lumetti <enrico.lumetti@gmail.com>"
+pkgname=sm-sparse-image-tool
+pkgver=0.1
+pkgrel=1
+pkgdesc="Small python utility and library to deal with Samsung's sparse image format"
+url="https://gitlab.com/doppioandante/sm_sparse_image_tool"
+arch="all"
+license="GPL-3.0-or-later"
+depends="python3"
+_commit="d2ac539aafa8eaf47dfccf582303f774d92a7208"
+source="$pkgname-$pkgver.tar.gz::https://gitlab.com/doppioandante/sm_sparse_image_tool/-/archive/v$pkgver/sm_sparse_image_tool-v$pkgver.tar.gz "
+builddir="$srcdir/sm_sparse_image_tool-v$pkgver"
+
+options="!check" # no testsuite
+
+build() {
+	:
+}
+
+package() {
+	install -Dm755 $builddir/sm_sparse_image_tool.py "$pkgdir"/usr/bin/sm_sparse_image_tool
+}
+sha512sums="
+ade76765922954a100e053f5de8f10bf93161fe5dff38c9454fc4d8931912609ec99ac5b8bf3390f3312451c85990e5274210a014548a20b5d63112057de5189  sm-sparse-image-tool-0.1.tar.gz
+"

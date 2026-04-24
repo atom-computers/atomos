@@ -1,0 +1,6 @@
+tps65185-regulator
+rockchip_ebc
+drm_kms_helper
+drm_shmem_helper
+pvi_waveform
+clk_scmi

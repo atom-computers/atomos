@@ -1,0 +1,20 @@
+#!/bin/sh
+
+watchdog_kick() {
+	while true; do
+		for wd in /dev/watchdog*; do
+			[ -c $wd ] && echo X > $wd
+		done
+		[ -z "$1" ] && sleep 10s || exit
+	done
+}
+
+if [ -z "$1" ]; then
+	watchdog_kick
+else
+	if [ "$1" != "-1" ]; then
+		echo "Invalid argument"
+		exit 1
+	fi
+	watchdog_kick $1
+fi

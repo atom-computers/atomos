@@ -1,0 +1,39 @@
+#!/bin/sh
+# systemd generator for uMTP-Responder configuration
+# Generates config with user UID/GID in /run
+
+set -e
+
+late_dir="$3"
+
+# fallback UID/GID
+uid=10000
+gid=10000
+
+user_file="/etc/default_user"
+if [ -f "$user_file" ]; then
+    user=$(cat "$user_file")
+    if [ -n "$user" ]; then
+        # Get UID/GID, fall back to defaults on failure
+        uid=$(id -u "$user" 2>/dev/null || echo 10000)
+        gid=$(id -g "$user" 2>/dev/null || echo 10000)
+    fi
+fi
+
+mkdir -p /run/umtprd
+
+cat /etc/umtprd/umtprd.conf > /run/umtprd/umtprd.conf
+cat << EOF >> /run/umtprd/umtprd.conf
+
+# GID/UID for file operations (generated)
+default_uid $uid
+default_gid $gid
+EOF
+
+# unit override to use generated config
+mkdir -p "${late_dir}/umtprd.service.d"
+cat << EOF > "${late_dir}/umtprd.service.d/10-config-path.conf"
+[Service]
+ExecStart=
+ExecStart=/usr/bin/umtprd -conf /run/umtprd/umtprd.conf
+EOF

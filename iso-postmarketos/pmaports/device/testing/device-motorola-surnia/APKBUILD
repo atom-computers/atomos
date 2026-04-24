@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-motorola-surnia
+pkgdesc="Motorola Moto E (2nd Gen)"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/Wi-Fi/Bluetooth/Video(/Modem) firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader firmware-motorola-surnia-wcnss-nv firmware-motorola-harpia-venus"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+605ba23c0e6c08c6af74bc934df6829be2786bcf558536472cd4df58b78cb5b5b1cf679c5abd6096cb1d6c981df1390013cece6c7403c4772d9d4e0b4943f1ee  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+44df8245209d15e16e5114874e22160383861988b0bd1b2e2faca27c817cc03f431a387e8cc5a708ab2cfcc67b04f204043cdaaf898552588ea8feb18755b0a9  modules-initfs
+"

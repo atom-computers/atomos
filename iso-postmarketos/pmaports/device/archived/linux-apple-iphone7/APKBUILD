@@ -1,0 +1,47 @@
+# Archived: Replaced by linux-postmarketos-apple-16k
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/hx_h9p_defconfig
+maintainer="Jonas Heinrich <onny@project-insanity.org>"
+pkgname=linux-apple-iphone7
+pkgver=5.4.14
+pkgrel=2
+pkgdesc="Apple iPhone 7 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="apple-iphone7"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_commit="0c2f7dda13d67bb7e06123df516f8bdb1000a79b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/corellium/linux-sandcastle/archive/$_commit.tar.gz
+	$_config
+	linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/linux-sandcastle-$_commit"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 \
+		. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+ba1f1d6b9ab07f0791cfb11f9ff2a7f36f9b43e6eb29cc58d208e7c29237e783408146a460dc93ca514768e593c508d8cd0b04d9c948d98878f8cd15e1633f36  linux-apple-iphone7-0c2f7dda13d67bb7e06123df516f8bdb1000a79b.tar.gz
+a932d5a611003d283360088560445f393011f270d9493d41daced9b984cfb636b1ac30732b7033d1f4d7c5e3ea5fc6055dab44557994fa37aef2ffaa1294a643  config-apple-iphone7.aarch64
+27827877040007fc1c4c719f7e2e19e5c272d44972415cfc53feba0313d87e4074f8204bdb13cbc5fe21ea61bf595314b68f10c081e7b7bac3c888b60f008acf  linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+"

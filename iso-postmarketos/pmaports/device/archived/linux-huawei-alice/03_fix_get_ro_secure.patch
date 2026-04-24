@@ -1,0 +1,40 @@
+Fixes kernel panic on get_ro_secure function.
+
+diff --git a/fs/proc/dcheck_root.c b/fs/proc/dcheck_root.c
+index 483cdb20..5507546f 100755
+--- a/fs/proc/dcheck_root.c
++++ b/fs/proc/dcheck_root.c
+@@ -94,33 +94,6 @@ static int is_recorded(int action_type)
+ static int get_ro_secure(void)
+ {
+     int ro_secue = 0;
+-    int ret = 0;
+-    mm_segment_t old_fs;
+-    char buf_line[LOG_LINE_LEN];
+-    struct file *filp = NULL;
+-    loff_t pos=0;
+-    int i = 0;
+-    
+-    filp = filp_open(DEFAULT_PROP_FILE, O_RDONLY, 0644);
+-    if(NULL == filp){
+-        printk(KERN_WARNING "DEFAULT_PROP_FILE OPEN FAIL!\n");
+-        ro_secue = 1;        
+-        return ro_secue;
+-    }
+-    old_fs = get_fs();
+-    set_fs(KERNEL_DS);
+-
+-    while( (filp->f_inode->i_size-LOG_LINE_LEN*i) > 0 ){
+-        memset(buf_line, 0, LOG_LINE_LEN);
+-        ret = filp->f_op->read(filp, buf_line, LOG_LINE_LEN, &pos);
+-        if(strstr(buf_line,"ro.secure=1")){
+-            ro_secue = 1;
+-            break;
+-        }
+-        i++;
+-    }
+-    set_fs(old_fs);
+-    filp_close(filp,NULL);
+     return ro_secue;
+ }
+ static int umh_exec_ckrt( void )

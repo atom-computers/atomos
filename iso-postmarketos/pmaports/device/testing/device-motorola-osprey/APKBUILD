@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-motorola-osprey
+pkgver=11
+pkgrel=0
+pkgdesc="Motorola Moto G 2015"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+options="!check !archcheck"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	# osprey can use newer venus firmware from harpia
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		 firmware-motorola-osprey-wcnss-nv firmware-motorola-harpia-venus"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+6455425e89921dea263f01088b814092940ffa84556b66523a4e23ccc94a994c6ec97bcad8467063f86e9c2caa127139cd9cef42c9600f6adbdc9b4f83cee4cb  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+fc1d1e57bd2a366884b1359ba32acfb484719958fb655067cfba28787384d626dde7683750dda523e2941df4fc78e2d234130ef5a5217002a09623a4a2f34919  modules-initfs
+"

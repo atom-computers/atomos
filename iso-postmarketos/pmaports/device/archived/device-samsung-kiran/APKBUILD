@@ -1,0 +1,39 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-kiran
+pkgdesc="Samsung Z1"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-kiran
+	postmarketos-base
+	alsa-utils
+	alsa-ucm-conf
+	soc-sprd-audio-sc8830
+"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for Wi-Fi"
+	depends="firmware-samsung-kiran"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+9eb76c7275ab6dfe2c6b9ac9404a1733acb9a9a6029bb7213186ea795e77faecc4abd0014cfb9b245079bf345511b3cd3358f3fa9c9b38b2a777b2aea92ceb0f  deviceinfo
+"

@@ -1,0 +1,16 @@
+Fix gpu_power_level not being defined when compiling without KGSL (is it really needed?)
+
+diff --git a/drivers/soc/qcom/msm_performance.c b/drivers/soc/qcom/msm_performance.c
+index dbfb3f0..5f3e3b3 100644
+--- a/drivers/soc/qcom/msm_performance.c
++++ b/drivers/soc/qcom/msm_performance.c
+@@ -1384,6 +1384,8 @@ static void start_timer(struct cluster *cl)
+        spin_unlock_irqrestore(&cl->timer_lock, flags);
+ }
+ 
++int gpu_power_level;
++int gpu_max_power_level;
+ static void check_cpu_load(struct cluster *cl, u64 now)
+ {
+        struct load_stats *pcpu_st;
+

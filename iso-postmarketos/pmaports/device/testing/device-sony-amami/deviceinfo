@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Sony Xperia Z1 Compact"
+deviceinfo_manufacturer="Sony"
+deviceinfo_codename="sony-amami"
+deviceinfo_year="2014"
+deviceinfo_chassis="handset"
+deviceinfo_dtb="qcom-msm8974-sony-xperia-rhine-amami"
+deviceinfo_append_dtb="true"
+deviceinfo_external_storage="true"
+deviceinfo_flash_method="fastboot"
+deviceinfo_arch="armv7"
+deviceinfo_generate_bootimg="true"
+
+# Splash screen
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1280"
+
+# Fastboot related
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x02000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x01e00000"
+deviceinfo_flash_pagesize="2048"

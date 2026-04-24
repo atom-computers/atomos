@@ -1,0 +1,15 @@
+diff --git a/arch/arm/boot/dts/exynos5433-tre_eur_open_14.dts b/arch/arm/boot/dts/exynos5433-tre_eur_open_14.dts
+index 919019725ac..12638037e26 100644
+--- a/arch/arm/boot/dts/exynos5433-tre_eur_open_14.dts
++++ b/arch/arm/boot/dts/exynos5433-tre_eur_open_14.dts
+@@ -22,8 +22,8 @@
+ 	model_info-chip = <5433>;
+ 	model_info-platform = "trlte";
+ 	model_info-subtype = "trlte_eur_open";
+-	model_info-hw_rev = <14>;
+-	model_info-hw_rev_end = <15>;
++	model_info-hw_rev = <0x0000020>;
++	model_info-hw_rev_end = <0x0000021>;
+ 	compatible = "samsung,TR E LTE 14", "samsung,exynos5433";
+ 
+ 	hsi2c@14D90000 {

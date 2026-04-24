@@ -1,0 +1,103 @@
+
+maintainer="Duje Mihanović <duje@dujemihanovic.xyz>"
+_flavor=samsung-coreprimevelte
+pkgname=linux-$_flavor
+pkgver=6.19.10
+pkgrel=1
+pkgdesc="Samsung Galaxy Core Prime VE LTE mainline kernel"
+arch="aarch64"
+_carch="arm64"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bc
+	bison
+	clang
+	dtc
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	zstd
+"
+
+# Source
+_config=config-$_flavor.$arch
+
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-$_kernver.tar.xz
+	0001-dt-bindings-mwifiex-document-use-with-the-SD8777-chi.patch
+	0002-net-mwifiex-add-support-for-the-SD8777-chipset.patch
+	0003-DONOTMERGE-net-mwifiex-fix-timeouts-with-the-SD8777-.patch
+	0004-arm64-dts-samsung-coreprimevelte-add-wifi-node.patch
+	0005-Bluetooth-btmrvl_sdio-Add-support-for-SD8777-chipset.patch
+	0006-arm64-dts-marvell-samsung-coreprimevelte-Use-memory-.patch
+	0007-arm64-dts-marvell-samsung-coreprimevelte-Increase-to.patch
+	0008-arm64-dts-marvell-samsung-coreprimevelte-Add-missing.patch
+	0009-backlight-ktd2801-enable-BL_CORE_SUSPENDRESUME.patch
+	$_config
+"
+builddir="$srcdir"/linux-"$_kernver"
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/$_config "$builddir"/.config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))"-$_flavor
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old ZSTD'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_EFI_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH=$_carch \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+11a397c54dddf02fc62b52b2571a0d13cf96450c2e67cffa759c34b9432e51dcb39871347c9cdbca36cfaf78198015d8d7a4d2c2a8d506e22b998fd2b185341b  linux-6.19.10.tar.xz
+853f63245c4c8c4a6229d52e2f1444eea6b67e8ecfacea4431c0a661ae0dff307086cba6677639a02d723c97a184a0075171747058107ac62ee98641c54fbde6  0001-dt-bindings-mwifiex-document-use-with-the-SD8777-chi.patch
+1813ae97fc99fa451f52a79cfb4a33ade26db3d357d4a7d0faec39eeec5046e6905d7caee7f0f8ef9029cd14690fd4794de568d94608559ea03720185f689d7c  0002-net-mwifiex-add-support-for-the-SD8777-chipset.patch
+a75a8f203d36e2410107e39bc591582b659ec242298125935d6daf027259d845ab8235c04bcd7ca008d309d1bfcc42a8be20e7a95d168ec7f9ffff6bb8c9a5a4  0003-DONOTMERGE-net-mwifiex-fix-timeouts-with-the-SD8777-.patch
+b09f1e155728dd4322df42fc1ad8221ca3c6999724bd647566e073a20f91b0e67dab202a92f2c8f6ee977c3c1985e0e646212f653287660d05652d2791dd74cb  0004-arm64-dts-samsung-coreprimevelte-add-wifi-node.patch
+24e6a9e7f39ba72df60c91b48488951a0b3ad5bc3568ba191c98de48be7f58c050c392504729c4f27bb2664f55d5ff8c3b72a196614aa43ee5cfb81be16754b8  0005-Bluetooth-btmrvl_sdio-Add-support-for-SD8777-chipset.patch
+fcd10232882fcdabc122689aad63cb32eab6f626f76fea67a92928affe48705d92a4a75ff6e587419537c8baa3eaa815f68905d6d164915ed7cdd8b91de5a0d0  0006-arm64-dts-marvell-samsung-coreprimevelte-Use-memory-.patch
+2cd76bf89f2b8baa9eb998f7a6553782c0b8e213fc9d0ed6cf8707af5a8d3e4722f00626642571a9d381078ada6fcf8f39763edab869db459455d3f6b66a1edd  0007-arm64-dts-marvell-samsung-coreprimevelte-Increase-to.patch
+e5cf0fbe4a727bfe83d582714b5a109e989f9b325303d33905cace7534c63462d5ee3374388b802b973fb288d3d7d390806982269465ea461312f8e6940ae534  0008-arm64-dts-marvell-samsung-coreprimevelte-Add-missing.patch
+b454382126dd51ebd51dd7b596088a937dec339f2763233ba1ed39b087a84b3342fbec15f03cab6829a55b6342fb80670490e09ee292188670673e0f5bab3fe7  0009-backlight-ktd2801-enable-BL_CORE_SUSPENDRESUME.patch
+f3d05d84b38b8429857d572e825ebee8ebe881eccdc29ed87fc4ce371d5aec823e36aa6cb6bf1f14f0325c758e79c33f83c34b74955fcc205d76e14c2454e5e0  config-samsung-coreprimevelte.aarch64
+"

@@ -1,0 +1,28 @@
+From 6443246a5765322e6407b3f5f619d906139e85a0 Mon Sep 17 00:00:00 2001
+From: Timon Baetz <timon.baetz@protonmail.com>
+Date: Sun, 19 Sep 2021 21:35:18 +0200
+Subject: [PATCH] msm: mdss: fix fb memory allocation
+
+Signed-off-by: Timon Baetz <timon.baetz@protonmail.com>
+---
+ drivers/video/msm/mdss/mdss_fb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index d692846ea6f..3e94c5b4fc8 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -2868,8 +2868,8 @@ static int mdss_fb_set_par(struct fb_info *info)
+ 	else
+ 		mfd->fbi->fix.line_length = var->xres * var->bits_per_pixel / 8;
+ 
+-	mfd->fbi->fix.smem_len = mfd->fbi->fix.line_length *
+-					mfd->fbi->var.yres_virtual;
++	mfd->fbi->fix.smem_len = PAGE_ALIGN(mfd->fbi->fix.line_length *
++					mfd->fbi->var.yres_virtual);
+ 
+ 	if (mfd->panel_reconfig || (mfd->fb_imgType != old_imgType)) {
+ 		mdss_fb_blank_sub(FB_BLANK_POWERDOWN, info, mfd->op_enable);
+-- 
+2.25.1
+

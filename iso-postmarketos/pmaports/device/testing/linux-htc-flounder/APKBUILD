@@ -1,0 +1,65 @@
+maintainer=""
+pkgname=linux-htc-flounder
+pkgver=6.19.0
+pkgrel=1
+pkgdesc="Google Nexus 9 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="htc-flounder"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native
+	pmb:kconfigcheck-nftables pmb:kconfigcheck-zram
+	pmb:kconfigcheck-containers pmb:kconfigcheck-waydroid
+"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	gzip
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	zstd
+"
+
+# Source
+_repository="linux"
+_commit="38ff68627120b204b30d030e5f4dd7d1ee33acc3"
+source="
+	$pkgname-$_commit.tar.gz::https://cyberchaos.dev/yuka/linux/-/archive/$_commit/linux-$_commit.tar.gz
+	config-$_flavor.$arch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+}
+
+sha512sums="
+c019acb38056e0f82c54de19447b1c398cb306b7e67a5797de7d3103d6a3f6949d6808acc75e613d7be56cd124e4c2ecf05764f75a3f54aa3979fccace0031d9  linux-htc-flounder-38ff68627120b204b30d030e5f4dd7d1ee33acc3.tar.gz
+03a05407977a77dce95976799be1c79ce00970d290c174ff8dbdb696fb79cc1f6af4179f25de92b63bc0dad2729ae663ac0dd2bdc8ea6eb44197911c2cba38bb  config-htc-flounder.aarch64
+"

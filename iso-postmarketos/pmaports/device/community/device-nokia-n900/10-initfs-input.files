@@ -1,0 +1,9 @@
+# console keyboard matrix mappings
+/usr/share/bkeymaps/us/rx51_us.bmap.gz
+/usr/share/bkeymaps/ch/rx51_ch.bmap.gz
+/usr/share/bkeymaps/it/rx51_it.bmap.gz
+/usr/share/bkeymaps/fi/rx51_fi.bmap.gz
+/usr/share/bkeymaps/se/rx51_se.bmap.gz
+
+# touchscreen calibration
+/usr/lib/udev/rules.d/90-touchscreen-dev.rules

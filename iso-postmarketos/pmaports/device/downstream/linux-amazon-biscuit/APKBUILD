@@ -1,0 +1,78 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/biscuit_defconfig
+
+pkgname=linux-amazon-biscuit
+pkgver=3.18.19
+pkgrel=1
+pkgdesc="Amazon Echo Dot (2nd gen) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-biscuit"
+url="https://kernel.org"
+license="GPL-2.0-only"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Disable kconfig check because Amazon kernel doesn't allow VT or SYSVIPC to be
+# built without extensive patching
+options="
+	!strip
+	!check
+	!tracedeps
+	!pmb:kconfigcheck
+	pmb:cross-native
+"
+
+# Source
+_repository="amazon-biscuit-kernel"
+_commit="3923647bdeca8fdaeb943fb31234dbe361668d28"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/echo-pmos/$_repository/-/archive/$_commit/amazon-biscuit-kernel-$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	replace-missing-code-from-mainline.patch
+	replace-solaris-style-directive.patch
+	x509-certificate-list.patch
+	biscuit-remove-dummy-audio-mmap.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+f8b3b837a1e52c6d2018b0bdf05ef92118e78e0566ba6e13a7b1009b634b5cf5b0d0c8b2ad4793eed6003c0f5c788b079b9a9dbf1e403431110d5250e52b2ccf  linux-amazon-biscuit-3923647bdeca8fdaeb943fb31234dbe361668d28.tar.gz
+479f093a1b63f8e702e6852d7e36e91345223d493bdcf27e32c5810a2cba470f5653aca9a5a2a8cbbe4f944758ac0567883f06050f3593247a7b8487900a1e2b  config-amazon-biscuit.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+f0a0591e0008fa5465f479677112b81ef3dac88c26e0aa358bb504abdb920d3682613dfc51183130b5a22772ad85b1cc7a1155104b33dbba748d8e074fc2876a  gcc10-extern_YYLOC_global_declaration.patch
+9ae0f1ca06c6084c0577578721968cd4b154d9cb9fb82af3b30732dd4ca2e857cae58c285d0f529e0b2c827f1cc2a12426698065e2d0aab1b23e2208fee70bc5  replace-missing-code-from-mainline.patch
+a4196e0184b3bb1bc8d0cf4fae931dab623bb9cd02732758bb8ac1d0588682960f58d4dba8ccebb1377e853ca5c135d2a700750228d54ac95a33d1cd44533bca  replace-solaris-style-directive.patch
+756bfc37c903085bec2e016f146cfc795da5495d8b095124a83f9d92931882ca63c5a1c418016dbcd19a18357c1e783dc7547bb115bb186751615ce9268007f2  x509-certificate-list.patch
+99a8649fbeda1a6343e994d65b391c684e0ccfa8c5d7c3f7e584ee16bfc98e1b7dcca359fd6541f341f54f883708a8bc69a50fde459fedf05ad6ea5ab133bfc9  biscuit-remove-dummy-audio-mmap.patch
+"

@@ -1,0 +1,45 @@
+/dts-v1/;
+
+/ {
+	description = "Amlogic Generic TV Box FIT Image";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "Kernel";
+			data = /incbin/("vmlinuz");
+			type = "kernel";
+			arch = "arm64";
+			os = "linux";
+			compression = "none";
+			load = <0x1080000>;
+			entry = <0x1080000>;
+		};
+		fdt {
+			description = "DTB";
+			data = /incbin/("[[[DEVICETREE]]]");
+			type = "flat_dt";
+			compression = "none";
+			arch = "arm64";
+		};
+		initrd {
+			description = "Initramfs image";
+			data = /incbin/("initramfs");
+			type = "ramdisk";
+			arch = "arm64";
+			os = "linux";
+		};
+
+	};
+
+	configurations {
+		default = "standard";
+		standard {
+			description = "Standard Boot";
+			kernel = "kernel";
+			fdt = "fdt";
+			ramdisk = "initrd";
+		};
+	};
+
+};

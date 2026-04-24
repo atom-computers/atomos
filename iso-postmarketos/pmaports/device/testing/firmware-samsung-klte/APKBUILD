@@ -1,0 +1,47 @@
+maintainer=""
+pkgname=firmware-samsung-klte
+pkgver=4
+pkgrel=0
+pkgdesc="Samsung Galaxy S5 Firmware"
+url="https://github.com/TheMuppets/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+subpackages="
+	$pkgname-wifi:wifi
+	$pkgname-bt:bt
+"
+_commit="63715ce31aedd827bd1f8bac5e5c42cc47f28f85"
+
+source="
+	$pkgname-$_commit-bcmdhd_sta.bin::https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commit/klte-common/proprietary/etc/wifi/bcmdhd_sta.bin
+	$pkgname-$_commit-nvram_net.txt::https://raw.githubusercontent.com/TheMuppets/proprietary_vendor_samsung/$_commit/klte-common/proprietary/etc/wifi/nvram_net.txt
+	$pkgname-$_commit-bcm4350_V0395.0797.hcd::https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commit/klte-common/proprietary/vendor/firmware/bcm4350_V0395.0797.hcd
+"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wifi() {
+	pkgdesc="Samsung Galaxy S5 Wi-Fi firmware"
+	mkdir "$subpkgdir"
+	install -Dm644 "$srcdir/$pkgname-$_commit-bcmdhd_sta.bin" \
+		"$subpkgdir/lib/firmware/postmarketos/brcm/brcmfmac4354-sdio.bin"
+	install -Dm644 "$srcdir/$pkgname-$_commit-nvram_net.txt" \
+		"$subpkgdir/lib/firmware/postmarketos/brcm/brcmfmac4354-sdio.samsung,klte.txt"
+}
+
+bt() {
+	pkgdesc="Samsung Galaxy S5 Bluetooth firmware"
+	mkdir "$subpkgdir"
+	install -Dm644 "$srcdir/$pkgname-$_commit-bcm4350_V0395.0797.hcd" \
+		"$subpkgdir/lib/firmware/postmarketos/brcm/BCM4354.hcd"
+}
+
+sha512sums="
+e382700c6af5f592ebb10c4eca038289ae09a3de36a3f330b81c2c6322b75a85d1bbe1e3061f4c2d889bf32e9cf92f17e3474c324e166aa89847bd401aa902df  firmware-samsung-klte-63715ce31aedd827bd1f8bac5e5c42cc47f28f85-bcmdhd_sta.bin
+3619fc3b569f34600a6709f7e003843ceeb9a6e6779e5e57e02a3ebdf7d66a949717026c414fe3eefe0f7a0bfa769c179ec10d6cdf2f010b98477ba3e81c8b52  firmware-samsung-klte-63715ce31aedd827bd1f8bac5e5c42cc47f28f85-nvram_net.txt
+8fd93a1d55b230a574406a082c0620d05f4374b4139042814db259b6d158903bbb7b57e3f9f6c838e9b533d0e173340fb0f16e5b0335fc518324961179445020  firmware-samsung-klte-63715ce31aedd827bd1f8bac5e5c42cc47f28f85-bcm4350_V0395.0797.hcd
+"

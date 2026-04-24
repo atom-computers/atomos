@@ -1,0 +1,27 @@
+From 68eaeb9b8b9592185608349a3399d23496724bca Mon Sep 17 00:00:00 2001
+From: Yuval Adam <_@yuv.al>
+Date: Fri, 4 Aug 2017 15:45:12 +0300
+Subject: [PATCH] Add two missing DTB files
+
+---
+ arch/arm/mach-msm/Makefile.boot | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-msm/Makefile.boot b/arch/arm/mach-msm/Makefile.boot
+index c0e9efc944d..c15d387df63 100644
+--- a/arch/arm/mach-msm/Makefile.boot
++++ b/arch/arm/mach-msm/Makefile.boot
+@@ -162,8 +162,10 @@ initrd_phys-$(CONFIG_ARCH_FSM9XXX)	:= 0x12000000
+         dtb-$(CONFIG_ARCH_MSM8610)	+= msm8610-sim.dtb
+         dtb-$(CONFIG_ARCH_MSM8610)	+= msm8610-v1-qrd-skuaa.dtb
+         dtb-$(CONFIG_ARCH_MSM8610)	+= msm8610-v1-qrd-skuab.dtb
++        dtb-$(CONFIG_ARCH_MSM8610)	+= msm8610-v1-qrd-skuab-dvt2.dtb
+         dtb-$(CONFIG_ARCH_MSM8610)	+= msm8610-v2-qrd-skuaa.dtb
+         dtb-$(CONFIG_ARCH_MSM8610)	+= msm8610-v2-qrd-skuab.dtb
++        dtb-$(CONFIG_ARCH_MSM8610)	+= msm8610-v2-qrd-skuab-dvt2.dtb
+ 
+ # MSMSAMARIUM
+    zreladdr-$(CONFIG_ARCH_MSMSAMARIUM)	:= 0x00008000
+-- 
+2.13.3
+

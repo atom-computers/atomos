@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-jfvelte
+pkgdesc="Samsung Galaxy S4 Value Edition"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-jfvelte mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf fb.modes"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	install -D -m644 "$srcdir"/fb.modes "$pkgdir"/etc/fb.modes
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+fdf5aefc03f23429038878a98f02397ca1bd5487d427e1fb8a6937e93d9d866c94589c1d8c944e1b025f3856f7220fbdd36c80462bd948468fd447250e0ea21d  deviceinfo
+706c68607d66e9a7196281794bd94d4d3267321a8090fb3f5388414a1aa3388387e77681b487c33641b4aa415274e8ed5224abc33c2e72cb21bc682f6b09fed8  kernel-cmdline.conf
+515cd3be1816bea9a1859a37f6568e3e82a9f8f16cbbc71ba13d60723f98eafbda9046ebb1ee7f4ae23dd2b2b2b18506f64516ca45ff71af18e7c163f12248bd  fb.modes
+"

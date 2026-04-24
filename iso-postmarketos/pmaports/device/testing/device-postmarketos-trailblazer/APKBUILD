@@ -1,0 +1,101 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Ferass El Hafidi <funderscore@postmarketos.org>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=device-postmarketos-trailblazer
+pkgdesc="postmarketOS Trailblazer generic ARM64"
+pkgver=20
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	systemd-boot
+"
+_pmb_recommends="
+	linux-firmware-qcom
+	linux-firmware-ath10k
+	linux-firmware-ath11k
+	linux-firmware-ath12k
+	linux-firmware-qca
+	linux-firmware-rtw88
+	firmware-siliconlabs-rs9116
+	firmware-brcm43752
+
+	soc-qcom-qbootctl
+	rmtfs
+	pd-mapper
+	tqftpserv
+	bootmac
+	woa-firmware-yoinker
+
+	dtbloader
+"
+install="$pkgname.pre-upgrade"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-next:kernel_next
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-postmarketos-qcom-laptop:kernel_postmarketos_qcom_laptop
+	$pkgname-kernel-postmarketos-amlogic:kernel_postmarketos_amlogic
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_next() {
+	pkgdesc="Unstable next kernel (linux-next)"
+	depends="linux-next"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Mainline postmarketOS kernel (linux-postmarketos-mainline)"
+	depends="linux-postmarketos-mainline"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long term support (LTS) kernel from Alpine Linux (linux-lts)"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel from Alpine Linux (linux-stable)"
+	depends="linux-stable"
+	provides="$pkgname-kernel-edge=$pkgver-r$pkgrel"
+	replaces="$pkgname-kernel-edge"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_postmarketos_qcom_laptop() {
+	pkgdesc="Mainline kernel with additional patches for Qualcomm Snapdragon-based laptops (linux-postmarketos-qcom-laptop)"
+	depends="linux-postmarketos-qcom-laptop"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_postmarketos_amlogic() {
+	pkgdesc="Mainline kernel with additional patches for Amlogic AArch64-based devices (linux-postmarketos-amlogic)"
+	depends="linux-postmarketos-amlogic"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+36812279ace456345d289a038d718dd08baa5e414a1429c7de5eec50ec9fa74d396e4d6bed5c38808c044d30dec46b21bc4dfe46861c6f338527e8cbd3029856  deviceinfo
+81492d13da96e7718ca546a6e879c54fc105e4b1dc4316b6e91f8c51cfbc816bbb0673222579afb5ce5a38fad91d8be7639aa938e0e8f77ff29a8d5d301d4949  kernel-cmdline.conf
+e26948d1f5005b16fefcaa51985010a5e55adef9ba3ed9d1f3d046c4b8928afbdd317123d0ca2fb0904e5431536c0d995144f66ad9025c7937ff0aae0537dfef  modules-initfs
+"

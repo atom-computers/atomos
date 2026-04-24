@@ -1,0 +1,46 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-huawei-sturgeon
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for Huawei Watch"
+subpackages="
+	$pkgname-adsp
+	$pkgname-wifi
+	"
+url="https://github.com/FairBlobs/sturgeon-firmware"
+arch="armv7"
+license="proprietary"
+_commit="646d3d18e9abc656c6f833cf7ae0313afc174a4d"
+builddir="$srcdir/sturgeon-firmware-$_commit"
+source="$pkgname-$_commit.tar.gz::https://github.com/FairBlobs/sturgeon-firmware/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pkgdesc="Huawei Watch - ADSP firmware"
+
+	cd "$builddir"
+	for _i in adsp.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+wifi() {
+	pkgdesc="Huawei Watch - WiFi/Bluetooth firmware"
+
+	cd "$builddir"
+	install -Dm644 BCM4343A0.hcd \
+		"$subpkgdir"/lib/firmware/brcm/BCM4343A0.hcd
+	install -Dm644 brcmfmac43430a0-sdio.huawei,sturgeon.bin \
+		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430a0-sdio.huawei,sturgeon.bin
+	install -Dm644 brcmfmac43430a0-sdio.huawei,sturgeon.txt \
+		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430a0-sdio.huawei,sturgeon.txt
+}
+
+sha512sums="
+58e85968f381966fe0c24bb651b4dc37edded9297c3e00f7e482fa9aabec56ce09361b8fedc78ccd9d96e3dd2b740e5b07e50ba7acb989352c6df41b96bf7378  firmware-huawei-sturgeon-646d3d18e9abc656c6f833cf7ae0313afc174a4d.tar.gz
+"

@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=device-samsung-klimtlte
+pkgdesc="Samsung Galaxy Tab S 8.4 LTE"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-klimt-mainline
+	linux-postmarketos-exynos5
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+3a51546efd477ab6c8918212a46a813068751f9c6b30aa6a87a4504222b359db44bc594dd9b2b4431fa4a73cc24b0b3157d1efad6c779727d17c157e00bbd35a  deviceinfo
+"

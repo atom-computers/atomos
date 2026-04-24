@@ -1,0 +1,4 @@
+#!/bin/sh
+# WARNING: do not symlink this file to postmarketos-base-ui.post-install!
+# Needs further discussion, see:
+# https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/2243#note_602226491

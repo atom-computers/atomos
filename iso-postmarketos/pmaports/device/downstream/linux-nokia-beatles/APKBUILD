@@ -1,0 +1,68 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: extracted from the real device
+maintainer="Max Pertsov <max.pertsov@gmail.com>"
+pkgname=linux-nokia-beatles
+pkgver=3.10.49
+pkgrel=5
+pkgdesc="Nokia 2720 Flip kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="nokia-beatles"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc4 libc-dev linux-headers"
+
+# Won't compile with newer GCC
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="caf-kernel-msm-3.10"
+_commit="e89da83520e1225d61d03ca39dd0b5009c0b892d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mpertsov/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-mmc-card-not-access-RPMB-partition-for-normal-read-and-write.patch
+	0002-begin-end-decl.patch
+	0003-undeclared-SG_MAX_CDB_SIZE.patch
+	0004-dts-adaptations.patch
+	0005-mobicore-section-mismatch.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+8473bae59384009163770fdd134ed55598a18667e598ed3a098a7beb59ad658e3a302c4cc4cca02e8b523c1a62488d7c240144f9383e782a36f934ddf32c1c15  linux-nokia-beatles-e89da83520e1225d61d03ca39dd0b5009c0b892d.tar.gz
+6dfc5c517c9f9e2b917efbcdbbd5e33377b39c373ef6d012cf3909e802dce1e1d178d571334ff10d473187c2e334802fc379291dcf35baebcc73fef881b6b094  config-nokia-beatles.armv7
+ed1c144529612e7e5320a00979095431135bd3a65271ca76b8b6ceecb26db11d11899a9104695387ffea64cc618f72c79d3caa41481fa11a8bd9b54fdf6fd1d7  0001-mmc-card-not-access-RPMB-partition-for-normal-read-and-write.patch
+80aa04da9cad38d65f6c58dd7cfc8a537265f516cbb03f7da96eb193d61c8d2ec9d2d429b7ce5e95ea57d88f934930fb89c5eb90e27b756c1cfb839fbda4d64b  0002-begin-end-decl.patch
+afbd100831551aff08fdd1b0f7307800877fb8483f7f77bc3ee6b3752cdd21e2d9bca8c4804c12dabc9c5e18f5f7a7cee4e8267109515fab2c9328d3da9ee4ce  0003-undeclared-SG_MAX_CDB_SIZE.patch
+39b2bc3a9e8989e5ba6d49b44ced92753b5d7894891d4a5d1d79225a82e6eb909bc823fe5fdabec5dd79a26802eecdf4e45c6ccf1eb5990740eed4a2a06a9332  0004-dts-adaptations.patch
+e05ff99be3ded020a995016c4c2419ad8808bed4be8713a9df5f6e9ad74800e5ea77cf890d64d67ecf5878ba6a91f1bd8c633a66e1f1a4bf28bcea7dc95862e0  0005-mobicore-section-mismatch.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

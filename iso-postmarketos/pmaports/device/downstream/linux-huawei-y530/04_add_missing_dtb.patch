@@ -1,0 +1,38 @@
+diff --git a/arch/arm/mach-msm/Makefile.boot b/arch/arm/mach-msm/Makefile.boot
+index 23267bfc..b3f51b98 100644
+--- a/arch/arm/mach-msm/Makefile.boot
++++ b/arch/arm/mach-msm/Makefile.boot
+@@ -170,24 +170,24 @@ initrd_phys-$(CONFIG_ARCH_FSM9XXX)	:= 0x12000000
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g620c-va-v1.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-y530-u00-va-v1.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-y530-u051-va-v1.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-c00-va-v1.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u00-va-v1.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-c00-va-v1.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u00-va-v1.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += msm8610-v2-qrd-skuac.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-mainboard-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g620c-va-v2.dtb
+-#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-y530-u00-va-v2.dtb
++	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-y530-u00-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-y530-u051-va-v2.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-c00-va-v2.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u00-va-v2.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-c00-va-v2.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u00-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g620d-va-v2.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u251-va-v2.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u10-va-v2.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u34-va-v2.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u251-va-v2.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u10-va-v2.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g6-u34-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g630-u00-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g630-u10-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g630-u251-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g630-c10-va-v2.dtb
+-	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g630-c00-va-v2.dtb
++#	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g630-c00-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-g630-u20-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-h870c-va-v2.dtb
+ #	dtb-$(CONFIG_ARCH_MSM8610)      += huawei-h871g-va-v2.dtb

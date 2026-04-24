@@ -1,0 +1,123 @@
+#!/bin/sh
+
+system_preset_path="/usr/lib/systemd/system-preset/90-base.preset"
+user_preset_path="/usr/lib/systemd/user-preset/90-base.preset"
+
+# $1: path to file (without .old)
+remove_old() {
+	rm "$1.old" 2>/dev/null || true
+}
+
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.preset.html
+# tldr: preset file format
+# - discard line when:
+#   - empty line
+#   - first character is # or :
+# - expect line to be
+#   - keyword + whitespace + unit name + [template unit directive]
+#   - keywords are: 'enable', 'disable', 'ignore'
+#   - unit name can contain shell-style wild-cards
+#   - unit name must match to a real file
+#   - when template unit directives are defined:
+#     - doesn't match to DefaultInstance
+#     - template unit gets expanded by directives
+#     - example: `enable dirsrv@.service foo bar baz` equivalent to:
+#		 `systemctl preset dirsrv@foo.service`
+#		 `systemctl preset dirsrv@bar.service`
+#		 `systemctl preset dirsrv@baz.service`
+
+# $1: path to preset
+units_affected_by_preset() {
+	# https://stackoverflow.com/questions/4198138/printing-everything-except-the-first-field-with-awk
+	if [ ! -f "$1" ]; then
+		# If the file doesn't exist, then there's no policy
+		echo ""
+		return
+	fi
+	# "enable unit.service abc def" becomes "unit.service abc def"
+	cat "$1" |
+		busybox awk '$1 == "enable" || $1 == "disable" || $1 == "ignore"' |
+		busybox sed 's/(\|enable \|disable \|ignore )//' |
+		uniq |
+		sort
+}
+
+# $1: path to file (without .old)
+units_affected_by_old_and_new_preset() {
+	# step one: get list of services in general
+	local new="$(units_affected_by_preset "$1")"
+	local old="$(units_affected_by_preset "$1.old")"
+
+	printf "$new\n$old" | sort | uniq
+}
+
+
+# $1: path to file
+# $2: entry name
+# returns: string oder exitcode
+get_policy_for_unit() {
+	# printf '%q' isn't available in busybox
+	# so we hope only * as an wildcard is used for now
+	# FIXME: better shell escaping
+	local escaped="$(echo "$2" | sed 's/\*/\\\*/')"
+
+	if [ ! -f "$1" ]; then
+		# If the file doesn't exist, then there's no policy
+		echo ""
+		return
+	fi
+
+	cat $1 |
+		grep "$escaped"'$' |
+		awk '$1 == "enable" || $1 == "disable" || $1 == "ignore" {print $1}'
+}
+
+# $1: path to file
+# $2: entry name
+# returns: exitcode
+policy_changed() {
+	# we don't have to care about the exitcode altough it's faster
+	# "" != "enable"
+	local new="$(get_policy_for_unit $1 "$2")"
+	local old="$(get_policy_for_unit $1.old "$2")"
+	[ "$new" != "$old" ]
+}
+
+# $1: takes system or user
+check_and_apply_presets() {
+	local type="$1"
+	local preset_path=""
+	local extra_args=""
+	if [ "$type" = user ]; then
+		preset_path="$user_preset_path"
+		extra_args="--global"
+	else
+		preset_path="$system_preset_path"
+		type="system"
+	fi
+
+	local entries="$(units_affected_by_old_and_new_preset $preset_path)"
+	local old_ifs=$IFS
+	IFS=$'\n'
+	for entry in $entries; do
+		if policy_changed "$preset_path" "$entry"; then
+			echo "unit policy has changed for $entry"
+			if echo "$entry" | grep -q '*'; then
+				echo "  wildcards are not supported yet, skipping"
+			else
+				if  [ -f "/usr/lib/systemd/$type/$entry" ]; then
+					systemctl --no-reload preset $extra_args "$entry"
+				else
+					echo "  no unit file found, skipping"
+				fi
+			fi
+		fi
+	done
+	IFS="$old_ifs"
+}
+
+check_and_apply_presets system
+check_and_apply_presets user
+
+remove_old "$system_preset_path"
+remove_old "$user_preset_path"

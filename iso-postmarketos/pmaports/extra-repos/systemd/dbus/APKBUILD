@@ -1,0 +1,108 @@
+# Forked from Alpine to enable systemd
+maintainer=""
+pkgname=dbus
+_pkgver=1.16.2
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="Freedesktop.org message bus system"
+url="https://www.freedesktop.org/Software/dbus"
+# armhf: pmb#2618
+arch="all !armhf"
+license="AFL-2.1 OR GPL-2.0-or-later"
+depends_dev="util-linux-dev"
+pkggroups="messagebus"
+provider_priority=1
+install="$pkgname.pre-install"
+triggers="$pkgname.trigger=/usr/share/dbus-1/system.d"
+# pmb:strict: force zap after building this package so we don't still have
+#             systemd-stage0 installed
+# !check: tests don't pass in pmbootstrap
+options="!check pmb:strict"
+depends="
+	dbus-libs
+	libexpat
+"
+makedepends="
+	$depends_dev
+	expat-dev
+	glib-dev
+	libsm-dev
+	libx11-dev
+	meson
+	xmlto
+	libcap-getcap
+	systemd-stage0-dev
+	systemd-stage0-libs
+	"
+subpackages="
+	$pkgname-daemon-launch-helper:launchhelper
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-libs
+	$pkgname-x11
+	$pkgname-systemd
+	"
+source="https://dbus.freedesktop.org/releases/dbus/dbus-$_pkgver.tar.xz"
+builddir="$srcdir/dbus-$_pkgver"
+
+# secfixes:
+#   1.14.4-r0:
+#     - CVE-2022-42010
+#     - CVE-2022-42011
+#     - CVE-2022-42012
+#   1.12.18-r0:
+#     - CVE-2020-12049
+#   1.12.16-r0:
+#     - CVE-2019-12749
+
+build() {
+	abuild-meson \
+		-Dsystem_pid_file=/run/dbus/dbus.pid \
+		output .
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	depends="$pkgname-libs=$pkgver-r$pkgrel"
+
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	# can't install tmpfs
+	rm -r "$pkgdir"/run
+}
+
+libs() {
+	pkgdesc="D-BUS access libraries"
+	depends="systemd-stage0-libs"
+
+	amove usr/lib/lib*.so.*
+}
+
+x11() {
+	pkgdesc="X11 add-ons for D-BUS"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/bin/dbus-launch
+}
+
+launchhelper() {
+	pkgdesc="DBus SUID launch helper for autospawning"
+	install_if="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/libexec/dbus-daemon-launch-helper
+
+	chmod 4750 "$subpkgdir"/usr/libexec/dbus-daemon-launch-helper
+	chown root:messagebus "$subpkgdir"/usr/libexec/dbus-daemon-launch-helper
+}
+
+dev() {
+	default_dev
+}
+
+sha512sums="
+5c26f52d85984bb9ae1dde8d7e73921eacbdf020a61ff15f00a4c240cb38a121553ee04bd66e62b28425ff9bc50f4f5e15135166573ac0888332a01a0db1faa2  dbus-1.16.2.tar.xz
+"

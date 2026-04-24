@@ -1,0 +1,66 @@
+
+maintainer="Alexander Martinz <amartinz@shiftphones.com>"
+pkgname=firmware-shift-sdm845
+pkgver=20240517
+pkgrel=1
+pkgdesc="Firmware for SHIFT sdm845 devices"
+url="https://gitlab.com/sdm845-mainline/firmware-shift-sdm845"
+arch="aarch64"
+depends="
+	linux-firmware-ath10k
+	linux-firmware-qcom
+"
+license="proprietary"
+# Textrels appear in DSP libraries which we cannot avoid
+options="!check !strip !archcheck !tracedeps textrels pmb:cross-native"
+
+_version="7065892b9e6302e16803872231b30d588ef4b0da"
+
+source="$pkgname.tar.gz::$url/-/archive/$_version/$pkgname-$_version.tar.gz
+	firmware.files
+	sensors.files
+	30-shift-sdm845-firmware-ci.files
+	"
+subpackages="
+	$pkgname-pmtest
+	$pkgname-sensors:firmware_sensors
+"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname-$_version/$_i" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+
+	# Install symlinks for using upstream firmware
+	ln -s ../mba.mbn.zst "$pkgdir"/lib/firmware/qcom/sdm845/axolotl/mba.mbn.zst
+	ln -s ../../../ath10k/WCN3990/hw1.0/wlanmdsp.mbn.zst "$pkgdir"/lib/firmware/qcom/sdm845/axolotl/wlanmdsp.mbn.zst
+}
+
+pmtest() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+
+	install -Dm644 "$srcdir/30-shift-sdm845-firmware-ci.files" \
+		"$subpkgdir/usr/share/mkinitfs/files/30-shift-sdm845-firmware-ci.files"
+}
+
+firmware_sensors() {
+	pkgdesc="Firmware files of the sensor registry"
+	depends="$pkgname"
+	install_if="$pkgname-nonfree-firmware"
+	mkdir "$subpkgdir"
+
+	cd "$srcdir/$pkgname-$_version/"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		echo $_i
+		install -Dm644 $_i "$pkgdir/$_i"
+	done < "$srcdir/sensors.files"
+}
+
+sha512sums="
+19d0f5debd851f6c5f2b460b72ee714265d48e5e12051cbde321dc97ebe235897ba377e67fc34cd6234611b12bdf20da6696f60621b855d9a9b912260d0f440e  firmware-shift-sdm845.tar.gz
+842f4e182da48cff45a41dcdb0cfe0a8fce1e1883a95177fe176a59797ade722a5b444eae1e572c7b2a9d5c8c0e4511ca2d561a3fc22cf79e853d3ccc9f676b6  firmware.files
+ef495c515cb16c7d6aebaf1c6a23883768228282ea39118b6a19bed12a41e4777bf67b2436fc553b204a1a02672df54b9bc33f2c3946b7e688e78cd87c51448e  sensors.files
+97756b554cc0f91a69f511496663a012287517ec5853167246fe59c4deeb1cbf1eb352ec267bd0ad897e3f30547d2ad2818e70b597d9dfec26db45efca85b3f2  30-shift-sdm845-firmware-ci.files
+"

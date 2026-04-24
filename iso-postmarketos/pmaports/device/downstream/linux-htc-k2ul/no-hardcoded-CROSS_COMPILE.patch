@@ -1,0 +1,12 @@
+diff -Naur a/Makefile b/Makefile
+--- a/Makefile	2013-11-29 03:09:36.000000000 +0100
++++ b/Makefile	2019-05-25 23:21:31.810636014 +0200
+@@ -194,8 +194,6 @@
+ export KBUILD_BUILDHOST := $(SUBARCH)
+ ARCH		?= $(SUBARCH)
+ CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+-ARCH		:= arm
+-CROSS_COMPILE	:= arm-eabi-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)

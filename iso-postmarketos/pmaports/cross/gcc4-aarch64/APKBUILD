@@ -1,0 +1,488 @@
+# Automatically generated aport, do not edit!
+# Generator: pmbootstrap aportgen gcc4-aarch64
+# Based on: main/gcc4 (from postmarketOS)
+
+CTARGET_ARCH=aarch64
+CTARGET="$(arch_to_hostspec ${CTARGET_ARCH})"
+LANG_D=false
+LANG_OBJC=false
+LANG_JAVA=false
+LANG_GO=false
+LANG_FORTRAN=false
+LANG_ADA=false
+options="!strip"
+
+# abuild doesn't try to tries to install "build-base-$CTARGET_ARCH"
+# when this variable matches "no*"
+BOOTSTRAP="nobuildbase"
+
+# abuild will only cross compile when this variable is set, but it
+# needs to find a valid package database in there for dependency
+# resolving, so we set it to /.
+CBUILDROOT="/"
+
+_cross_configure="--disable-bootstrap --with-sysroot=/usr/$CTARGET"
+
+pkgname=gcc4-aarch64
+pkgver=9999
+_pkgver=4.9.2
+pkgrel=7
+pkgdesc="Stage2 cross-compiler for aarch64"
+url="http://gcc.gnu.org"
+arch="x86_64"
+license="GPL LGPL"
+_gccrel=$_pkgver-r$pkgrel
+depends="binutils-aarch64 mpc1"
+makedepends_build="gcc g++ bison flex texinfo gawk zip gmp-dev mpfr-dev mpc1-dev zlib-dev"
+makedepends_host="linux-headers gmp-dev mpfr-dev mpc1-dev isl-dev zlib-dev musl-dev-aarch64 binutils-aarch64"
+options="!strip"
+
+# We only care about C, so we can compile old Linux kernels
+LANG_CXX=false
+LANG_OBJC=false
+LANG_JAVA=false
+LANG_GO=false
+LANG_FORTRAN=false
+LANG_ADA=false
+
+LIBGOMP="false"
+LIBGCC="false"
+LIBATOMIC="false"
+LIBITM="false"
+
+if [ "$CHOST" != "$CTARGET" ]; then
+	if [ "$BOOTSTRAP" = nolibc ]; then
+		LANG_CXX=false
+		LANG_ADA=false
+		LIBGCC=false
+		_builddir="$srcdir/build-cross-pass2"
+	else
+		_builddir="$srcdir/build-cross-final"
+	fi
+	LANG_OBJC=false
+	LANG_JAVA=false
+	LANG_GO=false
+	LANG_FORTRAN=false
+	LIBGOMP=false
+	LIBATOMIC=false
+	LIBITM=false
+
+	# reset target flags (should be set in crosscreate abuild)
+	# fixup flags. seems gcc treats CPPFLAGS as global without
+	# _FOR_xxx variants. wrap it in CFLAGS and CXXFLAGS.
+	export CFLAGS="$CPPFLAGS $CFLAGS"
+	export CXXFLAGS="$CPPFLAGS $CXXFLAGS"
+	unset CPPFLAGS
+	export CFLAGS_FOR_TARGET=" "
+	export CXXFLAGS_FOR_TARGET=" "
+	export LDFLAGS_FOR_TARGET=" "
+
+	STRIP_FOR_TARGET="$CTARGET-strip"
+elif [ "$CBUILD" != "$CHOST" ]; then
+	# fixup flags. seems gcc treats CPPFLAGS as global without
+	# _FOR_xxx variants. wrap it in CFLAGS and CXXFLAGS.
+	export CFLAGS="$CPPFLAGS $CFLAGS"
+	export CXXFLAGS="$CPPFLAGS $CXXFLAGS"
+	unset CPPFLAGS
+
+	# reset flags and cc for build
+	export CC_FOR_BUILD="gcc"
+	export CXX_FOR_BUILD="g++"
+	export CFLAGS_FOR_BUILD=" "
+	export CXXFLAGS_FOR_BUILD=" "
+	export LDFLAGS_FOR_BUILD=" "
+	export CFLAGS_FOR_TARGET=" "
+	export CXXFLAGS_FOR_TARGET=" "
+	export LDFLAGS_FOR_TARGET=" "
+
+	# Languages that do not need bootstrapping
+	LANG_OBJC=false
+	LANG_JAVA=false
+	LANG_GO=false
+	LANG_FORTRAN=false
+
+	STRIP_FOR_TARGET=${CROSS_COMPILE}strip
+	_builddir="$srcdir/build-cross-native"
+else
+	STRIP_FOR_TARGET=${CROSS_COMPILE}strip
+	_builddir="$srcdir/build"
+fi
+
+# Go needs {set,make,swap}context, unimplemented in musl
+[ "$CTARGET_LIBC" = musl ] && LANG_GO=false
+
+# libitm has TEXTRELs in ARM build, so disable for now
+case "$CTARGET_ARCH" in
+arm*)		LIBITM=false ;;
+mips*)		LIBITM=false ;;
+esac
+
+# Fortran uses libquadmath if toolchain has __float128
+# currently on x86, x86_64 and ia64
+LIBQUADMATH=$LANG_FORTRAN
+case "$CTARGET_ARCH" in
+x86 | x86_64)	LIBQUADMATH=$LANG_FORTRAN ;;
+*)		LIBQUADMATH=false ;;
+esac
+
+# libatomic is a dependency for openvswitch
+$LIBATOMIC && subpackages="$subpackages libatomic::$CTARGET_ARCH"
+$LIBGCC && subpackages="$subpackages libgcc::$CTARGET_ARCH"
+$LIBQUADMATH && subpackages="$subpackages libquadmath::$CTARGET_ARCH"
+if $LIBGOMP; then
+	depends="$depends libgomp=$_gccrel"
+	subpackages="$subpackages libgomp::$CTARGET_ARCH"
+fi
+
+_languages=c
+if $LANG_CXX; then
+	_languages="$_languages,c++"
+fi
+if $LANG_OBJC; then
+	subpackages="$subpackages libobjc::$CTARGET_ARCH gcc-objc$_target:objc"
+	_languages="$_languages,objc"
+fi
+if $LANG_JAVA; then
+	subpackages="$subpackages libgcj::$CTARGET_ARCH gcc-java$_target:java"
+	_languages="$_languages,java"
+fi
+if $LANG_GO; then
+	subpackages="$subpackages libgo::$CTARGET_ARCH gcc-go$_target:go"
+	_languages="$_languages,go"
+fi
+if $LANG_FORTRAN; then
+	subpackages="$subpackages libgfortran::$CTARGET_ARCH gfortran$_target:gfortran"
+	_languages="$_languages,fortran"
+fi
+if $LANG_ADA; then
+	subpackages="$subpackages libgnat::$CTARGET_ARCH gcc-gnat$_target:gnat"
+	_languages="$_languages,ada"
+	makedepends_build="$makedepends_build gcc-gnat gcc-gnat$_cross"
+fi
+makedepends="$makedepends_build $makedepends_host"
+
+source="http://gcc.gnu.org/pub/gcc/releases/gcc-${_pkgbase:-$_pkgver}/gcc-${_pkgbase:-$_pkgver}.tar.gz
+	http://sourceware.org/pub/java/ecj-4.9.jar
+
+	01_all_gcc49_configure.patch
+	02_all_gcc48_config.in.patch
+	03_all_gcc49_Makefile.in.patch
+	05_all_gcc48_gcc.c.patch
+	16_all_gcc47_nopie_option.patch
+	20_all_gcc49_config_crtbeginp.patch
+	24_all_gcc49_invoke.texi.patch
+	34_all_gcc48_config_i386.patch
+	35_all_gcc48_config_arm.patch
+	40_all_gcc49_config_esp.patch
+	41_all_gcc49_config_esp_alpine.patch
+
+	10_all_default-fortify-source.patch
+	12_all_default-warn-trampolines.patch
+	15_all_libgfortran-Werror.patch
+	16_all_libgomp-Werror.patch
+	48_all_x86_pr53113_libitm-avx.patch
+	50_all_libiberty-asprintf.patch
+	51_all_libiberty-pic.patch
+	67_all_gcc-poison-system-directories.patch
+
+	gcc49-cloog-dl.patch
+	gcc-ice-hack.patch
+	gcc-spec-env.patch
+	libgcc-always-build-gcceh.a.patch
+	gcc-4.6-pr32219.patch
+	gcc-4.9-musl.patch
+	gcc-4.8-musl-fix-iteratephdr.patch
+	gcc-4.8-musl-libssp.patch
+	gcc-4.9-musl-fortify.patch
+	boehm-gc-uclibc.patch
+	boehm-gc-musl.patch
+	gcc-pure64.patch
+	fix-gcj-musl.patch
+	fix-gcj-iconv-musl.patch
+	musl-posix_memalign-c++.patch
+	pr63740.patch
+	pr64037.patch
+
+	gcc-4.8-build-args.patch
+	fix-cxxflags-passing.patch
+	fix-cxxflags-for-target.patch
+	ada-no-pie.patch
+	ada-fixes.patch
+	ada-shared.patch
+	ada-musl.patch
+
+	vanilla.specs
+	hardenednossp.specs
+	hardenednopie.specs
+	hardenednopiessp.specs
+
+	1001-fix-reload1-compile-error.patch
+	"
+
+# we build out-of-tree
+_gccdir="$srcdir"/gcc-${_pkgbase:-$_pkgver}
+_gcclibdir=/usr/lib/gcc/${CTARGET}/$_pkgver
+_gcclibexec=/usr/libexec/gcc/${CTARGET}/$_pkgver
+
+prepare() {
+	cd "$_gccdir"
+
+	_err=
+	for i in $source; do
+		case "$i" in
+		*.patch)
+			msg "Applying $i"
+			patch -p1 -F3 -i "$srcdir"/$i || _err="$_err $i"
+			;;
+		esac
+	done
+
+	if [ -n "$_err" ]; then
+		error "The following patches failed:"
+		for i in $_err; do
+			echo "  $i"
+		done
+		return 1
+	fi
+
+	# see http://gcc.gnu.org/ml/java/2008-04/msg00027.html
+	mv "$srcdir"/ecj-*.jar ecj.jar
+
+	echo ${_pkgver} > gcc/BASE-VER
+}
+
+build() {
+	local _arch_configure=
+	local _libc_configure=
+	local _bootstrap_configure=
+	local _symvers=
+
+	cd "$_gccdir"
+
+	case "$CTARGET" in
+	aarch64-*-*-*)		_arch_configure="--with-arch=armv8-a --with-abi=lp64";;
+	armv5-*-*-*eabi)	_arch_configure="--with-arch=armv5te --with-tune=arm926ej-s --with-float=soft --with-abi=aapcs-linux";;
+	armv6-*-*-*eabihf)	_arch_configure="--with-arch=armv6zk --with-tune=arm1176jzf-s --with-fpu=vfp --with-float=hard --with-abi=aapcs-linux";;
+	armv7-*-*-*eabihf)	_arch_configure="--with-arch=armv7-a --with-tune=generic-armv7-a --with-fpu=vfpv3-d16 --with-float=hard --with-abi=aapcs-linux --with-mode=thumb";;
+	mips-*-*-*)		_arch_configure="--with-arch=mips32 --with-mips-plt --with-float=soft --with-abi=32";;
+	mips64-*-*-*)		_arch_configure="--with-arch=mips3 --with-tune=mips64 --with-mips-plt --with-float=soft --with-abi=64";;
+	mips64el-*-*-*)		_arch_configure="--with-arch=mips3 --with-tune=mips64 --with-mips-plt --with-float=soft --with-abi=64";;
+	mipsel-*-*-*)		_arch_configure="--with-arch=mips32 --with-mips-plt --with-float=soft --with-abi=32";;
+	powerpc-*-*-*)		_arch_configure="--enable-secureplt --enable-decimal-float=no";;
+	powerpc64*-*-*-*)	_arch_configure="--with-abi=elfv2 --enable-secureplt --enable-decimal-float=no --enable-targets=powerpcle-linux";;
+	i486-*-*-*)		_arch_configure="--with-arch=i486 --with-tune=generic --enable-cld";;
+	i586-*-*-*)		_arch_configure="--with-arch=i586 --with-tune=generic --enable-cld";;
+	s390x-*-*-*)		_arch_configure="--with-arch=z196 --with-tune=zEC12 --with-zarch --with-long-double-128 --enable-decimal-float";;
+	esac
+
+	case "$CTARGET_ARCH" in
+	mips*)	_hash_style_configure="--with-linker-hash-style=sysv" ;;
+	*)	_hash_style_configure="--with-linker-hash-style=gnu" ;;
+	esac
+
+	case "$CTARGET_LIBC" in
+	musl)
+		# musl does not support mudflap, or libsanitizer
+		# libmpx uses secure_getenv and struct _libc_fpstate not present in musl
+		# alpine musl provides libssp_nonshared.a, so we don't need libssp either
+		_libc_configure="--disable-libssp --disable-libmpx --disable-libmudflap --disable-libsanitizer"
+		_symvers="--disable-symvers"
+		export libat_cv_have_ifunc=no
+		;;
+	esac
+
+
+	case "$BOOTSTRAP" in
+	nolibc)	_bootstrap_configure="--with-newlib --disable-shared --enable-threads=no" ;;
+	*)	_bootstrap_configure="--enable-shared --enable-threads --enable-tls" ;;
+	esac
+
+	$LIBGOMP	|| _bootstrap_configure="$_bootstrap_configure --disable-libgomp"
+	$LIBATOMIC	|| _bootstrap_configure="$_bootstrap_configure --disable-libatomic"
+	$LIBITM		|| _bootstrap_configure="$_bootstrap_configure --disable-libitm"
+	$LIBQUADMATH	|| _arch_configure="$_arch_configure --disable-libquadmath"
+
+	msg "Building the following:"
+	echo ""
+	echo "  CBUILD=$CBUILD"
+	echo "  CHOST=$CHOST"
+	echo "  CTARGET=$CTARGET"
+	echo "  CTARGET_ARCH=$CTARGET_ARCH"
+	echo "  CTARGET_LIBC=$CTARGET_LIBC"
+	echo "  languages=$_languages"
+	echo "  arch_configure=$_arch_configure"
+	echo "  libc_configure=$_libc_configure"
+	echo "  cross_configure=$_cross_configure"
+	echo "  bootstrap_configure=$_bootstrap_configure"
+	echo "	hash_style_configure=$_hash_style_configure"
+	echo ""
+
+	mkdir -p "$_builddir"
+	cd "$_builddir"
+	"$_gccdir"/configure --prefix=/usr/gcc4 \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--build=${CBUILD} \
+		--host=${CHOST} \
+		--target=${CTARGET} \
+		--with-pkgversion="postmarketOS ${_pkgver}" \
+		--enable-checking=release \
+		--disable-fixed-point \
+		--disable-libstdcxx-pch \
+		\
+		--disable-bootstrap \
+		--disable-libstdcxx \
+		\
+		--disable-multilib \
+		--disable-nls \
+		--disable-werror \
+		$_symvers \
+		--enable-__cxa_atexit \
+		--enable-default-pie \
+		--enable-cloog-backend \
+		--enable-languages=$_languages \
+		$_arch_configure \
+		$_libc_configure \
+		$_cross_configure \
+		$_bootstrap_configure \
+		--with-system-zlib \
+		$_hash_style_configure
+	make
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="${pkgdir}" install
+
+	local prefix=/usr/gcc4
+	if [ "$CHOST" = "$CTARGET" ]; then
+		# gcc symlinks
+		ln -s gcc "$pkgdir$prefix"/bin/cc
+		ln -s gcc "$pkgdir$prefix"/bin/gcc4
+	fi
+
+	# remove docs
+	rm -r "$pkgdir/usr/share/"
+
+	# we don't support gcj -static
+	# and saving 35MB is not bad.
+	find "$pkgdir" -name libgcj.a -o -name libgtkpeer.a \
+		-o -name libgjsmalsa.a -o -name libgcj-tools.a \
+		-o -name libjvm.a -o -name libgij.a -o -name libgcj_bc.a \
+		-o -name libjavamath.a \
+		| xargs rm -f
+
+	# strip debug info from some static libs
+	${STRIP_FOR_TARGET} -g `find "$pkgdir" \( -name libgfortran.a -o -name libobjc.a -o -name libgomp.a \
+		-o -name libmudflap.a -o -name libmudflapth.a \
+		-o -name libgcc.a -o -name libgcov.a -o -name libquadmath.a \
+		-o -name libitm.a -o -name libgo.a -o -name libcaf\*.a \
+		-o -name libatomic.a -o -name libasan.a -o -name libtsan.a \) \
+		-a -type f`
+
+	if $LANG_JAVA; then
+		sed -i -e 's/lib: /&%{static:%eJava programs cannot be linked statically}/' \
+			"$pkgdir"/usr/lib/libgcj.spec
+	fi
+
+	if [ "$CHOST" != "$CTARGET" ]; then
+		# cross-gcc: remove any files that would conflict with the
+		# native gcc package
+		rm -rf "$pkgdir$prefix"/bin/cc \
+				"$pkgdir$prefix"/include \
+				"$pkgdir$prefix"/share
+		# libcc1 does not depend on target, don't ship it
+		rm -rf "$pkgdir$prefix"/lib/libcc1.so*
+
+		# fixup gcc library symlinks to be linker scripts so
+		# linker finds the libs from relocated sysroot
+		for so in "$pkgdir$prefix"/$CTARGET/lib/*.so; do
+			if [ -h "$so" ]; then
+				local _real=$(basename $(readlink "$so"))
+				rm -f "$so"
+				echo "GROUP ($_real)" > "$so"
+			fi
+		done
+
+		# Link binutils binaries to /usr/gcc4
+		# This is the path GCC4 will look for them, if we don't create these
+		# symlinks, it will use the native binutils instead (which is of course
+		# failing and causes many headaches). See also: '-B' in 'man gcc'.
+		echo "Link binutils binaries to /usr/gcc4"
+		mkdir -p "$pkgdir$prefix/$CTARGET/bin"
+		for i in "as" "ld"; do
+			ln -sv "/usr/$CTARGET/bin/$i" \
+				"$pkgdir$prefix/$CTARGET/bin/$i"
+		done
+
+		# Link binutils to gcc4-* (so 'CROSS_COMPILE=gcc4-...' works)
+		echo "Link binutils to gcc4-*"
+		mkdir -p "$pkgdir/usr/bin"
+		for i in "elfedit" "gprof" "addr2line" "strings" "as" "ld" "size" "ld.bfd" \
+			"readelf" "nm" "ar" "strip" "dwp" "objdump" "objcopy" "c++filt" "ranlib"; do
+			ln -sv "/usr/bin/$CTARGET-$i" \
+				"$pkgdir/usr/bin/gcc4-$CTARGET-$i"
+		done
+	fi
+
+	# Link all binaries from /usr/gcc4/bin/* to /usr/bin/gcc4-*
+	echo "Link all gcc binaries to /usr/bin/gcc4-*"
+	mkdir -p "$pkgdir"/usr/bin
+	cd "$pkgdir$prefix/bin/"
+	for i in *; do
+		ln -sv "$prefix/bin/$i" "$pkgdir/usr/bin/gcc4-$i"
+	done
+}
+
+sha512sums="
+35a1386ae2b8629cd464383fbb3c61e94a07f3691f48b8029b97cc62a60c792ffb870aad2343b2ad8185bf46f77e1e1dd62309ecdadc42f919874c6e2c58b936  gcc-4.9.2.tar.gz
+28f8c6fdbcb19e950b1d0bafb3bcc7a8cba87bc673aa6027cece116599cdee80f0cf5e95a1440544890239f5c754e8a93ab46d9daedd937faef445d7ea33b226  ecj-4.9.jar
+618a8d037ccad15e60182acc9c85ba844cb9b5800a22ece0b814e43541b01b4e390a2847f86debb351f4b05580241747fde87e86a17060744e7bb2b9a3dc5bd4  01_all_gcc49_configure.patch
+21770259c7916e55568027926e4a543eea468b04436cc61c28f749be5a6635c48e68b7924a8eb19a76733a9d2f00921ba06faddaedbf14b1cdad5ab1810cc6c6  02_all_gcc48_config.in.patch
+3afe2cc407b5440333d9517daca3257e08a7318695d20645a9186cafac53afa6d0c075af67398ff7abd06250567cc6c751e6dabb65a310eef9a5d981e910aa25  03_all_gcc49_Makefile.in.patch
+e98cc321d71e5bb62c6116b30ed6f11044bda440e238026a83dec63f04a0587440bdae50ec211b07976fcd9deb329f9dd1dac1317dae5003088a8a8bddbb97c1  05_all_gcc48_gcc.c.patch
+98a4da3137177c5cad7dd7d35ad39cd416aa36f07867714e09ab8c0d8b759d2659063aa87b16ac1b708a283afd2ac54e20b327a32d1147720996d7bc11dcbd63  16_all_gcc47_nopie_option.patch
+8fc6f2fd921c560fb1d7ba17b5cef4ea8071ee6909d372e41201667c011f948560fa543b1246cf55c0009622abf0dbc0bd79f718a853f2f0b59290e3df2c2968  20_all_gcc49_config_crtbeginp.patch
+32bfe9c1f6f566de72c93388622001ff4b95086ea6f476bdfc08403ea474f98212f7396bc75d88a79a053159f78dca922ec6f641f83d9959ad419b0d8901b504  24_all_gcc49_invoke.texi.patch
+dd5b9b30eb7716cb3c010ca79a83ed6219ff6e6f2557deb4e1d26cecac0f2b14c4ef7bf4dc5c2aec88aae5463763f5f64454b8a627ebd1d0a5c92984017025ad  34_all_gcc48_config_i386.patch
+8829f85323d8b11e26e3c19ced4a51875fc63f1483cfdc4d0f579a6cb37e1b6e23fcf33a87a574a6e0007250374ea46d117a136e73a40fbe43f0e39d9b2dd1a8  35_all_gcc48_config_arm.patch
+976994900d20a448b97fa91e1d758b6da6d8ad9121b3dbc2e8f66ff8006d8e496cd3dddc41394db6c4d20366d56fe12375b97f494d6fb9abb8e64ab626acc2ef  40_all_gcc49_config_esp.patch
+e2d027be2e76a64a607ae44566d163bcc2a03c9e14d5bd20cd8bb15c2e9e395d8964b747a6a9c49541a5d1613d721855b73d60cce7c834427b44788fa92d44dc  41_all_gcc49_config_esp_alpine.patch
+6cdac0741568b418af1e267a69b487e48a98e319f5ec8ab2bad293f2520ceced40c7df7ddef84963f5b101b94f34e441574c501ef3993ded097beb7c9d3b205f  10_all_default-fortify-source.patch
+5069e4b741488913a646a9b5d871af8e7f7a606158ea09305d0ddd46257c5b659770627bc2ca3abeaae039da1717b3ba6c9cd90554a441da74eb4ecf24c13074  12_all_default-warn-trampolines.patch
+c18a99b7303a734fe4dca9d4e90e21d18e5bd71c7d91e1a26c86b1354c73f567590a875941bfe64ce59f0393023b91c606c96b30885c55b98a790c3ab0c84ca7  15_all_libgfortran-Werror.patch
+433404fd9bfa172d69fff4a5505e8648cbbbf5f052d2b4235608ff7af0c4063d557d25d80c85c5bd0d1e1ed64b568e7bbc0cdbce11cc74db4c0189af3a01634a  16_all_libgomp-Werror.patch
+ff16f259fff8d78230593eee8641eab5a72c5c517c6ac5f09597edbc624d964b33f185a0dd5772d6029f757a5edb66431b3eab77dac71e76a0ef155bb7443d2c  48_all_x86_pr53113_libitm-avx.patch
+c6c314a2d24531b4286436dec7189f83e443c4cfa9b88339a4c324c2d40812d766ed44dcfd4a0c3b67695bb76969a4d8a9784ff95876ceba23def305ef8a48f8  50_all_libiberty-asprintf.patch
+0a0bc72b9366158f5d23fff1928e756fdd212433bac6ab1f00d632f241382820db8db5d475ddf11ea020eaf7e2e71b12fb9b1c3c870cf84adf6c2b16f15aabca  51_all_libiberty-pic.patch
+9b623a0b00254326596a56fff23dacc97e560823ebdf35698799fc7ab5e98984c71b7ddfceeb1589bbbdd1ba89a742cd7becf8f70f0081dfc26bcef4198b1b5d  67_all_gcc-poison-system-directories.patch
+9c6aa6d7f096c3aaebbe21d52967872195aea130b51d60a1934255b00bf1b23d24ec598c7763152f987f7999da9e56f512d169958666a3133641de3780a75d3f  gcc49-cloog-dl.patch
+7242876e4bba34235f6f3ea960d72439638bd31547284ca96cb94c97a2d46dd7b38a3709fd159cf86efa1e8a44e3e9125fe82bc3a1cc71153591755827d6c9fd  gcc-ice-hack.patch
+ce9c1f923e2c6d17347ec2d3d8482351a9644194b2753627389294d43bb4f11b9c2ef41eda1b46ad83d09901a0bedebd5b6b8a57a198646030ab61e8d2d8cb48  gcc-spec-env.patch
+d08d7ead2de0429e5c9055d5b029ec2be9a8c821d22cecaf9b51f633652c493333f98963d9267fa2fa63850c50ae5eefd5f59e5910ec10d20044dac082182a8b  libgcc-always-build-gcceh.a.patch
+9fc5e32f2573ae67b6cf22119d636d10a47c42718635bceff7d457a93a3f664ae1ed10e154f70964ba2d26b0de04f879a8c05de6411112760d40433373dd0a80  gcc-4.6-pr32219.patch
+e2be926c0ed4d67587857652678253a2a4e42294009a0c4b9fc420e53b0e6d44d1a2c6c2c62db837bc010470e9e62eb4af1ba7f51ff507c41e40922cd022dd26  gcc-4.9-musl.patch
+b5b0210dfaccfe0b06f0a9090666b1fae2a3faa4140b7930146b29531f0da9beb1f2c1f7e7bc2bd29179f9fe05dc30e246e96220b8ff75a90f75e8350c9058a1  gcc-4.8-musl-fix-iteratephdr.patch
+e6d9b103c128e5d4eca515b1496d78b05708de770597c883daddd95ea41e77b5ef1be613b989357cc870a7efd9e43b011022c2d302e7056cff7b69e764906ff2  gcc-4.8-musl-libssp.patch
+600fe5098dc54edaa9808fd5717af9dec058953f9ad37d49cfba1db4f7e9a7a8f02019342f75157fc575946fa693259422184de27b7ecc8386d9f3ecc0f7cc5d  gcc-4.9-musl-fortify.patch
+e1d6a450dfb40b134ad7f759c4c10174d2490b0093fe47cb33479245f26a3a8c54ebcf6255943c0ccfcb5095600d1c05e530baeed35609c8ffe75caac8e57c49  boehm-gc-uclibc.patch
+bda845a6aa1854d2c883910b115f79ccfa93dfc2b5eac69a3a236d83eb34cadc140731d616ffc24698c7abc8878dd15f231bcc5119f1860e575a120b311706c7  boehm-gc-musl.patch
+4a5aeff0399782c752e6e3f2f48d984b2056dfb5d229b23a24eee1562d241339989b2203f139821cfc03c9b25c9bd7da6ccbbdc7a09d242e4de7f0d606c6f63c  gcc-pure64.patch
+f89ddeb21bc8f97e6a850a6b70b4501a8f3e49a4bc8cc82897488decda5d98ad01cb7f6c8b392d452e9579924a523bc75da6e0648c1c976d42e40af48b10343b  fix-gcj-musl.patch
+54d67cc008b735e47771314171930c5d8b8f5f5dc97fcf4214824c105c808f3e75d22d5a4fdf5068ed0457fa0d46c60cfb442e276259a4a5e9b8722a027d18e6  fix-gcj-iconv-musl.patch
+7de81fc8c7eb36690949eb30082515454978440a8f389b12407ac5e9125ef6824d6059ffb5b063ab1ccc6c4827b1a6a0984b538f056b85e3171800a6f723ec8b  musl-posix_memalign-c++.patch
+095281d940ad7504ed7071cc9800d81db33eb4aa5465696ef7b12bf1213dbdfa701f4392095c5167b331c38219b19d25a0798524b319f1c77aa8522d76d8c92c  pr63740.patch
+efc04b179d41b484eddddc56d0e442634995d56c994e6295ae09b9856ab46649d5f45f51ea84494ab39df41c213772d0e68aee67e66fdf340f0a647b55629ced  pr64037.patch
+abe9aaf9aa956058d0386a4396a511d176a46bb3906b90e952383646cdc158cbeb0a5dc616a1ccb1ca7d49fd0b5e351532aa15a3b13362abbf1ca4266f54a687  gcc-4.8-build-args.patch
+35d6d59f0b7b968f282f56767c9e0823a7bdc5aa0d450aca50fbd802649a7ca608b47671244a3faa208a9b0d6832cabb5a22724157dc817b2c0ad63d09f93282  fix-cxxflags-passing.patch
+c731f4aaaa65c8950e1b2bd9331410f92d378fd8c7e718532dccaa27ee11984d51d74216c3611e89a802325b81d7f184116839dce2dab50cae9b643c20a82fe7  fix-cxxflags-for-target.patch
+e80a08de4b43fb71f7699bcce360cd99bc525dab20b9109e7152bd211def5d8e728f88771ed59f15ed520cbf069364debc4f822c10a1abf7e2c7badd67e1c83c  ada-no-pie.patch
+b37195a126476775e2ef16e0adc9173664c514339fb319f628debd8a4133fa53e022278387c68fc260cf813e58602617e9e629ea8177133bfdf5972398fe1c55  ada-fixes.patch
+3f5bc334d9f73d06f5f7c876738d02356acdd08958bea0e4d2095ebf15c2c2ec4e411abdae0297505ae9a1699ca01b17338e853184e84663203b192b0d35fc19  ada-shared.patch
+76d7d35066534c332956a88da84a95c8c54c6e0742c3c46e6b256395bf67f7c167b5ecd47fbed697fb1c9d7a41016c99e7dcd06465516a0e963707a0eab8f8b6  ada-musl.patch
+83a0996a48096032bcc674a6d28524f1cd2d81837621ebe4c15b5aedbd551c77ce5576b6307adb673ef0e4ac0431d935ad6a427edca2af5c21b6be9176bfaddb  vanilla.specs
+e4d38905527c500c61c421d782a8ac6ef2b034b15fd81d868486ac330a70922937d3c47e0684e9f3250744569b56a8df199499a4a5c107a6d544dca84458dc12  hardenednossp.specs
+b56f7c308c5aefd0cfc647abd75939508a6640c53fce7c19da7c7d8ef4405d29b0d88800117fc7ff8d0022b035d511fb6d478e745bb2ed12a1b63f9f8cf3e168  hardenednopie.specs
+f5ac7282201006548ed2bd835234af64d6f79f13f0b9a3410f5c794537e0ea91601361ae72180f49870b6b0f9af5f16002c86660feb94df346b9b1d9602e9d3a  hardenednopiessp.specs
+6f3d708269cc3f1d28ad9af8cd1206753b7d4ddde6589c303ce201d34b531f1abb73a14032a7f8e16c5ec3041e0c227b3451c09b1952a58893a64a2765d12a00  1001-fix-reload1-compile-error.patch
+"

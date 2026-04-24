@@ -1,0 +1,66 @@
+diff --git a/drivers/net/wireless/bcmdhd_100_10/dhd.h b/drivers/net/wireless/bcmdhd_100_10/dhd.h
+index df9f668a..cca9d769 100644
+--- a/drivers/net/wireless/bcmdhd_100_10/dhd.h
++++ b/drivers/net/wireless/bcmdhd_100_10/dhd.h
+@@ -376,7 +376,7 @@ enum dhd_op_flags {
+ #if defined(CUSTOMER_HW4) && defined(PLATFORM_SLP)
+ #define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/bcmdhd_clm.blob"
+ #else
+-#define CONFIG_BCMDHD_CLM_PATH "/etc/wifi/bcmdhd_clm.blob"
++#define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/postmarketos/wifi/bcmdhd_clm.blob"
+ #endif /* CUSTOMER_HW4 && PLATFORM_SLP */
+ #endif /* CONFIG_BCMDHD_CLM_PATH */
+ #define WL_CCODE_NULL_COUNTRY  "#n"
+@@ -2362,7 +2362,7 @@ extern uint dhd_pktgen_len;
+ extern char fw_path2[MOD_PARAM_PATHLEN];
+ #endif // endif
+ 
+-#if defined(ANDROID_PLATFORM_VERSION)
++#if 0 //defined(ANDROID_PLATFORM_VERSION)
+ #if (ANDROID_PLATFORM_VERSION < 7)
+ #define DHD_LEGACY_FILE_PATH
+ #define VENDOR_PATH "/system"
+diff --git a/drivers/net/wireless/bcmdhd_100_15/dhd.h b/drivers/net/wireless/bcmdhd_100_15/dhd.h
+index 6914a76c..e2af0596 100644
+--- a/drivers/net/wireless/bcmdhd_100_15/dhd.h
++++ b/drivers/net/wireless/bcmdhd_100_15/dhd.h
+@@ -401,7 +401,7 @@ enum dhd_op_flags {
+ #if defined(CUSTOMER_HW4) && defined(PLATFORM_SLP)
+ #define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/bcmdhd_clm.blob"
+ #else
+-#define CONFIG_BCMDHD_CLM_PATH "/etc/wifi/bcmdhd_clm.blob"
++#define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/postmarketos/wifi/bcmdhd_clm.blob"
+ #endif /* CUSTOMER_HW4 && PLATFORM_SLP */
+ #endif /* CONFIG_BCMDHD_CLM_PATH */
+ #define WL_CCODE_NULL_COUNTRY  "#n"
+@@ -2559,7 +2559,7 @@ extern uint dhd_pktgen_len;
+ extern char fw_path2[MOD_PARAM_PATHLEN];
+ #endif // endif
+ 
+-#if defined(ANDROID_PLATFORM_VERSION)
++#if 0 //defined(ANDROID_PLATFORM_VERSION)
+ #if (ANDROID_PLATFORM_VERSION < 7)
+ #define DHD_LEGACY_FILE_PATH
+ #define VENDOR_PATH "/system"
+diff --git a/drivers/net/wireless/bcmdhd_1_77/dhd.h b/drivers/net/wireless/bcmdhd_1_77/dhd.h
+index c3259173..bb634b0d 100755
+--- a/drivers/net/wireless/bcmdhd_1_77/dhd.h
++++ b/drivers/net/wireless/bcmdhd_1_77/dhd.h
+@@ -303,7 +303,7 @@ enum dhd_op_flags {
+ #if defined(CUSTOMER_HW4) && defined(PLATFORM_SLP)
+ #define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/bcmdhd_clm.blob"
+ #else
+-#define CONFIG_BCMDHD_CLM_PATH "/etc/wifi/bcmdhd_clm.blob"
++#define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/postmarketos/wifi/bcmdhd_clm.blob"
+ #endif /* CUSTOMER_HW4 && PLATFORM_SLP */
+ #endif /* CONFIG_BCMDHD_CLM_PATH */
+ #define WL_CCODE_NULL_COUNTRY  "#n"
+@@ -2140,7 +2140,7 @@ extern uint dhd_pktgen_len;
+ extern char fw_path2[MOD_PARAM_PATHLEN];
+ #endif
+ 
+-#if defined(ANDROID_PLATFORM_VERSION)
++#if 0 //defined(ANDROID_PLATFORM_VERSION)
+ #if (ANDROID_PLATFORM_VERSION < 7)
+ #define DHD_LEGACY_FILE_PATH
+ #define VENDOR_PATH "/system"

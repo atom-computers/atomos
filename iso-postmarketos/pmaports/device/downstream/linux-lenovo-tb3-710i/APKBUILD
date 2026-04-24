@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/hq8321_tb_b2b_l_defconfig
+maintainer="sreeranj <sreeranj1000@gmail.com>"
+pkgname=linux-lenovo-tb3-710i
+pkgver=3.10.72
+pkgrel=0
+pkgdesc="Lenovo Tab3 7 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="lenovo-tb3-710i"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex gcc4 linux-headers make perl python3 openssl-dev ncurses-dev"
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	export CC="gcc4-$CC"
+	export HOSTCC="gcc4-gcc"
+	export CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+_repository="linux-lenovo-tb3-710i"
+_commit="584fb0193192f814b804dba4f57c1be1947d9703"
+_config="config-lenovo-tb3-710i.armv7"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/1000Stars-debug/$_repository/archive/$_commit.tar.gz
+	fix-paths.patch
+	fix-busybox-sh-compatibility.patch
+	use-gnu89-explicitly.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix-check-lxdialog.patch
+	$_config
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+	yes "" | make ARCH="$_carch" HOSTCC="$HOSTCC" oldconfig
+
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="$CC" HOSTCC="$HOSTCC" prepare
+
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+}
+
+package() {
+	_install_dir="$srcdir/$pkgname-$_commit"
+	install -D "$_install_dir/include/config/kernel.release" "$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+	cd "$_install_dir/arch/$_carch/boot"
+	install -Dm644 zImage-dtb "$pkgdir/boot/vmlinuz"
+}
+
+sha512sums="
+e69556d9f95aebba32420ad56ba4de95326dbebf43ce4f5d1e5c7e14e9a9c0f5c6776f657bc926fad85dc083877d1828e8dea2487c7e93c41011037a5ea436f9  linux-lenovo-tb3-710i-584fb0193192f814b804dba4f57c1be1947d9703.tar.gz
+5a96db8474cdb9f7704c7b30cdf426d3f37b7a5f5d172eeebeb434bdb943555c0abd26ed63531855a7ef1122b7a8c1ef394539f8685a5da15f036f47e3a40564  fix-paths.patch
+9d5cbfb3fa0d076ae090778f4a80c172c296b71eca55bad69b25ecc6bd5658e38bcb53b7483b43066b21907bcb770974a2639983cb1ff59bb24f3fc429fc71d4  fix-busybox-sh-compatibility.patch
+7674bf62ce6ac7a6cffa9468d464ed66448b72fdae95023895992a2127c107b9914e1453a1e8913ed4a62416c12ea40a54095da9c581a265c0c08476449de20d  use-gnu89-explicitly.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+771a62c77cc0aaa232708f80a70c3b273f42906844617941fd3c2a9d0054b89ef867175f2a486bdad62ad93bc86918933decb1634023ad174719dcf283439c6f  config-lenovo-tb3-710i.armv7
+"

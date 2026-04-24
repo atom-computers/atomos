@@ -1,0 +1,45 @@
+/dts-v1/;
+
+/ {
+        description = "a";
+        #address-cells = <1>;
+
+        images {
+                kernel {
+                        description = "Kernel";
+                        data = /incbin/("vmlinuz");
+                        type = "kernel";
+                        arch = "arm";
+                        os = "linux";
+                        compression = "none";
+                        load = <0x41208000>;
+                        entry = <0x41208000>;
+                };
+                fdt {
+                        description = "DTB";
+                        data = /incbin/("/boot/dtbs/qcom-ipq5018-linksys-jamaica.dtb");
+                        type = "flat_dt";
+                        arch = "arm";
+                        compression = "none";
+                };
+		initrd {
+			description = "Initramfs image";
+			data = /incbin/("initramfs");
+			type = "ramdisk";
+			arch = "arm";
+			os = "linux";
+		};
+
+        };
+
+        configurations {
+                default = "standard";
+                standard {
+                        description = "Standard Boot";
+                        kernel = "kernel";
+                        fdt = "fdt";
+			ramdisk = "initrd";
+                };
+        };
+
+};    

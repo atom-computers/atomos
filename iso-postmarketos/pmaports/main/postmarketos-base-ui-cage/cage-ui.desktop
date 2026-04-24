@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Cage-UI
+Name[en]=Cage-UI
+Comment=This session logs you into Cage-UI
+Comment[en]=This session logs in you into Cage-UI
+Exec=dbus-run-session -- cage -d -s -- /usr/share/cage-ui/cage-ui-session.sh
+TryExec=/usr/bin/cage-ui
+Icon=
+Type=Application
+X-DesktopNames=Cage-UI
+Keywords=launch;desktop;session;

@@ -1,0 +1,22 @@
+maintainer=""
+pkgname=rpmsgexport
+pkgver=0.0_git20180228
+pkgrel=1
+pkgdesc="Create rpmsg endpoint devices"
+url="https://github.com/andersson/rpmsgexport"
+arch="all"
+license="BSD-3-Clause"
+_commit="324d88d668f36c6a5e6a9c2003a050b8a5a3cd60"
+source="$pkgname-$_commit.tar.gz::https://github.com/andersson/rpmsgexport/archive/$_commit.tar.gz"
+builddir="$srcdir/rpmsgexport-$_commit"
+options="!check"
+
+build() {
+	make
+}
+
+package() {
+	install -Dm755 rpmsgexport "$pkgdir"/usr/sbin/rpmsgexport
+}
+
+sha512sums="c5915bd217afc19dd92d2eefebe17abfeacc54345e7717d6171ad997e07403d5cb54963ed991fe4858937f6be1208de0d823692229f76fb1c8e875c0a3b1004b  rpmsgexport-324d88d668f36c6a5e6a9c2003a050b8a5a3cd60.tar.gz"

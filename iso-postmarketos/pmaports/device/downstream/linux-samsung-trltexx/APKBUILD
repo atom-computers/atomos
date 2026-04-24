@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/apq8084_sec_trlte_eur_defconfig
+#                         arch/arm/configs/apq8084_sec_defconfig
+#                         arch/arm/configs/selinux_defconfig
+
+pkgname=linux-samsung-trltexx
+pkgver=3.10.108
+pkgrel=1
+pkgdesc="Samsung Galaxy Note 4 (Qualcomm) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-trltexx"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool xz"
+
+# Source
+_repository="android_kernel_samsung_apq8084"
+_commit="45470c5e5fde343926188c3e78a3c652c81408cb"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	0004-fix-video-argb-setting.patch
+	0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot/dt.img" \
+		"$_outdir/arch/$_carch/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+a09b9f7ac2c70935678e2faac76d5db2d8d98e2dde17de3ed449f5e521c460f6c1d62056b670aba2c99ce0f6941991f8402f31a0696c5763fc799514d6bf3367  linux-samsung-trltexx-45470c5e5fde343926188c3e78a3c652c81408cb.tar.gz
+321775ec0e38a964794429dbbcd72d3b8a526bf5f72884af332ea6fb595e37f85ed46caae315abbfdfe596ac702e4c7d0e35a33416e823673d9b6bfcd7ddb7df  config-samsung-trltexx.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+5cf99d4ad3fddaeb211203ebfa3b05458b0fe1882f14da0343d218320be4f8ee36fd87b2fc2cf7af6f63f6a2821d2189e44f72a2d968bbfffdfdeb4636315fb9  0004-fix-video-argb-setting.patch
+e8b1507cad4be72855f840e84a7a894e2469527ff9402c6de491390fd64cae7952af97a2a2eb9709e71464c702902c8d941da95709db5b6b09039ed97669c1e1  0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+"

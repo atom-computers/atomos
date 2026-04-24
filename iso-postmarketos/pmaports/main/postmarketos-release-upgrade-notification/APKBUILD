@@ -1,0 +1,25 @@
+maintainer="Achill Gilgenast <achill@achill.org>"
+pkgname=postmarketos-release-upgrade-notification
+pkgver=1.0
+pkgrel=0
+pkgdesc="postmarketOS upgrading notification app"
+url="https://gitlab.postmarketos.org/postmarketOS/postmarketos-release-upgrade-notification"
+arch="all"
+license="GPL-3.0-or-later"
+makedepends="meson libadwaita-dev"
+source="https://gitlab.postmarketos.org/postmarketOS/postmarketos-release-upgrade-notification/-/archive/$pkgver/postmarketos-release-upgrade-notification-$pkgver.tar.gz"
+options="!check" # no tests
+
+build() {
+	abuild-meson \
+		. output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+b6bd64030f6cd812a1317ed13810a1140053f2b807dd29bd7248a827506f588ea1681d262e55887194393b69fd2dc7648fc1d8a6fdfc9452d44423c078de3b0e  postmarketos-release-upgrade-notification-1.0.tar.gz
+"

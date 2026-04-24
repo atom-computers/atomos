@@ -1,0 +1,65 @@
+From 2f6f8f51a3f6667f531e5dd4685c9703249bb919 Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Wed, 21 Nov 2018 00:10:31 +0300
+Subject: [PATCH 4/6] mdss_fb: Always allow to allocate/map framebuffer memory
+
+Like in recovery mode
+Add debug output about mapping framebuffer mem
+---
+ drivers/video/msm/mdss/mdss_fb.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index 435b0e19ad4..1c77048fe05 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -1619,13 +1619,22 @@ static int mdss_fb_mmap(struct fb_info *info, struct vm_area_struct *vma)
+ 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+ 	int rc = 0;
+ 
+-	if (!info->fix.smem_start && !mfd->fb_ion_handle)
++	pr_debug("mdss_fb_mmap: start; smem_start = %08X, fb_ion_handle = %p",
++			(unsigned int)info->fix.smem_start, mfd->fb_ion_handle);
++
++	if (!info->fix.smem_start && !mfd->fb_ion_handle) {
++		pr_debug("mdss_fb_mmap: using mdss_fb_fbmem_ion_mmap()...");
+ 		rc = mdss_fb_fbmem_ion_mmap(info, vma);
+-	else
++	} else {
++		pr_debug("mdss_fb_mmap: using mdss_fb_physical_mmap()...");
+ 		rc = mdss_fb_physical_mmap(info, vma);
++	}
+ 
+-	if (rc < 0)
++	if (rc < 0) {
+ 		pr_err("fb mmap failed with rc = %d", rc);
++	} else {
++		pr_info("mdss_fb_mmap: Mapped OK");
++	}
+ 
+ 	return rc;
+ }
+@@ -1665,15 +1674,18 @@ static int mdss_fb_alloc_fbmem_iommu(struct msm_fb_data_type *mfd, int dom)
+ 
+ 	pr_info("boot_mode_lpm = %d, boot_mode_recovery = %d\n",
+ 					boot_mode_lpm, boot_mode_recovery);
++	/* mdss_fb_alloc_fbmem_iommu: boot_mode_lpm = 0, boot_mode_recovery = 0 */
++	pr_info("qcom,memory-reservation-size = %u", size);
+ 
+ 	/* Incase of Normal Booting, Do not reserve FB memory */
+-	if ((!boot_mode_lpm) && (!boot_mode_recovery)){
+-		/* Normal Booting */
++	/* if ((!boot_mode_lpm) && (!boot_mode_recovery)) { */  /* Normal Booting */
++	if (0) {   /* Never go this way */
+ 		mfd->fbi->screen_base = NULL;
+ 		mfd->fbi->fix.smem_start = 0;
+ 		mfd->fbi->fix.smem_len = size;
+ 		return 0;
+ 	} else {
++		pr_info("Always allocating framebuffer memory like in recovery mode!");
+ 		of_property_read_u32(pdev->dev.of_node,
+ 			 "qcom,memory-alt-reservation-size", &size);
+ 	}
+-- 
+2.21.0
+

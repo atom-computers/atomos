@@ -1,0 +1,20 @@
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=firmware-acer-aspire1
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for Acer Aspire 1"
+url="https://laughlonely.gitlab.io"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://laughlonely.gitlab.io/firmware/aspire1.tar.xz"
+
+package() {
+	mkdir -p "$pkgdir"
+	install -Dm644 "$srcdir"/*.jsn "$srcdir"/*.mbn \
+		-t "$pkgdir"/lib/firmware/qcom/sc7180/acer/aspire1/
+}
+
+sha512sums="
+534ed9024e54e7acabda1ce1c97ce5e16ad9be5c635da6b11dae7553152ea2a8baf9ab3dd77c7d42f719de1249cbe27f61f6884f35bc0ed9a072ab1e0479badd  aspire1.tar.xz
+"

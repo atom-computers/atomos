@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Duje Mihanović <duje@dujemihanovic.xyz>"
+pkgname=device-samsung-coreprimevelte
+pkgdesc="Samsung Galaxy Core Prime VE LTE"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	dtc
+	firmware-samsung-pxa1908
+	linux-samsung-coreprimevelte
+	mkbootimg
+	postmarketos-base
+	pxa-mkbootimg
+	systemd-boot
+	u-boot-coreprimevelte
+	u-boot-tools
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modprobe.d_mwifiex.conf
+	modules-initfs
+	90-mlan-to-wlan.rules
+"
+subpackages="$pkgname-udev"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	fallocate -l 4k dummy-initramfs
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/90-mlan-to-wlan.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d
+
+	mkdir -p "$pkgdir"/usr/share/u-boot/coreprimevelte/
+	install -Dm644 dummy-initramfs \
+		-t "$pkgdir"/usr/share/u-boot/coreprimevelte/
+
+	install -Dm644 "$srcdir"/modprobe.d_mwifiex.conf \
+		"$pkgdir"/usr/lib/modprobe.d/mwifiex.conf
+}
+
+udev() {
+	default_udev
+	install_if="$pkgname=$pkgver-r$pkgrel udev"
+}
+
+sha512sums="
+59b0f7785ed4db79b4b78cc88a601d23e3bda7f0ff46f97ffe2a11ec70824955b65f4854a7cecfa4314fb5fee587723e443391bbab9afa915ed3d69eab0d308f  deviceinfo
+a9193f0e8190aca5820a5c96c575c87cf190e61a015cb7145ee47721fb543868207725ee9ba113981e1a158ea3cabfeedb26160692b32306d6d7c84791f71dd2  kernel-cmdline.conf
+d0f22c864f19d9d54c42a8397cb8c2412d43192211fb36a86d0bd61f9f420349f774282b9b6789b54e7a8be6d379f18e56b49ae19260a60d0b572e39729931c2  modprobe.d_mwifiex.conf
+b1617e4b116d60abb15003c5bf7d4e8fa13e57a4a12feadd1e128946238b0922e98810289690f0466fec39f54adcc9ef08346acdef0f5a0fbb62c68438c3a063  modules-initfs
+d51facbaa99f69964786e770dc8ed500bfb2609353a25aa344701c851131cc421ef3a2663fe4422a21a5f38e01f0c34235fa4fad75739fb614109a2fb268db8a  90-mlan-to-wlan.rules
+"

@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+description="Extract EPD waveform blob to /lib/firmware"
+
+depend() {
+	after root
+}
+
+start()
+{
+	# Only run once
+	rm -f /etc/runlevels/*/$RC_SVCNAME
+
+	extract-waveform.sh &&
+	ls /lib/firmware/imx/epdc/* >>/usr/share/mkinitfs/files/01-kobo-epdc-extractor.files &&
+	mkinitfs
+	eend $?
+}
+

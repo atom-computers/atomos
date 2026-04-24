@@ -1,0 +1,1 @@
+SUBSYSTEM=="leds", DEVPATH=="*/*:flash", RUN+="/bin/chmod g+w /sys%p/brightness /sys%p/flash_strobe", RUN+="/bin/chown :video /sys%p/brightness /sys%p/flash_strobe"

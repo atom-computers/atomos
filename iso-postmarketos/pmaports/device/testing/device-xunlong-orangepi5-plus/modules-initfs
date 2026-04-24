@@ -1,0 +1,9 @@
+fusb302
+tcpm
+phy_rockchip_usbdp
+typec
+phy_rockchip_naneng_combphy
+phy_rockchip_samsung_hdptx
+rockchipdrm
+nvme
+hid_generic

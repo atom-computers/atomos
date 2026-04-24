@@ -1,0 +1,60 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=device-odroid-hc2
+pkgdesc="ODROID HC2"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="linux-stable
+	 postmarketos-base
+	 u-boot-odroid
+	 u-boot-tools
+	"
+makedepends="devicepkg-dev u-boot-tools"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware $pkgname-tools"
+_commit="42ac93dcfbbb8a08c2bdc02e19f96eb35a81891a"
+source="deviceinfo modules-initfs uboot-script.cmd install-rootfs-hdd.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/uboot-script.cmd \
+		"$srcdir"/boot.scr
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+}
+
+nonfree_firmware() {
+	pkgdesc="U-Boot, Samsung JPEG encoder, and Realtek firmware, required for a bootable system"
+	depends="firmware-odroid-hc2 linux-firmware-rtl_nic linux-firmware-other linux-firmware-s5p-mfc"
+	mkdir "$subpkgdir"
+}
+
+tools() {
+	pkgdesc="ODROID HC2 tools"
+	depends="rsync e2fsprogs-extra"
+	mkdir "$subpkgdir"
+	install -Dm744 "$srcdir"/install-rootfs-hdd.sh \
+		"$subpkgdir"/usr/bin/install-rootfs-hdd
+}
+
+sha512sums="
+46f640892990620c71a67e543fc04a97ac5cd002a298ecd08387c7c6de08a47bb3ef4616e698736e82255d1e4024a4fe3b600a8730f6afda1eeb4f8ba9529b39  deviceinfo
+125ee07a940e7ae8408ec73c47a521fc0aa940b499842779ff715eb8302a09c13e95ea7b9c1fcc4d5f28d4d64c9ad59846bf4f5bdecd146af56b5f618c75446b  modules-initfs
+22212ee91d781bf9997569c986a340d4ff7ec2d30d19ae0233a664b5b91d8bbfe71586dae57d6a3d961f6e4e369733005e01c2cd58f941ce67f557b2e21ce37b  uboot-script.cmd
+09a2191dce5b5c8fdf80c4473d9773a51f2c633db51477f2f64983dd030d7800fd80999a228ec7efe3f9feafeba35902bff68cf95e6ae59048dc64424f402b63  install-rootfs-hdd.sh
+"

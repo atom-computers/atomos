@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-xiaomi-platina
+pkgdesc="Xiaomi Mi 8 Lite"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-sdm660
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+031f9f99fea0eea488fad148b8117cb8d33084ab249534f21b41917b00fdfcba842a987d6902fd1d00fc1bff0aac1dd653cfc740827bcd8551ed4e297d2036fa  deviceinfo
+a9eac9527c9561a1f6bd80d3e68116bb6bb780b0cb7db89ddd84aaf42a1afc605fff258aaf1cb589cb003e213c29293216c7e9c06e07fcc9a11fea9ff1c3c7c9  modules-initfs
+"

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Enable media-pipeline init script
+rc-update add media-pipeline default

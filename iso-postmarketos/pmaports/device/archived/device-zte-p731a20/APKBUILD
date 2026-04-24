@@ -1,0 +1,30 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-zte-p731a20
+pkgdesc="ZTE Blade AF3"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-zte-p731a20 mkbootimg alsa-utils soc-sprd-audio-sc8830"
+makedepends="devicepkg-dev"
+source="deviceinfo
+	kernel-cmdline.conf
+	initfs-hook.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+5b63aa8b00b137e6e59e5a3898f4617e9cc091c57602eb49a161e1b722153b78d8a097cae52c96f12c1e4f07be2cd844b49e0f3cf3a0491a230a15c0e70e3ace  deviceinfo
+41dd6dbff0ea7cfa308dc533b6c0b85cf280a89e23017e573e263f67e9802c77a0a795f3e163624f96ee7d404450b88d9aaaa599fb2ac4f136f36c18a42be1a4  kernel-cmdline.conf
+46c58ff11a1f6cecc3f450f462c9a2b01d2a651f933a796c8a9c2e72f5fba0a0fe876429b5e7dad2fbc64fb056150d56929cd932b39053bed64b389c825bac0d  initfs-hook.sh
+"

@@ -1,0 +1,32 @@
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=firmware-samsung-i9100
+pkgver=3
+pkgrel=0
+pkgdesc="Samsung Galaxy S II Firmware"
+url="https://github.com/TheMuppets/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+options="!check !tracedeps pmb:cross-native"
+
+_commit="5ae6836ddc96cdb6fa1910cb36dfab3ec77d9c67"
+_url="https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commit"
+source="
+	$pkgname-$_commit-bcmdhd_sta.bin::$_url/skyrocket/proprietary/etc/wifi/bcmdhd_sta.bin
+	$pkgname-$_commit-nvram_net.txt::$_url/i9100/proprietary/system/etc/wifi/nvram_net.txt
+	$pkgname-$_commit-bcm4330B1.hcd::$_url/galaxys2-common/proprietary/system/bin/bcm4330B1.hcd
+"
+
+package() {
+	install -Dm644 "$srcdir/$pkgname-$_commit-bcmdhd_sta.bin" \
+		"$pkgdir/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.bin"
+	install -Dm644 "$srcdir/$pkgname-$_commit-nvram_net.txt"  \
+		"$pkgdir/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.samsung,i9100.txt"
+	install -Dm644 "$srcdir/$pkgname-$_commit-bcm4330B1.hcd"  \
+		"$pkgdir/lib/firmware/postmarketos/brcm/bcm4330B1.hcd"
+}
+
+sha512sums="
+ef70cd280d5febcce7387eceb0ef8a7c3d389dfdad4bb7b4631b4dccd7fe55034d1857f79349969d1e104a8dd7d3c2db84eb623c566711aa5072bc2d8145d4b7  firmware-samsung-i9100-5ae6836ddc96cdb6fa1910cb36dfab3ec77d9c67-bcmdhd_sta.bin
+4a473740dfb3202e77fdd07c0bfe59c3cd2ea30e3388b7a09c38484408d9253b7e83a96558995e1fce87e00d6a071eec49ee5a10d68c0e05ab6b6a3dd873604e  firmware-samsung-i9100-5ae6836ddc96cdb6fa1910cb36dfab3ec77d9c67-nvram_net.txt
+d6a593f390a4356c811ba17fc51892366d934b56c063a5083db56dc1fd412d51e30a5a39f6834979652b0f7b754880af332c01cb0cfad4a012662e028a45ede3  firmware-samsung-i9100-5ae6836ddc96cdb6fa1910cb36dfab3ec77d9c67-bcm4330B1.hcd
+"

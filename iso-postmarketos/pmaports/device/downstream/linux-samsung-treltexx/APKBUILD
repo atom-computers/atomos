@@ -1,0 +1,84 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineage_trelte_defconfig
+pkgname=linux-samsung-treltexx
+pkgver=3.10.9
+pkgrel=2
+pkgdesc="samsung Galaxy Note 4 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-treltexx"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	xz
+"
+
+# Source
+_repository="android_kernel_samsung_universal5433"
+_commit="ab88c0ea282670b63059839b9483eb2f29d9d6dd"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/universal5433/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	samsung-usb-ethaddr.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	drivers-muic-fix.patch
+	security-tima_uevent-fix.patch
+	treltexx_hw_rev.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+	mkdir -p $_outdir/drivers/sensorhub/brcm/factory
+}
+
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	dtbTool-exynos --pagesize 2048 \
+	  --platform 0x00003ec3 \
+	  --subtype 0x3a37307e \
+	  -o "$_outdir/arch/$_carch/boot"/dt.img \
+	  $(find "$_outdir/arch/$_carch/boot/dts/" -name *exynos5433-tre_*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+dd5d6ec38bd6f026bd811e0dfd190bfa8926b088669315ed179c16f1c32008592c585bbc6681c589226677c20ba2b75bb55e3179c18036a4d6116b7e919b2adc  linux-samsung-treltexx-ab88c0ea282670b63059839b9483eb2f29d9d6dd.tar.gz
+02871400e5f6c9005f46ec013611c8888e2f8946fd35ee7f68b8bb9e817af9d6783ecff57f35cf691e740bd2e4a3978e2ceadb98ef7be09f8110bae5d9146edd  config-samsung-treltexx.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+7abefc75702b3275ad88055c57a580d419342d34df59ca38e0b2b183216ba563f0955a6794b1e3ee8dbc49da1d4531ae7c24451e53b0bc18fe1a0db209c66ddb  gcc10-extern_YYLOC_global_declaration.patch
+015cc3cd31c1edc208bf2bee872d3be1fe35006f8b90c3cc5c082fb7d89b2ae91a04239676b8868da75d5682e330b1d60d1f5fad67410cbaeeb66a8685df36f5  samsung-usb-ethaddr.patch
+841d23c78c490a1434c254b06a284f08e6a63a2ed94150302e931b336e1d19704554e5027a29500d073ca89f624ecbdd6c2d323902b03f1b1134d927e6538d00  kernel-use-the-gnu89-standard-explicitly.patch
+e2e550d9d5020c2f51e1af0576236ac9d57b2e0c10c14a2a92dc7b1bf4100ebc15a6bf0fff4f57232164e84358dc37d24721e1d9f133a526bf78b610eaf00add  drivers-muic-fix.patch
+f48216b4f2068d7ee2788d18deee4af769bcfa8cb88d4257275285a6017e8f193d527a1ede1ef1fb3a1bf7795f633434b57c13aed95ab1161066f215619a8c8b  security-tima_uevent-fix.patch
+fc618784b85fd77609e32a2af3a68456d66a3b6126c52d00e8a531e6c2c3c54c455330d9f4a9f857f2cc6e3d406a47c5d01ec9f7a96fede031f2dde136184ae1  treltexx_hw_rev.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

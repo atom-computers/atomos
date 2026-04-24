@@ -1,0 +1,43 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-xcover3lte
+pkgdesc="Samsung Galaxy Xcover 3"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-xcover3lte mkbootimg u-boot-tools pxa-mkbootimg alsa-ucm-conf"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	deviceinfo
+	initfs-hook.sh
+	ucm/HiFi.conf
+	ucm/map_asoc.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 -t "$pkgdir"/usr/share/alsa/ucm2/conf.d/map_asoc \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/map_asoc.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for the Samsung Galaxy Xcover 3"
+	depends="firmware-samsung-pxa1908-downstream"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+6379459018c9477c66d2133c3c8351259307c7222ffe26e30971cde6bc6bdf2541f588318ca6c9de52a204adfe7868c479e9e93c086841b31c71e54c242df718  deviceinfo
+0961c07638cf86c3e03c82c7b885cccd74700f0e3670508232b7aea09aa02e65bfa150a5ae95d4917ccf207c4cb5df021d1172452cdd1f82fafc59de0eac7355  initfs-hook.sh
+f8863a569454bdefb2e3813add3ee394b0684f34ac85f629d334e391988937f2b92277cb51abcfb43f36c53837103b63f65ef6ea158962bdde02ff285153991c  HiFi.conf
+2b5927d455dc84eaf2b2b3da27b87a71cc1e3f31cb03c3114f53578d5fcec05cd26a3340801e67b57a7276c5d07a555a38d266d965a273673ec413f5e6f93a0c  map_asoc.conf
+"

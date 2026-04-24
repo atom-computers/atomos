@@ -1,0 +1,27 @@
+From 2435ec7df5e263e5f321c8092dfd671faf81ccf9 Mon Sep 17 00:00:00 2001
+From: "elel@3wh.net" <elel@3wh.net>
+Date: Sat, 22 Dec 2018 22:56:50 +0000
+Subject: [PATCH 1/5] Get rid of Android toolchain binaries in Makefile
+
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index ddb4853621e3..785aa8d1cb2f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -194,8 +194,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ #ARCH		?= $(SUBARCH)
+ ARCH := arm64
+-#CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+-CROSS_COMPILE := aarch64-linux-android-
++CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
++
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+ SRCARCH 	:= $(ARCH)
+-- 
+2.20.1
+

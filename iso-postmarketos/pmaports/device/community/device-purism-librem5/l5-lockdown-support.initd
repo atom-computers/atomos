@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+name="Purism Librem 5 Lockdown Support"
+
+start()
+{
+	ebegin "Enabling lockdown support"
+        /usr/sbin/lockdown-support.sh
+	eend 0
+}

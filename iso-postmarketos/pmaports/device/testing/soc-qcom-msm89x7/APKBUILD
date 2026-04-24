@@ -1,0 +1,86 @@
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=soc-qcom-msm89x7
+pkgdesc="Common package for Qualcomm MSM89x7 devices"
+pkgver=5
+pkgrel=1
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps pmb:cross-native"
+depends="
+	$pkgname-gpu
+	$pkgname-modem
+	$pkgname-ucm
+	swclock-offset
+"
+subpackages="
+	$pkgname-gpu
+	$pkgname-modem
+	$pkgname-modem-openrc:modem_openrc
+	$pkgname-ucm
+"
+
+_ucm_commit="6078de44affd1023c1ba4f71ef1e21468e3282e9"
+source="
+	$pkgname-$_ucm_commit.tar.gz::https://github.com/msm89x7-mainline/alsa-ucm-conf/archive/$_ucm_commit.tar.gz
+	adreno-quirks.sh
+	51-qcom.conf
+	q6voiced.conf
+"
+
+package() {
+	mkdir -p $pkgdir
+	install -Dm644 "$srcdir"/51-qcom.conf \
+		-t "$pkgdir"/usr/share/wireplumber/wireplumber.conf.d
+}
+
+ucm() {
+	provides="alsa-ucm-conf"
+	provider_priority=1
+
+	cd "$srcdir/alsa-ucm-conf-$_ucm_commit"
+	mkdir -p "$subpkgdir"/usr/share/alsa
+	cp -r ucm2 "$subpkgdir"/usr/share/alsa
+}
+
+gpu() {
+	pkgdesc="Various GPU workarounds for Adreno 308 and 505"
+	install_if="$pkgname=$pkgver-r$pkgrel mesa-dri-gallium"
+
+	install -Dm644 "$srcdir"/adreno-quirks.sh \
+		"$subpkgdir"/etc/profile.d/adreno-quirks.sh
+}
+
+modem() {
+	depends="
+		msm-modem-uim-selection
+		msm-modem-wwan-port
+		q6voiced
+		qrtr
+		rmtfs
+		tqftpserv
+	"
+
+	install -Dm644 "$srcdir"/q6voiced.conf "$subpkgdir"/etc/conf.d/q6voiced
+}
+
+modem_openrc() {
+	install_if="$pkgname-modem=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		msm-modem-uim-selection-openrc
+		msm-modem-wwan-port-openrc
+		openrc
+		q6voiced-openrc
+		rmtfs-openrc
+		tqftpserv-openrc
+	"
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+b3cc3ad65cf5d3fd956f4d24f36fc4324e4ee676a0cdda99f213f90c6a854b1eb9d3333402e05e1b861e404f31c72b4d5a219b6bcb6170bacedc938657e9a7c4  soc-qcom-msm89x7-6078de44affd1023c1ba4f71ef1e21468e3282e9.tar.gz
+1deebe2d0ecfd1022d3f068faf8412edd6c6cf309c0472788620778a04c274187d01204b0c39c6dd5fddd1d5beaa36f2ca693b7af0a8fb9d2c27ea1f6d696ef1  adreno-quirks.sh
+28c14f47eaedec577d152001c51753537c98f267ac4a0acf78a304efebe5f6a1b4dc6d501497da9a0a925806a1d9c80b25e001cf9b1eb21efa22cd6a41ff753b  51-qcom.conf
+3a4a9322839d4b3ef9d79668a37840a9f444954759ae3c512e694051d2f9a2573db42ad6c4c1a5c75eeb861232a27ba1a8cef9b503decd54ead25a96e3dd6f98  q6voiced.conf
+"

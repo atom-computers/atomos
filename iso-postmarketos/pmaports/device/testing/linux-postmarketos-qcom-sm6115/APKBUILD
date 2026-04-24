@@ -1,0 +1,66 @@
+maintainer=""
+pkgname=linux-postmarketos-qcom-sm6115
+pkgver=6.10
+pkgrel=8
+pkgdesc="Mainline Kernel fork for SM6115 devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-qcom-sm6115"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	python3
+"
+
+_repository="linux"
+_commit="42b61ea7cdb9f531dd53f9e2c844a056db8978c1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/sm6115-mainline/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+67cf8499a17a18bbeec08eb7729b7dcec05661433dfb37684320ed806bedf105499a3f38dd8662ec1e443ae979d4050094a266fe250b6e6869ddd0eda2b14053  linux-postmarketos-qcom-sm6115-42b61ea7cdb9f531dd53f9e2c844a056db8978c1.tar.gz
+3d2947e1f13df313d05d926c4dc5e8ce20f13240af2ed951a4f8d1157177f01c68e4370da6ef44eeecce234933c4f08d5f868b17c771aecffe255adfec8c55b1  config-postmarketos-qcom-sm6115.aarch64
+"

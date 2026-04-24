@@ -1,0 +1,2 @@
+#!/bin/sh
+rc-update add hexagonrpcd-adsp-sensorspd default

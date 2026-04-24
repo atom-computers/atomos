@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=device-samsung-baffinlite
+pkgdesc="Samsung Galaxy Grand Neo"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-baffinlite mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-samsung-baffinlite"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+c564925f6744914fbfdfc93c14df4aa07264b13e22b4de857abcafa195f60f2a6e2c2e5ce5ad2113812856c6c896017b3825e4ba5b43e4afed231a84de73c548  deviceinfo
+286d590a20720df1ae56f73fa6d1c0f92b3d8218cab99fc502ef41095ff85288726ff9993c9404500e111229e421bb0d2b284621cb4d04ac2930174549d8c7fa  kernel-cmdline.conf
+af036fe35011db078379dbb2e8c16c86546f0a4fcb3d1bcee3502bb1ea5b38f3ec5a9fa8cd1ca8ed8b89592a7f572d6072781289845303e0bf85fc2de4ead9fb  modules-load.conf
+"

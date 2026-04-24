@@ -1,0 +1,80 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-fairphone-fp4
+pkgdesc="Fairphone 4"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-fairphone-fp4-adreno
+	firmware-fairphone-fp4-adsp
+	firmware-fairphone-fp4-audio
+	firmware-fairphone-fp4-bluetooth
+	firmware-fairphone-fp4-cdsp
+	firmware-fairphone-fp4-hexagonfs
+	firmware-fairphone-fp4-ipa
+	firmware-fairphone-fp4-modem
+	firmware-fairphone-fp4-wlan
+	firmware-qcom-adreno-a630-sqe
+	hexagonrpcd>=0.3.2-r3
+	linux-firmware-ath10k
+	linux-postmarketos-qcom-sm6350
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+"
+makedepends="devicepkg-dev"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
+subpackages="$pkgname-openrc"
+source="
+	52-fairphone-fp4.conf
+	81-libssc-fairphone-fp4.rules
+	deviceinfo
+	modules-initfs
+	ucm/HiFi.conf
+	ucm/fp4.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-fairphone-fp4.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-fairphone-fp4.rules
+
+	install -Dm644 "$srcdir"/52-fairphone-fp4.conf \
+		-t "$pkgdir"/usr/share/wireplumber/wireplumber.conf.d
+
+	# Alsa usecase manager config
+	install -Dm644 -t "$pkgdir"/usr/share/alsa/ucm2/Fairphone/fp4 \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/fp4.conf
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/sm7225
+	ln -s /usr/share/alsa/ucm2/Fairphone/fp4/fp4.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/sm7225/Fairphone\ 4.conf
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+fdf1973c32c3834f2e1194d2366fbe1ce6b1ac6ee6211fb720677793f3dcea9adaeeada0e7284d72de848692939e2bc2977997d72ab2126d4f4f8c19428ac846  52-fairphone-fp4.conf
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-fairphone-fp4.rules
+0b56ac5bcd8ec44de9a5f6939b95f7bd1b90d86f1fe8f21f5a0f2bf753445845f540932c0ddc09965bab48ddc0b092b03892240f43e421b265e4b5d76ab3b8db  deviceinfo
+52bb7ed829caa4dcff9728bd6e3cdf118b3c7ee7dfe90df0d4e6422dd67bf3258ae2a4d2dc7599da4182fbd8eb47a0e1d20c58198dc17f2bf178b8f01a8887f7  modules-initfs
+d0af0266cb888b06a6fc88f575c6c1941798b3162afcfc9f45e9c345781c46ce17a90ec99f4b0564ff5b5c01c7ac48e6649ea4a0a7c01aed2768a6a4c8fef07f  HiFi.conf
+7e463e14f25097dac94b10b0c2595503414a4cefca31f4795d91a68a435dd080fdbe07d349a51a4874a389247fafd3461ab4ec732794a1705e6eed08ecb72f08  fp4.conf
+"

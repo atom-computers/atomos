@@ -1,0 +1,11 @@
+[Unit]
+Description=USB Moded Developer Mode
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=usb-moded-developer-mode up
+ExecStop=usb-moded-developer-mode down
+
+[Install]
+WantedBy=multi-user.target

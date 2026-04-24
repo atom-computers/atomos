@@ -1,0 +1,41 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8956)
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-kenzo-downstream
+pkgdesc="Xiaomi Redmi Note 3 (Downstream)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-xiaomi-kenzo-downstream mkbootimg mdss-fb-init-hack"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo
+	kernel-cmdline.conf
+	fb.modes
+	directfbrc"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/fb.modes "$pkgdir"/etc/fb.modes
+	install -Dm644 "$srcdir"/directfbrc "$pkgdir"/etc/directfbrc
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-xiaomi-kenzo"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+e9e36a9172fe443b16e4eb2584ce7ca1b8335fe6add872b6e42dd7f08e0218bace0cd16f98a26de931b36a2c5af366f0f7da89606ebdb64b35b44540157cc766  deviceinfo
+cc38190984cd91a1bdc9662d14519d9abfe1c44f429cded44ad3041259946bc649ab11f3ccb09b95608c1c01c4a0594f9b5f0ca9b64fa4999c53dc95554ffd03  kernel-cmdline.conf
+646cedb1c4675ef04530f8cab305a48767ddc894d1d08541aae3a4c124268ca9ef88aa4fa6ad507d8618f4355144a206a32f5a75ade8e60ab1fc9a338d5209f8  fb.modes
+19b0a9ae89ad4ad1adfcc2a1b5a1abfe71f560c2857e392f904c393f0b3bb4d29d7c2fbf8e080227d50e7e13f53fd5a5f3b0902c89582ec3e2742430ade19f07  directfbrc
+"

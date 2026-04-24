@@ -1,0 +1,212 @@
+# Forked from Alpine to add systemd!
+maintainer="team/kde <bribbers@disroot.org>"
+pkgname=plasma-workspace
+_pkgver=6.6.4
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="KDE Plasma Workspace"
+# armhf blocked by qt6-qtdeclarative
+arch="all !armhf"
+url="https://kde.org/plasma-desktop/"
+license="(GPL-2.0-only OR GPL-3.0-only) AND LGPL-2.1-or-later AND GPL-2.0-or-later AND MIT AND LGPL-2.1-only AND LGPL-2.0-or-later AND (LGPL-2.1-only OR LGPL-3.0-only) AND LGPL-2.0-only"
+depends="
+	accountsservice
+	fprintd
+	kactivitymanagerd
+	kde-cli-tools
+	kded
+	kio-extras
+	kirigami
+	kirigami-addons
+	kwin
+	milou
+	pipewire-session-manager
+	plasma-integration
+	qt6-qttools
+	tzdata
+	xdg-desktop-portal-gtk
+	"
+depends_dev="
+	baloo-dev
+	breeze-dev
+	eudev-dev
+	gpsd-dev
+	icu-dev
+	iso-codes-dev
+	karchive-dev
+	kauth-dev
+	kcmutils-dev
+	kcoreaddons-dev
+	kcrash-dev
+	kdbusaddons-dev
+	kdeclarative-dev
+	kded-dev
+	kglobalaccel-dev
+	kglobalacceld-dev
+	kguiaddons-dev
+	kholidays-dev
+	ki18n-dev
+	kiconthemes-dev
+	kidletime-dev
+	kio-dev
+	kitemmodels-dev
+	knewstuff-dev
+	knotifications-dev
+	knotifyconfig-dev
+	kpackage-dev
+	kparts-dev
+	kpipewire-dev
+	kquickcharts-dev
+	krunner-dev
+	kscreenlocker-dev
+	kstatusnotifieritem-dev
+	ksvg-dev
+	ktexteditor-dev
+	ktextwidgets-dev
+	kunitconversion-dev
+	kuserfeedback-dev
+	kwayland-dev
+	kwin-dev
+	layer-shell-qt-dev
+	libcanberra-dev
+	libkexiv2-dev
+	libkscreen-dev
+	libksysguard-dev
+	libplasma-dev
+	libqalculate-dev
+	networkmanager-qt-dev
+	phonon-dev
+	plasma-activities-stats-dev
+	plasma-wayland-protocols
+	plasma5support-dev
+	prison-dev
+	qcoro-dev
+	qt6-qtlocation-dev
+	qt6-qtpositioning-dev
+	qt6-qtwayland-dev
+	wayland-dev
+	wayland-protocols
+	zlib-dev
+	"
+makedepends="$depends_dev
+	extra-cmake-modules
+	kded
+	kdoctools-dev
+	libxtst-dev
+	qt6-qttools-dev
+	samurai
+	xdotool
+	systemd
+	"
+checkdepends="
+	dbus
+	xwayland-run
+	"
+case "$_pkgver" in
+	*.90*) _rel=unstable;;
+	*) _rel=stable;;
+esac
+subpackages="
+	$pkgname-dbg
+	$pkgname-dev
+	$pkgname-libs
+	$pkgname-doc
+	$pkgname-lang
+	$pkgname-zsh-completion
+	$pkgname-systemd
+	$pkgname-x11
+	"
+_repo_url="https://invent.kde.org/plasma/plasma-workspace.git"
+source="https://download.kde.org/$_rel/plasma/$_pkgver/plasma-workspace-$_pkgver.tar.xz"
+builddir="$srcdir/$pkgname-$_pkgver"
+
+replaces="xdg-desktop-portal-kde<=6.1.5-r0"
+
+# Fails in pmaports CI. It already passes in Alpine, so just skip checks here.
+options="!check"
+
+# secfixes:
+#   6.0.5.1:
+#     - CVE-2024-36041
+
+
+build() {
+	# reduce size of debug syms
+	CFLAGS="$CFLAGS -O2 -g1" CXXFLAGS="$CXXFLAGS -O2 -g1" \
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DPLASMA_X11_DEFAULT_SESSION=OFF \
+		-DINSTALL_SDDM_WAYLAND_SESSION=ON
+
+	# workaround for:
+	# https://invent.kde.org/plasma/plasma-workspace/-/issues/132
+	ninja -C build shell/qwayland-plasma-shell.h
+	ninja -C build shell/wayland-plasma-shell-client-protocol.h
+
+	cmake --build build
+}
+
+check() {
+	local skipped_tests="(tasktoolstest"
+	local tests="
+		dbusmethodcalltest
+		dbusservicewatchertest
+		fetchinitialplayertest
+		keystatetest
+		klipper-testHistoryCycler
+		klipper-testHistoryModel
+		klipper_v3migrationtest
+		klippertest
+		lockedtest
+		mediakeystest
+		mprisdeclarativetest
+		servicerunnertest
+		shelltest
+		tasksmodeltest
+		testdesktop
+		testimagebackend
+		testimagefinder
+		testimagefrontend
+		testimagelistmodel
+		testimageproxymodel
+		testmediametadatafinder
+		testpackageimagelistmodel
+		testrunnermodel
+		testslidefiltermodel
+		testslidemodel
+		tst_triangleFilter
+		waylandtasksmodeltest
+		xwindowtasksmodeltest
+		"
+	case "$CARCH" in
+		arm*|aarch64|ppc64le) tests="$tests calculatorrunnertest" ;;
+	esac
+
+	# bitaptest is broken by our downstream patch
+	# 0001-plasma-workspace-krunner-crash-workaround.patch
+	tests="$tests bitaptest"
+
+	for test in $tests; do
+		skipped_tests="$skipped_tests|$test"
+	done
+	skipped_tests="$skipped_tests)"
+	dbus-run-session xwfb-run -- ctest --test-dir build -E "$skipped_tests"
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+x11() {
+	pkgdesc="X11 desktop launcher for $pkgname"
+	depends="xorg-server"
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+
+	amove usr/bin/startplasma-x11 usr/share/xsessions/plasmax11.desktop
+}
+
+sha512sums="
+52040f299962d5471c32a30e5d27c739608fe677bd262c5ec9377044c5dddd41629521a825214a33fc20e16c2e0d1737e6c5ef5fdc722fb13665721d8117be9a  plasma-workspace-6.6.4.tar.xz
+"

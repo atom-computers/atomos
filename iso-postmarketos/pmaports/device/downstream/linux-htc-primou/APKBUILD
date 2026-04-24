@@ -1,0 +1,53 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/primou_defconfig
+
+pkgname=linux-htc-primou
+pkgver=3.0.101
+pkgrel=4
+pkgdesc="HTC One V kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-primou"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="xz perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_htc_primou_new"
+_commit="f674566057bd4e5552e06d920e768fb6b50a0058"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/rastomanchik/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-fix-return-address.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+dd7744a8313497294283877085f31042e96132b21521b7c05f02829e612465b19487643462b87c4c26870dda5108667641e30e4dc09925eb22e2f320f67f2f48  linux-htc-primou-f674566057bd4e5552e06d920e768fb6b50a0058.tar.gz
+dde326f0aa451ee75b5350dab1d280ba2f3107cf17e210f89d69b9bb96d844357749e3f5386d125d00b9b3673e167a56dcaf5339cb7a6bf375a4b583dbef46e5  config-htc-primou.armv7
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  01-fix-return-address.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

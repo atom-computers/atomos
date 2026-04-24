@@ -1,0 +1,54 @@
+From bd62ba68291c614fed975beed961b5e2636fcc6f Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Thu, 7 Feb 2019 13:26:02 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: comment out MHL
+
+HDMI and MHL enabled makes screen size incorrectly set to 1024x800
+instead of 480x800
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index ddadfd998493..46e4d30b077a 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -81,7 +81,7 @@
+ 				nvidia,panel = <&panel>;
+ 			};
+ 		};
+-
++#if 0
+ 		hdmi@54280000 {
+ 			status = "okay";
+ 
+@@ -98,6 +98,7 @@
+ 				};
+ 			};
+ 		};
++#endif
+ 	};
+ 
+ 	pinmux@70000014 {
+@@ -905,7 +906,7 @@
+ 		i2c-gpio,delay-us = <5>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-
++#if 0
+ 		sii9234@39 {
+ 			compatible = "sil,sii9234";
+ 			reg = <0x39>;
+@@ -923,6 +924,7 @@
+ 				};
+ 			};
+ 		};
++#endif
+ 	};
+ 
+ 	i2c@15 {
+-- 
+2.22.0
+

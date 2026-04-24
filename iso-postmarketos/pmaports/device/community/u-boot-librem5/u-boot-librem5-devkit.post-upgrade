@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# NOTE: disabling since this u-boot doesn't support the devkit yet
+# update-u-boot -s

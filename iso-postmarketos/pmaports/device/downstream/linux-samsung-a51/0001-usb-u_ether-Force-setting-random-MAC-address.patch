@@ -1,0 +1,66 @@
+From 28dbfef394c8e4c0b14a1e208de3126aba6cd2ab Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@gmail.com>
+Date: Sat, 7 Dec 2024 09:26:26 +0700
+Subject: [PATCH] usb: u_ether: Force setting random MAC address
+
+Signed-off-by: Hendra Manudinata <manoedinata@gmail.com>
+---
+ drivers/usb/gadget/function/u_ether.c | 13 ++++---------
+ 1 file changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/usb/gadget/function/u_ether.c b/drivers/usb/gadget/function/u_ether.c
+index 6f71453bda..49942924e1 100644
+--- a/drivers/usb/gadget/function/u_ether.c
++++ b/drivers/usb/gadget/function/u_ether.c
+@@ -1084,9 +1084,8 @@ static int eth_stop(struct net_device *net)
+ }
+ 
+ /*-------------------------------------------------------------------------*/
+-#ifndef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
+ static u8 host_ethaddr[ETH_ALEN];
+-#endif
++
+ static int get_ether_addr(const char *str, u8 *dev_addr)
+ {
+ 	if (str) {
+@@ -1116,7 +1115,7 @@ static int get_ether_addr_str(u8 dev_addr[ETH_ALEN], char *str, int len)
+ 	snprintf(str, len, "%pM", dev_addr);
+ 	return 18;
+ }
+-#ifndef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
++
+ static int get_host_ether_addr(u8 *str, u8 *dev_addr)
+ {
+ 	memcpy(dev_addr, str, ETH_ALEN);
+@@ -1127,7 +1126,6 @@ static int get_host_ether_addr(u8 *str, u8 *dev_addr)
+ 	memcpy(str, dev_addr, ETH_ALEN);
+ 	return 1;
+ }
+-#endif
+ 
+ static const struct net_device_ops eth_netdev_ops = {
+ 	.ndo_open		= eth_open,
+@@ -1186,10 +1184,7 @@ struct eth_dev *gether_setup_name(struct usb_gadget *g,
+ 	if (get_ether_addr(dev_addr, net->dev_addr))
+ 		dev_warn(&g->dev,
+ 			"using random %s ethernet address\n", "self");
+-#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
+-	memcpy(dev->host_mac, ethaddr, ETH_ALEN);
+-	printk(KERN_DEBUG "usb: set unique host mac\n");
+-#else
++
+ 	if (get_host_ether_addr(host_ethaddr, dev->host_mac))
+ 		dev_warn(&g->dev, "using random %s ethernet address\n", "host");
+ 	else
+@@ -1197,7 +1192,7 @@ struct eth_dev *gether_setup_name(struct usb_gadget *g,
+ 
+ 	if (ethaddr)
+ 		memcpy(ethaddr, dev->host_mac, ETH_ALEN);
+-#endif
++
+ 	net->netdev_ops = &eth_netdev_ops;
+ 
+ 	net->ethtool_ops = &ops;
+-- 
+2.34.1
+

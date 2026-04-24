@@ -1,0 +1,370 @@
+From c3d6d0c97001f907bbdefb71b9dca6d9cd903998 Mon Sep 17 00:00:00 2001
+From: map220v <map220v300@gmail.com>
+Date: Sat, 16 Jan 2021 14:56:07 +0300
+Subject: [PATCH] [SQUASH] [HACK] DECON & framebuffer fixes for Linux
+
+This commit contains (a little bit hacky) patches to fix framebuffer
+behaving weird in native Linux system.
+
+The said patches are:
+  * A hacky way to force DECON refresh. Now we don't need msm-fb-refresher
+[1] anymore. [2]
+  * Fix fbcon and mismatched color [3]
+  * Keep `fb0` enabled [4]
+  * `decon_pan_display` downgrade to fix Samsung's DECON [5]
+
+[1] https://pkgs.postmarketos.org/package/master/postmarketos/aarch64/msm-fb-refresher
+[2] https://github.com/map220v/kernel_samsung_a51-linux/commit/8f88827bf29b4508ed2ea67110de93776a044e74
+[3] https://github.com/map220v/kernel_samsung_a51-linux/commit/83656dabd2b5db98c04c5b02a2eca7b78152bc18
+[4] https://github.com/map220v/kernel_samsung_a51-linux/commit/974f3e70d07021a9d7b42f08720b0b425003745f
+[5] https://github.com/map220v/kernel_samsung_a51-linux/commit/ebfe69da8c0e0c4fcf8fc22970f9e38280d5224f
+
+Signed-off-by: Hendra Manudinata <manoedinata@gmail.com>
+---
+ drivers/video/fbdev/exynos/dpu20/decon_core.c | 57 ++++++++----
+ drivers/video/fbdev/exynos/dpu20/decon_dsi.c  | 88 ++++++++-----------
+ 2 files changed, 81 insertions(+), 64 deletions(-)
+
+diff --git a/drivers/video/fbdev/exynos/dpu20/decon_core.c b/drivers/video/fbdev/exynos/dpu20/decon_core.c
+index 20a52c044d..e77c9e7018 100644
+--- a/drivers/video/fbdev/exynos/dpu20/decon_core.c
++++ b/drivers/video/fbdev/exynos/dpu20/decon_core.c
+@@ -47,6 +47,9 @@
+ #if defined(CONFIG_SOC_EXYNOS9610)
+ #include <dt-bindings/clock/exynos9610.h>
+ #endif
++#ifdef CONFIG_STATE_NOTIFIER
++#include <linux/state_notifier.h>
++#endif
+ 
+ #include "decon.h"
+ #include "dsim.h"
+@@ -58,13 +61,13 @@
+ #include "displayport.h"
+ #endif
+ 
+-int decon_log_level = 6;
++int decon_log_level = 0;
+ module_param(decon_log_level, int, 0644);
+-int dpu_bts_log_level = 6;
++int dpu_bts_log_level = 0;
+ module_param(dpu_bts_log_level, int, 0644);
+-int win_update_log_level = 6;
++int win_update_log_level = 0;
+ module_param(win_update_log_level, int, 0644);
+-int dpu_mres_log_level = 6;
++int dpu_mres_log_level = 0;
+ module_param(dpu_mres_log_level, int, 0644);
+ int decon_systrace_enable;
+ void decon_wait_for_vstatus(struct decon_device *decon, u32 timeout);
+@@ -1004,11 +1007,15 @@ err:
+ 	return ret;
+ }
+ 
++int decon_set_vsync_int(struct fb_info *info, bool active);
++extern int needs_pan;
++
+ static int decon_blank(int blank_mode, struct fb_info *info)
+ {
+ 	struct decon_win *win = info->par;
+ 	struct decon_device *decon = win->decon;
+ 	int ret = 0;
++	struct fb_info *fb_info;
+ 
+ 	decon_info("%s + blank_mode: %d, decon-%d %s mode: %d type (0: DSI, 1: eDP, 2:DP, 3: WB)\n",
+ 			__func__, blank_mode, decon->id,
+@@ -1034,6 +1041,9 @@ static int decon_blank(int blank_mode, struct fb_info *info)
+ 			goto blank_exit;
+ 		}
+ 		atomic_set(&decon->ffu_flag, 2);
++		#ifdef CONFIG_STATE_NOTIFIER
++			state_suspend();
++		#endif
+ 		break;
+ 	case FB_BLANK_UNBLANK:
+ 		DPU_EVENT_LOG(DPU_EVT_UNBLANK, &decon->sd, ktime_set(0, 0));
+@@ -1043,10 +1053,16 @@ static int decon_blank(int blank_mode, struct fb_info *info)
+ 			goto blank_exit;
+ 		}
+ 		atomic_set(&decon->ffu_flag, 2);
++		#ifdef CONFIG_STATE_NOTIFIER
++			state_suspend();
++		#endif
+ #if defined(CONFIG_EXYNOS_READ_ESD_SOLUTION)
+ 		if (decon->esd.thread)
+ 			wake_up_process(decon->esd.thread);
+ #endif
++		needs_pan = true;
++		fb_info = decon->win[decon->dt.dft_win]->fbinfo;
++		decon_set_vsync_int(fb_info, true);
+ 		break;
+ 	case FB_BLANK_VSYNC_SUSPEND:
+ 	case FB_BLANK_HSYNC_SUSPEND:
+@@ -3146,7 +3162,7 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
+ 	return ret;
+ }
+ 
+-static ssize_t decon_fb_read(struct fb_info *info, char __user *buf,
++/*static ssize_t decon_fb_read(struct fb_info *info, char __user *buf,
+ 		size_t count, loff_t *ppos)
+ {
+ 	return 0;
+@@ -3156,7 +3172,7 @@ static ssize_t decon_fb_write(struct fb_info *info, const char __user *buf,
+ 		size_t count, loff_t *ppos)
+ {
+ 	return 0;
+-}
++}*/
+ 
+ int decon_release(struct fb_info *info, int user)
+ {
+@@ -3164,6 +3180,7 @@ int decon_release(struct fb_info *info, int user)
+ 	struct decon_device *decon = win->decon;
+ 	int fb_count = atomic_read(&info->count);
+ 
++      return 0;
+ 	decon_info("%s + : %d\n", __func__, decon->id);
+ 
+ 	if (decon->id && decon->dt.out_type == DECON_OUT_DSI) {
+@@ -3216,12 +3233,14 @@ static struct fb_ops decon_fb_ops = {
+ 	.fb_blank	= decon_blank,
+ 	.fb_setcolreg	= decon_setcolreg,
+ 	.fb_fillrect    = cfb_fillrect,
++	.fb_copyarea    = cfb_copyarea,
++	.fb_imageblit   = cfb_imageblit,
+ #ifdef CONFIG_COMPAT
+ 	.fb_compat_ioctl = decon_compat_ioctl,
+ #endif
+ 	.fb_ioctl	= decon_ioctl,
+-	.fb_read	= decon_fb_read,
+-	.fb_write	= decon_fb_write,
++//	.fb_read	= decon_fb_read,
++//	.fb_write	= decon_fb_write,
+ 	.fb_pan_display	= decon_pan_display,
+ 	.fb_mmap	= decon_mmap,
+ 	.fb_release	= decon_release,
+@@ -3456,15 +3475,15 @@ static int decon_fb_alloc_memory(struct decon_device *decon, struct decon_win *w
+ 	}
+ #endif
+ 
+-	memset(vaddr, 0x00, size);
++	//memset(vaddr, 0x00, size);
+ 
+ 	fbi->screen_base = vaddr;
+ 
+ #if !defined(CONFIG_SUPPORT_LEGACY_ION)
+-	dma_buf_vunmap(buf, vaddr);
++	//dma_buf_vunmap(buf, vaddr);
+ #endif
+ 
+-	fbi->screen_base = NULL;
++	//fbi->screen_base = NULL;
+ 
+ 	win->dma_buf_data[1].fence = NULL;
+ 	win->dma_buf_data[2].fence = NULL;
+@@ -3637,6 +3656,7 @@ static int decon_acquire_window(struct decon_device *decon, int idx)
+ 	}
+ 
+ 	fbinfo->fix.type	= FB_TYPE_PACKED_PIXELS;
++	fbinfo->fix.visual	= FB_VISUAL_TRUECOLOR,
+ 	fbinfo->fix.accel	= FB_ACCEL_NONE;
+ 	fbinfo->var.activate	= FB_ACTIVATE_NOW;
+ 	fbinfo->var.vmode	= FB_VMODE_NONINTERLACED;
+@@ -3964,8 +3984,8 @@ static int decon_initial_display(struct decon_device *decon, bool is_colormap)
+ 	}
+ 
+ 	decon_to_init_param(decon, &p);
+-	if (decon_reg_init(decon->id, decon->dt.out_idx[0], &p) < 0)
+-		goto decon_init_done;
++	//if (decon_reg_init(decon->id, decon->dt.out_idx[0], &p) < 0)
++	//	goto decon_init_done;
+ 
+ 	memset(&win_regs, 0, sizeof(struct decon_window_regs));
+ 	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE,
+@@ -3991,7 +4011,7 @@ static int decon_initial_display(struct decon_device *decon, bool is_colormap)
+ 	set_bit(dpp_id, &decon->prev_used_dpp);
+ 	memset(&config, 0, sizeof(struct decon_win_config));
+ 	config.dpp_parm.addr[0] = fbinfo->fix.smem_start;
+-	config.format = DECON_PIXEL_FORMAT_BGRA_8888;
++	config.format = DECON_PIXEL_FORMAT_ARGB_8888;
+ 	config.src.w = fbinfo->var.xres;
+ 	config.src.h = fbinfo->var.yres;
+ 	config.src.f_w = fbinfo->var.xres;
+@@ -4030,14 +4050,21 @@ static int decon_initial_display(struct decon_device *decon, bool is_colormap)
+ 	decon_reg_set_int(decon->id, &psr, 1);
+ 	call_panel_ops(dsim, displayon, dsim);
+ 	decon_wait_for_vsync(decon, VSYNC_TIMEOUT_MSEC);
++	decon_set_vsync_int(fbinfo, true);
+ 	if (decon_reg_wait_update_done_and_mask(decon->id, &psr,
+ 				SHADOW_UPDATE_TIMEOUT) < 0)
+ 		decon_err("%s: wait_for_update_timeout\n", __func__);
+ 
+-decon_init_done:
++//decon_init_done:
+ 
+ 	decon->state = DECON_STATE_INIT;
+ 
++    // Try to unblank decon0
++    if(decon->id == 0)
++    {
++        decon_blank(FB_BLANK_UNBLANK, fbinfo);
++    }
++    
+ 	return 0;
+ }
+ 
+diff --git a/drivers/video/fbdev/exynos/dpu20/decon_dsi.c b/drivers/video/fbdev/exynos/dpu20/decon_dsi.c
+index 0b0b0a96e1..1189735567 100644
+--- a/drivers/video/fbdev/exynos/dpu20/decon_dsi.c
++++ b/drivers/video/fbdev/exynos/dpu20/decon_dsi.c
+@@ -322,6 +322,8 @@ static ssize_t decon_show_vsync(struct device *dev,
+ }
+ static DEVICE_ATTR(vsync, S_IRUGO, decon_show_vsync, NULL);
+ 
++int needs_pan = false;
++
+ static int decon_vsync_thread(void *data)
+ {
+ 	struct decon_device *decon = data;
+@@ -336,6 +338,19 @@ static int decon_vsync_thread(void *data)
+ 		int ret = wait_event_interruptible(decon->vsync.wait,
+ 			(timestamp != decon->vsync.timestamp) &&
+ 			decon->vsync.active);
++			
++		struct decon_mode_info psr;		
++		if (needs_pan) {
++			// TODO: This is dirty hack.
++			// Implement a better solution
++			struct fb_info *fb_info = decon->win[decon->dt.dft_win]->fbinfo;
++			struct fb_var_screeninfo *var = &fb_info->var;
++			usleep_range(200000, 201000);
++			decon_pan_display(var, fb_info);
++			needs_pan = false;
++		}
++		decon_to_psr_info(decon, &psr);
++		decon_reg_start(decon->id, &psr);
+ #endif
+ 		if (!ret)
+ 			sysfs_notify(&decon->dev->kobj, NULL, "vsync");
+@@ -835,87 +850,61 @@ int decon_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
+ 	struct v4l2_subdev *sd = NULL;
+ 	struct decon_win_config config;
+ 	int ret = 0;
++	int shift = 0;
+ 	struct decon_mode_info psr;
+-	int dpp_id = DPU_DMA2CH(decon->dt.dft_idma);
+-
+-	if (decon->dt.out_type != DECON_OUT_DSI) {
+-		decon_warn("%s: decon%d unspported on out_type(%d)\n",
+-				__func__, decon->id, decon->dt.out_type);
+-		return 0;
+-	}
+ 
+-	if ((!IS_DECON_HIBER_STATE(decon) && IS_DECON_OFF_STATE(decon)) ||
+-			decon->state == DECON_STATE_INIT) {
++	if ((decon->dt.out_type == DECON_OUT_DSI &&
++			decon->state == DECON_STATE_INIT) ||
++			decon->state == DECON_STATE_OFF) {
+ 		decon_warn("%s: decon%d state(%d), UNBLANK missed\n",
+ 				__func__, decon->id, decon->state);
+ 		return 0;
+ 	}
+ 
+-	decon_info("%s: [%d %d %d %d %d %d]\n", __func__,
+-			var->xoffset, var->yoffset,
+-			var->xres, var->yres,
+-			var->xres_virtual, var->yres_virtual);
++	decon_set_par(info);
++
++	decon_hiber_block_exit(decon);
+ 
++	set_bit(decon->dt.dft_idma, &decon->cur_using_dpp);
++	set_bit(decon->dt.dft_idma, &decon->prev_used_dpp);
+ 	memset(&config, 0, sizeof(struct decon_win_config));
+ 	switch (var->bits_per_pixel) {
+ 	case 16:
+ 		config.format = DECON_PIXEL_FORMAT_RGB_565;
++		shift = 2;
+ 		break;
+ 	case 24:
+ 	case 32:
+-		config.format = DECON_PIXEL_FORMAT_ABGR_8888; /* DECON_PIXEL_FORMAT_BGRA_8888; */
++		config.format = DECON_PIXEL_FORMAT_ARGB_8888;
++		shift = 4;
+ 		break;
+ 	default:
+-		decon_err("%s: Not supported bpp %d\n", __func__,
+-				var->bits_per_pixel);
+-		return -EINVAL;
++		decon_err("%s: bits_per_pixel %d\n", __func__, var->bits_per_pixel);
+ 	}
+ 
+ 	config.dpp_parm.addr[0] = info->fix.smem_start;
+-	config.src.x =  var->xoffset;
++	config.src.x =  var->xoffset >> shift;
+ 	config.src.y =  var->yoffset;
+ 	config.src.w = var->xres;
+ 	config.src.h = var->yres;
+-	config.src.f_w = var->xres_virtual;
+-	config.src.f_h = var->yres_virtual;
++	config.src.f_w = var->xres;
++	config.src.f_h = var->yres;
+ 	config.dst.w = config.src.w;
+ 	config.dst.h = config.src.h;
+-	config.dst.f_w = decon->lcd_info->xres;
+-	config.dst.f_h = decon->lcd_info->yres;
+-	if (decon_check_limitation(decon, decon->dt.dft_win, &config) < 0)
+-		return -EINVAL;
+-
+-	decon_hiber_block_exit(decon);
+-
+-	decon_to_psr_info(decon, &psr);
+-
+-	/*
+-	 * info->var is old parameters and var is new requested parameters.
+-	 * var must be copied to info->var before decon_set_par function
+-	 * is called.
+-	 *
+-	 * If not, old parameters are set to window configuration
+-	 * and new parameters are set to DMA and DPP configuration.
+-	 */
+-	memcpy(&info->var, var, sizeof(struct fb_var_screeninfo));
++	config.dst.f_w = config.src.f_w;
++	config.dst.f_h = config.src.f_h;
++	sd = decon->dpp_sd[decon->dt.dft_idma];
+ 
+-	set_bit(dpp_id, &decon->cur_using_dpp);
+-	set_bit(dpp_id, &decon->prev_used_dpp);
+-	sd = decon->dpp_sd[dpp_id];
+ 	if (v4l2_subdev_call(sd, core, ioctl, DPP_WIN_CONFIG, &config)) {
+ 		decon_err("%s: Failed to config DPP-%d\n", __func__, win->dpp_id);
+-		decon_reg_win_enable_and_update(decon->id, decon->dt.dft_win, false);
+-		clear_bit(dpp_id, &decon->cur_using_dpp);
+-		set_bit(dpp_id, &decon->dpp_err_stat);
+-		goto err;
++		clear_bit(win->dpp_id, &decon->cur_using_dpp);
++		set_bit(win->dpp_id, &decon->dpp_err_stat);
+ 	}
+ 
+ 	decon_reg_update_req_window(decon->id, win->idx);
+-#if 0
+-	decon_set_par(info);
+-#endif
++
++	decon_to_psr_info(decon, &psr);
+ 	decon_reg_start(decon->id, &psr);
+-err:
+ 	decon_wait_for_vsync(decon, VSYNC_TIMEOUT_MSEC);
+ 
+ 	if (decon_reg_wait_update_done_and_mask(decon->id, &psr, SHADOW_UPDATE_TIMEOUT)
+@@ -923,6 +912,7 @@ err:
+ 		decon_err("%s: wait_for_update_timeout\n", __func__);
+ 
+ 	decon_hiber_unblock(decon);
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(decon_pan_display);
+-- 
+2.34.1
+

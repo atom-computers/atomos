@@ -1,0 +1,13 @@
+diff --git a/drivers/video/msm/mdp4_util.c b/drivers/video/msm/mdp4_util.c
+index 65d872f010b..fde59ec5116 100644
+--- a/drivers/video/msm/mdp4_util.c
++++ b/drivers/video/msm/mdp4_util.c
+@@ -1311,7 +1311,7 @@ void mdp4_vg_qseed_init(int vp_num)
+ 
+ }
+ 
+-void mdp4_mixer_blend_init(mixer_num)
++void mdp4_mixer_blend_init(int mixer_num)
+ {
+ 	unsigned char *overlay_base;
+ 	int off;

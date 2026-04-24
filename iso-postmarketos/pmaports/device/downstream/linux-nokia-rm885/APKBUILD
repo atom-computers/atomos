@@ -1,0 +1,62 @@
+# Kernel config based on: arch/arm/configs/lineage_zeal_defconfig
+
+pkgname=linux-nokia-rm885
+pkgver=3.4.0
+pkgrel=7
+pkgdesc="Lumia 720 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="nokia-rm885"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_nokia_msm8x27"
+_commit="c76fa190cc0d20a9d803ce9bdb59eab0de67a64a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Android4Lumia/android_kernel_nokia_msm8x27/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	psmouse_base.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+7b09ae324b285b659a0b78755a559a814fabdc40857e0957fa4b637ed4b26b9d25b5a936d5231d5492956f6bd6a84739e5ab6402c8c0065d2b5963d0fe0bf6d8  linux-nokia-rm885-c76fa190cc0d20a9d803ce9bdb59eab0de67a64a.tar.gz
+d6cc7503bc4b90e4b4501abc635b7e4967e70acd128f3f8bacb9f507ebf56bdf700894954bab860970a49ab4eda04dce7399e29ac6acc0ac1ad014ff83d5e300  config-nokia-rm885.armhf
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+f7e31cfe422696922aec52002e56c58103183966edee3bb8e1995d33f8d37b07c32280a8ecc213874e358a6ff367418556a4542fba7e3c17e4b8e82e05c3a543  psmouse_base.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

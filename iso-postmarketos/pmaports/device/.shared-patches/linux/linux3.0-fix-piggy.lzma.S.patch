@@ -1,0 +1,22 @@
+From c6b821b1281f7ce2b54aad3b0b2acd0e29039c8f Mon Sep 17 00:00:00 2001
+From: Stefan Hansson <newbyte@postmarketos.org>
+Date: Mon, 6 May 2024 10:59:58 +0200
+Subject: [PATCH] Fix lzma piggy
+
+---
+ arch/arm/boot/compressed/piggy.lzma.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/compressed/piggy.lzma.S b/arch/arm/boot/compressed/piggy.lzma.S
+index d7e69cffbc0..cfea81ae8f4 100644
+--- a/arch/arm/boot/compressed/piggy.lzma.S
++++ b/arch/arm/boot/compressed/piggy.lzma.S
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata, "a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.lzma"
+-- 
+2.45.0
+

@@ -1,0 +1,59 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_chagallwifi_defconfig
+# Co-Maintainer: Henrik Grimler <henrik@grimler.se>
+maintainer="David Davies-Jones <david@exultantmonkey.co.uk>"
+pkgname=linux-samsung-chagallwifi-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab S 10.5 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-chagallwifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz"
+
+# Source
+_repository="android_kernel_samsung_exynos5420"
+_commit="fed1690ca92e33cc6a5febe2e45dd909b9090d37"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/exynos5420/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-netfilter-symbols.patch
+	02-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	03-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+c10c0b457a37ca89172203d83b0c5efd3b4fd4a9e4ff5b64328737275cfc4b19d4a316eab61aa5561943f29f70bb2bebac0efba54854e01553b90b8dd639d4bd  linux-samsung-chagallwifi-downstream-fed1690ca92e33cc6a5febe2e45dd909b9090d37.tar.gz
+9f5a290e6675208ef616e2f0aea721dc14708e35fb12da1cb0e19dc21ccc05c53ba4698f916f8aad685931f629c2db2aae80cb31f38225984e863c26f49116dd  config-samsung-chagallwifi.armv7
+5214a850d496bed9e17575bd0b52e9e4415bcbd5a89863f924c5bfed848f684c0a95e8d10c9ef93c0e00149f034cf5e897d1b268be35676a600b3ee6e1917501  01-netfilter-symbols.patch
+5fad0940e90da71277b70b6e72fbb75fcc5e12625e65f827ae896d448628b252b3312539f9c184b26ffe5ca3b343a56b388ea6addb7fe446c7d1ae2aefb4b51e  02-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+a3df24c8d9116a3ad3559aac5ce126049e9123df633990ec72facd64ef538ed773e3ac0da233f2e04d99164d590340d598cfb3da3bbea502cf7c2cd3ef08cf24  03-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

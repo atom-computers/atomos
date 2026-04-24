@@ -1,0 +1,6 @@
+# /etc/conf.d/modemmanager: config file for modemmanager
+
+# Add extra command line options to modemmanager, use with care
+# ModemManager --help for possible values
+# Use quick suspend/resume hooks
+modemmanager_opts="--test-quick-suspend-resume"

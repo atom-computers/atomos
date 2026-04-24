@@ -1,0 +1,3 @@
+# prevent from getting woken up by volume up / down in Phosh / Gnome Mobile
+SUBSYSTEM=="input", KERNEL=="event*", \
+ENV{GM_WAKEUP_KEY_114}="0", ENV{GM_WAKEUP_KEY_115}="0"

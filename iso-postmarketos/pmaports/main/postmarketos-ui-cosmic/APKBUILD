@@ -1,0 +1,91 @@
+# Reference: https://postmarketos.org/uipkg
+# Contributor: Aster Boese <asterboese@mailbox.org>
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-ui-cosmic
+pkgver=2
+pkgrel=4
+pkgdesc="COSMIC Desktop Environment from System76"
+url="https://system76.com/cosmic/"
+# Only tested on these archs.
+# If you want to add support for a new arch add it here and in the Alpine
+# packages and build locally.
+arch="x86_64 aarch64 ppc64le loongarch64"
+license="GPL-3.0-or-later"
+depends="
+	bluez
+	cosmic-session
+	gst-thumbnailers
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio-backend-pipewire
+	postmarketos-base-ui-networkmanager
+	power-profiles-provider
+	upower
+	xdg-desktop-portal-gtk
+	xdg-user-dirs
+"
+_pmb_recommends="
+	cosmic-edit
+	cosmic-initial-setup
+	cosmic-player
+	cosmic-store
+	cosmic-term
+	firefox-esr
+	flatpak
+	gnome-keyring
+	gst-libav
+	gst-plugins-bad
+	gst-plugins-good
+	gst-plugins-rs-dav1d
+	papers
+	postmarketos-artwork-wallpapers
+	snapshot
+	tuned-ppd
+"
+source="
+	amplification_sink.conf
+	favorites.conf
+	wallpaper.conf
+"
+subpackages="$pkgname-openrc"
+options="!check pmb:drm pmb:systemd"
+replaces="
+	cosmic-applets
+	cosmic-bg
+"
+
+package() {
+	install -Dm644 wallpaper.conf \
+		"$pkgdir"/usr/share/cosmic/com.system76.CosmicBackground/v1/all
+	install -Dm644 favorites.conf \
+		"$pkgdir"/usr/share/cosmic/com.system76.CosmicAppList/v1/favorites
+	install -Dm644 amplification_sink.conf \
+		"$pkgdir"/usr/share/cosmic/com.system76.CosmicAudio/v1/amplification_sink
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="
+		$subpkgname.post-install
+		$subpkgname.post-upgrade
+		"
+	depends="
+		bluez-openrc
+		cosmic-greeter-openrc
+		elogind-openrc
+		networkmanager-openrc
+		openrc
+		seatd
+		seatd-openrc
+		"
+	_pmb_recommends="
+		tuned-ppd-openrc
+		"
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+a0d71be3f1c5b3da25c46a98d2c86aaa3e2fc256c5ae7fcd648ee296e7428b6978fcf994be1103ada28a8051619843e3b26174124aa804f76d550c68c4fcc1c0  amplification_sink.conf
+671a0c696edbed71355c0ff842259d27a8eb2466ed472ac3c8de2a72c0f764cc02be3fb683f8dd709b7ba72fe2e07c7691240d84c01a639110df9e3b11a45abe  favorites.conf
+2f665d5040072aa2172a4755a1cd8c03ff950ae1d5cc1fe888f74ea1cca4587bb065686507849d81429c49a78c5baaa877231dd4bbe49c351c7978ce82789041  wallpaper.conf
+"

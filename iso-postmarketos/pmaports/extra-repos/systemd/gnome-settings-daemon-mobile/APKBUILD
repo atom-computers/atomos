@@ -1,0 +1,105 @@
+# Forked from Alpine for systemd support
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=gnome-settings-daemon-mobile
+_pkgver=48.0
+pkgver=9999$_pkgver
+pkgrel=1
+pkgdesc="GNOME settings daemon"
+url="https://gitlab.gnome.org/verdre/gnome-settings-daemon-mobile"
+# armhf: pmb#2618
+arch="all !armhf"
+options="!check" # tests fail on builders
+license="GPL-2.0-only AND LGPL-2.1-only"
+depends="pulseaudio"
+provides="gnome-settings-daemon=$pkgver-r$pkgrel"
+depends_dev="
+	alsa-lib-dev
+	colord-dev
+	cups-dev
+	geoclue-dev
+	geocode-glib-dev>=3.26.4-r1
+	lcms2-dev
+	libcanberra-dev
+	libgweather4-dev
+	libnotify-dev
+	libwacom-dev
+	modemmanager-dev
+	networkmanager-dev
+	nss-dev
+	pango-dev
+	polkit-dev
+	pulseaudio-dev
+	systemd-dev
+	upower-dev
+	"
+makedepends="
+	$depends_dev
+	coreutils
+	gcr4-dev
+	glib-dev
+	gnome-desktop-dev
+	gsettings-desktop-schemas-dev
+	gtk+3.0-dev
+	libxml2-utils
+	meson
+	"
+# checkdepends="
+# 	gnome-session
+# 	gnome-shell
+# 	py3-dbusmock
+# 	py3-gobject3
+# 	umockdev-dev
+# 	"
+subpackages="
+	$pkgname-dev
+	$pkgname-lang
+	$pkgname-systemd
+	"
+_commit=48.mobile.0
+_gvc_commit="47c47a423ff2f55bb038d92517e4782cf051496a"
+source="gnome-settings-daemon-mobile-$_commit.tar.gz::https://gitlab.gnome.org/verdre/gnome-settings-daemon-mobile/-/archive/$_commit/gnome-settings-daemon-mobile-$_commit.tar.gz
+	https://gitlab.gnome.org/GNOME/libgnome-volume-control/-/archive/$_gvc_commit/libgnome-volume-control-$_gvc_commit.tar.gz
+	pcver.patch
+	"
+builddir="$srcdir/$pkgname-$_commit"
+
+build() {
+	rm -rf "$builddir/subprojects/gvc"
+	mv "$srcdir/libgnome-volume-control-$_gvc_commit" $builddir/subprojects/gvc
+	abuild-meson \
+		-Db_lto=true \
+		-Dsystemd=true \
+		. output
+	meson compile -C output
+}
+
+dev() {
+	provides="gnome-settings-daemon-dev=$pkgver-r$pkgrel"
+	default_dev
+}
+
+systemd() {
+	provides="gnome-settings-daemon-systemd=$pkgver-r$pkgrel"
+	default_systemd
+}
+
+lang() {
+	provides="gnome-settings-daemon-lang=$pkgver-r$pkgrel"
+	default_lang
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+a09224513481df755e8461bdedb4c3a933a840c67ae9cd1efbb0bf42f0b7eb711d8d963d32c8e010491ac5e881c1152296c0c0d2454876e0048fe3e9af1be1e4  gnome-settings-daemon-mobile-48.mobile.0.tar.gz
+f1575dd86772e4bad9357f0322b2ba396478ec45a691c072c4ff98c299d8814aaaf0386fb90f883b3862f88495a07177453ac0fb163ce2b17eb7bb5e65ca5d6c  libgnome-volume-control-47c47a423ff2f55bb038d92517e4782cf051496a.tar.gz
+8639f116d56710eb204091fde66c250349f1d3f01951afc5218a59b53125320347fdefd432d19470ca00e105473640946d7ad0b620ae1162ab67f7d13653c987  pcver.patch
+"

@@ -1,0 +1,479 @@
+From 0e6f5534d67ebff379589213ab860233338ed758 Mon Sep 17 00:00:00 2001
+From: Edwin Cheng <edwin0cheng@gmail.com>
+Date: Fri, 26 Feb 2021 00:42:51 +0800
+Subject: [PATCH] framebuffer fixes
+
+---
+ drivers/video/msm/mdss/Makefile              |   3 +-
+ drivers/video/msm/mdss/mdss_fb.c             | 158 +++++++++++++++++--
+ drivers/video/msm/mdss/mdss_fb.h             |   2 +
+ drivers/video/msm/mdss/mdss_mdp.c            |   6 +-
+ drivers/video/msm/mdss/mdss_mdp_intf_video.c |   2 +-
+ drivers/video/msm/mdss/mdss_mdp_kcal_ctrl.c  |   3 +-
+ drivers/video/msm/mdss/mdss_mdp_overlay.c    |   5 +
+ drivers/video/msm/mdss/mdss_mdp_pp.c         |   5 +
+ 8 files changed, 162 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/video/msm/mdss/Makefile b/drivers/video/msm/mdss/Makefile
+index 27050a26d9b..ade54701ee8 100644
+--- a/drivers/video/msm/mdss/Makefile
++++ b/drivers/video/msm/mdss/Makefile
+@@ -40,7 +40,6 @@ mdss-qpic-objs := mdss_qpic.o mdss_fb.o mdss_qpic_panel.o
+ obj-$(CONFIG_FB_MSM_QPIC) += mdss-qpic.o
+ obj-$(CONFIG_FB_MSM_QPIC_ILI_QVGA_PANEL) += qpic_panel_ili_qvga.o
+ 
+-obj-$(CONFIG_FB_MSM_MDSS) += mdss_fb.o
+ obj-$(CONFIG_FB_MSM_MDSS) += lcd_notify.o
+ 
+ ifeq ($(CONFIG_FB_MSM_MDSS_MDP3),y)
+@@ -50,3 +49,5 @@ obj-$(CONFIG_FB_MSM_MDSS_DSI_CTRL_STATUS) += mdss_dsi_status.o
+ endif
+ 
+ obj-$(CONFIG_FB_MSM_MDSS_KCAL_CTRL) += mdss_mdp_kcal_ctrl.o
++
++obj-$(CONFIG_FB_MSM_MDSS) += mdss_fb.o
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index 030d4129fc8..976428e25fe 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -60,6 +60,8 @@
+ #define MDSS_FB_NUM 2
+ #endif
+ 
++#define INVALID_PIPE_INDEX 0xFFFF
++
+ #define MAX_FBI_LIST 32
+ static struct fb_info *fbi_list[MAX_FBI_LIST];
+ static int fbi_list_index;
+@@ -96,6 +98,14 @@ static int __mdss_fb_display_thread(void *data);
+ static int mdss_fb_pan_idle(struct msm_fb_data_type *mfd);
+ static int mdss_fb_send_panel_event(struct msm_fb_data_type *mfd,
+ 					int event, void *arg);
++static int mdss_fb_pending_probe(struct msm_fb_data_type* mfd);
++
++static int mdss_fb_fillrect(struct fb_info *info, const struct fb_fillrect *rect);
++static int mdss_fb_copyarea(struct fb_info *info, const struct fb_copyarea *area);
++static int mdss_fb_imageblit(struct fb_info *info, const struct fb_image *image);
++static int mdss_fb_setcolreg(unsigned regno, unsigned red, unsigned green,
++			    unsigned blue, unsigned transp, struct fb_info *info);
++
+ void mdss_fb_no_update_notify_timer_cb(unsigned long data)
+ {
+ 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)data;
+@@ -483,6 +493,8 @@ static int mdss_fb_probe(struct platform_device *pdev)
+ 	mfd->bl_min_lvl = 30;
+ 	mfd->fb_imgType = MDP_RGBA_8888;
+ 
++	mfd->registered = false;
++
+ 	mfd->pdev = pdev;
+ 	if (pdata->next)
+ 		mfd->split_display = true;
+@@ -500,6 +512,16 @@ static int mdss_fb_probe(struct platform_device *pdev)
+ 	if (rc)
+ 		return rc;
+ 
++	if (!mfd->registered)
++		rc = mdss_fb_pending_probe(mfd);
++	return rc;
++}
++
++static int mdss_fb_pending_probe(struct msm_fb_data_type *mfd) {
++	int rc;
++	struct platform_device *pdev = mfd->pdev;
++	struct fb_info *fbi = mfd->fbi;
++
+ 	if (mfd->mdp.init_fnc) {
+ 		rc = mfd->mdp.init_fnc(mfd);
+ 		if (rc) {
+@@ -568,6 +590,7 @@ static int mdss_fb_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	INIT_DELAYED_WORK(&mfd->idle_notify_work, __mdss_fb_idle_notify_work);
++	mfd->registered = true;
+ 
+ 	return rc;
+ }
+@@ -578,6 +601,10 @@ static int mdss_fb_remove(struct platform_device *pdev)
+ 
+ 	mfd = (struct msm_fb_data_type *)platform_get_drvdata(pdev);
+ 
++	if(mfd && !mfd->registered) {
++		return -EINVAL;
++	}
++
+ 	mdss_fb_remove_sysfs(mfd);
+ 
+ 	pm_runtime_disable(mfd->fbi->dev);
+@@ -933,6 +960,11 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
+ {
+ 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+ 
++	if (mfd && !mfd->registered) {
++		pr_err("try to blank unregistered fb");
++		return -EINVAL;
++	}
++
+ 	mdss_fb_pan_idle(mfd);
+ 	if (mfd->op_enable == 0) {
+ 		if (blank_mode == FB_BLANK_UNBLANK)
+@@ -958,6 +990,11 @@ static int mdss_fb_mmap(struct fb_info *info, struct vm_area_struct *vma)
+ 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+ 	int ret = 0;
+ 
++	if (mfd && !mfd->registered) {
++		pr_err("try to mmap unregistered fb");
++		return -EINVAL;
++	}
++
+ 	if (!start) {
+ 		pr_warn("No framebuffer memory is allocated.\n");
+ 		return -ENOMEM;
+@@ -1010,14 +1047,62 @@ static struct fb_ops mdss_fb_ops = {
+ 	.owner = THIS_MODULE,
+ 	.fb_open = mdss_fb_open,
+ 	.fb_release = mdss_fb_release,
+-	.fb_check_var = mdss_fb_check_var,	/* vinfo check */
++	// .fb_check_var = mdss_fb_check_var,	/* vinfo check, which is optional */
+ 	.fb_set_par = mdss_fb_set_par,	/* set the video mode */
+ 	.fb_blank = mdss_fb_blank,	/* blank display */
+ 	.fb_pan_display = mdss_fb_pan_display,	/* pan display */
+ 	.fb_ioctl = mdss_fb_ioctl,	/* perform fb specific ioctl */
+ 	.fb_mmap = mdss_fb_mmap,
++
++	.fb_fillrect = mdss_fb_fillrect,
++	.fb_copyarea = mdss_fb_copyarea,
++	.fb_imageblit = mdss_fb_imageblit,
++
++	.fb_setcolreg = mdss_fb_setcolreg,
+ };
+ 
++static int mdss_fb_fillrect(struct fb_info *info, const struct fb_fillrect *rect) {
++	cfb_fillrect(info, rect);
++	return 0;
++}
++
++static int mdss_fb_copyarea(struct fb_info *info, const struct fb_copyarea *area) {
++	cfb_copyarea(info, area);
++	return 0;
++}
++
++static int mdss_fb_imageblit(struct fb_info *info, const struct fb_image *image) {
++	cfb_imageblit(info, image);
++	return 0;
++}
++
++#define CMAP_TOHW(_val, _width) ((((_val) << (_width)) + 0x7FFF - (_val)) >> 16)
++
++static int mdss_fb_setcolreg(unsigned color_index, unsigned red, unsigned green,
++			    unsigned blue, unsigned transp, struct fb_info *info) {
++	struct msm_fb_data_type* mfd;
++
++	if (color_index > 255)
++		return 1;
++
++	red = CMAP_TOHW(red, info->var.red.length);
++	blue = CMAP_TOHW(blue, info->var.blue.length);
++	green = CMAP_TOHW(green, info->var.green.length);
++	transp = CMAP_TOHW(transp, info->var.transp.length);
++
++	if (info->fix.visual == FB_VISUAL_TRUECOLOR) {
++		// Do any required translations to convert red, blue, green and
++		// transp, to values that can be directly fed to the hardware
++		((u32 *)(info->pseudo_palette))[color_index] =
++			(red << info->var.red.offset)     |
++			(green << info->var.green.offset) |
++			(blue << info->var.blue.offset)   |
++			(transp << info->var.transp.offset);
++	}
++
++	return 0;
++}
++
+ static int mdss_fb_alloc_fbmem_iommu(struct msm_fb_data_type *mfd, int dom)
+ {
+ 	void *virt = NULL;
+@@ -1067,7 +1152,6 @@ static int mdss_fb_alloc_fbmem_iommu(struct msm_fb_data_type *mfd, int dom)
+ 
+ static int mdss_fb_alloc_fbmem(struct msm_fb_data_type *mfd)
+ {
+-
+ 	if (mfd->mdp.fb_mem_alloc_fnc)
+ 		return mfd->mdp.fb_mem_alloc_fnc(mfd);
+ 	else if (mfd->mdp.fb_mem_get_iommu_domain) {
+@@ -1109,7 +1193,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 	var->yoffset = 0,	/* resolution */
+ 	var->grayscale = 0,	/* No graylevels */
+ 	var->nonstd = 0,	/* standard pixel format */
+-	var->activate = FB_ACTIVATE_VBL,	/* activate it at vsync */
++	var->activate = FB_ACTIVATE_VBL | FB_ACTIVATE_FORCE,	/* activate it at vsync */
+ 	var->height = -1,	/* height of picture in mm */
+ 	var->width = -1,	/* width of picture in mm */
+ 	var->accel_flags = 0,	/* acceleration flags */
+@@ -1161,16 +1245,16 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 		fix->xpanstep = 1;
+ 		fix->ypanstep = 1;
+ 		var->vmode = FB_VMODE_NONINTERLACED;
+-		var->blue.offset = 0;
+-		var->green.offset = 8;
+-		var->red.offset = 16;
++		var->blue.offset = 24;
++		var->green.offset = 16;
++		var->red.offset = 8;
+ 		var->blue.length = 8;
+ 		var->green.length = 8;
+ 		var->red.length = 8;
+ 		var->blue.msb_right = 0;
+ 		var->green.msb_right = 0;
+ 		var->red.msb_right = 0;
+-		var->transp.offset = 24;
++		var->transp.offset = 0;
+ 		var->transp.length = 8;
+ 		bpp = 4;
+ 		break;
+@@ -1180,16 +1264,16 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 		fix->xpanstep = 1;
+ 		fix->ypanstep = 1;
+ 		var->vmode = FB_VMODE_NONINTERLACED;
+-		var->blue.offset = 8;
+-		var->green.offset = 16;
+-		var->red.offset = 24;
++		var->blue.offset = 16;
++		var->green.offset = 8;
++		var->red.offset = 0;
+ 		var->blue.length = 8;
+ 		var->green.length = 8;
+ 		var->red.length = 8;
+ 		var->blue.msb_right = 0;
+ 		var->green.msb_right = 0;
+ 		var->red.msb_right = 0;
+-		var->transp.offset = 0;
++		var->transp.offset = 24;
+ 		var->transp.length = 8;
+ 		bpp = 4;
+ 		break;
+@@ -1301,7 +1385,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 	}
+ 
+ 	pr_info("FrameBuffer[%d] %dx%d size=%d registered successfully!\n",
+-		     mfd->index, fbi->var.xres, fbi->var.yres,
++		     mfd->index, mfd->fbi->var.xres, mfd->fbi->var.yres,
+ 		     fbi->fix.smem_len);
+ 
+ 	return 0;
+@@ -1314,6 +1398,16 @@ static int mdss_fb_open(struct fb_info *info, int user)
+ 	int result;
+ 	int pid = current->tgid;
+ 
++	if (mfd && !mfd->registered) {
++		pr_info("Try to open unregister fb\n");
++		result = mdss_fb_pending_probe(mfd);
++		if (result < 0) {
++			pr_err("unable to unfinish register fb\n");
++			return -EINVAL;
++		}
++		pr_warn("successfully register pending fb\n");
++	}
++
+ 	if (mfd->shutdown_pending) {
+ 		pr_err("Shutdown pending. Aborting operation\n");
+ 		return -EPERM;
+@@ -1339,7 +1433,7 @@ static int mdss_fb_open(struct fb_info *info, int user)
+ 	result = pm_runtime_get_sync(info->dev);
+ 
+ 	if (result < 0) {
+-		pr_err("pm_runtime: fail to wake up\n");
++		pr_err("pm_runtime: fail to wake up, error = %d\n", result);
+ 		goto pm_error;
+ 	}
+ 
+@@ -1398,6 +1492,11 @@ static int mdss_fb_release_all(struct fb_info *info, bool release_all)
+ 	bool unknown_pid = true, release_needed = false;
+ 	struct task_struct *task = current->group_leader;
+ 
++	if (mfd && !mfd->registered) {
++		pr_info("try to close unregistered fb");
++		return -EINVAL;
++	}
++
+ 	if (!mfd->ref_cnt) {
+ 		pr_info("try to close unopened fb %d! from %s\n", mfd->index,
+ 			task->comm);
+@@ -1700,6 +1799,11 @@ static int mdss_fb_pan_display_ex(struct fb_info *info,
+ 	if (!mfd || (!mfd->op_enable) || (!mfd->panel_power_on))
+ 		return -EPERM;
+ 
++	if (mfd && !mfd->registered) {
++		pr_err("try to pan display unregistered fb");
++		return -EINVAL;
++	}
++
+ 	if (var->xoffset > (info->var.xres_virtual - info->var.xres))
+ 		return -EINVAL;
+ 
+@@ -1747,6 +1851,9 @@ static int mdss_fb_pan_display_sub(struct fb_var_screeninfo *var,
+ 			       struct fb_info *info)
+ {
+ 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
++	int pipe_index[2] = { INVALID_PIPE_INDEX, INVALID_PIPE_INDEX};
++
++	pr_debug("mdss_fb_pan_display_sub");
+ 
+ 	if ((!mfd->op_enable) || (!mfd->panel_power_on))
+ 		return -EPERM;
+@@ -1765,8 +1872,12 @@ static int mdss_fb_pan_display_sub(struct fb_var_screeninfo *var,
+ 		info->var.yoffset =
+ 		(var->yoffset / info->fix.ypanstep) * info->fix.ypanstep;
+ 
+-	if (mfd->mdp.dma_fnc)
+-		mfd->mdp.dma_fnc(mfd, NULL, 0, NULL);
++	if (mfd->mdp.dma_fnc) {
++		mfd->mdp.dma_fnc(mfd, NULL, 0, &pipe_index);
++		if (pipe_index[0] == INVALID_PIPE_INDEX) {
++			return -EINVAL;
++		}
++	}
+ 	else
+ 		pr_warn("dma function not set for panel type=%d\n",
+ 				mfd->panel.type);
+@@ -1864,6 +1975,11 @@ static int mdss_fb_check_var(struct fb_var_screeninfo *var,
+ {
+ 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+ 
++	if (mfd && !mfd->registered) {
++		pr_info("try to check unregistered var");
++		return -EINVAL;
++	}
++
+ 	if (var->rotate != FB_ROTATE_UR)
+ 		return -EINVAL;
+ 	if (var->grayscale != info->var.grayscale)
+@@ -1980,6 +2096,11 @@ static int mdss_fb_set_par(struct fb_info *info)
+ 	int old_imgType;
+ 	int ret = 0;
+ 
++	if (mfd && !mfd->registered) {
++		pr_info("try to set par for unregistered fb");
++		return -EINVAL;
++	}
++
+ 	ret = mdss_fb_pan_idle(mfd);
+ 	if (ret) {
+ 		pr_err("Shutdown pending. Aborting operation\n");
+@@ -2006,7 +2127,7 @@ static int mdss_fb_set_par(struct fb_info *info)
+ 		break;
+ 
+ 	case 32:
+-		if (var->transp.offset == 24)
++		if (var->transp.offset == 0)
+ 			mfd->fb_imgType = MDP_ARGB_8888;
+ 		else
+ 			mfd->fb_imgType	= MDP_RGBA_8888;
+@@ -2331,6 +2452,11 @@ static int mdss_fb_ioctl(struct fb_info *info, unsigned int cmd,
+ 	if (!mfd)
+ 		return -EINVAL;
+ 
++	if (mfd && !mfd->registered) {
++		pr_err("try to ioctl unregistered fb");
++		return -EINVAL;
++	}
++
+ 	if (mfd->shutdown_pending)
+ 		return -EPERM;
+ 
+diff --git a/drivers/video/msm/mdss/mdss_fb.h b/drivers/video/msm/mdss/mdss_fb.h
+index 2b4c1245dcb..68b20acf775 100644
+--- a/drivers/video/msm/mdss/mdss_fb.h
++++ b/drivers/video/msm/mdss/mdss_fb.h
+@@ -172,6 +172,8 @@ struct msm_fb_data_type {
+ 	int idle_time;
+ 	struct delayed_work idle_notify_work;
+ 
++    bool registered;
++
+ 	int op_enable;
+ 	u32 fb_imgType;
+ 	int panel_reconfig;
+diff --git a/drivers/video/msm/mdss/mdss_mdp.c b/drivers/video/msm/mdss/mdss_mdp.c
+index 92be0a9c9fc..e1eafe6bc7f 100644
+--- a/drivers/video/msm/mdss/mdss_mdp.c
++++ b/drivers/video/msm/mdss/mdss_mdp.c
+@@ -2132,10 +2132,10 @@ static void mdss_mdp_parse_dt_fudge_factors(struct platform_device *pdev,
+ 	rc = mdss_mdp_parse_dt_handler(pdev, prop_name, data, 2);
+ 	if (rc) {
+ 		pr_err("err reading %s\n", prop_name);
+-	} else {
+-		ff->numer = data[0];
+-		ff->denom = data[1];
+ 	}
++
++    ff->numer = data[0];
++    ff->denom = data[1];
+ }
+ 
+ static int mdss_mdp_parse_dt_prefill(struct platform_device *pdev)
+diff --git a/drivers/video/msm/mdss/mdss_mdp_intf_video.c b/drivers/video/msm/mdss/mdss_mdp_intf_video.c
+index 32fe1ba427e..bdbb0e3d8b4 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_intf_video.c
++++ b/drivers/video/msm/mdss/mdss_mdp_intf_video.c
+@@ -539,7 +539,7 @@ static int mdss_mdp_video_config_fps(struct mdss_mdp_ctl *ctl,
+ 	int rc = 0;
+ 	u32 hsync_period, vsync_period;
+ 
+-	pr_debug("Updating fps for ctl=%d\n", ctl->num);
++	pr_info("Updating fps for ctl=%d\n", ctl->num);
+ 
+ 	ctx = (struct mdss_mdp_video_ctx *) ctl->priv_data;
+ 	if (!ctx) {
+diff --git a/drivers/video/msm/mdss/mdss_mdp_kcal_ctrl.c b/drivers/video/msm/mdss/mdss_mdp_kcal_ctrl.c
+index e9da0516b3a..3dce36ad15c 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_kcal_ctrl.c
++++ b/drivers/video/msm/mdss/mdss_mdp_kcal_ctrl.c
+@@ -385,7 +385,8 @@ static void __exit kcal_ctrl_exit(void)
+ 	platform_driver_unregister(&kcal_ctrl_driver);
+ }
+ 
+-late_initcall(kcal_ctrl_init);
++//late_initcall(kcal_ctrl_init);
++module_init(kcal_ctrl_init);
+ module_exit(kcal_ctrl_exit);
+ 
+ MODULE_DESCRIPTION("LCD KCAL Driver");
+diff --git a/drivers/video/msm/mdss/mdss_mdp_overlay.c b/drivers/video/msm/mdss/mdss_mdp_overlay.c
+index 07dde330b93..955ffa95d58 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_overlay.c
++++ b/drivers/video/msm/mdss/mdss_mdp_overlay.c
+@@ -1652,9 +1652,14 @@ static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd,
+ 	}
+ 	mutex_unlock(&mdp5_data->ov_lock);
+ 
++    /*
+ 	if ((fbi->var.activate & FB_ACTIVATE_VBL) ||
+ 	    (fbi->var.activate & FB_ACTIVATE_FORCE))
+ 		mfd->mdp.kickoff_fnc(mfd, NULL);
++    */
++    // @edwin Always force kickoff the fb
++    // otherwise suppend mode will not work
++    mfd->mdp.kickoff_fnc(mfd, NULL);
+ 
+ 	return;
+ 
+diff --git a/drivers/video/msm/mdss/mdss_mdp_pp.c b/drivers/video/msm/mdss/mdss_mdp_pp.c
+index 6a1d9bbc5c3..3c89f00d586 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_pp.c
++++ b/drivers/video/msm/mdss/mdss_mdp_pp.c
+@@ -2518,6 +2518,11 @@ static void pp_update_gc_one_lut(char __iomem *addr,
+ {
+ 	int i, start_idx, idx;
+ 
++    if( addr == NULL || lut_data == NULL ) {
++        pr_warn("addr = %p, lut_data = %p", addr, lut_data);
++        return;
++    }
++
+ 	start_idx = ((readl_relaxed(addr) >> 16) & 0xF) + 1;
+ 	for (i = start_idx; i < GC_LUT_SEGMENTS; i++) {
+ 		idx = min((uint8_t)i, (uint8_t)(num_stages-1));
+-- 
+2.30.1
+

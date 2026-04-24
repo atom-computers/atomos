@@ -1,0 +1,84 @@
+pkgname=firmware-samsung-gts210
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Samsung tablets based on exynos5433"
+url="https://github.com/universal5433/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# gts210lte and gts210wifi share most wifi fw files, keep them in
+# main firmware-samsung-gts210 package. The non-shared files are put in
+# subpackages firmware-samsung-gts210-{lte,wifi}.
+subpackages="$pkgname-lte"
+
+# Source
+_commit="be9861bee2728486d5da4c7b700800cef97127d7"
+_url="$url/raw/$_commit"
+
+_gts210_wifi_files_common="
+	bcmdhd_apsta.bin
+	bcmdhd_apsta.bin_4358
+	bcmdhd_apsta.bin_a1
+	bcmdhd_ibss.bin
+	bcmdhd_ibss.bin_4358
+	bcmdhd_ibss.bin_a1
+	bcmdhd_mfg.bin
+	bcmdhd_mfg.bin_4358
+	bcmdhd_mfg.bin_a1
+	bcmdhd_sta.bin
+	bcmdhd_sta.bin_4358
+	bcmdhd_sta.bin_a1
+	cred.conf
+	nvram_mfg.txt_4358_a1
+	nvram_net.txt_4358_a1
+"
+
+_gts210_wifi_files_lte="
+	nvram_mfg.txt
+	nvram_net.txt
+"
+
+for _i in $_gts210_wifi_files_common; do
+	source="$source $pkgname-$_commit-$_i::$_url/gts210ltexx/proprietary/system/vendor/etc/wifi/$_i";
+done
+
+for _i in $_gts210_wifi_files_lte; do
+	source="$source $pkgname-$_commit-$_i::$_url/gts210ltexx/proprietary/system/vendor/etc/wifi/$_i";
+done
+
+package() {
+	local file
+	for file in $_gts210_wifi_files_common; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+		    "$pkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+
+lte() {
+	local file
+	for file in $_gts210_wifi_files_lte; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+		    "$subpkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+
+sha512sums="
+069acc0a495bc83afa1e071c4d3d5d3d4d2315c0807ce16ef0eaa49d86eb04dcfaaad1d14eda6d1e10efb0688e373edf935f4010c533503e9c86a46b9ed20a99  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_apsta.bin
+81cd331ecdf90b098904f7d19e4fe0696de94aa95052ac70723f58cdf6a730f3c63e88a384b862ba2616e85362af4e6f6d82559b0df0106ab1c36f1a03eef542  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_apsta.bin_4358
+43afbd2754a5f6cf8e27af95ac850574a8fede7265388fc37eca5b5b37a0a11f4838ce144b39f39d1c16874e9ff420f9e3e9a49dbffda9a210b2d68d222aae9a  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_apsta.bin_a1
+2a33533174d7946878b8c0a40c435fd7b280f60c9547865c783a47f53210894ec8ba3f529dd8e9bf1db9f4b2182e2257d2110efcd148ceaca0fcf01ad3312f06  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_ibss.bin
+cf15bf3b5797ef344c24189b14cf9e6177544babf744a40deb4e56fffca56d9714cb1870522a790c79c972cb05951ff5e970116f54e1b6cd29c9647cf145a989  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_ibss.bin_4358
+6c9fd6fbd7848b18ade0292178d1f2b44fda9965e8e9d62e9419a80f3ebc256aa0204ae59e5264d1d22a30b9363af5e606448bce9a0c86df4a906342def7ccc4  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_ibss.bin_a1
+1c54df659ea269e7dd430e64709aaf78b6e79e9336e9192ad589d48b500ccdb3ccd1104d9aa17fb3cad59b8f42c52d8ab95a24184c8fa70c09049eba503fa002  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_mfg.bin
+087ce8dcfa39348eb038d37c630e03fa163ea5807a2ae44091853f913010b552fda3364eb28713c8121719db479069a0ca86ba68362bec60e146fa92ac548197  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_mfg.bin_4358
+fa4ab6bcbe5fcaf769f954d5f19fd5f58219ce9e10d49c18213b30b7a29f3805608492ce0c7586865f5300cf026af04e08c017de72d28b03c185e2dde2d231bf  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_mfg.bin_a1
+fcfd883c5e1a027c7864cf7e01023d6b954ea63218e886048c5feaeceeb05a09a190993d2fd7b185e08688600cec0aead8c8cf77433c9aae826ea2f2b3f77f7b  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_sta.bin
+b96a7507e245b9c0479bf37effcbe7a88a604bc045282a60917d085730452ad3fbf5fc84a9b115202a47903fdcb33b8dc27101d564d1f82107a5f9fe394f8539  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_sta.bin_4358
+e5c5271cd556fdf3658a8a18dfe687f163f79bf4c81e3aafbbb46f58877eb682ef3cce6e266df603eaa984c3f1d3210f15740003469f02dc2420e41d38b4c7f1  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-bcmdhd_sta.bin_a1
+16ee43800bf7c05f550a14036ef1d648999568996854c72c1ef3965a8fd18eabfda284266fa2e2a0fee8c5fec01fd9a7e22b11b6723797742b5a6260e0b44096  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-cred.conf
+48eea987097fd9c6693a2b037e40ee81dd65a9285045809f4e2c0061ef3d7c39fb7e9807e0c7c84920c21bcfc4b332be29e77b7602df9ad9ce6d37dbb370d0f8  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-nvram_mfg.txt_4358_a1
+9f1f26f68602b9671a4aa8548396747fd0ee49d761d19bd341bce4f0cb7625881dc61077626410ead70d525127880080c5329ef9406bdc182176b33ded0268da  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-nvram_net.txt_4358_a1
+068059064aca94ba1a6eed00b8d95ddbabd311bcacaa2bae54fa32e9103bfe89f10aea39afc21509ee610945e3dc571d1493e94390c4f07ca81368cbe0135ab3  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-nvram_mfg.txt
+037464b6f50f3d95e8b014187b494bc44b55a860f378a6870d96d30b84bd9d0c86abe86ab3a52e43031defff1213f913d0411f991938896ebaa51889fafaa922  firmware-samsung-gts210-be9861bee2728486d5da4c7b700800cef97127d7-nvram_net.txt
+"

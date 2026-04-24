@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="exkc <exxxxkc@getgoogleoff.me>"
+pkgname=device-radxa-zero
+pkgver=5
+pkgrel=0
+pkgdesc="Radxa Zero"
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-postmarketos-amlogic u-boot-amlogic-radxa-zero"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT firmware"
+	depends="firmware-radxa-zero linux-firmware-meson"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+b45c235d36e47e7d734d6e1965fc09e33ec07cc19680548a2f8430d4762aeef31b3e2776162577c03ddf7462f4d5e0e1a9c80491ec0cd58fcc772128483bb638  deviceinfo
+cf9d03ab06004b4629bde4eff29028ffb07edc512a08c397f773dc49bed1aa2aead46496333c530f51bc10b653eb3ac706966cbc86997cdc37c7518b24acc368  kernel-cmdline.conf
+b9f3e1902c17909de928c99868265a257ba5873f6ea6aa1097ad10721f59d68342d50ee51992472ecd23722f7664a13dd15f4e26071a40595c7c3e5161e533d7  modules-initfs
+"

@@ -1,0 +1,97 @@
+# Kernel config based on: arch/arm/configs/omap2plus_defconfig
+maintainer="Mithil Bavishi <bavishimithil@gmail.com>"
+pkgname=linux-postmarketos-omap
+pkgver=6.19.0
+pkgrel=0
+pkgdesc="Mainline kernel fork for OMAP devices"
+arch="armv7"
+url="https://kernel.org/"
+license="GPL-2.0-only"
+options="!check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bash
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+"
+_carch="arm"
+_flavor="postmarketos-omap"
+_config="config-$_flavor.armv7"
+
+case $pkgver in
+	*.*rc*)	_rc=1
+	        _kernver=$(echo $pkgver | tr '_' '-');;
+	*.*.0) _kernver=${pkgver%.0};;
+	*.*.*) _kernver=$pkgver;;
+esac
+
+if [ $_rc ]
+then
+	_kernsrc="linux-$pkgver.tar.gz::https://git.kernel.org/torvalds/t/linux-$_kernver.tar.gz"
+else
+	_kernsrc="https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kernver.tar.xz"
+fi
+
+source="
+	$_kernsrc
+	$_config
+	0001-Add-TWL6032-dtsi.patch
+	0002-arm-dts-Add-common-dtsi-for-espresso.patch
+	0003-arm-dts-Add-espresso7-support.patch
+	0004-arm-dts-Add-espresso10-support.patch
+	0005-Add-TWL6030-power-button-support-to-twl-pwrbutton.patch
+	0006-iio-rescale-revert-logic.patch
+	0007-hsi-ssi_port-force-pio-path.patch
+	0008-n900-dts-volume-keys.patch
+	0010-arm-dts-Add-barnesnoble-encore-support.patch
+	0011-panel-Add-lg-ld070ws1-for-barnesnoble-encore.patch
+"
+builddir="$srcdir/linux-$_kernver"
+replaces="linux-samsung-espresso3g linux-nokia-n900"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+01b29c7f4e5bc0c9802794c2cd027fece825f90417be229a71e60eefce530010d5d301749c54ae744e9d4a483518e769e2bb7e6e9209687681ad7fff11c3ed86  linux-6.19.tar.xz
+07194748500e39926dcb42c8bd240eff61efa150993c1a664986dc2cf26ba72bea07ad0835b2047825cd64fc452f9e3e5c264a6ebb4b483398d5160da99d6720  config-postmarketos-omap.armv7
+9a187d93885f07467ec67094621b2d762607d58622e67172bdfcd8ba5f3d6aab900ca5d233efd3d447540f9b906ba950083a35997c84b315801604e1cd5cddc3  0001-Add-TWL6032-dtsi.patch
+f7d1a87088c65278a114125e732d5bebebb560a6245afb34e003083d808ef3f8c5f49ff23131953508a6daae111ab6adfffdbcf56b79260a6d4115f859c7bb3a  0002-arm-dts-Add-common-dtsi-for-espresso.patch
+089ca0547997c7cd5d1b65924c134eb6b7703a7439729923d3639d125763412fa7e826d1cb839ac0b6cd22e614f69a3b52605a75b571e271c33f9a27ff6ac9c2  0003-arm-dts-Add-espresso7-support.patch
+97f6671bd6fa02d095b726793a3ae68a5b94b0a89719006121a6eaf1607c477f74446489a0f62250edc3c193945f571c92196c85ec8043ae18a141ea9adffd51  0004-arm-dts-Add-espresso10-support.patch
+a17ddc7a41ce2a6be04a8ee0ffcfb8dbb0381d1ce7fac8336befd79bc388ce5d16b6ba3a4732a540a43add55c43b015a3b77205a007a058d4d6e3291234b5cc0  0005-Add-TWL6030-power-button-support-to-twl-pwrbutton.patch
+1a68e3a32ae1e56d325c0f759ee66d64d14f46a5d52e75ae008dfddac335beb3aa7acaf62abb95b6d5ce1557f0cf9b4c31ab78e110af178db1ac963bb377dbf0  0006-iio-rescale-revert-logic.patch
+c3af9715b3559c2d593f4fcfa078730722c7deeec132c5b83e085ff4d9815d85ef349384097c580efe1bbc37c60f42e18ef559f0abccfe236080670e4403fa77  0007-hsi-ssi_port-force-pio-path.patch
+b98ce806b3d5a0122086e4c9670639174470ff6d29851c60258cc5d699ce9a479dbf4996b24299fc075d25e9fe8f6b1250fafdff742deea0ddeaf53d342a9d72  0008-n900-dts-volume-keys.patch
+2626cdd833bfbee5e714e224953533f02a7d1faba0d7c9b968ab728a28d70ebfb3a9ed46aab30e3784165c6eeeff3f26b482e188af5bc5c15de5c970d262c188  0010-arm-dts-Add-barnesnoble-encore-support.patch
+f03770e3c2f4c2876b31750f194646bbbe43b60fc7489ee9c54d1f6b36d72da4d2894b86dc47c1c9bf7676ef0c5d1788fa4f8c4d0f8eff1dd4e75d1ce4b9dfc8  0011-panel-Add-lg-ld070ws1-for-barnesnoble-encore.patch
+"

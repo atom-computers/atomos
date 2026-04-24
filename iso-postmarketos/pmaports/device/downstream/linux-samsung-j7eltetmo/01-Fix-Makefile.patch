@@ -1,0 +1,45 @@
+From 26e578b095d2ae3ae9adf24e660ac2903909c07e Mon Sep 17 00:00:00 2001
+From: nbe1233 <nbe1233@sdf.org>
+Date: Mon, 2 Aug 2021 22:20:27 -0700
+Subject: [PATCH 1/4] Fix Makefile
+Explicitly use gnu89 standard, and clears CROSS_COMPILE in the use case
+that the host machine is also aarch64.
+---
+ Makefile | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 8627ce8a..b202de97 100755
+--- a/Makefile
++++ b/Makefile
+@@ -194,7 +194,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ export KBUILD_BUILDHOST := $(SUBARCH)
+ ARCH		?=arm64
+-CROSS_COMPILE	?=../PLATFORM/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
++CROSS_COMPILE	?=
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+@@ -242,7 +242,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
+ 
+ HOSTCC       = gcc
+ HOSTCXX      = g++
+-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
++HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
+ HOSTCXXFLAGS = -O2
+ 
+ # Decide whether to build built-in, modular, or both.
+@@ -380,7 +380,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+ 		   -Werror-implicit-function-declaration \
+ 		   -Wno-format-security \
+ 		   -fno-delete-null-pointer-checks \
+-		   -fdiagnostics-show-option -Werror
++		   -fdiagnostics-show-option -Werror \
++		   -std=gnu89
+ KBUILD_AFLAGS_KERNEL :=
+ KBUILD_CFLAGS_KERNEL :=
+ KBUILD_AFLAGS   := -D__ASSEMBLY__
+-- 
+2.32.0
+

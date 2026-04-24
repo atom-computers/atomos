@@ -1,0 +1,48 @@
+pkgname=firmware-xiaomi-armani
+pkgver=1
+pkgrel=3
+pkgdesc="Firmware files for Xiaomi Redmi 1S"
+url="https://github.com/TheMuppets/proprietary_vendor_xiaomi"
+arch="armhf"
+license="proprietary"
+depends="wcnss-wlan"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07
+	wcnss.b08 wcnss.b09 wcnss.mdt"
+_files_prima="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+_commit="20c75ad6131d16bb4b0daf54dd64cc6612f222f5"
+_commit_prima="1815c7a6e5a9d124ae44d0290cd2e4a75dd338cf"
+_url="https://gitlab.com/the-muppets/proprietary_vendor_xiaomi/raw/$_commit/armani/proprietary/etc/firmware"
+_url_prima="https://github.com/LineageOS/android_device_xiaomi_armani/raw/$_commit_prima/wifi"
+for _i in $_files; do
+	source="$source $pkgname-$_commit-$_i::$_url/$_i"
+done
+for _i in $_files_prima; do
+	source="$source $pkgname-$_commit-$_i::$_url_prima/$_i"
+done
+
+package() {
+	for _i in $_files; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files_prima; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="08d47e5c5c64099f014db869eea307a157fd347ff6834e3e7e4f69dfba3f82155b4a0d78599d3f1c6ad803c7debcfe9ad55052c32861d34631351658259a71fc  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b00
+cd89779564b3d6a4c74601d46bc925879d6601d427d709bdb55fa019270fb6f3edf7c2dad4366b1fa926a504ebb5b6ebcfb5b342b5b51be1550fe7ec8ca1725a  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b01
+f698d619ad43bc280c87af43852f0f81b319860ea04dcb8c74d89a785f15faf33657a60b1b82f0faac3a7e5d2591b1ec18a217eb76b55053ca801959de75acf5  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b02
+cbbfa987ab510173d95a36cc4342049607ec198465a659103ce8399429dd12e98a7cc3bdfb586575d43f250ff8fa9e6442c3dac1bf8a7479c46993bff2820a28  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b04
+cc8b6ea1f8cce96849e932fd3bdd1b3c808a0415b684deed0f84b81560fe2626cc4b05a942d05a1afd8dfa79fbd83a5f4aa93ffa0cff900cf604774f8a73a306  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b06
+2146aa8ab60c48acff43ae8c33c5da4c2586f20a39f8f1308aefb6f833b758ad7158bd5e9a386e45feba446f33855d393857b557fe8ba6fe52364e7a7af3be9b  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b07
+6033893c75b32cc906bcabdff02fdbbbb75f0b4d568962b38ea023c00b2273f90bce4482358d4ecc64c22bceaa628d55d17877c8301a1406f67c55c86fc08723  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b08
+45a8cf6ad5986cbf754cf28ef29fc44315781a3256fe38b185fde57cd619804460f9db28bf9222b6732464e938a70ead7a9bbb06a61c94dc2b43639335deea6b  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.b09
+a29b06bff302a42b52537f1daef48802928b0453e9b585005692a7f10cc68d532b39b4d073b74bb8180bde5fe70506f510affb8351187350637ac2fd2ceaaeea  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-wcnss.mdt
+619df454e0dc65ab62894b7f328c015729e8261919032ee9096bb4f983ddd6f7b98dd14f593b4c6b75cf86c09f090a9cde7674f4c8197cda927a2ac47111cd2e  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-WCNSS_cfg.dat
+56c8c2e32227b3e0b45e9755f8f166f64755a45c4a4ff2410f0ee13f17156f84b2906b953c41bdced5585e42f735a7f43dbf7b578cf4e90042e04236ebe13588  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-WCNSS_qcom_cfg.ini
+9f6974a1f35bbf5a77e4b060b67949423c6713144b6f2e2098ca0e8e04240d40cf65cdf2ca295dba177123ec115b619e346a0ba75f5086d7df6aaaa20f5e06ed  firmware-xiaomi-armani-20c75ad6131d16bb4b0daf54dd64cc6612f222f5-WCNSS_qcom_wlan_nv.bin"

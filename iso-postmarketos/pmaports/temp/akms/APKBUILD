@@ -1,0 +1,42 @@
+# Forked from Alpine for temporary downstream patches
+# Blocked by: https://github.com/jirutka/akms/pull/19
+maintainer="Antoine Martin <dev@ayakael.net>"
+pkgname=akms
+_pkgver=0.3.0
+pkgver=9999$_pkgver
+pkgrel=1
+pkgdesc="Alpine Kernel Module Support"
+url="https://github.com/jirutka/akms"
+arch="noarch"
+license="MIT"
+depends="bubblewrap cmd:depmod kernel-hooks"
+makedepends="asciidoctor"
+triggers="$pkgname.trigger=/usr/src/*"
+install="$pkgname.pre-install $pkgname.post-install $pkgname.pre-deinstall"
+subpackages="$pkgname-doc"
+source="https://github.com/jirutka/akms/archive/v$_pkgver/akms-$_pkgver.tar.gz
+	modules-load.conf
+	0001-Add-use_sandbox-boolean-and-no-sandbox-option-to-dis.patch
+	0002-Check-if-build-base-is-installed-by-checking-if-file.patch
+	"
+builddir="$srcdir"/$pkgname-$_pkgver
+options="!check"  # no tests provided
+
+build() {
+	make build
+}
+
+package() {
+	make install DESTDIR="$pkgdir" prefix=/usr
+
+	# See https://github.com/jirutka/akms/issues/5
+	install -Dm644 "$srcdir"/modules-load.conf "$pkgdir"/usr/lib/modules-load.d/$pkgname.conf
+}
+
+
+sha512sums="
+4388530747ddece057d490ba9c77471967a35b1996a869ccbae86eb221b0b8529d6eaa877a2f6037530b734fdd089049ab1da431368d7c43bd168839e4fa1cbc  akms-0.3.0.tar.gz
+e61ebacae17e4e6b9ec39c0673d46c7764cba7f1378208341688f201c396a1599f8a518ce0849f36da0de2710391014f45d90ab09f6b36a579970d1672b0d71d  modules-load.conf
+93550c02695b288a0626bafc11670d09b4563ad94df0816c2cbe11944762fe4c500b6dafb06ef6b48ab3205e708321d727ee20b37a239576f8afd6c443567ace  0001-Add-use_sandbox-boolean-and-no-sandbox-option-to-dis.patch
+d33815d42de28b89cf69f6480ce91ef9005e0456df8943324b6cc06fca5ac083013b35862c8931e3402a9d526f0ec1575efadf54482bbbd2074fac4aff988a3b  0002-Check-if-build-base-is-installed-by-checking-if-file.patch
+"

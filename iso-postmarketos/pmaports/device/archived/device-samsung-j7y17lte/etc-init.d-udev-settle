@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+# Copyright 2014 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+depend() {
+	need udev
+	after udev-trigger
+	provide dev-settle
+	keyword -containers
+}
+
+# udev-settle takes 3 minutes to start (and fails anyway, after which the device boots). Nuking it.
+
+start() {
+	ebegin "Not waiting for uevents to be processed"
+	eend $?
+}

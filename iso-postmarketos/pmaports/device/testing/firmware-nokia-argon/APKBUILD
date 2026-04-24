@@ -1,0 +1,36 @@
+maintainer=""
+pkgname=firmware-nokia-argon
+pkgver=17.00.17.01
+pkgrel=0
+pkgdesc="Firmware for Nokia 8110 4G"
+url="https://storage.abscue.de/private/zImage/$pkgname-$pkgver/"
+arch="armv7"
+license="custom"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+subpackages="$pkgname-venus:venus_package $pkgname-wcnss-nv:wcnss_nv_package"
+source="$url/$pkgname.tar.gz"
+
+_fwsrc="$srcdir/firmware-nokia-argon"
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+venus_package() {
+	pkgdesc="Nokia 8110 4G video encoder/decoder firmware"
+
+	# venus.mbn already exists and doesn't differ from the file produced
+	# by pil-squasher
+	install -Dm644 "$_fwsrc"/venus.mbn -t "$subpkgdir/$_fwdir"/qcom/venus-3.0/
+}
+
+wcnss_nv_package() {
+	pkgdesc="Nokia 8110 4G WiFi/BT firmware configuration"
+	install -Dm644 "$_fwsrc"/wlan/prima/WCNSS_qcom_wlan_nv.bin -t \
+		"$subpkgdir/$_fwdir"/wlan/prima/
+}
+
+sha512sums="
+ee59cb7018212ff5dfffeaced34120f6856fb8ff4279319e8551c28864e1c050e352cb34c0200e068cd6f514f9135cf0884ba064982ef5f2896c1b24f9a4c4fa  firmware-nokia-argon.tar.gz
+"

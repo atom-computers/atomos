@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-olive
+pkgdesc="Xiaomi Redmi 8"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-xiaomi-olive
+	mkbootimg
+	postmarketos-base
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	etc-lightdm-lightdm.conf
+"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-fix-lightdm:fix_lightdm
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Proprietary firmware"
+	depends="firmware-xiaomi-pine"
+	mkdir "$subpkgdir"
+}
+
+# copied from device-samsung-goyawifi
+fix_lightdm() {
+	install_if="$pkgname=$pkgver-r$pkgrel lightdm"
+	pkgdesc="Fix the problem for CanGraphical=no in LightDM according to Display Manager in PMOS Wiki"
+	depends="lightdm"
+	replaces="lightdm"
+
+	# Install lightdm configuration with logind-check-graphical=false
+	install -D -m644 "$srcdir"/etc-lightdm-lightdm.conf \
+		"$subpkgdir"/etc/lightdm/lightdm.conf
+}
+sha512sums="
+b86f2818a4ac0f6644be3d161e4c1b9169710a3458ca1c04cbf11e52b1ab0ae941069761025375298f775cfb554db784249d01d8366962ce6916a9a4097d38a9  deviceinfo
+b52f659b82d895feafdb8e608ff02b187a3811a0a172f6247798a6c9f6b2a1031f8dcbce8b4c9a39ceb0eeedbcc7e700425db0f5862f4341129a0a624cc94963  kernel-cmdline.conf
+861270c6bc0b2a3e6cd389c21c8c895e62de8cf8bec6fcf23c178f8cbaae855d62b0ee98692671ab4f518d84cb43dd0b2fe46f5a609f65af6a6c06e0fdbb6d0c  etc-lightdm-lightdm.conf
+"

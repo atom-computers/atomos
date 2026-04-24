@@ -1,0 +1,36 @@
+From 269f6a524a9d82624f5eea0f41eea14634650a25 Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Tue, 24 Jun 2025 22:44:42 +0700
+Subject: [PATCH 3/7] drivers: usb: u_ether: Force setting random MAC address
+
+Signed-off-by: Hendra Manudinata <manoedinata@daunscape.tech>
+---
+ drivers/usb/gadget/function/u_ether.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/drivers/usb/gadget/function/u_ether.c b/drivers/usb/gadget/function/u_ether.c
+index b7d94ae9..6252450c 100644
+--- a/drivers/usb/gadget/function/u_ether.c
++++ b/drivers/usb/gadget/function/u_ether.c
+@@ -1270,18 +1270,12 @@ struct eth_dev *gether_setup_name(struct usb_gadget *g, u8 ethaddr[ETH_ALEN],
+ 	if (get_ether_addr(dev_addr, net->dev_addr))
+ 		dev_warn(&g->dev,
+ 			"using random %s ethernet address\n", "self");
+-#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
+-	memcpy(dev->host_mac, ethaddr, ETH_ALEN);
+-	printk(KERN_DEBUG "usb: set unique host mac\n");
+-	
+-#else
+ 	if (get_ether_addr(host_addr, dev->host_mac))
+ 		dev_warn(&g->dev,
+ 			"using random %s ethernet address\n", "host");
+ 
+ 	if (ethaddr)
+ 		memcpy(ethaddr, dev->host_mac, ETH_ALEN);
+-#endif
+ 	net->netdev_ops = &eth_netdev_ops;
+ 
+ 	net->ethtool_ops = &ops;
+-- 
+2.43.0
+

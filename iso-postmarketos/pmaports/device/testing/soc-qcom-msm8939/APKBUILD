@@ -1,0 +1,26 @@
+
+maintainer="Vincent Knecht <vincent.knecht@mailoo.org>"
+pkgname=soc-qcom-msm8939
+pkgdesc="Common package for Qualcomm MSM8939 devices"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck"
+depends="soc-qcom-msm8916"
+
+source="
+	gpu-nobin.sh
+	"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	install -D -m644 "$srcdir"/gpu-nobin.sh \
+		"$pkgdir"/etc/profile.d/gpu-nobin.sh
+}
+
+sha512sums="
+4c6bb73ca630e8e08a72dfb7b92e2a3b4f526785601c8095bda3142c72638d89d60c9e110a2eeb4d6d3d97c9fde06c0bfd1dad18f9f5a346f697cc49b6507b21  gpu-nobin.sh
+"

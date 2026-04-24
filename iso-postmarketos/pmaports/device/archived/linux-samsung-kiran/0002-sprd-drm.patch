@@ -1,0 +1,28 @@
+From 1448e53fcaa4c6d787b2dcecbdc1f3103bfe77f4 Mon Sep 17 00:00:00 2001
+From: Shinjo Park <peremen@gmail.com>
+Date: Tue, 28 Jun 2022 23:25:49 +0200
+Subject: [PATCH 2/4] samsung-kiran: Fix building when CONFIG_DRM_SPRD is false
+
+---
+ drivers/video/sprdfb/sprdfb_dispc.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/video/sprdfb/sprdfb_dispc.c b/drivers/video/sprdfb/sprdfb_dispc.c
+index a29d6f9e..b3fbea20 100644
+--- a/drivers/video/sprdfb/sprdfb_dispc.c
++++ b/drivers/video/sprdfb/sprdfb_dispc.c
+@@ -362,7 +362,11 @@ extern void dsi_irq_trick(void);
+ #endif
+ 
+ /* FIXME:!! when we not clear the register in dispc, phone doesn't bootup */
++#ifdef CONFIG_DRM_SPRD
+ extern u32 dispc_int_status;
++#else
++u32 dispc_int_status;
++#endif
+ //static uint32_t underflow_ever_happened = 0;
+ static irqreturn_t dispc_isr(int irq, void *data)
+ {
+-- 
+2.34.1
+

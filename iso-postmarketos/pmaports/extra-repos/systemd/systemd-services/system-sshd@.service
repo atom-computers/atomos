@@ -1,0 +1,9 @@
+[Unit]
+Description=OpenSSH per-connection server daemon
+Documentation=man:sshd(8) man:sshd_config(5)
+Wants=sshdgenkeys.target
+After=sshdgenkeys.target
+
+[Service]
+ExecStart=-/usr/sbin/sshd.pam -i
+StandardInput=socket

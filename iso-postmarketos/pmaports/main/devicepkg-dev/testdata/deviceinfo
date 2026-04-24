@@ -1,0 +1,3 @@
+deviceinfo_name="Test"
+deviceinfo_bootimg_qcdt_downstream="true"
+deviceinfo_bootimg_qcdt_mainline="false"

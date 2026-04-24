@@ -1,0 +1,70 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Kernel config based on: arch/arm64/configs/lineageos_bullhead_defconfig
+
+pkgname=linux-lg-bullhead-downstream
+pkgver=3.10.108
+pkgrel=0
+pkgdesc="Google Nexus 5X kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lg-bullhead"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="bullhead"
+_commit="57351a6494f82cda87c697e10afb98b7f3bd28a2"
+_config="config-$_flavor.$arch"
+_wireguard_commit="c3fb88503cabc2234db2c1dfda41f0288c9f4ba8"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/franciscofranco/$_repository/archive/$_commit.tar.gz
+	$_config
+	wireguard-fetch-$_wireguard_commit.sh::https://raw.githubusercontent.com/WireGuard/android_kernel_wireguard/$_wireguard_commit/fetch.sh
+	static-inline.patch
+	driver-fix.patch
+	undefined-screen_info.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+
+	install -Dm755 "$srcdir"/wireguard-fetch-$_wireguard_commit.sh \
+		scripts/fetch-latest-wireguard.sh
+
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+f34e79b5c80e6dcb2de4a85ec5a59b837338b55c4fef5ac5c6dfaf0d78220a016397442032fbf340eeead1201dd01feeff660adfe3406fdddf66832e59416898  linux-lg-bullhead-downstream-57351a6494f82cda87c697e10afb98b7f3bd28a2.tar.gz
+dee3954eaf27315f59bf7ce4090ad4945f99b7349e8599511f9b7c0b573afa73e17ad1251db868dcf8fbe8e828dac6040c9a59fc2a1802cdf98de210ce1f9d16  config-lg-bullhead.aarch64
+80c744be3228255d400efc249129c03388d3f8b2e717ee027e92ca2726686ef7760df1c7c4dd172d76885831c219fd0504523d6146eb4d3d117139fafe57c30d  wireguard-fetch-c3fb88503cabc2234db2c1dfda41f0288c9f4ba8.sh
+ad77ff2bea83e603bfdbd6bdae7a15f8e8d4a4a005a6ad26b6d8872767bb80b41cc2c0df228d6978ad0bd9e84486bea98a178478b93948e3e37794755e136bd6  static-inline.patch
+64060a1b42743b398feb7b9b05259ff5bc8a3607c9e357d9c1f57c9c0994b433a2fc0c2697a34c71b78ca4096f06ef18e1f5575c4a6a3e93d3c39066ee88d418  driver-fix.patch
+f05386bd27c61e579e69b6ece42b99438ae6da67b8321eec3e4b408a06ff9bdc35cb354fe6dd66751c9118263463f91eb8c250e82532ec4698ea61ac3371c558  undefined-screen_info.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

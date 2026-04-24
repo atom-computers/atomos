@@ -1,0 +1,82 @@
+From ce0249eb837abad6d8829d5f964a3338be8aca67 Mon Sep 17 00:00:00 2001
+From: Nick Desaulniers <ndesaulniers@google.com>
+Date: Tue, 10 Mar 2020 15:36:45 -0700
+Subject: [PATCH] Revert "selinux: Relocate ss_initialized and
+ selinux_enforcing to separate 4k"
+
+This reverts commit 50240fa8416f5fd183cb147fd3c66aeaeb74a1f8.
+
+That out of tree patch causes the resulting kernel image to be too
+large, causing ld.lld to error; since .bss is specified twice.
+
+Fixes the observed error:
+ld.lld: error: output file too large: 18446743524330100280 bytes
+
+when using LLD without LTO enabled.
+
+Bug: 151154720
+Reported-by: Matthias Maennich <maennich@google.com>
+Debugged-by: Fangrui Song <maskray@google.com>
+Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
+Change-Id: Iebb8135630132cd4ae49f3d2d1e85bd61cfa6111
+---
+ arch/arm64/kernel/vmlinux.lds.S | 8 --------
+ include/linux/init.h            | 2 --
+ security/selinux/hooks.c        | 2 +-
+ 3 files changed, 1 insertion(+), 11 deletions(-)
+
+diff --git a/arch/arm64/kernel/vmlinux.lds.S b/arch/arm64/kernel/vmlinux.lds.S
+index 86a57e2fa9af..05df6fffedea 100644
+--- a/arch/arm64/kernel/vmlinux.lds.S
++++ b/arch/arm64/kernel/vmlinux.lds.S
+@@ -76,10 +76,6 @@ jiffies = jiffies_64;
+ #define TRAMP_TEXT
+ #endif
+ 
+-#define RTIC_BSS					\
+-	. = ALIGN(PAGE_SIZE);				\
+-	KEEP(*(.bss.rtic));			\
+-	. = ALIGN(PAGE_SIZE);				\
+ /*
+  * The size of the PE/COFF section that covers the kernel image, which
+  * runs from stext to _edata, must be a round multiple of the PE/COFF
+@@ -260,10 +256,6 @@ SECTIONS
+ 	STABS_DEBUG
+ 
+ 	HEAD_SYMBOLS
+-
+-	.bss : {			/* bss segment		*/
+-         RTIC_BSS
+-	}
+ }
+ 
+ /*
+diff --git a/include/linux/init.h b/include/linux/init.h
+index bc719c7da735..586dd187e22f 100644
+--- a/include/linux/init.h
++++ b/include/linux/init.h
+@@ -322,8 +322,6 @@ void __init parse_early_options(char *cmdline);
+ /* Data marked not to be saved by software suspend */
+ #define __nosavedata __section(.data..nosave)
+ 
+-#define __rticdata  __attribute__((section(".bss.rtic")))
+-
+ #ifdef MODULE
+ #define __exit_p(x) x
+ #else
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index 305890cab97b..d4e1e63a55d6 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -100,7 +100,7 @@
+ #include "audit.h"
+ #include "avc_ss.h"
+ 
+-struct selinux_state selinux_state __rticdata;
++struct selinux_state selinux_state;
+ 
+ /* SECMARK reference count */
+ static atomic_t selinux_secmark_refcount = ATOMIC_INIT(0);
+-- 
+2.39.2
+

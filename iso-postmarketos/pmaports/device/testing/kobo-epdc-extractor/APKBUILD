@@ -1,0 +1,50 @@
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=kobo-epdc-extractor
+pkgver=1.1
+pkgrel=1
+pkgdesc="Extractor for waveform on the kobo devices"
+arch="armv7"
+license="MIT"
+url="https://github.com/akemnade/kobo-firmware-extractor"
+source="
+	kobo-firmware-extractor-$pkgver.tar.gz::https://github.com/akemnade/kobo-firmware-extractor/archive/refs/tags/$pkgver.tar.gz
+	start-epd.sh
+	kobo-epdc-extractor.files
+	extract-waveform.initd
+	"
+subpackages="$pkgname-openrc"
+# no tests
+options="!check"
+builddir="$srcdir"/kobo-firmware-extractor-"$pkgver"
+
+build() {
+	make
+}
+
+package() {
+	make PREFIX="/usr" DESTDIR="$pkgdir" install
+	touch kobo-epdc-extractor
+	# we need it in case we want to do use a graphical display unlock
+	install -Dm644 kobo-epdc-extractor -t \
+		"$pkgdir"/usr/share/mkinitfs-triggers
+
+	install -Dm644 "$srcdir"/start-epd.sh \
+		"$pkgdir"/usr/share/mkinitfs/hooks/80-start-epd.sh
+
+	install -Dm644 "$srcdir"/kobo-epdc-extractor.files \
+		"$pkgdir"/usr/share/mkinitfs/files/01-kobo-epdc-extractor.files
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	install -Dm755 "$srcdir"/extract-waveform.initd "$subpkgdir"/etc/init.d/extract-waveform
+}
+
+sha512sums="
+0f7c3dc3f08543ecabf8ab9e5abbaed3e04b75da666150ade8afbfa6482958ee9efe5df49412445aec9eccbe9722b0d37c2ae6a8211c2633bc2d2ba696cc21c0  kobo-firmware-extractor-1.1.tar.gz
+d008a75fb6ae229e1257af517e741717611cb2bc9cd11ab736f9e066493986cf4a6199854deaf90a1e8c91cbc02e7f79b2cf67ccd92ba110290d4af0b5c5f8ef  start-epd.sh
+d2d4aab75a39e7c7667c15fbaac081e6007950b1b6e8c7073ee75eb0266e86c312d6ba3d9976bc9046ca07bbf761ec9e7091476037f952b8a2335a872e2e92a2  kobo-epdc-extractor.files
+380a131085f50c1a5a80504368c943f3a9372c21ef9dc7fab74eccfc03795652f65a5f4dcf436930f316ba03ad13472e9bc4bfc045f5f0acdb1b94cb0bb5d687  extract-waveform.initd
+"

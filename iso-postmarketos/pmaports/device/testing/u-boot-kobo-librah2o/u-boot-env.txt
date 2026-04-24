@@ -1,0 +1,3 @@
+# Load actual boot script from the boot partition
+# On failure activate USB mass storage mode
+bootcmd=if load mmc 0:1 0x80800000 boot.scr ; then source 0x80800000 ; else ums 0 mmc 0 ; fi

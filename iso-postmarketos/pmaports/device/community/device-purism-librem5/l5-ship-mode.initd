@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+name="Purism Librem 5 Ship Mode Enabler"
+
+start()
+{
+	ebegin "Enabling ship mode"
+        l5-poweroff-shipmode poweroff
+	eend 0
+}

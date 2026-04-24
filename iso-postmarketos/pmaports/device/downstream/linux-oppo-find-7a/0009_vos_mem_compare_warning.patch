@@ -1,0 +1,23 @@
+From 0d0246768aa46d69b6cd96a4f71f46f374533d1c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Lo=C3=AFc?= <4661917+HacKurx@users.noreply.github.com>
+Date: Sat, 1 Dec 2018 18:52:23 +0100
+Subject: [PATCH] fix warning of 'vos_mem_compare'
+
+drivers/staging/prima/CORE/MAC/src/pe/sch/schBeaconGen.c:99:58: warning: passing argument 2 of 'vos_mem_compare' discards 'const' qualifier from pointer target type [-Wdiscarded-array-qualifiers]
+---
+ drivers/staging/prima/CORE/MAC/src/pe/sch/schBeaconGen.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/prima/CORE/MAC/src/pe/sch/schBeaconGen.c b/drivers/staging/prima/CORE/MAC/src/pe/sch/schBeaconGen.c
+index 9729489d..c6fc8dc2 100644
+--- a/drivers/staging/prima/CORE/MAC/src/pe/sch/schBeaconGen.c
++++ b/drivers/staging/prima/CORE/MAC/src/pe/sch/schBeaconGen.c
+@@ -77,7 +77,7 @@
+ // Temporarily (maybe for all of Alpha-1), assuming TIM = 0
+ //
+ 
+-const tANI_U8 P2pOui[] = {0x50, 0x6F, 0x9A, 0x9};
++tANI_U8 P2pOui[] = {0x50, 0x6F, 0x9A, 0x9};
+ 
+ 
+ tSirRetStatus schGetP2pIeOffset(tANI_U8 *pExtraIe, tANI_U32 extraIeLen, tANI_U16 *pP2pIeOffset)

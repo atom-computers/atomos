@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Ben Grisdale <bengris32@protonmail.ch>"
+pkgname=device-sony-redwood
+pkgdesc="Sony Xperia XA1 Ultra"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-mediatek-mt6757
+	soc-mediatek-mt6757
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+5ff3e45e4726b70a4159f117aeb8e6e8dfa7acf0ae45677c594357c362d8413b7560278024f759e6d192c5d54628274ec9674b7fa854874b012d145008744e49  deviceinfo
+9c7b81350fb5bb9906315603e4f5a36df25f6739347f0cbc6a52cbf8a2558d94a2cf1f1f43df7aaf2c36d23652b44abf9316b04f3bcb9dbb9dd6f7a2906b4572  kernel-cmdline.conf
+297c3089263b24c84ee626302bd95480219bc63c07d57af8bac3bf4c61d83fade1c9ee410262197b88859aa087ffe660a905f93220388e675c84929906bb790d  modules-initfs
+"

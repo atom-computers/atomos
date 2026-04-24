@@ -1,0 +1,37 @@
+pkgname=firmware-samsung-crownlte
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for the Samsung Galaxy Note 9"
+url="https://github.com/rom4nik/android_vendor_samsung"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="e1494313c7223c0bb39a9c9f91b3f68bdcd204e7"
+_wifi_files="bcmdhd_sta.bin_b2 bcmdhd_clm.blob nvram.txt_r02a_b2"
+_firmware_files="bcm4361B2_semco.hcd mfc_fw.bin"
+
+for _file in $_wifi_files; do
+	source="$source $pkgname-$_commit-$_file::$url/raw/$_commit/universal9810-common/proprietary/vendor/etc/wifi/$_file"
+done
+for _file in $_firmware_files; do
+	source="$source $pkgname-$_commit-$_file::$url/raw/$_commit/crownlte/proprietary/vendor/firmware/$_file"
+done
+
+
+package() {
+	local file
+	for file in $_wifi_files $_firmware_files; do
+		 install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+
+sha512sums="
+af96fa7245c06ca494eb6c43903a39795e2f9d316db4df4e88ea63837d87f41933259812503d62851c3bd9b4d6f126979193190544cb3c4db6b6b304661bdab9  firmware-samsung-crownlte-e1494313c7223c0bb39a9c9f91b3f68bdcd204e7-bcmdhd_sta.bin_b2
+15647eb158603dfee3d14420703e0f05c89fa91a9aaf35b9ea92197f1c75b1aaa1046d18ef539c5d600542ce87ab6b7a776b4616896be3aae192361019996051  firmware-samsung-crownlte-e1494313c7223c0bb39a9c9f91b3f68bdcd204e7-bcmdhd_clm.blob
+7a9d701311a1e00248c0367c9eea8ab2bf8a4ad859513b55c47b33a000cad784a1ba8ea390e972f13c4e64825e8ca84f3c547bd1a8a7d6861df1b89ad9a18d18  firmware-samsung-crownlte-e1494313c7223c0bb39a9c9f91b3f68bdcd204e7-nvram.txt_r02a_b2
+6928f40a4ac0db839b9654e1f3f74d0444cbca219d998c84fabe9f8dc432002d3b5b20135f2b489ff45ee2509184a88f37c3a695b46fd3b58b1e987a103ff37c  firmware-samsung-crownlte-e1494313c7223c0bb39a9c9f91b3f68bdcd204e7-bcm4361B2_semco.hcd
+aef2df91bac236ff2e55e59bf3ee9ff1d039699c21e8033fda1b8a4d62f470b571e7b1b8b0ea7213e31260058c013c1455a62d239a8b4ec5d693ddc5b41fda1e  firmware-samsung-crownlte-e1494313c7223c0bb39a9c9f91b3f68bdcd204e7-mfc_fw.bin
+"

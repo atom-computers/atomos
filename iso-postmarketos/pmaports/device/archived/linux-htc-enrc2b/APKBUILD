@@ -1,0 +1,48 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/enrc2b_defconfig
+maintainer="Max Buchholz <2maxax2@gmx.de>"
+pkgname=linux-htc-enrc2b
+pkgver=3.1.10
+pkgrel=4
+pkgdesc="HTC One X+ kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-enrc2b"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="pulsar-enrc2b"
+_commit="f9d175c85097000be61ed039a6c00fc8c7aae36c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/jareddantis/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="3982a2b62fea6d5d75929e5a3a429ad451b90be72078237c8bb72bd57818327b529001c456298b80822b4c632a6091a8ecd0304a1c950e1170c0ae17ccfc47d6  linux-htc-enrc2b-f9d175c85097000be61ed039a6c00fc8c7aae36c.tar.gz
+953d3a86f7abb73bfe7218998d3b06d818cc2615c961c133400dd5796e581de243b6434dd61dcf3b22b69ef6510378475a99a49384651c79738a43a6e6be1695  config-htc-enrc2b.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch"

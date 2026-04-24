@@ -1,0 +1,42 @@
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+# Co-Maintainer: Alicja Michalska <ellyqw@mainlining.org>
+maintainer="Ingo Reitz <9l@9lo.re>"
+pkgname=device-google-cherry
+pkgdesc="Google Cherry Chromebooks"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-postmarketos-mediatek-mt81
+	postmarketos-base
+	postmarketos-cros-common
+	soc-mediatek-mt8183
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT Firmware"
+	depends="linux-firmware-mediatek"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+e1940e47cfefaec5e421191de6523b769a3c4bbf12a84e6b5769749229155932f08fb70a71b644819adc91c00ce0721ab077f888e7263c296851ae36d69fc0a8  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+bb7f9a426bfa151c53089f07fd4e874b1fb69fd8180a584b4c9824e2d5ea1e7678602d74eb641b2640b692fec73b88acc78ca26ba9c9f3b8ac8366c6fb63dd5f  modules-initfs
+"

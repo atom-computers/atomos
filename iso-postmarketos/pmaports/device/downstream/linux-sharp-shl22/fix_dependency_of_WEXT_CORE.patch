@@ -1,0 +1,13 @@
+diff --git a/net/wireless/Kconfig b/net/wireless/Kconfig
+index 8db24da2..bce9db53 100644
+--- a/net/wireless/Kconfig
++++ b/net/wireless/Kconfig
+@@ -3,7 +3,7 @@ config WIRELESS_EXT
+ 
+ config WEXT_CORE
+ 	def_bool y
+-	depends on CFG80211_WEXT || WIRELESS_EXT
++	depends on CFG80211_WEXT || WIRELESS_EXT || SHWLAN_CFG80211
+ 
+ config WEXT_PROC
+ 	def_bool y

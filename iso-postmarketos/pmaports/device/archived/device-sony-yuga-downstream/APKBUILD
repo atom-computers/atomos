@@ -1,0 +1,41 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-yuga-downstream
+pkgver=3
+pkgrel=0
+pkgdesc="Sony Xperia Z (Downstream)"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	firmware-sony-fusion3
+	linux-sony-yuga-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream-disable-udev-v4l
+	"
+makedepends="devicepkg-dev"
+source="
+	90-android-touch-dev.rules
+	deviceinfo
+	kernel-cmdline.conf
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/etc/udev/rules.d/90-android-touch-dev.rules
+}
+
+sha512sums="
+8b6034c0338ab4c7d648f47983aad6da07e427e7dba47baabf85a1b3ddeeda47c8d7fbcd547a302c9a759b2943ee30d3e82c3b368d8582833a058e4671638a9e  90-android-touch-dev.rules
+352429bbd49c41e84b5046a67aabc7b398a93f5cc3c8109744f57590c1ea6fa35a49c33dbddcb60fa561dbb9ea7f1c3cd7acb39e86934f3d60383eed2166fae7  deviceinfo
+4ba49259458b2fb7eb067428f638b8d5c3b0fbd90fc714421ae1e582a3dee78f3085739f0101ef4024902f1a8f475c06d2a0e03359ad1c545437745f1d97edf1  kernel-cmdline.conf
+"

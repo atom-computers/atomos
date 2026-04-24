@@ -1,0 +1,19 @@
+# Archived: Kernel does not build anymore
+pkgname=firmware-samsung-crespo
+pkgver=1
+pkgrel=0
+_commit="1c8cfa4aa3baa7d2334d1db2f83e6fb54b5b3b07"
+pkgdesc="Samsung Nexus S Firmware"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="firmware-aosp-broadcom-wlan"
+source="$pkgname-$_commit-nvram_net.txt::https://github.com/LineageOS/android_device_samsung_crespo/raw/$_commit/nvram_net.txt"
+options="!strip !check !archcheck !spdx !tracedeps"
+
+package() {
+	install -Dm644 "$srcdir/$pkgname-$_commit-nvram_net.txt" \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd/bcm4329/nvram_net.txt
+}
+
+sha512sums="3417bdb280ec49d08b4e67f0391b9593ea7c365927f61bb4e3f03d53b9e77b26cde67fd47fcac6f3d23d0e70818eb3e0abbbd77267a64a721e128040700cb18f  firmware-samsung-crespo-1c8cfa4aa3baa7d2334d1db2f83e6fb54b5b3b07-nvram_net.txt"

@@ -1,0 +1,40 @@
+From b7756b6fc4bb728722b14d2dfdbaf1dc843812e9 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Tue, 21 Oct 2014 18:41:36 -0400
+Subject: [PATCH] gpu:msm: Fix 5.0 compile
+
+* These need to be static to avoid these errors:
+
+drivers/built-in.o: In function `.LANCHOR1':
+msm_iommu_sec.c:(.data+0x9298): undefined reference to `kgsl_iommu_sync_lock'
+msm_iommu_sec.c:(.data+0x929c): undefined reference to `kgsl_iommu_sync_unlock'
+Makefile:877: recipe for target '.tmp_vmlinux1' failed
+make: *** [.tmp_vmlinux1] Error 1
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ drivers/gpu/msm/kgsl_iommu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/msm/kgsl_iommu.c b/drivers/gpu/msm/kgsl_iommu.c
+index c4fa8af4..4f66a2f0 100644
+--- a/drivers/gpu/msm/kgsl_iommu.c
++++ b/drivers/gpu/msm/kgsl_iommu.c
+@@ -1002,7 +1002,7 @@ static int kgsl_iommu_init_sync_lock(struct kgsl_mmu *mmu)
+  *
+  * Return - int - number of commands.
+  */
+-inline unsigned int kgsl_iommu_sync_lock(struct kgsl_mmu *mmu,
++static inline unsigned int kgsl_iommu_sync_lock(struct kgsl_mmu *mmu,
+ 						unsigned int *cmds)
+ {
+ 	struct kgsl_device *device = mmu->device;
+@@ -1072,7 +1072,7 @@ inline unsigned int kgsl_iommu_sync_lock(struct kgsl_mmu *mmu,
+  *
+  * Return - int - number of commands.
+  */
+-inline unsigned int kgsl_iommu_sync_unlock(struct kgsl_mmu *mmu,
++static inline unsigned int kgsl_iommu_sync_unlock(struct kgsl_mmu *mmu,
+ 					unsigned int *cmds)
+ {
+ 	struct kgsl_device *device = mmu->device;

@@ -1,0 +1,25 @@
+Adapted from ../linux-samsung-dream/04-firmware-path.patch.
+Changes hardcoded path for WiFi module's firmware to match pmOS package.
+
+diff --git a/drivers/net/wireless/bcmdhd_100_15/dhd.h b/drivers/net/wireless/bcmdhd_100_15/dhd.h
+index f8f13a869622..bac7f7d4aa7c 100644
+--- a/drivers/net/wireless/bcmdhd_100_15/dhd.h
++++ b/drivers/net/wireless/bcmdhd_100_15/dhd.h
+@@ -401,7 +401,7 @@ enum dhd_op_flags {
+ #if defined(CUSTOMER_HW4) && defined(PLATFORM_SLP)
+ #define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/bcmdhd_clm.blob"
+ #else
+-#define CONFIG_BCMDHD_CLM_PATH "/etc/wifi/bcmdhd_clm.blob"
++#define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/postmarketos/bcmdhd_clm.blob"
+ #endif /* CUSTOMER_HW4 && PLATFORM_SLP */
+ #endif /* CONFIG_BCMDHD_CLM_PATH */
+ #define WL_CCODE_NULL_COUNTRY  "#n"
+@@ -2543,7 +2543,7 @@ extern uint dhd_pktgen_len;
+ extern char fw_path2[MOD_PARAM_PATHLEN];
+ #endif // endif
+ 
+-#define VENDOR_PATH "/vendor"
++#define VENDOR_PATH ""
+ 
+ #if defined(DHD_LEGACY_FILE_PATH)
+ #define PLATFORM_PATH	"/data/"

@@ -1,0 +1,124 @@
+maintainer="bluebunny <kalorin.bok084@passinbox.com>"
+pkgname=firmware-xiaomi-pipa
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Pad 6"
+subpackages="
+	$pkgname-adreno
+	$pkgname-adsp
+	$pkgname-awinic
+	$pkgname-cdsp
+	$pkgname-hexagonfs
+	$pkgname-novatek
+	$pkgname-nuvolta
+	$pkgname-slpi
+	$pkgname-venus
+"
+_repo="xiaomi-pipa-firmware"
+url="https://github.com/pipa-mainline/$_repo"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="842d35beffeda8c6d1b0e611b335543bf0e6b41e"
+source="
+	$url/archive/$_commit/$_repo-$_commit.tar.gz
+	50-novatek-touchscreen.files
+"
+builddir="$srcdir/$_repo-$_commit"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adreno() {
+	pkgdesc="Xiaomi Pad 6 adreno firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/a650_zap.mbn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+}
+
+adsp() {
+	pkgdesc="Xiaomi Pad 6 adsp firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/adsp.mbn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/adspr.jsn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/adspua.jsn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+}
+
+awinic() {
+	pkgdesc="Xiaomi Pad 6 awinic firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/awinic/aw88230_2113_pipa.bin -t \
+		"$subpkgdir/usr/lib/firmware/awinic/"
+}
+
+cdsp() {
+	pkgdesc="Xiaomi Pad 6 cdsp firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/cdsp.mbn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/cdspr.jsn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+}
+
+hexagonfs() {
+	pkgdesc="Xiaomi Pad 6 hexagonfs files"
+
+	mkdir -p "$subpkgdir"/usr/share/qcom/sm8250/Xiaomi/
+	cp -r "$builddir"/usr/share/qcom/sm8250/Xiaomi/pipa/ \
+		"$subpkgdir"/usr/share/qcom/sm8250/Xiaomi/
+
+	# Remove files that we don't need - for now
+	rm -r "$subpkgdir"/usr/share/qcom/sm8250/Xiaomi/pipa/acdb/
+	rm -r "$subpkgdir"/usr/share/qcom/sm8250/Xiaomi/pipa/dsp/
+
+	find "$subpkgdir/usr/share/qcom/sm8250/Xiaomi/pipa/" \
+		-type f -exec chmod 0644 {} \;
+}
+
+novatek() {
+	pkgdesc="Xiaomi Pad 6 novatek firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/novatek/nt36532_csot.bin -t \
+		"$subpkgdir/usr/lib/firmware/novatek/"
+	install -Dm644 "$builddir"/lib/firmware/novatek/nt36532_tianma.bin -t \
+		"$subpkgdir/usr/lib/firmware/novatek/"
+
+	install -Dm644 "$srcdir"/50-novatek-touchscreen.files -t \
+		"$subpkgdir/usr/share/mkinitfs/files/"
+}
+
+nuvolta() {
+	pkgdesc="Xiaomi Pad 6 nuvolta firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/nuvolta/rx1665.bin -t \
+		"$subpkgdir/usr/lib/firmware/nuvolta/"
+}
+
+slpi() {
+	pkgdesc="Xiaomi Pad 6 slpi firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/slpi.mbn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/slpir.jsn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/slpius.jsn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+}
+
+venus() {
+	pkgdesc="Xiaomi Pad 6 venus firmware"
+
+	install -Dm644 "$builddir"/lib/firmware/sm8250/xiaomi/pipa/venus.mbn -t \
+		"$subpkgdir/usr/lib/firmware/qcom/sm8250/xiaomi/pipa/"
+}
+
+
+sha512sums="
+cbd61052dd5ddc54ed9290547ab4a63eca59cf113d5b3b0f5d64248b48e3e5616a12bc1296abe05d3ab3556054c3541b2cd5b6fa9d797bc49a5e6f32d5bea961  xiaomi-pipa-firmware-842d35beffeda8c6d1b0e611b335543bf0e6b41e.tar.gz
+0036dfc52d9de2b1be8b275b36401d1c60a8b8531ce26edd59ac86e3c1dc3aa7f37944916a7b502f7e585d285cc59048a7322f8f46064c191ef732ea77733a52  50-novatek-touchscreen.files
+"

@@ -1,0 +1,21 @@
+Remove f_fsmodule implementation which causes kernel build to fail.
+diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
+index d7304ad18c2a..659d813ddd21 100644
+--- a/drivers/usb/gadget/function/f_fs.c
++++ b/drivers/usb/gadget/function/f_fs.c
+@@ -4309,7 +4309,6 @@ static int ffs_init(void)
+ 
+ 	return 0;
+ }
+-module_init(ffs_init);
+ 
+ static void __exit ffs_exit(void)
+ {
+@@ -4332,7 +4331,6 @@ static void __exit ffs_exit(void)
+ 		ffs_ipc_log = NULL;
+ 	}
+ }
+-module_exit(ffs_exit);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Michal Nazarewicz");

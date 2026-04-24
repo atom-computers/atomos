@@ -1,0 +1,24 @@
+pkgname=firmware-samsung-apexq
+pkgver=1
+pkgrel=0
+_commit="f7e14fda78f8b3db294a26e02fade3c77009907c"
+pkgdesc="Samsung Galaxy S Relay 4G Firmware"
+url="https://gitlab.com/5ilver/apexqwififw"
+arch="armhf"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/apexqwififw.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/apexqwififw-$_commit"
+depends="wcnss-wlan"
+
+package() {
+	# Wifi
+	for file in wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05 wcnss.mdt \
+		wlan/prima/WCNSS_qcom_cfg.ini wlan/prima/WCNSS_qcom_wlan_nv.bin_ \
+		wlan/prima/WCNSS_qcom_wlan_nv.bin wlan/prima/WCNSS_cfg.dat;
+	do
+		install -Dm644 "$file" "$pkgdir"/lib/firmware/postmarketos/"$file"
+	done
+}
+
+sha512sums="cf1b0c7015e38528e5646a0d81a785fd19dae2d044ea1e0e325bcd73caf733ae851ccaedbbdb3260a89de9e34532f1f678f178ed66791ea780c83a80fa47141d  firmware-samsung-apexq-f7e14fda78f8b3db294a26e02fade3c77009907c.tar.gz"

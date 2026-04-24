@@ -1,0 +1,12 @@
+#!/bin/sh
+
+adduser -S -H -D -h /run/systemd -s /usr/sbin/nologin -g 'systemd Time Synchronization' systemd-timesync 2>/dev/null
+adduser -S -H -D -h /run/systemd -s /usr/sbin/nologin -g 'systemd Network Management' systemd-network 2>/dev/null
+adduser -S -H -D -h /run/systemd -s /usr/sbin/nologin -g 'systemd Resolver' systemd-resolve 2>/dev/null
+adduser -S -H -D -h / -s /usr/sbin/nologin -g 'systemd Core Dumper' systemd-coredump 2>/dev/null
+addgroup -S systemd-network 2>/dev/null
+addgroup -S systemd-journal 2>/dev/null
+addgroup -S render 2>/dev/null
+addgroup -S sgx 2>/dev/null
+
+exit 0

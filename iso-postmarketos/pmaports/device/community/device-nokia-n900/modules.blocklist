@@ -1,0 +1,12 @@
+# rx51-battery is not absolutely necessary to running system, but can be
+# useful to keep around since it can detect battery design capacity
+blacklist rx51_battery
+# extra modules to block for pm purposes. lifted from maemo leste
+# https://github.com/maemo-leste/leste-config/blob/master/leste-config-n900/etc/modprobe.d/blacklist-pm.conf.leste
+blacklist omap3_isp
+blacklist hci_nokia
+blacklist hci_uart
+blacklist ehci_omap
+# do not autoload leds_gpio used by the debug leds, since it is now initialized
+# in ON state, interfering with the keyboard backlight
+blacklist leds_gpio

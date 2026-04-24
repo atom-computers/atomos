@@ -1,0 +1,2 @@
+SUBSYSTEM=="switch", ACTION=="change", ENV{SWITCH_NAME}=="h2w", ENV{SWITCH_STATE}=="0", RUN+="/usr/bin/alsaucm -c mt-snd-card set _verb HiFi set _enadev Speaker"
+SUBSYSTEM=="switch", ACTION=="change", ENV{SWITCH_NAME}=="h2w", ENV{SWITCH_STATE}=="1", RUN+="/usr/bin/alsaucm -c mt-snd-card set _verb HiFi set _enadev Headphones"

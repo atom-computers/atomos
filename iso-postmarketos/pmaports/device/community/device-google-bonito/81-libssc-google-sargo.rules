@@ -1,0 +1,2 @@
+# Be compatible with the fix to CVE 2024-41024.
+SUBSYSTEM=="misc", KERNEL=="fastrpc-adsp-secure", SYMLINK="fastrpc-adsp"

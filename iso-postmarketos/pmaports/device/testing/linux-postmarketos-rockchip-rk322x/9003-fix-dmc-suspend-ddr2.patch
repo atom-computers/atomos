@@ -1,0 +1,76 @@
+Patch from https://github.com/rk-unofficial-cfw/LibreELEC.tv/blob/le12-rk322x-wip/projects/Rockchip/devices/RK322X/patches/linux/default/linux-9003-fix-dmc-suspend-ddr2.patch
+
+diff -ruPN linux-5.10.76/drivers/devfreq/rk3228_dmc.c linux-new/drivers/devfreq/rk3228_dmc.c
+--- linux-5.10.76/drivers/devfreq/rk3228_dmc.c	2022-02-17 11:10:14.196295398 +0100
++++ linux-new/drivers/devfreq/rk3228_dmc.c	2022-02-17 11:13:37.163303895 +0100
+@@ -442,17 +442,23 @@
+ 	struct rk3228_dmc *rdev = dev_get_drvdata(dev);
+ 	int ret = 0;
+ 
+-	ret = devfreq_event_disable_edev(rdev->edev);
+-	if (ret < 0) {
+-		dev_err(dev, "failed to disable the devfreq-event devices\n");
+-		return ret;
+-	}
+-
+-	ret = devfreq_suspend_device(rdev->devfreq.devfreq);
+-	if (ret < 0) {
+-		dev_err(dev, "failed to suspend the devfreq devices\n");
+-		return ret;
+-	}
++    if (rdev->dram_type == DDR3 ||
++		rdev->dram_type == LPDDR3 ||
++		rdev->dram_type == DDR4 ||
++		rdev->dram_type == LPDDR4) {
++
++        ret = devfreq_event_disable_edev(rdev->edev);
++        if (ret < 0) {
++            dev_err(dev, "failed to disable the devfreq-event devices\n");
++            return ret;
++        }
++
++        ret = devfreq_suspend_device(rdev->devfreq.devfreq);
++        if (ret < 0) {
++            dev_err(dev, "failed to suspend the devfreq devices\n");
++            return ret;
++        }
++    }
+ 
+ 	return 0;
+ }
+@@ -462,17 +468,24 @@
+ 	struct rk3228_dmc *rdev = dev_get_drvdata(dev);
+ 	int ret = 0;
+ 
+-	ret = devfreq_event_enable_edev(rdev->edev);
+-	if (ret < 0) {
+-		dev_err(dev, "failed to enable the devfreq-event devices\n");
+-		return ret;
+-	}
+-
+-	ret = devfreq_resume_device(rdev->devfreq.devfreq);
+-	if (ret < 0) {
+-		dev_err(dev, "failed to resume the devfreq devices\n");
+-		return ret;
+-	}
++    if (rdev->dram_type == DDR3 ||
++		rdev->dram_type == LPDDR3 ||
++		rdev->dram_type == DDR4 ||
++		rdev->dram_type == LPDDR4) {
++
++        ret = devfreq_event_enable_edev(rdev->edev);
++        if (ret < 0) {
++            dev_err(dev, "failed to enable the devfreq-event devices\n");
++            return ret;
++        }
++
++        ret = devfreq_resume_device(rdev->devfreq.devfreq);
++        if (ret < 0) {
++            dev_err(dev, "failed to resume the devfreq devices\n");
++            return ret;
++        }
++    }
++
+ 	return ret;
+ }
+ 

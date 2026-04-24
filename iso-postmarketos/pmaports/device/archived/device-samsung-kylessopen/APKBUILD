@@ -1,0 +1,26 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-kylessopen
+pkgdesc="Galaxy Trend"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-kylessopen mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+39607097d1ea0d47ffdcd3ee90c2b6ef690c173e052ccc3ea4eebbb2c4affd068c164898d10efdaa927a827e7985a1a99e0eb8436955f711ed1f147fc3629845  deviceinfo
+7cd1593c0016040bd3ab157c8ef46e100901ab58814b8b61b04571b85319eb23aaa393f31eca5490f0d0ab33f626e9e464fdb9f3bcb3eca3d99d1429f57cbb14  kernel-cmdline.conf
+"

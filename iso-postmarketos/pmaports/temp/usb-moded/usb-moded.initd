@@ -1,0 +1,20 @@
+#!/sbin/openrc-run
+
+name=usb-moded
+description="usb-moded USB gadget controller"
+command="/usr/sbin/usb_moded"
+command_background=yes
+
+depend() {
+	need dbus
+}
+
+start_pre() {
+        mkdir -p "$configfs"
+        mount -t configfs none "$configfs"
+}
+
+stop_post() {
+        umount "$configfs"
+        rmdir "$configfs"
+}

@@ -1,0 +1,26 @@
+#!/sbin/openrc-run
+name="NVMe power state config"
+description="Set NVMe power state to lowest operational level"
+
+nvme_command="/usr/sbin/nvme"
+nvme_opts="-f 2 -v 2"
+
+depend() {
+	need localmount
+}
+
+start() {
+	ebegin "Setting low power state for NVMe drive"
+        if [ ! -e /dev/nvme0 ]; then
+		einfo "No NVMe drive found at /dev/nvme0"
+		eend 0
+		return 0
+        fi
+                
+	if ! ${nvme_command} set-feature /dev/nvme0 ${nvme_opts}; then
+		eerror "Error setting PM state."
+		eend 1
+		return 1
+	fi
+	eend 0
+}

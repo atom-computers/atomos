@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-nokia-n9
+pkgver=4
+pkgrel=0
+pkgdesc="Nokia N9"
+url="https://postmarketos.org"
+arch="armhf"
+license="MIT"
+depends="postmarketos-base linux-nokia-n9 ofono watchdog-kick"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	initfs-hook.sh
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="linux-firmware"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+46d238f2d9fb2e9fd520a0ebdb2147c7e9c698c39c544278baca89323536fbb6b44bcd84542cd673a611b45b539fa335adc7103f88a86ef4e0fcbfaf34a5f625  deviceinfo
+194b135573da8c894b079bc00cf560e318a62d71ed3dd63f219f0f80d0f882b7d41e988c9c0945319a665e0f217c8eb5ff5353acafe25fa755a84e9e8de3df4b  initfs-hook.sh
+"

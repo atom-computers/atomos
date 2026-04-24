@@ -1,0 +1,82 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_vee7_defconfig
+
+pkgname=linux-lg-vee7e
+pkgver=3.4.0
+pkgrel=10
+pkgdesc="LG Optimus L7 II kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="lg-vee7e"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	gcc6
+"
+
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+
+# Source
+_repository="lge-kernel-lproj"
+_commit="8a90ec65502bde12a03c60d6756eea3e88c02917"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Vee7-Cyanogenmod13/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	timeconst.pl-Eliminate-Perl-warning.patch
+	static-inline-in-ftrace.h.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	0001-Makefile-fix-build-with-new-binutils.patch
+	linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+0124de18237d4ea6a367aab9b6474a05bc67a5db18f687b8f58d3a8a63d2569b3ea9a9c8e33dc78ae834f4cc8fd2ee1c64b6d6a2ea12f0c4821b1f29385a3d8d  linux-lg-vee7e-8a90ec65502bde12a03c60d6756eea3e88c02917.tar.gz
+29fbe4218864dfd032e8cb63771bb142a40e85a794bffc5ac0f2ed9218953188df16a3296424fea95377d6d6250edeee174cc22d1777d163c8ec052a271f63d0  config-lg-vee7e.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  static-inline-in-ftrace.h.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+ea8d5913bb28a2e1b7a22e7e2257c90b21b20382c4a08254b12dda1592c20cb5ec59ed4047ee8890380739889a7365ca087c398581f8702568d3cd575a59d158  0001-Makefile-fix-build-with-new-binutils.patch
+5e81c20b0b30c1ab09bd59f1e1b77fcce945a27de8144c68617ddc5e8f10e1f6fa8b1e4cd5d63e43511d61dace46fb26b14a6227a667b9718d44c8b81dbe6100  linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

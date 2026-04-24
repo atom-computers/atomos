@@ -1,0 +1,37 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+# Reference: <https://postmarketos.org/devicepkg>
+
+pkgname=device-xiaomi-onclite
+pkgdesc="Xiaomi Redmi 7"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-onclite
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8953
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+53e976a06c4d8975dbb9785d8e913e9f1828ee79de73cf3429797ab0fce08fac2264bf11990a2301772245e9a368f0b4e20bc02cb1ec117b6aa85d1009ddf631  deviceinfo
+706e76054992dfd03ef240e0de2d7e84a77c97727141fa8d737b02c9d780f60c2df57755e17c44d93136aa6a6d1f8a8d9dbbf51d11674e5fb67197bd313811fd  modules-initfs
+"

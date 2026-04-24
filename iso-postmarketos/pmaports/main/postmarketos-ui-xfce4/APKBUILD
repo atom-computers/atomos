@@ -1,0 +1,102 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Jakko <jahau@rocketmail.com>"
+pkgname=postmarketos-ui-xfce4
+pkgver=0.6.0
+pkgrel=2
+pkgdesc="(X11) Lightweight desktop (stylus recommended)"
+url="https://gitlab.postmarketos.org/postmarketOS/xfce4-phone"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	bluez
+	brightnessctl
+	dnsmasq
+	elogind
+	lightdm
+	lightdm-settings
+	mesa-egl
+	onboard
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	slick-greeter
+	unclutter-xfixes
+	xfce-polkit
+	xfce4
+	xorg-server
+	"
+_pmb_recommends="
+	alsa-plugins-pulse
+	blueman
+	faenza-icon-theme
+	gnome-keyring
+	greybird-themes
+	network-manager-applet
+	pavucontrol
+	pm-utils
+	postmarketos-artwork-wallpapers
+	xfce4-notifyd
+	xfce4-pulseaudio-plugin
+	xfce4-screensaver
+	xfce4-terminal
+	xfce4-whiskermenu-plugin
+	"
+subpackages="$pkgname-openrc"
+source="
+	xfce4-phone-$pkgver.tar.gz::https://gitlab.postmarketos.org/postmarketOS/xfce4-phone/-/archive/$pkgver/xfce4-phone-$pkgver.tar.gz
+	10_onboard.gschema.override
+	10_slick-greeter.gschema.override
+	70-lightdm-pmos.conf
+	enable-scrollbars.sh
+	onboard-autostart.desktop
+	xfce4-phone.sh
+	"
+options="!check pmb:systemd"
+builddir="$srcdir/xfce4-phone-$pkgver"
+
+package() {
+	mkdir -p "$pkgdir"/etc/skel/.config
+	cp -a "$builddir"/config/gtk-3.0 "$pkgdir"/etc/skel/.config/gtk-3.0
+
+	mkdir -p "$pkgdir"/etc/xdg/xfce4-phone
+	cp -a "$builddir"/config/xfce4 "$pkgdir"/etc/xdg/xfce4-phone/xfce4
+
+	install -Dm644 -t "$pkgdir"/etc/profile.d \
+		"$srcdir"/enable-scrollbars.sh \
+		"$srcdir"/xfce4-phone.sh
+
+	install -Dm644 -t "$pkgdir"/etc/xdg/xfce4-phone/autostart \
+		"$srcdir"/onboard-autostart.desktop
+
+	install -Dm644 -t "$pkgdir"/usr/share/lightdm/lightdm.conf.d \
+		"$srcdir"/70-lightdm-pmos.conf
+
+	install -Dm644 -t "$pkgdir"/usr/share/glib-2.0/schemas \
+		"$srcdir"/10_onboard.gschema.override \
+		"$srcdir"/10_slick-greeter.gschema.override
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		bluez-openrc
+		brightnessctl-openrc
+		elogind-openrc
+		lightdm-openrc
+		networkmanager-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+3658095eb68748a60f491838a4d11e7cc34b2dccd4eac5628928af6f34bf99e1c15581fb0c88918b57e07df64e50bf04025f269ab532a83e6d15a6aac3640b4f  xfce4-phone-0.6.0.tar.gz
+114d77e6e7c11fc87244fc7c179244274c8f8711f111fcb1b9774ef6b226bd2bea01f85395da130f53670a870cfe571babd7f1c233ba85e1ef5a056ab65bd0b7  10_onboard.gschema.override
+7ce4ee56bbff8052ceb14f52e010ae48290589f45dfd0afbb240bf95abac1bd02e7a75a22776f90a1c96b59286ec4d8b6cbe18881550f4488b589cbf2b12bfc8  10_slick-greeter.gschema.override
+c11a66b639570ecad51b97c127898afc3f123e2de95ea2a788abc51a45c23c82dbf1022224c15a88691656a8065874d6f396aee0df64e93e1966a82b32d6a31c  70-lightdm-pmos.conf
+262cdcf334cfa56872797c960cb8683b79c7b13b0a8179cd002e598576f0e9fe07057fd0fe724e87a6664db4b91b31a8c0cbf026ab137533b07675f838ae57bb  enable-scrollbars.sh
+ce7921f500b603796572bc02fa123e58d58ed1e9efd4d909de8f73c11a3e0bc0893639ce159f0701578b19db764893d021502d1c98cc24eb692e9d48320ff68c  onboard-autostart.desktop
+9ef0891cb1476c693175cf1ef8c64112354c1b2bf80c3cdfff4aabb2b9b9c434ccfa7dbdde3385fb215e94fc6216f3dc898be31b4ce9ad5bdb1c23bbb338d633  xfce4-phone.sh
+"

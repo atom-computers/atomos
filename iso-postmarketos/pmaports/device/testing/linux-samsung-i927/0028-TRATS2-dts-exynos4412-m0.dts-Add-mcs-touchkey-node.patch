@@ -1,0 +1,49 @@
+From ee20adbc92dde3253b807247df3e512a25f333b8 Mon Sep 17 00:00:00 2001
+From: Beomho Seo <beomho.seo@samsung.com>
+Date: Mon, 12 Aug 2013 21:51:45 +0900
+Subject: [PATCH] TRATS2: dts: exynos4412-m0.dts: Add mcs-touchkey node
+
+Support melfas 2 touchkey device for TRATS2 board
+Adds also the binding documentation file
+
+Signed-off-by: Beomho Seo <beomho.seo@samsung.com>
+---
+ .../bindings/input/mcs-touchkey.txt           | 26 +++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/input/mcs-touchkey.txt
+
+diff --git a/Documentation/devicetree/bindings/input/mcs-touchkey.txt b/Documentation/devicetree/bindings/input/mcs-touchkey.txt
+new file mode 100644
+index 000000000000..545454112a43
+--- /dev/null
++++ b/Documentation/devicetree/bindings/input/mcs-touchkey.txt
+@@ -0,0 +1,26 @@
++* mcs_touchkey MELFAS MCS5000/5080 controller
++
++Required properties:
++- compatible: must be "mcs5000_touchkey" or "mcs5080_touchkey"
++- reg : I2C address of the chip
++- interrupts: interrupt to which the chop is connected
++- key_maxval: size of keycode table
++- interrupts: interrupt to which the chip is connected
++- code: key code for this device
++
++Example:
++
++	i2c_touch_key: i2c-gpio-0 {
++	       /* ... */
++
++	       touch_key@20 {
++		       compatible = "mcs5080_touchkey";
++		       reg = <0x20>;
++		       interrupt-patrent = <gpj0>;
++		       key_maxval = <2>;
++		       linux, code = <0x0000009e
++			              0x000000a9>;
++	       };
++
++	       /* ... */
++	};
+-- 
+2.22.0
+

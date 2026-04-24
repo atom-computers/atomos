@@ -1,0 +1,167 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-config-nftables
+pkgver=1
+pkgrel=2
+pkgdesc="nftables firewall configuration for postmarketOS"
+url="https://gitlab.com/postmarketos"
+arch="noarch"
+license="MIT"
+depends="openssh-nftrules"
+# No subpackage for ausweisapp2, it's also on flathub, and
+# install_if won't work
+subpackages="
+	$pkgname-openusb
+	$pkgname-log
+	$pkgname-chromecast
+	$pkgname-docker
+	$pkgname-mdns
+	$pkgname-moshserver
+	$pkgname-networkmanager
+	$pkgname-rdpserver
+	$pkgname-upnp-client:upnp_client
+	$pkgname-vlc-chromecast:vlc_chromecast
+	$pkgname-vncserver
+	$pkgname-wifi-display:wifi_display
+"
+source="
+	rules/00_log_all.nft
+	rules/01_wwan.nft
+	rules/10_dhcp.nft
+	rules/50_ausweisapp2.nft
+	rules/50_mdns.nft
+	rules/50_rdpserver.nft
+	rules/50_upnp_client.nft
+	rules/50_vlc_chromecast.nft
+	rules/50_vncserver.nft
+	rules/51_docker.nft
+	rules/51_hotspot.nft
+	rules/51_usb_inet.nft
+	rules/51_wifi_display.nft
+	rules/60_usb.nft
+	rules/99_drop_log.nft
+	networkmanager.conf
+"
+options="!check" # No tests
+
+package() {
+	cd rules
+	for _i in ./*; do
+		install -Dm644 "$_i" "$pkgdir"/etc/nftables.d/"$_i"
+	done
+
+	ln -s ../../usr/share/nftables.avail/50_sshd.nft "$pkgdir/etc/nftables.d/50_sshd.nft"
+	ln -s ../../usr/share/nftables.avail/50_mosh.nft "$pkgdir/etc/nftables.d/50_mosh.nft"
+}
+
+openusb() {
+	depends="$pkgname"
+	description="Adds a rule to accept all incoming connections to the usb* interface"
+
+	amove etc/nftables.d/60_usb.nft
+}
+
+log() {
+	depends="$pkgname"
+	description="Enables logging of nftable events"
+
+	amove etc/nftables.d/00_log_all.nft
+	amove etc/nftables.d/99_drop_log.nft
+}
+
+chromecast() {
+	depends="$pkgname $pkgname-mdns"
+	description="Enables networking for Chromium Chromecast"
+	install_if="$pkgname=$pkgver-r$pkgrel chromium"
+
+	# meta package is empty
+	mkdir -p "$subpkgdir"
+}
+
+docker() {
+	depends="$pkgname"
+	description="Enables networking for Docker"
+	install_if="$pkgname=$pkgver-r$pkgrel docker"
+
+	amove etc/nftables.d/51_docker.nft
+}
+
+mdns() {
+	depends="$pkgname"
+	description="Enables networking for mDNS"
+
+	amove etc/nftables.d/50_mdns.nft
+}
+
+moshserver() {
+	depends="$pkgname mosh-nftrules"
+	description="Enables networking for mosh server"
+	install_if="$pkgname=$pkgver-r$pkgrel mosh-server"
+
+	amove etc/nftables.d/50_mosh.nft
+}
+
+upnp_client() {
+	depends="$pkgname"
+	description="Enables networking for SSDP/UPnP client"
+	install_if="$pkgname=$pkgver-r$pkgrel libupnp"
+
+	amove etc/nftables.d/50_upnp_client.nft
+}
+
+vlc_chromecast() {
+	depends="$pkgname $pkgname-chromecast"
+	description="Enables networking for VLC Chromecast casting"
+	install_if="$pkgname=$pkgver-r$pkgrel vlc"
+
+	amove etc/nftables.d/50_vlc_chromecast.nft
+}
+
+rdpserver() {
+	depends="$pkgname"
+	description="Enables networking for RDP Server"
+	install_if="$pkgname=$pkgver-r$pkgrel freerdp-libs"
+
+	amove etc/nftables.d/50_rdpserver.nft
+}
+
+vncserver() {
+	depends="$pkgname"
+	description="Enables networking for VNC Server"
+
+	amove etc/nftables.d/50_vncserver.nft
+}
+
+wifi_display() {
+	depends="$pkgname"
+	description="Enables networking for peer-to-peer Wi-Fi Displays (Miracast)"
+
+	amove etc/nftables.d/51_wifi_display.nft
+}
+
+networkmanager() {
+	depends="$pkgname"
+	description="Enables nftables backend in NetworkManager"
+	install_if="$pkgname=$pkgver-r$pkgrel networkmanager"
+
+	install -Dm644 "$srcdir"/networkmanager.conf \
+	       "$subpkgdir"/usr/lib/NetworkManager/conf.d/50-nftables.conf
+}
+
+sha512sums="
+166d77bcccc85a3db24af85010d07241cf193bccd79064863fbf9da7be4426364e9f9a9e0668c2c8018ada470d0fda30fe8eba24d24a2d4150af1d78af31b9b7  00_log_all.nft
+10b3ab4d1f98a669e88fb2113a3880c4bf410d68859fe6a3efe8d638e3060af4a829485aed8c8da226c7fb7a53bab1bc90a659cb8fad9ccd226d808dbba94caf  01_wwan.nft
+ae6a8ac03d4643004f5ce9279083bc12a215ceb2ee66993a26ab5620bb1aab347541eb1729b38cc7ec9d232de07e0176bc59475669741dfa2588c9e1ec4a4958  10_dhcp.nft
+a3f3fc76a636b1bed9de251f93cef46139b06e1c13113a6b6100ef08e79d249cb89a1b61d9b6bfbec73bdefdeb47360a6bb048488b4bccc2dccfc26d0635b579  50_ausweisapp2.nft
+597bf66783379691962f4b87a29e6219d5f87ef17d49b261c7b1eebe54561deafce4be77de3b39252c10b7b4452ac5b55870dd30605d7d0f074d27b06d1dfa6d  50_mdns.nft
+54f7e043b22097fd31d925b1fb34c57f1b4b01331efa34ec0552a8259c217a29e317335df4ce6b4c2abcf2f6565c582c4304be5ac08ba8fd2a988c0af89412f3  50_rdpserver.nft
+5779bbcc55e411ec4da58e4e7eaaa6918cdcea5b8818cd72ab93be2d1108f020861457dbd8079a60b0912f84d05eb7b42274cc9a0577f66e8322f3596b89b411  50_upnp_client.nft
+9207bef8d2df8d728521aef19f3c6ccb5c645a0295617b54722a6867c86b29c13502a01747eb3c91602f416f60bdc2bfa18dfb4906e17494923996596b6b1444  50_vlc_chromecast.nft
+c688e768c709ad17685641a6ba543f84e8466080356712073e06108fc1707109f590be45b8a0aca8d0d95171c5afe69887f71b78fe56444912dd0582a461f477  50_vncserver.nft
+76ac156ee80f895ab4f574f70f4ee9f960dfd23a3381bbbf7c744bea919b98f69e91e2eaa10425dfeaf5dbe77b745ec1dd82cb94953835873baffd9e5d89e166  51_docker.nft
+1ce70bb71c9008b6c727a2c26d11467be3b5a0cb9815a8bb0790150c7958457b22b110e35ba974973b9579d44bd14219985d85597c954b5fa8cf77bf206c959b  51_hotspot.nft
+ea7d8a652808ba6ae92de6dfc9f7d57415e411a04db3a41d1480f254b3a3a574558dbee2e7259e5d527527a11ca3aace7bb9edc7e023b0f4f67afceefeeb9e88  51_usb_inet.nft
+c243534219eca3ea31504eef9ea88f8c2e00f2340e9dec3d381459a84a09a7390c8327eac43ae38155f6d7a059327cb26be63451a1ba280664fc1da81b27f7be  51_wifi_display.nft
+0e86974602622c03f0b34acd048e3a31157c0226ab4b5ec093a19696af3fc9637ed84cecf0d190941e4bd3afeb0c76a37245fa850abef46778cd1235ad8106df  60_usb.nft
+1532899534d7432a7708620cf1053ab80635fffe038a2352eb890c35fba4247c3b9ab3d0b028da1be765e5feb9b5a5b3a8107f4aa79f790d17930d38535a2288  99_drop_log.nft
+ea738469e68b8a8038f301b0cb901cd305445321ee24c4b4025365b4b95d5c61113a5bb24ab4efaa73eda23c2e06984d3e58395584fcb8887cf1595ea99542da  networkmanager.conf
+"

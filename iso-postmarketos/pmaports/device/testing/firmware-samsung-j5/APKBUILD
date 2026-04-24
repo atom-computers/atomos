@@ -1,0 +1,29 @@
+maintainer="Raymond Hackley <wonderfulShrineMaidenOfParadise@postmarketos.org>"
+pkgname=firmware-samsung-j5
+pkgver=1
+pkgrel=2
+_name="Samsung Galaxy J5 (2015)"
+pkgdesc="Firmware for $_name"
+url="https://postmarketos.org"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-WCNSS_qcom_wlan_nv.bin::https://github.com/nergzd723/j53g_firmware/raw/master/WCNSS_qcom_wlan_nv.bin"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="$_name WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/$pkgname-WCNSS_qcom_wlan_nv.bin \
+		"$subpkgdir/$_fwdir"/wlan/prima/WCNSS_qcom_wlan_nv.bin
+}
+
+sha512sums="
+742ee81d034116cf1ecdfae5f75495e6b10ce5be0c2a999b6c8a2c161b1da8b48d6810d5405edb8c829b96fdf75e45a565c74963c76d1bca4aaedf28572fa91f  firmware-samsung-j5-WCNSS_qcom_wlan_nv.bin
+"

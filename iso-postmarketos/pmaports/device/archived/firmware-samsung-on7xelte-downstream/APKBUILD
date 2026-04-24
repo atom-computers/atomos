@@ -1,0 +1,43 @@
+# Archived: Only used by archived downstream kernel
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=firmware-samsung-on7xelte-downstream
+pkgver=1
+pkgrel=0
+pkgdesc="Samsung Galaxy J7 Prime Firmware"
+url="https://github.com/DevOtag-Open-Source/android_vendor_samsung_on7xelte"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+_commit="51b221e521ff93e51c40366f0245d6815248f817"
+_repo="https://raw.githubusercontent.com/DevOtag-Open-Source/android_vendor_samsung_on7xelte/eleven/proprietary/"
+_prefix=$pkgname-$_commit
+
+_files_etc="bcmdhd_sta.bin nvram_net.txt"
+_files_vendor="mfc_fw.bin fimc_is_lib.bin bcm43438A1_V0068.0286.hcd setfile_4h5yc.bin setfile_imx258.bin"
+
+for _file in $_files_etc; do
+	source="$source $_prefix-$_file::$_repo/etc/wifi/$_file"
+done
+
+for _file in $_files_vendor; do
+	source="$source $_prefix-$_file::$_repo/vendor/firmware/$_file"
+done
+
+package() {
+	local file
+	for file in $_files_etc $_files_vendor; do
+		install -Dm644 "$srcdir/$_prefix-$file" \
+		"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+
+}
+sha512sums="
+fa250eecbbea53e0a5dbe8317e9a40ee189d4f016122fedff93d299cd799b8f95761643ce4042709a83705189348cf5d5b5bcf74acbeb7d84dc30ec3a62ee6c5  firmware-samsung-on7xelte-downstream-51b221e521ff93e51c40366f0245d6815248f817-bcmdhd_sta.bin
+183fa0fc0bb87602154d23b6fcaf699f0556919b4a9625ff83df4ba2514beb79a1abcb4fb7d2d18e2d57bc726caea579715c377225c7efffb03a65fa5aa2ab56  firmware-samsung-on7xelte-downstream-51b221e521ff93e51c40366f0245d6815248f817-nvram_net.txt
+ef58a1c6bfebd7ef43cc16de834a8446cc373a3e304dac279c6d7f061bda80f96a9f5b9e2b6d21de7eb53f4abfddeb597306bbf2eed579b1441a247e29bf888e  firmware-samsung-on7xelte-downstream-51b221e521ff93e51c40366f0245d6815248f817-mfc_fw.bin
+2eacf2bac885578d1619978b33a9cf14357dda024705c7a88449b460aec08d94e499d5c5ff7f96862591dbf667729a3b0f772a3f00c0c06ebe07f9d227d89086  firmware-samsung-on7xelte-downstream-51b221e521ff93e51c40366f0245d6815248f817-fimc_is_lib.bin
+a86e5021f8c3e8fd4f568a412ae9052e70ada65cbf8cf46b7d6c27ec8ef6e925d0eeff843214451959e783b04a06803ed5bb39e064fbbaae7421e41dbb93d19e  firmware-samsung-on7xelte-downstream-51b221e521ff93e51c40366f0245d6815248f817-bcm43438A1_V0068.0286.hcd
+4da1d0b5cfd608a5d22d1b8b35c4b7bc6915a2da3a999d9d4c1a38404686c9aefb9508e90b4c84c7d88b6a715ff71b8de04c8959f7cc830c82cb45485ad152fc  firmware-samsung-on7xelte-downstream-51b221e521ff93e51c40366f0245d6815248f817-setfile_4h5yc.bin
+29d8601d4f77fe49a38ec974d7ad432f1815e55a7f9d011fcdaa45580653c395a7f89debdea7588f693a111043f9dee286948ed1e4fbb1b1b4807ec6799ba34f  firmware-samsung-on7xelte-downstream-51b221e521ff93e51c40366f0245d6815248f817-setfile_imx258.bin
+"

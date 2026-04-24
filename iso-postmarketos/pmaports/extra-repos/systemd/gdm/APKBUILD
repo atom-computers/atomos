@@ -1,0 +1,93 @@
+# Forked from Alpine for systemd support and dropping x11
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=gdm
+_pkgver=50.0
+pkgver=9999$_pkgver
+pkgrel=3
+pkgdesc="GNOME display manager"
+url="https://gitlab.gnome.org/GNOME/gdm"
+# blocked by gnome-shell
+arch="all !armhf !s390x"
+license="GPL-2.0-or-later"
+depends="
+	dbus
+	gnome-session
+	gnome-settings-daemon
+	gnome-shell
+	gsettings-desktop-schemas
+	linux-pam>=1.4
+	xrdb
+	xwayland
+	"
+makedepends="
+	accountsservice-dev
+	audit-dev
+	dconf
+	eudev-dev
+	gettext
+	glib-dev
+	gtk+3.0-dev
+	itstool
+	json-glib-dev
+	libcanberra-dev
+	libgudev-dev
+	libselinux-dev
+	libsm-dev
+	libx11-dev
+	libxau-dev
+	libxcb-dev
+	libxdmcp-dev
+	linux-pam-dev
+	meson
+	systemd-dev
+	"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang $pkgname-systemd"
+options="!check" # Causes circular dep with gnome-shell
+source="https://download.gnome.org/sources/gdm/${_pkgver%%.*}/gdm-$_pkgver.tar.xz
+	0003-DOWNSTREAM-pam-rename-common-to-base.patch
+	disable-userdb.patch
+	gdm.sysusers
+	gdm.tmpfiles
+	gnome-login-session.patch
+	"
+install="gdm.pre-install gdm.post-deinstall"
+builddir="$srcdir/gdm-$_pkgver"
+
+build() {
+	abuild-meson \
+		-Db_lto=true \
+		-Ddefault-pam-config=openembedded \
+		-Dgdm-xsession=false \
+		-Dpam-mod-dir=/usr/lib/security \
+		-Dselinux=enabled \
+		-Dlibaudit=enabled \
+		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
+		-Dsystemduserunitdir=/usr/lib/systemd/user \
+		-Dx11-support=false \
+		. output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	install -Dm644 "$srcdir/gdm.sysusers" "$pkgdir"/usr/lib/sysusers.d/gdm.conf
+	install -Dm644 "$srcdir/gdm.tmpfiles" "$pkgdir"/usr/lib/tmpfiles.d/gdm.conf
+}
+
+systemd() {
+	amove usr/lib/sysusers.d/gdm.conf
+	amove usr/lib/tmpfiles.d/gdm.conf
+	default_systemd
+}
+
+sha512sums="
+e4236564014dd79d9369e56be0933278811ae276e6296b580e4b724b3f7fb2f1209b886230fb59137d66d67bee4124251404f998b2cb41e58e36882a4186325a  gdm-50.0.tar.xz
+66611d49fc4c9578415a7e554834edcb9de99396bd0ca511dcfd4fb256e8a1cd1fd5f10464f4668ffe04799d919bc22ddb58e8bf272017edba69a7951522e63d  0003-DOWNSTREAM-pam-rename-common-to-base.patch
+4cbaf87896c6d890b5bdbdf13ee31c81b3cdbcba44cd8a48606268f28202fd775361c9507a503d680c70ba49eff00b896935942daf8615f434b903ae0e76fe20  disable-userdb.patch
+cdac8a8d0563f050ed7b8f4d31ea085ae24550bd99ab57ed4f3469723aea2bdcdb92330b625a96e4e366a8c3334d3b7657e0fafe9b914df6f846ea2bd0be22ec  gdm.sysusers
+b2492cb554aef98265037cf18cf55ee5f0a881bd1120d77a2ebc5b1da6b123bac028a31cc43fdb0a307886bd264073dd7723290b42392dfba9fbe64aadfd9934  gdm.tmpfiles
+96bb63304b8b728930166b157d48e01baf90947a85e6802010ee6541c3cdcf5f5df7fdc0e3a51a81985c6a398215b978825188364191c8325f84db1a562605ab  gnome-login-session.patch
+"

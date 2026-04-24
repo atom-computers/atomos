@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=u-boot-kobo-clara
+pkgver=2023.10
+pkgrel=1
+pkgdesc="U-Boot for Kobo Clara HD"
+arch="armv7"
+_carch="arm"
+license="GPL-2.0"
+url="https://github.com/akemnade/u-boot-fslc"
+makedepends="bash bc dtc bison flex openssl-dev"
+options="!check !tracedeps pmb:cross-native"
+
+install="$pkgname.post-upgrade"
+_repository="u-boot-fslc"
+_commit="3247fa27aed27bb5ac24bd9966fd7dadd9c4c373"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/akemnade/$_repository/archive/$_commit.tar.gz
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+build() {
+	make ARCH="$_carch" mx6sllclarahd_defconfig
+	scripts/config --set-str BOOTCOMMAND "detect_clara_rev ; run distro_bootcmd ; fastboot 0"
+	scripts/config -e ENV_IS_IN_EXT4
+	scripts/config -d ENV_IS_IN_MMC
+	scripts/config --set-str ENV_EXT4_INTERFACE "mmc"
+	scripts/config --set-str ENV_EXT4_DEVICE_AND_PART "0:1"
+	scripts/config --set-str ENV_EXT4_FILE "/uboot.env"
+	make ARCH="$_carch"
+}
+
+package() {
+	install -Dm644 "$builddir/u-boot-dtb.imx" "$pkgdir/usr/share/u-boot/kobo-clara/u-boot.imx"
+}
+
+sha512sums="
+725f689bd5bd00f3b484830e5db9be51af6ed6f5644463e646db2c412f5878361e887ed4f3b3083a3e16f0915c909af22081cb52fd8541ac2953e1f77ffc5940  u-boot-kobo-clara-3247fa27aed27bb5ac24bd9966fd7dadd9c4c373.tar.gz
+"

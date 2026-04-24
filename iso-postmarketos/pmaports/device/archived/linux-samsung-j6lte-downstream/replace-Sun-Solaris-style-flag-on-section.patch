@@ -1,0 +1,75 @@
+diff --git a/arch/arm/boot/bootp/init.S b/arch/arm/boot/bootp/init.S
+index 78b50807..868eeeaa 100644
+--- a/arch/arm/boot/bootp/init.S
++++ b/arch/arm/boot/bootp/init.S
+@@ -16,7 +16,7 @@
+  *  size immediately following the kernel, we could build this into
+  *  a binary blob, and concatenate the zImage using the cat command.
+  */
+-		.section .start,#alloc,#execinstr
++		.section .start, "ax"
+ 		.type	_start, #function
+ 		.globl	_start
+ 
+diff --git a/arch/arm/boot/compressed/big-endian.S b/arch/arm/boot/compressed/big-endian.S
+index 25ab26f1..f22428e2 100644
+--- a/arch/arm/boot/compressed/big-endian.S
++++ b/arch/arm/boot/compressed/big-endian.S
+@@ -5,7 +5,7 @@
+  *  Author: Nicolas Pitre
+  */
+ 
+-	.section ".start", #alloc, #execinstr
++	.section ".start", "ax"
+ 
+ 	mrc	p15, 0, r0, c1, c0, 0	@ read control reg
+ 	orr	r0, r0, #(1 << 7)	@ enable big endian mode
+diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+index d2e45951..290a13ed 100644
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -109,7 +109,7 @@
+ #endif
+ 		.endm
+ 
+-		.section ".start", #alloc, #execinstr
++		.section ".start", "ax"
+ /*
+  * sort out different calling conventions
+  */
+diff --git a/arch/arm/boot/compressed/piggy.lzma.S b/arch/arm/boot/compressed/piggy.lzma.S
+index d7e69cff..cfea81ae 100644
+--- a/arch/arm/boot/compressed/piggy.lzma.S
++++ b/arch/arm/boot/compressed/piggy.lzma.S
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata, "a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.lzma"
+diff --git a/arch/arm/mm/proc-v7.S b/arch/arm/mm/proc-v7.S
+index 22ac2a6f..68744e1c 100644
+--- a/arch/arm/mm/proc-v7.S
++++ b/arch/arm/mm/proc-v7.S
+@@ -462,7 +462,7 @@ __v7_setup_stack:
+ 	string	cpu_elf_name, "v7"
+ 	.align
+ 
+-	.section ".proc.info.init", #alloc, #execinstr
++	.section ".proc.info.init", "ax"
+ 
+ 	/*
+ 	 * Standard v7 proc info content
+diff --git a/arch/arm64/mm/proc.S b/arch/arm64/mm/proc.S
+index 302353d9..22f35fb5 100644
+--- a/arch/arm64/mm/proc.S
++++ b/arch/arm64/mm/proc.S
+@@ -186,7 +186,7 @@ ENTRY(cpu_do_switch_mm)
+ 	ret
+ ENDPROC(cpu_do_switch_mm)
+ 
+-	.section ".text.init", #alloc, #execinstr
++	.section ".text.init", "ax"
+ 
+ /*
+  *	__cpu_setup

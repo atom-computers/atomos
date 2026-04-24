@@ -1,0 +1,75 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/(w7ds_lineageos_defconfig)
+
+pkgname=linux-lg-w7
+pkgver=3.4.0
+pkgrel=2
+pkgdesc="LG Optimus L90 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="lg-w7"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_lge_msm8226"
+_commit="bf756279493c2cc4656b784afa29822b30838e98"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -o "$_outdir/arch/$_carch/boot"/dt.img \
+		"$_outdir/arch/$_carch/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+6406689c9fe29ab7bc6874cd7ed0d3770fd15a3befc90f1d2fef26b100c581c0dd99ec3bd30f83ff42f2ba8b29239ac7254ebc8f359fbe70348d862b07057e79  linux-lg-w7-bf756279493c2cc4656b784afa29822b30838e98.tar.gz
+e1b7a513a9e5a8c5a041b01ff866576c78aedfe05882a43da06c916c11c48e2a082998efd275f4b25e1c872bb94c292765d4fbc1f9806dd977cd255d04c14b4f  config-lg-w7.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+25217ec622dbcb811c9a7375c6e360f313e58c8433a300c9a9afd3f17712ec0d322e16501c72c49fef9e38a2d3a69718401bf4269977fccd075a4a57d8458c5d  linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

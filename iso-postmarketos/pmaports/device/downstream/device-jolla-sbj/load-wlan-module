@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+description="Loading wlan module"
+
+depend()
+{
+	need wcnss-wlan
+	before wlan
+}
+
+start()
+{
+	ebegin "Loading wlan module"
+	modprobe wlan || return 1
+}
+
+stop()
+{
+	ebegin "Unloading wlan module"
+	rmmod wlan || return 1
+}
+

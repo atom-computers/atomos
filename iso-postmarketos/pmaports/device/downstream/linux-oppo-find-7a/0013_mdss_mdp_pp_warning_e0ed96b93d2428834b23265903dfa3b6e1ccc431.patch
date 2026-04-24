@@ -1,0 +1,26 @@
+From e0ed96b93d2428834b23265903dfa3b6e1ccc431 Mon Sep 17 00:00:00 2001
+From: sub77 <sub77@ymail.com>
+Date: Wed, 10 Feb 2016 12:07:37 +0100
+Subject: [PATCH] gcc5: drivers/video/msm/mdss/mdss_mdp_pp.c: fix warning: 
+ comparison of constant '15' with boolean expression is always false
+
+---
+ drivers/video/msm/mdss/mdss_mdp_pp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_mdp_pp.c b/drivers/video/msm/mdss/mdss_mdp_pp.c
+index ea133ee2a9f..3c97e086f79 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_pp.c
++++ b/drivers/video/msm/mdss/mdss_mdp_pp.c
+@@ -4173,7 +4173,7 @@ int mdss_mdp_ad_input(struct msm_fb_data_type *mfd,
+ 	mutex_lock(&ad->lock);
+ 	if ((!PP_AD_STATE_IS_INITCFG(ad->state) &&
+ 			!PP_AD_STS_IS_DIRTY(ad->sts)) &&
+-			!input->mode == MDSS_AD_MODE_CALIB) {
++			input->mode == MDSS_AD_MODE_CALIB) {
+ 		pr_warn("AD not initialized or configured.");
+ 		ret = -EPERM;
+ 		goto error;
+-- 
+2.21.0
+

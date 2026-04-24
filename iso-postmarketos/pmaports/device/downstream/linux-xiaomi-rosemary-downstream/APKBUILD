@@ -1,0 +1,79 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/rosemary_defconfig
+
+pkgname=linux-xiaomi-rosemary-downstream
+pkgver=4.14.340
+pkgrel=0
+pkgdesc="Xiaomi Redmi Note 10S kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-rosemary"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	android-tools
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	cpio
+	gzip
+	xz
+	perl
+	clang
+	dtc
+"
+
+export CC="clang"
+export HOSTCC="clang"
+
+# Source Backup of https://github.com/SpendYT/android_kernel_xiaomi_mt6785
+_repository="android_kernel_xiaomi_mt6785"
+_commit="254520f2902bcb3ec8a982745ee3745f23a56da6"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/recorvus/$_repository/archive/$_commit.tar.gz
+	$_config
+	selinux_include_generated_headers.patch
+	use_system_cpio.patch
+	stop-inlining-blk_crypto_flock-and-ksm_flock.patch
+	use_system_dtc.patch
+	fix-check-lxdialog.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make modules_install dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+}
+
+sha512sums="
+293a02cd4f7f9d8ab3bdf63b6187765ba9229f599fc13455dd2b12aa4818168610d99b5c734c5d864d1b7114ac3db02b714c07e6b65371ea1db50054c3b09bfa  linux-xiaomi-rosemary-downstream-254520f2902bcb3ec8a982745ee3745f23a56da6.tar.gz
+2afe08188fbd0f1c7a02bbba399901b69c482fc243f843b61872f5aa5127c40004ee30b9b0c1ed3538ce66b3c4f608c254bc2d8a4c9348dd2a100b702a548ad2  config-xiaomi-rosemary.aarch64
+6ab9db01d35f7f5cc2c19ebe5f65a7dc479a1c68de587300cdde9a6c759d34610666c72f0f321cd450cf56c13df3b54a774e0f7ebdbf0f8608fbfd66b49d04e7  selinux_include_generated_headers.patch
+28975f5aac872eab10bdfe2b29a8685b70ddb0d105c6c66a26de88ac912573b430fa20901b65384c9cb99d9740cdff7804cfd95474176f93a5bffbccf8182208  use_system_cpio.patch
+e448a1093c09414be36333fbdb0d4a3bc5b59018d571b702c6607cb32927cf1563bf03aa1f2d502e6040490e0b26198dd8204306ebaad41be810ba2d47a2721c  stop-inlining-blk_crypto_flock-and-ksm_flock.patch
+c9e562403cd572c66def9adea434731b77617f7561f1ce1079e21e8f02e8fd9cc1febd7e52c581e8e4b1c4aca21c5ca8c5813d2006be13051048d681a640ab3d  use_system_dtc.patch
+f748320ebe3e630b37977b6ea9f09498251cbf27368a7851b0a514853df6ad85da90cd282f62de1fbe95c551d91db82279be13611867263f4bc8aac3398aef82  fix-check-lxdialog.patch
+"

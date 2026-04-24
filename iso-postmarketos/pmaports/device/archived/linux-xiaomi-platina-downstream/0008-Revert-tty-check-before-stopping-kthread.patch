@@ -1,0 +1,29 @@
+From 7fc383ecf3a8913dfb89fb7e6a4d2e9376f91fcd Mon Sep 17 00:00:00 2001
+From: TAKIZAWA Fumiya <takizawa.fumiya34@gmail.com>
+Date: Sat, 9 May 2020 23:58:39 +0900
+Subject: [PATCH 1/6] Revert "tty: check before stopping kthread"
+
+This reverts commit d74871d364a32d28c70eb9f521807d8ca6e1968e.
+
+This is a workaround for a crash when CONFIG_VT=y
+---
+ drivers/tty/tty_buffer.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/tty/tty_buffer.c b/drivers/tty/tty_buffer.c
+index 92af201f9030..8917b6f87b04 100644
+--- a/drivers/tty/tty_buffer.c
++++ b/drivers/tty/tty_buffer.c
+@@ -132,8 +132,7 @@ void tty_buffer_free_all(struct tty_port *port)
+ 	buf->tail = &buf->sentinel;
+ 
+ 	atomic_set(&buf->mem_used, 0);
+-	if (!IS_ERR_OR_NULL(port->worker_thread))
+-		kthread_stop(port->worker_thread);
++	kthread_stop(port->worker_thread);
+ }
+ 
+ /**
+-- 
+2.26.2
+

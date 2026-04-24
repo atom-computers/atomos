@@ -1,0 +1,49 @@
+From 2ebbc5585b50866cc02ee682db2c12770361c52d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Duje=20Mihanovi=C4=87?= <duje@dujemihanovic.xyz>
+Date: Thu, 18 Sep 2025 16:46:23 +0200
+Subject: [PATCH 6/9] arm64: dts: marvell: samsung,coreprimevelte: Use
+ memory-region for framebuffer
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Since the framebuffer resides in system RAM, use the memory-region
+property preferred in that case over reg.
+
+Also, testing showed that reusing most of the region (excluding where
+the actual framebuffer resides) is perfectly safe, so do that and save
+~22.5 MiB of RAM in the process.
+
+Signed-off-by: Duje Mihanović <duje@dujemihanovic.xyz>
+---
+ .../dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts     | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+index 36d6ae4e902e..faeea5001364 100644
+--- a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
++++ b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+@@ -23,7 +23,7 @@ chosen {
+ 
+ 		fb0: framebuffer@17177000 {
+ 			compatible = "simple-framebuffer";
+-			reg = <0 0x17177000 0 (480 * 800 * 4)>;
++			memory-region = <&fb_mem>;
+ 			power-domains = <&apmu PXA1908_POWER_DOMAIN_DSI>;
+ 			width = <480>;
+ 			height = <800>;
+@@ -48,8 +48,9 @@ secure-region@0 {
+ 			reg = <0 0 0 0x1000000>;
+ 		};
+ 
+-		framebuffer@17000000 {
+-			reg = <0 0x17000000 0 0x1800000>;
++		/* The "active buffer" is at 0x17000000 + (size of one buffer). */
++		fb_mem: framebuffer@17177000 {
++			reg = <0 0x17177000 0 (480 * 800 * 4)>;
+ 			no-map;
+ 		};
+ 	};
+-- 
+2.53.0
+

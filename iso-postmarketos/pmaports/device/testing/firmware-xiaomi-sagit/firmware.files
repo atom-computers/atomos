@@ -1,0 +1,13 @@
+ath10k/WCN3990/hw1.0/board-2.bin
+ath10k/WCN3990/hw1.0/firmware-5.bin
+qcom/a540_gpmu.fw2
+qcom/msm8998/xiaomi/a540_zap.mbn
+qcom/msm8998/xiaomi/adsp.mbn
+qcom/msm8998/xiaomi/adspua.jsn
+qcom/msm8998/xiaomi/ipa_fws.mbn
+qcom/msm8998/xiaomi/mba.mbn
+qcom/msm8998/xiaomi/modem.mbn
+qcom/msm8998/xiaomi/modemuw.jsn
+qcom/msm8998/xiaomi/slpi_v2.mbn
+qcom/msm8998/xiaomi/slpius.jsn
+qcom/msm8998/xiaomi/wlanmdsp.mbn

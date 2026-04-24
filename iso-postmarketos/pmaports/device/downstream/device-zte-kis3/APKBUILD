@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-zte-kis3
+pkgdesc="ZTE Open C / Kis 3"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-zte-kis3 mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-zte-kis3"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+a14fe81631ce5e8eb41aeb1579228d323fefcd86656853a791def5ce33127f3e31a0f0037524dcaf256b0086b8805555694bfaf7d8bf8f6806da3de117476ec5  deviceinfo
+2dc51efac5814437284691829fb01a22c9f8bf7759ceb2ce274a02d81e366a224d980cc39d81a8aec5c10d9dbb1d681ee0e05a7709cd4c173eac7269db035a8f  kernel-cmdline.conf
+2d00033baa1cddacb94a9cbdf163dd0d15b4427ded07ef0718ef55ffc8fae2483018d3c1cedff6cf2b7e54de733f603f79c6456d2d4bbf1e41937671060783ff  initfs-hook.sh
+"

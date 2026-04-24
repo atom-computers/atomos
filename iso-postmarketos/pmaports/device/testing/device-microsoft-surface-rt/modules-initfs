@@ -1,0 +1,6 @@
+surface-rt-ec
+hid-generic
+i2c-hotplug-gpio
+i2c-hid-of
+lvds-codec
+panel-lvds

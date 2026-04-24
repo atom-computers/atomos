@@ -1,0 +1,22 @@
+diff --git a/drivers/hisi/mntn/blackbox/platform_ap/rdr_hisi_ap_adapter.c b/drivers/hisi/mntn/blackbox/platform_ap/rdr_hisi_ap_adapter.c
+index ddefead5..66373bde 100644
+--- a/drivers/hisi/mntn/blackbox/platform_ap/rdr_hisi_ap_adapter.c
++++ b/drivers/hisi/mntn/blackbox/platform_ap/rdr_hisi_ap_adapter.c
+@@ -194,7 +194,7 @@ static unsigned long exception_buf_len __attribute__((__section__(".data")));
+  * You should not use this function to access IO space, use memcpy_toio()
+  * or memcpy_fromio() instead.
+  */
+-__no_sanitize_address static void *memcpy_rdr(void *dest, const void *src, size_t count)
++__attribute__((no_sanitize_address)) static void *memcpy_rdr(void *dest, const void *src, size_t count)
+ {
+ 	char *tmp = dest;
+ 	const char *s = src;
+@@ -1047,7 +1047,7 @@ void regs_dump(void)
+ 	}
+ }
+ 
+-__no_sanitize_address void last_task_stack_dump(void)
++__attribute__((no_sanitize_address)) void last_task_stack_dump(void)
+ {
+ 	int i;
+ 	unsigned char *dst = NULL;

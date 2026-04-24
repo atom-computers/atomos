@@ -1,0 +1,233 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Newbyte <newbyte@postmarketos.org>
+# Contributor: Clayton Craft <clayton@craftyguy.net>
+maintainer="Alistair Francis <alistair@alistair23.me>"
+pkgname=device-purism-librem5
+pkgver=12
+pkgrel=1
+_confver=69
+_purismrel=2
+# <librem5-base ver>.<purism release>
+_purismver=${_confver}pureos$_purismrel
+pkgdesc="Purism Librem 5 Phone (librem5-base: $_purismver)"
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+# postmarketos-base-ui-audio-backend-pulseaudio, pulseaudio<9990: pma#3858, pma#4187
+depends="
+	alsa-ucm-conf
+	bash
+	bluez
+	bluez-deprecated
+	bm818-tools
+	gnss-share
+	i2c-tools
+	iw
+	linux-purism-librem5>=6.3
+	mesa-egl
+	millipixels
+	postmarketos-base
+	postmarketos-base-ui-audio-backend-pulseaudio
+	pulseaudio<9990
+	postprocessd
+	u-boot-librem5
+	u-boot-tools
+	wys
+"
+makedepends="devicepkg-dev u-boot-tools"
+builddir=$srcdir/librem5-base-pureos-$_confver
+source="
+	https://source.puri.sm/Librem5/librem5-base/-/archive/pureos/$_purismver/librem5-base-pureos-$_purismver.tar.gz
+	00-mesa.sh
+	deviceinfo
+	modules-initfs
+	flash_script.lst
+	modprobe.d_rsi.conf
+	modules-load.d_librem5.conf
+	pcscd-librem5-reader.conf
+	pcscd-librem5.initd
+	uboot-script.cmd
+	xorg.conf
+	70-librem5-xwayland-accel.sh
+	0001-udev-cameras-use-correct-path-for-modprobe-on-Alpine.patch
+	l5-brcm-bt-enable.initd
+	l5-brcm-bt-enable.service
+	l5-lockdown-support.initd
+	l5-ship-mode.initd
+	udev/70-brcm-bluetooth.rules
+	udev/70-wifi-pm.rules
+"
+subpackages="
+	$pkgname-gnome
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-pulseaudio
+	$pkgname-openrc
+	$pkgname-smartcard
+	$pkgname-smartcard-openrc:smartcard_openrc
+	$pkgname-systemd
+	$pkgname-tinydm
+	$pkgname-usbguard
+	$pkgname-x11
+"
+# TODO: remove "replaces" when upstream ucm has proper L5 support...
+replaces="alsa-ucm-conf"
+
+
+builddir="$srcdir/librem5-base-pureos-$_purismver"
+
+build() {
+	mkimage -A arm64 -C none -O linux -T script -d "$srcdir/uboot-script.cmd" "$srcdir/boot.scr"
+	devicepkg_build $startdir $pkgname
+}
+
+gnome() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-base-ui-gnome"
+	install -D -m644 "$builddir"/default/org.freedesktop.ModemManager1.pkla \
+		"$subpkgdir"/var/lib/polkit-1/localauthority/10-vendor.d/org.freedesktop.ModemManager1.pkla
+}
+
+pulseaudio() {
+	pkgdesc="Pulseaudio support for the Librem 5"
+	install_if="$pkgname pulseaudio"
+	# install config files from upstream Purism
+	mkdir -p "$subpkgdir"/etc/pulse/
+	cp -r "$builddir"/default/audio/pulse/daemon.conf.d "$subpkgdir"/etc/pulse/
+	install -D -m644 "$builddir"/default/audio/pulse/librem5.pa "$subpkgdir"/etc/pulse/librem5.pa
+	mkdir -p "$subpkgdir"/usr/share/pulseaudio/alsa-mixer
+	cp -r "$builddir"/default/audio/profile-sets "$subpkgdir"/usr/share/pulseaudio/alsa-mixer/
+}
+
+tinydm() {
+	pkgdesc="Tinydm config for the Librem 5"
+	install_if="$pkgname tinydm"
+	install -Dm755 "$srcdir"/70-librem5-xwayland-accel.sh \
+		"$subpkgdir"/usr/share/tinydm/env-wayland.d/70-librem5-xwayland-accel.sh
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+smartcard() {
+	pkgdesc="OpenPGP SmartCard support for the Librem 5"
+	depends="$pkgname ccid gnupg-scdaemon pcsc-lite pcsc-tools"
+	install_if="$pkgname pcsc-tools"
+
+	mkdir -p "$subpkgdir"
+}
+
+smartcard_openrc() {
+	install_if="$pkgname-smartcard=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="openrc"
+
+	install -D -m644 "$srcdir"/pcscd-librem5-reader.conf \
+		"$subpkgdir"/etc/reader.conf.d/librem5-ttxs-reader
+	install -D -m755 "$srcdir"/pcscd-librem5.initd \
+		"$subpkgdir"/etc/init.d/pcscd-librem5
+}
+
+usbguard() {
+	pkgdesc="USB guard support for the Librem 5"
+	install_if="$pkgname usbguard"
+	install -Dm600 "$builddir"/default/usbguard/librem5.conf \
+		-t "$subpkgdir"/etc/usbguard/rules.d/
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-video.conf
+}
+
+package() {
+	install -D -m644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+	install -D -m644 "$srcdir"/modprobe.d_rsi.conf "$pkgdir"/usr/lib/modprobe.d/rsi.conf
+	install -D -m644 "$srcdir"/modules-load.d_librem5.conf "$pkgdir"/usr/lib/modules-load.d/librem5.conf
+	install -D -m644 "$srcdir"/00-mesa.sh "$pkgdir"/etc/profile.d/00-mesa.sh
+	install -D -m644 "$srcdir"/flash_script.lst "$pkgdir"/usr/share/uuu/flash_script.lst
+
+	# udev
+	for f in "$builddir"/debian/*.udev; do
+		# rename the udev rules, dropping the default prefix and (arbitrarily...) using "85-"
+		install -Dm644 "$f" \
+			"$pkgdir"/usr/lib/udev/rules.d/85-"$(basename ${f//librem5-base-defaults./}).rules"
+	done
+	for f in "$srcdir"/*.rules; do
+		# rename the udev rules, dropping the default prefix and (arbitrarily...) using "85-"
+		install -Dm644 "$f" \
+			"$pkgdir"/usr/lib/udev/rules.d/"$(basename $f)"
+	done
+
+	# Bluetooth (Sparklan)
+	install -Dm755 "$srcdir"/l5-brcm-bt-enable.initd \
+		"$pkgdir"/etc/init.d/l5-brcm-bt-enable
+
+	install -Dm644 "$srcdir"/l5-brcm-bt-enable.service -t \
+		"$pkgdir"/usr/lib/systemd/system
+
+	# install audio config files from Purism
+	install -Dm644 "$builddir"/default/audio/ucm2/conf.d/simple-card/Librem\ 5.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/NXP/iMX8/Librem_5/Librem\ 5.conf
+	install -Dm644 "$builddir"/default/audio/ucm2/conf.d/simple-card/HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/NXP/iMX8/Librem_5/HiFi.conf
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/simple-card
+	# relative path seems to be required or else alsa-lib can't figure it out
+	ln -s ../../NXP/iMX8/Librem_5/Librem\ 5.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/simple-card/Librem\ 5.conf
+
+	# ship mode service
+	install -Dm755 "$builddir"/default/shipmode/l5-poweroff-shipmode \
+		-t "$pkgdir"/usr/sbin/
+
+	install -D -m755 "$srcdir"/l5-ship-mode.initd \
+		"$pkgdir"/etc/init.d/l5-ship-mode
+	install -D -m755 "$builddir"/default/shipmode/l5-poweroff-shipmode -t \
+		"$pkgdir"/usr/lib/systemd/system-shutdown/
+
+	# lockdown support
+	install -Dm755 "$builddir"/default/lockdown-support/lockdown-support.sh \
+		-t "$pkgdir"/usr/sbin/
+	install -Dm755 "$builddir"/default/lockdown-support/modprobe.d/librem5-lsm9ds1.conf \
+		-t "$pkgdir"/usr/lib/modprobe.d/
+	install -Dm755 "$srcdir"/l5-lockdown-support.initd \
+		"$pkgdir"/etc/init.d/l5-lockdown-support
+	install -Dm644 "$builddir"/debian/librem5-base-defaults.librem5-lockdown-support.service -t \
+		"$pkgdir"/usr/lib/systemd/system
+
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi and Bluetooth firmware"
+	depends="firmware-siliconlabs-rs9116 firmware-brcm43752"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+f7add67e644664620a06c4905cfa8834c321ee2795632a301c7ffe0b8add5ea0dda6db2765559cef92aef22ea2595b4cab0af52d89c2dc65e01148e4a74be94e  librem5-base-pureos-69pureos2.tar.gz
+2e72d9a084ecd6c96cafbbd8fda461ae8b2ebd14ffda601d9f36d73f08f04088213de17da078293ddd958d4c76d33148c7af6e252eb0709f6934855a55578509  00-mesa.sh
+18e6bc6c214fa8c0ec74e8d6ada8df0ed5981d4c8589116e158b2432a6249fbc94899e5906b5584603c9ceab17e488ffc678b319e547fa57e798680b0fe84ee8  deviceinfo
+138ed85e6509e4611bf21a0061c312e6c2ce60f722ee9e4565d19c5f025301d4df3fa321343524219a54b20c5288dc6ed1b058ac66f4d608af22eb5bc83e84c6  modules-initfs
+ccb47fd421c5e35a8def8e6fb61dad99e42cf542690068a68f90c257e41d33f45f1069db0a8d89372d9029681812957033995639a6a8a5e3eed48019325e0f4d  flash_script.lst
+79a7088139629745a19b0465ac632d61ce7c513fc0bb6ea71784cd615f5ab8b32bee5ea903d7d7eb1a4508c4844f90f0435d789ea2642a529dd930d0de631ca5  modprobe.d_rsi.conf
+a0740e405781ec6ef765fdc9f5700c95adbb241c45c97b9384ba68cdece662cb216ca5918640042f6e65a5d1b1a9099936382c99b49a44303f7b6d77a075a471  modules-load.d_librem5.conf
+8ef4ec7a9e9a4fb801d207e7d94b627aacc9243a93b0ec28e0823a6f44b8102416c040e4ddf499f87bb9dfa960cf6f627b008b79f197f6814b3fd881e18ae8ef  pcscd-librem5-reader.conf
+2618b40eebd3602066ee75ab85cbdbb4cfee498def9879c95a304f05a6eeedf1ab28c5dd9fa5efc8f88c790f49c96458c61d5dfe8a3ca0f96bcc0e244313ab01  pcscd-librem5.initd
+59634b85867a65191934e365ccde40ae03dbad6cf3dc3cc513daf3265dd1105af7cca7d52ef8e20f40fdbdbeb74aee5a26908ae8de083a80e223d2c275a8135d  uboot-script.cmd
+1cbc65cf2cb8fad4b0332d012a0256a266205b9b64371f5c0dae09dbb7f1e45b254e8c43993b896097e9d7035a72d547d9bce1ab2133addc56a5abdb80b44616  xorg.conf
+fad386071fc45f9880a94cc8004fabd5d98b3e6a12606c98d8e72e0208f22ab54f03b921f5967a959782507e2bff67d2fa92e46d8cd242011a3afcdbda529279  70-librem5-xwayland-accel.sh
+b45749fcddfd65a302b502bcabfa5828d1b63e45d844fd50e44009a756b919db20fe9526102947c0f0dfcdffe4a037e5050fe1b24fb915933ce0837f49759378  0001-udev-cameras-use-correct-path-for-modprobe-on-Alpine.patch
+177ec87ec1f110d7c4253a20375c6771c6cfac41057b02bd673caea5399a799a59c5e087037fccf7a104447e6890499a2194aa34bab14df203fa95168ced75d7  l5-brcm-bt-enable.initd
+58edf35607606b7ef9079bfe015b8867c32ff3c0d3c87e11246e9077311017645d1a2d58917eab2990d25a26b85191fb3b9843195387643e4bafe3f3567cd0d2  l5-brcm-bt-enable.service
+f4b314d553655f7975445ac0a33099923e20dabb082c07e2cf6a78e4118c143d777dd4ad2c09cbc388600bdefe8deb3073fbd15b238772ddf09c66ac46415590  l5-lockdown-support.initd
+c723764d507ccd4b04aa5ce79b1d1ebc131873cdc37a943cb0f92b8a08a3c69eb9e0d31fcd4589fd8c40a9676bae9897e4f12ec2ebe4db8214ac85669ef35a53  l5-ship-mode.initd
+b7f5ecd0fefe8a122ed20e7ac21a23a65e007f62a7343c7178712955ed580f5473ca923cedb9f86cd10ecb13a76ab50c91a2f7b8b2fd456ee8420aeca75f3fec  70-brcm-bluetooth.rules
+8b6fa7b12c15f439c561901f3ffe24a1ef2a0c343401c0a79281060854ab29e08a1fb5e7adae8684b12aa9f535ed99e2dad993dce9724822cb0fbf2497dd86e5  70-wifi-pm.rules
+"

@@ -1,0 +1,7 @@
+usr/bin/
+usr/lib/systemd/user
+usr/lib/sysusers.d/feedbackd.conf
+usr/lib/udev/
+usr/libexec/
+usr/share/dbus-1/
+usr/share/feedbackd/

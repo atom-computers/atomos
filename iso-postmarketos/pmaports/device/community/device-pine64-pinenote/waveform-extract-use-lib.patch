@@ -1,0 +1,47 @@
+diff --git a/bin/waveform_extract.sh.orig b/bin/waveform_extract.sh
+index e00be1c4ad..8e97749555 100755
+--- a/bin/waveform_extract.sh.orig
++++ b/bin/waveform_extract.sh
+@@ -3,8 +3,8 @@
+ set -e
+ 
+ IN=/dev/disk/by-partlabel/waveform
+-OUT=/usr/lib/firmware/rockchip/ebc.wbf
++OUT=/lib/firmware/rockchip/ebc.wbf
+ 
+-mkdir -p /usr/lib/firmware/rockchip
++mkdir -p /lib/firmware/rockchip
+ size=$(hexdump --skip 4 --length 4 "${IN}" --format '"%u"')
+ head -c "${size}" "${IN}" > "${OUT}"
+diff --git a/systemd/pinenote-hrdl-extract-waveform.service.orig b/systemd/pinenote-hrdl-extract-waveform.service
+index dddbc1e5d0..37d8952cdb 100644
+--- a/systemd/pinenote-hrdl-extract-waveform.service.orig
++++ b/systemd/pinenote-hrdl-extract-waveform.service
+@@ -3,8 +3,8 @@ Description=Extract rockchip_ebc ebc.wbf waveform from waveform partition
+ 
+ [Service]
+ Type=oneshot
+-ExecCondition=/usr/bin/test ! -e /usr/lib/firmware/rockchip/ebc.wbf
+-ExecStart=/usr/bin/waveform_extract.sh
++ExecCondition=/usr/bin/test ! -s /lib/firmware/rockchip/ebc.wbf
++ExecStart=/usr/libexec/pinenote/waveform_extract.sh
+ 
+ [Install]
+ WantedBy=default.target
+diff --git a/systemd/pinenote-hrdl-convert-waveform.service.orig b/systemd/pinenote-hrdl-convert-waveform.service
+index b57b57e7e8..6a5a4c8652 100644
+--- a/systemd/pinenote-hrdl-convert-waveform.service.orig
++++ b/systemd/pinenote-hrdl-convert-waveform.service
+@@ -5,9 +5,9 @@ Before=display-manager.service
+ 
+ [Service]
+ Type=oneshot
+-ExecCondition=/usr/bin/test ! -e /usr/lib/firmware/rockchip/custom_wf.bin
+-ExecCondition=/usr/bin/test -e /usr/lib/firmware/rockchip/ebc.wbf
+-ExecStart=/bin/sh -c 'cd /tmp && wbf_to_custom.py /usr/lib/firmware/rockchip/ebc.wbf && mv custom_wf.bin /usr/lib/firmware/rockchip/custom_wf.bin && mkinitcpio -P && (modprobe -r rockchip_ebc; modprobe rockchip_ebc)'
++ExecCondition=/usr/bin/test ! -s /lib/firmware/rockchip/custom_wf.bin
++ExecCondition=/usr/bin/test -s /lib/firmware/rockchip/ebc.wbf
++ExecStart=/bin/sh -c 'cd /tmp && /usr/libexec/pinenote/wbf_to_custom.py /lib/firmware/rockchip/ebc.wbf && mv custom_wf.bin /lib/firmware/rockchip/custom_wf.bin && mkinitfs && (modprobe -r rockchip_ebc; modprobe rockchip_ebc)'
+ 
+ [Install]
+ RequiredBy=display-manager.service

@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-starway-andromeda-s8
+pkgdesc="Starway Andromeda S8"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	android-tools
+	linux-postmarketos-rockchip-rk3188
+	postmarketos-base
+"
+makedepends="
+	devicepkg-dev
+"
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+8f1558f30bf91b1b89a4bfdbc83d2bff5f9686f53e6b3fc6e58233460036fa0cdfd8ea17fcafbeacef12f544972944fb6ad0edf372cc086e021d088451853837  deviceinfo
+"

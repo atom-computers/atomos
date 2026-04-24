@@ -1,0 +1,94 @@
+maintainer="Frieder Hannenheim <git@fhannenheim.net>"
+pkgname=firmware-oneplus-instantnoodlep
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for OnePlus 8 Pro (instantnoodlep)"
+url="https://github.com/pangwalla/oneplus-instantnoodlep-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="
+	qca-swiss-army-knife
+	pil-squasher
+"
+replaces="
+	linux-firmware-ath11k
+	linux-firmware-qca
+	linux-firmware-qcom
+"
+subpackages="
+	$pkgname-adsp:adsp
+	$pkgname-bluetooth:bluetooth
+	$pkgname-cdsp:cdsp
+	$pkgname-gpu:gpu
+	$pkgname-ipa:ipa
+	$pkgname-modem:modem
+	$pkgname-slpi:slpi
+	$pkgname-wifi:wifi
+	$pkgname-venus:venus
+"
+_commit="2dce2681689fcf615198c663555c5a7c7b3650ba"
+source="https://github.com/pangwalla/oneplus-instantnoodlep-firmware/archive/$_commit/oneplus-instantnoodlep-firmware-$_commit.tar.gz"
+builddir="$srcdir/oneplus-instantnoodlep-firmware-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pil-squasher "$builddir/adsp/adsp.mbn" "$builddir/adsp/adsp.mdt"
+	install -Dm644 "$builddir/adsp/adsp.mbn" -t $subpkgdir/lib/firmware/postmarketos
+}
+
+bluetooth() {
+	for file in $builddir/bluetooth/*; do
+		install -Dm644 $file -t "$subpkgdir/lib/firmware/qca/"
+	done
+}
+
+cdsp() {
+	pil-squasher "$builddir/cdsp/cdsp.mbn" "$builddir/cdsp/cdsp.mdt"
+	install -Dm644 "$builddir/cdsp/cdsp.mbn" -t $subpkgdir/lib/firmware/postmarketos
+}
+
+gpu() {
+	for file in $builddir/gpu/*; do
+		install -Dm644 $file -t "$subpkgdir/lib/firmware/qcom/"
+	done
+}
+
+ipa() {
+	pil-squasher "$builddir/ipa/ipa_fws.mbn" "$builddir/ipa/ipa_fws.mdt"
+	install -Dm644 "$builddir/ipa/ipa_fws.mbn" -t $subpkgdir/lib/firmware/postmarketos
+
+	pil-squasher "$builddir/ipa/ipa_uc.mbn" "$builddir/ipa/ipa_uc.mdt"
+	install -Dm644 "$builddir/ipa/ipa_uc.mbn" -t $subpkgdir/lib/firmware/postmarketos
+}
+
+modem() {
+	for file in $builddir/modem/*; do
+		install -Dm644 $file -t "$subpkgdir/lib/firmware/qcom/sdx55m"
+	done
+}
+
+slpi() {
+	pil-squasher "$builddir/slpi/slpi.mbn" "$builddir/slpi/slpi.mdt"
+	install -Dm644 "$builddir/slpi/slpi.mbn" -t $subpkgdir/lib/firmware/postmarketos
+}
+
+wifi() {
+	cd "$builddir/wlan"
+	ath11k-bdencoder -c board-2.json
+	install -Dm644 "$builddir/wlan/board-2.bin" -t "$subpkgdir/lib/firmware/ath11k/QCA6390/hw2.0"
+	install -Dm644 "$builddir/wlan/amss.bin" -t "$subpkgdir/lib/firmware/ath11k/QCA6390/hw2.0"
+	install -Dm644 "$builddir/wlan/m3.bin" -t "$subpkgdir/lib/firmware/ath11k/QCA6390/hw2.0"
+}
+
+venus() {
+	pil-squasher "$builddir/venus/venus.mbn" "$builddir/venus/venus.mdt"
+	install -Dm644 "$builddir/venus/venus.mbn" -t $subpkgdir/lib/firmware/postmarketos
+}
+
+sha512sums="
+c2855805e6327977fbd119ed89e76010586273008260c4df827622266f42dc318abf7f61f78408596377338cf36c03dd10b7279b6e6f7986569c970fffae72da  oneplus-instantnoodlep-firmware-2dce2681689fcf615198c663555c5a7c7b3650ba.tar.gz
+"

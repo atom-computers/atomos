@@ -1,0 +1,28 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy Tab 4 8.0 Wi-Fi"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-milletwifi"
+deviceinfo_year="2014"
+deviceinfo_dtb="qcom-apq8026-samsung-milletwifi"
+deviceinfo_append_dtb="true"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="800"
+deviceinfo_screen_height="1280"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_generate_extlinux_config="true"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x02000000"
+deviceinfo_flash_offset_second="0x00000000"
+deviceinfo_flash_offset_tags="0x01e00000"

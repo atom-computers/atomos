@@ -1,0 +1,32 @@
+From 573d769372d0dd1b6e7199048764cd851a511750 Mon Sep 17 00:00:00 2001
+From: "Lukas F. Hartmann" <lukas@mntre.com>
+Date: Sun, 9 Jul 2023 23:02:47 +0200
+Subject: [PATCH 11/21] dw-mipi-dsi-phy-stop-wait-time
+
+---
+ drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
+@@ -605,8 +605,10 @@ static void dw_mipi_dsi_video_mode_confi
+ 	 */
+ 	val = ENABLE_LOW_POWER;
+ 
+-	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_BURST)
++	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_BURST) {
+ 		val |= VID_MODE_TYPE_BURST;
++		printk(KERN_DEBUG "dw-mipi-dsi: video mode type burst\n");
++	}
+ 	else if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE)
+ 		val |= VID_MODE_TYPE_NON_BURST_SYNC_PULSES;
+ 	else
+@@ -886,7 +888,7 @@ static void dw_mipi_dsi_dphy_interface_c
+ 	 * stop wait time should be the maximum between host dsi
+ 	 * and panel stop wait times
+ 	 */
+-	dsi_write(dsi, DSI_PHY_IF_CFG, PHY_STOP_WAIT_TIME(0x20) |
++	dsi_write(dsi, DSI_PHY_IF_CFG, PHY_STOP_WAIT_TIME(0x1) |
+ 		  N_LANES(dsi->lanes));
+ }
+ 

@@ -1,0 +1,32 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-volla-mimameid-downstream
+pkgdesc="Volla Phone 22 (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-volla-mimameid-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+fc319168fc9a95f4b6659ae2887d9081c855c45b382c408457492e9c000ad7b1d06ac82a1e34453cd7f773482c420d73970ff385ba8569c4c1244a24d7e88ae8  deviceinfo
+d89b08ef9888faae6cb96a378421669e6119023307a3b5a109e18b7f9e2c70e1f8b240ba8f9b9d22d319fa28e416565d06074d34382f482c9b037b7ab3f4861c  kernel-cmdline.conf
+"

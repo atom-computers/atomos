@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Clockwork Tech ClockworkPi uConsole Radxa CM5"
+deviceinfo_manufacturer="Clockwork Tech"
+deviceinfo_codename="clockworkpi-uconsole-radxa-cm5"
+deviceinfo_year="2023"
+deviceinfo_dtb="rockchip/rk3588s-radxa-cm5-uconsole"
+deviceinfo_arch="aarch64"
+deviceinfo_disable_dhcpd="true"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1280"
+deviceinfo_screen_height="720"
+deviceinfo_getty="ttyFIQ0;1500000"
+
+# initfs
+
+# Flash related
+deviceinfo_flash_method="rkdeveloptool"
+deviceinfo_flash_rk_partition_kernel="boot"
+deviceinfo_flash_rk_partition_rootfs="os1"
+
+# sd embed
+deviceinfo_sd_embed_firmware="u-boot/clockworkpi-uconsole-radxa-cm5/idbloader.img:64,u-boot/clockworkpi-uconsole-radxa-cm5/u-boot.itb:16384"
+deviceinfo_sd_embed_firmware_step_size="512"
+deviceinfo_boot_part_start="32768"
+
+# Partition table
+# pmbootstrap does not support flashing a partition table using rkdeveloptool, manual steps:
+# enable `write-partition-table` commands
+# > rkdeveloptool boot $chroot/usr/share/u-boot/clockworkpi-uconsole-radxa/rk3588_spl_loader_v1.19.113.bin
+# >
+# write new GPT partition table
+# > rkdeveloptool write-partition-table partition-table.txt
+# >
+# deviceinfo_flash_rk_partition_table="partition-table.txt"
+
+# Bootloader
+# pmbootstrap does not support flashing u-boot using rkdeveloptool, manual steps:
+# > rkdeveloptool write-partition idbloader $chroot/usr/share/u-boot/clockworkpi-uconsole-radxa-cm5/idbloader.img
+# > rkdeveloptool write-partition uboot $chroot/usr/share/u-boot/clockworkpi-uconsole-radxa-cm5/uboot.img
+# >
+
+deviceinfo_boot_filesystem="fat32"
+deviceinfo_generate_extlinux_config="true"
+

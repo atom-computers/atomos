@@ -1,0 +1,13 @@
+ath10k/WCN3990/hw1.0/board-2.bin
+ath10k/WCN3990/hw1.0/firmware-5.bin
+qcom/a540_gpmu.fw2
+qcom/msm8998/oneplus/a540_zap.mbn
+qcom/msm8998/oneplus/adsp.mbn
+qcom/msm8998/oneplus/adspua.jsn
+qcom/msm8998/oneplus/ipa_fws.mbn
+qcom/msm8998/oneplus/mba.mbn
+qcom/msm8998/oneplus/modem.mbn
+qcom/msm8998/oneplus/modemuw.jsn
+qcom/msm8998/oneplus/slpi_v2.mbn
+qcom/msm8998/oneplus/slpius.jsn
+qcom/msm8998/oneplus/wlanmdsp.mbn

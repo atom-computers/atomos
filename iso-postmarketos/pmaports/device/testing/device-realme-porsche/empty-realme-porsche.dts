@@ -1,0 +1,25 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+        // if board-id 10008
+	model = "Qualcomm Technologies, Inc. Lahaina MTP";
+
+        // if board-id 20108
+        //model = "Qualcomm Technologies, Inc. Lahaina MTP v2.1";
+
+        // compatible is common for all board-id
+	compatible = "qcom,lahaina-mtp", "qcom,lahaina", "qcom,mtp";
+
+        qcom,board-id = <0x10008 0>;
+        //qcom,board-id = <0x20108 0>;
+        oppo,dtsi_no = <0x5093>;
+        oplus,dtsi_no = <21617>;
+
+        __fixups__{};
+
+};
+
+&apps_rsc {
+    compatible = "qcom,rpmh-rsc";
+};

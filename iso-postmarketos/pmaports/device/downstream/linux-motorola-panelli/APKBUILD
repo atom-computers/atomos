@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/panelli_defconfig
+
+pkgname=linux-motorola-panelli
+pkgver=3.18.35
+pkgrel=2
+pkgdesc="Motorola Moto C Plus kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="motorola-panelli"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="panelli-kernel"
+_commit="a06daea005dbbbb6b958bbd39a74fdd21cf092e2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/GRajin/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	00_disable_drvgen.patch
+	cust.dtsi
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+	cp "$srcdir"/cust.dtsi arch/arm/boot/dts/cust.dtsi
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+9532db50fed23cbe2452b6fba3051833e14eefeaa1a9c656e6e26a90a9f5a10c065286e5e42e08bd8ed04e323dd0ac64420e38e68bee483df3f115d55bf0540c  linux-motorola-panelli-a06daea005dbbbb6b958bbd39a74fdd21cf092e2.tar.gz
+e1ada3692dbc45c978c7b60bd545f9108af10bc5ca239e57d1a51dc5d8f210590a17706c65947455a254c413b15870da222d442544acab8b2ab9b52cce1eafaf  config-motorola-panelli.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+8a04940e6f5424df67a3cc4c75dd19be1c9b560859e9db0ae67b766d52982a46156b601698afb80f90b9b99f63ef74e1f6147902b43ec97c25d2b75ba2f8d2b3  00_disable_drvgen.patch
+6f32a4429faf97c1597264d9f42455cef7cab53d9f724baca9faab6af666421e48c1079fc4ae9f2b12415d0f5c749e2d015d1bc8302a25cc7dd7f775eee804f9  cust.dtsi
+"

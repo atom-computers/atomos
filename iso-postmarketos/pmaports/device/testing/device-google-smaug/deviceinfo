@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Google Pixel C"
+deviceinfo_manufacturer="Google"
+deviceinfo_codename="google-smaug"
+deviceinfo_year="2015"
+deviceinfo_dtb="nvidia/tegra210-smaug"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="2560"
+deviceinfo_screen_height="1800"
+deviceinfo_disable_dhcpd="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_cgpt_kpart="/boot/boot.img"
+deviceinfo_cgpt_kpart_start="8192"
+deviceinfo_cgpt_kpart_size="65536"
+deviceinfo_depthcharge_board="smaug"
+deviceinfo_depthcharge_compression="lzma"
+deviceinfo_generate_depthcharge_image="true"

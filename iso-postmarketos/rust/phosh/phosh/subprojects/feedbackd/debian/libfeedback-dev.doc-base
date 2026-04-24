@@ -1,0 +1,12 @@
+Document: libfeedback
+Title: libfeedback Reference Manual
+Author: Guido Günther
+Abstract: A library to trigger feedback (such as haptic feedback)
+ from your application. This document covers the C API,
+ but it also useful for GObject introspection bindings
+ of your favourite programming language.
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/libfeedback-dev/libfeedback-0/index.html
+Files: /usr/share/doc/libfeedback-dev/libfeedback-0/*.html

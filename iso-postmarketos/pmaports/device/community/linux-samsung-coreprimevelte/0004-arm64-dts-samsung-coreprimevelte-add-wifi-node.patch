@@ -1,0 +1,51 @@
+From 72469a9519d3aa34348ea2fd9e60b66532f2f69c Mon Sep 17 00:00:00 2001
+From: Karel Balej <balejk@matfyz.cz>
+Date: Sun, 26 Oct 2025 19:20:41 +0100
+Subject: [PATCH 4/9] arm64: dts: samsung,coreprimevelte: add wifi node
+
+Add a node for the phone's WiFi serviced by the Marvell SD8777 chip a
+communication with which happens over the SDIO. Also enable a regulator
+without which it is not possible to connect to networks although they
+are discovered properly.
+
+Signed-off-by: Karel Balej <balejk@matfyz.cz>
+---
+ .../mmp/pxa1908-samsung-coreprimevelte.dts        | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+index b2ce5edd9c6a..36d6ae4e902e 100644
+--- a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
++++ b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+@@ -475,6 +475,14 @@ ldo14: ldo14 {
+ 				regulator-min-microvolt = <1200000>;
+ 				regulator-max-microvolt = <3300000>;
+ 			};
++
++			/*
++			 * Needs to be enabled in order for the WiFi to be able
++			 * to connect to networks.
++			 */
++			ldo15 {
++				regulator-always-on;
++			};
+ 		};
+ 	};
+ };
+@@ -523,6 +531,13 @@ &sdh1 {
+ 	pinctrl-1 = <&sdh1_fast_pins_0 &sdh1_fast_pins_1 &sdh1_pins_2>;
+ 	bus-width = <4>;
+ 	non-removable;
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	wifi@1 {
++		compatible = "marvell,sd8777";
++		reg = <1>;
++	};
+ };
+ 
+ &pwm3 {
+-- 
+2.53.0
+

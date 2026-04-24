@@ -1,0 +1,85 @@
+# NOTE: Please ensure any changes made to this kernel are also applied to the
+#       16k varient.
+
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Aster Boese <asterboese@mailbox.org>"
+_flavor="postmarketos-apple-4k"
+pkgname=linux-$_flavor
+pkgver=6.19.0
+pkgrel=0
+pkgdesc="Mainline kernel fork for Apple iPhone and iPad devices (4k)"
+arch="aarch64"
+_carch="arm64"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-rust
+"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	clang-libclang
+	devicepkg-dev
+	elfutils-dev
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+	rust
+	rustfmt
+	rust-bindgen
+	rust-src
+"
+
+# Source
+_repository="HoolockLinux/linux"
+_tag="hoolock-${pkgver%.*}"
+_config="config-$_flavor.$arch"
+source="
+	http://github.com/$_repository/archive/refs/tags/$_tag.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+f27eac038be9ece21b5b569afde3af967f87a015a46b5158551744a1b68cac306bf15a159f8c8337409ae3b54d24845cfdf524c97e53a951a5d7fdad055edf48  hoolock-6.19.tar.gz
+feabd04c322428b073d24d155f425dc37ea7a05041e68ed4861dad904c160dc1b94bed10421ab7a04a721d60418bb84044ff36d756fc603b89f69e8e60a8db72  config-postmarketos-apple-4k.aarch64
+"

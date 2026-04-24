@@ -1,0 +1,21 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Sipeed M1s DOCK"
+deviceinfo_manufacturer="Sipeed"
+deviceinfo_codename="sipeed-m1sdock"
+deviceinfo_year="2022"
+deviceinfo_dtb="bouffalolab/bl808-sipeed-m1s"
+deviceinfo_arch="riscv64"
+
+# Device related
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_no_framebuffer="true"
+deviceinfo_swap_size_recommended="1024"
+deviceinfo_generate_extlinux_config="true"
+deviceinfo_getty="ttyS0;2000000"
+
+# Bootloader related

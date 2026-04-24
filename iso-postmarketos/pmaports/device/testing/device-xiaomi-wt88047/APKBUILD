@@ -1,0 +1,43 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-xiaomi-wt88047
+pkgdesc="Xiaomi Redmi 2"
+pkgver=12
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+# Backwards compatibility for old kernel variant subpackages
+replaces="$pkgname-kernel-mainline $pkgname-kernel-mainline-modem"
+for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		 firmware-qcom-msm8916-wcnss firmware-xiaomi-wt88047-wcnss-nv
+		 firmware-qcom-msm8916-venus"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+72539043477dc68b98523c36e3d32c93dc871233d80c15093df505938c55084150d9b9219c36ba01571d7f89db3142353c48581761bee6f4bd23746fc8b6722a  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+7f6892125a15fdfcfca140571073150df25a5c355eae8ae632a56a00cd9e5fc7168d435680ca83eb8a8d9ae63aef6af478f42e92815f175d26ec592941de61e6  modules-initfs
+"

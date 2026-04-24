@@ -1,0 +1,31 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-gtaxlwifi
+pkgdesc="Samsung Galaxy Tab A 2016 (SM-T580)"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-gtaxlwifi
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+0bc75d727aea11a4c26569b5a3363ef64d34aca551150dca1665f83d891fccf3d7d0d3e1a4ecaf4d614efa34a235756700f38be8a16817f12987a4e0aff11db0  deviceinfo
+6263b6dab9ea670bd1af22feff8fb7ce9d143ed5ab99223bcef9da76bb0947c89e62dbf7004e1a307e2b71df48de84ea95cad258d88a44cedb37e347c56db8d2  kernel-cmdline.conf
+"

@@ -1,0 +1,18 @@
+maintainer=""
+pkgname=firmware-surftab-wintron7.0
+pkgver=1
+pkgrel=2
+pkgdesc="Firmware for Trekstor Surftab Wintron 7.0"
+url="https://github.com/onitake/gsl-firmware"
+arch="x86_64"
+license="proprietary"
+source="https://github.com/onitake/gsl-firmware/raw/231bb49e312966df4b2eebc46815d7dde90c9b52/firmware/linux/silead/gsl1686-surftab-wintron70-st70416-6.fw"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+package() {
+	mkdir -p "$pkgdir"/lib/firmware/silead
+	install -Dm644 "$srcdir"/gsl1686-surftab-wintron70-st70416-6.fw \
+		"$pkgdir"/lib/firmware/silead/mssl1680.fw
+}
+
+sha512sums="30f4dca3bf01066fc4a1eff5a60453ca7147ea3838a6e070f25979f30b8d6d97d054f133e29a6efbb8a0fd4d17127e7191070c4df03f55a6bc90b953492be48a  gsl1686-surftab-wintron70-st70416-6.fw"

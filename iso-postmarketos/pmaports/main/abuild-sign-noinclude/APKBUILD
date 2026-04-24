@@ -1,0 +1,33 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=abuild-sign-noinclude
+pkgver=3.4.0
+pkgrel=1
+pkgdesc="self-contained abuild-sign to be used by non-Alpine systems"
+url="https://git.alpinelinux.org/cgit/abuild/"
+arch="x86_64"
+license="GPL-2.0-only"
+makedepends="openssl-dev openssl-libs-static zlib-dev zlib-static pkgconf"
+source="https://dev.alpinelinux.org/archive/abuild/abuild-$pkgver.tar.xz
+	0002-add-abuild-sign.noinclude-target.patch
+	0003-use-abuild-tar.static-from-script-directory.patch"
+options="!check"
+builddir="$srcdir/abuild-$pkgver"
+
+prepare() {
+	default_prepare
+
+	sed -i -e "/^CHOST=/s/=.*/=$CHOST/" abuild.conf
+}
+
+build() {
+	make VERSION="$pkgver-r$pkgrel" abuild-tar.static abuild-sign.noinclude
+}
+
+package() {
+	install -Dm755 abuild-tar.static "$pkgdir"/usr/bin/abuild-tar.static
+	install -Dm755 abuild-sign.noinclude "$pkgdir"/usr/bin/abuild-sign.noinclude
+}
+
+sha512sums="0ddf1cef2e79628a4de06015ba217432711ee76751ccc487fd3b1af9cae37ed1b8c5afdc0b916322472314ccee8a6d1c17ccb5b55f6eebfb54444199d2281d3e  abuild-3.4.0.tar.xz
+a7a207094a80856e0aa10591611ee6b7c235df165791574acbb010a3c7d593d8a918f157bbff2e885ffa159e5c777ab9bf4475447a846d78cd6ca81112ea271d  0002-add-abuild-sign.noinclude-target.patch
+3253540dc0def37c31ace080e2e78a10516c903ed96eba950895e99e5143cd7d58ddbbfcfae2be37be8d31a53578291cac8fca8b6270faea630889646f31b2fd  0003-use-abuild-tar.static-from-script-directory.patch"

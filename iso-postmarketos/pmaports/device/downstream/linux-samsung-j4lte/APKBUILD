@@ -1,0 +1,82 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos7570-j4lte_defconfig
+maintainer="Hendra Manudinata <hendra@manoedinata.com>"
+pkgname=linux-samsung-j4lte
+pkgver=3.18.140
+pkgrel=1
+pkgdesc="Samsung Galaxy J4 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j4lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	dtbtool-exynos
+"
+
+# Source
+_repository="android_kernel_samsung_universal7570"
+_commit="57ffdcdde7e968af314e809cdab6b3ee24bc4d24"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/DaunScape/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-drivers-leds-ktd2692-Guard-function-calls-under-CONF.patch
+	0002-zram-Set-zstd-as-the-default-compressor.patch
+	0003-drivers-usb-u_ether-Force-setting-random-MAC-address.patch
+	0004-staging-samsung-sec_batt-Force-disable-low-power-cha.patch
+	0005-HACK-decon_7570-Swap-red-blue-offset.patch
+	0006-drivers-samsung-scsc-Fix-FW_LOCATION_AUTO-symbol.patch
+	0007-drivers-samsung-scsc-Skip-mount-point-check.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Build dt image with exynos dtbtool
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype  0x217584da \
+		-o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+495e1f9d4c6b4997a5f5faced507493421ecaa104fc6c8affff546f855cc5ea8f535177464f422f5b76db96fbbd1ead2471ef0fd7537659c2041d03c53ede97c  linux-samsung-j4lte-57ffdcdde7e968af314e809cdab6b3ee24bc4d24.tar.gz
+d3f172f271e2bd92ac2167a558590725a4f064b17ade139691eb24db85d21e70a3160a2c14ff6d7b029df4d744154d06ada621b181a653949cc4f3ce0fbfea7b  config-samsung-j4lte.aarch64
+fafed0c79633b50f9c62febeb1198bc863ddcaf7d3140bf58b87f574a75a16c1b73d563ce849ab8400030d6700bf64ea3bbb60b5cb86a902696e1bd702a3b276  0001-drivers-leds-ktd2692-Guard-function-calls-under-CONF.patch
+f81dc234b7c37e5c33472a22f96299c435d4e2728e24164dc375abbc80912ce5a9045178deb2338f1f484a52296ad558541c01c101f244a62bf6149e75e0406b  0002-zram-Set-zstd-as-the-default-compressor.patch
+f69b9363ffd543f98f7799256bb3cfccc84623b69d8c7ee3ea291b52cecac7d961d4b491db6b5477bdd527ad3e9cbd738d67647fc074adcd2927b5eb6d2478dd  0003-drivers-usb-u_ether-Force-setting-random-MAC-address.patch
+8f17a56957476832df48f90c229302958ec848300ea7dff76c2e9fc9433c301b28239bbc7404cf9c1bac5410dd9984dce39d132bbb29650324b9136777185583  0004-staging-samsung-sec_batt-Force-disable-low-power-cha.patch
+a5d4afc22f514525f362884a618a770cf5301d4b0ae89d7f819d60c27aff9cb04f1ee823ebefe49872ac01e84a429d9619e0df7ec1c7b83793bc0dfb1da62e39  0005-HACK-decon_7570-Swap-red-blue-offset.patch
+e0f5e505e794d4db1ed87a86dadf8321199c8c749a2b1a9b31fc572320b95d9cc004664eea2f3e20163d2993bfe0f50bdcecf027b70ce551d02abb2874985f9a  0006-drivers-samsung-scsc-Fix-FW_LOCATION_AUTO-symbol.patch
+f0da70e3b5cc498e19430936422cf89476d68a5bbe45d593ab3c8bf353a81401a9133df983d3f1f84d0127670ad32b8adcb91e1beb821eb2efddd831f22f79dc  0007-drivers-samsung-scsc-Skip-mount-point-check.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

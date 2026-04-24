@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Paul Sajna (sajattack) <sajattack@postmarketos.org>
+maintainer="Newbyte <newbie13xd@gmail.com>"
+pkgname=device-lg-judyln
+pkgdesc="LG G7 ThinQ"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-lg-judy
+	linux-postmarketos-qcom-sdm845
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+0c82533f37e9a78b8c8c6f023e08046bdbfc2e8af1a85066615bcc27ae1f54be74f68666f995063f923a7b22dbaf662aa9243b880303ca7a1f4ee16074bf5e43  deviceinfo
+003e5228a2b2825f24cb8b4842e3c3f72b99225f0aef3cda5bb2de4e4beb5e1c84800ba48c6cf1b84fe042bd039912e67c545c00981b604db0c0f0bcb546f7c5  kernel-cmdline.conf
+09fb39b4698e3fd433e35f94b4c39787a4ff9af258e8a85b5a197fb2676f993da2666ffb4ae98c41f35446d52b3578e1e6ebd06cc7010287ca140bf207c3a8af  modules-initfs
+"

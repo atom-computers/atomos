@@ -1,0 +1,2 @@
+# Lenovo Tab P12 Pro specific hexagonrpcd firmware directory
+hexagonrpcd_fw_dir="/usr/share/qcom/sm8250/Lenovo/q706f/"

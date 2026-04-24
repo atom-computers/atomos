@@ -1,0 +1,7 @@
+mode "1080x1920-0"
+	# D: 0.001 MHz, H: 0.001 kHz, V: 0.000 Hz
+	geometry 1080 1920 1080 1920 16
+	timings 898000000 36 159 4 10 10 2
+	accel false
+	rgba 8/0,8/8,8/16,8/24
+endmode

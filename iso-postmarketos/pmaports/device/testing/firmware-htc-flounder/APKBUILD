@@ -1,0 +1,23 @@
+maintainer=""
+pkgname=firmware-htc-flounder
+pkgver=2.0
+pkgrel=1
+pkgdesc="Firmware for Google Nexus 9"
+url="https://github.com/LineageOS/android_device_htc_flounder"
+arch="aarch64"
+license="custom:proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Sources
+_commit="2ef67acc1769613c968493feeb8e2548a1519d37"
+_url="https://github.com/LineageOS/android_device_htc_flounder"
+source="$pkgname-$_commit.tar.gz::$_url/archive/$_commit.tar.gz"
+
+package() {
+	cd "$srcdir/android_device_htc_flounder-$_commit"
+	install -Dm644 bcmdhd.cal \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4354-sdio.google,flounder64.txt
+}
+sha512sums="
+4e931621822a041570bca1e8ba7548b5c954c5c6b382665e263205b7247b67640df83cecdf32a0d6890f49c93393fe1305a60ab4bce85d435fadeece2042b38e  firmware-htc-flounder-2ef67acc1769613c968493feeb8e2548a1519d37.tar.gz
+"

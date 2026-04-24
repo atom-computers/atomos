@@ -1,0 +1,3 @@
+#!/bin/sh
+rc-update add -q q6voiced default
+rc-update add -q moto-modem-rfs-setup boot

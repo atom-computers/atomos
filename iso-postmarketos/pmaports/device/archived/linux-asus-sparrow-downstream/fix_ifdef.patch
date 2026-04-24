@@ -1,0 +1,18 @@
+diff --git a/drivers/hwmon/qpnp-adc-common.c b/drivers/hwmon/qpnp-adc-common.c
+index e93bbbf5d466..02039388c099 100644
+--- a/drivers/hwmon/qpnp-adc-common.c
++++ b/drivers/hwmon/qpnp-adc-common.c
+@@ -30,11 +30,11 @@
+ #include <linux/qpnp/qpnp-adc.h>
+ #include <linux/platform_device.h>
+ 
+-#ifdef ASUS_WREN_PROJECT
++#ifdef CONFIG_ASUS_WREN
+ #include "qpnp-adc-common-wren.h"
+ #endif
+ 
+-#ifdef ASUS_SPARROW_PROJECT
++#ifdef CONFIG_ASUS_SPARROW
+ #include "qpnp-adc-common-sparrow.h"
+ #endif
+ 

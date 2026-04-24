@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# remove offset file and directory
+offset_file="/var/cache/swclock-offset/offset-storage"
+offset_directory="/var/cache/swclock-offset"
+
+if [ -f $offset_file ]; then
+  rm $offset_file
+fi
+
+if [ -d $offset_directory ]; then
+  rmdir $offset_directory
+fi

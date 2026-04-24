@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-wiko-lenny2
+pkgdesc="Wiko Lenny 2"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-wiko-lenny2 mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+2b5a6eff59ef45b367c38ee7ce437339aa9399b2564de36c57f0a792db61a645ff35ad3dfde17251fbd6863b9a8e3701253027f4569490a0b4a4fb4686812476  deviceinfo
+0d61d841c6f2aaff3a807a10d1df7000be0aa4de263e49e944b8304950b48727966e40f39dcc5418001b3a4c71205d5f2f919334d4fcb609130b478e7b6b44d0  kernel-cmdline.conf
+"

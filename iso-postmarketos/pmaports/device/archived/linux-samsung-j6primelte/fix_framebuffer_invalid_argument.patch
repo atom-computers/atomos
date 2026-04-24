@@ -1,0 +1,40 @@
+From: omame <me@omame.xyz>
+Subject: [PATCH] samsung-j6primelte: "Fix" EINVAL on FBIOPUT_VSCREENINFO
+
+This isn't really a fix, but the device's framebuffer has only one mode and it's enough to get Xorg up and running.
+---
+ drivers/video/msm/mdss/mdss_fb.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index 9755534da948..5b7d900e36b9 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -3995,13 +3995,13 @@ static int mdss_fb_check_var(struct fb_var_screeninfo *var,
+ 	if (var->yoffset > (var->yres_virtual - var->yres))
+ 		return -EINVAL;
+ 
+-	if (info->mode) {
++	/* if (info->mode) {
+ 		const struct fb_videomode *mode;
+ 
+ 		mode = fb_match_mode(var, &info->modelist);
+ 		if (mode == NULL)
+ 			return -EINVAL;
+-	} else if (mfd->panel_info && !(var->activate & FB_ACTIVATE_TEST)) {
++	} else */ if (mfd->panel_info && !(var->activate & FB_ACTIVATE_TEST)) {
+ 		struct mdss_panel_info *panel_info;
+ 		int rc;
+ 		panel_info = kzalloc(sizeof(struct mdss_panel_info),
+@@ -4148,7 +4148,7 @@ static int mdss_fb_set_par(struct fb_info *info)
+ 
+ 		mode = fb_match_mode(var, &info->modelist);
+ 		if (!mode)
+-			return -EINVAL;
++			mode = info->mode;
+ 
+ 		pr_debug("found mode: %s\n", mode->name);
+ 
+-- 
+2.37.3
+

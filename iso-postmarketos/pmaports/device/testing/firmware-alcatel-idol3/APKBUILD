@@ -1,0 +1,46 @@
+maintainer=""
+pkgname=firmware-alcatel-idol3
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for Alcatel OneTouch Idol 3 (5.5)"
+url="https://github.com/vknecht/"
+subpackages="$pkgname-venus $pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="pil-squasher"
+_repository="firmware-alcatel-idol3"
+_commit="a6d724edf0959dbbd97aa0980f149ba51f74435d"
+source="$pkgname-$_commit.tar.gz::$url/$_repository/archive/$_commit.tar.gz"
+builddir="$srcdir/$_repository-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	# venus.mbn exists already but seems a bit different
+	pil-squasher venus2.mbn venus.mdt
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+venus() {
+	pkgdesc="Alcatel OneTouch Idol 3 (5.5) video firmware"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to link venus.mbn to venus.mdt
+	# Older kernels look for venus.mdt, newer ones directly for venus.mbn
+	install -Dm644 "$builddir"/venus2.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mbn
+	ln -s venus.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mdt
+}
+
+wcnss_nv() {
+	pkgdesc="Alcatel OneTouch Idol 3 (5.5) WiFi/BT firmware configuration"
+	install -Dm644 "$builddir"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+764169837f61a3eb07ff2850c8410ff538a9f5bc0921c72fedd85185a7912a147b93a905adfdbe1e3206a8b6c71c8065cbb5f7f442f257faa399b382920335e6  firmware-alcatel-idol3-a6d724edf0959dbbd97aa0980f149ba51f74435d.tar.gz
+"

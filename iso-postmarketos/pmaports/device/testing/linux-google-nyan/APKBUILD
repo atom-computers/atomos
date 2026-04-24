@@ -1,0 +1,79 @@
+# Co-Maintainer: Robert Eckelmann <longoserob@postmarketos.org>
+maintainer="WeirdTreeThing <bradyn127@protonmail.com>"
+pkgname=linux-google-nyan
+pkgver=6.6.17
+pkgrel=8
+pkgdesc="Mainline kernel fork for Google Nyan Chromebooks"
+arch="armv7"
+_carch="arm"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+"
+makedepends="
+	bison
+	findutils
+	flex
+	openssl-dev
+	perl
+	gmp-dev
+	mpc1-dev
+	mpfr-dev
+	postmarketos-installkernel
+	xz
+"
+
+# Source
+_config="config-$_flavor.$arch"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-${pkgver//_/-}.tar.xz
+	$_config
+	0001-ARM-dts-tegra-nyan-add-mmc-aliases.patch
+	0002-ARM-tegra-nyan-fix-mic-jack-detection.patch
+	0003-Revert-spi-Reintroduce-spi_set_cs_timing.patch
+	0004-Revert-drm-tegra-Implement-fbdev-emulation-as-in-ker.patch
+	0005-Revert-drm-tegra-Initialize-fbdev-DRM-client.patch
+"
+builddir="$srcdir/linux-${_kernver//_/-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+91a6ec0d1e371cad5703bc65016fd930a5da74ca4d862eecdab08846b455b42a6845531322af65d8805210d88dd74c327ca6de1166ed250aa546918e5412c470  linux-6.6.17.tar.xz
+18bb48c07971cae859bd51195dd1df01bcb703170e316329da2c1c8459d1ea730fb5e5125aba7a414315e9f095795567b1c2aa51a0ff66c36d213ee6abd02915  config-google-nyan.armv7
+4e46d412d6a342044ad348e19cb75b8b90d57fe345eaa341e1c960f73f0c1ef3dd09196eccc3c413e199ac366eb512770e96b60d6a3ad44ec80a930d732d0fd4  0001-ARM-dts-tegra-nyan-add-mmc-aliases.patch
+f62ce358aed7273320f0163fbaf7425b4800945ac3cdb6a57062b0087c5b2799131d0a48fa1580bff33a4ae33c1ee9ae2c5771887b8b460be2596c7605234a0f  0002-ARM-tegra-nyan-fix-mic-jack-detection.patch
+a43ecb9f410d2c3168ada6c4788174154627fe6568e9048def2b6ea827b0c7b676f148352e39f6985172bcb85b4d0f77376ec7f94ba33716671f99fe20923504  0003-Revert-spi-Reintroduce-spi_set_cs_timing.patch
+5bc98d414a3e02f62f3b3ccd32d6d27f8e6e0706efb4eef1496b616a47dda866411072a27da1eb713d249cf0c0934b519d0b68ac9b594b34edf49fc2e26945c8  0004-Revert-drm-tegra-Implement-fbdev-emulation-as-in-ker.patch
+010c9094706cbac87200dc940b52e8c8b2a53a44fed1b361e828d19f65ea98eda7b8840678349b9fba7ac72d15e2095ff8f674d2ffede7594f7b35d850635b58  0005-Revert-drm-tegra-Initialize-fbdev-DRM-client.patch
+"

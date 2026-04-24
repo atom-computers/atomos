@@ -1,0 +1,72 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Kernel config based on: arch/arm/configs/peregrine_defconfig
+
+pkgname=linux-motorola-peregrine-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Moto G 4G (2013) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="motorola-peregrine"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="coreutils perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_motorola_msm8226"
+_commit="75e7c47f8084a89b3b3019641aea9f01166bfbcb"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_mdss_fb_refresh_rate.patch
+	06_fix_mdss_fb_rgb_mode.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# We need the dtb file
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+8e651741fce8b6263647ae3f91bbd8ac6d36178ba1bd7c7dc31829e52596efc151ea344c43413a322b28ba96a8cc81def4b70e502940d50a92f66a1a18b263a9  linux-motorola-peregrine-downstream-75e7c47f8084a89b3b3019641aea9f01166bfbcb.tar.gz
+67082f621c4c0112d20efe2b7e661aebbcdb8f70415bcff6bb8918d2154094f5b0e2f860fcebcc7b200a29ff97d1f700c18ec6c4cb6401d4fa54b622883dfe8d  config-motorola-peregrine.armv7
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+a8c955bf718f155011e980f3d0948be98e1fee5649f418299a4851780543019daf7afa406aa7b0829375645107e4e6fbf241026b0cabe2b2ac895a47df83d2d8  03_mdss_fb_refresh_rate.patch
+384ae0bf2f5d7e15b0b60655693fd600b52c0f5bfcaa4ba7336d0ebeb224e84b99b597f77d26a1249e14a4e7bbc1629be00556b393bb9dd2266cb4bd67c3cfea  06_fix_mdss_fb_rgb_mode.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

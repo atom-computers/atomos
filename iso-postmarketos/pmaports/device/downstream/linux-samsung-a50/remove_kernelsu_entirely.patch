@@ -1,0 +1,19 @@
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index c41c3b1fa..6541a9dba 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -236,6 +236,4 @@ source "drivers/samsung/Kconfig"
+ 
+ source "drivers/security/samsung/tzic/Kconfig"
+ 
+-source "drivers/kernelsu/Kconfig"
+-
+ endmenu
+diff --git a/drivers/kernelsu b/drivers/kernelsu
+deleted file mode 120000
+index 9e51d0d62..000000000
+--- a/drivers/kernelsu
++++ /dev/null
+@@ -1 +0,0 @@
+-../KernelSU/kernel
+\ No newline at end of file

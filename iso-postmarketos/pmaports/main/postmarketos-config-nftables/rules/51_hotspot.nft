@@ -1,0 +1,15 @@
+#!/usr/sbin/nft -f
+
+table inet filter {
+	chain input {
+
+		# allow DNS from wlan*
+		iifname "wlan*" tcp dport 53 accept comment "Accept DNS over TCP on wlan*"
+		iifname "wlan*" udp dport 53 accept comment "Accept DNS over UDP on wlan*"
+
+	}
+
+	chain forward {
+		iifname "wlan*" accept comment "Accept forwarding from wlan*"
+	}
+}

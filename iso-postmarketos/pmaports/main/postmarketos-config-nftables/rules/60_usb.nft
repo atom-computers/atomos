@@ -1,0 +1,13 @@
+#!/usr/sbin/nft -f
+
+# Allow all traffic from usb-ethernet interfaces for debugging
+# and porting.
+
+table inet filter {
+	chain input {
+
+		# allow all from USB net
+		iifname "usb*" accept comment "accept USB net"
+
+	}
+}

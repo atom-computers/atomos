@@ -1,0 +1,59 @@
+commit 611c7138d2812827c3a62940576bf62c61cd8515
+Author: Henrik Grimler <henrik@grimler.se>
+Date:   Fri Nov 27 18:01:34 2020 +0100
+
+    Fix so that FIMC IS can be disabled
+    
+    * mach-exynos: don't set EXYNOS5_{DEV,SETUP}_FIMC_IS for universal5420
+    
+    * board-universal5420-media: add ifdef guard to fix compilation error
+    
+    * pm_domains: always init exynos54xx_pd_isp to prevent null pointer dereference
+
+diff --git a/arch/arm/mach-exynos/Kconfig b/arch/arm/mach-exynos/Kconfig
+index 2aed1a4dfbac..9667d665363d 100644
+--- a/arch/arm/mach-exynos/Kconfig
++++ b/arch/arm/mach-exynos/Kconfig
+@@ -883,8 +883,6 @@ config MACH_UNIVERSAL5420
+ 	select EXYNOS5_SETUP_HSI2C4
+ 	select EXYNOS5_SETUP_HSI2C5
+ 	select EXYNOS5_SETUP_HSI2C6
+-	select EXYNOS5_DEV_FIMC_IS
+-	select EXYNOS5_SETUP_FIMC_IS
+ 	help
+ 	  Machine support for Universal board based on EXYNOS5420
+ endif
+diff --git a/arch/arm/mach-exynos/board-universal5420-media.c b/arch/arm/mach-exynos/board-universal5420-media.c
+index 91677b04f9e8..4e461819fa68 100644
+--- a/arch/arm/mach-exynos/board-universal5420-media.c
++++ b/arch/arm/mach-exynos/board-universal5420-media.c
+@@ -1166,6 +1166,7 @@ void __init exynos5_universal5420_media_init(void)
+ 			sizeof(s5p_mipi_csis1_default_data), &s5p_device_mipi_csis1);
+ #endif
+ 
++#ifdef CONFIG_VISION_MODE
+ #ifdef CONFIG_VIDEO_EXYNOS_FIMC_LITE
+ #if !defined(CONFIG_V1A) && !defined(CONFIG_V2A)
+ 	s3c_i2c1_set_platdata(NULL);
+@@ -1178,6 +1179,7 @@ void __init exynos5_universal5420_media_init(void)
+ 	s3c_set_platdata(&exynos_flite2_default_data,
+ 			sizeof(exynos_flite2_default_data), &exynos_device_flite2);
+ #endif
++#endif /* CONFIG_VISION_MODE */
+ 
+ 	/* camera */
+ #ifdef CONFIG_VIDEO_EXYNOS5_FIMC_IS
+diff --git a/arch/arm/mach-exynos/pm_domains5.c b/arch/arm/mach-exynos/pm_domains5.c
+index 3220333bed94..2599bb756958 100644
+--- a/arch/arm/mach-exynos/pm_domains5.c
++++ b/arch/arm/mach-exynos/pm_domains5.c
+@@ -1224,8 +1224,8 @@ static int exynos5420_pm_domain_init(void)
+ 	exynos_pm_add_clk(&exynos5420_spd_mscl1, NULL, "mscl");
+ 	exynos_pm_add_clk(&exynos5420_spd_mscl2, NULL, "mscl");
+ #endif
+-#ifdef CONFIG_EXYNOS5_DEV_FIMC_IS
+ 	exynos_pm_powerdomain_init(&exynos54xx_pd_isp);
++#ifdef CONFIG_EXYNOS5_DEV_FIMC_IS
+ 	exynos_pm_add_platdev(&exynos54xx_pd_isp, &exynos5_device_fimc_is);
+ 	exynos_pm_add_platdev(&exynos54xx_pd_isp, &s3c64xx_device_spi3);
+ 	exynos_pm_add_clk(&exynos54xx_pd_isp, &exynos5_device_fimc_is.dev, "gscl_wrap0");

@@ -1,0 +1,13 @@
+diff --git a/drivers/video/msm/mdss/mdss_mdp_trace.h b/drivers/video/msm/mdss/mdss_mdp_trace.h
+index 33fe3a4..730b7ff 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_trace.h
++++ b/drivers/video/msm/mdss/mdss_mdp_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM mdss
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/video/msm/mdss
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE mdss_mdp_trace
+ 

@@ -1,0 +1,26 @@
+From d71d6d5ae6fc56903618444e2229866c0712725a Mon Sep 17 00:00:00 2001
+From: "elel@3wh.net" <elel@3wh.net>
+Date: Mon, 24 Dec 2018 21:51:40 +0000
+Subject: [PATCH 2/5] Make exynos_ufs_ctrl_hci_core_clk visible to other TUs
+ for DM
+
+---
+ drivers/scsi/ufs/ufs-exynos.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/scsi/ufs/ufs-exynos.c b/drivers/scsi/ufs/ufs-exynos.c
+index d591033a6ac1..af9480e3a637 100644
+--- a/drivers/scsi/ufs/ufs-exynos.c
++++ b/drivers/scsi/ufs/ufs-exynos.c
+@@ -883,7 +883,7 @@ struct exynos_ufs_soc *exynos_ufs_get_drv_data(struct device *dev)
+ 	return ((struct ufs_hba_variant *)match->data)->vs_data;
+ }
+ 
+-inline void exynos_ufs_ctrl_hci_core_clk(struct exynos_ufs *ufs, bool en)
++void exynos_ufs_ctrl_hci_core_clk(struct exynos_ufs *ufs, bool en)
+ {
+ 	u32 reg;
+ 
+-- 
+2.20.1
+

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rc-update add buffyboard default
+rc-update add networkmanager default

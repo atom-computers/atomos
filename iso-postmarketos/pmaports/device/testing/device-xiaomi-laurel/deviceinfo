@@ -1,0 +1,31 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Xiaomi Mi A3"
+deviceinfo_manufacturer="Xiaomi"
+deviceinfo_codename="xiaomi-laurel"
+deviceinfo_year="2019"
+deviceinfo_dtb="qcom/sm6125-xiaomi-laurel_sprout"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1560"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_fastboot_partition_vbmeta="vbmeta"
+deviceinfo_append_dtb="true"
+deviceinfo_rootfs_image_sector_size="4096"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_flash_sparse="true"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"

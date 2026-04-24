@@ -1,0 +1,101 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-jolla-sbj
+pkgdesc="Jolla phone"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	postmarketos-base-downstream-disable-udev-v4l
+	linux-jolla-sbj
+	mkbootimg
+	msm-fb-refresher
+	wcnss-wlan
+	alsa-ucm-conf
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-openrc
+	$pkgname-udev
+	"
+source="deviceinfo
+	kernel-cmdline.conf
+	load-wlan-module
+	wcnss-wlan
+	100-charging.rules
+	led-charging-sbj.sh
+	led-discharging-sbj.sh
+	pointercal
+	asound.state
+	ucm/msm8930-sitar.conf
+	ucm/HiFi.conf
+	buttons.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm744 "$srcdir"/led-charging-sbj.sh \
+		"$pkgdir"/usr/lib/device-jolla-sbj/led-charging-sbj.sh
+	install -Dm744 "$srcdir"/led-discharging-sbj.sh \
+		"$pkgdir"/usr/lib/device-jolla-sbj/led-discharging-sbj.sh
+
+	install -Dm644 "$srcdir"/100-charging.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/100-charging.rules
+
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+	install -D -m644 "$srcdir"/asound.state \
+		"$pkgdir"/var/lib/alsa/asound.state
+
+	# Install triggerhappy evdev rules for sbj
+	install -Dm755 "$srcdir"/buttons.conf "$pkgdir"/etc/triggerhappy/triggers.d/buttons.conf
+
+	# Alsa usecase manager config
+	install -Dm644 -t "$pkgdir"/usr/share/alsa/ucm2/conf.d/msm8930-sitar \
+		"$srcdir"/msm8930-sitar.conf \
+		"$srcdir"/HiFi.conf
+
+	install -Dm755 "$srcdir"/load-wlan-module \
+		"$pkgdir"/etc/init.d/load-wlan-module
+	install -Dm644 "$srcdir"/wcnss-wlan \
+		"$pkgdir"/etc/conf.d/wcnss-wlan
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for Modem and WiFi"
+	depends="firmware-jolla-sbj-modem firmware-jolla-sbj-wlan msm-modem-downstream"
+
+	mkdir -p "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="openrc"
+
+	default_openrc
+}
+
+sha512sums="
+a00df756e40e8fccbc94003f38a4ffbb0417631fbe5e7e537dfafea4611f4314406a42651b035100cf13ec8f43b5108c6787a2b637fe660fe2c88abcee6bcbd9  deviceinfo
+3ae07a13ec6fc13976558ee6dbaf5759ff2e81cbda680e6e90b97d2bec9f81d3d5b45958462e728c639e6ee863e8d84bd8644748b0d932a1f5e580253bb705f1  kernel-cmdline.conf
+501fbd47a2302ba9320fcdba81c4d6b806d2ded3e0fa70ab486fc0ff6501216f702d4724ef2878df2d7deef5eb1f66b42a04981804e7cfe3b4dc6dbee2be0ce5  load-wlan-module
+a8cfde9dd3bc96d990038443e8d10a551f13536f017992ae23545d2f1e09b0f729e5cfd1f94f52a2a335335172f082925b91c980695a27f76f636343de795898  wcnss-wlan
+829c8c8699188b6d0347a947abdb66f44096ac3a35094fb4d574b8debb6cb410f1f403321fed2cf82678fc7f52cb156959124aa6c15f3ef728b7237d62240e7e  100-charging.rules
+e6241b7cebe2f970fb6d24ecd18edc55e92e73307594e6dda985fc9b0a2f5039313bb835b7969faf1d6aba9aed2cf97d4d7f24744e5d7528d3b7402b0dd72693  led-charging-sbj.sh
+df54971314fde8e917e675b7813f208bc0e92748d177e9e07faf27c9e8d66e816de47da9a6760be0327842a9196ff563debc09a3a478485c814d7cbee3217095  led-discharging-sbj.sh
+c6698c4992c0f88c90364107eb8e5d0120b70b380ecdcf32879615def782d8e64ab64c8a94ee69d13aaba2d9105044ffbf33f106170bcfd1eaf4447240ceef51  pointercal
+4515ba1e449502e321f70de6bb69a771ccbe5d3f87777e9d91da80b9e0fb43f7198055555102e534043b0154dc8c30e942f09f3e753d0a8a5c91c6444f7d3497  asound.state
+abbf130efc767c7062ac875e3a7c1a912c3f677abdc36ef4ed4c0a8d52a3b279680ecf1124ed5bf8f14321fee30b52b19d1ad4acebefb19880991a1e136735e2  msm8930-sitar.conf
+0130ef966d66b284ad422a1d8333f7b308b9359c310db432047658906590713fea9103f422eab25c64d0d35684b4981879d08a6e64d44885c77284459683f8bd  HiFi.conf
+635565cb2caf4c17456590bf4db8903a8f8a0eeef7a643eceb3eea923908b19a0b2a0156cd62c0cd9ea4509e05e8bf08b9e0900ab1b622310f19947850dfc63d  buttons.conf
+"

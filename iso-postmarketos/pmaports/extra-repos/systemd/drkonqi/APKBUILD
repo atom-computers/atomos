@@ -1,0 +1,72 @@
+maintainer="team/kde <bribbers@disroot.org>"
+pkgname=drkonqi
+pkgver=6.6.4
+pkgrel=0
+pkgdesc="The KDE crash handler"
+# armhf blocked by qt6-qtdeclarative -> ki18n
+arch="all !armhf"
+url="https://kde.org/plasma-desktop/"
+license="GPL-2.0-or-later"
+depends="
+	elfutils
+	gdb
+	kirigami
+	kitemmodels
+	py3-psutil
+	py3-pygdbmi
+	py3-sentry-sdk
+	"
+makedepends="
+	extra-cmake-modules
+	kcompletion-dev
+	kconfigwidgets-dev
+	kcoreaddons-dev
+	kcrash-dev
+	kdeclarative-dev
+	ki18n-dev
+	kidletime-dev
+	kio-dev
+	kjobwidgets-dev
+	knotifications-dev
+	kservice-dev
+	kstatusnotifieritem-dev
+	kuserfeedback-dev
+	kwallet-dev
+	kwidgetsaddons-dev
+	py3-chai
+	qt6-qtbase-dev
+	samurai
+	syntax-highlighting-dev
+	systemd-dev
+	"
+
+case "$pkgver" in
+	*.90*) _rel=unstable;;
+	*) _rel=stable;;
+esac
+subpackages="$pkgname-lang"
+_repo_url="https://invent.kde.org/plasma/drkonqi.git"
+source="https://download.kde.org/stable/plasma/$pkgver/drkonqi-$pkgver.tar.xz"
+
+build() {
+	cmake -B build -G Ninja \
+		-DWITH_PYTHON_VENDORING=OFF \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_TESTING=ON
+	cmake --build build
+}
+
+check() {
+	# connectiontest requires a network connection
+	ctest --test-dir build --output-on-failure -E "(connection|preamble)test"
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+ec9a2f41b3a6096f887aecbe7ce066f2a6fe7459aa5585234b7563434f0ab5410fbf342eb070fb1eefe4402924a61b5a68e3312723cd3a83f5fadbe7768360fa  drkonqi-6.6.4.tar.xz
+"

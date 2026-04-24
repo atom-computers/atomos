@@ -1,0 +1,72 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=device-qemu-amd64
+pkgver=17
+pkgrel=0
+pkgdesc="Simulated device in QEMU (x86_64)"
+url="https://postmarketos.org"
+arch="x86_64"
+license="MIT"
+depends="
+	postmarketos-base
+	postmarketos-qemu-common
+	systemd-boot
+	"
+makedepends="devicepkg-dev"
+# First kernel subpackage is default in pmbootstrap init!
+subpackages="
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-kernel-none:kernel_none
+	$pkgname-pmtest
+	"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_none() {
+	pkgdesc="No kernel (does not boot! can be used during pmbootstrap testing to save time)"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel (recommended, best balance between stability and features)"
+	depends="linux-postmarketos-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long-term maintainance kernel (most stability, not all security fixes & new features)"
+	depends="linux-postmarketos-lts linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Upstream development kernel (regular breakage, latest features)"
+	depends="linux-postmarketos-mainline linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+pmtest() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+	depends="postmarketos-test-unl0kr"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+3f2daeae210e38e2672fad53afe6a7e1821339e3e7e5782d6fd16a3ab2b70dfcc0658f0340af2ed76fbfd2b38a55fb7d150680fde80260e7b8e66127edb3d447  deviceinfo
+433875074bc225f5509bde089409b079902a5f161ecb22abcee25b2e45399b3561288c1018e5e08a6a21c38844f7b185dc3683442f97ceddee1020fdc6cc022b  kernel-cmdline.conf
+"

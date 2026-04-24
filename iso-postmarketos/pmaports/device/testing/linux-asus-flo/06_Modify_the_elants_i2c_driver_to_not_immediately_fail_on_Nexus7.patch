@@ -1,0 +1,41 @@
+author	John Stultz <john.stultz@linaro.org>	2015-06-22 16:37:30 -0700
+committer	John Stultz <john.stultz@linaro.org>	2017-05-12 14:09:24 -0700
+commit	18a343b4eb643e0eaf203d812b32b4aff19df17b (patch)
+tree	66cf0beff9832db7b6be94bb1ef597654b6fd0d1
+parent	7c0667f5e450796a1494e05b419aad1a264ee09f (diff)
+download	flo-18a343b4eb643e0eaf203d812b32b4aff19df17b.tar.gz
+HACK: Modify the elants_i2c driver to not immediately fail on Nexus7
+So the upstream elants_i2c driver doesn't seem to exactly
+support the N7's touch screen, but its close, so tweak the
+driver to accept the intial packet and this allows the driver
+to load and detect the touchscreen. Allowing data from
+/dev/input/event0 to show up on touch events.
+
+I've not yet validated if that data is at all correct or calibrated,
+as that will have to wait for getting the display up and running.
+
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+Diffstat
+-rw-r--r--	drivers/input/touchscreen/elants_i2c.c	2	
+		
+1 files changed, 1 insertions, 1 deletions
+diff --git a/drivers/input/touchscreen/elants_i2c.c b/drivers/input/touchscreen/elants_i2c.c
+index 872750e..6079857 100644
+--- a/drivers/input/touchscreen/elants_i2c.c
++++ b/drivers/input/touchscreen/elants_i2c.c
+@@ -894,7 +894,6 @@ static irqreturn_t elants_i2c_irq(int irq, void *_dev)
+ 		switch (ts->buf[FW_HDR_TYPE]) {
+ 		case CMD_HEADER_HELLO:
+ 		case CMD_HEADER_RESP:
+-		case CMD_HEADER_REK:
+ 			break;
+ 
+ 		case QUEUE_HEADER_WAIT:
+@@ -912,6 +911,7 @@ static irqreturn_t elants_i2c_irq(int irq, void *_dev)
+ 			elants_i2c_event(ts, &ts->buf[HEADER_SIZE]);
+ 			break;
+ 
++		case CMD_HEADER_REK:
+ 		case QUEUE_HEADER_NORMAL:
+ 			report_count = ts->buf[FW_HDR_COUNT];
+ 			if (report_count == 0 || report_count > 3) {

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# reenables tinydm if tinydm-ebc is detected as enabled
+# allow seamless upgrade 7-r0 to 8-r0, as tinydm-ebc was removed
+# in favor of a systemd override for tinydm
+# TODO: remove in preparation for v26.06
+if [ "$(systemctl is-active tinydm-ebc.service 2>/dev/null )" == "active" ]; then
+ 	systemctl disable tinydm-ebc.service
+ 	systemctl enable tinydm.service
+fi

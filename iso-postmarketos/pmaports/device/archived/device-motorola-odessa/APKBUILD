@@ -1,0 +1,35 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-motorola-odessa
+pkgdesc="Motorola Moto G9 Plus"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-motorola-odessa
+	mkbootimg
+	postmarketos-base
+"
+makedepends="
+	devicepkg-dev
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+8bca8a89f266de7566a27d5980b10ef4fcb19f08992c8aff4ebd5b49e556ce895f951f745cf2c7ec6c414451d9bc394fe7e13b58abf5b64ff4874e6bdc3dad86  deviceinfo
+aa92ec426209478e5c6ac90ae5a15398ec383a0c276eeb325ef0cf40240cb4d95c960fb9385a3dda50fa425fa11e869e0759afd3c842a647527679b075edc4fc  kernel-cmdline.conf
+"

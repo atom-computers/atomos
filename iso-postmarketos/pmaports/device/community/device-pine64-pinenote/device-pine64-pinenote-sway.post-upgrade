@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# if device-pine64-pinenote-sway-hrdl isn't installed, and tinydm default session is sway_hrdl
+# should set back to sway.desktop and give a message announcing end of default sway_hrdl
+if ! apk info device-pine64-pinenote-sway-hrdl --installed -q && [ "$(readlink /var/lib/tinydm/default-session.desktop)" == "sway_hrdl" ]; then
+
+	cat >&2 <<-EOF
+
+Starting with 8-r0 device package version, the opinionated configuration
+from hrdl is not installed by default with sway, and packaged under a
+different subpackage. To keep it, please execute the following
+
+    apk add device-pine64-pinenote-sway-hrdl
+	
+	EOF
+
+	tinydm-set-session -f -s  /usr/share/wayland-sessions/sway.desktop
+fi

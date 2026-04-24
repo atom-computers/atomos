@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-eagle
+pkgdesc="Sony Xperia M2"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-eagle mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+2761374e04adf34f6a946d140008f10440637d1379e33687d6f66372346cb70d3123d172382645e60469d10c1c77674cf3eb35a76c72433474333b2dc40f7d68  deviceinfo
+840edd24d537aa4dba699301e37db41b5653344a8301b973813e41e83e61d11e1f45e48bda20fe8d5a5feb998686034236b34f4937ab1c7a6cf5099585d2ef0e  kernel-cmdline.conf
+"

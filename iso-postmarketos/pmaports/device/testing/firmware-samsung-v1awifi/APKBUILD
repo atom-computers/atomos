@@ -1,0 +1,46 @@
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=firmware-samsung-v1awifi
+pkgdesc="Firmware for Samsung Galaxy Tab Pro 12.2"
+pkgver=3
+pkgrel=1
+url="https://github.com/exynos5420/android_vendor_samsung_v1a-common"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+_cfg_commit="5a1eb40e80f9de6c6bad9d0cd1438339c41af3ad"
+_cfg_url="https://gitlab.com/Eisenbahnfan/exynos5-firmware/-/raw/$_cfg_commit"
+_universal_commit="8f5241f7637477d3ecae65c67b9315d343257fad"
+_universal_url="https://github.com/exynos5420/android_vendor_samsung_universal5420-common/raw/$_universal_commit"
+_v1a_commit="2bf0fc3da1fe95e188fcf78f6d80cff56375778a"
+_v1a_url="https://github.com/exynos5420/android_vendor_samsung_v1a-common/raw/$_v1a_commit"
+source="
+	30-touchscreen-firmware.files
+	BCM4354.samsung,v1a-wifi.hcd::$_universal_url/proprietary/vendor/firmware/bcm4350_V0301.0609.hcd
+	brcmfmac4354-sdio.samsung,v1a-wifi.txt::$_v1a_url/proprietary/etc/wifi/nvram_net.txt_4354_a0
+	maxtouch_v1.cfg::$_cfg_url/mXT1664S_v.cfg
+"
+
+package() {
+	cd "$srcdir"
+
+	# Bluetooth
+	install -Dm644 BCM4354.samsung,v1a-wifi.hcd \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Wifi
+	install -Dm644 brcmfmac4354-sdio.samsung,v1a-wifi.txt \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Touchscreen
+	install -Dm644 maxtouch_v1.cfg \
+		"$pkgdir/lib/firmware/postmarketos/maxtouch.cfg"
+	install -Dm644 30-touchscreen-firmware.files \
+		-t "$pkgdir/usr/share/mkinitfs/files/"
+}
+
+sha512sums="
+d92d73d06d88371d8842cca02b9a396414d6f9e879c74afd8fd540c76a97edbd8655d903815a2aed508785b3fe96fa5798fbd1ceb918098b8b788555ba4267cf  30-touchscreen-firmware.files
+2a5c682c520d7a35343abc0caccc1809fa022184a5684fd5fd579da6126273dbbb1441ec4f178f6295eb6360cccddbab070bc969924f1341839cd4c296222d8c  BCM4354.samsung,v1a-wifi.hcd
+71d5220e56b2277b86fc7257f687dec91f2bf5e87e00cad9465bea40b6965f240599a3c39fb4d16b116e7d530ff93bc1015e8e7a574fc4b04f686097a71a86b7  brcmfmac4354-sdio.samsung,v1a-wifi.txt
+769fff7ed8ceb8c140a13f8d7d422a17b663060fefe5e90d503c654cd6301a8ceb36c8560bd6684ff1070aa9debe4dd366cd9f5802b16de0d96eed1cadd04f1a  maxtouch_v1.cfg
+"

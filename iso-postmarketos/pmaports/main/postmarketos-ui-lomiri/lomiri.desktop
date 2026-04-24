@@ -1,0 +1,3 @@
+[Desktop Entry]
+Exec=/usr/bin/dbus-run-session /usr/bin/start_lomiri
+Name=Lomiri

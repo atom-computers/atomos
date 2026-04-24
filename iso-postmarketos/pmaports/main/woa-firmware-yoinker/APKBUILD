@@ -1,0 +1,25 @@
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=woa-firmware-yoinker
+pkgver=0.0.1
+pkgrel=4
+pkgdesc="Automatically pull firmware from Windows on X1 Elite devices"
+url="https://github.com/CadmiumLinux/woa-firmware-yoinker"
+arch="aarch64"
+license="BSD-3-Clause"
+options="!check"
+subpackages="$pkgname-openrc $pkgname-systemd"
+_commit="8351bf19928487609c7ff822c45669c49c6164f8"
+source="$pkgname-$_commit.tar.gz::https://github.com/calebccff/woa-firmware-yoinker/archive/$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	install -Dm755 yoink-firmware "$pkgdir"/usr/libexec/yoink-firmware
+	install -Dm755 yoink-firmware.initd "$pkgdir"/etc/init.d/yoink-firmware
+	install -Dm644 yoink-firmware.service "$pkgdir"/usr/lib/systemd/system/yoink-firmware.service
+
+	# FIXME: add a preset for yoink-firmware.service
+}
+
+sha512sums="
+f5d9d6d9d33e76b64786f8adfd8953295b593678bb4154197711fec5de3fc6ca9e188a8be6789f0a5723c47b86cdc273f3af2b7bb36d30f0fff781144e375fd3  woa-firmware-yoinker-8351bf19928487609c7ff822c45669c49c6164f8.tar.gz
+"

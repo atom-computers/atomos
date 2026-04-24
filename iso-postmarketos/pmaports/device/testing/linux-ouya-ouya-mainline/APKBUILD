@@ -1,0 +1,74 @@
+# Kernel config based on: arch/arm/configs/tegra_defconfig
+maintainer=""
+pkgname=linux-ouya-ouya-mainline
+pkgver=5.0
+pkgrel=5
+pkgdesc="Ouya kernel fork, close to mainline"
+arch="armv7"
+_carch="arm"
+_flavor="ouya-ouya-mainline"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev xz flex bison openssl-dev"
+
+# Source
+_repository="linux"
+_rev="7c3acfbc49c690a8ec27f2269840a7e141182ab9"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_rev.tar.gz::https://github.com/decatf/$_repository/archive/$_rev.tar.gz
+	$_config
+	linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_rev"
+
+prepare() {
+	default_prepare
+
+	mkdir -p "$srcdir"/build
+	cp -v "$srcdir"/$_config "$srcdir"/build/.config
+	make -C "$builddir" O="$srcdir"/build ARCH="$_carch" \
+		olddefconfig
+}
+
+build() {
+	cd "$srcdir"/build
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" \
+		CFLAGS_MODULE=-fno-pic
+}
+
+package() {
+	cd "$srcdir/build/arch/$_carch/boot"
+
+	if [ "$CARCH" == "aarch64" ]; then
+		install -Dm644 "$srcdir/build/arch/$_carch/boot/Image" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		install -Dm644 "$srcdir/build/arch/$_carch/boot/"*zImage \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	install -D "$srcdir/build/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	cd "$srcdir"/build
+
+	local _install
+	case "$CARCH" in
+	aarch64*|arm*)	_install="modules_install dtbs_install" ;;
+	*)		_install="modules_install" ;;
+	esac
+
+	make -j1 $_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+}
+
+
+sha512sums="5892de457aea6d4cbbfbcc902d24891dcc03c40638510d031d5007477241cb3616ca5c0a2fcad6882f4e8a341b767b3b6a18b42f496198bf08b326d2a1cd7fdd  linux-ouya-ouya-mainline-7c3acfbc49c690a8ec27f2269840a7e141182ab9.tar.gz
+09b93d7efb39c69edd5fc9ebaf476dc383335cb2feaf4b84ebba28b7bdc248f7c7d467d76a6c1cfdf4d2cd436b83eec2654952a8b64eafcdd6d47c804c277c0b  config-ouya-ouya-mainline.armv7
+27827877040007fc1c4c719f7e2e19e5c272d44972415cfc53feba0313d87e4074f8204bdb13cbc5fe21ea61bf595314b68f10c081e7b7bac3c888b60f008acf  linux4.17-gcc10-extern_YYLOC_global_declaration.patch"

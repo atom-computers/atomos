@@ -1,0 +1,15 @@
+diff --git a/drivers/input/touchscreen/Novatek_TouchDriver.c b/drivers/input/touchscreen/Novatek_TouchDriver.c
+index 5cccaf03..b1eb5e69 100755
+--- a/drivers/input/touchscreen/Novatek_TouchDriver.c
++++ b/drivers/input/touchscreen/Novatek_TouchDriver.c
+@@ -1122,8 +1122,8 @@ err_gpio_request_failed:
+ 	}
+ #endif
+ 
+-//	input_set_abs_params(ts->input_dev, ABS_X, 0, ts->abs_x_max-1, 0, 0);
+-//	input_set_abs_params(ts->input_dev, ABS_Y, 0, ts->abs_y_max-1, 0, 0);
++	input_set_abs_params(ts->input_dev, ABS_X, 0, ts->abs_x_max-1, 0, 0);
++	input_set_abs_params(ts->input_dev, ABS_Y, 0, ts->abs_y_max-1, 0, 0);
+ 	input_set_abs_params(ts->input_dev, ABS_PRESSURE, 0, 255, 0, 0);
+ 
+ #ifdef NOVATEK_MULTI_TOUCH	

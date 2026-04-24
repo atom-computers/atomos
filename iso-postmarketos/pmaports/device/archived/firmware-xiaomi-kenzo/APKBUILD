@@ -1,0 +1,40 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8956)
+pkgname=firmware-xiaomi-kenzo
+pkgver=1
+pkgrel=3
+_commit="1f5bc36bab97586358feab5952be859195760688"
+pkgdesc="Firmware files for Xiaomi Redmi Note 3"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/IdanHoro/vendor_xiaomi_kenzo/-/archive/$_commit/vendor_xiaomi_kenzo-$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_xiaomi_kenzo-$_commit"
+
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06
+	    wcnss.b09 wcnss.b10 wcnss.b11 wcnss.b12 wcnss.mdt"
+_files_venus="venus-v1.b00 venus-v1.b01 venus-v1.b02 venus-v1.b03 venus-v1.b04 venus-v1.mbn venus-v1.mdt"
+_files_prima="WCNSS_wlan_dictionary.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin WCNSS_cfg.dat"
+
+package() {
+	# /lib/firmware/postmarketos
+	for _i in $_files; do
+		install -D -m644 "$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files_venus; do
+		install -D -m644 "$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	# /lib/firmware/postmarketos/wlan/prima
+	for _i in $_files_prima; do
+		install -D -m644 wlan/prima/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="
+47b0a8d34ea7db56ffe8c1f81f947568e743c143d3e51937d3cfa711994cae3774cbfaef6ad6ed68b48b8ebc437d817a0b476b469dad1e5061333482119b84c6  firmware-xiaomi-kenzo-1f5bc36bab97586358feab5952be859195760688.tar.gz
+"

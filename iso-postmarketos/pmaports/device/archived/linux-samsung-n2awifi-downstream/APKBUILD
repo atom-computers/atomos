@@ -1,0 +1,69 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_n2awifi_defconfig
+
+pkgname=linux-samsung-n2awifi-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab PRO 10.1 (WiFi) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-n2awifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	xz
+"
+
+# Source
+_repository="android_kernel_samsung_exynos5420"
+_commit="fed1690ca92e33cc6a5febe2e45dd909b9090d37"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/exynos5420/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	01-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	02-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+c10c0b457a37ca89172203d83b0c5efd3b4fd4a9e4ff5b64328737275cfc4b19d4a316eab61aa5561943f29f70bb2bebac0efba54854e01553b90b8dd639d4bd  linux-samsung-n2awifi-downstream-fed1690ca92e33cc6a5febe2e45dd909b9090d37.tar.gz
+abcc8c1c889fc546a51bd09edd4f786bb7120262d3cefcda8a987c012ebd8ee43fdb1bc2c8624c2150ef247c68e83f6322fbe682fe26ff34529f909a5b7f96f1  config-samsung-n2awifi.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+5fad0940e90da71277b70b6e72fbb75fcc5e12625e65f827ae896d448628b252b3312539f9c184b26ffe5ca3b343a56b388ea6addb7fe446c7d1ae2aefb4b51e  01-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+a3df24c8d9116a3ad3559aac5ce126049e9123df633990ec72facd64ef538ed773e3ac0da233f2e04d99164d590340d598cfb3da3bbea502cf7c2cd3ef08cf24  02-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+"

@@ -1,0 +1,96 @@
+diff --git a/arch/arm/dts/meson-gxl-s905x-libretech-cc.dts b/arch/arm/dts/meson-gxl-s905x-libretech-cc.dts
+index e8348b2728..92c9c2b9f0 100644
+--- a/arch/arm/dts/meson-gxl-s905x-libretech-cc.dts
++++ b/arch/arm/dts/meson-gxl-s905x-libretech-cc.dts
+@@ -55,17 +55,11 @@
+ 		compatible = "gpio-leds";
+ 
+ 		system {
+-			label = "librecomputer:system-status";
++			label = "system-status";
+ 			gpios = <&gpio GPIODV_24 GPIO_ACTIVE_HIGH>;
+ 			default-state = "on";
+ 			panic-indicator;
+ 		};
+-
+-		blue {
+-			label = "librecomputer:blue";
+-			gpios = <&gpio_ao GPIOAO_2 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+-		};
+ 	};
+ 
+ 	memory@0 {
+diff --git a/configs/khadas-vim2_defconfig b/configs/khadas-vim2_defconfig
+index 771632c782..eda02e6a5f 100644
+--- a/configs/khadas-vim2_defconfig
++++ b/configs/khadas-vim2_defconfig
+@@ -64,3 +64,6 @@ CONFIG_USB_GADGET_PRODUCT_NUM=0xfada
+ CONFIG_USB_GADGET_DWC2_OTG=y
+ CONFIG_USB_GADGET_DOWNLOAD=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_DISPLAY_BOARDINFO_LATE=y
++CONFIG_BOOTDELAY=5
++CONFIG_USE_PREBOOT=y
+diff --git a/configs/libretech-cc_defconfig b/configs/libretech-cc_defconfig
+index 48e8800ce4..68de6715a7 100644
+--- a/configs/libretech-cc_defconfig
++++ b/configs/libretech-cc_defconfig
+@@ -64,3 +64,8 @@ CONFIG_SYS_WHITE_ON_BLACK=y
+ CONFIG_VIDEO_MESON=y
+ CONFIG_VIDEO_DT_SIMPLEFB=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_DISPLAY_BOARDINFO_LATE=y
++CONFIG_BOOTDELAY=5
++CONFIG_USE_PREBOOT=y
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
+diff --git a/configs/libretech-s912-pc_defconfig b/configs/libretech-s912-pc_defconfig
+index 50138aa3ac..bc1c07e232 100644
+--- a/configs/libretech-s912-pc_defconfig
++++ b/configs/libretech-s912-pc_defconfig
+@@ -30,7 +30,6 @@ CONFIG_CMD_USB_MASS_STORAGE=y
+ CONFIG_CMD_REGULATOR=y
+ CONFIG_OF_CONTROL=y
+ CONFIG_DEFAULT_DEVICE_TREE="meson-gxm-s912-libretech-pc"
+-CONFIG_ENV_IS_IN_SPI_FLASH=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SARADC_MESON=y
+ CONFIG_DM_KEYBOARD=y
+@@ -74,3 +73,5 @@ CONFIG_SYS_WHITE_ON_BLACK=y
+ CONFIG_VIDEO_MESON=y
+ CONFIG_VIDEO_DT_SIMPLEFB=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_DISPLAY_BOARDINFO_LATE=y
++CONFIG_BOOTDELAY=5
+diff --git a/include/configs/meson64.h b/include/configs/meson64.h
+index 50707a3197..61da7caa08 100644
+--- a/include/configs/meson64.h
++++ b/include/configs/meson64.h
+@@ -76,6 +76,8 @@
+ #endif
+ 
+ #ifndef CONFIG_EXTRA_ENV_SETTINGS
++/* the led system-status on is a hack to turn on the led as for some strange reason it does not
++ * the usb start below makes sure a usb keyboard is available when the autoboot prompt starts */
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"stdin=" STDIN_CFG "\0" \
+ 	"stdout=" STDOUT_CFG "\0" \
+@@ -86,6 +88,17 @@
+ 	"pxefile_addr_r=0x01080000\0" \
+ 	"ramdisk_addr_r=0x13000000\0" \
+ 	"fdtfile=amlogic/" CONFIG_DEFAULT_DEVICE_TREE ".dtb\0" \
++	"bootenv_addr_r=0x01080000\0" \
++	"preboot=led system-status on; " \
++		"usb start; " \
++		"for target in 0 1;do " \
++		"for prefix in / /boot/;do " \
++			"if test -e mmc ${target}:1 ${prefix}uEnv.txt;then " \
++				"load mmc ${target}:1 ${bootenv_addr_r} ${prefix}uEnv.txt; " \
++				"env import -t ${bootenv_addr_r} ${filesize}; " \
++			"fi; " \
++		"done; " \
++	"done\0" \
+ 	BOOTENV
+ #endif
+

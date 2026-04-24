@@ -1,0 +1,42 @@
+From c4dd412e68ccbe2e759d6517e902a6f3e7d8f700 Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Tue, 2 Jul 2019 02:57:25 +0300
+Subject: [PATCH 5/5] ARM: wire up memfd_create syscall
+
+Add the memfd_create syscall to ARM.
+
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/arm/include/asm/unistd.h | 2 ++
+ arch/arm/kernel/calls.S       | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/arch/arm/include/asm/unistd.h b/arch/arm/include/asm/unistd.h
+index 6ef9635a174..9b81e87e683 100644
+--- a/arch/arm/include/asm/unistd.h
++++ b/arch/arm/include/asm/unistd.h
+@@ -405,6 +405,8 @@
+ #define __NR_process_vm_readv		(__NR_SYSCALL_BASE+376)
+ #define __NR_process_vm_writev		(__NR_SYSCALL_BASE+377)
+ #define __NR_seccomp			(__NR_SYSCALL_BASE+383)
++/*#define __NR_getrandom			(__NR_SYSCALL_BASE+384) not ported yet */
++#define __NR_memfd_create		(__NR_SYSCALL_BASE+385)
+ 
+ /*
+  * The following SWIs are ARM private.
+diff --git a/arch/arm/kernel/calls.S b/arch/arm/kernel/calls.S
+index d01eb013b0a..957e262aa86 100644
+--- a/arch/arm/kernel/calls.S
++++ b/arch/arm/kernel/calls.S
+@@ -393,6 +393,8 @@
+ 		CALL(sys_ni_syscall)
+ 		CALL(sys_ni_syscall)
+ 		CALL(sys_seccomp)
++		CALL(sys_ni_syscall)	/* no sys_getrandom yet */
++/* 385 */	CALL(sys_memfd_create)
+ #ifndef syscalls_counted
+ .equ syscalls_padding, ((NR_syscalls + 3) & ~3) - NR_syscalls
+ #define syscalls_counted
+-- 
+2.20.1
+

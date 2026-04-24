@@ -1,0 +1,13 @@
+diff --git a/drivers/video/msm/msm_fb.c b/drivers/video/msm/msm_fb.c
+index 015c3da18..34decdea8 100644
+--- a/drivers/video/msm/msm_fb.c
++++ b/drivers/video/msm/msm_fb.c
+@@ -1517,7 +1517,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
+ 	mfd->var_yres = panel_info->yres;
+ 	mfd->var_frame_rate = panel_info->frame_rate;
+ 
+-	var->pixclock = mfd->panel_info.clk_rate;
++	var->pixclock = 1000000 / 60;
+ 	mfd->var_pixclock = var->pixclock;
+ 
+ 	var->xres = panel_info->xres;

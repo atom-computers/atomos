@@ -1,0 +1,38 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-j6lte)!
+pkgname=firmware-samsung-j6lte-downstream
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for Samsung Galaxy J6 (2018)"
+url="https://github.com/samsungexynos7870/android_vendor_samsung_j6lte"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="0ace47cab223eb50ef39a2725f3974ed43918b29"
+builddir="$srcdir/android_vendor_samsung_j6lte-$_commit"
+_raw_wifi_path="$url/raw/$_commit/proprietary/vendor/etc/wifi"
+_install_wifi_path="/lib/firmware/postmarketos/wifi/"
+source="
+	bcmdhd_apsta.bin_36::$_raw_wifi_path/bcmdhd_apsta.bin_36
+	bcmdhd_clm.blob::$_raw_wifi_path/bcmdhd_clm.blob
+	bcmdhd_mfg.bin_36::$_raw_wifi_path/bcmdhd_mfg.bin_36
+	bcmdhd_sta.bin_36::$_raw_wifi_path/bcmdhd_sta.bin_36
+	nvram.txt_36::$_raw_wifi_path/nvram.txt_36
+"
+
+package() {
+	install -Dm644 "$srcdir/bcmdhd_apsta.bin_36" "$pkgdir$_install_wifi_path/bcmdhd_apsta.bin_36"
+	install -Dm644 "$srcdir/bcmdhd_clm.blob" "$pkgdir$_install_wifi_path/bcmdhd_clm.blob"
+	install -Dm644 "$srcdir/bcmdhd_mfg.bin_36" "$pkgdir$_install_wifi_path/bcmdhd_mfg.bin_36"
+	install -Dm644 "$srcdir/bcmdhd_sta.bin_36" "$pkgdir$_install_wifi_path/bcmdhd_sta.bin_36"
+	install -Dm644 "$srcdir/nvram.txt_36" "$pkgdir$_install_wifi_path/nvram.txt_36"
+}
+
+sha512sums="
+678c30e5e64ba216fca0e0121eb9b2f6ad22f6e10c19138b3fa4af52bbce91f0a22886e7282062a44a4ded79bb675893556c5a193e56a8bd9979a0b0a679f008  bcmdhd_apsta.bin_36
+e2d1ca4f6a5f3649c1ab0fc9a7dca34077d5a4c5ea8465c3da92845141145e5f19d06c1bcb5f7d683bdce6c15675f41506bb9fbff0076ec58defa27114b2ad52  bcmdhd_clm.blob
+fbe0c453088efc5318fc80cdd6b6b9855ea21ce6619ca7f40fdf007d0dd9c8f4f821fe9356dd3492506223bfdb67eb6821347a2d0b420e06a8fadaf9166a947c  bcmdhd_mfg.bin_36
+706cb7f4eda0bba5069cb3635033a34d7155a4e60dc2fd1d5a724c387da77865d5a960f1c8b08546e1715470fe71bebbad29404207c62cdbfd3bbbdce26fa60d  bcmdhd_sta.bin_36
+6ff097c0895d39c576ec70b1e5a6ba37dddef1e2f9a5f22f077033d08c9c94dd62c4e482210105d38f639b45564b54b5919f52af3eecd6961af1fb2eb600fa5f  nvram.txt_36
+"

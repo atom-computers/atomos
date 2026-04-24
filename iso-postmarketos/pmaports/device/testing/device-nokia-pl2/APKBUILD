@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Sid Pranjale <sidpranjale127@protonmail.com>"
+pkgname=device-nokia-pl2
+pkgdesc="HMD Global Nokia 6.1"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-sdm660
+	mkbootimg
+	postmarketos-base
+	msm-firmware-loader
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+7e467e26a17eb592d9a4513ad7f21e795c35ac58f28da527e60fd1c644ebb2392e6066e792668ea52edb7bf0f6a7cad841001e23033d356b8912f5da4c3f88d2  deviceinfo
+d9d3a38bff450f13b8ccae1b3bc0332f87dd88d5537479570b9f571b702547e463c9f14237bb4152dd13624d9c9442ae907ae1784390556d60049ec10138b403  kernel-cmdline.conf
+"

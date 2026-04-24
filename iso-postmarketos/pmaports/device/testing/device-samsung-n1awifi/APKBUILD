@@ -1,0 +1,45 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=device-samsung-n1awifi
+pkgdesc="Samsung Galaxy Note 10.1 (2014) WiFi"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-n1awifi
+	linux-firmware-brcm
+	linux-firmware-s5p-mfc
+	linux-postmarketos-exynos5
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-disable-gsd-color:disable_gsd_color"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+disable_gsd_color() {
+	# Prevent high CPU usage of gsd-color (see issue #3853)
+	install_if="$pkgname=$pkgver-r$pkgrel gnome-settings-daemon"
+
+	mkdir -p "$subpkgdir"/usr/share/systemd/user/
+	ln -s /dev/null "$subpkgdir"/usr/share/systemd/user/org.gnome.SettingsDaemon.Color.service
+}
+
+sha512sums="
+7af7e0be9ed778d9fa2a8242339fd8a60383ad365a13015b4765e41c12245a3c81d5b24f19596b5187a38f4a2af3d53ae62b0f7c21814680d72eff6a3e1acdfa  deviceinfo
+4b3cb9dca85c04f1bfc5676029a6ae225409f173c6f0fc025786c1a72326dabad4b5ad75d0dd9a41cdebe8c15db5ca9761e15f3b9f99f8bf70b19769bb116fe6  modules-initfs
+"

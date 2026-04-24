@@ -1,0 +1,103 @@
+# Kernel config based on: arch/arm/configs/msm8610_defconfig
+
+pkgname=linux-huawei-y530
+pkgver=3.4.0
+pkgrel=14
+pkgdesc="Kernel for Huawei MSM8x1x devices"
+arch="armv7"
+_carch="arm"
+_flavor="huawei-y530"
+url="https://github.com/PieroV/android_kernel_huawei_msm8x1x"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_huawei_msm8x1x"
+_commit="1880463bf10c4c2d2b348698614a613902184e22"
+_config="config-$_flavor.armv7"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/PieroV/$_repository/archive/$_commit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	00_fix_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_avoid_rpmb_read_during_boot.patch
+	04_add_missing_dtb.patch
+	05_fix_mdp3_ctrl_off.patch
+	06_fix_mdss_fb_rgb_mode.patch
+	07_fix_mdss_fb_refresh_rate.patch
+	08_fix_touchscreen.patch
+	09_fix_various_include_directives.patch
+	linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		modules
+
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="
+b88fe4981fb35d289977c9a7ca6b041ec8d09380250485d7b3f3e1e1ef51ba500db2e1aecd222aa8c140a3b9ec5ed2fa638b68ddf446efe81f278aa8b8e7871f  linux-huawei-y530-1880463bf10c4c2d2b348698614a613902184e22.tar.gz
+44139799dfa0140c281b59f93f4e96c25907bd550f55888dede36e49a5733be0f5e991aa074aa95abf63690c295950a0278262c259ab84c974a628b0dc6ebdf3  config-huawei-y530.armv7
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+760fdff79df31754ebed59839f34fc8c5a61750471614ac93a01b1e13b2535e7ca1f879c0cad3e83ad92946586c91679ba853eac4fe454d7e948317c84d81941  03_avoid_rpmb_read_during_boot.patch
+e1fff84343ec4374a7c4bd9e472fc1c7b1b00efc059724b16ca0b7980b7ff55e542310a3bfbf12a0a1b7936261fee8e633d43be1a084ff3ba64e5e8d271a51f0  04_add_missing_dtb.patch
+fbc61e379403990167853f4c4fbdfa22d7e9661a7eedecf2a75eec2a8008991a82d0a61be844ab4b1c88383f3fa79b43eff10b1039e44ad5a758a173cbf6386b  05_fix_mdp3_ctrl_off.patch
+384ae0bf2f5d7e15b0b60655693fd600b52c0f5bfcaa4ba7336d0ebeb224e84b99b597f77d26a1249e14a4e7bbc1629be00556b393bb9dd2266cb4bd67c3cfea  06_fix_mdss_fb_rgb_mode.patch
+1f743d3e7f4ac7401167ea35edc7d7e113bd80824c4d53631d7500f33557ff486163f8244786c16506b2e21db6ccbcd8a0f7b26fcf4937efee50b62c074f9a22  07_fix_mdss_fb_refresh_rate.patch
+f83e9b6549155a2f32c89dffbab3ad6fba7b8d93976dfccb1232833244ed6e064e28105a321eaa934c5bb326384730d03f3d3141227a7258a30045fa12573268  08_fix_touchscreen.patch
+c9831aa037d4cb26fa349c44a27111daf8f7a84a9527d0221ecc4f01839b195243c178838663ff7592bb1d5c3cdc9872b449254beb7b9dffa67c365c3d8e042c  09_fix_various_include_directives.patch
+5e81c20b0b30c1ab09bd59f1e1b77fcce945a27de8144c68617ddc5e8f10e1f6fa8b1e4cd5d63e43511d61dace46fb26b14a6227a667b9718d44c8b81dbe6100  linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

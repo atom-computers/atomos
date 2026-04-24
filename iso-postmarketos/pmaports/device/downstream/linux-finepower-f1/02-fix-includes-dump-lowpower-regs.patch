@@ -1,0 +1,35 @@
+Fix errors like:
+drivers/platform/sprd/dump_lowpower_regs.c:6:10: fatal error: lowpower_regs_aon_apb.h: No such file or directory
+diff --git a/drivers/platform/sprd/dump_lowpower_regs.c b/drivers/platform/sprd/dump_lowpower_regs.c
+index 9f274d8f..f07e460d 100755
+--- a/drivers/platform/sprd/dump_lowpower_regs.c
++++ b/drivers/platform/sprd/dump_lowpower_regs.c
+@@ -3,17 +3,17 @@
+ #include <asm/io.h>
+ #include <soc/sprd/sci_glb_regs.h>
+ #include <soc/sprd/iomap.h>
+-#include <lowpower_regs_aon_apb.h>
+-#include <lowpower_regs_aon_apb_pll.h>
+-#include <lowpower_regs_aon_ckg.h>
+-#include <lowpower_regs_ap_ahb.h>
+-#include <lowpower_regs_ap_ahb_ckg.h>
+-#include <lowpower_regs_ap_apb.h>
+-#include <lowpower_regs_ap_apb_usb.h>
+-#include <lowpower_regs_pinctrl.h>
+-#include <lowpower_regs_pmic_glb.h>
+-#include <lowpower_regs_pmu_apb.h>
+-#include <lowpower_regs_dmc.h>
++#include "lowpower_regs_aon_apb.h"
++#include "lowpower_regs_aon_apb_pll.h"
++#include "lowpower_regs_aon_ckg.h"
++#include "lowpower_regs_ap_ahb.h"
++#include "lowpower_regs_ap_ahb_ckg.h"
++#include "lowpower_regs_ap_apb.h"
++#include "lowpower_regs_ap_apb_usb.h"
++#include "lowpower_regs_pinctrl.h"
++#include "lowpower_regs_pmic_glb.h"
++#include "lowpower_regs_pmu_apb.h"
++#include "lowpower_regs_dmc.h"
+ #include <soc/sprd/hardware.h>
+ 
+ extern void compare_pin_regs();

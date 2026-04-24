@@ -1,0 +1,24 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=hello-world-wrapper
+pkgver=1
+pkgrel=4
+pkgdesc="Dependency test package wrapping hello-world"
+url="https://postmarketos.org"
+arch="noarch"
+license="MIT"
+depends="hello-world"
+makedepends="hello-world"
+source="hello-world-wrapper.sh"
+
+check() {
+	cd "$srcdir"
+	printf 'hello, world!\n' > expected
+	sh "$srcdir"/hello-world-wrapper.sh > real
+	diff -q expected real
+}
+
+package() {
+	install -D -m755 "$srcdir"/hello-world-wrapper.sh \
+		"$pkgdir"/usr/bin/hello-world-wrapper
+}
+sha512sums="a5c25ab16c0d98749b9cce8f347b115b44522c1d791e0ffcd248c65d25343936a542ea6b8af81a3d2e4f17e7ab9403ec44b5af679129bf0ed880dd4c5bcf7139  hello-world-wrapper.sh"

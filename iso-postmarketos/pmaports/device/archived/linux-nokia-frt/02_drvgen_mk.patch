@@ -1,0 +1,17 @@
+This program cannot be used as it uses glibc, it doesn't seem to break anything
+
+diff --git a/scripts/drvgen/drvgen.mk b/scripts/drvgen/drvgen.mk
+index 17f5f7b7273d..a40efd974f3f 100644
+--- a/scripts/drvgen/drvgen.mk
++++ b/scripts/drvgen/drvgen.mk
+@@ -92,7 +92,8 @@ $(DTB_OVERLAY_IMAGE_TAGERT) : $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ) dtbs $(PRIVATE
+ 	@echo Singing the generated overlay dtbo.
+ 	cat $(PRIVATE_DTB_OVERLAY_OBJ) > $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ) || (rm -f $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ); false)
+ 	python $(PRIVATE_MULTIPLE_DTB_OVERLAY_HDR) $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ) $(PRIVATE_MULTIPLE_DTB_OVERLAY_IMG)
+-	$(PRIVATE_MKIMAGE_TOOL) $(PRIVATE_MULTIPLE_DTB_OVERLAY_IMG) $(PRIVATE_MKIMAGE_CFG)  > $@
++	# Not needed, requires glibc
++	#$(PRIVATE_MKIMAGE_TOOL) $(PRIVATE_MULTIPLE_DTB_OVERLAY_IMG) $(PRIVATE_MKIMAGE_CFG)  > $@
+ 
+ .PHONY: odmdtboimage dtbs
+ odmdtboimage : $(DTB_OVERLAY_IMAGE_TAGERT)
+

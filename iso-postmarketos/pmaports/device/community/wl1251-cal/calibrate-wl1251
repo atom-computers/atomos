@@ -1,0 +1,17 @@
+#!/bin/sh -e
+
+if [ -e /in-pmbootstrap ]; then
+	echo "Skipping update of wl1251 calibration data (running in pmbootstrap)"
+	exit 0
+fi
+
+# Use /run since this must be run before udev and mounts are up
+BASEDIR="/run/wl1251-cal"
+mkdir -p "$BASEDIR/ti-connectivity"
+touch "$BASEDIR/ti-connectivity/wl1251-nvs.bin"
+
+# Extract NVS from CAL and save in /run
+wl1251-cal --nvs-loading=/dev/null --nvs-push-data="$BASEDIR/ti-connectivity/wl1251-nvs.bin"
+
+# Inform kernel about the location of the NVS/firmware
+printf "%s" "$BASEDIR" > /sys/module/firmware_class/parameters/path

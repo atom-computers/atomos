@@ -1,0 +1,58 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/crespo_defconfig
+
+pkgname=linux-samsung-crespo
+pkgver=3.0.101
+pkgrel=3
+pkgdesc="Samsung Nexus S kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-crespo"
+url="https://github.com/LineageOS/android_kernel_samsung_crespo"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz"
+
+# Source
+_repository="android_kernel_samsung_crespo"
+_commit="9a6165e4894757cb3869db36272154066bf8a678"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	01_fix_aid_net_on_apn_disable.patch
+	02_fix_s3cfb_include.patch
+	03_ARM-7668-1-fix-memset-related-crashes-caused-by-rece.patch
+	04_ARM-7670-1-fix-the-memset-fix.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="c0d2182a4dd177e529bf74571298f5cb168c1a02127e52d56758ff6297dcb8bb3264a73cda3928795f23be224aba0572066c8e34bf997a3168d579a2337722eb  linux-samsung-crespo-9a6165e4894757cb3869db36272154066bf8a678.tar.gz
+294be895d8c450cf1ad14f7a33e0b6dd19896e7b9c920efa418b596a3fc2c293b23055dd78c5326d7083d7f82d4e3405f467f9df9903683ea256c9ea80aecac6  config-samsung-crespo.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+1cae09c775d787e877f82cb164b5d68530f4bd9b108b7abaf8192bd85a3d8975456762ce9f563fa766b1c03519e09ef93e177fd6972e439e4aa0c3a5709ea691  01_fix_aid_net_on_apn_disable.patch
+e7246dfe45d8ae5df917ff040deb10b253911b7b83e397ec486f1343af06bcfbfe02823be352c70cc7dcc48a98eee69c6d0e315a84e4b45b6ae1097be5b6a9de  02_fix_s3cfb_include.patch
+d2e3694242180254ac0984b8a3a82f29dd53c2f3b1dd72b9850f6e800d23005a7edcdd91f6b5293005a164d369aa5b725a490a608a60f29ac70fb7073184fd2b  03_ARM-7668-1-fix-memset-related-crashes-caused-by-rece.patch
+1c316a86e97f74e562baa99c1a9846701d2d1b13056335a0e6e8dba71656ccd9fb60f5c30f208441efa9ab8b14d1781b88a4c4a03633cf456278262e049bf97e  04_ARM-7670-1-fix-the-memset-fix.patch"

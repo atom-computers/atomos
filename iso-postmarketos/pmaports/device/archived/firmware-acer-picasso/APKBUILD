@@ -1,0 +1,27 @@
+# Archived: replaced by firmware-nvida-tegra-armv7
+maintainer=""
+pkgname=firmware-acer-picasso
+pkgver=4
+pkgrel=0
+pkgdesc="Firmware for Acer Iconia Tab A500 (acer-picasso)"
+url="https://github.com/grate-driver/linux-firmware"
+arch="armv7"
+license="custom:proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Sources
+_commit="803fa8cce4e6aab3c97473c9dbab9abc49894cb7"
+_url="https://github.com/grate-driver/linux-firmware"
+source="$pkgname-$_commit.tar.gz::$_url/archive/$_commit.tar.gz"
+
+package() {
+	# Wi-Fi & BT firmware
+	cd "$srcdir/linux-firmware-$_commit/brcm/"
+	install -Dm644 brcmfmac4329-sdio.bin \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4329-sdio.bin
+	# Firmware configuration
+	install -Dm644 brcmfmac4329-sdio.acer,picasso.txt \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4329-sdio.acer,picasso.txt
+}
+
+sha512sums="5b0cdcea8edb09db9fca95eae8a77f34ad0164e06106a52ef1f4e801fbed873467f14edd14513d28c571d28e0a61bb74a345f1acc91d41104e9e1751ae8418e6  firmware-acer-picasso-803fa8cce4e6aab3c97473c9dbab9abc49894cb7.tar.gz"

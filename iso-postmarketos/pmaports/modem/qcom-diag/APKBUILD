@@ -1,0 +1,35 @@
+maintainer="SzczurekYT <szczurek@szczurek.yt>"
+pkgname=qcom-diag
+pkgver=0_git20250324
+pkgrel=1
+_commit="29277ef0bcbe22468a3836b796dc525ba6df87f3"
+pkgdesc="Routing of diagnostics related messages between host and various subsystems"
+url="https://github.com/linux-msm/diag"
+arch="all"
+license="BSD-3-Clause"
+makedepends="linux-headers musl-dev eudev-dev qrtr-dev"
+subpackages="$pkgname-doc $pkgname-openrc $pkgname-systemd"
+source="
+	diag-$_commit.tar.gz::https://github.com/linux-msm/diag/archive/$_commit.tar.gz
+	diag-router.initd
+	systemd-service.patch
+"
+builddir="$srcdir/diag-$_commit"
+options="!check" # No test suite
+
+build() {
+	make prefix=/usr all
+}
+
+package() {
+	make prefix=/usr DESTDIR="$pkgdir" install
+	install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+	install -Dm755 "$srcdir"/diag-router.initd "$pkgdir"/etc/init.d/diag-router
+	install -Dm644 diag-router.service -t "$pkgdir"/usr/lib/systemd/system/
+}
+
+sha512sums="
+19987ed217edc783fcf215b61d969d4d77c3b018db63b70543f925134100345000b434a340cec1b2494da54b66c3b39874924b174d0b4ed8fffe716b6046f6fb  diag-29277ef0bcbe22468a3836b796dc525ba6df87f3.tar.gz
+8417f0280e11a2f3855a3178da9de837202a5219eb7653779699ee7ede7f63a888bce8ff47340a5338e3a010d0c1589e5b8d5fcb627abb990d2697a9137c6606  diag-router.initd
+43069ef4b03b234ddfd9f2522aae3d0d3a073fb5ccb5fb1d9beaf4065307e2b586023283ceca0ff7751a918223b159f3a0fd169e524c57014438e92bfd0717c7  systemd-service.patch
+"

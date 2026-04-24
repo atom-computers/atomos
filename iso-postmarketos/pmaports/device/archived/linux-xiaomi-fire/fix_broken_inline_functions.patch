@@ -1,0 +1,41 @@
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -2362,7 +2362,7 @@
+ extern struct mutex uclamp_mutex;
+ 
+ unsigned long uclamp_eff_value(struct task_struct *p, enum uclamp_id clamp_id);
+-inline void uclamp_se_set(struct uclamp_se *uc_se,
++void uclamp_se_set(struct uclamp_se *uc_se,
+ 				 unsigned int value, bool user_defined);
+ void
+ uclamp_update_active_tasks(struct cgroup_subsys_state *css,
+--- a/include/linux/blk-crypto.h
++++ b/include/linux/blk-crypto.h
+@@ -30,7 +30,7 @@
+ int blk_crypto_evict_key(struct request_queue *q,
+ 			 const struct blk_crypto_key *key);
+ 
+-inline void blk_crypto_flock(struct keyslot_manager *ksm, unsigned int flags);
++void blk_crypto_flock(struct keyslot_manager *ksm, unsigned int flags);
+ 
+ 
+ #else /* CONFIG_BLK_INLINE_ENCRYPTION */
+@@ -45,7 +45,7 @@
+ 	return true;
+ }
+ 
+-static inline void blk_crypto_flock(struct keyslot_manager *ksm,
++static void blk_crypto_flock(struct keyslot_manager *ksm,
+ 				unsigned int flags) {}
+ 
+ #endif /* CONFIG_BLK_INLINE_ENCRYPTION */
+--- a/include/linux/keyslot-manager.h
++++ b/include/linux/keyslot-manager.h
+@@ -98,7 +98,7 @@
+ 				      unsigned int wrapped_key_size,
+ 				      u8 *secret, unsigned int secret_size);
+ 
+-inline void ksm_flock(struct keyslot_manager *ksm, unsigned int flags);
++void ksm_flock(struct keyslot_manager *ksm, unsigned int flags);
+ 
+ #endif /* CONFIG_BLK_INLINE_ENCRYPTION */

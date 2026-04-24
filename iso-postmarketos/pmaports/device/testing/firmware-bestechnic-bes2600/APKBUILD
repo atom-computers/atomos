@@ -1,0 +1,24 @@
+# Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
+maintainer="Dang Huynh <dang.huynh@mainlining.org>"
+pkgname=firmware-bestechnic-bes2600
+pkgver=0_git20231227
+pkgrel=1
+_commit=7a305de61771a84f1264866b204cf172df6d9195
+pkgdesc="Firmware for Bestechnic BES2600 WLAN/BT combo chip"
+url="https://gitlab.com/pine64-org/bes2600-firmware"
+arch="all"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://gitlab.com/pine64-org/bes2600-firmware/-/archive/$_commit/bes2600-firmware-$_commit.tar.gz"
+builddir="$srcdir/bes2600-firmware-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"/lib/firmware/postmarketos
+	mv firmware/bes2600 "$pkgdir"/lib/firmware/postmarketos
+
+	# This is not needed for initializing WLAN
+	rm "$pkgdir"/lib/firmware/postmarketos/bes2600/bes2600_factory.txt
+}
+sha512sums="
+1ba0c4473348711b201d3f78cf2a1d6b6ec88de48cd90e3c6137a1565a46e25925b9330dbaf40add3b47d485c388755262b60b275d97cd078118017df36155fa  bes2600-firmware-7a305de61771a84f1264866b204cf172df6d9195.tar.gz
+"

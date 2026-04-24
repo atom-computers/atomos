@@ -1,0 +1,57 @@
+# Archived: Kernel does not build anymore
+#   net/bluetooth/rfcomm/sock.c:1043:27: error: initialization of 'int (*)(struct net *, struct socket *, int,  int)' from incompatible pointer type 'int (*)(struct net *, struct socket *, int)' [-Wincompatible-pointer-types]
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/franken_defconfig
+
+pkgname=linux-samsung-kylessopen
+pkgver=3.0.101
+pkgrel=9
+pkgdesc="Samsung Galaxy Trend kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-kylessopen"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev lzo xz"
+
+_kernel="FrankenKernel"
+_commit="d0e853abec2d7be79f5d9b319273a0b66046b125"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pavlepiramida/$_kernel/archive/$_commit.tar.gz
+	$_config
+	gcc5.patch
+	0001-fix-video-argb-setting.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	Fix-datatype-of-rate-parameter-for-struct-clk_ops.patch
+"
+builddir="$srcdir/$_kernel-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+22c89caaae880c64fb1a9e25ff5c65813b4bfa9a27ca4310fe9da17c4a1bfff2b49b4516f48fd30a4ccb1a185fc525b0c5967b4f18bfd3c2f8cfce66c8a268bd  linux-samsung-kylessopen-d0e853abec2d7be79f5d9b319273a0b66046b125.tar.gz
+89c6bb98a9bafa1942a07cc6de7eae8c66df1afdac9fc78ad391c531357f28791b87da51632df6b05765f7758bb7ffc5f67146cfd7fd401b275d4e7badb7f7ee  config-samsung-kylessopen.armv7
+db5d16e03a93b453c98882dcd08b7a4cd96c126393365d8916d9cf045e8725831f70ea841756526af7bead36a74301024e3c569c438442906e079fea2ac0a022  gcc5.patch
+e3083c260ed9c4fc0d83f43106700b6173876dbfae072f6e6696ac6785a4dc17771fbcb3e21601e04ed29a11bf0f7a2a09ad549375e0c34cea245c7f2e2bcbbd  0001-fix-video-argb-setting.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+1729fadf353dd3920d5492f4f483380ae4388fe25aa1df656b1715f2927d9050cec21fe94382ac7dd58181689f7805a9c73cb082366df5d84d729a32b25de349  Fix-datatype-of-rate-parameter-for-struct-clk_ops.patch
+"

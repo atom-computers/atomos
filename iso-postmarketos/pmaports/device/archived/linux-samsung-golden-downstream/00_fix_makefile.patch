@@ -1,0 +1,14 @@
+diff -ruN '--from-file=./android_kernel_samsung_golden-2662dc4f65ef3ad5eeb4222d3aad5dd418a04510' ./android_kernel_samsung_golden-2662dc4f65ef3ad5eeb4222d3aad5dd418a04510/Makefile ./tmp-kernel/Makefile
+--- ./Makefile	2017-05-20 10:01:01.000000000 +0100
++++ ./Makefile	2018-04-17 20:51:34.774960271 +0100
+@@ -194,8 +194,8 @@
+ export KBUILD_BUILDHOST := $(SUBARCH)
+ #ARCH		?= $(SUBARCH)
+ ARCH		:= arm
+-#CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+-CROSS_COMPILE	:= /home/marcin/bin/arm-eabi-4.6/bin/arm-eabi-
++CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
++#CROSS_COMPILE	:= /home/marcin/bin/arm-eabi-4.6/bin/arm-eabi-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)

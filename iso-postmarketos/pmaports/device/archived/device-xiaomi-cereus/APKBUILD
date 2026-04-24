@@ -1,0 +1,34 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-cereus
+pkgdesc="Xiaomi Redmi 6"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-xiaomi-cereus
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+e237272ca1fb417a6c52cb922cbdb734d990fec9af062ade01a2b4de0ad4fc1c97ab4a9b1cbc35011dd0a8a59e9e0bdbc8d8134fd89204f875efa716ec58c0c6  deviceinfo
+53613c64bafe42607cca461b62ed97a3f653b50f0cad9b38c13f61ef12438c7c624afb8ecc7cc53d8c9de45f270a0456f43ee003df20f17928d088e15735504e  kernel-cmdline.conf
+"

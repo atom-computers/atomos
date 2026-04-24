@@ -1,0 +1,27 @@
+--- a/meson.build
++++ b/meson.build
+@@ -1,5 +1,5 @@
+ project('mutter', 'c',
+-  version: '48.mobile.0',
++  version: '48.0',
+   meson_version: '>= 1.3.0',
+   license: 'GPL-2.0-or-later',
+ )
+@@ -26,7 +26,7 @@ pango_req = '>= 1.46.0'
+ cairo_req = '>= 1.10.0'
+ pangocairo_req = '>= 1.20'
+ pixman_req = '>= 0.42'
+-gsettings_desktop_schemas_req = '>= 47.beta'
++gsettings_desktop_schemas_req = '>= 47'
+ x11_req = '>= 1.7.0'
+ xcomposite_req = '>= 0.4'
+ xkbcommon_req = '>= 0.4.3'
+@@ -122,7 +122,7 @@ gio_unix_dep = dependency('gio-unix-2.0', version: glib_req)
+ gobject_dep = dependency('gobject-2.0', version: glib_req)
+ gthread_dep = dependency('gobject-2.0', version: glib_req)
+ gmodule_no_export_dep = dependency('gmodule-no-export-2.0', version: glib_req)
+-gnome_settings_daemon_dep = dependency('gnome-settings-daemon', version: '= 48.mobile.0', required: true)
++gnome_settings_daemon_dep = dependency('gnome-settings-daemon', version: '= 48.0', required: true)
+ xkbcommon_dep = dependency('xkbcommon', version: xkbcommon_req)
+ atk_dep = dependency('atk', version: atk_req)
+ colord_dep = dependency('colord', version: colord_req)

@@ -1,0 +1,29 @@
+Add support for Sintronix ST7796S in kernel
+diff --git a/drivers/video/sprdfb/Kconfig b/drivers/video/sprdfb/Kconfig
+index 5c929a5..7f0678c 100755
+--- a/drivers/video/sprdfb/Kconfig
++++ b/drivers/video/sprdfb/Kconfig
+@@ -305,6 +305,11 @@ config FB_LCD_ST7789V_MCU
+ 	depends on FB_SC8825 || FB_SCX35 || FB_SCX15
+ 	default n
+ 
++config FB_LCD_ST7796S_MIPI
++	boolean "support ST7796S mipi panel"
++	depends on FB_SC8825 || FB_SCX35 || FB_SCX30G
++	default n
++
+ config FB_LCD_NT51017_MIPI_LVDS
+         boolean "support nt51017 lvds panel"
+         depends on FB_SC8825 || FB_SCX35
+diff --git a/drivers/video/sprdfb/lcd/Makefile b/drivers/video/sprdfb/lcd/Makefile
+index c1b385b..df28587 100755
+--- a/drivers/video/sprdfb/lcd/Makefile
++++ b/drivers/video/sprdfb/lcd/Makefile
+@@ -27,6 +27,7 @@ obj-$(CONFIG_FB_LCD_S6D77ALA_MIPI_PIKEBJ1MINI) += lcd_s6d77a1a01_mipi_pikebj1min
+ obj-$(CONFIG_FB_LCD_SC7798D_MIPI_PIKEBJ1MINI) += lcd_sc7798d_mipi_pikebj1mini.o
+ obj-$(CONFIG_FB_LCD_ILI9341) += lcd_ili9341.o
+ obj-$(CONFIG_FB_LCD_ST7789V_MCU)  += lcd_st7789v_mcu.o
++obj-$(CONFIG_FB_LCD_ST7796S_MIPI)  += lcd_st7796s_mipi.o
+ obj-$(CONFIG_FB_LCD_OTM1283A_MIPI)  += lcd_otm1283a_mipi.o
+ obj-$(CONFIG_FB_LCD_NT35502_MIPI) += lcd_nt35502_mipi.o
+ obj-$(CONFIG_FB_LCD_VIVA_RGB_SPI) += lcd_hx8363_rgb_spi_viva.o

@@ -1,0 +1,2 @@
+SUBSYSTEM=="input", ATTRS{name}=="ft5x06_ts", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1"

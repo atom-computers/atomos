@@ -1,0 +1,59 @@
+# Archived: Downstream port, only for testing, use mainline port instead
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/aosp_kanuti_tulip_defconfig
+
+pkgname=linux-sony-tulip
+pkgver=3.10
+pkgrel=7
+pkgdesc="Sony Xperia M4 Aqua kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="sony-tulip"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev openssl openssl-dev gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+
+# Source
+_repository="kernel_kanuti"
+_commit="d8e51bc7dd6bde228f1d9a7ddcf664845c4f07fb"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/bartcubbins/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	0001-posix_acl-fix-bad-kernel-backport.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+7372b4fdfca2fef3c8ae48c9353a6d7ea658fc8412e2b288ee1097d902f5d9b81a0b76f3fc0e1bc74a015ec34e84c4942608f0e522d628b3deb288f4b177428c  linux-sony-tulip-d8e51bc7dd6bde228f1d9a7ddcf664845c4f07fb.tar.gz
+d6b7c9e894f47318de19bbcb3e5969a93a5618dd91796a72556ad4b00ea5b2af50df3f919589eb372407fa9c99bca4deca5544f7bcd7b31070a4546f4aeb8c4a  config-sony-tulip.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+62c27cb75bbfd65ead3a5345ab81e356f04da803b45ce14239d95694adc675c4dced89de7582ae2f0e229b176f545cc76a6706c9774d48eabcbb010f83623268  0001-posix_acl-fix-bad-kernel-backport.patch
+"

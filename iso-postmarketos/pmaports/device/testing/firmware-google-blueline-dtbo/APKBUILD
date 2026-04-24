@@ -1,0 +1,27 @@
+# Co-Maintainer: Joel Selvaraj <foss@joelselvaraj.com>
+# Co-Maintainer: Casey Connolly <kcxt@postmarketos.org>
+maintainer="Victoria Brekenfeld <postmarketos@drakulix.de>"
+pkgname=firmware-google-blueline-dtbo
+pkgver=1
+pkgrel=1
+_commit="88468ea69b2598551861cb48f0785463a61f066c"
+pkgdesc="dtbo.img needed to boot mainline on Pixel 3"
+url="https://gitlab.com/phodina/dtbo-google-blueline"
+arch="aarch64"
+license="GPL-2.0-only"
+makedepends="dtc android-tools"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/phodina/dtbo-google-blueline/-/archive/$_commit.tar.gz"
+options="!check !archcheck !strip !tracedeps pmb:cross-native"
+builddir="$srcdir/dtbo-google-blueline-$_commit"
+
+build() {
+	dtc -O dtb -o sdm845-b1-dvt1.1.dtbo -b 0 -@ sdm845-b1-dvt.dts
+	mkdtboimg cfg_create dtbo.img dtboimg.cfg
+}
+
+package() {
+	install -D -m644 dtbo.img \
+		"$pkgdir"/boot/dtbo-google-blueline.img
+}
+
+sha512sums="7c8e27ab8c29027b53a699954f62571a6750a3c7337659d166507b063a843feff9e357f0b5f5ebbb30ffbb8ae7f4bc7fe3da267cb86b0c77c2e36d62fb471061  firmware-google-blueline-dtbo-88468ea69b2598551861cb48f0785463a61f066c.tar.gz"

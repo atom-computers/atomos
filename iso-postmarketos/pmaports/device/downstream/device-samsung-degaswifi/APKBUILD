@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-degaswifi
+pkgdesc="Samsung Galaxy Tab 4 7.0 WiFi"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-degaswifi
+	pxa-mkbootimg
+	postmarketos-base-downstream
+	postmarketos-base
+	alsa-ucm-conf
+	alsa-utils
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+source="
+	deviceinfo
+	modules-initfs
+	audio/ucm2/pxa-88pm805-dkb-hifi/HiFi.conf
+	audio/ucm2/pxa-88pm805-dkb-hifi/pxa-88pm805-dkb-hifi.conf
+	audio/ucm2/ucm.conf
+	sd8887.conf
+	galcore.conf
+"
+replaces="alsa-ucm-conf"
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/pxa-88pm805-dkb-hifi.conf \
+		-t "$pkgdir"/usr/share/alsa/ucm2/pxa-88pm805-dkb-hifi
+	install -Dm644 "$srcdir"/HiFi.conf \
+		-t "$pkgdir"/usr/share/alsa/ucm2/pxa-88pm805-dkb-hifi
+	install -Dm644 "$srcdir"/ucm.conf \
+		-t "$pkgdir"/usr/share/alsa/ucm2
+	install -Dm644 "$srcdir"/sd8887.conf \
+		-t "$pkgdir"/usr/lib/modprobe.d
+	install -Dm644 "$srcdir"/galcore.conf \
+		-t "$pkgdir"/usr/lib/modprobe.d
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for the Samsung Galaxy Tab 4"
+	depends="firmware-samsung-degaswifi"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+8197bd0d569ce338900fe0c5d3a7b0d1f071f4be322213c97c1f95d9a67f8d4249be7bbc9aba927573050b85f25f5c95a92e4cb5d498b128c3e7e74cfc6e0144  deviceinfo
+12ce6c1d9ff73d97835b5f794f1a4a7d1ff796cc3913a3fbb65d579ec798f5bba108b5ed7d15b53db8a814fd71f3bd2553d868754a3dd3fd258250a99b657c8c  modules-initfs
+40a732897f27711c2e83dcc1e1295b38ac286362cc36eddc147960506522a036c1528e5c08893b1e2a459307cb7c09fd88dfa1bc70ea798694404a04974791e3  HiFi.conf
+9491be2f6f9145a1314206eb12d679ee0a9a82e2db73253ebd76e386e3c3bab4080f317a59b6065a14519fb8b156feba4af96662aa04fa0497dfded01b88f0a1  pxa-88pm805-dkb-hifi.conf
+b143788b4284d859bc6fd30457631b66d06c97e7d2aa1959492edc1e618abc495f9d72baba9736ab3d89ebe7d53c24d097fa047836656cdbda88ed38f2f198e8  ucm.conf
+f9b32aa49f3e90204ca52ef289aae60d54bd32c90dafb7d2f4dfe8d7e6fe4865b1f774acffd0e1f65bc78fecbd4d2e32c1ad210305097e2699a8b8dd0fc514ab  sd8887.conf
+e9fc29d4eb0888411e223a2a993ba193d80266ba6ab94a65a0b1e1177205818970e4893064d7cb60ffaee4d75b3023339b6cba3305bd5bd2ec7fa15bb6dca70f  galcore.conf
+"

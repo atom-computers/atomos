@@ -1,0 +1,1 @@
+KERNEL=="udmabuf",GROUP="video",MODE="0660"

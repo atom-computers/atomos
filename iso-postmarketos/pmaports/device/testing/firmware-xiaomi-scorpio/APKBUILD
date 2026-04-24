@@ -1,0 +1,40 @@
+maintainer="Yassine Oudjana (Tooniis) <y.oudjana@protonmail.com>"
+pkgname=firmware-xiaomi-scorpio
+pkgver=4
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi Note 2"
+url="https://gitlab.com/Tooniis/firmware-xiaomi-scorpio"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+
+_commit="fa2a51d8ce7acbffbf4a172744be87fb9608c943"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz"
+
+_mbns="
+	a530_zap.mbn
+	adsp.mbn
+	mba.mbn
+	modem.mbn
+	slpi.mbn
+	venus.mbn
+	"
+
+package() {
+	cd "$srcdir/$pkgname-$_commit/"
+
+	# Install MBNs
+	for _i in $_mbns; do
+		install -Dm644 $_i "$pkgdir/lib/firmware/qcom/msm8996/scorpio/$_i"
+	done
+
+	# Install QCA6174 board firmware
+	install -Dm644 board-2.bin "$pkgdir/lib/firmware/postmarketos/ath10k/QCA6174/hw3.0/board-2.bin"
+
+	# Install sns.reg
+	install -Dm644 sns.reg "$pkgdir/lib/firmware/qcom/sensors/sns.reg-xiaomi,scorpio"
+}
+
+sha512sums="
+912503726f82a109d3ebc8a178f64f4b808b85d0bf8dfe59038d18bf6081b873555a87f15f3a977b99e7577645e4978414ca8541523077f24998da325c658767  firmware-xiaomi-scorpio-fa2a51d8ce7acbffbf4a172744be87fb9608c943.tar.gz
+"

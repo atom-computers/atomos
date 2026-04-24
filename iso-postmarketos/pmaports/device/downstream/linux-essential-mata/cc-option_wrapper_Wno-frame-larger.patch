@@ -1,0 +1,11 @@
+Workaround for a gcc error that causes kernel build to fail
+diff --git a/drivers/media/platform/msm/vidc/Makefile b/drivers/media/platform/msm/vidc/Makefile
+index 560a5184c6ea..3a43a80cf5fa 100644
+--- a/drivers/media/platform/msm/vidc/Makefile
++++ b/drivers/media/platform/msm/vidc/Makefile
+@@ -23,4 +23,4 @@ obj-$(CONFIG_MSM_VIDC_VMEM) += vmem/
+ 
+ # TODO: remove me b/62058353
+ subdir-ccflags-y += \
+-	-Wno-frame-larger-than=
++	$(call cc-option,-Wno-frame-larger-than=)

@@ -1,0 +1,10 @@
+--- a/SConstruct
++++ b/SConstruct
+@@ -6,6 +6,7 @@ env = Environment(
+ 	tools = ["clang", "link"],
+ 	LINKFLAGS=[
+ 		"--target=arm-none-eabi",
++		"-fuse-ld=lld",
+ 		"-mcpu=cortex-a53",
+ 		"-nostdlib",
+ 		"-DAARCH64_BASE=$aarch64_base",

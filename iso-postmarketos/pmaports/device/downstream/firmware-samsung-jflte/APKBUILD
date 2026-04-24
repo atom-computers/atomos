@@ -1,0 +1,20 @@
+pkgname=firmware-samsung-jflte
+pkgver=1.1
+pkgrel=1
+_commit="af95c8f4af9fda8b909579dafc30ec1ce29cb12d"
+pkgdesc="Samsung Galaxy S4 Firmware"
+url="https://github.com/flo071/proprietary_vendor_samsung_jf-common"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/flo071/proprietary_vendor_samsung_jf-common/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/proprietary_vendor_samsung_jf-common-$_commit"
+
+package() {
+	# Wifi
+	install -Dm644 proprietary/etc/wifi/bcmdhd_sta.bin \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_sta.bin
+	install -Dm644 proprietary/etc/wifi/nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_net.txt
+}
+sha512sums="b8b92806123b4ab5c02adfb1e33ad18a84a51f181485f7fffe51a6d60678b9750c3bc461550b0a3afde99b4685c8720b0b8be3626f68a284863cb10e3c68c7c5  firmware-samsung-jflte-af95c8f4af9fda8b909579dafc30ec1ce29cb12d.tar.gz"

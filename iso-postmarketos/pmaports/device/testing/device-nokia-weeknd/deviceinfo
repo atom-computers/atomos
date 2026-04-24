@@ -1,0 +1,31 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Nokia 2780 Flip"
+deviceinfo_manufacturer="Nokia"
+deviceinfo_codename="nokia-weeknd"
+deviceinfo_year="2022"
+deviceinfo_dtb="qcom/qm215-nokia-weeknd"
+deviceinfo_append_dtb="true"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="240"
+deviceinfo_screen_height="320"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_header_version="0"
+deviceinfo_flash_offset_base="0x80000000"
+deviceinfo_flash_offset_kernel="0x00080000"
+deviceinfo_flash_offset_ramdisk="0x03600000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x03400000"
+deviceinfo_flash_sparse="true"

@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-google-peach-pi
+pkgdesc="Samsung Chromebook 2 (13.3 inch)"
+pkgver=10
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-postmarketos-exynos5
+	postmarketos-base
+	postmarketos-cros-common
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	i3wm/xorg.conf.d/90-tap-to-click.conf
+	ucm/Peach-Pi-I2S-MA.conf
+	ucm/HiFi.conf
+"
+subpackages="
+	$pkgname-i3wm
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Alsa UCM configs
+	install -Dm644 "$srcdir"/Peach-Pi-I2S-MA.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Peach-Pi-I2S-MA/Peach-Pi-I2S-MA.conf
+	install -Dm644 "$srcdir"/HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Peach-Pi-I2S-MA/HiFi.conf
+}
+
+i3wm() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-i3wm"
+	install -Dm644 "$srcdir"/90-tap-to-click.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/90-tap-to-click.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT and MFC firmware"
+	depends="linux-firmware-mrvl linux-firmware-s5p-mfc"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+2ffcd8b1e436056f33bdbc3d011c3e8d865668ff811894320a2f3f6fe9c1f7e7dc98cbb20985e7398ddb4738fa23b95d10e80ef364868271c5f46e14a7ad69da  deviceinfo
+fef8383cd86332dbdb247b81791a7e5ca0775f93f5cd2ef5033d1ea340920fcdddf9e6b5c15bcc79562a5da784964503643e184030211019f08e103aafcf4b83  kernel-cmdline.conf
+e12a68f919182cb4e6812a5dd13fce8dc15266d2ac16aa5f0a31034f111cb403c020ebaaa4d94309f4baf2f71379327c57c08029e27c506d152695e9a2b04b2b  modules-initfs
+e53ca475830930ecfc1fd537702e850e2abcb66fbed521cb6c3a2918d762649254bd0244ec93a47b20dfc593ec3afc9bdebdec1759a7bc96dcbe4800f40893da  90-tap-to-click.conf
+2ccec36a88003673471fcec7c0e408c24892e43701d88986c6a85a7882ac275565eb3abf566709306ddc16a62b4558ebceffbc289e7c95336ba28262719c6413  Peach-Pi-I2S-MA.conf
+a95701b30c6b7535a60d0db932d018673a72346974cca86b9a1212fa8c66b1ad5fffaa0c6ac5fe5ead2c91a90375d5d24f74fd571300a21c53e4a2c16953c170  HiFi.conf
+"

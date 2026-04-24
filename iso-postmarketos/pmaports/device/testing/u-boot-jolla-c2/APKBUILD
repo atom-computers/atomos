@@ -1,0 +1,34 @@
+maintainer="Affe Null <affenull2345@gmail.com>"
+pkgname=u-boot-jolla-c2
+pkgver=2025.01_rc1_git20250423
+pkgrel=0
+pkgdesc="U-Boot bootloader for the Jolla C2"
+url="https://codeberg.org/ums9230-mainline/u-boot"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+makedepends="
+	bc
+	bison
+	dtc
+	flex
+	openssl-dev
+"
+_commit="88db704f6fe59c281db4f928bb0825c2862c32d7"
+source="$url/archive/$_commit.tar.gz"
+options="!check !tracedeps pmb:cross-native"
+builddir="$srcdir"/u-boot
+
+build() {
+	make ARCH=arm reeder-s19mps_defconfig
+	make ARCH=arm
+}
+
+package() {
+	install -Dm644 "$builddir"/u-boot.bin \
+		-t "$pkgdir"/usr/share/u-boot/reeder-s19mps
+}
+
+sha512sums="
+e56aa1760900f497679690015d5c7449d0416549998e6cc3854de888cc214588bf056882c30f66154b782de1035fb8ad7e78346919c7de8d1086141e3c746bde  88db704f6fe59c281db4f928bb0825c2862c32d7.tar.gz
+"

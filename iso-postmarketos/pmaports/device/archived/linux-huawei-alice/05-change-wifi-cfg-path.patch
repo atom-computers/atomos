@@ -1,0 +1,26 @@
+diff --git a/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_board.h b/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_board.h
+index 115419a1..151f98f1 100755
+--- a/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_board.h
++++ b/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_board.h
+@@ -38,7 +38,7 @@ extern "C" {
+ #define SDIO_RW_NAME_LEN            128
+ #define INI_NAME_LEN            	128
+ 
+-#define RW_SDIO_PATH                "/system/vendor/firmware/"
++#define RW_SDIO_PATH                "/lib/firmware/postmarketos/"
+ #define DTS_COMP_HI1101_RW_NAME     "hisilicon,hi1101-power"
+ 
+ 
+diff --git a/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_patch.h b/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_patch.h
+index cbc34a54..cbabf858 100755
+--- a/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_patch.h
++++ b/drivers/huawei_platform/connectivity/hisi/hw-pm/wireless_patch.h
+@@ -75,7 +75,7 @@ extern "C" {
+ #define SDIO_CFG_FILE               "./config/sdio_cfg"
+ #else
+ #define UART_CFG_FILE               "/system/vendor/firmware/uart_cfg"
+-#define SDIO_CFG_FILE               "/system/vendor/firmware/sdio_cfg"
++#define SDIO_CFG_FILE               "/lib/firmware/postmarketos/sdio_cfg"
+ #define SDIO_RECOVER_CFG_FILE       "/system/vendor/firmware/sdio_recover_cfg"
+ #define SDIO_RECOVER_FLAG_FILE      "/data/hwlogdir/recoverflag"
+ #endif

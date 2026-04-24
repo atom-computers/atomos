@@ -1,0 +1,13 @@
+diff --git a/drivers/tty/serial/msm_serial_hs.c b/drivers/tty/serial/msm_serial_hs.c
+index d099b32d40cb..2ca91bc13f22 100644
+--- a/drivers/tty/serial/msm_serial_hs.c
++++ b/drivers/tty/serial/msm_serial_hs.c
+@@ -3331,7 +3331,7 @@ static void  msm_serial_hs_rt_init(struct uart_port *uport)
+ 	msm_uport->pm_state = MSM_HS_PM_SUSPENDED;
+ 	mutex_unlock(&msm_uport->mtx);
+ 	pm_runtime_enable(uport->dev);
+-	tty_port_set_policy(&uport->state->port, SCHED_FIFO, 1);
++	//tty_port_set_policy(&uport->state->port, SCHED_FIFO, 1);
+ }
+ 
+ static int msm_hs_runtime_suspend(struct device *dev)

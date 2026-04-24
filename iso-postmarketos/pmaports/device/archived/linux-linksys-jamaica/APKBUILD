@@ -1,0 +1,74 @@
+# Archived: the only maintainter don't want to maintain this package anymore
+# Kernel config based on : device/community/linux-postmarketos-qcom-msm8916/config-postmarketos-qcom-msm8916.armv7
+maintainer="exkc <exkc@exkc.moe>"
+_flavor="linksys-jamaica"
+_config="config-$_flavor.armv7"
+pkgname=linux-$_flavor
+pkgver=6.11
+pkgrel=1
+pkgdesc="Mainline kernel for Linksys EA9350 V3"
+arch="armv7"
+_carch="arm"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-waydroid
+	pmb:kconfigcheck-containers
+	pmb:kconfigcheck-zram
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bash
+	bison
+	findutils
+	gmp-dev
+	flex
+	mpc1-dev
+	mpfr-dev
+	openssl-dev
+	perl
+	postmarketos-installkernel
+"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-$_kernver.tar.xz
+	config-$_flavor.armv7
+	armv7.patch
+	jamaica.patch
+	"
+builddir="$srcdir/linux-${_kernver//_/-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION=$((pkgrel + 1 ))
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+329c1f94008742e3f0c2ce7e591a16316d1b2cb9ea4596d4f45604097e07b7aa2f64afa40630a07f321a858455c77aa32ba57b271932ddcf4dc27863f9081cea  linux-6.11.tar.xz
+37355be62bd54110c5489b83aeaa68e5aa57b783a44c698acd231122303c33abd19adf0ad72977816461d457d1677b4114b88ec7fd65b64f03ac131fda8d0270  config-linksys-jamaica.armv7
+3ce2bf0aec8ec910481d9ca7e9d1d0f9e5409ca3118b401e9e386d14245f938392a3999348e9d34133663516a8eaf080952ec9dc5c4912c2d67e59b6e9d6f36e  armv7.patch
+38d93e83a7452c977b783161975ef6cf3c0329a524f224c0b954806f137d410100fc50e265d79a14f86bea347543d3a891e313f2aacfa805aebf59eb0bf1ea51  jamaica.patch
+"

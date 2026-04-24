@@ -1,0 +1,42 @@
+diff --git a/drivers/misc/samsung/scsc/mx140_file.c b/drivers/misc/samsung/scsc/mx140_file.c
+index 0bc345ca..a726aa67 100755
+--- a/drivers/misc/samsung/scsc/mx140_file.c
++++ b/drivers/misc/samsung/scsc/mx140_file.c
+@@ -23,8 +23,8 @@
+ #define MX140_FW_BASE_DIR_SYSTEM_ETC_WIFI      CONFIG_SCSC_CORE_FW_LOCATION
+ #define MX140_FW_BASE_DIR_VENDOR_ETC_WIFI      CONFIG_SCSC_CORE_FW_LOCATION
+ #else
+-#define MX140_FW_BASE_DIR_SYSTEM_ETC_WIFI	"/system/etc/wifi"
+-#define MX140_FW_BASE_DIR_VENDOR_ETC_WIFI	"/vendor/etc/wifi"
++#define MX140_FW_BASE_DIR_SYSTEM_ETC_WIFI	"/lib/firmware/postmarketos/mx140"
++#define MX140_FW_BASE_DIR_VENDOR_ETC_WIFI	"/lib/firmware/postmarketos/mx140"
+ #endif
+ 
+ /* Look for this file in <dir>/etc/wifi */
+@@ -488,26 +488,6 @@ int mx140_basedir_file(struct scsc_mx *mx)
+ 	/* Set to kernel segment. */
+ 	set_fs(get_ds());
+ 
+-	/* If /system isn't present, assume platform isn't ready yet */
+-	r = vfs_stat("/system", &stat);
+-	if (r != 0) {
+-		SCSC_TAG_ERR(MX_FILE, "/system not mounted yet\n");
+-		r = -EAGAIN;
+-		goto done;
+-	}
+-
+-	/* If /vendor isn't present, assume O platform isn't ready yet.
+-	 * Android M and N still have /vendor, though we don't use it.
+-	 * Searching for /vendor is not enough as it's a mountpoint and
+-	 * appears before its contents.
+-	 */
+-	r = vfs_stat("/vendor", &stat);
+-	if (r != 0) {
+-		SCSC_TAG_ERR(MX_FILE, "/vendor not mounted yet\n");
+-		r = -EAGAIN;
+-		goto done;
+-	}
+-
+ 	/* Search for SCSC FW under the mountpoints */
+ 
+ 	/* Try /vendor partition  (Oreo) first.

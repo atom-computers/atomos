@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_tb8504_defconfig
+
+pkgname=linux-lenovo-tb8504f
+pkgver=3.18.140
+pkgrel=3
+pkgdesc="Lenovo Tab 4 8 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lenovo-tb8504f"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lenovo_msm8953"
+_commit="070b6a871761481c2284ae2f862adaeb9b4d9d2f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/lenovo-devs/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	struct-rndis-incomplete-type.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+cf456f1319dda22693bb70e8445bd9b3642f49e384ecb8ad8d51b985aafa41404c17773b328292c7562e54d2facd072d77aad836c4cf6c4a9592316bc44aada8  linux-lenovo-tb8504f-070b6a871761481c2284ae2f862adaeb9b4d9d2f.tar.gz
+8dc75cc7b685a7688b5dbb4594359a7e260ad716b3b391bb4a7b95675c59d8f321b2106dc2b273261c911d9b2a5b60585d0f6f51015d3bae083f63ebfbc55fda  config-lenovo-tb8504f.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+c64c63702c1638987640cf80dc8c36488ad0bc1c4ce6a875b9b98f3de1f1ae1435be7ff7f8b0b164f28ac79a22cf70f3d3fb6c28d8c162b7162ef8ac6f95e02d  struct-rndis-incomplete-type.patch
+"

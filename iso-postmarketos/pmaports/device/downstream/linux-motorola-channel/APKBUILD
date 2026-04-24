@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/channel_defconfig
+maintainer="Jean-Etienne Tremblay <jean.etienne.tremblay@gmail.com>"
+pkgname=linux-motorola-channel
+pkgver=4.9.206
+pkgrel=2
+pkgdesc="Motorola G7 Play kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-channel"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc dtc bison devicepkg-dev flex openssl-dev perl dtbtool xz"
+
+# Source
+_repository="android_kernel_motorola_sdm632"
+_commit="92694d1c83cd63c6628b1ae42b6c5a4c1c95d67b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	disable_tty_port_set_policy.patch
+	disable_skip_initramfs.patch
+	mdss-panel-to-fb-var.patch
+	fix_intree_dtc.patch
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" DTC=dtc \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="1453e028fec1f3ce45328b3e4857237f7986bfdf12343a662ccf006b266712fdb2becea2d37978389e7ac3799e0aff6326ffb2fe910d542021bd1051b5599533  linux-motorola-channel-92694d1c83cd63c6628b1ae42b6c5a4c1c95d67b.tar.gz
+0fd5fd59e16c24a85302de83f61468591df472afbddaeab2b3dbf59cf9d48af2ac8ecc1a48a72b7a1db44077fbd4856dc60f2b2885eb1adf1f8e96b3a311eaad  disable_tty_port_set_policy.patch
+65048fb6474fd543b14bc99d9d95cfe5297da239af211d327a8509f7777d489bd01dd911364e0c62ec0e68f4c22ebb3b145eabfe01cad2abf57cf46896a1e58f  disable_skip_initramfs.patch
+d5b868c64b8ebddcf74cb3aa478f30f0897af1e14e4fc42d977921104a6c568cc0bf36fc8a3b0f538cd3ca2ebf59244fdf23186a903259e5acc14d1c4ef4ccc3  mdss-panel-to-fb-var.patch
+c6d7273b247ea58281962bfd8545d8f273d5d6c0dfb1f16ce16e8b14988abdbed249863d3b9998aded5ab445022dc551480d5190b4595d84d028f60dcc03d76d  fix_intree_dtc.patch
+e010ebf435cadf2f3e2db85ffb800a1cea70a1859fa9b8a93bb0d57403990579cdb9d34740f4ade79c43bf1cb5750947b669dca6e139b72e418ec68dd13c4f22  config-motorola-channel.aarch64"

@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/jf_defconfig
+
+pkgname=linux-samsung-jflte
+pkgver=3.4.113
+pkgrel=2
+pkgdesc="Samsung Galaxy S4 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-jflte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_samsung_jf"
+_commit="0b7873d52c2331383f37eb908e54940eeac07345"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	03-fix-video-argb-setting.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	deduplicate-copy_net_ns.patch
+	nfqnl_ct_put.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+5301543d6f04c0b70ee8892cbc81e5c81965dd4e81b76282520f9bb7de8cebcb15323d8a58cc5ddaa29c7d7ef0107dcd9022bdbdd05e944516afbc256870513d  linux-samsung-jflte-0b7873d52c2331383f37eb908e54940eeac07345.tar.gz
+b7595ecb480aeb93007bcd941dd131a80884db44fe714c681bdd79ac330df3ae904f8d6f53243f1bdd081949cb5f4b886e051641ea83d737e7b857b4c56dfa00  config-samsung-jflte.armv7
+e3083c260ed9c4fc0d83f43106700b6173876dbfae072f6e6696ac6785a4dc17771fbcb3e21601e04ed29a11bf0f7a2a09ad549375e0c34cea245c7f2e2bcbbd  03-fix-video-argb-setting.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+213717aabd91c8b1fe93f113a33e8d859d29e319ae49b9c751bf4abdedc4ee3bc972a55141cf879876009001fedd055b07cae42aeffdc73535f2e99857f3a101  deduplicate-copy_net_ns.patch
+9bc646815e5064fade207b3cc62a7bfdef8edb2e8b9edf9c2110e35517001ead2f5a4725247dfcf734e1ce9f8cfdd1414338cae425ecdc4874cfcf1ead22cd05  nfqnl_ct_put.patch
+"

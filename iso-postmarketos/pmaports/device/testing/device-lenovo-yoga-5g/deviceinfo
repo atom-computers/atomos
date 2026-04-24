@@ -1,0 +1,21 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Lenovo Yoga 5G"
+deviceinfo_manufacturer="Lenovo"
+deviceinfo_codename="lenovo-yoga-5g"
+deviceinfo_year="2019"
+deviceinfo_dtb="qcom/sc8180x-lenovo-flex-5g"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="convertible"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1920"
+deviceinfo_screen_height="1080"
+
+# Bootloader related
+# most parameters from: https://github.com/jhovold/linux/wiki/X13s#kernel-command-line
+deviceinfo_boot_filesystem="fat32"

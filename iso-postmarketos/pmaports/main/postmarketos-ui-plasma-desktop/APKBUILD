@@ -1,0 +1,79 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Bart Ribbers <bribbers@disroot.org>"
+pkgname=postmarketos-ui-plasma-desktop
+pkgver=5
+pkgrel=0
+pkgdesc="(Wayland) KDE Desktop Environment (works well with tablets)"
+url="https://www.kde.org"
+# armhf and riscv64 blocked by plasma
+# x86 blocked by firefox
+arch="noarch !armhf !riscv64 !x86"
+license="GPL-3.0-or-later"
+depends="
+	plasma
+	postmarketos-base-ui-plasma
+	"
+_pmb_recommends="
+	ark
+	dolphin
+	ffmpegthumbs
+	firefox
+	fwupd
+	gwenview
+	kate
+	kdialog
+	kfind
+	kio-extras
+	konsole
+	print-manager
+	spectacle
+	"
+
+# For the KInfocenter pages in system settings
+_pmb_recommends="$_pmb_recommends
+	aha
+	pciutils
+	vulkan-tools
+	wayland-utils
+	xdpyinfo
+	"
+options="!check pmb:systemd" # No tests for a metapkg
+subpackages="$pkgname-openrc $pkgname-systemd"
+install="
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	$pkgname-systemd.post-install
+	$pkgname-systemd.post-upgrade
+	"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+extras() {
+	pkgdesc="Meta package for additional Plasma apps and functionality"
+	# For Kinfocenter: mesa-demos
+	_pmb_recommends="
+		audiocd-kio
+		kolourpaint
+		kwrite
+		mesa-demos
+		okular
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="openrc sddm"
+
+	mkdir -p "$subpkgdir"
+}
+
+systemd() {
+	install_if="$pkgname=$pkgver-r$pkgrel systemd"
+	depends="plasma-login-manager"
+
+	mkdir -p "$subpkgdir"
+}

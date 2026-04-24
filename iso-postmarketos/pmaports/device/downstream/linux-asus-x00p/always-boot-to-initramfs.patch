@@ -1,0 +1,22 @@
+From c8eaf96c743d667806eceeca238c247770b2029f Mon Sep 17 00:00:00 2001
+From: r3vn <giuseppe.corti@protonmail.com>
+Date: Fri, 4 Sep 2020 00:20:30 +0200
+Subject: [PATCH] (halium) always boot to initramfs
+
+---
+ init/initramfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init/initramfs.c b/init/initramfs.c
+index bf3af10c500a..858631138dd0 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -613,7 +613,7 @@ static int __init skip_initramfs_param(char *str)
+ {
+ 	if (*str)
+ 		return 0;
+-	do_skip_initramfs = 1;
++	do_skip_initramfs = 0;
+ 	return 1;
+ }
+ __setup("skip_initramfs", skip_initramfs_param);

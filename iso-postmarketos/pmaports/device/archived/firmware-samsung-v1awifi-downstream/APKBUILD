@@ -1,0 +1,40 @@
+# Archived: Downstream port, replaced by mainline port.
+pkgname=firmware-samsung-v1awifi-downstream
+pkgdesc="Firmware for Samsung Galaxy Tab Pro 12.2"
+pkgver=3
+pkgrel=0
+url="https://github.com/exynos5420/android_vendor_samsung_v1a-common"
+arch="armv7"
+license="proprietary"
+_commit="2bf0fc3da1fe95e188fcf78f6d80cff56375778a"
+source="$pkgname-$pkgver.tar.gz::https://github.com/exynos5420/android_vendor_samsung_v1a-common/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+# All the files are picked from proprietary/etc/wifi, so put this path instead of the root directory
+builddir="$srcdir/android_vendor_samsung_v1a-common-$_commit/proprietary/etc/wifi"
+
+package() {
+	install -Dm644 "$builddir"/bcmdhd_apsta.bin_4354_a1 \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_apsta.bin_4354_a1
+
+	install -Dm644 "$builddir"/bcmdhd_ibss.bin_4354_a1 \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_ibss.bin_4354_a1
+
+	install -Dm644 "$builddir"/bcmdhd_mfg.bin_4354_a1 \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_mfg.bin_4354_a1
+
+	install -Dm644 "$builddir"/bcmdhd_sta.bin_4354_a1 \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_sta.bin_4354_a1
+
+	install -Dm644 "$builddir"/cred.conf \
+		"$pkgdir"/lib/firmware/postmarketos/cred.conf
+
+	install -Dm644 "$builddir"/nvram_mfg.txt_4354_a1 \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_mfg.txt_4354_a1
+
+	install -Dm644 "$builddir"/nvram_net.txt_4354_a1 \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_net.txt_4354_a1
+}
+
+sha512sums="
+f95569da626e30755866e131d485b8c1882164883289cd2ed3ed1cad172b8d7da03b2a760bc2e4c138e419215b37c7fcbe6921c8c3d0bf97fcad6afb913410d2  firmware-samsung-v1awifi-downstream-3.tar.gz
+"

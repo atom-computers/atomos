@@ -1,0 +1,47 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-huawei-y635
+pkgdesc="Huawei Y635"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916 soc-qcom-msm8916"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs pointercal phoc.ini"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware $pkgname-phosh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/pointercal -t \
+		"$pkgdir"/etc
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Video firmware"
+	# msm-firmware-loader not needed because modem is not supported yet
+	depends="firmware-qcom-adreno-a300
+		 firmware-qcom-msm8916-wcnss firmware-huawei-y635-wcnss-nv
+		 firmware-qcom-msm8916-venus"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini -t \
+		"$subpkgdir"/etc/phosh
+}
+
+sha512sums="
+a99ce7162efda6870d37d792360d10fe1075353630442d11181d3c20dfaf3c50933a80db74ef0063309af8fc99b2975011e5948e5e0873698730f5767aa2ac4b  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+573feeb83028d1c7f5bce4347747e9bfa36ad927125633981a037503088786848cf1985e2d5da73f60fe534deaf05ec6ab12d55438efb3e4bf516b382e4432eb  modules-initfs
+4d43e2c8facedbf5ba98c072e8fc20197a15acb06918a02bb753b48df356be1d4cafc0383968aac2dda50d240dc8cb038370da1fd37d807a9cb832e873de2b85  pointercal
+e8f734a2f8d154813dbb493f0d58af50a7f624ffed41967a81493b975a6211efc6d30743b23825562cfd126791cbdd3348bfbed32eeece9b8acec0a37c3c51b6  phoc.ini
+"

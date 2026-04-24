@@ -1,0 +1,33 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-oneplus-instantnoodlep-downstream
+pkgdesc="OnePlus 8 Pro (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-oneplus-instantnoodlep-downstream
+	mkbootimg
+	postmarketos-base
+"
+makedepends="
+	devicepkg-dev
+	dtc
+"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+0c4c09857d090ea3f3a15eacfe3c0e62951b4a2706154956b0aa6e3a4dc34398de50ea661772fb460b550f0938ea70b8f78ca7b6d9400cda15d56740928f79b5  deviceinfo
+5f52b2b7ebb4f0b79fc7211f8439134138acd517f3672a844af9726343c96a072f38d24313ee97d9f1524d5d3bc0c06f73b3272d81c9b2bea8c5a90fb687592e  kernel-cmdline.conf
+"

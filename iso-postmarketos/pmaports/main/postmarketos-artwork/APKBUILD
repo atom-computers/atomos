@@ -1,0 +1,130 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-artwork
+pkgver=25.12
+pkgrel=1
+pkgdesc="Meta package for the postmarketOS artwork"
+url="https://postmarketos.org/"
+arch="noarch"
+license="CC-BY-SA-4.0"
+_hash="822f3607b79b78c23e0565ac55acda05842a8a3f"
+source="postmarketos-artwork-$_hash.tar.gz::https://gitlab.postmarketos.org/postmarketOS/artwork/-/archive/$_hash/artwork-$_hash.tar.gz
+	10_pmOS-wallpaper.gschema.override
+	postmarketos-gnome.xml
+	set-plasma-wallpaper.desktop
+	set-plasma-wallpaper.sh
+	"
+subpackages="
+	$pkgname-wallpapers
+	$pkgname-wallpapers-extra:wallpapers_extra
+	$pkgname-wallpapers-gnome:wallpapers_gnome
+	$pkgname-wallpapers-plasma:wallpapers_plasma
+	$pkgname-icons
+	$pkgname-sounds
+	"
+makedepends="
+	imagemagick
+	imagemagick-jpeg
+	"
+options="!check pmb:cross-native"
+builddir="$srcdir"/artwork-$_hash
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+wallpapers() {
+	pkgdesc="Wallpapers for postmarketOS"
+
+	mkdir -p "$subpkgdir"/usr/share/wallpapers/postmarketos
+
+	# To avoid complexity, we only package the most recent wallpaper.
+	# Checklist for changing the wallpaper:
+	# - Add the new wallpaper here: https://postmarketos.org/wallpapers
+	# - Adjust the path in the "cp" line below
+	# - If paths inside the wallpaper dir (e.g. 2024/meadow) are different,
+	#   then adjust them here:
+	#     - postmarketos.jpg symlink/conversion below
+	#     - postmarketos-gnome.xml
+	#     - 10_pmOS-wallpaper.gschema.override
+	for i in contents metadata.json; do
+		cp -r "$builddir"/wallpapers/2024/sward/"$i" \
+			"$subpkgdir"/usr/share/wallpapers/postmarketos/"$i"
+	done
+
+	# /usr/share/wallpapers/postmarketos.jpg should always point to the
+	# current wallpaper so we don't break configs
+	magick "$subpkgdir"/usr/share/wallpapers/postmarketos/contents/images/2000x2000.png \
+		-format jpeg \
+		"$subpkgdir"/usr/share/wallpapers/postmarketos.jpg
+}
+
+wallpapers_extra() {
+	pkgdesc="Additional Wallpapers for postmarketOS"
+
+	mkdir -p "$subpkgdir"/usr/share/wallpapers/
+	install -Dm644 "$builddir"/wallpapers/extra/* \
+		"$subpkgdir"/usr/share/wallpapers/
+	install -Dm644 "$builddir"/wallpapers/logo/postmarketos.jpg \
+		"$subpkgdir"/usr/share/wallpapers/postmarketos-light.jpg
+	install -Dm644 "$builddir"/wallpapers/logo/logo_dark.jpg \
+		"$subpkgdir"/usr/share/wallpapers/logo_dark.jpg
+	install -Dm644 "$builddir"/wallpapers/logo/pmos-grass-800x480.jpg \
+		"$subpkgdir"/usr/share/wallpapers/pmos-grass-800x480.jpg
+	install -Dm644 "$builddir"/wallpapers/logo/pmos-grass.jpg \
+		"$subpkgdir"/usr/share/wallpapers/pmos-grass.jpg
+	install -Dm644 "$builddir"/wallpapers/logo/pmos.jpg \
+		"$subpkgdir"/usr/share/wallpapers/pmos.jpg
+}
+
+wallpapers_gnome() {
+	pkgdesc="Wallpaper configuration for GNOME-based UIs"
+	replaces="postmarketos-base-ui-gnome-wallpaper-pmos"
+	install_if="postmarketos-artwork-wallpapers=$pkgver-r$pkgrel postmarketos-base-ui-gnome"
+
+	install -Dm644 "$srcdir"/postmarketos-gnome.xml \
+		-t "$subpkgdir"/usr/share/gnome-background-properties/
+	install -Dm644 "$srcdir"/10_pmOS-wallpaper.gschema.override \
+		-t "$subpkgdir"/usr/share/glib-2.0/schemas
+}
+
+wallpapers_plasma() {
+	pkgdesc="Wallpaper configuration for Plasma-based UIs"
+	install_if="postmarketos-artwork-wallpapers=$pkgver-r$pkgrel postmarketos-base-ui-plasma"
+
+	install -Dm755 "$srcdir"/set-plasma-wallpaper.sh \
+		-t "$subpkgdir"/usr/libexec/postmarketos
+
+	install -Dm644 "$srcdir"/set-plasma-wallpaper.desktop \
+		-t "$subpkgdir"/etc/skel/.config/autostart
+}
+
+icons() {
+	pkgdesc="Icons for postmarketOS"
+
+	install -Dm644 "$builddir"/logo/logo.svg \
+		"$subpkgdir"/usr/share/pixmaps/postmarketos-logo.svg
+	install -Dm644 "$builddir"/logo/logo-phone.svg \
+		"$subpkgdir"/usr/share/pixmaps/postmarketos-logo-phone.svg
+	install -Dm644 "$builddir"/logo/logo_monochrome.svg \
+		"$subpkgdir"/usr/share/pixmaps/postmarketos-logo-monochrome.svg
+}
+
+sounds() {
+	pkgdesc="Sounds for postmarketOS"
+
+	mkdir -p "$subpkgdir"/usr/share/sounds/postmarketOS/
+	install -Dm644 "$builddir"/tones/battery_low.mid \
+		"$subpkgdir"/usr/share/sounds/postmarketOS/
+	install -Dm644 "$builddir"/tones/no_signal.mid \
+		"$subpkgdir"/usr/share/sounds/postmarketOS/
+	install -Dm644 "$builddir"/tones/startup.mid \
+		"$subpkgdir"/usr/share/sounds/postmarketOS/
+}
+
+sha512sums="
+24b6ddfe4f82c4b2e7a815927da332ac428d56e119b5171c09d17db0c14826d92d3e4835adad5a28f621a92b518599d6d6ac6c3989207bce06481592cb52cdc0  postmarketos-artwork-822f3607b79b78c23e0565ac55acda05842a8a3f.tar.gz
+a60a78f15604e349a187cd125f2fa9f9d368fbc056d564d1e9068303dc4e7bfd76ccd4f0a8e7ecac873745f0ac7905997ac568d7d639851bebb5e62fc5277e7f  10_pmOS-wallpaper.gschema.override
+802ba597568e054ae054ea69323146b5a88f2eefe9ccbcacff5151ee1c874876f94c225bea67d7f245546b518619c2725ab065f99aa4f70860807855c5f6c218  postmarketos-gnome.xml
+a2fe87907a0fc6eb2b18305c7f183ac57bae7223d9fdeb992c93947576480c6a2fdb073ea2746407e227531c84aaa0acd0c27abb7fb272bc58433b3a02c260f4  set-plasma-wallpaper.desktop
+770bf87c4629327b4c7b35ee42587cdcd6100103640cce1894be66d1346b7220df919371935f3288e00f99b652f223ad578f1e93c5d43556e7c4ddd50f87f739  set-plasma-wallpaper.sh
+"

@@ -1,0 +1,50 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="methanal <baclofen@tuta.io>"
+pkgname=device-samsung-exynos7
+pkgdesc="Generic device package for Samsung Exynos7 devices"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+subpackages="
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-mainline:kernel_mainline
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel (recommended, best balance between stability and features)"
+	depends="linux-postmarketos-stable"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Upstream development kernel (regular breakage, latest features)"
+	depends="linux-postmarketos-mainline"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+fe6a0ab189b72a78d4b6bff2b240effa978619a792895c1272643569b8c2968322dda21b513e2047d92136e6005f0066e509196b547da94e471d57b0bf25039c  deviceinfo
+d67b144c72e8d999b0913407a22b5c1e418a263cc87ae0aed0b5d5afbba0e027eb2504b034630cf6011a4f81d3e4a10790b23fce23a6a2b1b02f88271df59374  kernel-cmdline.conf
+09bcb90ee9544bf0f26503a3a54b7ac0f457c256d5b8a946877830a258c977b79b05d255f3a794e32be0cec85b79bce03e5c0767feae52730f1381d15deae40d  modules-initfs
+"

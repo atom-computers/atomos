@@ -1,0 +1,58 @@
+# Co-Maintainer: Achill Gilgeanst <achill@achill.org>
+# Co-Maintainer: Aelin <aelin@postmarketos.org>
+# Co-Maintainer: Oliver Smith <ollieparanoid@postmarketos.org>
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-qemu-common
+pkgdesc="Common package for Qemu 'devices'"
+pkgver=3
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64 x86_64 loongarch64 ppc64le riscv64"
+options="!check !archcheck !tracedeps"
+subpackages="
+	$pkgname-mce
+	$pkgname-sway
+	$pkgname-x11
+"
+source="
+	mce-display-blanking.conf
+	modules-initfs
+	resolution-qemu-X11.conf
+	wlr-no-hw-cursor.sh
+"
+
+package() {
+	# This sets a var specific to wlroots, but some UIs vendor it and creating
+	# multiple subpkgs to handle these is silly.
+	install -Dm644 wlr-no-hw-cursor.sh \
+		"$pkgdir"/etc/profile.d/10-wlr-no-hw-cursor.sh
+
+	install -Dm644 modules-initfs "$pkgdir"/usr/share/mkinitfs/modules/00-$pkgname.modules
+}
+
+mce() {
+	pkgdesc="Prevents screen blanking for UI's using mce (Glacier, Asteroid)"
+	install_if="$pkgname=$pkgver-r$pkgrel mce"
+	install -Dm644 "$srcdir"/mce-display-blanking.conf \
+		"$subpkgdir"/etc/mce/50display-blanking.conf
+}
+
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sway"
+	depends="postmarketos-ui-sway-logo-key-alt"
+	mkdir "$subpkgdir"
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -Dm644 "$srcdir"/resolution-qemu-X11.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-resolution-qemu-X11.conf
+}
+
+sha512sums="
+99d32eed6c5cda59e91516e982c5bd5165ff718133e2411a0dbba04e2057d1dfad49a75e5cc67140d0e0adcbe1383671bd2892335929b782a5b19f5472e635ad  mce-display-blanking.conf
+83c3c0be8ee8ccf5c96e99c4aecdb1ff7e9a1dc7704a75ff160cf31536ef46fd095c3037a0d4a936ca47765ec760ac801df793b101c1a2b69a61413c1957c3ca  modules-initfs
+bfff3ebf11abb43d8ea45e778c19554b1bc8ef9e694d8160daaac0ef906b4d8eda772e5f984033cce52ebddfbbe76e5340c6805e68f967994a3240c1e10c8b5b  resolution-qemu-X11.conf
+1434e9d3431eabeb76129e3bcaf20318b6a0c8fcc879d90d667f53984f45a88d5b50000501b3deb4469df5f5d9b82cb0accef23313344c23c13336880d9006e1  wlr-no-hw-cursor.sh
+"

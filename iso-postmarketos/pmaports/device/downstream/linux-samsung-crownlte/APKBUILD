@@ -1,0 +1,77 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos9810-crownlte_defconfig
+
+pkgname=linux-samsung-crownlte
+pkgver=4.9.218
+pkgrel=6
+pkgdesc="Samsung Galaxy Note 9 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-crownlte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_samsung_universal9810"
+_commit="5a2dd7d6f3a05168d2f1303c3b29e9e9fa39b781"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-decon_reg.patch
+	02-decon_dsi-BGRA-to-RGBA.patch
+	03-decon_dsi-UNBLANK-missed.patch
+	04-wifi-firmware-path.patch
+	05-decon_core-disable-decon_release.patch
+	06-fix-read-only-segment-has-dynamic-relocations-error.patch
+	07-statx-add-system-call-to-make-advanced-file-info-available.patch
+	08-generic-syscall-wire-up-statx-syscall.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *crownlte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+a19967220faac402dd6fc2424f89cc236f367047d069a2234ca391e44a47fe04e3aff9562dd0be6f6b81d80e95fc7daf3edb26cf29349a35e0dc1c4af4fcb813  linux-samsung-crownlte-5a2dd7d6f3a05168d2f1303c3b29e9e9fa39b781.tar.gz
+a4375b6afd9cfdb5365050778052e4d9677a700ed711929e85dbaec01875feaf398c876fe907c973d1220a42373cab0dae791d7652b3412244a1fce79486f1b5  config-samsung-crownlte.aarch64
+8d56a239cbd488692249ba856f3e949863dbb60edacfc862171f7b42c2564e99009ba88c8299b2179f468291fdc0de118235307acad07ec88342b8e68ee6f075  01-decon_reg.patch
+65f5b1541bf3d4dab9db3d5de2aa888e794772f66d85541d11fbf515e7ec9188cda2ec46411f5469d8485caa5f405ffa16159f556bd9180c0cd3a527b14f9f5f  02-decon_dsi-BGRA-to-RGBA.patch
+24eb8701d77ad6cfc98a153341874d753a67930a369b1a08d8d51682a5d1014971e106bda93b7180bcacdf7032bb952fdca02f68886ea27c761eab8fefdb03fa  03-decon_dsi-UNBLANK-missed.patch
+596235334147a430d0104d01647e57aeac71b7a9e484daf4ad8fca9cd1cf23e040fbf2c00dea7fb2a096e741eb1dde71471585a59d71d47dcdb1336e5c16efad  04-wifi-firmware-path.patch
+3bae3abd47766eba42ebe1ca758f0d9e1f8a926132d98705985b493fb99115af863700cc76cfaf3a8b812fcae86b52b7c6807dc8fbade95f98c1e965c5e3dddc  05-decon_core-disable-decon_release.patch
+763b7bb86f7b0d381771c292f531f81e33826438e7d3e866e3b295295415366a68f55a0b9ed6afd1a2a1ffc4204537cbc14a55af8b500e2c087cc4ef7f25b059  06-fix-read-only-segment-has-dynamic-relocations-error.patch
+e725283a658b3ab40472a0b0840da935bf7659e58f9dff580fa519b5bd6f36b3ce61f410d331240c05a203ef155df48287bf68c510ab5deef86922bdc379a2e9  07-statx-add-system-call-to-make-advanced-file-info-available.patch
+7b1cf87a53ed9be1c23f61d7584f2f381e888e9b2768b93935cd8e92fa70e17365ca83aa46d795f7bce8277b4ccfef21d8dfba806e39b67d369305bc278c8dbd  08-generic-syscall-wire-up-statx-syscall.patch
+"

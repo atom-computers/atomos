@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Purism Librem 5 Devkit"
+deviceinfo_manufacturer="Purism"
+deviceinfo_codename="purism-librem5dev"
+deviceinfo_year="2018"
+deviceinfo_dtb="freescale/imx8mq-librem5-devkit"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1440"
+deviceinfo_no_framebuffer="true"
+# The following is required since this device has builtin ethernet
+deviceinfo_disable_dhcpd="true"
+deviceinfo_getty="ttymxc0;115200"
+
+# Bootloader related
+deviceinfo_flash_method="uuu"
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_sd_embed_firmware="u-boot/librem5/devkit-boot.img:2"
+deviceinfo_boot_part_start="4096"

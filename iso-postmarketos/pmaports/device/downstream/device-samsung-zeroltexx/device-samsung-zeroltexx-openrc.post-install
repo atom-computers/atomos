@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# enable deferred-initcalls script by default (from postmarketos-base package)
+rc-update add deferred-initcalls default
+

@@ -1,0 +1,18 @@
+commit e52824b6ce950050b5dca60cf86ad3f42a5211e5
+Author: Firstbober <firstbober@tutanota.com>
+Date:   Sat Aug 14 15:29:30 2021 +0200
+
+    Fix path to fingerprint driver in makefile.
+
+diff --git a/drivers/input/Makefile b/drivers/input/Makefile
+index e1e0bb21..a0d102fd 100644
+--- a/drivers/input/Makefile
++++ b/drivers/input/Makefile
+@@ -40,6 +40,6 @@ else
+   include $(PWD)/vendor/tinno/Fingerprint-N/kernel_macro_cfg
+ endif
+ ifneq ($(strip $(TINNO_FINGERPRINT_SUPPORT)),)
+-obj-y += ../../../../$(kernel_fp_source_dir)/
++obj-y += ../../$(kernel_fp_source_dir)/
+ endif
+ #TINNO END

@@ -1,0 +1,7 @@
+mode "480x854-0"
+    # D: 0.003 MHz, H: 0.004 kHz, V: 0.005 Hz
+    geometry 854 1708 854 1708 16
+    timings 400000000 50 50 9 9 20 4
+    accel false
+    rgba 8/24,8/16,8/8,8/0
+endmode

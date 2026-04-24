@@ -1,0 +1,1 @@
+KERNEL=="bq27200-0", SUBSYSTEM=="power_supply", ACTION=="change", RUN+="/usr/bin/bq27k-monitor"

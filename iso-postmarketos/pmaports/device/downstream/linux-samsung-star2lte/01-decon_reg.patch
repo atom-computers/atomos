@@ -1,0 +1,21 @@
+Adapted from ../linux-samsung-dream/02-fix-decon_reg.patch.
+Fixes:
+../drivers/video/fbdev/exynos/dpu_9810/decon_reg.c: In function 'decon_reg_get_clock_ratio':
+../drivers/video/fbdev/exynos/dpu_9810/decon_reg.c:2376:42: error: '-mgeneral-regs-only' is incompatible with the use of floating-point types
+ 2376 |                 clks->decon[CLK_ID_VCLK] = decon_clocks_table[i][CLK_ID_VCLK];
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+and a few similar errors within this file.
+
+diff --git a/drivers/video/fbdev/exynos/dpu_9810/decon_reg.c b/drivers/video/fbdev/exynos/dpu_9810/decon_reg.c
+index 4261b1648cf5..85a31b57b476 100644
+--- a/drivers/video/fbdev/exynos/dpu_9810/decon_reg.c
++++ b/drivers/video/fbdev/exynos/dpu_9810/decon_reg.c
+@@ -2326,7 +2326,7 @@ u32 decon_reg_get_height(u32 id, int dsi_mode)
+ 	return 0;
+ }
+ 
+-const double decon_clocks_table[][CLK_ID_MAX] = {
++const unsigned decon_clocks_table[][CLK_ID_MAX] = {
+ 	/* VCLK, ECLK, ACLK, PCLK, DISP_PLL, resolution, MIC_ratio, DSC count */
+ 	{  71,   168, 400, 66,   71, 1080 * 1920,    MIC_COMP_BYPASS,  0},
+ 	{  63,   168, 400, 66,   63, 1440 * 2560, MIC_COMP_RATIO_1_2,  0},

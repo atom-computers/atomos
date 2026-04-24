@@ -1,0 +1,22 @@
+From 1e5273ea46a2869ad31d9275dc99661ef58f013b Mon Sep 17 00:00:00 2001
+From: BeastRein <80418545+BeastRein@users.noreply.github.com>
+Date: Mon, 8 Jan 2024 20:06:32 -0500
+Subject: [PATCH] Update head.S
+
+---
+ arch/arm/boot/compressed/head.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+index d2e43b053d9b..002cb8ca3d40 100644
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -112,7 +112,7 @@
+ #endif
+ 		.endm
+ 
+-		.section ".start", #alloc, #execinstr
++		.section ".start", "ax"
+ /*
+  * sort out different calling conventions
+  */

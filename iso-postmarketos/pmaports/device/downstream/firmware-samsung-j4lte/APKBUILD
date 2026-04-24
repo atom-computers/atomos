@@ -1,0 +1,37 @@
+maintainer="Hendra Manudinata <hendra@manoedinata.com>"
+pkgname=firmware-samsung-j4lte
+pkgver=1
+pkgrel=0
+pkgdesc="Proprietary firmware for Samsung Galaxy J4 (j4lte)"
+url="https://github.com/manoe-firmware/samsung_j4lte_dump"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+_commit="019a045093a481c8cea9503fbd91247924d7cdbe"
+_repo="$url/raw/$_commit"
+
+_files_wifi="
+mx
+mx140.bin
+mx140_wlan.hcf
+"
+
+for _file in $_files_wifi; do
+	source="$source $pkgname-$_commit-$_file::$_repo/vendor/etc/wifi/$_file"
+done
+
+package() {
+	j4lte_dir="$pkgdir/lib/firmware/postmarketos/samsung-j4lte"
+	local file
+	for file in $_files_wifi; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+			"$j4lte_dir/mx140/$file"
+	done
+}
+
+sha512sums="
+cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e  firmware-samsung-j4lte-019a045093a481c8cea9503fbd91247924d7cdbe-mx
+23cae12e6350ec4f785891726e35e1546eebe5f049501b4a803af32e015ef0a3cf9284fe246409ad83789d4cde1acfce642ca52c96f599b4c04dde9732aeb13b  firmware-samsung-j4lte-019a045093a481c8cea9503fbd91247924d7cdbe-mx140.bin
+2f325056446b09e063d1d22c6db5201b17638589993ef2f5f763ddef54947761049eeb1ea64b9e4450283e3d5e3550eb40ac604ce1158a3da9af86f28a48583d  firmware-samsung-j4lte-019a045093a481c8cea9503fbd91247924d7cdbe-mx140_wlan.hcf
+"

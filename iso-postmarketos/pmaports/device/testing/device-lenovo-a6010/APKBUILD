@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-lenovo-a6010
+pkgdesc="Lenovo A6010"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs phoc.ini"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+# Backwards compatibility for old kernel variant subpackages
+replaces="$pkgname-kernel-mainline $pkgname-kernel-mainline-modem"
+for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		 firmware-qcom-msm8916-wcnss firmware-lenovo-a6010-wcnss-nv
+		 firmware-qcom-msm8916-venus"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+d7383bfbfeae2b0d600724d43b378f32666769296f35ac68fc979c1abe4eed36fcb6f1d3a91155c6eea3c6bd99787467f79b1c1c5fd466bcfdf6c57c8bb73123  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+258464e46872cf221f7ac367766f9b8ead5d5dccbd71f3df5a5555127a42448906247ff2519d1750eec53b3ed37ae96c2409369d7cb8e2fffeb202a8f69bba53  modules-initfs
+10d4ee62e5f7a9e4c368c460dd4c3ef282476e47d8cc40e4e3b83e971d04c493b801e5628ebdfe721f869e2fd68c521cf192cba1a973c8e03a61445534a28811  phoc.ini
+"

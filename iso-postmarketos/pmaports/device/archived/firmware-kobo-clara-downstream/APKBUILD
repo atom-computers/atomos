@@ -1,0 +1,50 @@
+# Archived: not needed by mainline kernel, describes only the hardware
+pkgname=firmware-kobo-clara-downstream
+pkgver=4.26.16704
+pkgrel=0
+pkgdesc="Kobo Clara firmware"
+url="https://wiki.mobileread.com/wiki/Kobo_Firmware_Releases"
+arch="armv7"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+source="
+	https://download.kobobooks.com/firmwares/kobo7/Feb2021/kobo-update-4.26.16704.zip
+	hwcfg.bin
+"
+
+# Print given number as bytes in 32-bit little-endian
+_le32() {
+	printf "%08x" "$1" | sed -E 's/(..)(..)(..)(..)/\\x\4\\x\3\\x\2\\x\1/'
+}
+# Print the magic header for the given file for Kobo u-boot
+_print_header() {
+	length=$(stat -L -c %s "$1")
+	dd bs=496 count=1 if=/dev/zero
+	printf '\xff\xf5\xaf\xff\x78\x56\x34\x12%b\x00\x00\x00\x00' "$(_le32 "$length")"
+}
+
+build() {
+	# Prepend a header to each firmware file loaded by u-boot
+	for fw in hwcfg upgrade/mx6sll-ntx/ntxfw-E60K00 ; do
+		out="$srcdir/$fw+header.bin"
+		_print_header "$srcdir/$fw.bin" > "$out"
+		cat "$srcdir/$fw.bin" >> "$out"
+	done
+}
+
+package() {
+	# Hardware description struct, passed to kernel by u-boot
+	# See https://misc.andi.de1.cc/kobo/
+	install -Dm644 "$srcdir/hwcfg+header.bin" \
+		"$pkgdir/usr/share/firmware/kobo-clara/hwcfg+header.bin"
+
+	# Value table for the 2-color lm3630 frontlight, passed to kernel by u-boot
+	install -Dm644 "$srcdir/upgrade/mx6sll-ntx/ntxfw-E60K00+header.bin" \
+		"$pkgdir/usr/share/firmware/kobo-clara/ntxfw-E60K00+header.bin"
+}
+
+sha512sums="
+c1f89e630777ebad282ad77f40355b5fb50ad3c8fa57ed624b89d53d4fbb788783ed60f85f6f848f786c8c5ea7dcb913d16446fa2a87d68f033277272799d149  kobo-update-4.26.16704.zip
+f7820b6c4624bab4bea92a0e2732cdaae8a37fbbe2ef823e61c48bb3e2400c70f7ee3c7945e7826f01653ba65f9a4034e884b985518fbcb84c8759c9c6351fad  hwcfg.bin
+"

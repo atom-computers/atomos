@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="HTC Desire Z (vision)"
+deviceinfo_manufacturer="HTC"
+deviceinfo_year="2010"
+deviceinfo_chassis="handset"
+deviceinfo_dev_touchscreen="/dev/input/event1"
+deviceinfo_external_storage="true"
+deviceinfo_flash_method="fastboot"
+deviceinfo_arch="armv7"
+deviceinfo_codename="htc-vision"
+
+# Splash screen
+deviceinfo_screen_width="480"
+deviceinfo_screen_height="800"
+
+# Fastboot
+deviceinfo_flash_offset_base="0x04000000"
+deviceinfo_flash_offset_kernel="0008000"
+deviceinfo_flash_offset_ramdisk="01000000"
+deviceinfo_flash_offset_second="00f00000"
+deviceinfo_flash_offset_tags="00000100"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_generate_bootimg="true"

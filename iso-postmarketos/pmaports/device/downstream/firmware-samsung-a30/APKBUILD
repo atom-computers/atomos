@@ -1,0 +1,59 @@
+pkgname=firmware-samsung-a30
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for the Samsung Galaxy A30"
+url="https://github.com/Johnnyhandsome69/proprietary_vendor_a305"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="084c25e4ec61e4609b80ed20c1b38891e977dc9b"
+_url="https://github.com/Johnnyhandsome69/proprietary_vendor_a305"
+source="$pkgname-$_commit.tar.gz::$_url/archive/$_commit.tar.gz"
+
+package() {
+	#VENDOR FILES
+	cd "$srcdir/proprietary_vendor_a305-$_commit/firmware/"
+	install -Dm644 APBargeIn_AUDIO_SLSI.bin \
+		"$pkgdir"/lib/firmware/postmarketos/APBargeIn_AUDIO_SLSI.bin
+	install -Dm644 AP_AUDIO_SLSI.bin \
+		"$pkgdir"/lib/firmware/postmarketos/AP_AUDIO_SLSI.bin
+	install -Dm644 calliope_dram.bin \
+		"$pkgdir"/lib/firmware/postmarketos/calliope_dram.bin
+	install -Dm644 calliope_sram.bin \
+		"$pkgdir"/lib/firmware/postmarketos/calliope_sram.bin
+	install -Dm644 fimc_is_lib.bin \
+		"$pkgdir"/lib/firmware/postmarketos/fimc_is_lib.bin
+	install -Dm644 fimc_is_rta.bin \
+		"$pkgdir"/lib/firmware/postmarketos/fimc_is_rta.bin
+	install -Dm644 mfc_fw.bin \
+		"$pkgdir"/lib/firmware/postmarketos/mfc_fw.bin
+	install -Dm644 setfile_2p6.bin \
+		"$pkgdir"/lib/firmware/postmarketos/setfile_2p6.bin
+	install -Dm644 setfile_3p8sp.bin \
+		"$pkgdir"/lib/firmware/postmarketos/setfile_3p8sp.bin
+	install -Dm644 setfile_5e9.bin \
+		"$pkgdir"/lib/firmware/postmarketos/setfile_5e9.bin
+	install -Dm644 setfile_imx471.bin \
+		"$pkgdir"/lib/firmware/postmarketos/setfile_imx471.bin
+	install -Dm644 Tfa9896.cnt \
+		"$pkgdir"/lib/firmware/postmarketos/Tfa9896.cnt
+
+	#WIFI FIRMWARE
+	cd "$srcdir/proprietary_vendor_a305-$_commit/etc/wifi/"
+	install -Dm644 mx \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx
+	install -Dm644 mx140.bin \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140.bin
+	install -Dm644 mx140_bt.hcf \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140_bt.hcf
+	install -Dm644 mx140_wlan.hcf \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140_wlan.hcf
+	install -Dm644 mx140_wlan_t.hcf \
+		"$pkgdir"/lib/firmware/postmarketos/mx140/mx140_wlan_t.hcf
+}
+
+sha512sums="
+5e8ef3c92142263d0b8f3ec4c622aecb35bc6829ac5c0bfd96db6e84744b1215d0cdc3b2229b74fdc34a046eb13b9154c1aa8d5ec538dfdb981f3f4294047cce  firmware-samsung-a30-084c25e4ec61e4609b80ed20c1b38891e977dc9b.tar.gz
+"

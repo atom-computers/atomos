@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Enable adsp-audio init script
+rc-update add adsp-audio default

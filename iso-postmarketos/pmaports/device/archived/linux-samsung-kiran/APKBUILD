@@ -1,0 +1,106 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/tizen_kiran_defconfig
+
+pkgname=linux-samsung-kiran
+pkgver=3.10.17
+pkgrel=0
+pkgdesc="Samsung Z1 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-kiran"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	dtbtool-sprd
+	findutils
+	busybox-static-armv7
+	tizen-mkdzimage
+"
+# Source
+_repository="kernel-samsung-kiran"
+_commit="99ac1b0fcbdf3ff9931521b48db8543f482e05b1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/peremen/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	0001-kiran-initramfs.patch
+	0002-sprd-drm.patch
+	0003-mmc-card-not-access-RPMB-partition-for-normal-read-and-write.patch
+	0004-sprdfb-fix-mmap-address.patch
+	sprdfb-check-for-buffering.patch
+	sprdfb-fix-swapped-colors.patch
+	init
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare_isorec() {
+	# Use Alpine's busybox.static instead of the pre-compiled busybox shipped
+	# with the source
+	mkdir -p "$builddir"/usr/kiran_initramfs_files
+	cp -v /usr/$(arch_to_hostspec $arch)/bin/busybox.static \
+		"$builddir"/usr/kiran_initramfs_files/busybox
+
+	# always use the initramfs from the ramdisk partition (like "isorec"),
+	# so we can build it later and independently from the kernel. note that
+	# the vendor Z1 kernel does not have initramfs, so we build our own one.
+	cd "$builddir"/usr/
+	cp -v "$srcdir"/init "$builddir"/usr/kiran_initramfs_files/init
+
+	# Paths supplied to gen_initramfs_list.sh are prefixed with "source/".
+	ln -s "$builddir" "$builddir"/source
+
+	cd "$builddir"
+}
+
+prepare() {
+	default_prepare
+	prepare_isorec
+
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB and dzImage
+	dtbTool-sprd -s 2048 -p "$_outdir/scripts/dtc/" -o "$_outdir/arch/arm/boot/dt.img" "$_outdir/arch/arm/boot/dts/"
+	tizen-mkdzimage -d "$_outdir/arch/arm/boot/dt.img" -k "$_outdir/arch/arm/boot/zImage" -o "$_outdir/arch/arm/boot/dzImage"
+}
+
+package() {
+	KERNEL_IMAGE_NAME="dzImage" downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+89f4acbd05bc08639af14abc684173fc9b835be92327b8b5c28ed9af9cba94ae1f1454a122c3f75490a0a774b70365f67371fc05407cce776f9a1eb69f3dce75  linux-samsung-kiran-99ac1b0fcbdf3ff9931521b48db8543f482e05b1.tar.gz
+fb8cc16bed6e950cf8a4298b776549ca819eb63e4044f6b27179eb228686143b6551f2bfbdbbda2ccd7fd71562edceb27338811c9f48b99276cde6d831cd300c  config-samsung-kiran.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+3d89a6d4db7aee2c828e86f1cb409417432a5a23a3530e1dfd269a9aa507a65b01904c689c6b19527ce8643ec2b3003725cd27d884e18a83b5b1b89b13b31e0e  0001-kiran-initramfs.patch
+b03938fa21fc703bf38c3487a28ce0933b7d33b89e1eda975d0ebfeb7cdad25371d7f2faac385b2e9307cf2927f967cbd257e411df289a4eb7301f92d3a8d270  0002-sprd-drm.patch
+6b79288d5f107faf2411543eacb99a53f1e4849010ca804a5154a3526a9716acb95836af54122e77538b9adff0b86a1770daa7cc12d092316f71c002189420a2  0003-mmc-card-not-access-RPMB-partition-for-normal-read-and-write.patch
+fb57fd711851225ccbc59d1fc7201270a503ccd859e43479331fce6e84460a2cbcda98e32e6a96a732a588383734f767a3950543354a60e8bf044372c3bf53cd  0004-sprdfb-fix-mmap-address.patch
+e33ed12de874c1c8bc9231aea3b0389b18ee0ff804e39c0f47d9cbf657ea19015370d6114846c2d142fbdb88f472f0e65811c53b9b335feb8ae2f30dffdf4846  sprdfb-check-for-buffering.patch
+6836001b24508d413a059f19b0c6f6f547037f68886c22159ad51be91d1a089e3d1d9ed79c3c62724648df7f810cd81d96a83f4a34368b373524b649e5539656  sprdfb-fix-swapped-colors.patch
+575c98ce265f71ef29cf496386262786d51c60c91c1ae0e8825e5dfeeca82d7bfc4684c293dad786c81f7620db85ba7cab8962060cfb8e9c44b1eb7656037ce4  init
+"

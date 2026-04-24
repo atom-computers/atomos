@@ -1,0 +1,25 @@
+maintainer=""
+pkgname=firmware-asus-me176c
+pkgver=12.10.1.36
+pkgrel=1
+arch="x86_64"
+pkgdesc="Firmware for ASUS MeMO Pad 7 (ME176C(X))"
+url="https://dlcdnets.asus.com/pub/ASUS/EeePAD/ME176C/UL-K013-WW-$pkgver-user.zip"
+license="unknown"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$url"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	cd "$srcdir"
+
+	# WiFi
+	install -Dm644 system/vendor/firmware/bcm43362/fw_bcmdhd.bin "$pkgdir/$_fwdir"/brcm/brcmfmac43362-sdio.bin
+	install -Dm644 system/etc/nvram.txt "$pkgdir/$_fwdir"/brcm/brcmfmac43362-sdio.txt
+
+	# Bluetooth
+	install -Dm644 system/etc/firmware/BCM2076B1_002.002.004.0132.0141_reduced_2dB.hcd "$pkgdir/$_fwdir"/brcm/BCM2076B1.hcd
+}
+
+sha512sums="4bfb30fcc872b9e3d57f251bff7a3fe9349d90a02c2c9ef8af938fad9d84ff3367723a2fee0dc7a5a10c3df1d4e28a766ae69f967b6a45e1835f284e61762404  UL-K013-WW-12.10.1.36-user.zip"

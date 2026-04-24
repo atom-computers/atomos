@@ -1,0 +1,75 @@
+# Archived: Downstream port, only for reference.
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/cepheus_defconfig
+
+pkgname=linux-xiaomi-cepheus-downstream
+pkgver=4.14.239
+pkgrel=1
+pkgdesc="Xiaomi Mi 9 (cepheus) downstream kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-cepheus-downstream"
+url="https://github.com/EcrosoftXiao/kernel_xiaomi_cepheus"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	android-tools
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	linux-headers
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="kernel_xiaomi_cepheus"
+_commit="b8381357dcb21e10c86e81f62705fa1de6e942ed"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/EcrosoftXiao/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-Disable-YAML-for-dtc-build.patch
+	0002-ipa_v3-fix-potential-buffer-overflow.patch
+	0003-fix-invalid-printf-format.patch
+	0004-Get-rid-of-Werror.patch
+	0005-Use-real-mkdtboimg-don-t-use-python2-one.patch
+	0006-Do-not-skip-initramfs.patch
+	0007-qpnp-fg-gen4-reduce-dmesg-spamming.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		V=1
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Install dtbo.img too
+	install -Dm644 "$_outdir"/arch/arm64/boot/dtbo.img \
+		"$pkgdir"/boot/dtbo.img-"$_flavor"
+}
+
+sha512sums="
+53541473317d2205d1583cc663eb96394d4ce29acb31fb3bde4bf6fce6ca5ace5a184ff298b63f2984f2a92747c46c5b7bfd0e7b10c4b42f5b94e2c806dc9c2b  linux-xiaomi-cepheus-downstream-b8381357dcb21e10c86e81f62705fa1de6e942ed.tar.gz
+18f7a156890472241656345dca18cfb9958119c84c57dc027da37b6e61b302318fe9c67acd0fdf1c6436dcda824ed1f8b600a1f988642ca33b3458c39f8ea795  config-xiaomi-cepheus-downstream.aarch64
+60713f4260c27417dbf80c8d6edd2aa1a2d440c4e6f5a38ba4df1dc01186bae70ec832f91b4769810d3600e34881948892137e36028a3c54bcbba1f4f9096620  0001-Disable-YAML-for-dtc-build.patch
+0faeb11653f940e9741638ed2a43a214e33c4e316e6454b56082de02bfae2180f0f81d4c225083f8813fe201e9cd194085333e615f92d5dee6b7b9288e4d5f20  0002-ipa_v3-fix-potential-buffer-overflow.patch
+a9dc748e0b00f6a604dfde0ec4c52fcd84a91ff3203f07eed74cba2c821cda605016d79d1e7aba5939f5ebf59dfd680c8f4e9b4d20ce3aa415ece927a045d170  0003-fix-invalid-printf-format.patch
+486f8ed2807ed4c4f255ad3620c3ed859fc9c627d70c4dd83f28260ac19f0a20c8c229f577ec38c6c566572040cecbb272a7e74838618601b2bf6c2c3177d5b9  0004-Get-rid-of-Werror.patch
+fdb2e85b149107f57f816434832ded9d07f3a2221dc39bf5cd69f8ef2787a8ae6d5c83d3885a3be8bb8ebdafc8559e8c1563b41893782c7f349c45d57eb824b9  0005-Use-real-mkdtboimg-don-t-use-python2-one.patch
+e05182832f96b5c73f577be9f71bfd71beef880763154f8b7277a6db8037699d610821242b14f097e5e452afc79c81c60d0516b1022d0fee9cd8b55dfcc1d960  0006-Do-not-skip-initramfs.patch
+5b8b362eb1013a8fd7a05c15c0fab6ebd178b4ba8d805d899e3a1b1f984a1fe1c390d08380c472ade20b8bc313cd8cda92235ad0486b246971503c1585d84cc9  0007-qpnp-fg-gen4-reduce-dmesg-spamming.patch
+"

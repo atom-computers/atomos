@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-d285
+pkgver=2
+pkgrel=1
+pkgdesc="LG L65"
+url="https://postmarketos.org"
+arch="armhf"
+license="MIT"
+depends="postmarketos-base linux-lg-d285 mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-udev"
+source="
+	deviceinfo
+	initfs-hook.sh
+	90-android-touch-dev.rules
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+}
+
+sha512sums="
+fb32f667e1a8cdd425b28ac46c1ae4829e9c309469ce26a56149f87769125cdaa2ace85c775d7aca911cdb6e3639f9d49a248cddeda0bbda910a4b32f87bd4ba  deviceinfo
+f53bd829fc747c50116c948f45a2227cded050dc649a874e8e2af80d2d4632311694d8ad4b967658ac99150ae7857c849bdc3705cd56b422803bed25205f4365  initfs-hook.sh
+568d407c3e96b45d740af8617f0e389d36a7091dceccae8f77288fdc45fb7a5ed418c28f31d7fe5a51d92337a40b2dd741b1b18ad02e3fbae91f9a2035d62c95  90-android-touch-dev.rules
+"

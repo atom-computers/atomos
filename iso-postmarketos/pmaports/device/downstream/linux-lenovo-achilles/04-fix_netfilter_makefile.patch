@@ -1,0 +1,13 @@
+diff --git a/net/netfilter/Makefile b/net/netfilter/Makefile
+index e7f0d7d2..153c4f40 100644
+--- a/net/netfilter/Makefile
++++ b/net/netfilter/Makefile
+@@ -110,7 +110,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_CONNTRACK) += xt_conntrack.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_CPU) += xt_cpu.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_DCCP) += xt_dccp.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_DEVGROUP) += xt_devgroup.o
+-obj-$(CONFIG_NETFILTER_XT_MATCH_DSCP) += xt_dscp.o
++obj-$(CONFIG_NETFILTER_XT_MATCH_DSCP) += xt_DSCP.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_ECN) += xt_ecn.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_ESP) += xt_esp.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_HASHLIMIT) += xt_hashlimit.o

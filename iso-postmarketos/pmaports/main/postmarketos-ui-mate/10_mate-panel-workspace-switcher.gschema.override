@@ -1,0 +1,8 @@
+[org.mate.panel.applet.workspace-switcher]
+display-workspace-names=true
+
+[org.mate.Marco.workspace-names]
+name-1='-  1  -'
+name-2='-  2  -'
+name-3='-  3  -'
+name-4='-  4  -'

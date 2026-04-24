@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Google Oak Chromebook"
+deviceinfo_manufacturer="Google"
+deviceinfo_codename="google-oak"
+deviceinfo_year="2017"
+deviceinfo_dtb="mediatek/mt8173-elm*"
+deviceinfo_arch="aarch64"
+
+# Device related
+# chassis does not make sense here, will probably be removed (pmb#2255)
+deviceinfo_chassis="convertible"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1366"
+deviceinfo_screen_height="768"
+deviceinfo_disable_dhcpd="true"
+deviceinfo_create_initfs_extra="true"
+
+# Bootloader related
+deviceinfo_cgpt_kpart="/boot/vmlinuz.kpart"
+deviceinfo_cgpt_kpart_start="8192"
+deviceinfo_cgpt_kpart_size="65536"
+# We are supposed to use "oak" board here, but lazor dts does
+# not include oak compatible which results in loading a wrong
+# dtb. "mt8173" board may result in including dtbs that are for
+# mt8173 but not related to Chrome OS devices which would increase
+# image size. This doesn't happen for us because we provide only
+# dtbs from deviceinfo_dtb variable and nothing more, so use "mt8173"
+# board here.
+deviceinfo_depthcharge_board="mt8173"
+deviceinfo_depthcharge_compression="lzma"
+deviceinfo_generate_depthcharge_image="true"

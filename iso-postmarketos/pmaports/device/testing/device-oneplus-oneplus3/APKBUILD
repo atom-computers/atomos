@@ -1,0 +1,43 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-oneplus-oneplus3
+pkgdesc="OnePlus 3"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+depends="
+	postmarketos-base
+	linux-postmarketos-qcom-msm8996
+	mkbootimg
+	reboot-mode
+	soc-qcom-msm8996
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="OnePlus 3 nonfree firmware (GPU, modem, sound, camera, sensors, WiFi, bluetooth)"
+	depends="
+		firmware-oneplus-oneplus3
+		linux-firmware-ath10k
+		linux-firmware-qca
+		soc-qcom-msm8996-nonfree-firmware
+		"
+	mkdir "$subpkgdir"
+}
+sha512sums="
+dc421d6ef831029b9b0305a06889c8c69c0f1a85ae8a6acce1073cf9162dd19643f637f6dd12d378b0ba6f7404c502a440c886c6d7f1e2e656f7fdfcf04bac5b  deviceinfo
+cc0bbb074d5ca73910673b571546715d6cdf0195526ee7b873f1795c0181ca62b650ab9899d70b3e0589a6373a5c873c2056dd67f68980f348b45fad6b399dfa  modules-initfs
+"

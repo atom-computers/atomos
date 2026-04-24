@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ -z "$(grep /dev/disk/by-partlabel/modem_a /etc/fstab)" ]; then
+	# Firmware shipped with the stock ROM, _a is always populated
+	echo "/dev/disk/by-partlabel/modem_a   /opt/firmware/modem       auto    ro      0       0" >> /etc/fstab
+fi
+
+if [ -z "$(grep /dev/disk/by-partlabel/oem_a /etc/fstab)" ]; then
+	# ODM blobs provided by Sony Open Devices Project
+	echo "/dev/disk/by-partlabel/oem_a   /opt/firmware/odm       auto    ro      0       0" >> /etc/fstab
+fi

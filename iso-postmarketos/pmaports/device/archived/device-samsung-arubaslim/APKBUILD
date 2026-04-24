@@ -1,0 +1,31 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-arubaslim
+pkgdesc="Samsung Galaxy Core"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-arubaslim
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+f3190b47bbcdcad116f16630368c95e47ef80fba542af63065b820fa1992c885075fd9d2159602a7171cceba264780bfd916bba83eed0765c95ca4616c4d23c5  deviceinfo
+9584fdc80ce771726eec8fb8f469160544991d7e97a66c8b218528ced3a2bfbf3c5a9ae1136e97a4dde8e0a9560e1fd303a084ff582547cf1130331ba28c84a4  kernel-cmdline.conf
+"

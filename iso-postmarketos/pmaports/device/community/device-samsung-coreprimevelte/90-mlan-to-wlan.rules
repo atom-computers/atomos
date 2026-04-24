@@ -1,0 +1,3 @@
+# Rename mlan0 to wlan0 to make NetworkManager work out-of-the-box
+
+ACTION=="add|change", SUBSYSTEM=="net", KERNEL=="mlan0", NAME="wlan0"

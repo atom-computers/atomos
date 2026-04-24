@@ -1,0 +1,55 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-a7
+pkgdesc="Samsung Galaxy A7 (2015)"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8939
+	soc-qcom-msm8916-rproc
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	phoc.ini
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a420 msm-firmware-loader firmware-samsung-a7-wcnss-nv"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+2b41f0dd61e35320ecee207234a8aabf49845e6767ad120110c9a1f48309a83ecba4e60a5c3d61b148c0d05b71805de3754d373ccdf1a6823461cb45a71fad50  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+0bccefc8adb58a3e2d2553da486ed8adb0cfdbc9771ee91a76465b66581d4d024ac86e377b3cb5086e9f37590889541cdf6ac5037199353e399e08aeccb2698c  modules-initfs
+25d2518d66e612df1f218e00544a282fa730dfe801bb0f8a7c928eb1a54aa9e5a167bd76fb00358c87dd8fd86564303c956c8a7460ab27e7eb96e44e80beb919  phoc.ini
+"

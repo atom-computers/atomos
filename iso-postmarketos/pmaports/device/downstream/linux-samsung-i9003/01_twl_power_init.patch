@@ -1,0 +1,12 @@
+diff --git a/include/linux/i2c/twl.h b/include/linux/i2c/twl.h
+index d56945e..53033bd 100644
+--- a/include/linux/i2c/twl.h
++++ b/include/linux/i2c/twl.h
+@@ -743,7 +743,6 @@ static inline int twl4030_remove_script(u8 flags) { return -EINVAL; }
+ #ifdef CONFIG_TWL6030_POWER
+ extern void twl6030_power_init(struct twl4030_power_data *power_data);
+ #else
+-extern inline void twl6030_power_init(struct twl4030_power_data *power_data) { }
+ #endif
+ 
+ struct twl4030_codec_audio_data {

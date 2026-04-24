@@ -1,0 +1,32 @@
+diff --git a/init/Kconfig b/init/Kconfig
+index 7a214a1a..23116f1d 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -99,21 +99,27 @@ config LOCALVERSION_AUTO
+ 
+ config HAVE_KERNEL_GZIP
+ 	bool
++	default y
+ 
+ config HAVE_KERNEL_BZIP2
+ 	bool
++	default y
+ 
+ config HAVE_KERNEL_LZMA
+ 	bool
++	default y
+ 
+ config HAVE_KERNEL_XZ
+ 	bool
++	default y
+ 
+ config HAVE_KERNEL_LZO
+ 	bool
++	default y
+ 
+ config HAVE_KERNEL_LZ4
+ 	bool
++	default y
+ 
+ choice
+ 	prompt "Kernel compression mode"

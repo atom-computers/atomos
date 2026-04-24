@@ -1,0 +1,36 @@
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=firmware-xiaomi-lavender
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware files for Xiaomi Redmi Note 7"
+url="https://gitlab.com/barni2000/$pkgname"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+makedepends="qca-swiss-army-knife"
+
+_commit="2e88d6d6935ca75e8ae1e217422e353b0a5ddc96"
+_muppets_commit="36a0f45ed788aa7cb532e72687d6adbdcc627faa"
+
+source="
+	$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	$pkgname-$_muppets_commit.tar.gz::https://github.com/TheMuppets/proprietary_vendor_xiaomi_lavender/archive/$_muppets_commit.tar.gz
+"
+
+builddir="src"
+_fwdir="/lib/firmware"
+
+package() {
+	ath10k-fwencoder --create \
+		--features=wowlan,no-nwifi-decap-4addr-padding,allows-mesh-bcast,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel  \
+		--set-wmi-op-version=tlv --set-htt-op-version=tlv \
+		--set-fw-api=5
+	install -Dm644 firmware-5.bin -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 $pkgname-$_commit/board-2.bin -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 proprietary_vendor_xiaomi_lavender-$_muppets_commit/proprietary/vendor/firmware/a512_zap.elf "$pkgdir/$_fwdir/postmarketos/a512_zap.mbn"
+}
+
+sha512sums="
+54832bc3c25856231721deaa8150eb4af6eafcbfb9a8bfb80131c19b86de3349d5987d635f8c80c7ecdd5380683684224dbf2cfffe719142e2d0c89dbccf5359  firmware-xiaomi-lavender-2e88d6d6935ca75e8ae1e217422e353b0a5ddc96.tar.gz
+2fa30958ea2a3684b12b6bbaa34a3d9a2334bfbe558279624361f7a3e65a76c7ef47f88fb9ad198e2a3629ac805d8599dc6ea182ada7bb776ad746e36b87ba81  firmware-xiaomi-lavender-36a0f45ed788aa7cb532e72687d6adbdcc627faa.tar.gz
+"

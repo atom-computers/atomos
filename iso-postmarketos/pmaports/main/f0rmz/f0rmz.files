@@ -1,0 +1,11 @@
+/usr/share/f0rmz
+/usr/bin/f0rmz
+/usr/share/libinput/*.quirks
+/bin/udevadm
+/sbin/udevd
+/usr/share/X11/xkb
+/usr/lib/udev/libinput-device-group
+/usr/lib/udev/libinput-fuzz-extract
+/usr/lib/udev/libinput-fuzz-to-zero
+/usr/lib/udev/rules.d/80-libinput-device-groups.rules
+/usr/lib/udev/rules.d/90-libinput-fuzz-override.rules

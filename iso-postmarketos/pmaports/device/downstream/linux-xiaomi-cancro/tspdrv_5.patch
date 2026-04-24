@@ -1,0 +1,54 @@
+diff --git a/drivers/tspdrv/ImmVibeSPI.c b/drivers/tspdrv/ImmVibeSPI.c
+index c28585f..57c0ffb 100644
+--- a/drivers/tspdrv/ImmVibeSPI.c
++++ b/drivers/tspdrv/ImmVibeSPI.c
+@@ -680,7 +680,6 @@ static void drv2604_write_reg_val(const unsigned char* data, unsigned int size)
+ 	if(g_hw_version == 5) {
+ 		while (i < size) {
+ 			/* From Xiaomi start */
+-			pr_debug("drv2604 x5 write 0x%02x, 0x%02x", data[i], data[i + 1]);
+ 			/* From Xiaomi end */
+ 			if(data[i] == 0x02)
+ 				i2c_smbus_write_byte_data(g_pTheClient, data[i], 0xFF);
+@@ -691,7 +690,6 @@ static void drv2604_write_reg_val(const unsigned char* data, unsigned int size)
+ 	} else {
+ 		while (i < size) {
+ 			/* From Xiaomi start */
+-			pr_debug("drv2604 write 0x%02x, 0x%02x", data[i], data[i + 1]);
+ 			/* From Xiaomi end */
+ 			i2c_smbus_write_byte_data(g_pTheClient, data[i], data[i + 1]);
+ 			i += 2;
+@@ -731,8 +729,6 @@ static unsigned char drv2604_read_reg(unsigned char reg)
+ 	msgs[1].len = 1;
+ 
+ 	res = i2c_transfer(i2c_adap, msgs, 2);
+-	pr_debug("drv2604 read addr:0x%x reg:0x%x data:0x%x res:%d",
+-		address, reg, data, res);
+ 
+ 	return data;
+ /* From Xiaomi end */
+@@ -921,14 +917,12 @@ static void drv2604_pat_work(struct work_struct *work)
+ 			if ((time == 0) || (i + 2 >= vibdata.pat_len )) { /* the end */
+ 				pwm_disable(vibdata.pwm_dev);
+ 				drv2604_change_mode(MODE_STANDBY);
+-				pr_debug("drv2604 vib len:%d time:%d", vibdata.pat_len, time);
+ 				break;
+ 			} else {
+ 				pwm_duty_enable(vibdata.pwm_dev, 0);
+ 				msleep(time);
+ 			}
+ 		}
+-		pr_debug("%s: %d vib:%d time:%d value:%u",__func__, i, vibdata.pat[i], time, value);
+ 	}
+ 	wake_unlock(&vibdata.wklock);
+ }
+@@ -942,9 +936,6 @@ static ssize_t drv2604_write_pattern(struct file *filp, struct kobject *kobj,
+ #if SUPPORT_WRITE_PAT
+ 	mutex_lock(&vibdata.lock);
+ 	wake_lock(&vibdata.wklock);
+-	pr_debug("%s count:%d [%d %d %d %d %d %d %d %d %d ]", __func__,
+-		count, buffer[0], buffer[1], buffer[2], buffer[3],
+-		buffer[4], buffer[5], buffer[6], buffer[7], buffer[8]);
+ 
+ 	vibdata.pat_len = 0;
+ 	cancel_work_sync(&vibdata.pat_work);

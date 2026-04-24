@@ -1,0 +1,18 @@
+maintainer="Vitaliy Ognev <vitaliy.ognev@gmail.com>"
+pkgname=postmarketos-ui-cage
+pkgver=1.1.0
+pkgrel=0
+pkgdesc="(Wayland) Kiosk WM"
+arch="all"
+url="https://postmarketos.org/"
+license="GPL-3.0-or-later"
+options="!check pmb:drm"
+depends="postmarketos-base-ui-cage"
+# https://gitlab.postmarketos.org/postmarketOS/pmbootstrap/-/issues/2347
+_pmb_groups="seat"
+_pmb_recommends="postmarketos-demos"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+

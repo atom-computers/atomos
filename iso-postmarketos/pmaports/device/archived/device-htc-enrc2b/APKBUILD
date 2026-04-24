@@ -1,0 +1,27 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Max Buchholz <2maxax2@gmx.de>"
+pkgname=device-htc-enrc2b
+pkgdesc="HTC One X+"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-htc-enrc2b mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+01a9257c552cd6dfd49e3e05fa2e09529e0a0b3ba0d73583e7d4778ac71768bbbcdd1e8f843b08889aa3a4488141ad5219fe3df14f81a2c68110902aac0be147  deviceinfo
+"

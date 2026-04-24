@@ -1,0 +1,34 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=device-samsung-chagallwifi-downstream
+pkgdesc="Samsung Galaxy Tab S 10.5 (Downstream)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-chagall-downstream
+	linux-samsung-chagallwifi
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream
+	postmarketos-base-downstream-disable-udev-v4l
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+45bbde49d291ab220b5749561183cd5d8135124bc7b5dcfe621ca7ae76d9c6fa538303a5f59fdf797a7d3675c4a8c2ecb45cfa5fe68c308ce55f75ceb98bc466  deviceinfo
+"

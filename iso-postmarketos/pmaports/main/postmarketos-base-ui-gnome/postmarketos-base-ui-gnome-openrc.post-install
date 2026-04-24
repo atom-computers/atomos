@@ -1,0 +1,8 @@
+#!/bin/sh
+
+rc-update add apk-polkit-server default
+rc-update add bluetooth default
+rc-update add elogind default
+rc-update add iio-sensor-proxy default
+rc-update add modemmanager default
+rc-update add networkmanager default

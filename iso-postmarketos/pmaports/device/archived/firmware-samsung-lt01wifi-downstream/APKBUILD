@@ -1,0 +1,27 @@
+# Archived: Only used by archived downstream kernel
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=firmware-samsung-lt01wifi-downstream
+pkgver=0.1
+pkgrel=0
+_commit="38ea48dbc6a683874aaf3376b63fc97ff3823459"
+pkgdesc="Samsung Galaxy Tab 3 8.0 (SM-T310) Firmware"
+url="https://github.com/gr8nole/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/gr8nole/proprietary_vendor_samsung/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/proprietary_vendor_samsung-$_commit"
+
+package() {
+	# Wifi
+	install -Dm644 lt01wifi/proprietary/system/etc/wifi/bcmdhd_sta.bin_b2 \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_sta.bin_b2
+	install -Dm644 lt01wifi/proprietary/system/etc/wifi/bcmdhd_sta.bin_b2 \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_sta.bin
+	install -Dm644 lt01wifi/proprietary/system/etc/wifi/nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_net.txt
+}
+
+sha512sums="
+33500dccd81d9f4ee8735f2f91e056913f0abb538248244512405f42156dd663b4337f97226fcadc1ed772c56590380cc7a6a8735a6fed46c62b8ac61424d684  firmware-samsung-lt01wifi-downstream-38ea48dbc6a683874aaf3376b63fc97ff3823459.tar.gz
+"

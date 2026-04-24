@@ -1,0 +1,32 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-zram
+pkgver=3
+pkgrel=0
+pkgdesc="zram swap configuration for postmarketOS"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="util-linux-misc"
+subpackages="$pkgname-openrc $pkgname-systemd"
+replaces="postmarketos-base"
+options="!check"
+source="
+	postmarketos-zram-swap.initd
+	postmarketos-zram-swap.service
+	zramstart
+	zramstop
+"
+
+package() {
+	install -Dm755 zramstart -t "$pkgdir"/usr/bin
+	install -Dm755 zramstop -t "$pkgdir"/usr/bin
+	install -Dm755 postmarketos-zram-swap.initd "$pkgdir"/etc/init.d/postmarketos-zram-swap
+	install -Dm644 postmarketos-zram-swap.service -t "$pkgdir"/usr/lib/systemd/system
+}
+
+sha512sums="
+ca91be78a47c00f40f3e645f79a72b2cd7ba3f080e2feb256998bb121f64c0394041f2ed822ad307ac36e86398b8175b3284dc5097a7017947e520a304b0a37d  postmarketos-zram-swap.initd
+5c1787bc2d597726113aaf3ea59229b5a56b8fc3446c78406a202e163a0b37ac564a87b2acc1c1f1a7dcdc18ff863c45e13aa687b93fa537c5ef000b9e8d6d19  postmarketos-zram-swap.service
+b08a59a624e4b56f2f88987ce4e246b86effea31bb9a3f8d1581c1bf3444bc0f9ed96a17bf64b5942bd9cc1eca5ab8a295f8220d86d52ed6ac95f9362ba587ac  zramstart
+a70d2bcb26c1af42a71811a1c1cd2984808f5ce09d7af52b26824cf5c15c8a9c819691fc6290cf3028226fca39f6e7a495546c5573c582a14d5a8c7c65dbfe3e  zramstop
+"

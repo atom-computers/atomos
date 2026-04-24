@@ -1,0 +1,56 @@
+# Archived: Downstream port
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogen_expressatt_defconfig
+
+pkgname=linux-samsung-expressatt-downstream
+pkgver=3.4.106
+pkgrel=1
+pkgdesc="Samsung Galaxy Express SGH-I437 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-expressatt"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc4 xz"
+
+# Compiler: GCC 4 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_d2"
+_commit="0dbe2b56847b304d30b809dfd08ba3b4a61d9af8"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+b9ac45ce753c83d1875ef0f55cedf0c998a2ad58ac4e1a667869980b21e70dd0e7c0781e8108c454fe45ed5a4bf76a3f79d68b70f38467470899acf4dc7daa47  linux-samsung-expressatt-downstream-0dbe2b56847b304d30b809dfd08ba3b4a61d9af8.tar.gz
+ba96d4e7a712f77442a2e99dd747cdb367a5f2994c18ff8be4eb256b16ca53216528b085886cd0f9df310fec394928c06b70e92bfde7be3a918cd77662bc98cc  config-samsung-expressatt.armv7
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

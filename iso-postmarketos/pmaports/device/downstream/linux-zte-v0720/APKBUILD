@@ -1,0 +1,86 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ztexa6735m_35u_m_defconfig
+maintainer="Martin Kunze <kunzemartin5@gmail.com>"
+pkgname=linux-zte-v0720
+pkgver=3.18.19
+pkgrel=0
+pkgdesc="ZTE Blade V7 Lite kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="zte-v0720"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	python3
+"
+
+# Source (see below for getting and using the source from ZTE directly)
+_repository="kernel-zte-v0720"
+_commit="25a03c27f9da0397ae7dc5bf64fb6252097c56ad"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/pmos-kernels/$_repository/-/archive/$_commit/$_repository-$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern-yylloc-global-declaration.patch
+	fix-check-lxdialog.patch
+	python3dct.patch
+	replace-alloc-execinstr.patch
+	add-missing-semicolons.patch
+	replace-vararg-macros.patch
+	mtk-wifi-export-symbol-fix.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+
+# Alternative source
+
+# 1. Download the kernel from https://opensource.ztedevices.com/
+# 2. At the time of writing, the specific download link is: https://download.ztedevices.com/device/global/support/opensource/2/20160623_1/ZTE_BLADE_V7_LITE_Marshmallow_Kernel(3.18.x).tar.gz
+# 3. Put the downloaded <kernel name>.tar.gz file in this directory (i.e. `linux-zte-v0720`)
+# 4. Change the first line in `source` (see above) from `<...>.tar.gz::<remote repo url>` to <kernel name>.tar.gz
+# 5. Change the `builddir` to `builddir="$srcdir/kernel-3.18"`
+# 6. You can change the `_repository` and `_commit` values to reflect that you are working on a local repository, but that step is optional
+
+
+# Build stages
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+731b97d025f71df2708baf7b3df986b9b5527c08f0c50d80ef5e5e09ae409c6226baf024dace9e106cd3d609280dee63bc0d8ff2019219a51faa79a4ef9b85de  linux-zte-v0720-25a03c27f9da0397ae7dc5bf64fb6252097c56ad.tar.gz
+d885faafc784d4b6494d7b92deda4fd246f0a77f57a1fc31985d0944e686dd1c81612193e864f5e758e93cca03cb25c39b59d37f4bf8d7ab94f7a1471f444489  config-zte-v0720.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern-yylloc-global-declaration.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+a2990a27436d3ffe40f1fd1e388486727042cc5fa5be23b19dad623a18731c94c07ac4a89be1e59e6214593d2b03d38702b60a7475807e8cda0811c4e5d50a9b  python3dct.patch
+7f4dd5a25e4df087b4025e19d8a71523b9ac3a981b139d60fdc9304554168837cfdd7115cb7e6f2fa12f4e72fc6e50d11827f744f52f8d7ede21a07f2676b7c3  replace-alloc-execinstr.patch
+d375f27e46f8078d11233b2ff7aa9d4c151fa2c0f6ebd33649b9c2e686ec5ad9f4ea9d82d49a9edbd849559d8f0c21cf7f4dda79c42d925db153ee885d18dc1e  add-missing-semicolons.patch
+41551d55815bbfb6876ec34b1b4916166b9bab3c326863807daccb9c30155ea8f9d084ae707ab87fbc36ab1b0b8619ef778b0daa74364bd60f24b5b0890b6427  replace-vararg-macros.patch
+33113cc46dd800138147e255627555db5f6aa7f58cda2c466133775ce0934ff5b8f46210e645ab937c7b2a0d7d4770d60a8d3329affcb54f056f93a14fa67fcc  mtk-wifi-export-symbol-fix.patch
+"

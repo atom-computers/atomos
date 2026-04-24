@@ -1,0 +1,29 @@
+
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=firmware-lenovo-yoga-c630
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for Lenovo Yoga C630"
+url="https://gitlab.com/sdm845-mainline/firmware-lenovo-yoga-c630"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-ath10k"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="6ddfd13d1bb0dcaf56dd0ffe9387f745a08eb80f"
+
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/sdm845-mainline/firmware-lenovo-yoga-c630/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	firmware.files"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	cd "$builddir"
+	for file in $(cat "$srcdir/firmware.files"); do
+		install -Dm644 "$file" "$pkgdir/$file"
+	done
+}
+
+sha512sums="
+c04d565c05c794c2da96cfbccb4ab9d4b406b8da34924901ab49002f6161c2c51e4cfc818f9cb0701ee0e7f4646280e4cc2fb441da3a0ff2514f5264934c2941  firmware-lenovo-yoga-c630-6ddfd13d1bb0dcaf56dd0ffe9387f745a08eb80f.tar.gz
+5b3d312ad96868893ed1faad822d66ecc723f5d803b0a94a42db7d53d228a4d86cc80c873e1a62bdca0c4ca371473703157ccbe1832abe28af90e5b3d1ec815f  firmware.files
+"

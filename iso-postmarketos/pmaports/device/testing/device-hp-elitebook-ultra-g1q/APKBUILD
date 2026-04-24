@@ -1,0 +1,94 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="askiiart <mail@askiiart.net>"
+pkgname=device-hp-elitebook-ultra-g1q
+pkgdesc="HP EliteBook Ultra G1q"
+pkgver=1
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-asus-s5507q-dpu
+	firmware-hp-elitebook-ultra-g1q-common
+	firmware-hp-elitebook-ultra-g1q-wifi
+	postmarketos-base
+	systemd-boot
+"
+_pmb_recommends="
+	bootmac
+	dtbloader
+	firmware-brcm43752
+	firmware-siliconlabs-rs9116
+	linux-firmware-qca
+	linux-firmware-rtw88
+	pd-mapper
+	rmtfs
+	soc-qcom-qbootctl
+	tqftpserv
+	woa-firmware-yoinker
+"
+install="$pkgname.pre-upgrade"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-next:kernel_next
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-postmarketos-qcom-laptop:kernel_postmarketos_qcom_laptop
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	noremote_proc.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	# blacklist kernel module so usb-c works properly
+	install -Dm644 "$srcdir/noremote_proc.conf" "$pkgdir/usr/lib/modprobe.d/noremote_proc.conf"
+}
+
+kernel_next() {
+	pkgdesc="Unstable next kernel (linux-next)"
+	depends="linux-next"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Mainline postmarketOS kernel (linux-postmarketos-mainline)"
+	depends="linux-postmarketos-mainline"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long term support (LTS) kernel from Alpine Linux (linux-lts)"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel from Alpine Linux (linux-stable)"
+	depends="linux-stable"
+	provides="$pkgname-kernel-edge=$pkgver-r$pkgrel"
+	replaces="$pkgname-kernel-edge"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_postmarketos_qcom_laptop() {
+	pkgdesc="Mainline kernel with additional patches for Qualcomm Snapdragon-based laptops (linux-postmarketos-qcom-laptop)"
+	depends="linux-postmarketos-qcom-laptop"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+39b86d82834c86510788b64ac118e4c2307a7f5ef0dfde7eefef88d09407ced1917499281829ad8b856f24e8d56edda1b3e074ce7462a969213f781d30613d32  deviceinfo
+81492d13da96e7718ca546a6e879c54fc105e4b1dc4316b6e91f8c51cfbc816bbb0673222579afb5ce5a38fad91d8be7639aa938e0e8f77ff29a8d5d301d4949  kernel-cmdline.conf
+e26948d1f5005b16fefcaa51985010a5e55adef9ba3ed9d1f3d046c4b8928afbdd317123d0ca2fb0904e5431536c0d995144f66ad9025c7937ff0aae0537dfef  modules-initfs
+6adc7d0c6822c2aa8ff53007391876bb591dddc0a6e3294eb6b1e48012b2fc808d5d2aca9233d6ca506a16e0df0cba17ba61731bf5b80d1241260405e4ea58dc  noremote_proc.conf
+"

@@ -1,0 +1,10 @@
+diff --git a/techpack/audio/ipc/Kbuild b/techpack/audio/ipc/Kbuild
+index f6a67fa..cfed23c 100644
+--- a/techpack/audio/ipc/Kbuild
++++ b/techpack/audio/ipc/Kbuild
+@@ -236,4 +236,4 @@ obj-$(CONFIG_WCD_DSP_GLINK) += wglink_dlkm.o
+ wglink_dlkm-y := $(WDSP_GLINK)
+ 
+ # inject some build related information
+-CDEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
++DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"

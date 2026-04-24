@@ -1,0 +1,7 @@
+# udev rules file
+# All device names can be read from weston's logfile
+
+# Touchscreen detection
+SUBSYSTEM=="input", ATTRS{name}=="synaptics_rmi4_i2c", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1"
+

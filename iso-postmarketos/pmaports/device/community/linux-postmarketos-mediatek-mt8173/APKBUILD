@@ -1,0 +1,74 @@
+# Co-Maintainer: Alicja Michalska <ellyqw@mainlining.org>
+# Co-Maintainer: Ingo Reitz <9l@9lo.re>
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+maintainer="Adam Thiede <me@adamthiede.com>"
+pkgname=linux-postmarketos-mediatek-mt8173
+pkgver=7.0
+pkgrel=0
+pkgdesc="Mainline kernel fork for Mediatek MT8173 devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+"
+makedepends="
+	bash
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+	zstd
+"
+
+# Source
+_config="config-$_flavor.$arch"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${pkgver//_/-}.tar.xz
+	$_config
+"
+builddir="$srcdir/linux-${_kernver//_/-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+8c85b708342f8f09ca25b2234b22e93b62b144a9ef919fbb21827f52fa47498e778c79db1559524dd7fb360f95b2ce174171443c1859656c281be41d2b6c5a0b  linux-7.0.tar.xz
+da794d5ff5d0b8e7d0c2d0f421c662620bf818c531ebd37ccc6f526173777d4c122eb2a727b1b5f4d57defe8a768262672fbebc0fe49a9692e90e6e406e65414  config-postmarketos-mediatek-mt8173.aarch64
+"

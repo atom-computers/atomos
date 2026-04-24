@@ -1,0 +1,47 @@
+maintainer=""
+pkgname=firmware-samsung-hlte
+pkgver=1
+pkgrel=0
+pkgdesc="Samsung Galaxy Note 3 Firmware"
+url="https://github.com/TheMuppets/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+subpackages="
+	$pkgname-wifi:wifi
+	$pkgname-bt:bt
+"
+_commit="63715ce31aedd827bd1f8bac5e5c42cc47f28f85"
+
+source="
+	$pkgname-$_commit-bcmdhd_sta.bin::https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commit/hlte-common/proprietary/etc/wifi/bcmdhd_sta.bin
+	$pkgname-$_commit-nvram_net.txt::https://raw.githubusercontent.com/TheMuppets/proprietary_vendor_samsung/$_commit/hlte-common/proprietary/etc/wifi/nvram_net.txt
+	$pkgname-$_commit-bcm4335_V0111.0559.hcd::https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commit/hlte-common/proprietary/vendor/firmware/bcm4335_V0111.0559.hcd
+"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wifi() {
+	pkgdesc="Samsung Galaxy Note 3 Wi-Fi firmware"
+	mkdir "$subpkgdir"
+	install -Dm644 "$srcdir/$pkgname-$_commit-bcmdhd_sta.bin" \
+		"$subpkgdir/lib/firmware/postmarketos/brcm/brcmfmac4354-sdio.bin"
+	install -Dm644 "$srcdir/$pkgname-$_commit-nvram_net.txt" \
+		"$subpkgdir/lib/firmware/postmarketos/brcm/brcmfmac4354-sdio.samsung,hlte.txt"
+}
+
+bt() {
+	pkgdesc="Samsung Galaxy Note 3 Bluetooth firmware"
+	mkdir "$subpkgdir"
+	install -Dm644 "$srcdir/$pkgname-$_commit-bcm4335_V0111.0559.hcd" \
+		"$subpkgdir/lib/firmware/postmarketos/brcm/BCM4354.hcd"
+}
+
+sha512sums="
+b9344478874f94af33052e76116f2c24b577c4c8178a3c7fc8eb9bb6a1d8c3f497443a88cf1b94256ef3e17806541d7271784505ac16de2b322ccb5ddcec54d3  firmware-samsung-hlte-63715ce31aedd827bd1f8bac5e5c42cc47f28f85-bcmdhd_sta.bin
+5c4d01630e96b7b35241116d4e46442b706d53a1691ef329b94fcba2e4d3673983535e6416ac53fb086e9d25b8619151f8618d8b744c685ea7d293cb9fdb2499  firmware-samsung-hlte-63715ce31aedd827bd1f8bac5e5c42cc47f28f85-nvram_net.txt
+54933cd01cdd8ea1d87eb0c6db1a20ca995f76420bfe06a73d002ac3d8c6bbb14d04bd596edef9155fc4105e41bff6a1432ab71c348987369dc1bc9cc5df5214  firmware-samsung-hlte-63715ce31aedd827bd1f8bac5e5c42cc47f28f85-bcm4335_V0111.0559.hcd
+"

@@ -1,0 +1,33 @@
+# Archived: Replaced by apple-idevice
+
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=device-apple-n61
+pkgdesc="Apple iPhone 6"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-apple
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+provides="device-apple-iphone6=$pkgver-r$pkgrel"
+replaces="device-apple-iphone6"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+205d8c2f9b5c9a1378e9fbfa1cf0ba7506c5ff8ba98fb690649f85d9d6ca89f40b474c92091847bf13185750a20cda9092d128010c0d521e88c8bccc13cdb51f  deviceinfo
+f4df83d543efb5748743f56fbfeddc6734ad341fb623f796faa74b4f42cadfd9a7b1aea2bd3a6f7aa3f284bcb34c05b2ec2a1704ad6e88b043f92dc0de14a573  modules-initfs
+"

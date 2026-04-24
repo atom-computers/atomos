@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rc-update add seatd default
+rc-update add elogind default
+rc-update add tinydm default

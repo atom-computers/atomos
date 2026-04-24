@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="bluebunny <kalorin.bok084@passinbox.com>"
+pkgname=device-samsung-j7xelte
+pkgdesc="Samsung Galaxy J7 (2016)"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	dtbtool-exynos
+	linux-firmware-brcm
+	linux-postmarketos-exynos7870
+	mesa-dri-simpledrm
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# linux-firmware-brcm doesn't have a default sdio.txt file
+	# for BCM43430/0, so the BCM43430/1 one should be symlinked.
+	mkdir -p "$pkgdir/usr/lib/firmware/brcm"
+	ln -s brcmfmac43430-sdio.txt.zst \
+		"$pkgdir/usr/lib/firmware/brcm/brcmfmac43430a0-sdio.txt.zst"
+}
+
+sha512sums="
+e0bd54b59d1aa905ae15b9225a0d85a1004a38e5a32be76e33bed30ef41400fc1862d9add1a20a843c78a2af719abebb3e309b7f86d6f29c5a2f24c254f22c73  deviceinfo
+15d03e90e5e70fd9120ad6a98b66ca980470465fc6e0548f8126aea2b692bc9ea9141d5efc2cddeebccb905204401a523d0b4b4ad544a1c264083309063ba403  modules-initfs
+"

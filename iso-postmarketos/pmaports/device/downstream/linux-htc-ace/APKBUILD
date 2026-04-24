@@ -1,0 +1,60 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ace_defconfig
+
+pkgname=linux-htc-ace
+pkgver=3.0.101
+pkgrel=19
+pkgdesc="HTC Desire HD kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-ace"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_htc_msm7x30"
+_commit="887cd64b8361ac89ac56810460947a537112bdc9"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/OpenDesireProject/$_repository/archive/$_commit.tar.gz
+	$_config
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_msm-fb-pixclock.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+72fc35e1c7fe848ae5c1139176d4c45ef042d494403ab38e5fa98e3620fce3253ffc4bf7151738c7dd47967f2ad96b034a9365dc68f1c025aef87e985d5b1776  linux-htc-ace-887cd64b8361ac89ac56810460947a537112bdc9.tar.gz
+0c959e3da98feaa594b2177650a0b71e934376ceffa454b2f82b7517f357ca03e88a9f6db5e962a57f0b1f45579a830b41bf414e8c7cd38edaa4d3fec6c433de  config-htc-ace.armv7
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+6a4079863ca09f8bca1dd9c80487860a8f6fc6c20d18961bc54988bb1831517e36092605cc593e5e1531ebb80eb76d0b1a006c339a7e334dc0d85bd91b20c72a  03_msm-fb-pixclock.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

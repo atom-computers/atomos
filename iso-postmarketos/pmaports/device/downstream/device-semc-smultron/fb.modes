@@ -1,0 +1,7 @@
+mode "320x480-0"
+        # D: 0.005 MHz, H: 0.016 kHz, V: 0.034 Hz
+        geometry 320 480 320 480 16
+        timings 190000000 0 0 0 0 0 0
+        accel false
+        rgba 8/24,8/16,8/8,8/0
+endmode

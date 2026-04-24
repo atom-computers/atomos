@@ -1,0 +1,82 @@
+From 092b5938363b42831aab1ebd8c2811ff9429d393 Mon Sep 17 00:00:00 2001
+From: Andreas Kemnade <andreas@kemnade.info>
+Date: Sun, 8 Dec 2019 23:34:36 +0100
+Subject: [PATCH] fbdev: mxc: epdc: replace blob by source functions
+
+Signed-off-by: Andreas Kemnade <andreas@kemnade.info>
+---
+ drivers/video/fbdev/mxc/Makefile         |  4 +--
+ drivers/video/fbdev/mxc/mxc_epdc_v2_fb.c | 35 +++++++++++++++++++++++-
+ 2 files changed, 36 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/fbdev/mxc/Makefile b/drivers/video/fbdev/mxc/Makefile
+index cb81820c..c4c7fd3a 100644
+--- a/drivers/video/fbdev/mxc/Makefile
++++ b/drivers/video/fbdev/mxc/Makefile
+@@ -8,8 +8,8 @@ obj-$(CONFIG_FB_MXC_HDMI)			+= mxc_hdmi.o
+ obj-$(CONFIG_FB_MXC_EDID)			+= mxc_edid.o
+ obj-$(CONFIG_FB_MXC_SYNC_PANEL) += mxc_dispdrv.o mxc_lcdif.o mxc_ipuv3_fb.o
+ obj-$(CONFIG_FB_MXC_EINK_PANEL)			+= mxc_epdc_fb.o
+-obj-$(CONFIG_FB_MXC_EINK_V2_PANEL)		+= mxc_epdc_v2_fb.o mxc_epdc_eink.o fake_s1d13522.o epdfb_dc.o
+-mxc_epdc_eink-objs				:= mxc_epdc_eink_module.o lib.a_shipped-imx6sl-noaa
++obj-$(CONFIG_FB_MXC_EINK_V2_PANEL)		+= mxc_epdc_v2_fb.o fake_s1d13522.o epdfb_dc.o
++#mxc_epdc_eink-objs				:= mxc_epdc_eink_module.o lib.a_shipped-imx6sl-noaa
+ obj-$(CONFIG_FB_MXS_SII902X) += mxsfb_sii902x.o
+ obj-$(CONFIG_FB_MXC_DCIC) += mxc_dcic.o
+ obj-$(CONFIG_HANNSTAR_CABC) += hannstar_cabc.o
+diff --git a/drivers/video/fbdev/mxc/mxc_epdc_v2_fb.c b/drivers/video/fbdev/mxc/mxc_epdc_v2_fb.c
+index 8f9aca48..d8a5ec03 100644
+--- a/drivers/video/fbdev/mxc/mxc_epdc_v2_fb.c
++++ b/drivers/video/fbdev/mxc/mxc_epdc_v2_fb.c
+@@ -64,7 +64,6 @@
+ 
+ #include "../../../../arch/arm/mach-imx/hardware.h"
+ #include "epdc_v2_regs.h"
+-#include "eink_processing2.h"
+ 
+ 
+ #include "../../../../kernel/ntx/ntx_timestamp.h"
+@@ -1139,6 +1138,40 @@ static void mxc_epdc_fb_fw_handler(const struct firmware *fw,void *context);
+ // FW_IN_RAM //]
+ 
+ #include "mxc_epdc_fake_s1d13522.c"
++static unsigned mxc_epdc_fb_fetch_wxi_data(uint8_t *xwi_buffer, char *outbuf)
++{
++	unsigned l = xwi_buffer[0];
++	if (outbuf) {
++		u8 chk = 0;
++		unsigned i;
++
++		for (i = 0; i <= l; i++)
++			chk += xwi_buffer[i];
++
++		if (chk != xwi_buffer[i])
++			return 0;
++
++		memcpy(outbuf, xwi_buffer + 1, l);
++	}
++
++	return l;
++}
++
++static int mxc_epdc_fb_fetch_vc_data(u8 *vcd_buffer, u32 waveform_mode, u32 waveform_tempRange, u32 mc, u32 trc, u8 *vcd)
++{
++	u8 *vcd_src = vcd_buffer + 16 * (waveform_mode * trc + waveform_tempRange);
++	int i;
++	u8 chk = 0;
++	for(i = 0 ; i < 15; i++)
++		chk += vcd_src[i];
++
++	if (chk != vcd_src[i])
++		return -EINVAL;
++
++	memcpy(vcd, vcd_src, 16);
++	return 0;
++}
++
+ 
+ #ifdef DEBUG
+ static void dump_pxp_config(struct mxc_epdc_fb_data *fb_data,
+-- 
+2.30.2
+

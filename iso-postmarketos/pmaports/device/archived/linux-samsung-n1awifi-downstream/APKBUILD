@@ -1,0 +1,75 @@
+# Archived: Downstream port, replaced by mainline port.
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_n1awifi_defconfig
+
+pkgname=linux-samsung-n1awifi-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Samsung Galaxy Note 10.1 (2014 Edition) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-n1awifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	gcc6
+	openssl-dev
+	perl
+	xz
+"
+
+# Compiler: GCC 6 (doesn't compile with newer kernel)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_exynos5420"
+_commit="c1a203cee565eb20a9b5bc2daf1c1b650a420fe5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/exynos5420/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+	01-fix-FIMC-IS-disabling.patch
+	02-revert-hrtimer-crash.patch
+	03-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	fix-check-lxdialog.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+38bb1af78097f32ec594d3c7dd393c1fe449c4c892b567b1558a999143049e1bc2fa7375ecd54477be97066534e0dd875c01453e4658b4ae3f91e346e0b3b6ea  linux-samsung-n1awifi-downstream-c1a203cee565eb20a9b5bc2daf1c1b650a420fe5.tar.gz
+a7b056c7bf900ffc038eee8276dbd00ff3cf448bf957b1de187daeef160017282c1861cfc603659babec33f343f4253286c78831dc41567ed8a06b90dc254a4c  config-samsung-n1awifi.armv7
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+a3df24c8d9116a3ad3559aac5ce126049e9123df633990ec72facd64ef538ed773e3ac0da233f2e04d99164d590340d598cfb3da3bbea502cf7c2cd3ef08cf24  drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+00c86b897193340ce4e8184e622d830d16efe9a5c10c12357e5f6ab98193a28f69c0006bdfe0d3429f1136a9820b8f8ff262d07b0314e40f4c7b664013e0b8a6  01-fix-FIMC-IS-disabling.patch
+14e9341140e6fcc899c435c7572cacfbbef3c5a9b455106cfc648985211daf64ff5955ea9b9b7706b459401d9b60c6bb5857396e913adc07c01b3557c49a98d8  02-revert-hrtimer-crash.patch
+5fad0940e90da71277b70b6e72fbb75fcc5e12625e65f827ae896d448628b252b3312539f9c184b26ffe5ca3b343a56b388ea6addb7fe446c7d1ae2aefb4b51e  03-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+"

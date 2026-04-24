@@ -1,0 +1,83 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/cosmic_defconfig
+
+pkgname=linux-samsung-a5xelte
+pkgver=3.10.107
+pkgrel=2
+pkgdesc="Samsung Galaxy A5 (2016) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a5xelte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	linux-headers
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_samsung_a5xelte"
+_commit="738375813823cb33918102af385bdd5d82225e17"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Cosmic-Kernel/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	02-fix-vmm-blob-include.patch
+	0003-create-a-file-platform.h-which-is-a-symlink.patch
+	0004-build-dtb.patch
+	0001-security-Fix-tima-compile.patch
+	0001-drivers-muic-fix-the-compile.patch
+	0001-fs-Fix-the-compile-w-o-ROOT-Restriction-enabled.patch
+	samsung-usb-ethaddr.patch
+	fix-argb.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *a5xelte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+62b6012ca49a88d3eb73a3440cba434a54b17ead6c23e7b55f83196fe25bbc351afaf0c8179ca1f8daf01ef7b70d81f9414c0407d08a81bd65722ca04a86b490  linux-samsung-a5xelte-738375813823cb33918102af385bdd5d82225e17.tar.gz
+d143361b725de6f2755b88e66f2e42f6e11215785a3017142f82294445f823ad9ceb89dc1951b59b0cfd3c87e23da7621f227cb8550baf34d1987b2686cc8f58  config-samsung-a5xelte.aarch64
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+23bf8ef0ad38b38ffa9ddfdee76a32c43b021169c6db6f5b733fd6434169f7c7bb27cdb1232be89475f34f9053211d943e13f5fba565c928256b92b18d636130  02-fix-vmm-blob-include.patch
+b2b8020948dfa4dc24eec4402aa7c2845ba56e844b2cfb591b4326b372a7748063c9e67d54bf70d841141c7a9203c25766538522d1a6a08e3ca3b8054eface43  0003-create-a-file-platform.h-which-is-a-symlink.patch
+1e7b01a1620e9a5bf6fafc892a0e8bbc0eab12303c8f8787a4a993bb1e2db2b21102092f3573def4e37e5c64264667f9d5b92445e0a3b1d520bc7720d37343da  0004-build-dtb.patch
+8f39d0b668cfefb2f1da801a16efe30ee8962c48931b51fac2cac86d1504584af951083b045a20df10bb1d4a8f66d2dc0c4cc39b27f521746c9d64924ae8b88d  0001-security-Fix-tima-compile.patch
+f6dcf35fdfc0de4f3c30caf3512ad442644c218f2e0a0c3ce0487f83872ed0d49e79cefbd1423690c7134973797113a148620f24a6253dcdf27c06dd753a2b20  0001-drivers-muic-fix-the-compile.patch
+d58c5f8772435c70713013f63e36913dafb532a16ab68c440f0b2042073ba18d97b67ccaeb00d94b00afc41f132f8b4fdd669f65a6a1068395508751fe0e39ae  0001-fs-Fix-the-compile-w-o-ROOT-Restriction-enabled.patch
+bfd0332076724bea2d10e96c81fae41eefb60bfc19f7a21ec849cf2a6b48e4cada694ed6b389ed600e182755d6fdb96f12dcbe81c8e691a2b4602f432fae165a  samsung-usb-ethaddr.patch
+aff2f127c44de0fc3e523834766a5851b48ade0e5cd95f594b36fc17adf3fb0549c70e4cba34a4bbea272fca80d61e0f4615a7195662f38794a1cd96213c7ca2  fix-argb.patch
+"

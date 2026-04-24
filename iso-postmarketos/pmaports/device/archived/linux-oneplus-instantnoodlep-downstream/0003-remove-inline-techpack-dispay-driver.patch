@@ -1,0 +1,39 @@
+From 39116bad0b493e732e9bc2ac4ed771ce0959a622 Mon Sep 17 00:00:00 2001
+From: Pangwalla <pangwalla@protonmail.com>
+Date: Wed, 1 Mar 2023 21:57:28 -0500
+Subject: [PATCH] remove inline techpack dispay driver
+
+---
+ techpack/display/oplus/oplus_adfr.c | 2 +-
+ techpack/display/oplus/oplus_adfr.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/techpack/display/oplus/oplus_adfr.c b/techpack/display/oplus/oplus_adfr.c
+index 1bd798c82449..0ebf2fa27552 100644
+--- a/techpack/display/oplus/oplus_adfr.c
++++ b/techpack/display/oplus/oplus_adfr.c
+@@ -155,7 +155,7 @@ enum oplus_vsync_mode oplus_adfr_get_vsync_mode(void)
+ 	return (enum oplus_vsync_mode)ADFR_GET_VSYNC_SWITCH_MODE(oplus_adfr_config);
+ }
+ 
+-inline bool oplus_adfr_is_support(void)
++bool oplus_adfr_is_support(void)
+ {
+ 	return  (bool)(ADFR_GET_GLOBAL_CONFIG(oplus_adfr_config) &&
+ 		!(oplus_adfr_debug & OPLUS_ADFR_DEBUG_GLOBAL_DISABLE));
+diff --git a/techpack/display/oplus/oplus_adfr.h b/techpack/display/oplus/oplus_adfr.h
+index 76eb5b4d1ee2..dfe9dea0abdc 100644
+--- a/techpack/display/oplus/oplus_adfr.h
++++ b/techpack/display/oplus/oplus_adfr.h
+@@ -74,7 +74,7 @@ extern bool oplus_adfr_compatibility_mode;
+ 
+ /* --------------- adfr misc ---------------*/
+ void oplus_adfr_init(void *dsi_panel);
+-inline bool oplus_adfr_is_support(void);
++bool oplus_adfr_is_support(void);
+ ssize_t oplus_adfr_get_debug(struct device *dev,
+ 	struct device_attribute *attr, char *buf);
+ ssize_t oplus_adfr_set_debug(struct device *dev,
+-- 
+2.39.2
+

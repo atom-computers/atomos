@@ -1,0 +1,46 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-santos10wifi
+pkgdesc="Samsung Galaxy Tab 3 10.1 Wi-Fi"
+pkgver=4
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="x86"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-santos10wifi mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-x11
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+source="deviceinfo
+	xorg.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	depends="
+		xf86-input-libinput
+		xf86-video-fbdev"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-santos10wifi.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="Wi-Fi firmware"
+	depends="firmware-samsung-santos10wifi"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+f764a9cea523a4dc1ee4454b5c749f70b917c6163c6ce81d9404537c70f23e93d4512994f085e700a0b98c79330f7aa40b051cc9399511e5ab1b3409505cbf9c  deviceinfo
+2511fa519813061531757996fbbbb9eecae1a136d2e13149fd7afe04d19982c7eaa5ced8df57860bb816186f206915fcbd4a9e34fdf92b2c6efe3320a223c328  xorg.conf
+"

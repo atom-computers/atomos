@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy Grand Prime Plus"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-grandpplte"
+deviceinfo_year="2016"
+deviceinfo_arch="aarch64"
+deviceinfo_dtb="mediatek/mt6737t-samsung-grandpplte"
+deviceinfo_uboot_boardname="grandpplte"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="540"
+deviceinfo_screen_height="960"
+deviceinfo_create_initfs_extra="true"
+deviceinfo_drm="true"
+
+# Bootloader related
+deviceinfo_flash_method="heimdall-bootimg"
+deviceinfo_generate_uboot_fit_images="true"
+deviceinfo_generate_bootimg="true"
+deviceinfo_bootimg_override_payload="u-boot-shimmed.bin"
+deviceinfo_bootimg_override_initramfs="boot-image.itb"
+deviceinfo_flash_offset_base="0x3fffc000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x04004000"
+deviceinfo_flash_offset_second="0x00f04000"
+deviceinfo_flash_offset_tags="0x0e004000"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_flash_heimdall_partition_kernel="boot"
+deviceinfo_flash_heimdall_partition_rootfs="system"

@@ -1,0 +1,68 @@
+maintainer="BotchedRPR <igor.belwon@mentallysanemainliners.org>"
+pkgname=linux-postmarketos-mediatek-mt6878
+pkgver=6.18
+pkgrel=0
+pkgdesc="Mainline Kernel fork for MT6878 devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-mediatek-mt6878"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+"
+
+_repository="linux"
+_commit="d84b264a54a37611f2f46bc19363cb9b41606205"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/MT6878-mainline/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+				   "$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs \
+		LLVM=1
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+5d809b44f94336549285a559909bfe5d8b2dcc3f213af58c25a52d535cd2cd0345ce34f44e1d155940cf0d4089fd2ad49fa0d6829fd2b965095084cd1500003c  linux-postmarketos-mediatek-mt6878-d84b264a54a37611f2f46bc19363cb9b41606205.tar.gz
+c29d74f8bd22a93ea8b00cc08a77e13193097188cb5f11ebdc819bae53735a012a529a26e7d750bf28511dded8263c335941c628684408e10dfdbb4e8317690d  config-postmarketos-mediatek-mt6878.aarch64
+"

@@ -1,0 +1,61 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-on7xelte)!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-on7xelte-downstream
+pkgdesc="Samsung Galaxy J7 Prime"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-on7xelte-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	samsungipcd
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware $pkgname-lightdm"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	lightdm.conf
+	mount-efs.rc-init
+	samsungipcd.rc-conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Mounting EFS Partition
+	install -Dm755 mount-efs.rc-init "$pkgdir"/etc/init.d/mount-efs
+
+	# Modem Configuration - samsungipcd
+	install -Dm644 samsungipcd.rc-conf "$pkgdir"/etc/conf.d/samsungipcd
+}
+
+nonfree_firmware() {
+	pkgdesc="Proprietary Firmware blobs"
+	depends="firmware-samsung-on7xelte"
+	mkdir "$subpkgdir"
+}
+
+lightdm() {
+	install_if="$pkgname=$pkgver-r$pkgrel lightdm"
+	install -Dm644 lightdm.conf \
+		"$subpkgdir"/etc/lightdm/lightdm.conf.d/00-on7xelte.conf
+}
+
+sha512sums="
+2f431d3592b805e6593b84ef9bdd5ca385d27570ffc0a69f805a94991cc0a8ce9a8110daa162c4fe413dc4b74e9da6b53063a581b47df4405bca2c375c7253fd  deviceinfo
+6263b6dab9ea670bd1af22feff8fb7ce9d143ed5ab99223bcef9da76bb0947c89e62dbf7004e1a307e2b71df48de84ea95cad258d88a44cedb37e347c56db8d2  kernel-cmdline.conf
+baee319b6d2f49a15680b0f322ec3e398a071d73fbf7713d14f26a1d027f8950457a482ac3f019605af3dfcf25bbb33ebaa0ffde181f7f96d911d56251c81eef  lightdm.conf
+efbe3d6217854c0131e61f9f3722100d349cb0673f4923bc3d56dae30a6346b0c33e676a39fc4c080150f6ea9457bf268abf870eea916a7d5daae1a22642a2b8  mount-efs.rc-init
+3e5bb764529010d2b6b1f2759a7799f665d140aebcee2dd63433e68cd4282e09b5d3b34fb7c21e737595b406501e7f02ece4592651c60e4c2b9419de4aedb438  samsungipcd.rc-conf
+"

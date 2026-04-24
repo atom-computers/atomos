@@ -1,0 +1,22 @@
+maintainer="Federico Amedeo Izzo <federico@izzo.pro>"
+pkgname=firmware-nothing-spacewar
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for Nothing Phone (1)"
+url="https://github.com/mainlining/firmware-nothing-spacewar"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="ee19e2b28e5f12b700117c11debf27f5f182536e"
+source="$pkgname-$_commit.tar.gz::https://github.com/mainlining/firmware-nothing-spacewar/archive/$_commit/$pkgname-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+}
+
+sha512sums="
+8b24d1427a97ed45526c36e7b6c13a1efb09be3108f9d5dca56fc2bfc8f7ee7610f76ad5279a59f9f7548e7bbbcf10d934754cec507a93f15f04aa3d6792dd40  firmware-nothing-spacewar-ee19e2b28e5f12b700117c11debf27f5f182536e.tar.gz
+"

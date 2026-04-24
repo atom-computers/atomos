@@ -1,0 +1,50 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Danila Tikhonov <danila@jiaxyga.com>
+# Co-Maintainer: David Wronek <david@mainlining.org>
+# Co-Maintainer: Arian Kulmer <arian.kulmer@web.de>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=device-qcom-sm7150
+pkgdesc="Generic device package for Qualcomm SM7150 devices"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sm7150
+	firmware-qcom-sm7150
+	hexagonrpcd
+	linux-postmarketos-qcom-sm7150
+	make-dynpart-mappings
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+
+source="
+	81-libssc-180-degrees.rules
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-180-degrees.rules -t \
+		"$pkgdir"/usr/lib/udev/rules.d
+}
+
+sha512sums="
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-180-degrees.rules
+492b22ce3350e8b1452128234062f41a2e6a23e4f5fac2c56fbd43e354a1c6f3792f8bc760e59a2e89c51a83a87f2b4ef77bdf7c422e01d891a32854ec3f2d19  deviceinfo
+c3924d35b27e3c3dcd0df3684848698c1c0545be0a978d845c099aac4d74b4ccdddfd69f3808a18143f30609300aede929f6efbd035a868d2140f5335597da5f  kernel-cmdline.conf
+"

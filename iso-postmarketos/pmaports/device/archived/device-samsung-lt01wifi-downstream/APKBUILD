@@ -1,0 +1,42 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-lt01)!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-lt01wifi-downstream
+pkgdesc="Samsung Galaxy Tab 3 8.0"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	linux-samsung-lt01wifi-downstream
+	mkbootimg
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf
+	modprobe.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-samsung-lt01wifi-downstream"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+f77c15435f2b1d1e418ee1ee438d16ec3aff4aecba67601a3173f83879fc2d9227026f249426969951d5a86a2de341465ee1f4996aa3f6e308a4e5ac6bd06d46  deviceinfo
+a38f3f83c7b3ec86b8a2fa35c1b72bfa283f2ff915fc18f121db968a5848dad44ba57deabc4d696d5cadc40257cc8c762a7bf453ab4252ba9379a208c3480515  kernel-cmdline.conf
+af036fe35011db078379dbb2e8c16c86546f0a4fcb3d1bcee3502bb1ea5b38f3ec5a9fa8cd1ca8ed8b89592a7f572d6072781289845303e0bf85fc2de4ead9fb  modules-load.conf
+594d6059ba1b06bce65538d26ce80cf2ce840786605b86e993ffaef858837507c033c0f95b7bcd9914ae7ea3cd2a9e43e32ec879db7c908219ad62d38b4e426a  modprobe.conf
+"

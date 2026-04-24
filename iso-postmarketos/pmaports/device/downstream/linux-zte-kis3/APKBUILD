@@ -1,0 +1,87 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/msm8610-zte_defconfig
+
+pkgname=linux-zte-kis3
+pkgver=3.4.0
+pkgrel=9
+pkgdesc="ZTE Open C / Kis 3 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="zte-kis3"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_zte_msm8610"
+_commit="b55a46067bb75d8a290b2cc0e07f5fb3d8207cb1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/KonstaT/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	01_avoid_rpmb_read_during_boot.patch
+	02_fix_mdp3_ctrl_off.patch
+	03_fix_mdss_fb_rgb_mode.patch
+	04_fix_mdss_fb_refresh_rate.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+	    CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS"
+}
+
+sha512sums="
+5759d54232e0c83e71896fc4c859fe8554731678defa337ec9da441505e03fb2f3b795fb68b35dec8e0fc6a920e82f03cd986badc05cf55c993d22085620bebc  linux-zte-kis3-b55a46067bb75d8a290b2cc0e07f5fb3d8207cb1.tar.gz
+89bf4bb74c8647cb660996487c91dffadc81f2b6f62b835190db7dea02a731c0e5449b373b0d01ce2417074a1a22bfd0760abf48106814cfc9a6d7465349fe99  config-zte-kis3.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+5e81c20b0b30c1ab09bd59f1e1b77fcce945a27de8144c68617ddc5e8f10e1f6fa8b1e4cd5d63e43511d61dace46fb26b14a6227a667b9718d44c8b81dbe6100  linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+760fdff79df31754ebed59839f34fc8c5a61750471614ac93a01b1e13b2535e7ca1f879c0cad3e83ad92946586c91679ba853eac4fe454d7e948317c84d81941  01_avoid_rpmb_read_during_boot.patch
+fbc61e379403990167853f4c4fbdfa22d7e9661a7eedecf2a75eec2a8008991a82d0a61be844ab4b1c88383f3fa79b43eff10b1039e44ad5a758a173cbf6386b  02_fix_mdp3_ctrl_off.patch
+384ae0bf2f5d7e15b0b60655693fd600b52c0f5bfcaa4ba7336d0ebeb224e84b99b597f77d26a1249e14a4e7bbc1629be00556b393bb9dd2266cb4bd67c3cfea  03_fix_mdss_fb_rgb_mode.patch
+1f743d3e7f4ac7401167ea35edc7d7e113bd80824c4d53631d7500f33557ff486163f8244786c16506b2e21db6ccbcd8a0f7b26fcf4937efee50b62c074f9a22  04_fix_mdss_fb_refresh_rate.patch
+"

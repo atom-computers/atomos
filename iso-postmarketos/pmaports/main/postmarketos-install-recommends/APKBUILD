@@ -1,0 +1,22 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-install-recommends
+pkgver=0.3
+pkgrel=0
+pkgdesc="Script to quickly install pmb_recommends for a package"
+url="https://gitlab.postmarketos.org/postmarketOS/postmarketos-install-recommends"
+options="!check"  # no tests
+depends="git python3"
+arch="noarch"
+license="GPL-3.0-or-later"
+source="https://gitlab.postmarketos.org/postmarketOS/postmarketos-install-recommends/-/archive/$pkgver/postmarketos-install-recommends-$pkgver.tar.gz"
+# no tests
+options="!check"
+
+package() {
+	install -Dm755 "$builddir/install-recommends.py" \
+		"$pkgdir/usr/bin/install-recommends"
+}
+
+sha512sums="
+3e656e9925c45e6fbb93dec487b8806f23c288488a4d8fe55a58bb1afee61dda7adb702ec3129ed0aac67722da7ed8d3dbfa28c51b2fadf45be5dc602a08cc6a  postmarketos-install-recommends-0.3.tar.gz
+"

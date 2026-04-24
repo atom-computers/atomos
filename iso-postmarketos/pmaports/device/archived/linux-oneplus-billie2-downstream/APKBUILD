@@ -1,0 +1,76 @@
+# Archived: Downstream port, only for testing. Use mainline port (oneplus-billie2)!
+# Kernel config based on: arch/arm64/configs/vendor/bengal_defconfig
+# Reference: <https://postmarketos.org/vendorkernel>
+
+pkgname=linux-oneplus-billie2-downstream
+pkgver=4.19.95
+pkgrel=0
+pkgdesc="OnePlus Nord N100 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="oneplus-billie2"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl linux-headers"
+
+# Source
+_repository="android_kernel_oneplus_sm4250"
+_commit="6db26f433f9a8722d0858562804da13f3090bfd7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/OnePlusOSS/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-Fix-function-declarations.patch
+	0002-Fix-dangerous-relocation.patch
+	0003-Remove-gcc-python-wrapper.patch
+	0004-Fix-reading-after-array-end.patch
+	0005-Remove-inline-from-external-functions.patch
+	0006-Suppress-error-about-static-buffer-overflow.patch
+	0007-linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+	Revert-selinux-Relocate-ss_initialized-and-selinux_e.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+
+	mkdir -p "$builddir/$_outdir"
+	cp "$srcdir/$_config" "$builddir"/"$_outdir"/.config
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CONFIG_SECTION_MISMATCH_WARN_ONLY=y
+}
+
+package() {
+	KERNEL_IMAGE_NAME=Image.gz downstreamkernel_package \
+		"$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	mkdir -p "$pkgdir/boot/dtbs"
+	install -Dm644 "$_outdir/arch/arm64/boot/dts/vendor/20882/bengal-qrd.dtb" \
+		"$pkgdir/boot/dtbs"
+
+	make O="$_outdir" \
+		ARCH="$_carch" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir" \
+		modules_install
+}
+
+sha512sums="
+9995a00adeceb30d4a64421e17c85a8349fe674b8a20dc2462cf21af867197f23e62326f0948ca12b52c7cb954388a3767122cea85eb033ff9525e15aa5af9b5  linux-oneplus-billie2-downstream-6db26f433f9a8722d0858562804da13f3090bfd7.tar.gz
+53d5c7e98bcf0621f15e249393a610f685c9c9b20086dd1d463ce3d6c85df9bb7bed229ba65b80f0b28951ec174981613a48fad0c9d07228b0ae861eac8b98f7  config-oneplus-billie2.aarch64
+c6739758f857f3da23702e005b1ed11e30fa28981a4307fa8d5d7419931400c419c3bd0c2dcfb2c0aff8972e5a19125be5074597e094195315d8a760e373802a  0001-Fix-function-declarations.patch
+39007dd285b502633c7bbf398acd6841a14fb6f5e0a3ad8570d31be77763b537b2352401701d67c53d36ddbf4068ee32446bf3b4ef9aa20c39f052ca491d2be4  0002-Fix-dangerous-relocation.patch
+359f619b7aac5bab061311f0806018ed04ce96a2233584a507b14c50ce616dfbc1681dd465ca3f0182165a6fc6c7b87435615bd1bd93efe174b95deba071f5fc  0003-Remove-gcc-python-wrapper.patch
+f8727c9c3b6c42ac921bd31fd05dc507e02a53c1c158fe7b67e75db482067b77ab9e2ffe33088c047a699b79642d6be1722d854cdf74cea6db5b46f586315bd0  0004-Fix-reading-after-array-end.patch
+aba7ae12986a2df81c6993f369390c6b3f5586fa70ab747e03d59aaf08cb79482a44eab723aed4469e98cadea0f70912f4e67caaf67cc279e1dc85e485b93a0f  0005-Remove-inline-from-external-functions.patch
+3835f7e4fca12aaba82fe21cc9632f0e569a8c4405231d137aea4f2640190d919e1a44612082decfbaaa41faa3c6a3ff0442086afb81d59c984a5697fdb9cac9  0006-Suppress-error-about-static-buffer-overflow.patch
+27827877040007fc1c4c719f7e2e19e5c272d44972415cfc53feba0313d87e4074f8204bdb13cbc5fe21ea61bf595314b68f10c081e7b7bac3c888b60f008acf  0007-linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+16459200092a2fa68054a758ad8fb175c86e6cdaa49e81c0c91568082cd0348526d43b9dfe0faac8b21465240f44253683f9c475c6f7350d7ef74149aa9c1dba  Revert-selinux-Relocate-ss_initialized-and-selinux_e.patch
+"

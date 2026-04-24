@@ -1,0 +1,77 @@
+# Kernel config based on: arch/arm/configs/msm8974-hdx_defconfig
+
+pkgname=linux-amazon-thor
+pkgver=3.4.113
+pkgrel=8
+pkgdesc="Phoenix Kernel for the 7-inch Kindle Fire HDX 3rd generation"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-thor"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel_phoenix_hdx-common"
+_commit="f73e4eec8717c6104eca954cf9c259d9d37c38a5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LastNiceGuy/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_smd_private.patch
+	00_fix_qaudio.patch
+	00_fix_return_address.patch
+	00_Input-sentelic-use-static-inline-instead-of-inline.patch
+	00_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_msm_fix_trace.patch
+	06_fix_mdss_fb_rgb_mode.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/" --version=1
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	install -Dm644 "$builddir/arch/$_carch/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+7d9f9001c6fc11954922070e3ed18f7e2843d5cd45dbab0f86ab332d6c45ee0279dd2c9bf498d91c017322f8b56f7f7417f132201bf2104ea5826212d09224f7  linux-amazon-thor-f73e4eec8717c6104eca954cf9c259d9d37c38a5.tar.gz
+ffcf918ff25489fd1fcbaab8ffdc9e64dd0bf7f2b08bd673887dabc0b58e5c3ddb32e608252337bd217b5182733c5bffed1d2ef0e9bb90ad31526a7417685115  config-amazon-thor.armv7
+ddf6caae3f087f21fbfdc258da1c05731bc14c24fe25ce1383133140129d44c48dc427b52d93ed7395def9ad5bf4dab01cc2792581c8ec3e10278c014a64d240  00_fix_smd_private.patch
+f40a9b3395882046adc66f97631dc85815f1901471559a40df502ec3fb0334ce2fd14202cd2a2b0de5a5e78deb103983bb0bcf9a5dce14cf1048b9750ebba6fa  00_fix_qaudio.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+2d77d90b501aa8afbf81629e73fc0a2055b373942975f58277e43f398d0835b3dbbff4a1118137ec82873ba90a254fea87c1d73ba7708578f1779bd0b4c6ff2d  00_Input-sentelic-use-static-inline-instead-of-inline.patch
+5c49f6ff6773a7dc3067d2b1359648fe7a9f758b6c068d6fa69d9aaf24a291ba8022c960317d926aabc11d020a71b20c4e81a6fcf9b21ef66d9b6d065bae23e9  00_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+657630a1ebd5a9aff872530022e83b1087ef3c0eb7a214d350c9caf779c2691f92de6630a40d735b5f7a34ba6a3e9e7eb708d3deb52f134d53164836c312e5e9  03_msm_fix_trace.patch
+2ce72397039e5a842e6564586ec14dcd2aaf0430959a42c18406c9c3736ce6f6fc6af146b345fa81977748a3182ce585af0da5db3e39cd4dc5314b6186478a64  06_fix_mdss_fb_rgb_mode.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

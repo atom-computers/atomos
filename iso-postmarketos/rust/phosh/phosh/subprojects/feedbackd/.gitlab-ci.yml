@@ -1,0 +1,157 @@
+---
+include:
+  - remote: 'https://gitlab.freedesktop.org/freedesktop/ci-templates/-/raw/6a40df92957c8ce9ee741aaccc5daaaf70545b1e/templates/ci-fairy.yml'
+  - remote: 'https://gitlab.gnome.org/World/Phosh/meta-phosh/-/raw/fe94386c4e4f088e96955194cb9d405df0654563/ci/phosh-common-jobs.yml'
+
+stages:
+  - build
+  - test+docs
+  - style-checks
+  - deploy
+
+variables:
+  FDO_UPSTREAM_REPO: feedbackd/feedbackd
+  # ci-check image comes from here
+  CI_REGISTRY: registry.gitlab.gnome.org
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    # Don't trigger a branch pipeline if there is an open MR
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH
+
+.before_script: &before_script
+  before_script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt-get -y update
+    - apt-get -y upgrade
+    - apt-get -y build-dep .
+    - '[ -z "${EXTRA_PKGS}" ] || echo "Extra packages: ${EXTRA_PKGS}"'
+    - apt-get -y install gcovr git build-essential ${EXTRA_PKGS}
+
+.image: &image
+  image:
+    name: debian:trixie
+
+# Regular, full build
+build:gcc:native-debian-trixie:full:
+  <<: *image
+  <<: *before_script
+  stage: build
+  artifacts:
+    paths:
+      - _build
+  script:
+    - meson setup -Db_coverage=true --werror _build
+    - meson compile -C _build
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+
+# Minimal build for e.g. submodule usage
+build:gcc:native-debian-trixie:lib:
+  <<: *image
+  <<: *before_script
+  stage: build
+  script:
+    - meson setup --werror -Ddaemon=false -Dgtk_doc=false _build
+    - meson compile -C _build
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+
+# Build using clang
+build:clang:native-debian-trixie:full:
+  variables:
+    EXTRA_PKGS: clang
+  <<: *image
+  <<: *before_script
+  stage: build
+  artifacts:
+    paths:
+      - _build
+  script:
+    - CC=clang meson setup --werror _build
+    - meson compile -C _build
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+  allow_failure: true
+
+test:native-debian-trixie:
+  <<: *image
+  <<: *before_script
+  stage: test+docs
+  needs:
+    - build:gcc:native-debian-trixie:full
+  coverage: '/^\s+lines\.+:\s+([\d.]+\%)\s+/'
+  script:
+    - dbus-run-session ninja -C _build test
+    - ninja -C _build coverage || true
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+
+build-doc:
+  stage: test+docs
+  image: ${DEBIAN_IMAGE}
+  variables:
+    BUILD_OPTS: -Dtests=false -Dgtk_doc=true
+  <<: *image
+  <<: *before_script
+  needs: []
+  script:
+    - git clean -dfx
+    - 'echo "Build opts: ${BUILD_OPTS}"'
+    - meson setup ${BUILD_OPTS} _build
+    - meson compile -C _build
+    - mv _build/doc/libfeedback-0/ _reference/
+  artifacts:
+    paths:
+      - _reference
+
+check-consistency:
+  stage: test+docs
+  extends: .phosh-check-consistency
+
+format-check:
+  stage: style-checks
+  extends: .phosh-format-check
+  allow_failure: true
+
+check-meson:
+  stage: style-checks
+  extends:
+    - .phosh-check-meson
+
+# Sanity checks of MR settings and commit logs
+check-commit-log:
+  extends:
+    - .fdo.ci-fairy
+  stage: style-checks
+  variables:
+    GIT_DEPTH: "100"
+  needs: []
+  script: |
+    ci-fairy check-commits --signed-off-by --junit-xml=commit-message-junit-report.xml
+  artifacts:
+    reports:
+      junit: commit-message-junit-report.xml
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH'
+
+pages:
+  stage: deploy
+  needs:
+    - build-doc
+  script:
+    - mv _reference/ public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+

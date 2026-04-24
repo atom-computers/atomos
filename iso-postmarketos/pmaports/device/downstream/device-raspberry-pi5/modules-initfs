@@ -1,0 +1,12 @@
+aes_ce_blk
+aes_ce_cipher
+drm
+drm_display_helper
+drm_dma_helper
+drm_kms_helper
+i2c_brcmstb
+libaes
+snd
+snd_soc_core
+snd_soc_hdmi_codec
+vc4

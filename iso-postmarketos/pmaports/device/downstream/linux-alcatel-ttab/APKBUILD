@@ -1,0 +1,66 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ttab_defconfig
+
+pkgname=linux-alcatel-ttab
+pkgver=3.10.108
+pkgrel=1
+pkgdesc="Alcatel Telekom Puls kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="alcatel-ttab"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	linux-headers
+	ncurses
+	openssl-dev
+	perl
+	xz
+"
+
+# Source: backup of https://github.com/mt8127/android_kernel_alcatel_ttab
+_repository="android_kernel_alcatel_ttab"
+_commit="1795ea3c237773d32616954a03738d67d209a8d7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Error504TimeOut/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	fix-check-lxdialog.patch
+	fix-assembler-junk.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+52fa47751c8b2a5e9f7b2a72a29dabc41a4363b1203b2c0b5e60c69c23fca5364abcd0c17958e585ef06b7ac76d67296b7922f899c70ea10b9932a3995a8385f  linux-alcatel-ttab-1795ea3c237773d32616954a03738d67d209a8d7.tar.gz
+a553038f774ec27bca7069fa515e9f7a08c2b991c2146a61fce4c7b68de0359ba4dd9c9b55733d4d522e411fa18444e47a0f602fb880a114d12704c85cb32d0b  config-alcatel-ttab.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+f748320ebe3e630b37977b6ea9f09498251cbf27368a7851b0a514853df6ad85da90cd282f62de1fbe95c551d91db82279be13611867263f4bc8aac3398aef82  fix-check-lxdialog.patch
+341b1f6357d46b54e49afcc66b1d6052a954ec5be9b1cf5da47eed39ea3beff261d94c73d4b83532246b404f57abff1d0fa69db2f4c8cfb15b89f79aaab69bc8  fix-assembler-junk.patch
+"

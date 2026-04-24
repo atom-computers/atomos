@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rc-update add powkiddy-x55-mapper default

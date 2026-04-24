@@ -1,0 +1,36 @@
+maintainer="rxbnDE <contact@rxbn.de>"
+pkgname=firmware-leeco-s2
+pkgver=1
+pkgrel=0
+_commit="fc1676d7e3697c4c57f0bb94e5ba057905019fc8"
+pkgdesc="Firmware for LeEco Le 2 (s2)"
+url="https://github.com/rxbnDE/firmware-leeco-s2"
+subpackages="$pkgname-adsp $pkgname-wcnss"
+arch="aarch64"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/rxbnDE/firmware-leeco-s2/archive/$_commit.tar.gz"
+
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/firmware-leeco-s2-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	depends="adsp-audio"
+	pkgdesc="LeEco Le 2 (s2) audio firmware"
+	install -Dm644 "$builddir"/adsp.* -t "$subpkgdir/$_fwdir"
+}
+
+wcnss() {
+	depends="wcnss-wlan"
+	pkgdesc="LeEco Le 2 (s2) WiFi/BT firmware"
+	install -Dm644 "$builddir"/wcnss.* -t "$subpkgdir/$_fwdir"
+	install -Dm644 "$builddir"/wlan/prima/WCNSS_* -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="a689f97f40cd0814d319432521ad8ea384f831d14475019ea1a83282934606f4e1da163e2bbf1fc1e213ca1d594f72855442708c0ac9c1c6c5e7918999cd2412  firmware-leeco-s2-fc1676d7e3697c4c57f0bb94e5ba057905019fc8.tar.gz"

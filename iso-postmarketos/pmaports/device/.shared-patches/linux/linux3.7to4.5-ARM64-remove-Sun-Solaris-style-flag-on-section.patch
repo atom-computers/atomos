@@ -1,0 +1,12 @@
+diff --git a/arch/arm64/mm/proc.S b/arch/arm64/mm/proc.S
+index d2f2cedf..7e2cbc74 100644
+--- a/arch/arm64/mm/proc.S
++++ b/arch/arm64/mm/proc.S
+@@ -171,7 +171,6 @@ ENTRY(cpu_do_switch_mm)
+ 	ret
+ ENDPROC(cpu_do_switch_mm)
+ 
+-	.section ".text.init", #alloc, #execinstr
+ 
+ /*
+  *	__cpu_setup

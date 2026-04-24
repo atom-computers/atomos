@@ -1,0 +1,36 @@
+Ifdef a few HDMI audio function calls behind the relevant SoC HDMI audio flag.
+Temporarily needed to avoid kernel hangs caused by interacting with audio.
+diff --git a/drivers/video/omap2/dss/hdmi_panel.c b/drivers/video/omap2/dss/hdmi_panel.c
+index 8503459e83c..696629debde 100644
+--- a/drivers/video/omap2/dss/hdmi_panel.c
++++ b/drivers/video/omap2/dss/hdmi_panel.c
+@@ -42,7 +42,9 @@ static ssize_t hdmi_audio_max_channel_show(struct device *dev,
+ 		struct device_attribute *attr, char *buf)
+ {
+ 	int r;
++#ifdef CONFIG_SND_OMAP_SOC_OMAP4_HDMI
+ 	r = hdmi_audio_get_max_channels();
++#endif
+ 	return snprintf(buf, PAGE_SIZE, "%d\n", r);
+ }
+ 
+@@ -335,7 +337,9 @@ static void hdmi_hotplug_detect_worker(struct work_struct *work)
+ 			mutex_unlock(&hdmi.hdmi_lock);
+ 			dssdev->driver->disable(dssdev);
+ 			omapdss_hdmi_enable_s3d(false);
++#ifdef CONFIG_SND_OMAP_SOC_OMAP4_HDMI
+ 			hdmi_audio_update_edid_info();
++#endif
+ 			mutex_lock(&hdmi.hdmi_lock);
+ 		}
+ 		goto done;
+@@ -358,7 +362,9 @@ static void hdmi_hotplug_detect_worker(struct work_struct *work)
+ 					dssdev->panel.monspecs.max_x * 10000;
+ 			dssdev->panel.height_in_um =
+ 					dssdev->panel.monspecs.max_y * 10000;
++#ifdef CONFIG_SND_OMAP_SOC_OMAP4_HDMI
+ 			hdmi_audio_update_edid_info();
++#endif
+ 			hdmi_inform_hpd_to_cec(true);
+ 			switch_set_state(&hdmi.hpd_switch, 1);
+ 			goto done;

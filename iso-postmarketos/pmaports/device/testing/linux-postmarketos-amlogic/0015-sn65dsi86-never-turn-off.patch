@@ -1,0 +1,61 @@
+From 87c72ab5cd34dfa5fe1c91c475e5b6d4b8e1aad6 Mon Sep 17 00:00:00 2001
+From: "Lukas F. Hartmann" <lukas@mntre.com>
+Date: Sun, 17 Sep 2023 17:43:10 +0200
+Subject: [PATCH 18/21] sn65dsi86-never-turn-off
+
+---
+ drivers/gpu/drm/bridge/ti-sn65dsi86.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/drivers/gpu/drm/bridge/ti-sn65dsi86.c
++++ b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+@@ -347,6 +347,9 @@ static void ti_sn65dsi86_disable_comms(s
+ {
+ 	mutex_lock(&pdata->comms_mutex);
+ 
++
++	return;
++
+ 	pdata->comms_enabled = false;
+ 	clk_disable_unprepare(pdata->refclk);
+ 
+@@ -387,6 +390,9 @@ static int __maybe_unused ti_sn65dsi86_s
+ 	struct ti_sn65dsi86 *pdata = dev_get_drvdata(dev);
+ 	int ret;
+ 
++	printk(KERN_DEBUG "ti_sn65dsi86: suspend skipped\n");
++	return 0;
++
+ 	if (pdata->refclk)
+ 		ti_sn65dsi86_disable_comms(pdata);
+ 
+@@ -820,6 +826,9 @@ static void ti_sn_bridge_atomic_disable(
+ {
+ 	struct ti_sn65dsi86 *pdata = bridge_to_ti_sn65dsi86(bridge);
+ 
++	printk(KERN_DEBUG "ti_sn65dsi86: atomic disable skipped\n");
++	return;
++
+ 	/* disable video stream */
+ 	regmap_update_bits(pdata->regmap, SN_ENH_FRAME_REG, VSTREAM_ENABLE, 0);
+ }
+@@ -1185,6 +1194,9 @@ static void ti_sn_bridge_atomic_post_dis
+ {
+ 	struct ti_sn65dsi86 *pdata = bridge_to_ti_sn65dsi86(bridge);
+ 
++	printk(KERN_DEBUG "ti_sn65dsi86: atomic_post_disable skipped\n");
++	return;
++
+ 	/* semi auto link training mode OFF */
+ 	regmap_write(pdata->regmap, SN_ML_TX_MODE_REG, 0);
+ 	/* Num lanes to 0 as per power sequencing in data sheet */
+@@ -1871,6 +1883,9 @@ static inline void ti_sn_gpio_unregister
+ 
+ static void ti_sn65dsi86_runtime_disable(void *data)
+ {
++
++	return;
++
+ 	pm_runtime_dont_use_autosuspend(data);
+ 	pm_runtime_disable(data);
+ }

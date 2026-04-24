@@ -1,0 +1,27 @@
+pkgname=firmware-motorola-perry
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Motorola Perry E4"
+url="https://github.com/lastramses/firmware-motorola-perry"
+subpackages="$pkgname-wcnss"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="813155d3bbce0f8a83cace3fd8c3cceedc184a46"
+source="https://github.com/lastramses/firmware-motorola-perry/archive/$_commit/firmware-motorola-perry-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss() {
+	pkgdesc="Motorola Moto E4 WiFi firmware"
+	install -Dm644 "$builddir"/wcnss.* -t "$subpkgdir/$_fwdir"
+	install -Dm644 "$builddir"/wlan/prima/WCNSS_* -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="de37ff72ab99f2cc8da29091cda0c11eda7a08c3c0c5d91827ea4356f62e55adf5546dc2377d584a501394941bb4364529781841ed808cd64bd587b2ddd4589f  firmware-motorola-perry-813155d3bbce0f8a83cace3fd8c3cceedc184a46.tar.gz"

@@ -1,0 +1,35 @@
+From ce55a041d522ac43f6590e45e248033dc4650eb6 Mon Sep 17 00:00:00 2001
+From: pmb-test <pmb-test@pmb-test>
+Date: Thu, 22 Nov 2018 09:32:11 +0100
+Subject: [PATCH 3/3] use abuild-tar.static from script directory
+
+---
+ abuild-sign.in | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/abuild-sign.in b/abuild-sign.in
+index c74bc12..c6d820d 100644
+--- a/abuild-sign.in
++++ b/abuild-sign.in
+@@ -9,6 +9,9 @@
+ program_version=@VERSION@
+ @FUNCTIONS_SH@
+ 
++# abuild-tar.static: from script dir
++abuildtar="$(cd $(dirname "$0") && pwd)/abuild-tar.static"
++
+ do_sign() {
+ 	local f i keyname repo
+ 
+@@ -25,7 +28,7 @@ do_sign() {
+ 		sig=".SIGN.RSA.$keyname"
+ 		openssl dgst -sha1 -sign "$privkey" -out "$sig" "$i"
+ 		tmptargz=$(mktemp)
+-		tar -f - -c "$sig" | abuild-tar --cut | gzip -9 > "$tmptargz"
++		tar -f - -c "$sig" | $abuildtar --cut | gzip -9 > "$tmptargz"
+ 		tmpsigned=$(mktemp)
+ 		cat "$tmptargz" "$i" > "$tmpsigned"
+ 		rm -f "$tmptargz" "$sig"
+-- 
+2.17.2
+

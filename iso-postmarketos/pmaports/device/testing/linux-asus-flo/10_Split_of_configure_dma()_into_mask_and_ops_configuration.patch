@@ -1,0 +1,183 @@
+author	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>	2015-05-15 02:00:06 +0300
+committer	John Stultz <john.stultz@linaro.org>	2017-05-12 12:39:36 -0700
+commit	b3c0228dd8468ab9a9da3b70b2a011ffb855091b (patch)
+tree	98ebf97c7cb6a3b42602124fcef49d2c78b992d7
+parent	6dd93436bf11ccd9fef459b8dc9f58c8635a6230 (diff)
+download	flo-b3c0228dd8468ab9a9da3b70b2a011ffb855091b.tar.gz
+of: dma: Split of_configure_dma() into mask and ops configuration
+The of_configure_dma() function configures both the DMA masks and ops.
+Moving DMA ops configuration to probe time would thus also delay
+configuration of the DMA masks, which might not be safe. To avoid issues
+split the configuration in two to allow keeping masks configuration at
+device add time and move ops configuration to device probe time.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Diffstat
+-rw-r--r--	drivers/of/device.c	47	
+		
+-rw-r--r--	drivers/of/of_reserved_mem.c	3	
+		
+-rw-r--r--	drivers/of/platform.c	6	
+		
+-rw-r--r--	include/linux/of_device.h	11	
+		
+4 files changed, 50 insertions, 17 deletions
+diff --git a/drivers/of/device.c b/drivers/of/device.c
+index 0d378c0..d73bfa19 100644
+--- a/drivers/of/device.c
++++ b/drivers/of/device.c
+@@ -71,7 +71,7 @@ int of_device_add(struct platform_device *ofdev)
+ }
+ 
+ /**
+- * of_dma_configure - Setup DMA configuration
++ * of_dma_configure - Setup DMA masks and offset
+  * @dev:	Device to apply DMA configuration
+  * @np:		Pointer to OF node having DMA configuration
+  *
+@@ -82,13 +82,12 @@ int of_device_add(struct platform_device *ofdev)
+  * can use a platform bus notifier and handle BUS_NOTIFY_ADD_DEVICE events
+  * to fix up DMA configuration.
+  */
+-void of_dma_configure(struct device *dev, struct device_node *np)
++void of_dma_configure_masks(struct device *dev, struct device_node *np)
+ {
+-	u64 dma_addr, paddr, size;
+-	int ret;
+-	bool coherent;
++	u64 dma_addr, paddr, size, range_mask;
+ 	unsigned long offset;
+ 	const struct iommu_ops *iommu;
++	int ret;
+ 
+ 	/*
+ 	 * Set default coherent_dma_mask to 32 bit.  Drivers are expected to
+@@ -106,9 +105,10 @@ void of_dma_configure(struct device *dev, struct device_node *np)
+ 
+ 	ret = of_dma_get_range(np, &dma_addr, &paddr, &size);
+ 	if (ret < 0) {
+-		dma_addr = offset = 0;
+-		size = dev->coherent_dma_mask + 1;
++		range_mask = dev->coherent_dma_mask + 1;
++		offset = 0;
+ 	} else {
++		range_mask = DMA_BIT_MASK(ilog2(dma_addr + size));
+ 		offset = PFN_DOWN(paddr - dma_addr);
+ 
+ 		/*
+@@ -134,10 +134,31 @@ void of_dma_configure(struct device *dev, struct device_node *np)
+ 	 * Limit coherent and dma mask based on size and default mask
+ 	 * set by the driver.
+ 	 */
+-	dev->coherent_dma_mask = min(dev->coherent_dma_mask,
+-				     DMA_BIT_MASK(ilog2(dma_addr + size)));
+-	*dev->dma_mask = min((*dev->dma_mask),
+-			     DMA_BIT_MASK(ilog2(dma_addr + size)));
++	dev->coherent_dma_mask = min(dev->coherent_dma_mask, range_mask);
++	*dev->dma_mask = min((*dev->dma_mask), range_mask);
++}
++EXPORT_SYMBOL_GPL(of_dma_configure_masks);
++
++/**
++ * of_dma_configure_ops - Setup DMA operations
++ * @dev:	Device to apply DMA configuration
++ * @np:		Pointer to OF node having DMA configuration
++ *
++ * Try to get devices's DMA configuration from DT and update it
++ * accordingly.
++ */
++int of_dma_configure_ops(struct device *dev, struct device_node *np)
++{
++	u64 dma_addr, paddr, size;
++	struct iommu_ops *iommu;
++	bool coherent;
++	int ret;
++
++	ret = of_dma_get_range(np, &dma_addr, &paddr, &size);
++	if (ret < 0) {
++		dma_addr = 0;
++		size = dev->coherent_dma_mask + 1;
++	}
+ 
+ 	coherent = of_dma_is_coherent(np);
+ 	dev_dbg(dev, "device is%sdma coherent\n",
+@@ -148,8 +169,10 @@ void of_dma_configure(struct device *dev, struct device_node *np)
+ 		iommu ? " " : " not ");
+ 
+ 	arch_setup_dma_ops(dev, dma_addr, size, iommu, coherent);
++
++	return 0;
+ }
+-EXPORT_SYMBOL_GPL(of_dma_configure);
++EXPORT_SYMBOL_GPL(of_dma_configure_ops);
+ 
+ /**
+  * of_dma_deconfigure - Clean up DMA configuration
+diff --git a/drivers/of/of_reserved_mem.c b/drivers/of/of_reserved_mem.c
+index d507c35..a145480 100644
+--- a/drivers/of/of_reserved_mem.c
++++ b/drivers/of/of_reserved_mem.c
+@@ -357,7 +357,8 @@ int of_reserved_mem_device_init_by_idx(struct device *dev,
+ 		/* ensure that dma_ops is set for virtual devices
+ 		 * using reserved memory
+ 		 */
+-		of_dma_configure(dev, np);
++		of_dma_configure_masks(dev, np);
++		of_dma_configure_ops(dev, np);
+ 
+ 		dev_info(dev, "assigned reserved memory node %s\n", rmem->name);
+ 	} else {
+diff --git a/drivers/of/platform.c b/drivers/of/platform.c
+index 5344db5..a2d27bc 100644
+--- a/drivers/of/platform.c
++++ b/drivers/of/platform.c
+@@ -186,7 +186,8 @@ static struct platform_device *of_platform_device_create_pdata(
+ 
+ 	dev->dev.bus = &platform_bus_type;
+ 	dev->dev.platform_data = platform_data;
+-	of_dma_configure(&dev->dev, dev->dev.of_node);
++	of_dma_configure_masks(&dev->dev, dev->dev.of_node);
++	of_dma_configure_ops(&dev->dev, dev->dev.of_node);
+ 	of_msi_configure(&dev->dev, dev->dev.of_node);
+ 
+ 	if (of_device_add(dev) != 0) {
+@@ -248,7 +249,8 @@ static struct amba_device *of_amba_device_create(struct device_node *node,
+ 		dev_set_name(&dev->dev, "%s", bus_id);
+ 	else
+ 		of_device_make_bus_id(&dev->dev);
+-	of_dma_configure(&dev->dev, dev->dev.of_node);
++	of_dma_configure_masks(&dev->dev, dev->dev.of_node);
++	of_dma_configure_ops(&dev->dev, dev->dev.of_node);
+ 
+ 	/* Allow the HW Peripheral ID to be overridden */
+ 	prop = of_get_property(node, "arm,primecell-periphid", NULL);
+diff --git a/include/linux/of_device.h b/include/linux/of_device.h
+index af98455..8c70184 100644
+--- a/include/linux/of_device.h
++++ b/include/linux/of_device.h
+@@ -55,7 +55,8 @@ static inline struct device_node *of_cpu_device_node_get(int cpu)
+ 	return of_node_get(cpu_dev->of_node);
+ }
+ 
+-void of_dma_configure(struct device *dev, struct device_node *np);
++void of_dma_configure_masks(struct device *dev, struct device_node *np);
++int of_dma_configure_ops(struct device *dev, struct device_node *np);
+ void of_dma_deconfigure(struct device *dev);
+ #else /* CONFIG_OF */
+ 
+@@ -104,8 +105,14 @@ static inline struct device_node *of_cpu_device_node_get(int cpu)
+ {
+ 	return NULL;
+ }
+-static inline void of_dma_configure(struct device *dev, struct device_node *np)
++static inline void of_dma_configure_masks(struct device *dev,
++					  struct device_node *np)
+ {}
++static inline int of_dma_configure_ops(struct device *dev,
++				       struct device_node *np)
++{
++	return 0;
++}
+ static inline void of_dma_deconfigure(struct device *dev)
+ {}
+ #endif /* CONFIG_OF */

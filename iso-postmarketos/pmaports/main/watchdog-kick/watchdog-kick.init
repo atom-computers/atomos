@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+
+cmd=/usr/sbin/watchdog-kick
+pid=/run/watchdog-kick.pid
+
+depend() {
+	after udev
+}
+
+start() {
+	ebegin "Starting watchdog-kick"
+	start-stop-daemon --start --exec $cmd --background --make-pidfile \
+		--pidfile $pid
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping watchdog-kick"
+	start-stop-daemon --stop --exec $cmd --pidfile $pid
+	$cmd -1
+	eend $?
+}
+
+restart() {
+	stop
+	start
+}

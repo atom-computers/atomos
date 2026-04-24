@@ -1,0 +1,80 @@
+diff --git a/Makefile b/Makefile
+index 792d22b4..a7ebcec6 100755
+--- a/Makefile
++++ b/Makefile
+@@ -748,8 +748,7 @@ export	INSTALL_PATH ?= /boot
+ # makefile but the argument can be passed to make if needed.
+ #
+ 
+-#MODLIB	= $(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)
+-MODLIB = $(INSTALL_MOD_PATH)/lib/modules
++MODLIB	= $(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)
+ export MODLIB
+ 
+ #
+@@ -1030,16 +1029,16 @@ modules_install: _modinst_ _modinst_post
+ 
+ PHONY += _modinst_
+ _modinst_:
+-#	@rm -rf $(MODLIB)/kernel
+-#	@rm -f $(MODLIB)/source
+-#	@mkdir -p $(MODLIB)/kernel
+-#	@ln -s $(srctree) $(MODLIB)/source
+-#	@if [ ! $(objtree) -ef  $(MODLIB)/build ]; then \
+-#		rm -f $(MODLIB)/build ; \
+-#		ln -s $(objtree) $(MODLIB)/build ; \
+-#	fi
+-#	@cp -f $(objtree)/modules.order $(MODLIB)/
+-#	@cp -f $(objtree)/modules.builtin $(MODLIB)/
++	@rm -rf $(MODLIB)/kernel
++	@rm -f $(MODLIB)/source
++	@mkdir -p $(MODLIB)/kernel
++	@ln -s $(srctree) $(MODLIB)/source
++	@if [ ! $(objtree) -ef  $(MODLIB)/build ]; then \
++		rm -f $(MODLIB)/build ; \
++		ln -s $(objtree) $(MODLIB)/build ; \
++	fi
++	@cp -f $(objtree)/modules.order $(MODLIB)/
++	@cp -f $(objtree)/modules.builtin $(MODLIB)/
+ 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modinst
+ 
+ # This depmod is only for convenience to give the initial
+@@ -1048,7 +1047,7 @@ _modinst_:
+ PHONY += _modinst_post
+ _modinst_post: _modinst_
+ 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.fwinst obj=firmware __fw_modinst
+-#	$(call cmd,depmod)
++	$(call cmd,depmod)
+ 
+ ifeq ($(CONFIG_MODULE_SIG), y)
+ PHONY += modules_sign
+@@ -1468,12 +1467,9 @@ quiet_cmd_rmfiles = $(if $(wildcard $(rm-files)),CLEAN   $(wildcard $(rm-files))
+       cmd_rmfiles = rm -f $(rm-files)
+ 
+ # Run depmod only if we have System.map and depmod is executable
+-#quiet_cmd_depmod = DEPMOD  $(KERNELRELEASE)
+-#      cmd_depmod = $(CONFIG_SHELL) $(srctree)/scripts/depmod.sh $(DEPMOD) \
+-#                   $(KERNELRELEASE) "$(patsubst y,_,$(CONFIG_HAVE_UNDERSCORE_SYMBOL_PREFIX))"
+-quiet_cmd_depmod = DEPMOD $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))
+-       cmd_depmod = $(CONFIG_SHELL) $(srctree)/scripts/depmod.sh $(DEPMOD) \
+-		    $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))
++quiet_cmd_depmod = DEPMOD  $(KERNELRELEASE)
++      cmd_depmod = $(CONFIG_SHELL) $(srctree)/scripts/depmod.sh $(DEPMOD) \
++                   $(KERNELRELEASE) "$(patsubst y,_,$(CONFIG_HAVE_UNDERSCORE_SYMBOL_PREFIX))"
+ 
+ # Create temporary dir for module support files
+ # clean it up only when building all modules
+diff --git a/scripts/Makefile.modinst b/scripts/Makefile.modinst
+index 45ad64da..bf9092bf 100755
+--- a/scripts/Makefile.modinst
++++ b/scripts/Makefile.modinst
+@@ -27,8 +27,7 @@ ext-mod-dir = $(INSTALL_MOD_DIR)$(subst $(patsubst %/,%,$(KBUILD_EXTMOD)),,$(@D)
+ modinst_dir = $(if $(KBUILD_EXTMOD),$(ext-mod-dir),kernel/$(@D))
+ 
+ $(modules):
+-#	$(call cmd,modules_install,$(MODLIB)/$(modinst_dir))
+-	$(call cmd,modules_install,$(MODLIB))
++	$(call cmd,modules_install,$(MODLIB)/$(modinst_dir))
+ 
+ # Declare the contents of the .PHONY variable as phony.  We keep that
+ # information in a variable se we can use it in if_changed and friends.

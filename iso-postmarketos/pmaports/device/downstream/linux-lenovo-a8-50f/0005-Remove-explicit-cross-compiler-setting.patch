@@ -1,0 +1,34 @@
+From bfe65fa4a346f0fca5069f3e29fab188f508e946 Mon Sep 17 00:00:00 2001
+From: Oreeeee <oree3ee@gmail.com>
+Date: Wed, 22 Oct 2025 23:37:26 +0200
+Subject: [PATCH 5/5] Remove explicit cross compiler setting
+
+---
+ Makefile | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 25b68893..fa1cd96a 100755
+--- a/Makefile
++++ b/Makefile
+@@ -192,15 +192,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # "make" in the configured kernel build directory always uses that.
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+-#ARCH		?= $(SUBARCH)
+-#CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+-ifeq ($(TARGET_ARCH), arm)
+-ARCH		?= arm
+-CROSS_COMPILE	?= arm-eabi-
+-else
+-ARCH		?= arm64
+-CROSS_COMPILE	?= aarch64-linux-android-
+-endif
++ARCH		?= $(SUBARCH)
++CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+-- 
+2.51.1.dirty
+

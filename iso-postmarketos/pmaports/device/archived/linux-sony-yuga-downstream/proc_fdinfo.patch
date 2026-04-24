@@ -1,0 +1,81 @@
+From 25437b2a54dd619a96e268ecaf303b089aa785e4 Mon Sep 17 00:00:00 2001
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Mon, 4 Jun 2012 11:00:45 -0700
+Subject: [PATCH] vfs: Fix /proc/<tid>/fdinfo/<fd> file handling
+
+commit 0640113be25d283e0ff77a9f041e1242182387f0 upstream.
+
+Cyrill Gorcunov reports that I broke the fdinfo files with commit
+30a08bf2d31d ("proc: move fd symlink i_mode calculations into
+tid_fd_revalidate()"), and he's quite right.
+
+The tid_fd_revalidate() function is not just used for the <tid>/fd
+symlinks, it's also used for the <tid>/fdinfo/<fd> files, and the
+permission model for those are different.
+
+So do the dynamic symlink permission handling just for symlinks, making
+the fdinfo files once more appear as the proper regular files they are.
+
+Of course, Al Viro argued (probably correctly) that we shouldn't do the
+symlink permission games at all, and make the symlinks always just be
+the normal 'lrwxrwxrwx'.  That would have avoided this issue too, but
+since somebody noticed that the permissions had changed (which was the
+reason for that original commit 30a08bf2d31d in the first place), people
+do apparently use this feature.
+
+[ Basically, you can use the symlink permission data as a cheap "fdinfo"
+  replacement, since you see whether the file is open for reading and/or
+  writing by just looking at st_mode of the symlink.  So the feature
+  does make sense, even if the pain it has caused means we probably
+  shouldn't have done it to begin with. ]
+
+Change-Id: I6499a97dc8993b3dd6b4df5af2724990ee91fd3b
+Reported-and-tested-by: Cyrill Gorcunov <gorcunov@openvz.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ fs/proc/base.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 2f198dad12c5..c8cb15dcca08 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -1838,7 +1838,7 @@ static int tid_fd_revalidate(struct dentry *dentry, struct nameidata *nd)
+ 			rcu_read_lock();
+ 			file = fcheck_files(files, fd);
+ 			if (file) {
+-				unsigned i_mode, f_mode = file->f_mode;
++				unsigned f_mode = file->f_mode;
+ 
+ 				rcu_read_unlock();
+ 				put_files_struct(files);
+@@ -1854,12 +1854,14 @@ static int tid_fd_revalidate(struct dentry *dentry, struct nameidata *nd)
+ 					inode->i_gid = 0;
+ 				}
+ 
+-				i_mode = S_IFLNK;
+-				if (f_mode & FMODE_READ)
+-					i_mode |= S_IRUSR | S_IXUSR;
+-				if (f_mode & FMODE_WRITE)
+-					i_mode |= S_IWUSR | S_IXUSR;
+-				inode->i_mode = i_mode;
++				if (S_ISLNK(inode->i_mode)) {
++					unsigned i_mode = S_IFLNK;
++					if (f_mode & FMODE_READ)
++						i_mode |= S_IRUSR | S_IXUSR;
++					if (f_mode & FMODE_WRITE)
++						i_mode |= S_IWUSR | S_IXUSR;
++					inode->i_mode = i_mode;
++				}
+ 
+ 				security_task_to_inode(task, inode);
+ 				put_task_struct(task);
+@@ -1894,6 +1896,7 @@ static struct dentry *proc_fd_instantiate(struct inode *dir,
+ 	ei = PROC_I(inode);
+ 	ei->fd = fd;
+ 
++	inode->i_mode = S_IFLNK;
+ 	inode->i_op = &proc_pid_link_inode_operations;
+ 	inode->i_size = 64;
+ 	ei->op.proc_get_link = proc_fd_link;

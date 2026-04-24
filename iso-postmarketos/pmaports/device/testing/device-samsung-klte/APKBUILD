@@ -1,0 +1,72 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-klte
+pkgdesc="Samsung Galaxy S5 (G900F/G9006/G9008/G9009W)"
+pkgver=13
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	lk2nd-msm8974
+	mkbootimg
+	postmarketos-base
+	swclock-offset
+	soc-qcom-msm8974
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-kernel-klte:kernel_klte
+	$pkgname-kernel-kltechn:kernel_kltechn
+"
+source="
+	bt-module-deps.conf
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_klte() {
+	pkgdesc="For G900F"
+	depends="linux-postmarketos-qcom-msm8974"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_kltechn() {
+	pkgdesc="For Chinese variants G9006/G9008/G9009W (kltechn)"
+	depends="linux-postmarketos-qcom-msm8974"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU, Wi-Fi, Bluetooth firmware"
+	depends="
+		firmware-qcom-adreno-a330
+		firmware-samsung-klte-bt
+		firmware-samsung-klte-wifi
+		msm-firmware-loader
+		msm-modem
+	"
+
+	mkdir "$subpkgdir"
+	# This config makes sense only if non-free firmware is installed
+	install -Dm644 "$srcdir"/bt-module-deps.conf \
+		"$subpkgdir"/usr/lib/modprobe.d/bt-module-deps.conf
+}
+
+sha512sums="
+6cef5f8ae1785ac16e6fe84bfc861ac50cdfb94db35d764f44a25c960e123cb82f6e56f45362a5340c62a3d5ac225f2689afd4f6964cb88305a0892ba44214f0  bt-module-deps.conf
+18f2b894bf15c7e17a53e8ce18421670ff024a69de4a75bf8ea0f2503c5ad8cc3cc386c5bbe1112c1b2fc5564652e6fc2178023515d5ad6ad8b468931dc66b4f  deviceinfo
+48518cc782d7ec0dd469c5301975546a794fea49bd642436b1cdf65335d9a9e092ed6ba75a9c7fb95e85326c49499226c7e43ec820752793b8178c8635640635  kernel-cmdline.conf
+0e123f1ce1255395addf08218c7ca7947c7dbd0a81f578ff1c96c53c51bb2c616cd50b390fa92f6fc67ed9c73957f8dd8390213df1520e2d97b9ff256ddbb954  modules-initfs
+"

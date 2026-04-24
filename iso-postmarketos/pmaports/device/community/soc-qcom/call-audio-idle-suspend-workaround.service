@@ -1,0 +1,11 @@
+[Unit]
+Description=Disable pulseaudio suspend-on-idle module during call
+Requires=dbus.service
+
+[Service]
+ExecStart=/usr/sbin/call_audio_idle_suspend_workaround
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

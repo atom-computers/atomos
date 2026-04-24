@@ -1,0 +1,63 @@
+# Automatically generated aport, do not edit!
+# Generator: pmbootstrap aportgen musl-aarch64
+
+# Stub for apkbuild-lint
+if [ -z "$(type -t arch_to_hostspec)" ]; then
+	arch_to_hostspec() { :; }
+fi
+
+maintainer=""
+pkgname=musl-aarch64
+pkgver=1.2.6
+pkgrel=2
+arch="x86_64"
+subpackages="musl-dev-aarch64:package_dev"
+
+_arch="aarch64"
+_mirror="http://dl-4.alpinelinux.org/alpine/"
+
+url="https://musl-libc.org"
+license="MIT"
+options="!check !strip"
+pkgdesc="the musl library (lib c) implementation for $_arch"
+
+_target="$(arch_to_hostspec $_arch)"
+
+source="
+	musl-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-$pkgver-r$pkgrel.apk
+	musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-dev-$pkgver-r$pkgrel.apk
+"
+
+package() {
+	mkdir -p "$pkgdir/usr/$_target"
+	cd "$pkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+}
+package_dev() {
+	mkdir -p "$subpkgdir/usr/$_target"
+	cd "$subpkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+
+	# symlink everything from /usr/$_target/usr/*
+	# to /usr/$_target/* so the cross-compiler gcc does not fail
+	# to build.
+	for _dir in include lib; do
+		mkdir -p "$subpkgdir/usr/$_target/$_dir"
+		cd "$subpkgdir/usr/$_target/usr/$_dir"
+		for i in *; do
+			cd "$subpkgdir/usr/$_target/$_dir"
+			ln -s /usr/$_target/usr/$_dir/$i $i
+		done
+	done
+}
+
+sha512sums="
+03134d5e7b840db09a10f1f34254840dd86d69f960f3eb38a0944df06d897cc603a1a82af380f0ee975a10708c51430d77618debc8ae500d1bbef705fd77681b  musl-1.2.6-r2-aarch64-edge.apk
+d95f9907bd7c0e818ffde40481bf0a8c23ca038e83f260f4ecb583fe164a581c978f76df3623be312400d75e23e2ca4b0742d59855cd908a9d411829ac017de7  musl-dev-1.2.6-r2-aarch64-edge.apk
+"

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rc-update add wl1251-cal sysinit

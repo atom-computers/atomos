@@ -1,0 +1,13 @@
+diff --git a/scripts/Makefile.dtbinst b/scripts/Makefile.dtbinst
+index b3770d5c8..99254eee5 100644
+--- a/scripts/Makefile.dtbinst
++++ b/scripts/Makefile.dtbinst
+@@ -31,7 +31,7 @@ quiet_cmd_dtb_install =	INSTALL $<
+ 
+ install-dir = $(patsubst $(dtbinst_root)%,$(INSTALL_DTBS_PATH)%,$(obj))
+ 
+-$(dtbinst-files) $(dtboinst-files) $(dtbinst-dirs): | __dtbs_install_prep
++# $(dtbinst-files) $(dtboinst-files) $(dtbinst-dirs): | __dtbs_install_prep
+ 
+ $(dtbinst-files): %.dtb: $(obj)/%.dtb
+ 	$(call cmd,dtb_install,$(install-dir))

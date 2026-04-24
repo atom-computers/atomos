@@ -1,0 +1,25 @@
+From 16cb015cfc3adc6a91aa560343a22a681804a481 Mon Sep 17 00:00:00 2001
+From: Yuval Adam <_@yuv.al>
+Date: Mon, 11 Sep 2017 21:33:10 +0300
+Subject: [PATCH] Fix fb_imgType
+
+---
+ drivers/video/msm/mdss/mdss_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index 76d97074..b20d75a9 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -454,7 +454,7 @@ static int mdss_fb_probe(struct platform_device *pdev)
+ 	mfd->bl_level = 0;
+ 	mfd->bl_scale = 1024;
+ 	mfd->bl_min_lvl = 30;
+-	mfd->fb_imgType = MDP_RGBA_8888;
++	mfd->fb_imgType = MDP_RGB_888;
+ 
+ 	mfd->pdev = pdev;
+ 	if (pdata->next)
+-- 
+2.14.1
+

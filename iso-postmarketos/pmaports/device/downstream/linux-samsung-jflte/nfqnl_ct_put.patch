@@ -1,0 +1,36 @@
+From 674147e21195a496164e1c7ff70d0f0b45235f25 Mon Sep 17 00:00:00 2001
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Tue, 19 Jun 2012 05:25:46 +0200
+Subject: [PATCH] netfilter: fix missing symbols if
+ CONFIG_NETFILTER_NETLINK_QUEUE_CT unset
+
+ERROR: "nfqnl_ct_parse" [net/netfilter/nfnetlink_queue.ko] undefined!
+ERROR: "nfqnl_ct_seq_adjust" [net/netfilter/nfnetlink_queue.ko] undefined!
+ERROR: "nfqnl_ct_put" [net/netfilter/nfnetlink_queue.ko] undefined!
+ERROR: "nfqnl_ct_get" [net/netfilter/nfnetlink_queue.ko] undefined!
+
+We have to use CONFIG_NETFILTER_NETLINK_QUEUE_CT in
+include/net/netfilter/nfnetlink_queue.h, not CONFIG_NF_CONNTRACK.
+
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/net/netfilter/nfnetlink_queue.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/net/netfilter/nfnetlink_queue.h b/include/net/netfilter/nfnetlink_queue.h
+index 9f8095c108e4..86267a529514 100644
+--- a/include/net/netfilter/nfnetlink_queue.h
++++ b/include/net/netfilter/nfnetlink_queue.h
+@@ -5,7 +5,7 @@
+ 
+ struct nf_conn;
+ 
+-#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
++#ifdef CONFIG_NETFILTER_NETLINK_QUEUE_CT
+ struct nf_conn *nfqnl_ct_get(struct sk_buff *entskb, size_t *size,
+ 			     enum ip_conntrack_info *ctinfo);
+ struct nf_conn *nfqnl_ct_parse(const struct sk_buff *skb,
+-- 
+2.32.0
+

@@ -1,0 +1,33 @@
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=firmware-odroid-hc2
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for ODROID HC2"
+url="https://github.com/hardkernel/u-boot"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="42ac93dcfbbb8a08c2bdc02e19f96eb35a81891a"
+source="bl1.bin.hardkernel::https://github.com/hardkernel/u-boot/raw/$_commit/sd_fuse/bl1.bin.hardkernel
+	bl2.bin.hardkernel::https://github.com/hardkernel/u-boot/raw/$_commit/sd_fuse/bl2.bin.hardkernel.720k_uboot
+	tzsw.bin.hardkernel::https://github.com/hardkernel/u-boot/raw/$_commit/sd_fuse/tzsw.bin.hardkernel
+	"
+
+package() {
+	# Trim bl1.bin.hardkernel to 15360 bytes
+	# See https://forum.odroid.com/viewtopic.php?f=93&t=42724
+	truncate -s15360 "$srcdir"/bl1.bin.hardkernel
+
+	# Install firmware
+	install -D -m644 "$srcdir"/bl1.bin.hardkernel \
+		"$pkgdir"/usr/share/u-boot/odroid-hc2/bl1.bin
+	install -D -m644 "$srcdir"/bl2.bin.hardkernel \
+		"$pkgdir"/usr/share/u-boot/odroid-hc2/bl2.bin
+	install -D -m644 "$srcdir"/tzsw.bin.hardkernel \
+		"$pkgdir"/usr/share/u-boot/odroid-hc2/tzsw.bin
+}
+sha512sums="
+db2d53673a36c8c186804996354ca3dea8621444596751a1cf51140149a9cce2cdb368417290046393828e943af256bb609a65d30569c95c51105ee82e6cac20  bl1.bin.hardkernel
+0c6fb8b0cccfafe7d0d5ace2a18eaaa8f70ca4d87d7899ddb310462d2daf50dc0c9fca55392a46817153f797eef0262b1ffb6eb2ddbae8ba9dd3d20ff7b241f4  bl2.bin.hardkernel
+434f6b479ead6b5d25877bb615df4281f95d1637d4171354f4bf324f8a1d7df3855e0a696aa204285c3298b45bf7d1e0ad4c27a88bc705f4cff1f082754f444f  tzsw.bin.hardkernel
+"

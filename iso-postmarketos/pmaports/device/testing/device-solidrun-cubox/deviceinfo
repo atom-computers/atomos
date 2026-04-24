@@ -1,0 +1,32 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="SolidRun CuBox"
+deviceinfo_manufacturer="SolidRun"
+deviceinfo_codename="solidrun-cubox"
+deviceinfo_year="2011"
+deviceinfo_dtb="dove-cubox"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+# as long as HDMI does not work, we can disable pbsplash with:
+deviceinfo_no_framebuffer="true"
+
+
+# Bootloader related
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_legacy_uboot_load_address="00008000"
+deviceinfo_initfs_compression="gzip"
+deviceinfo_append_dtb="true"
+deviceinfo_disable_dhcpd="true"
+# legacy uboot on this device cannot use gpt:
+deviceinfo_partition_type="msdos"
+
+
+# debugging support (could be removed later)
+deviceinfo_getty="ttyS0;115200"

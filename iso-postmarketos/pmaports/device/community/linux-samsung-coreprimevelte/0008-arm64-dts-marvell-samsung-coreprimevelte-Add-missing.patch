@@ -1,0 +1,34 @@
+From 12e608294afcfc34896f5ff14a1b163a74644c03 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Duje=20Mihanovi=C4=87?= <duje@dujemihanovic.xyz>
+Date: Sat, 24 Jan 2026 17:39:12 +0100
+Subject: [PATCH 8/9] arm64: dts: marvell: samsung-coreprimevelte: Add missing
+ SDIO properties
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+According to the vendor device tree, the WiFi+BT card must not be
+powered off during suspend and is capable of waking up the board. Add
+the respective properties to the SDIO node to reflect this.
+
+Signed-off-by: Duje Mihanović <duje@dujemihanovic.xyz>
+---
+ .../boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts     | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+index fd16760f1072..ecae615b4414 100644
+--- a/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
++++ b/arch/arm64/boot/dts/marvell/mmp/pxa1908-samsung-coreprimevelte.dts
+@@ -532,6 +532,8 @@ &sdh1 {
+ 	pinctrl-1 = <&sdh1_fast_pins_0 &sdh1_fast_pins_1 &sdh1_pins_2>;
+ 	bus-width = <4>;
+ 	non-removable;
++	keep-power-in-suspend;
++	wakeup-source;
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;
+ 
+-- 
+2.53.0
+

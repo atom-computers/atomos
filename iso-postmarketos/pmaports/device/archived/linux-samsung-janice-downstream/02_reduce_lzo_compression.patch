@@ -1,0 +1,26 @@
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index a7ca009..808091b 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -259,7 +259,7 @@ cmd_lzma = (cat $(filter-out FORCE,$^) | \
+ 
+ quiet_cmd_lzo = LZO     $@
+ cmd_lzo = (cat $(filter-out FORCE,$^) | \
+-	lzop -9 && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
++	lzop -6 && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
+ 	(rm -f $@ ; false)
+ 
+ # XZ
+diff --git a/scripts/gen_initramfs_list.sh b/scripts/gen_initramfs_list.sh
+index b482f16..c4e08c5 100644
+--- a/scripts/gen_initramfs_list.sh
++++ b/scripts/gen_initramfs_list.sh
+@@ -245,7 +245,7 @@ case "$arg" in
+ 		echo "$output_file" | grep -q "\.lzma$" && compr="lzma -9 -f"
+ 		echo "$output_file" | grep -q "\.xz$" && \
+ 				compr="xz --check=crc32 --lzma2=dict=1MiB"
+-		echo "$output_file" | grep -q "\.lzo$" && compr="lzop -9 -f"
++		echo "$output_file" | grep -q "\.lzo$" && compr="lzop -6 -f"
+ 		echo "$output_file" | grep -q "\.cpio$" && compr="cat"
+ 		shift
+ 		;;

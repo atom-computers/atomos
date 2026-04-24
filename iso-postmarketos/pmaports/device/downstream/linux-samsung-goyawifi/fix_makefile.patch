@@ -1,0 +1,43 @@
+diff --git a/Makefile b/Makefile
+index 37ada86c..87636345 100644
+--- a/Makefile
++++ b/Makefile
+@@ -192,10 +192,10 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ export KBUILD_BUILDHOST := $(SUBARCH)
+-#ARCH		?= $(SUBARCH)
+-ARCH		?= arm
+-#CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+-CROSS_COMPILE	?= /usr/bin/arm-linux-gnueabi-
++ARCH		?= $(SUBARCH)
++#ARCH		?= arm
++CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
++#CROSS_COMPILE	?= /usr/bin/arm-linux-gnueabi-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+@@ -332,8 +332,9 @@ include $(srctree)/scripts/Kbuild.include
+ 
+ AS		= $(CROSS_COMPILE)as
+ LD		= $(CROSS_COMPILE)ld
+-CC		= ccache $(CROSS_COMPILE)gcc-4.7
+-CPP		= ccache $(CC) -E
++#CC		= ccache $(CROSS_COMPILE)gcc-4.7
++CC		= $(CROSS_COMPILE)gcc
++CPP		= $(CC) -E
+ AR		= $(CROSS_COMPILE)ar
+ NM		= $(CROSS_COMPILE)nm
+ STRIP		= $(CROSS_COMPILE)strip
+@@ -689,9 +690,9 @@ export	INSTALL_PATH ?= /boot
+ # makefile but the argument can be passed to make if needed.
+ #
+ 
+-#MODLIB	= $(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)
++MODLIB	= $(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)
+ #MODLIB	= $(INSTALL_MOD_PATH)/lib/modules/$(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))
+-MODLIB	= $(INSTALL_MOD_PATH)/lib/modules
++#MODLIB	= $(INSTALL_MOD_PATH)/lib/modules
+ export MODLIB
+ 
+ #

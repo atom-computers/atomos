@@ -1,0 +1,31 @@
+--- b/net/.gitignore
++++ /dev/null
+@@ -1 +0,0 @@
+-wireguard/
+--- b/net/Kconfig
++++ a/net/Kconfig
+@@ -80,7 +80,6 @@
+ 	  Short answer: say Y.
+ 
+ if INET
+-source "net/wireguard/Kconfig"
+ source "net/ipv4/Kconfig"
+ source "net/ipv6/Kconfig"
+ source "net/netlabel/Kconfig"
+--- b/net/Makefile
++++ a/net/Makefile
+@@ -14,7 +14,6 @@
+ obj-$(CONFIG_LLC)		+= llc/
+ obj-$(CONFIG_NET)		+= ethernet/ 802/ sched/ netlink/
+ obj-$(CONFIG_NETFILTER)		+= netfilter/
+-obj-$(CONFIG_WIREGUARD) += wireguard/
+ obj-$(CONFIG_INET)		+= ipv4/
+ obj-$(CONFIG_XFRM)		+= xfrm/
+ obj-$(CONFIG_UNIX)		+= unix/
+--- b/scripts/Kbuild.include
++++ a/scripts/Kbuild.include
+@@ -365,7 +365,6 @@
+ endef
+ #
+ ###############################################################################
+-$(shell cd "$(srctree)" && ./scripts/fetch-latest-wireguard.sh)

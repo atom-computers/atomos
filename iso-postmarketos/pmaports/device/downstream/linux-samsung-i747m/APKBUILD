@@ -1,0 +1,68 @@
+# Kernel config based on: arch/arm/configs/lineageos_d2_defconfig
+# Changes:
+# - Added DEVTEMPFS
+# - Enabled SYSVIPC
+# - Disabled ANDROID_PARANOID_NETWORK
+# Patches:
+# - All simply to allow it to compile under GCC6.
+
+pkgname=linux-samsung-i747m
+pkgver=3.4.112
+pkgrel=7
+pkgdesc="Samsung Galaxy SIII (USA/Canada) kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="samsung-i747m"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_d2"
+_commit="716f00ee2e86adfd507842c5f193a738b57d3c49"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	00_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+	00_Input-sentelic-use-static-inline-instead-of-inline.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+6850231f0596dd272b4f963d20c77aee6ed16a1ba47261dbafe11ffccac695427db54efa71d070525c519885b795395e9ac6ca97fa06ccc36131aba1f95aa715  linux-samsung-i747m-716f00ee2e86adfd507842c5f193a738b57d3c49.tar.gz
+5dfb4e6d9eeadeb657a120aaa6d451b979002e78f6d62ff615b4d1325de9be210c3140753985268b84f1d817bebb2cbe1e9061d9b581a5025176fb9ab592b069  config-samsung-i747m.armhf
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+5c49f6ff6773a7dc3067d2b1359648fe7a9f758b6c068d6fa69d9aaf24a291ba8022c960317d926aabc11d020a71b20c4e81a6fcf9b21ef66d9b6d065bae23e9  00_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+2d77d90b501aa8afbf81629e73fc0a2055b373942975f58277e43f398d0835b3dbbff4a1118137ec82873ba90a254fea87c1d73ba7708578f1779bd0b4c6ff2d  00_Input-sentelic-use-static-inline-instead-of-inline.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

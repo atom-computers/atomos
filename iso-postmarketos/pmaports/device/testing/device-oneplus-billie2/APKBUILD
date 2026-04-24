@@ -1,0 +1,50 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jonas Heinrich <onny@project-insanity.org>"
+pkgname=device-oneplus-billie2
+pkgdesc="OnePlus Nord N100"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-firmware-none"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-next:kernel_next
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_next() {
+	pkgdesc="Unstable next kernel (linux-next)"
+	depends="linux-next"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel from Alpine Linux (linux-stable)"
+	depends="linux-stable"
+	provides="$pkgname-kernel-edge=$pkgver-r$pkgrel"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long term support (LTS) kernel from Alpine Linux (linux-lts)"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+0783e6d4b0c27301a66e034fb432aee9207bba408fbf3a535d982e03b797d227b5f7367f3dde05a76986754024b2c15fddf69bfc75821b7119aef6a2f9fbfac3  deviceinfo
+04cc87ed6b0041ede7edb2693ee4dd58d6ac8f1b036a0b37e1a86cce57b66e35d9f400a3ea75d75278b028132535033915f3a2fff919866e85336c5f92a68ffe  kernel-cmdline.conf
+"

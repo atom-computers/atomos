@@ -1,0 +1,29 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-zanin
+pkgdesc="Samsung Galaxy Chat"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-zanin mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo
+	initfs-hook.sh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+24ea4765c18027fa80981964b335408ecf3aa197a4fe6c3788a8bca2fa703e8cf1672d8a2ee7c785883583f4768a6f02281bc76dfe89c200105f23e8c9996593  deviceinfo
+27a2263ce1dc96de8ac3a2ff6fc8d19c1ae591c883ff201637c5b8dfbbb07d807200853fa51de7d9ee1d0126ceb3a35a6787da53fd25389bbbb78c126eb049a3  initfs-hook.sh
+"

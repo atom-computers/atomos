@@ -1,0 +1,107 @@
+#!/bin/sh
+#
+# This hook checks that all local sources specified in the staged APKBUILDs
+# are staged too or already committed and that checksums are correct.
+#
+set -eu
+
+if ! command -v sha512sum >/dev/null; then
+	# macOS / BSDs (?) don't have sha512sum, but shasum.
+	alias sha512sum='shasum -a 512'
+fi
+
+error() {
+	printf '\033[0;31mpre-commit:\033[0m %s\n' "$1" >&2  # red
+}
+
+# Prints paths of created or modified files being committed.
+changed_files() {
+	git diff-index \
+		--name-only \
+		--cached \
+		--diff-filter=ACMR HEAD \
+		-- "$@"
+}
+
+# Prints file names and checksums (in format <SHA-512>:<filename>) of local
+# sources specified in the APKBUILD ($1).
+apkbuild_local_sources() {
+	apkbuild="$1"
+
+	set +eu
+	. "$apkbuild" || {
+		error "$apkbuild is invalid"
+		return 1
+	}
+	set -eu
+
+	status=0
+	: ${source:=""}
+	for src in $source; do
+		# Skip remote sources.
+		case "$src" in */*) continue;; esac
+
+		echo "$sha512sums" | awk -v src="$src" '
+				{ if ($2 == src) { ok=1; print($2 ":" $1) } }
+				END { if (ok != 1) exit 1 }' || {
+			status=1
+			error "${apkbuild%/*}: file \"$src\" is missing in \$sha512sums (hint: run pmbootstrap checksum)"
+		}
+	done
+
+	return $status
+}
+
+# check if given object is a symlink
+is_symlink() {
+	test "$(git ls-files --stage "$1" | awk '{print $1}')" = "120000"
+}
+
+# Checks that all local sources specified in the APKBUILD file ($1) are
+# available in git tree and checksums are correct.
+check_local_sources() {
+	local apkbuild="$1"
+	local startdir="$2"
+	local status=0
+	local checksum_act checksum_exp content filename line sources
+
+	sources=$(apkbuild_local_sources "$apkbuild")
+	for line in $sources; do
+		filename=${line%%:*}
+		checksum_exp=${line#*:}
+
+		if ! git cat-file -e ":$startdir/$filename" 2>/dev/null; then
+			error "$startdir: missing file \"$filename\""
+			status=1
+			continue
+		fi
+
+		if is_symlink ":$startdir/$filename"; then
+			continue
+		fi
+
+		checksum_act=$(git show ":$startdir/$filename" | sha512sum)
+		if [ "$checksum_act" != "$checksum_exp  -" ]; then
+			local cmd="pmbootstrap checksum $(basename "$startdir")"
+			error "$startdir: bad checksum for file \"$filename\" (hint: run $cmd)"
+			status=1
+		fi
+	done
+
+	return $status
+}
+
+cleanup() {
+  [ -f "$_staged" ] && rm "$_staged"
+}
+
+trap cleanup EXIT
+
+for apkbuild in $(changed_files '**/APKBUILD'); do
+	_staged="$(mktemp)"
+	git show ":$apkbuild" >"$_staged"
+	check_local_sources "$_staged" "${apkbuild%/*}"
+	cleanup
+done
+
+trap - EXIT

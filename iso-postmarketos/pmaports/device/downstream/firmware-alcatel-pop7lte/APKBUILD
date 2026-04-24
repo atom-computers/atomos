@@ -1,0 +1,36 @@
+maintainer="Lauren Kelly <lauren.kelly@msn.com>"
+pkgname=firmware-alcatel-pop7lte
+pkgver=1
+pkgrel=0
+_commit="0f0e5d3036d0554e967ddca84708c2717cae83a6"
+pkgdesc="Firmware files for Alcatel OneTouch Pop 7S"
+url="https://postmarketos.org"
+subpackages="$pkgname-adsp $pkgname-wcnss"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/thejsa/vendor_alcatel_pop7lte/archive/$_commit.tar.gz"
+
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_alcatel_pop7lte-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	depends="adsp-audio"
+	pkgdesc="Alcatel OneTouch Pop 7S (pop7lte) audio firmware"
+	install -Dm644 "$builddir"/adsp.* -t "$subpkgdir/$_fwdir"
+}
+
+wcnss() {
+	depends="wcnss-wlan"
+	pkgdesc="Alcatel OneTouch Pop 7S (pop7lte) WiFi/BT firmware"
+	install -Dm644 "$builddir"/wcnss.* -t "$subpkgdir/$_fwdir"
+	install -Dm644 "$builddir"/wlan/prima/WCNSS_* -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="739fb907606a246cef8084079ea58a5836e3d93d53a38e4e8b5e6f1e458d3dea542b90cf3f7bd647399d4eeab8578f195e8c7b384e90da6bf677aecb391b091c  firmware-alcatel-pop7lte-0f0e5d3036d0554e967ddca84708c2717cae83a6.tar.gz"

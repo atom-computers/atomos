@@ -1,0 +1,42 @@
+pkgname=firmware-xiaomi-pine
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Redmi 7A"
+url="https://github.com/dburkov05/firmware-xiaomi-pine"
+arch="aarch64"
+depends="wcnss-wlan"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="2ac9558477be0fb8547838ea0eb905026f319c23"
+
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	cd "$srcdir/$pkgname-$_commit"
+
+	# ADSP firmware
+	install -Dm0644 adsp/adsp.* -t "$pkgdir/$_fwdir"
+
+	# Camera firmware
+	install -Dm0644 camera/*.fw -t "$pkgdir/$_fwdir"
+
+	# GPU and video acceleration firmwares
+	install -Dm0644 gpu/a530* -t "$pkgdir/$_fwdir/../qcom"
+	install -Dm0644 gpu/a506_zap.* -t "$pkgdir/$_fwdir"
+
+	install -Dm0644 venus/venus.* -t "$pkgdir/$_fwdir"
+
+	# Modem firmware
+	install -Dm0644 modem/mba.mbn -t "$pkgdir/$_fwdir"
+	install -Dm0644 modem/modem.* -t "$pkgdir/$_fwdir"
+
+	# Wifi/BT firmware
+	install -Dm0644 wcnss/wcnss.* -t "$pkgdir/$_fwdir"
+	cp -r wlan "$pkgdir/$_fwdir"
+}
+sha512sums="
+6781e410c476a294a16530361fad5ebda0847d6aac205c03449981b04cc722c70ce3b7923ff85b43ede759b7678ba26b64b82468bd653137aa2aad8f620d2ed6  firmware-xiaomi-pine-2ac9558477be0fb8547838ea0eb905026f319c23.tar.gz
+"

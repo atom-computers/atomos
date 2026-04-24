@@ -1,0 +1,32 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Uclydde <julianbraha@gmail.com>"
+pkgname=device-lg-us996
+pkgdesc="LG V20"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-lg-us996
+	msm-fb-refresher
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+9d301d18d399def0eb0be109b848c56455946be4b2359d18bd54677502b4cd7574eb5d3430b815ae23337517442e09aad26e6fe64f7f570c934ce58eca1b46ec  deviceinfo
+4651a3b003e812b08facae42d5bd9c9f6089ed2481da8804ba2f98f75bd910b36551b2a8f2de437cfe8fea257746c904841dac3ae5e8278819dfb7b813f9ddd2  kernel-cmdline.conf
+"

@@ -1,0 +1,105 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Bart Ribbers <bribbers@disroot.org>"
+pkgname=postmarketos-base-ui-plasma
+pkgver=2
+pkgrel=22
+pkgdesc="Meta package for shared configuration for Plasma-based UIs"
+url="https://postmarketos.org"
+arch="noarch !armhf" # armhf is not supported
+license="GPL-3.0-or-later"
+depends="
+	bluedevil
+	breeze
+	dnsmasq
+	geoclue
+	iio-sensor-proxy
+	kunifiedpush
+	kscreen
+	kwallet-pam
+	modemmanager
+	polkit-kde-agent-1
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	powerdevil
+	urfkill
+	xdg-desktop-portal-kde
+	"
+replaces="plasma-mobile-meta"
+# Required to launch
+depends="$depends
+	xorg-server
+	"
+_pmb_recommends="
+	breeze-gtk
+	discover
+	flatpak
+	kaccounts-providers
+	kde-gtk-config
+	plasma-keyboard
+	postmarketos-artwork-wallpapers
+	tuned-ppd
+	xdg-user-dirs
+	"
+subpackages="$pkgname-openrc $pkgname-systemd"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
+source="
+	drkonqirc
+	gtk-app-wayland.sh
+	kdewallet.kwl
+	kdewallet.salt
+	qtlogging.ini
+	"
+options="!check"
+
+package() {
+	install -Dm644 \
+		"$srcdir"/qtlogging.ini \
+		-t "$pkgdir"/etc/xdg/QtProject/
+
+	install -Dm755 \
+		"$srcdir"/gtk-app-wayland.sh \
+		-t "$pkgdir"/etc/profile.d/
+
+	install -Dm644 \
+		"$srcdir"/drkonqirc \
+		-t "$pkgdir"/etc/xdg/
+
+	# TODO: remove once keyboard input bug is fixed
+	# https://bugs.kde.org/show_bug.cgi?id=435183
+	install -Dm600 -t "$pkgdir"/etc/skel/.local/share/kwalletd \
+		"$srcdir"/kdewallet.kwl \
+		"$srcdir"/kdewallet.salt
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="
+		bluez-openrc
+		elogind
+		elogind-openrc
+		iio-sensor-proxy-openrc
+		openrc
+		networkmanager-openrc
+		urfkill-openrc
+	"
+
+	mkdir -p "$subpkgdir"
+}
+
+systemd() {
+	install_if="$pkgname=$pkgver-r$pkgrel systemd"
+	depends="
+		drkonqi
+		polkit-systemd
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+60317edd2a250174e31976766bb8d53b44f1cde065c3ed913ac344d54fecb949dc653064791484c6ee523b43fb11dd3d05cde7504d0078edd5d42f7c1b40049b  drkonqirc
+57793bb079c76ba3bdcfca7880aa887de11fe80e7a05557b78435e57feabab70fbaeedc42da3aec6f914c35bba8e8ee9918367516eb45ee247f63f694624f179  gtk-app-wayland.sh
+923309f71ee0840ae49d610ab5c11260432f462709eee7148ee5a4703872b9926a3267b16b524162c1560e0798c63fe392a161a57be5c6000bbb1e3f0c947e25  kdewallet.kwl
+f3fdaaaf13e985166b86158d5a60098aa45195ea078a4cab7fbf12d3aa428000af3e46ec011dbdc38a4c00faeac5f9a3b5bc2765a6afdd0f1ee58616e31e7429  kdewallet.salt
+341f0b866c315f37868ef3e7137cce8b53a0e8e6164e5af71b3e8e2fa68321afbf0652d76124ef84bade1393f701748852ac939aef9daff7e272a0df827780eb  qtlogging.ini
+"

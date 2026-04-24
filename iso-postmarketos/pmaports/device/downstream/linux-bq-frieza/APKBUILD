@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/bq_aquaris_m10_FHD_ubuntu_defconfig
+
+pkgname=linux-bq-frieza
+pkgver=3.10.93
+pkgrel=1
+pkgdesc="BQ Aquarius M10 FHD kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="bq-frieza"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="kernel_bq_m10"
+_commit="547e2e991ba95c5b26870570eba4b32f934f0167"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ubports/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+f9ddd8f59a98e6d0f488d44456a1c336d7fbe3282b22ca705702c44154c2d87686cfe1ba39b109446420d3cb190cc41e7f3e65e4e65896ccfe083383fc394901  linux-bq-frieza-547e2e991ba95c5b26870570eba4b32f934f0167.tar.gz
+c181ef409b6d7930f5da876d2ccb8276dc6b52cff090a7db5472e3b2f3b6ea95511f597299890d202454a9125447935933c6a1d30308adedd0de5dd3b294686a  config-bq-frieza.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

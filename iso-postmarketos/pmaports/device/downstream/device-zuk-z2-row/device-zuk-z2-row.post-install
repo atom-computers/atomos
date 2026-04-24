@@ -1,0 +1,8 @@
+#!/bin/sh
+
+dir="/mnt/vendor"
+
+if ! grep -q "$dir" /etc/fstab; then
+    mkdir -p "$dir"
+    echo "PARTLABEL=persist	$dir	ext4	ro	0	2" >> /etc/fstab
+fi

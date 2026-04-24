@@ -1,0 +1,88 @@
+# Kernel config based on: arch/arm64/configs/sdm660_defconfig
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+_flavor="postmarketos-qcom-sdm660"
+pkgname=linux-$_flavor
+pkgver=6.19.10
+pkgrel=0
+pkgdesc="Close to mainline linux kernel for Qualcomm Snapdragon 660 SoC"
+arch="aarch64"
+url="https://kernel.org/"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+	"
+
+_tag="v$pkgver-sdm660"
+
+source="
+	linux-$_tag.tar.gz::https://github.com/sdm660-mainline/linux/archive/refs/tags/$_tag.tar.gz
+	config-$_flavor.aarch64
+"
+
+_carch="arm64"
+
+# for some reason, the directory inside .tar.gz does not match tag name: leading
+#     "v" is missing, so we can't use $_tag here
+builddir="$srcdir/linux-$pkgver-sdm660"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir/config-$_flavor.$CARCH" "$builddir"/.config
+}
+
+build() {
+	unset LDFLAGS
+
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" all Image.gz
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs-tmp"
+
+	install -D "$builddir/arch/arm64/boot/vmlinuz.efi" \
+		"$pkgdir/boot/vmlinuz.efi"
+
+	install -D "$builddir/arch/arm64/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	# Reduce package size, install only qcom SDM630/636/660 dtbs.
+	# This reduces .apk size from ~46 Mb to ~30 Mb.
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sda660* "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm630* "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm636* "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm660* "$pkgdir"/boot/dtbs/qcom
+	rm -r "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+sha512sums="
+abf0ec97c2530ad3543a64019cefde3396c3361d7550513bf17948c6f4bf2621d88bb1947a519e8bddc97f1c6fdc7d12989cc8292a41805acac9f8f16f7a14df  linux-v6.19.10-sdm660.tar.gz
+489b4cc74e49164971e7467e2884a724d9e1be51edd0054c7e4c4d233bd5fd31e011e0b3e79d855d94f6980886675ab195130d6aa4c62592b9e981aca217884e  config-postmarketos-qcom-sdm660.aarch64
+"

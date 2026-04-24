@@ -1,0 +1,50 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-motorola-peregrine-downstream
+pkgdesc="Moto G 4G (2013) (Downstream)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-motorola-titan
+	linux-motorola-peregrine-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-x11
+	"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	xorg.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	depends="
+		libinput
+		xf86-input-libinput
+		xf86-video-fbdev"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/etc/X11/xorg.conf.d/10-peregrine.conf
+}
+
+sha512sums="
+8d6a97973b7b7bb861f2a255d4c93c706e9f63e8a2fffe97a24c1a2418d69bf4e4f108a1db800e496911a8efd9a5cb9efe33ba1d0191bd806aa4ef76cd870860  deviceinfo
+29f032f3f7a89e2f280c2e88124c0f16d2b4d09613b2ffe5aa7c1558d5a5f7df54a57c23040361e54a7546da5b7c5ff72e3c1e473ff1cd381847e343fa119fcd  kernel-cmdline.conf
+f86ef35730b89bcc8160c08db7a7fcd0970adf60c0b77af68bac397de49c0d1783e6b8db1762380c9bf874aff2d030c6f44ecb75c803d69e79ede11376409369  xorg.conf
+"

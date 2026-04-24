@@ -1,0 +1,38 @@
+From 445dd03e6d4c8ba8bbc0525d82f77ede2f89355e Mon Sep 17 00:00:00 2001
+From: Nathan Chancellor <nathan@kernel.org>
+Date: Fri, 21 Jan 2022 14:15:08 -0700
+Subject: [PATCH 3/3] WIP: arch/powerpc/boot: Add '-z norelro'
+
+ld.bfd defaults to '-z norelro', whereas ld.lld defaults to '-z relro',
+which results in an error when building cuImages:
+
+  ld.lld: error: section: .dynamic is not contiguous with other relro sections
+
+Commit a538d184e3f0 ("powerpc/boot: Move the .got section to after the
+.dynamic section") previously worked around this in the boot wrapper by
+shuffling the sections but other areas of the kernel have just disabled
+the relro program header altogether (see commit 3b92fa7485eb ("arm64:
+link with -z norelro regardless of CONFIG_RELOCATABLE") and
+commit 0cda9bc15dfc ("ARM: 9038/1: Link with '-z norelro'")).
+
+Signed-off-by: Nathan Chancellor <nathan@kernel.org>
+---
+ arch/powerpc/boot/wrapper | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/powerpc/boot/wrapper b/arch/powerpc/boot/wrapper
+index 2a28695d5bd6..1e4f4fbd3948 100755
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -531,7 +531,7 @@ if [ "$platform" != "miboot" ]; then
+         text_start="-Ttext $link_address"
+     fi
+ #link everything
+-    $ld -m $format -T $lds $text_start $pie $nodl $nowarn $rodynamic $notext -o "$ofile" $map \
++    $ld -m $format -T $lds $text_start $pie $nodl $nowarn $rodynamic $notext -z norelro -o "$ofile" $map \
+ 	$platformo $tmp $object/wrapper.a
+     rm $tmp
+ fi
+-- 
+2.53.0
+

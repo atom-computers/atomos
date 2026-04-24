@@ -1,0 +1,81 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=device-acer-aspire1
+pkgdesc="Acer Aspire 1"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	linux-postmarketos-qcom-sc7180
+	postmarketos-base
+	soc-qcom-sc7180
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-ucm
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	ucm/sc7180.conf
+	ucm/Acer-Aspire-1/init.conf
+	ucm/Acer-Aspire-1/HiFi.conf
+	ucm/Acer-Aspire-1/Acer-Aspire-1.conf
+	ucm/Acer-Aspire-1/DP.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+ucm() {
+	pkgdesc="UCM files for Acer Aspire 1"
+	install_if="$pkgname=$pkgver-r$pkgrel alsa-ucm-conf"
+
+	install -Dm644 -t "$subpkgdir"/usr/share/alsa/ucm2/Qualcomm/sc7180/ \
+		"$srcdir"/sc7180.conf
+
+	install -Dm644 -t "$subpkgdir"/usr/share/alsa/ucm2/Qualcomm/sc7180/Acer-Aspire-1/ \
+		"$srcdir"/init.conf \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/Acer-Aspire-1.conf \
+		"$srcdir"/DP.conf
+
+	mkdir -p "$subpkgdir"/usr/share/alsa/ucm2/conf.d/SC7180/
+	ln -s /usr/share/alsa/ucm2/Qualcomm/sc7180/sc7180.conf \
+		"$subpkgdir"/usr/share/alsa/ucm2/conf.d/SC7180/SC7180.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="Modem, WiFi, Bluetooth and GPU Firmware"
+	depends="
+		firmware-acer-aspire1
+		firmware-qcom-adreno-a630
+		linux-firmware-ath10k
+		linux-firmware-qca
+		soc-qcom-sc7180-nonfree-firmware-woa
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+9f3a50cf2aa26fa421101800cf954cf80a2a3ca25f0ef567932621d525df755f8a6b06e79b82365f62aa79674b4942c4b2db81b596aad70d735f0332b7f2a4bd  deviceinfo
+d77c87adffec9d5f5a5d0d87e05aceefbcd42d112d3ed6068ab23566b21e52046018c8e0c9c1f5165c58f43b370bbbd632a45b2d9e397a35fc74563930639db0  kernel-cmdline.conf
+99b3c6fee1e4088ad0246170b6884c5f342893efa4d4846c4e9fa47fbf58f2dc655b8379f465e7d690621630804634533392254fc4305fea6d292a9d5eb4795a  modules-initfs
+0626518d52fb56b80115e333030abe409fb5ca13aa7c13387e3f41e7d34c3b7c7da3ff06dd7062b79b5472f93119100bffa98f32f05f530623ccca7282777302  sc7180.conf
+ee33efa68a091f47ecaf51fc05f43fb7d5c62ec3eeaacb917dc1438edc4636eaba52c336645bf8a555b68b366a7dc40baf55895595ac7ac66cdeaa7ede86a72f  init.conf
+aa02be162bf7d17396c19f457a73b887b23ac3aaa43543532c2f94d45d5ecfe600a4ae52d6dc43ccfd33ca3fa817533187fb895623b68e3f65150a6db0adc418  HiFi.conf
+e9b3e1f2c3ad8dcbafd3420aa203da0b0d45098d2a20abaae0cdca77e64f9f51bd329f11a4777f66fe777ad1ea4c41b7749b4fb9bb6beb63a55a5af58f8c76c4  Acer-Aspire-1.conf
+08c6b1bd8685bb47cfebe3f3cc38f2cb6f04c95498dc1fe2b4dbff08a563cf51b5933c20a6d3cae021af80afe61aa32ce7550687eec71a89bd1ae8791ae4c5fb  DP.conf
+"

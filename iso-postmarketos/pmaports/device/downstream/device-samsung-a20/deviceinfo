@@ -1,0 +1,32 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy A20"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-a20"
+deviceinfo_year="2019"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1560"
+
+# Bootloader related
+deviceinfo_flash_method="heimdall-bootimg"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_flash_heimdall_partition_kernel="boot"
+deviceinfo_flash_heimdall_partition_rootfs="system"
+
+# Samsung Electronics Co., Ltd
+deviceinfo_usb_idVendor="0x04e8"
+# Galaxy (MTP)
+deviceinfo_usb_idProduct="0x6860"

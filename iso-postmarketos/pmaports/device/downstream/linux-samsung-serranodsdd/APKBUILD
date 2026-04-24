@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/arch/arm/configs/{samsung_serrano_defconfig, msm8930_serrano_eur_3g_defconfig}
+
+pkgname=linux-samsung-serranodsdd
+pkgver=3.4.113
+pkgrel=6
+pkgdesc="Samsung Galaxy S4 Mini (dual sim) kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="samsung-serranodsdd"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+
+# Source
+_repository="android_kernel_samsung_msm8930-common"
+_commit="0c7b2079e9ba8f945ea444bad393c8d7f8b099cc"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_msm-fix-perf_trace_counters.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+a89f9da68be6cf3b0bc77a9d70519b4ffc4ad332a53bfb35facf0e8ae418b7f1870fc1596c9305c596f7a0353be82f7eff0e211a32e330d0dd20c98398ab2826  linux-samsung-serranodsdd-0c7b2079e9ba8f945ea444bad393c8d7f8b099cc.tar.gz
+e52909c230a9bf376046a61194e3e1f9be289dad8ec9e85c817bf3d329a97bb4c9e41f47d888f9a9dc1218b86b17c092dfe70c55b76b009ecd4012e6fd00f6a2  config-samsung-serranodsdd.armhf
+f85ced49ee2f2461adea68dac0a10452aa809a7d41d869092d94eb085344919a9a385dec0c48011f4601ca4f441700f7fe49075c7eca4fb2d66b01f7d413ccb7  01_msm-fix-perf_trace_counters.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

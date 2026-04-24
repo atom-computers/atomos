@@ -1,0 +1,46 @@
+maintainer=""
+pkgname=firmware-asus-z010d
+pkgver=4
+pkgrel=0
+pkgdesc="Firmware for Asus Zenfone Max ZC550KL"
+url="https://gitlab.com/camillathechicken/firmware-max"
+subpackages="$pkgname-wcnss-nv:wcnss_nv $pkgname-venus"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="pil-squasher"
+
+_tag="v0.1"
+_repo="firmware-max"
+
+source="$pkgname-$_tag.tar.gz::https://gitlab.com/camillathechicken/$_repo/-/archive/$_tag/$_repo-$_tag.tar.gz"
+builddir="$srcdir/$_repo-$_tag"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	pil-squasher venus2.mbn venus.mdt
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="Asus Zenfone Max ZC550KL WiFi/BT firmware configuration"
+	replaces="firmware-asus-z010d-wcnss"
+	install -Dm644 "$builddir"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+venus() {
+	pkgdesc="Asus Zenfone Max ZC550KL video firmware"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to link venus.mbn to venus.mdt
+	# Older kernels look for venus.mdt, newer ones directly for venus.mbn
+	install -Dm644 "$builddir"/venus2.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mbn
+	ln -s venus.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mdt
+}
+
+sha512sums="870c4835de86aac68f29249d6f1545dc8b9ccdb4c3a19ed19eb3429c5d0ab40ed3ffceba36bf54b69a9e3ca2170fde66b2e357a8686580865bfa38e8b99e0cd6  firmware-asus-z010d-v0.1.tar.gz"

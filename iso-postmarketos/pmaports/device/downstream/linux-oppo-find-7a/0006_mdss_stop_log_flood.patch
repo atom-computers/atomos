@@ -1,0 +1,25 @@
+--- android_kernel_oppo_msm8974/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c.orig	2019-07-02 22:24:37.259764000 +0200
++++ android_kernel_oppo_msm8974/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c	2019-08-25 14:52:09.260796927 +0200
+@@ -685,10 +685,10 @@ int mdss_mdp_cmd_kickoff(struct mdss_mdp
+ 		return -ENODEV;
+ 	}
+ 
+-	if (ctx->intf_stopped) {
+-		pr_err("ctx=%d stopped already\n", ctx->pp_num);
+-		return -EPERM;
+-	}
++	//if (ctx->intf_stopped) {
++	//	pr_err("ctx=%d stopped already\n", ctx->pp_num);
++	//	return -EPERM;
++	//}
+ 
+ 	mdss_mdp_ctl_perf_set_transaction_status(ctl,
+ 		PERF_HW_MDP_STATE, PERF_STATUS_BUSY);
+@@ -889,6 +890,7 @@ panel_events:
+ 	}
+ 	pr_debug("%s: turn off panel\n", __func__);
+ 	memset(ctx, 0, sizeof(*ctx));
++	ctx->intf_stopped = 1;
+ 	ctl->priv_data = NULL;
+ 
+ 	ctl->stop_fnc = NULL;

@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos8890-hero2lte_defconfig
+
+pkgname=linux-samsung-herolte
+pkgver=3.18.140
+pkgrel=7
+pkgdesc="Samsung Galaxy S7 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-herolte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool-exynos"
+
+# Source - use Ivan Meler's 3.18 upstream kernel
+_repository="android_kernel_samsung_universal8890"
+_commit="57884d864fb572642fcf84abf13b099db7efc5b8"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/8890q/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-kstrtobool_from_user.patch
+	02-fix-wifi-firmware-path.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Build dt image with exynos dtbtool
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype 0x217584da \
+		-o "arch/arm64/boot/dt.img" \
+		"arch/arm64/boot/dts/exynos8890-herolte_eur_open_04.dtb" \
+		"arch/arm64/boot/dts/exynos8890-herolte_eur_open_08.dtb" \
+		"arch/arm64/boot/dts/exynos8890-herolte_eur_open_09.dtb"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Copy the in-tree DTBH block image
+	install -Dm644 "$builddir/arch/arm64/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+e7337d87dbc067a0a9cfe8fab8aac41408e5d54b8b138ca01309f5b9a65477ff8faaa995ee1957b664c195a3b9020b33f525864b01b1516dab15f8e2157343d5  linux-samsung-herolte-57884d864fb572642fcf84abf13b099db7efc5b8.tar.gz
+38ff2c5e6d654c5bd7ee900a6f84c8a836499c224bee372bf64b97e4d89e94efeff9d96a02ad8c3f1a6eea3ac917507ecb3bfd030f12584613303f799a01f7ef  config-samsung-herolte.aarch64
+7b0687165fa854c9c60944487cc7ea87758af8612f10125c22643743284d9abcc17c6a40853d05da2e27313a4e830c995a876b306f1488a2fcb72c3cbed3a8ae  01-kstrtobool_from_user.patch
+ffef99094b44893d07aedf3bbf12b03f2c26fb93be4eb179ade9552ae82be6680daca06b6fc0f95064ef08fd94ef4a0b192a94f5065314a4608de8b8c413d86e  02-fix-wifi-firmware-path.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

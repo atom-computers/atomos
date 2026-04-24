@@ -1,0 +1,53 @@
+diff --git a/etc/sway_hrdl/sway/config.orig b/etc/sway_hrdl/sway/config
+index 0937a24bb7..bdbc0e5ddf 100644
+--- a/etc/sway_hrdl/sway/config.orig
++++ b/etc/sway_hrdl/sway/config
+@@ -25,7 +25,7 @@ font pango:Noto Sans 20
+ 
+ ### Output configuration
+ output * bg #FFFFFF solid_color
+-output * scale 1
++output * scale 1.5
+ 
+ gaps inner 5
+ gaps outer 0
+diff --git a/bin/sway_rotate.sh.orig b/bin/sway_rotate.sh
+index 280fd83015..c87676069b 100755
+--- a/bin/sway_rotate.sh.orig
++++ b/bin/sway_rotate.sh
+@@ -13,7 +13,7 @@ startlisgd() {
+ }
+ 
+ rotnormal() {
+-	swaymsg -- output "-" transform 0 scale 1
++	swaymsg -- output "-" transform 0
+ 	focused_name="$(focusedname)"
+ 	swaymsg -- input type:touch map_to_output "$focused_name"
+ 	swaymsg -- input type:tablet_tool map_to_output "$focused_name"
+@@ -22,7 +22,7 @@ rotnormal() {
+ }
+ 
+ rotleft() {
+-	swaymsg -- output "-" transform 90 scale 1
++	swaymsg -- output "-" transform 90
+ 	focused_name="$(focusedname)"
+ 	swaymsg -- input type:touch map_to_output "$focused_name"
+ 	swaymsg -- input type:tablet_tool map_to_output "$focused_name"
+@@ -31,7 +31,7 @@ rotleft() {
+ }
+ 
+ rotright() {
+-	swaymsg -- output "-" transform 270 scale 1
++	swaymsg -- output "-" transform 270
+ 	focused_name="$(focusedname)"
+ 	swaymsg -- input type:touch map_to_output "$focused_name"
+ 	swaymsg -- input type:tablet_tool map_to_output "$focused_name"
+@@ -40,7 +40,7 @@ rotright() {
+ }
+ 
+ rotinvert() {
+-	swaymsg -- output "-" transform 180 scale 1
++	swaymsg -- output "-" transform 180
+ 	focused_name="$(focusedname)"
+ 	swaymsg -- input type:touch map_to_output "$focused_name"
+ 	swaymsg -- input type:tablet_tool map_to_output "$focused_name"

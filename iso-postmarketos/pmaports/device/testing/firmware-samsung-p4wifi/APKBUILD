@@ -1,0 +1,29 @@
+maintainer=""
+pkgname=firmware-samsung-p4wifi
+pkgver=2
+pkgrel=1
+_commit_fw="e0e37239ad4aead6316a6f913696a1c71dfbde7d"
+_commit_nvram="216172bddf07ea19fc05cc932ebb0b449a3d84d6"
+pkgdesc="Samsung Galaxy Tab 10.1 Firmware"
+url="https://github.com/Decatf"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit_fw-fw.tar.gz::https://github.com/Decatf/android_device_samsung_p4-common/archive/$_commit_fw.tar.gz
+	$pkgname-$_commit_nvram-nvram.tar.gz::https://github.com/Decatf/android_vendor_samsung_p4wifi/archive/$_commit_nvram.tar.gz"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/android_device_samsung_p4-common-$_commit_fw"
+
+package() {
+	install -Dm644 wifi/bcmdhd_sta.bin \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd_sta.bin
+	install -Dm644 wifi/bcmdhd_sta.bin \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.bin
+
+	cd "$srcdir/android_vendor_samsung_p4wifi-$_commit_nvram"
+	install -Dm644 proprietary/etc/wifi/nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_net.txt
+	install -Dm644 proprietary/etc/wifi/nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.txt
+}
+sha512sums="81bd67e7153b73c7ba63e546fecf222e9065b9aa6d99a1ea78046f2c6e9ad0a255b4e12f5f57b23584d3a4b5e5ff19416f2fcdf09def7aba715bdb9f34d72604  firmware-samsung-p4wifi-e0e37239ad4aead6316a6f913696a1c71dfbde7d-fw.tar.gz
+20eaa172a65ae31b8f95a81c22f2e6e768c6cb8828253313a5d4d55703a476e7ad57b6d430902caf980df24631144fa2a862f0f051c4485dae93dbaf851c2647  firmware-samsung-p4wifi-216172bddf07ea19fc05cc932ebb0b449a3d84d6-nvram.tar.gz"

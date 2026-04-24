@@ -1,0 +1,37 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=oem-nvidia
+pkgdesc="NVIDIA device support"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	linux-firmware-nvidia
+"
+subpackages="
+	$pkgname-libva
+"
+source="
+	00-oem-nvidia.modules
+"
+
+package() {
+	mkdir -p "$pkgdir"
+	install -Dm644 00-oem-nvidia.modules \
+		-t "$pkgdir"/usr/share/mkinitfs/modules
+}
+
+libva() {
+	pkgdesc="libva support for NVIDIA gpus"
+	install_if="$pkgname=$pkgver-r$pkgrel libva"
+	depends="mesa-va-gallium"
+
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+75517c7de27376f65973d36196c2635103c5806cb6fcf3d4aea08183ae3b037b5c861216ae341a731c395841da5d675365de7e850c2c5af917b3fae7ea4c4d92  00-oem-nvidia.modules
+"

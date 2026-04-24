@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-hlte
+pkgdesc="Samsung Galaxy Note 3"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8974
+	lk2nd-msm8974
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8974
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+source="
+	bt-module-deps.conf
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU, Wi-Fi, Bluetooth firmware"
+	depends="
+		firmware-qcom-adreno-a330
+		firmware-samsung-hlte-bt
+		firmware-samsung-hlte-wifi
+		msm-firmware-loader
+		msm-modem
+	"
+
+	mkdir "$subpkgdir"
+	# This config makes sense only if non-free firmware is installed
+	install -Dm644 "$srcdir"/bt-module-deps.conf \
+		"$subpkgdir"/usr/lib/modprobe.d/bt-module-deps.conf
+}
+
+sha512sums="
+6cef5f8ae1785ac16e6fe84bfc861ac50cdfb94db35d764f44a25c960e123cb82f6e56f45362a5340c62a3d5ac225f2689afd4f6964cb88305a0892ba44214f0  bt-module-deps.conf
+9d9113b73a4f9775929f820b630475a890cdaa8bb815ac60f6f175ac46b7a59baa0f480778cabdab108fa8d8fedc71b8507ec0ce476ae322e1d1a5272d726fff  deviceinfo
+48518cc782d7ec0dd469c5301975546a794fea49bd642436b1cdf65335d9a9e092ed6ba75a9c7fb95e85326c49499226c7e43ec820752793b8178c8635640635  kernel-cmdline.conf
+640f11d6cdea23ae5e183468aa9873f5ce091cac721d893866d5e46c19d77bcc6f5401cc0e6488c36d4da954fe94c3d7046f0bc2d299b656a06b540fab8d5e55  modules-initfs
+"

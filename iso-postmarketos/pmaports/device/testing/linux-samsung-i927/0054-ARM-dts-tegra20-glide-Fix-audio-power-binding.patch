@@ -1,0 +1,62 @@
+From 2dbda86d5f83841ad6904a75ae5a04f1241133fe Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Fri, 28 Jun 2019 22:54:20 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: Fix audio power binding
+
+The LDO definition in wm8994 node is used for internal LDOs, but not for
+powering the chip, so we use the fixed regulator to resolve this.
+All regulators of wm8994 are defined to suppress messages in dmesg.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index 6a85ab96b763..74edc637f4d1 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -908,12 +908,21 @@
+ 			compatible = "wlf,wm8994";
+ 			reg = <0x1a>;
+ 
++			DBVDD-supply = <&wlf_ldo>;
++			DCVDD-supply = <&wlf_ldo>;
++			AVDD1-supply = <&wlf_ldo>;
++			AVDD2-supply = <&wlf_ldo>;
++			CPVDD-supply = <&wlf_ldo>;
++			SPKVDD1-supply = <&wlf_ldo>;
++			SPKVDD2-supply = <&wlf_ldo>;
++
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 
+-			wlf,ldo1ena =  <&gpio TEGRA_GPIO(X, 5) GPIO_ACTIVE_HIGH>;
+-			wlf,gpio-cfg = <0xA101 0 0 0 0 0 0 0 0 0 0>;
++			/* Probably doesn't make sense because typoed in driver */
++			wlf,ldoena-always-driven;
+ 
++			wlf,gpio-cfg = <0xA101 0 0 0 0 0 0 0 0 0 0>;
+ 		};
+ 	};
+ 
+@@ -1798,6 +1807,16 @@
+ 			gpio = <&gpio TEGRA_GPIO(R, 0) GPIO_ACTIVE_HIGH>;
+ 			enable-active-high;
+ 		};
++
++		wlf_ldo: regulator@9 {
++			compatible = "regulator-fixed";
++			reg = <9>;
++			regulator-name = "wlf-wm8994-ldo";
++			gpio = <&gpio TEGRA_GPIO(X, 5) GPIO_ACTIVE_HIGH>;
++			regulator-enable-ramp-delay = <125000>;
++			regulator-boot-on;
++			enable-active-high;
++		};
+ 	};
+ 
+ 	sound {
+-- 
+2.22.0
+

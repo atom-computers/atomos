@@ -1,0 +1,11 @@
+--- a/drivers/gpu/msm2/kgsl_events.c
++++ b/drivers/gpu/msm2/kgsl_events.c
+@@ -14,7 +14,7 @@
+ #include <linux/slab.h>
+ #include <linux/list.h>
+ #include <linux/module.h>
+-#include <kgsl_device.h>
++#include "kgsl_device.h"
+ 
+ #include "kgsl_trace.h"
+ #include "adreno.h"

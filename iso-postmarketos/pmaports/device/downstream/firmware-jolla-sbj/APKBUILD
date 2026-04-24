@@ -1,0 +1,71 @@
+pkgname=firmware-jolla-sbj
+pkgver=1
+pkgrel=0
+_commit="37d1d41a521f7b5258f217b8ac4aa5f8b9b4fe3b"
+pkgdesc="Firmware files for Jolla 1 (sbj)"
+subpackages="$pkgname-modem $pkgname-wlan"
+url="https://jolla.com"
+arch="armv7"
+license="proprietary"
+makedepends="rpm2cpio"
+_rpm_commit="2f37d840cc7f52eb38b0613a832a55b216d89bd5"
+_rpm_version="0.2.7-1.3.6"
+_rpm_file="sbj-wlan-$_rpm_version.jolla.armv7hl.rpm"
+source="
+	$_rpm_file::https://gitlab.com/postmarketeer/jolla-sbj-wlan/-/raw/$_rpm_commit/$_rpm_file
+	https://gitlab.com/postmarketeer/jolla-sbj-firmware/-/archive/$_commit/jolla-sbj-firmware-$_commit.tar.gz
+"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/jolla-sbj-firmware-$_commit"
+
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05
+	wcnss.mdt"
+_files_prima="
+	WCNSS_cfg.dat
+	WCNSS_qcom_cfg.ini
+	WCNSS_qcom_wlan_nv0.bin"
+_rpm_extract_path="./system/etc/firmware/wlan/prima/WCNSS_cfg.dat"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+modem() {
+	pkgdesc="Jolla 1 (sbj) Modem firmware"
+
+	# /lib/firmware/postmarketos
+	cd "$builddir"
+	for _i in modem.* modem_fw.* tzapps.* q6.* ; do
+		install -D -m644 "$_i" \
+			"$subpkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+wlan() {
+	pkgdesc="Jolla 1 (sbj) WiFi firmware"
+	depends="wcnss-wlan"
+
+	# /lib/firmware/postmarketos
+	cd "$builddir"
+	for _i in $_files; do
+		install -D -m644 "$_i" \
+			"$subpkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	rpm2cpio "$srcdir/$_rpm_file" | cpio -i --to-stdout \
+		"$_rpm_extract_path" > wlan/prima/WCNSS_cfg.dat
+
+	# /lib/firmware/postmarketos/wlan/prima/
+	for _i in $_files_prima; do
+		echo $_i
+		install -D -m644 "wlan/prima/$_i" \
+			"$subpkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+
+}
+
+sha512sums="
+4c582883b609b5cd312b48213ac633e8c65ac3ea310c6016c01da769440f694f42c22f06f13599ce12e9992afe150de364fcaf2f816d9d678d019d00019f007b  sbj-wlan-0.2.7-1.3.6.jolla.armv7hl.rpm
+287fda592eeb117d158ecea9bfb72d2e6806a77a41dd62b3aaa1f2b0d83775ee5e7533efbc55a132339f173db5553ed2d508e91fd033358d24285dc48410a8d3  jolla-sbj-firmware-37d1d41a521f7b5258f217b8ac4aa5f8b9b4fe3b.tar.gz
+"

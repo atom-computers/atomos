@@ -1,0 +1,21 @@
+maintainer=""
+pkgname=qca-swiss-army-knife
+pkgver=0_git20220701
+pkgrel=1
+_commit="1b102ba5126bbbdae0efa6f568ac2467392b49f4"
+pkgdesc="Utilities to help and debug Qualcomm Atheros wireless driver development"
+url="https://github.com/qca/qca-swiss-army-knife"
+arch="all"
+license="ISC"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+depends="python3"
+options="!check" # No tests
+
+package() {
+	find "$builddir"/tools/scripts -type f -exec install -Dm755 {} -t "$pkgdir"/usr/bin \;
+}
+
+sha512sums="
+e41d678f208cf09f02e78ebf4e1295837a43c2fd031d9f3b2be962772a7cdf2e2296f9751855847707ae5348b3da46f37f9c0aa858f7b7912cfd56e534f28f2f  qca-swiss-army-knife-1b102ba5126bbbdae0efa6f568ac2467392b49f4.tar.gz
+"

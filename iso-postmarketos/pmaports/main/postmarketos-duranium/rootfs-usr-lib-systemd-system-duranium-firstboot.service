@@ -1,0 +1,13 @@
+[Unit]
+Description=Duranium First Boot Setup
+ConditionPathExists=!/etc/default_user
+After=plymouth-quit.service
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/duranium/first-boot
+
+[Install]
+WantedBy=multi-user.target
+RequiredBy=display-manager.service

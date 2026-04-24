@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-w5
+pkgdesc="L70"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-lg-w5 mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+0c76a14e01dba97a0b6950e1d65cf4d55fec7c88f22d99b3c8c7957ec5fb348212233a106ba6d5acc6f927c613aef04b60046769883fe9492957883125640f50  deviceinfo
+7203789386337fc4c255bb3d1fef2906add1f41ee1973ab8ddf9fe5776a1464a32c48e7f9987e0d618d1243030082e57731abe401fb38f332ba5e400a248de64  kernel-cmdline.conf
+"

@@ -1,0 +1,109 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jianhua Lu <lujianhua000@gmail.com>"
+pkgname=device-xiaomi-elish
+pkgdesc="Xiaomi Mi Pad 5 Pro"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	hexagonrpcd>=0.3.2-r3
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-qbootctl
+"
+makedepends="devicepkg-dev"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
+source="
+	81-libssc-xiaomi-elish.rules
+	alsa-ucm-conf/elish.conf
+	alsa-ucm-conf/HiFi.conf
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+"
+
+subpackages="
+	$pkgname-kernel-boe:kernel_boe
+	$pkgname-kernel-csot:kernel_csot
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-openrc
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# device-specific alsa ucm conf
+	install -Dm644 "$srcdir/elish.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Xiaomi/elish/elish.conf"
+
+	install -Dm644 "$srcdir/HiFi.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Xiaomi/elish/HiFi.conf"
+
+	mkdir -p "$pkgdir/usr/share/alsa/ucm2/conf.d/sm8250"
+	ln -s ../../Xiaomi/elish/elish.conf \
+		"$pkgdir/usr/share/alsa/ucm2/conf.d/sm8250/Xiaomi Mi Pad 5 Pro.conf"
+
+	install -Dm644 "$srcdir"/81-libssc-xiaomi-elish.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-xiaomi-elish.rules
+
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+}
+
+kernel_boe() {
+	pkgdesc="BOE Panel. To know which panel your device use and the status of the port, Visit the Mi Pad 5 Pro wiki page: https://wiki.postmarketos.org/wiki/Xiaomi_Mi_Pad_5_Pro_(xiaomi-elish)"
+	depends="linux-postmarketos-qcom-sm8250"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_csot() {
+	pkgdesc="CSOT Panel. To know which panel your device use and the status of the port, Visit the Mi Pad 5 Pro wiki page: https://wiki.postmarketos.org/wiki/Xiaomi_Mi_Pad_5_Pro_(xiaomi-elish)"
+	depends="linux-postmarketos-qcom-sm8250"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for GPU, WiFi, etc."
+	depends="
+		firmware-xiaomi-elish-adreno
+		firmware-xiaomi-elish-adsp
+		firmware-xiaomi-elish-cdsp
+		firmware-xiaomi-elish-cirrus
+		firmware-xiaomi-elish-hexagonfs
+		firmware-xiaomi-elish-initramfs
+		firmware-xiaomi-elish-slpi
+		firmware-xiaomi-elish-touchscreen
+		firmware-xiaomi-elish-venus
+		linux-firmware-ath11k
+		linux-firmware-qca
+		"
+	mkdir "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="hexagonrpcd-openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+d0e8f2e378130130ac72703aed957f7638e2dd75acf4aa421e1b4592c6cb6d296b652db0d9c242be4e56326760ce18d28c1e36ae553d0b7a7f91e12ab0353f22  81-libssc-xiaomi-elish.rules
+7b5def03dc5da28c7449719f0619f9d9ddbd988235b8591304ae4fea0989189d65ca1bc0d43664115f595137ba7896359b1b5f48fd6e350cac5d41ef9b1df869  elish.conf
+ed9a509f70715fd6c6614ee5fddbdb0ed2aa69f4a2983af9dbec26bdeb18fe93e3d1a65e03c618550c61da1416c79eb9440fb1bcd4961f85059b27904c4395cc  HiFi.conf
+436532a56ff43d6b2dc0f98dbe7db107d4f5be6d6f107e2bd26c35aa0f7c43df2fc26c960e780e4fc8444f4b56c38234ee2641cb16b4403f2c76aabc1b1a9b2f  deviceinfo
+2c251920d837bfef95f1ba5f768cd5365d2efce9f1b6454ceed574a16e04d29b7c8e866a9e811abd4699ce57c73962421a1859799f76c24c157b87b21f9039f3  kernel-cmdline.conf
+7d5a1b8c43b15d1711225f4680a67f365ca6515ddbf8239902c7886a20cf06d7da0f195760108ddeb4b039866e1c415981d413dee15eed4423a256d40a46a516  hexagonrpcd.confd
+c76604b9449dd471645eed22fdfbf167c64336e1833fbd5d37efe1ae331afe608f36099e045fdf0b3b72d62d57bc8fa15a07f6300d167963ecbe4eac6ebff83c  modules-initfs
+"

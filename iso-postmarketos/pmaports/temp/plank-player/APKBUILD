@@ -1,0 +1,52 @@
+# Has no release yet, will be moved to aports with the next KDE Plasma release where it will be included
+
+# The group tag is just to easily find this APKBUILD by some scripts for automation
+# group=kde-plasma
+maintainer="team/kde <bribbers@disroot.org>"
+pkgname=plank-player
+pkgver=6.6.80_git20260304
+pkgrel=0
+_commit="0772b39e49ffec589eea61bd0b7e0702ed710cf8"
+pkgdesc="Multimedia Player for playing local files on Plasma Bigscreen allowing navigation with just a remote control"
+url="https://invent.kde.org/plasma/plank-player"
+# armhf blocked by qt6-qtdeclarative
+arch="all !armhf"
+license="BSD-2-Clause AND (GPL-2.0-only OR GPL-3.0-only) AND CC0-1.0"
+depends="kirigami"
+# openmp can be removed once kirigami is fixed in Alpine
+makedepends="
+	extra-cmake-modules
+	ki18n-dev
+	kirigami-dev
+	openmp-dev
+	qt6-qtbase-dev
+	qt6-qtdeclarative-dev
+	qt6-qtmultimedia-dev
+	samurai
+	"
+subpackages="$pkgname-lang"
+case "$pkgver" in
+	*.90*) _rel=unstable;;
+	*) _rel=stable;;
+esac
+_repo_url="https://invent.kde.org/plasma/plank-player.git"
+source="https://invent.kde.org/plasma/plank-player/-/archive/$_commit/plank-player-$_commit.tar.gz"
+options="!check" # No tests
+
+builddir="$srcdir/plank-player-$_commit"
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib
+	cmake --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+f423dd4bb08dc588903c46a5e9de564b20a3e74c3ca202b8dcc1878c589ffaeeccb42d44eb213a858f9a812bbf49716ba40ec9b0864095bb9d3ce784f9df56ed  plank-player-0772b39e49ffec589eea61bd0b7e0702ed710cf8.tar.gz
+"

@@ -1,0 +1,68 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+# APKBUILD based on linux-postmarketos-mainline
+# See: https://gitlab.postmarketos.org/postmarketOS/pmaports/issues/153
+#
+_flavor=google-crosshatch-mainline
+_config="config-$_flavor.$CARCH"
+
+maintainer=""
+pkgname=linux-$_flavor
+pkgver=5.3_rc5
+pkgrel=10
+arch="aarch64"
+_carch="arm64"
+pkgdesc="Google Pixel 3 XL kernel fork, close to mainline"
+url="https://kernel.org/"
+license="GPL2-2.0-only"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev openssl-dev file bison flex"
+options="!strip !check !tracedeps
+		pmb:cross-native
+"
+
+_repository="linux"
+_commit="9c9b87cec239101274451cc9c086da60108f9fda"
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Pixel3Dev/$_repository/archive/$_commit.tar.gz
+	config-$_flavor.aarch64
+	0001-linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+"
+
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	# V=1: workaround for pma#1990
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" \
+		CFLAGS_MODULE=-fno-pic V=1
+}
+
+package() {
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+
+sha512sums="
+1ce235689d7ce0b40be203cb16c1bdfe9bc7b2c5e793a942afc5ea4f3268a0a15b684d9c4017a87916d989d8592a96a4223976c95bf7fcca603e71d2f20fee86  linux-google-crosshatch-mainline-9c9b87cec239101274451cc9c086da60108f9fda.tar.gz
+858f75f29fc18b600f2a8359c69d53628665f926fa3b06010a9cb6b377555e4786b2967c98a9a752277dae1071bfb1980f6422e1d72f4661da4b652a342004f6  config-google-crosshatch-mainline.aarch64
+27827877040007fc1c4c719f7e2e19e5c272d44972415cfc53feba0313d87e4074f8204bdb13cbc5fe21ea61bf595314b68f10c081e7b7bac3c888b60f008acf  0001-linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+"

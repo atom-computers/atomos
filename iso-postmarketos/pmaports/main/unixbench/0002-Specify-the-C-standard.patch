@@ -1,0 +1,23 @@
+From 66dc9854073e0683219b7fd8f4b568d5b56e7447 Mon Sep 17 00:00:00 2001
+From: Suyun <suyun@aosc.io>
+Date: Sat, 5 Jul 2025 15:06:29 +0800
+Subject: [PATCH] Specify the C standard to avoid errors from new compilers
+
+---
+ Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 3169c03..31202f4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -85,7 +85,8 @@ else
+ 
+   ## gcc optimization flags
+   ## (-ffast-math) disables strict IEEE or ISO rules/specifications for math funcs
+-  OPTON = -O3 -ffast-math
++  ## (-std=c89) specifies the C standard to avoid errors from new compilers
++  OPTON = -O3 -ffast-math -std=c89
+ 
+   ## OS detection.  Comment out if gmake syntax not supported by other 'make'. 
+   OSNAME:=$(shell uname -s)

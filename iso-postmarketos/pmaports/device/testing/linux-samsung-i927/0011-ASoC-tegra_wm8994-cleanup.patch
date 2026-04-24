@@ -1,0 +1,211 @@
+From 3ad800934b0affed3c881112897b8014d17b29c6 Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Mon, 28 Jan 2019 11:35:06 +0300
+Subject: [PATCH] ASoC: tegra_wm8994: cleanup
+
+Remove unnecessary functions. Also, S/PDIF support
+is not needed.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ sound/soc/tegra/Kconfig        |   3 -
+ sound/soc/tegra/tegra_wm8994.c | 155 ---------------------------------
+ 2 files changed, 158 deletions(-)
+
+diff --git a/sound/soc/tegra/Kconfig b/sound/soc/tegra/Kconfig
+index f1018b271314..a77e83692bdc 100644
+--- a/sound/soc/tegra/Kconfig
++++ b/sound/soc/tegra/Kconfig
+@@ -92,9 +92,6 @@ config SND_SOC_TEGRA_WM8994
+ 	depends on SND_SOC_TEGRA && I2C
+ 	select SND_SOC_TEGRA20_I2S if ARCH_TEGRA_2x_SOC
+ 	select SND_SOC_TEGRA30_I2S if ARCH_TEGRA_3x_SOC
+-	select SND_SOC_TEGRA20_SPDIF if ARCH_TEGRA_2x_SOC
+-	select SND_SOC_TEGRA30_SPDIF if ARCH_TEGRA_3x_SOC
+-	select SND_SOC_SPDIF
+ 	select SND_SOC_TEGRA30_DAM if ARCH_TEGRA_3x_SOC
+ 	help
+ 	  Say Y or M here if you want to add support for SoC audio on Tegra
+diff --git a/sound/soc/tegra/tegra_wm8994.c b/sound/soc/tegra/tegra_wm8994.c
+index bf928d7f4813..87cb36df3bcf 100755
+--- a/sound/soc/tegra/tegra_wm8994.c
++++ b/sound/soc/tegra/tegra_wm8994.c
+@@ -138,117 +138,6 @@ static int tegra_wm8994_hw_params(struct snd_pcm_substream *substream,
+ 	return 0;
+ }
+ 
+-static int tegra_bt_sco_hw_params(struct snd_pcm_substream *substream,
+-					struct snd_pcm_hw_params *params)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+-	struct snd_soc_card *card = rtd->card;
+-	struct tegra_wm8994 *machine = snd_soc_card_get_drvdata(card);
+-	int srate, mclk, min_mclk;
+-	int err;
+-
+-	srate = params_rate(params);
+-	switch (srate) {
+-	case 11025:
+-	case 22050:
+-	case 44100:
+-	case 88200:
+-		mclk = 11289600;
+-		break;
+-	case 8000:
+-	case 16000:
+-	case 32000:
+-	case 48000:
+-	case 64000:
+-	case 96000:
+-		mclk = 12288000;
+-		break;
+-	default:
+-		return -EINVAL;
+-	}
+-	min_mclk = 64 * srate;
+-
+-	err = tegra_asoc_utils_set_rate(&machine->util_data, srate, mclk);
+-	if (err < 0) {
+-		if (!(machine->util_data.set_mclk % min_mclk))
+-			mclk = machine->util_data.set_mclk;
+-		else {
+-			dev_err(card->dev, "Can't configure clocks\n");
+-			return err;
+-		}
+-	}
+-
+-	err = snd_soc_dai_set_fmt(cpu_dai,
+-					SND_SOC_DAIFMT_DSP_A |
+-					SND_SOC_DAIFMT_NB_NF |
+-					SND_SOC_DAIFMT_CBS_CFS);
+-	if (err < 0) {
+-		dev_err(card->dev, "cpu_dai fmt not set\n");
+-		return err;
+-	}
+-
+-#ifdef CONFIG_ARCH_TEGRA_2x_SOC
+-	err = tegra20_das_connect_dac_to_dap(TEGRA20_DAS_DAP_SEL_DAC2,
+-					TEGRA20_DAS_DAP_ID_4);
+-	if (err < 0) {
+-		dev_err(card->dev, "failed to set dac-dap path\n");
+-		return err;
+-	}
+-
+-	err = tegra20_das_connect_dap_to_dac(TEGRA20_DAS_DAP_ID_4,
+-					TEGRA20_DAS_DAP_SEL_DAC2);
+-	if (err < 0) {
+-		dev_err(card->dev, "failed to set dac-dap path\n");
+-		return err;
+-	}
+-#endif
+-	return 0;
+-}
+-
+-static int tegra_spdif_hw_params(struct snd_pcm_substream *substream,
+-					struct snd_pcm_hw_params *params)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_card *card = rtd->card;
+-	struct tegra_wm8994 *machine = snd_soc_card_get_drvdata(card);
+-	int srate, mclk, min_mclk;
+-	int err;
+-
+-	srate = params_rate(params);
+-	switch (srate) {
+-	case 11025:
+-	case 22050:
+-	case 44100:
+-	case 88200:
+-		mclk = 11289600;
+-		break;
+-	case 8000:
+-	case 16000:
+-	case 32000:
+-	case 48000:
+-	case 64000:
+-	case 96000:
+-		mclk = 12288000;
+-		break;
+-	default:
+-		return -EINVAL;
+-	}
+-	min_mclk = 128 * srate;
+-
+-	err = tegra_asoc_utils_set_rate(&machine->util_data, srate, mclk);
+-	if (err < 0) {
+-		if (!(machine->util_data.set_mclk % min_mclk))
+-			mclk = machine->util_data.set_mclk;
+-		else {
+-			dev_err(card->dev, "Can't configure clocks\n");
+-			return err;
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+ static int tegra_hw_free(struct snd_pcm_substream *substream)
+ {
+ 	return 0;
+@@ -284,28 +173,6 @@ static struct snd_soc_dai_link tegra_wm8994_dai[] = {
+ 		// .codec_dai_name = "WM8994 PAIFRX",
+ 		.ops = &tegra_wm8994_ops,
+ 	},
+-/*
+-	{
+-		.name = "SPDIF",
+-		.stream_name = "SPDIF PCM",
+-		.codec_name = "spdif-dit.0",
+-		.platform_name = "tegra-pcm-audio",
+-		.cpu_dai_name = "tegra20-spdif",
+-		.codec_dai_name = "dit-hifi",
+-		.ops = &tegra_spdif_ops,
+-	},
+-*/
+-/*
+-	{
+-		.name = "BT-SCO",
+-		.stream_name = "BT SCO PCM",
+-		.codec_name = "spdif-dit.1",
+-		.platform_name = "tegra-pcm-audio",
+-		.cpu_dai_name = "tegra20-i2s.1",
+-		.codec_dai_name = "dit-hifi",
+-		.ops = &tegra_wm8994_bt_sco_ops,
+-	},
+-*/
+ };
+ 
+ static struct snd_soc_card snd_soc_tegra_wm8994 = {
+@@ -369,28 +236,6 @@ static int tegra_wm8994_driver_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	tegra_wm8994_dai[0].platform_of_node = tegra_wm8994_dai[0].cpu_of_node;
+-/*
+-	tegra_wm8994_dai[1].codec_of_node = of_parse_phandle(np,
+-						"nvidia,spdif-codec", 0);
+-	if (!tegra_wm8994_dai[1].codec_of_node) {
+-		dev_err(&pdev->dev,
+-			"Property 'nvidia,spdif-codec' missing or invalid\n");
+-		ret = -EINVAL;
+-		goto err;
+-	}
+-
+-	tegra_wm8994_dai[1].cpu_of_node = of_parse_phandle(np,
+-			"nvidia,spdif-controller", 0);
+-	if (!tegra_wm8994_dai[1].cpu_of_node) {
+-		dev_err(&pdev->dev,
+-			"Property 'nvidia,spdif-controller' missing or invalid\n");
+-		ret = -EINVAL;
+-		goto err;
+-	}
+-
+-	tegra_wm8994_dai[1].platform_of_node = tegra_wm8994_dai[1].cpu_of_node;
+-*/
+-
+ 	ret = tegra_asoc_utils_init(&machine->util_data, &pdev->dev);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "tegra_asoc_utils_init failed (%d)\n",
+-- 
+2.22.0
+

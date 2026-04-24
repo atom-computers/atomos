@@ -1,0 +1,30 @@
+diff --git a/drivers/leds/leds-s2mu005.c b/drivers/leds/leds-s2mu005.c
+index 1e8c0b70..d7d6ac3d 100644
+--- a/drivers/leds/leds-s2mu005.c
++++ b/drivers/leds/leds-s2mu005.c
+@@ -24,7 +24,9 @@
+ #include <linux/platform_device.h>
+ #include <linux/sec_batt.h>
+ 
++#ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS2
+ extern struct class *camera_class;
++#endif
+ struct device *flash_dev;
+ bool assistive_light = false;
+ #ifdef CONFIG_LEDS_SUPPORT_FRONT_FLASH
+@@ -1139,6 +1141,7 @@ int create_flash_sysfs(void)
+ {
+ 	int err = -ENODEV;
+ 
++#ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS2
+ 	if (IS_ERR_OR_NULL(camera_class)) {
+ 		pr_err("flash_sysfs: error, camera class not exist");
+ 		return -ENODEV;
+@@ -1149,6 +1152,7 @@ int create_flash_sysfs(void)
+ 		pr_err("flash_sysfs: failed to create device(flash)\n");
+ 		return -ENODEV;
+ 	}
++#endif
+ 
+ 	err = device_create_file(flash_dev, &dev_attr_rear_flash);
+ 	if (unlikely(err < 0)) {

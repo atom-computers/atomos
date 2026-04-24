@@ -1,0 +1,69 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+_flavor="postmarketos-qcom-msm8974"
+pkgname=linux-$_flavor
+pkgver=6.16.12
+pkgrel=0
+pkgdesc="Mainline Kernel fork for MSM8974 devices"
+arch="armv7"
+_carch="arm"
+url="https://github.com/msm8974-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+	xz
+	zstd
+"
+
+_config="config-$_flavor.$arch"
+_tag="v${pkgver/_/-}-msm8974"
+
+# Source
+source="
+	https://github.com/msm8974-mainline/linux/archive/$_tag/linux-$_tag.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-${_tag#v}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+6e67e6c86e36e235bad086ea2984c0885eb2e47264e667aa177df8ed7c29edbb23a866407dc59bdd39cfb95f6677e755a426eff485a93898c01997a6a6fcdd9c  linux-v6.16.12-msm8974.tar.gz
+61e14469e7997a61e461c88c1d363460c7b12bccaee5a010556fd77e6a08872e4df7c0265267e568a8ea292569ad8a68e7622b0d98d418b7d6f2c1af553087bf  config-postmarketos-qcom-msm8974.armv7
+"

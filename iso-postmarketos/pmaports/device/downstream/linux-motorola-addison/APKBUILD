@@ -1,0 +1,55 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/addison_defconfig
+
+pkgname=linux-motorola-addison
+pkgver=3.18.120
+pkgrel=3
+pkgdesc="motorola Motorola Moto Z Play kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-addison"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool"
+
+# Source
+_repository="artxplay_msm8953_addison"
+_commit="c2dcd33239fb09ba0f322ee6bfe3a8f1f6329c4c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/KB-E/$_repository/archive/$_commit.tar.gz
+	$_config
+	wireguard.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+5943439e2951c8857a3a41c806cd6f607c78872648d7826c1c4aa67b1c6bfb9500516899e9f7fd73bc7bf8e746ccb0fdb0712e047e8e53d28930121e6fe93cc4  linux-motorola-addison-c2dcd33239fb09ba0f322ee6bfe3a8f1f6329c4c.tar.gz
+53dd330941bed2f79963f0d3fdf5acfdf967be9983a461d3094d0cffc9b86258d3e67d210faa79723fbf94c781c382d497d499bba540747c85eb147bdc048dcb  config-motorola-addison.aarch64
+638c4b9887f14f0c6cbbd7bb042cc9ef142795a3e62e4f2e5ef8c4489f2d1129d0aa3d0ee1c20fdd8c08b56bee1405aca4fb65a882124b6cc3c31fd2bc90a8ba  wireguard.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

@@ -1,0 +1,22 @@
+From 6083916292864215fe4af6c0829186d5cc520f7f Mon Sep 17 00:00:00 2001
+From: Stefan Hansson <newbyte@postmarketos.org>
+Date: Mon, 6 May 2024 19:08:35 +0200
+Subject: [PATCH] Fix lzo piggy
+
+---
+ arch/arm/boot/compressed/piggy.lzo.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/compressed/piggy.lzo.S b/arch/arm/boot/compressed/piggy.lzo.S
+index a425ad95..236976d8 100644
+--- a/arch/arm/boot/compressed/piggy.lzo.S
++++ b/arch/arm/boot/compressed/piggy.lzo.S
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata, "a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.lzo"
+-- 
+2.45.0
+

@@ -1,0 +1,11 @@
+--- a/drivers/media/platform/exynos/fimc-is/fimc-is-sec-define.h
++++ b/drivers/media/platform/exynos/fimc-is/fimc-is-sec-define.h
+@@ -103,7 +103,7 @@
+ #define FIMC_IS_2P2_SETF			"setfile_2p2.bin"
+ #define FIMC_IS_COMPANION_MASTER_SETF			"companion_master_setfile.bin"
+ #define FIMC_IS_COMPANION_MODE_SETF			"companion_mode_setfile.bin"
+-#define FIMC_IS_FW_PATH				"/system/vendor/firmware/"
++#define FIMC_IS_FW_PATH				"/lib/firmware/postmarketos/"
+ #define FIMC_IS_FW_DUMP_PATH			"/data/"
+ 
+ #define FIMC_IS_FW_BASE_MASK			((1 << 26) - 1)

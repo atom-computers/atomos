@@ -1,0 +1,67 @@
+# Reference: https://github.com/LineageOS/android_kernel_xiaomi_sdm439/tree/lineage-20
+# Kernel config based on: arch/arm64/configs/lineageos_mi439_defconfig
+
+pkgname=linux-xiaomi-olive
+pkgver=4.9.337
+pkgrel=1
+pkgdesc="Xiaomi Redmi 8 kernel"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-olive"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_xiaomi_sdm439"
+_commit="2bcfae17be1b3e70d41ee89f6fed7825627d952b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_mdp3_ctrl_off.patch
+	01_fix_fbioput.patch
+	02-fix-xorg-mdss-update-fb-info.patch
+	03_framebuffer.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="
+491349581f0e0ffcbf59c20367f6d2e1a4f82d909b17398bc80db2711f543f845ddad4b8f0d0ae31f5a876e2ce1873315935700c1a42cd1f9abff1aa0d4253ae  linux-xiaomi-olive-2bcfae17be1b3e70d41ee89f6fed7825627d952b.tar.gz
+fb1c6eea21b075eaa20b95c63b18988315686b42e455c396c16ab782f6fc4edf80def5256a087b753d1f28af3e583e8ee5817acb32f4108e202dca425494998a  config-xiaomi-olive.aarch64
+e0eb25aec61dd342c0ccdc0d5afc3626416089ffbe797b57d134dd62036cc6285dda24e16e6b82f1c8dedce8bd5fd034e38f67b811362c67f13290114f58de18  00_fix_mdp3_ctrl_off.patch
+62c49b71f7570e23ac7cbf9be25dcddeb7957484b342e9010b8e7a0ae1a785c7db1803ca87970f7fcdd62c6eb3a0117a7ebc6bb773a793973a9218dcc389cd8b  01_fix_fbioput.patch
+be8852fe5ae159ed6e22845d3c4d7b9b4fb2a27dd0a60cecf9daa615ac461af8975186f4445842a3cff888011d91d8b913b3c8f922e36fbec50ec3dfeb95eda7  02-fix-xorg-mdss-update-fb-info.patch
+29ef1f5c52ad6982b24bb141178078338e638673c48e155edffb46b1472a6cc004ec2cc8fe86e47566c718352505c817efe1066c6bf703ea6e7b8a69a0eb1ddc  03_framebuffer.patch
+"

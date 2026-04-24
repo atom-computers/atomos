@@ -1,0 +1,22 @@
+pkgname=firmware-samsung-a7y18lte
+pkgver=1
+pkgrel=0
+_commit="05cd435745188e6d6f5bd4f3d1af851534b857d2"
+pkgdesc="Firmware files for Samsung Galaxy A7 (2018)"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+source="a7y18lte-fw-$_commit.tar.gz::https://github.com/M0Rf30/postmarketos-vendor-samsung-a7y18lte/archive/$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/postmarketos-vendor-samsung-a7y18lte-$_commit"
+
+package() {
+	cd $srcdir
+	mkdir -p "$pkgdir/lib/firmware"
+	cp -r postmarketos-vendor-samsung-a7y18lte-"$_commit"/firmware/ \
+		"$pkgdir/lib/firmware/postmarketos"
+}
+
+sha512sums="
+1fcc5db43060db0a8a44580f60be15027812b3c5abeff804e0b4073590887b5d0b2308fa1c9f1c772e357cec445b646998b1c85cdeb8893941c5a1db667398cf  a7y18lte-fw-05cd435745188e6d6f5bd4f3d1af851534b857d2.tar.gz
+"

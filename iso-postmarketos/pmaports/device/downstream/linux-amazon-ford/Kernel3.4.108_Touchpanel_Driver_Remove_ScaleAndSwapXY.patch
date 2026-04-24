@@ -1,0 +1,26 @@
+diff --git a/arch/arm/mach-mt8127/ford/touchpanel/ssd60xx_tp.c b/arch/arm/mach-mt8127/ford/touchpanel/ssd60xx_tp.c
+index 84954324c5f..f83ed8ffbbe 100644
+--- a/arch/arm/mach-mt8127/ford/touchpanel/ssd60xx_tp.c
++++ b/arch/arm/mach-mt8127/ford/touchpanel/ssd60xx_tp.c
+@@ -1226,7 +1226,7 @@ static int ssd60xx_work(void)
+                           max_pressure = press;
+                         }
+ 
+-
++			/*				
+ 			xpos = xpos * 600 / 1024;        //For MTK Scaling
+ 			ypos = ypos * 1024 / 600;        //For MTK Scaling
+ 			if (xpos > 600 || ypos > 1024) {
+@@ -1234,9 +1234,10 @@ static int ssd60xx_work(void)
+                             press = 0;
+                             FingerCount = FingerCount-1;
+ 			}
++			*/
+ 
+-                        FingerY[i] = xpos;      //For MTK Remapping
+-                        FingerX[i] = ypos;      //For MTK Remapping
++                        FingerY[i] = ypos;      //For MTK Remapping
++                        FingerX[i] = xpos;      //For MTK Remapping
+                         FingerP[i] = press;
+                         SSL_DEBUG("start: %i, %i, %i (%i,%i) \n", i, edge_filter_x[i],edge_filter_y[i],FingerX[i],FingerY[i]);
+ #ifdef FORCE_EDGE_FILTER

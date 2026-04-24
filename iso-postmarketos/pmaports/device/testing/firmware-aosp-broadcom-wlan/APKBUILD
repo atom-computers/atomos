@@ -1,0 +1,31 @@
+maintainer="Petr Vorel <petr.vorel@gmail.com>"
+pkgname=firmware-aosp-broadcom-wlan
+pkgver=1
+pkgrel=5
+pkgdesc="Broadcom Wi-Fi firmware from AOSP"
+url="https://android.googlesource.com/platform/hardware/broadcom/wlan/+/android-8.0.0_r12"
+arch="armhf armv7 aarch64"
+license="custom:proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Sources
+_commit="6c8ef5b600cec5d36a54a0276fe8c97b9ab8d6bb"
+source="$pkgname-$_commit.tar.gz::https://github.com/zhuowei/android_hardware_broadcom_wlan/archive/$_commit.tar.gz"
+builddir="$srcdir/android_hardware_broadcom_wlan-$_commit"
+subpackages="$pkgname-mainline:mainline"
+
+package() {
+	cd bcmdhd/firmware
+	for _i in */*.bin; do
+		install -Dm644 "$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/bcmdhd/"$_i"
+	done
+}
+
+mainline() {
+	cd "$srcdir/android_hardware_broadcom_wlan-$_commit/bcmdhd/firmware"
+	install -Dm644 bcm4330/fw_bcm4330_apsta_bg.bin \
+		"$subpkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.bin
+}
+
+sha512sums="ffd125833076a257b6ad4bf9d3f1cb262331e0ce5b1a15b12b6a5b375fa82ea37c17876dada4cab8fe74c4c66dfc499bd9a00526c1a9c31664add3d4e45d5cf0  firmware-aosp-broadcom-wlan-6c8ef5b600cec5d36a54a0276fe8c97b9ab8d6bb.tar.gz"

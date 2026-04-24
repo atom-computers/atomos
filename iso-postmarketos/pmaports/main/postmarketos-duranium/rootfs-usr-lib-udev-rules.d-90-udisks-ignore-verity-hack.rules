@@ -1,0 +1,5 @@
+# FIXME: udisks2 (or udiskie) insist on trying to unlock verity hash partitions,
+# probably because ID_FS_USAGE="crypto" or something. This just tells udisks to
+# ignore the verity hash device...
+
+SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="DM_verity_hash", ENV{ID_FS_USAGE}=="crypto", ENV{UDISKS_IGNORE}="1"

@@ -1,0 +1,36 @@
+From 966d3ac2409b59f431e1397f5ab8e9ee74ba5ae0 Mon Sep 17 00:00:00 2001
+From: Iskren Chernev <me@iskren.info>
+Date: Sat, 20 Feb 2021 00:49:45 +0200
+Subject: [PATCH 3/6] Remove gcc python wrapper
+
+---
+ Makefile | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 15a18b3cd15f6..e6a72c1a84fe9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -370,7 +370,7 @@ KBUILD_HOSTLDLIBS   := $(HOST_LFS_LIBS) $(HOSTLDLIBS)
+ # Make variables (CC, etc...)
+ AS		= $(CROSS_COMPILE)as
+ LD		= $(CROSS_COMPILE)ld
+-REAL_CC		= $(CROSS_COMPILE)gcc
++CC		= $(CROSS_COMPILE)gcc
+ CPP		= $(CC) -E
+ AR		= $(CROSS_COMPILE)ar
+ NM		= $(CROSS_COMPILE)nm
+@@ -389,10 +389,6 @@ PYTHON2		= python2
+ PYTHON3		= python3
+ CHECK		= sparse
+ 
+-# Use the wrapper for the compiler.  This wrapper scans for new
+-# warnings and causes the build to stop upon encountering them
+-CC		= $(PYTHON) $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
+-
+ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
+ 		  -Wbitwise -Wno-return-void -Wno-unknown-attribute $(CF)
+ NOSTDINC_FLAGS  =
+-- 
+2.30.1
+

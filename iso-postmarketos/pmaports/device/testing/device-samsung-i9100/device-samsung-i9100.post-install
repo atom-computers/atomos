@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Create mount point and /efs mount point in fstab
+if [ -z "$(grep /efs /etc/fstab)" ]; then
+	mkdir -p /efs
+	echo "/dev/mmcblk0p1	/efs	auto	ro	0	0" >> /etc/fstab
+fi

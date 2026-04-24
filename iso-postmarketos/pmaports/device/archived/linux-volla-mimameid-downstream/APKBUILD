@@ -1,0 +1,68 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/gs5_defconfig
+maintainer=""
+pkgname=linux-volla-mimameid-downstream
+pkgver=4.14.186
+pkgrel=0
+pkgdesc="Volla Phone 22 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="volla-mimameid"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	xz
+"
+
+# Source
+_repository="kernel-volla-mt6768"
+_commit="263d122c614e3c60cef7bfa3d0d2da55cb409d5d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/ubports/porting/community-ports/android11/volla-phone-22/$_repository/-/archive/$_commit.tar.gz
+	$_config
+	revert-ALPS04791965-dtc-remove-prebuilt-dtc_overlay.patch
+	stop-inlining-blk_crypto_flock-and-ksm_flock.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	KERNEL_IMAGE_NAME="Image.gz" downstreamkernel_package \
+		"$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	make modules_install dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+}
+
+sha512sums="
+b4af2b94a9f5ea6663ce0a866cb568cbb550ec88ce708ae5ede8cd3d2d8abbb64c7c6f5ebb6a0eec4a37e6d6c3d65a99c34bde07eb39dad906b31d3c4f281d41  linux-volla-mimameid-downstream-263d122c614e3c60cef7bfa3d0d2da55cb409d5d.tar.gz
+6c1eac12ec0ab77a8be4de82fbca96341ca5e9c29668db04a52010cddab0807737eb9aea8bc0c3b6454ae904efb391a5cabf7330622d453bc369512027a425bf  config-volla-mimameid.aarch64
+d3a19d48fe1392cb7d48d5bf21073a32045a3937233435d016129f31b5e43ec220c5481c2c31c6a787efc14f934028de33d8be79bed212d288dd9a40bd6834de  revert-ALPS04791965-dtc-remove-prebuilt-dtc_overlay.patch
+e448a1093c09414be36333fbdb0d4a3bc5b59018d571b702c6607cb32927cf1563bf03aa1f2d502e6040490e0b26198dd8204306ebaad41be810ba2d47a2721c  stop-inlining-blk_crypto_flock-and-ksm_flock.patch
+"

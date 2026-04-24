@@ -1,0 +1,31 @@
+From b3f52a7b1a98bfdf0a3847b186ad81432291b5aa Mon Sep 17 00:00:00 2001
+From: Achill Gilgenast <achill@achill.org>
+Date: Thu, 20 Nov 2025 15:28:42 +0100
+Subject: [PATCH] Add systemd system service
+
+Adapted from downstream in postmarketOS:
+https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/master/extra-repos/systemd/systemd-services/system-diag-router.service
+
+Signed-off-by: Achill Gilgenast <achill@achill.org>
+---
+ diag-router.service | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+ create mode 100644 diag-router.service
+
+diff --git a/diag-router.service b/diag-router.service
+new file mode 100644
+index 0000000..2a6c816
+--- /dev/null
++++ b/diag-router.service
+@@ -0,0 +1,11 @@
++[Unit]
++Description=Routing of diagnostics related messages between host and various subsystems
++Before=rmtfs.service
++
++[Service]
++ExecStart=/usr/bin/diag-router
++Restart=always
++RestartSec=1
++
++[Install]
++WantedBy=multi-user.target

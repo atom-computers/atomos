@@ -1,0 +1,13 @@
+diff --git a/init/_vmm.S b/init/_vmm.S
+index b2ef92fa..1a1d898f 100755
+--- a/init/_vmm.S
++++ b/init/_vmm.S
+@@ -19,7 +19,7 @@
+ 
+ #include <linux/vmm.h>
+ 
+-#define vmm_ELF_PATH "init/vmm.elf"
++#define vmm_ELF_PATH "../init/vmm.elf"
+ 
+ #define SMC_64BIT_RET_MAGIC 0xC2000401
+ 

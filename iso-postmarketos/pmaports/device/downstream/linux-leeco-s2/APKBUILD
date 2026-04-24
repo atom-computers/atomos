@@ -1,0 +1,63 @@
+# Kernel config based on: arch/arm64/configs/lineage_s2_defconfig
+
+pkgname=linux-leeco-s2
+pkgver=3.10.108
+pkgrel=3
+pkgdesc="LeEco Le 2 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="leeco-s2"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev git gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_leeco_msm8976"
+_commit="34d5355a3059e3991f291c63f7ba5507bbeddf6c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_fix_gcc6_errors.patch
+	02_fix_msm_dba.patch
+	03_psci.patch
+	05_dtb-fix.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+sha512sums="
+b21357959cebb3cdbfbb12da6bcd95f928791c76d861810d70ca11d9d909bb342e1e67b97772f5052221227be2a3956f3781f2da1081cd159ed7a478c5cb3c97  linux-leeco-s2-34d5355a3059e3991f291c63f7ba5507bbeddf6c.tar.gz
+5911b2922b8a60986c26f9dc2cc30c2df3110a8d0350e288c4e81f75f71fc0effaeea9ef5eed850aba359200249aff089158e58d030413bc528fb4deeba3bd8b  config-leeco-s2.aarch64
+b23dfac4f6be2ac460f220f9e0780590c8d137cdfc5f0bf513efa0fb1ca07f32a6f0a53a96b215e9db8cdc28937e0eb46e6420147b5d3cf4dc64cff77b414457  01_fix_gcc6_errors.patch
+3cf963ee3dbf08547d731081850183ec2a30924f182b12eddc3befb9bd1a3ed9aefdbc8bfa10ff62d2351ce69743996edb00830559f84dad0d067cff7de5a127  02_fix_msm_dba.patch
+a66521ea257ed7d339592e198ce9cab983deb20fa45c02ffa8689ac7081d879ae3bff9648107c65e2805893c08611b356a55e6c088c8e17c7631364aa2a10c39  03_psci.patch
+0e5ebee2f1b0005fcae4f313219c0b6481b3d044c7167e0fb18b72db0eae49aef7b281cd29e0fa1e653fc5585064c990085ca68f920348c3d9d9ea9524d1baa6  05_dtb-fix.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

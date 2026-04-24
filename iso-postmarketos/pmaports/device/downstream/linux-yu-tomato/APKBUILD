@@ -1,0 +1,73 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_tomato_defconfig
+maintainer="xeon zolt <xeon.harsh@gmail.com>"
+pkgname=linux-yu-tomato
+pkgver=3.10.108
+pkgrel=4
+pkgdesc="YU Yureka kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="yu-tomato"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="gcc6 perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_cyanogen_msm8916"
+_commit="7ac9a15c55f441060e83a3b0b6a9b4573cefeea7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_fix_gcc6_errors.patch
+	mdss_fb_refresh_rate.patch
+	rndis.patch
+	fix_dp3_ctrl_off.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+
+sha512sums="
+7787047fc72da32e3dd5daa1d867be5e47035e76fe35ae681bc8456222bd891dd39915bcbd139a301a1e2ebb7d9acfae5f4130451c23d3654b18f3b707b2d51c  linux-yu-tomato-7ac9a15c55f441060e83a3b0b6a9b4573cefeea7.tar.gz
+5e919c7b5d887af278ddc042002ec4c0d0347f084a6c68dc0ae7f404710870ff5861d3730df76ddfa695da2c44c0340bbcc1d39ea90d6759e32c5f5aaf5382bb  config-yu-tomato.aarch64
+972e98523d6ef06342e69a09e979bdd86904cf7f9a843b519b37791e531b680182564a2ab537c94629c3589f4e775b2c39de04c64e210a0f8b6f10745c3596f1  01_fix_gcc6_errors.patch
+a8c955bf718f155011e980f3d0948be98e1fee5649f418299a4851780543019daf7afa406aa7b0829375645107e4e6fbf241026b0cabe2b2ac895a47df83d2d8  mdss_fb_refresh_rate.patch
+635196d271a710eaf9c80ec7f7e1ec88c6b6ef5ce11cfb512d56d760e30b4db1f6e962091951c35ddaa8464293e239765a0d9bebadf59dfd40802434ce8f698f  rndis.patch
+f7f4df56c66c018a3d674e197a4545bb0cb9b81df4252c01904a766808ed9e573ae831b4dd8117134d7d2a59a91d3acf6fe5e8e18907cda57abc8bf17fae87cd  fix_dp3_ctrl_off.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

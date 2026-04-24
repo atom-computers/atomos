@@ -1,0 +1,21 @@
+pkgname=firmware-asus-duma
+pkgver=1
+pkgrel=2
+_commit="598acdf72ad986302d028fef7e9bcb5daadf7d79"
+pkgdesc="Firmware files for ASUS MeMO Pad FHD 10 (asus-duma)"
+url="https://postmarketos.org"
+arch="armhf"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://github.com/yatto/android_vendor_asus_duma/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/android_vendor_asus_duma-$_commit"
+
+package() {
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05 wcnss.mdt"
+	for _i in $_files; do
+		install -D -m644 proprietary/vendor/firmware/"$_i" "$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="24e2e1bd79607fac822490f4ffc0e46f9cba2993fa2244d6d0d9281aecf21340f019aa33f501c8a3b74c1271eaefcb2e70c30cb7057897679b765748f054a279  firmware-asus-duma-598acdf72ad986302d028fef7e9bcb5daadf7d79.tar.gz"

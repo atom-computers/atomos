@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-p4note
+pkgdesc="Samsung Galaxy Note 10.1"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-exynos4
+	mkbootimg
+	alsa-ucm-conf
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-udev
+"
+source="
+	deviceinfo
+	audio/HiFi.conf
+	audio/p4note.conf
+	90-sensors.hwdb
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/HiFi.conf \
+		-t "$pkgdir"/usr/share/alsa/ucm2/conf.d/p4note
+	install -Dm644 "$srcdir"/p4note.conf \
+		-t "$pkgdir"/usr/share/alsa/ucm2/conf.d/p4note
+	install -Dm644 "$srcdir"/90-sensors.hwdb \
+		-t "$pkgdir"/usr/lib/udev/hwdb.d
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi, Bluetooth, MFC firmware"
+	depends="
+		firmware-samsung-midas-bluetooth
+		firmware-samsung-midas-wifi
+		linux-firmware-s5p-mfc
+		"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+5b85b5393e5596a1ef741080836fd3fef551659af4d70131be5c187d60fec5469594704b57a92b0c40e40b9159e7cd15cccc231c4c6da52c01e057f79ff5935f  deviceinfo
+40c2d13a8e59749a646e4070a444098609f62679f19a975da3f53b1a0fc4ac4c417dd86ec271a339e6a19c1737b384b759661d8f9a167c7eedc4a3ffbaffd77f  HiFi.conf
+2c5011f7d5f25362e6249624796a6d9d36d858169538ab9c4ab1a79f37ece95f425a92b14849a65fd9281c5567753158871c6bf20a772f8dca6b2d6813ea2f03  p4note.conf
+af1dfc74ebec2f848d784c961c1b19eb1134aa62a0fd741903043466cfdec98d2c35c5b95738f63fcbdac6937e0b39be188b584b1f8cd45d98d295f32f2c882a  90-sensors.hwdb
+"

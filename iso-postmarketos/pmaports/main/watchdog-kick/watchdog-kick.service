@@ -1,0 +1,13 @@
+[Unit]
+Description=watchdog-kick daemon
+After=udev.service
+
+[Service]
+ExecStart=/usr/sbin/watchdog-kick
+ExecStop=/usr/sbin/watchdog-kick -1
+PIDFile=/run/watchdog-kick.pid
+Type=simple
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

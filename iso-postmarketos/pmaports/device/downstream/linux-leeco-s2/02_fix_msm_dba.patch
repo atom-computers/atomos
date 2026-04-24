@@ -1,0 +1,13 @@
+diff --git a/drivers/video/msm/msm_dba/msm_dba.c b/drivers/video/msm/msm_dba/msm_dba.c
+index cc6512a..eb073a7 100644
+--- a/drivers/video/msm/msm_dba/msm_dba.c
++++ b/drivers/video/msm/msm_dba/msm_dba.c
+@@ -22,7 +22,7 @@
+ #include <linux/err.h>
+
+ #include <video/msm_dba.h>
+-#include <msm_dba_internal.h>
++#include "msm_dba_internal.h"
+
+ static DEFINE_MUTEX(register_mutex);
+ 

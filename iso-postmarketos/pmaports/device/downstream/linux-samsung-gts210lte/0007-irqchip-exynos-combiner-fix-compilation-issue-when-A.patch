@@ -1,0 +1,30 @@
+From 7a17168ffd6823753a4bac4c8edbce6b89b52f7f Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Fri, 4 Jul 2025 08:42:12 +0200
+Subject: [PATCH] irqchip: exynos-combiner: fix compilation issue when ATAGS=y
+
+Fixes errors like:
+
+    /home/pmos/build/src/android_kernel_samsung_universal5433-f82aa9085561a94894caabfe57de1f521f12f3b0/drivers/irqchip/exynos-combiner.c: In function 'combiner_lookup_irq':
+    /home/pmos/build/src/android_kernel_samsung_universal5433-f82aa9085561a94894caabfe57de1f521f12f3b0/drivers/irqchip/exynos-combiner.c:196:21: error: 'EXYNOS4210_MAX_COMBINER_NR' undeclared (first use in this function)
+      196 |         if (group < EXYNOS4210_MAX_COMBINER_NR || soc_is_exynos5250())
+          |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+---
+ drivers/irqchip/exynos-combiner.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/irqchip/exynos-combiner.c b/drivers/irqchip/exynos-combiner.c
+index e044ecb3ad65..5909413216c3 100644
+--- a/drivers/irqchip/exynos-combiner.c
++++ b/drivers/irqchip/exynos-combiner.c
+@@ -21,6 +21,7 @@
+ #include <linux/syscore_ops.h>
+ 
+ #ifdef CONFIG_EXYNOS_ATAGS
++#include <mach/irqs.h>
+ #include <plat/cpu.h>
+ #endif
+ 
+-- 
+2.50.0
+

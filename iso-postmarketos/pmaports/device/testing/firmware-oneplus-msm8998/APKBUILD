@@ -1,0 +1,50 @@
+maintainer=""
+pkgname=firmware-oneplus-msm8998
+pkgver=10.0.1
+pkgrel=4
+_commit="a1a0dfd9be6fe250559c01678569e5295a4c335d"
+pkgdesc="Firmware for OnePlus 5/5T"
+url="https://github.com/JamiKettunen/firmware-mainline-oneplus5"
+# Conflicts with ath10k/WCN3990/hw1.0/firmware-5.bin; here we enable the
+# "single-chan-info-per-channel" feature to suppresss "chan info event" warning spam from dmesg
+replaces="linux-firmware-ath10k"
+arch="aarch64"
+depends="firmware-qcom-adreno-a530 linux-firmware-qca soc-qcom-msm8998-nonfree-firmware"
+license="proprietary"
+options="!check !archcheck !strip !tracedeps"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/JamiKettunen/firmware-mainline-oneplus5/archive/$_commit.tar.gz
+	30-gpu-firmware.files
+	firmware.files
+"
+subpackages="
+	$pkgname-initramfs:firmware_initramfs
+	$pkgname-openrc
+	"
+builddir="$srcdir/firmware-mainline-oneplus5-$_commit"
+
+package() {
+	while IFS="" read -r fw; do
+		install -Dm644 "$fw" "$pkgdir/lib/firmware/$fw"
+	done < "$srcdir"/firmware.files
+}
+
+firmware_initramfs() {
+	pkgdesc="Files to be included in the initramfs to support osk-sdl"
+
+	install -Dm644 "$srcdir"/30-gpu-firmware.files \
+		"$subpkgdir"/usr/share/mkinitfs/files/30-gpu-firmware.files
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+c8997e5b2fde1c57651234be63f84b6f8d62f29fc8b55d8ebb8268cb7636241f7f5d11609bbcae71bd734eca9fd857330755979ad3e432a0c7bc6f3b034ea710  firmware-oneplus-msm8998-a1a0dfd9be6fe250559c01678569e5295a4c335d.tar.gz
+c29e0abb08dd345d88223e29e49290226d0df63470a809ef3c933f7f088f709fd54da6d01c9a7c249b42e84fb86ca39a20a38e5055d3d1c53f37e4a3ab892a16  30-gpu-firmware.files
+10366f7944ac83a765217f3f10343913c0b72fdd0c5a6e76ffcb87bbe045c270fd1d9499798956f5bcccd2440e71f6d80067b6a22358b6939827f2e71f363777  firmware.files
+"

@@ -1,0 +1,8 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="TA services"
+description="TA services for msm8974-based Sony Xperia devices"
+
+command="/usr/bin/ta-service"
+command_args="/dev/disk/by-partlabel/TA"

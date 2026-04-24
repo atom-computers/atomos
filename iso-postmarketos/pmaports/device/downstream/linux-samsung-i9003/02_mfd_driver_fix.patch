@@ -1,0 +1,13 @@
+diff --git a/drivers/mfd/twl-core.c b/drivers/mfd/twl-core.c
+index 7df976d..1937e6c 100644
+--- a/drivers/mfd/twl-core.c
++++ b/drivers/mfd/twl-core.c
+@@ -1352,8 +1352,6 @@ twl_probe(struct i2c_client *client, const struct i2c_device_id *id)
+ 			twl4030_power_sr_init();
+ 			twl4030_power_init(pdata->power);
+ 		}
+-		if (twl_class_is_6030())
+-			twl6030_power_init(pdata->power);
+ 	}
+ 
+ 	/* Maybe init the T2 Interrupt subsystem */

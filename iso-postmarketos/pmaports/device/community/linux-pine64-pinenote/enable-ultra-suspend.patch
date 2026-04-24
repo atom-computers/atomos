@@ -1,0 +1,160 @@
+Patch-Source: https://git.sr.ht/~hrdl/linux/log/v6.19_ultra_suspend
+From af0f33629aefaa75ea6318352debdb8b64655c15 Mon Sep 17 00:00:00 2001
+From: hrdl <git@hrdl.eu>
+Date: Sun, 15 Mar 2026 21:35:31 +0100
+Subject: [PATCH] [rockchip suspend driver] allow overriding suspend_state
+
+Rockchip's bl31 behaves differently when configured with
+suspend_state=5, which identifies rockchip's ultra suspend mode. This
+is a prerequisite to achieve significant power savings in suspend mode
+with rockchip's bl31.
+
+Signed-off-by: hrdl <git@hrdl.eu>
+---
+ drivers/soc/rockchip/rockchip_pm_config.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/soc/rockchip/rockchip_pm_config.c b/drivers/soc/rockchip/rockchip_pm_config.c
+index 65524181695fb8eafa0c09adf5d9c9860f1f6654..e5f982879c42b9f4ca5ac751cd973f880917b1b6 100644
+--- a/drivers/soc/rockchip/rockchip_pm_config.c
++++ b/drivers/soc/rockchip/rockchip_pm_config.c
+@@ -38,6 +38,8 @@ static struct rk_on_off_regulator_list {
+ 	struct regulator_dev *off_reg_list[MAX_ON_OFF_REG_NUM];
+ } on_off_regs_list[RK_PM_STATE_MAX];
+ 
++static int suspend_state_override = 0;
++
+ static const struct of_device_id pm_match_table[] = {
+ 	{ .compatible = "rockchip,pm-px30",},
+ 	{ .compatible = "rockchip,pm-rk1808",},
+@@ -190,6 +192,9 @@ static int pm_config_probe(struct platform_device *pdev)
+ 	else
+ 		sip_smc_set_suspend_mode(WKUP_SOURCE_CONFIG, wakeup_config, 0);
+ 
++	of_property_read_u32(node, "rockchip,suspend-state-override",
++			     &suspend_state_override);
++
+ 	if (of_property_read_u32_array(node,
+ 				       "rockchip,pwm-regulator-config",
+ 				       &pwm_regulator_config, 1))
+@@ -250,6 +255,9 @@ static int pm_config_prepare(struct device *dev)
+ 	struct regulator_dev **on_list;
+ 	struct regulator_dev **off_list;
+ 
++	if (suspend_state_override)
++		suspend_state = suspend_state_override;
++
+ 	sip_smc_set_suspend_mode(LINUX_PM_STATE,
+ 				 suspend_state,
+ 				 0);
+From 693fee19336c7b348e30222a31de06eb34f70e25 Mon Sep 17 00:00:00 2001
+From: hrdl <git@hrdl.eu>
+Date: Sun, 15 Mar 2026 21:35:31 +0100
+Subject: [PATCH] [HACK]: Input: cyttsp5: support resume from ultra suspend
+
+Signed-off-by: hrdl <git@hrdl.eu>
+---
+ drivers/input/touchscreen/cyttsp5.c | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/input/touchscreen/cyttsp5.c b/drivers/input/touchscreen/cyttsp5.c
+index 63e71f3b1ff2c40ec29d5c01a37afeee20512c33..c163ef2d87b80267b7cf28f7967162be8ac3177d 100644
+--- a/drivers/input/touchscreen/cyttsp5.c
++++ b/drivers/input/touchscreen/cyttsp5.c
+@@ -1008,11 +1008,22 @@ static int __maybe_unused cyttsp5_suspend(struct device *dev)
+ static int __maybe_unused cyttsp5_resume(struct device *dev)
+ {
+ 	struct cyttsp5 *ts = dev_get_drvdata(dev);
++	int error = 0;
++
++	if (!device_may_wakeup(dev)) {
++		error = cyttsp5_power_control(ts, true);
++
++		if (error) {
++			gpiod_set_value_cansleep(ts->reset_gpio, 1);
++			msleep(10);
++			gpiod_set_value_cansleep(ts->reset_gpio, 0);
++			msleep(20);
++			error = 0;
++			// error = cyttsp5_startup(ts);
++		}
++	}
+ 
+-	if (!device_may_wakeup(dev))
+-		cyttsp5_power_control(ts, true);
+-
+-	return 0;
++	return error;
+ }
+ 
+ static SIMPLE_DEV_PM_OPS(cyttsp5_pm, cyttsp5_suspend, cyttsp5_resume);
+From ee2c553f7893e82223e42436cebbcf8c4958464d Mon Sep 17 00:00:00 2001
+From: hrdl <git@hrdl.eu>
+Date: Sun, 15 Mar 2026 21:35:32 +0100
+Subject: [PATCH] arm64: dts: rockchip: pinenote: enable rockchip's ultra
+ suspend mode
+
+This reduces suspend power consumption from about 60 mW to about 11
+mW, extending the battery life in suspend mode from a week to about
+1.5 months. This is achieved by
+
+1. Disabling the *_pmu regulators in suspend to save power.
+2. Overriding the suspend mode to instruct bl31 to configure the
+  system for ultra suspend (suspend mode 5). This is needed for the
+  system to resume.
+3. Indicate that the wifi mmc module will be powered off during
+  suspend. Without it the driver will not try to reinitialise it.
+
+Signed-off-by: hrdl <git@hrdl.eu>
+---
+ arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi b/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi
+index 15118c7ea8aa70f8ddcd26ebe4411dfe0b04e7b4..fe2219961b2420874626941ac56d42f7a444ce34 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi
+@@ -137,6 +137,7 @@
+ 		compatible = "rockchip,pm-rk3568";
+ 		status = "okay";
+ 		rockchip,sleep-debug-en = <0>;
++		rockchip,suspend-state-override = <5>;
+ 		rockchip,sleep-mode-config = <
+ 			(0
+ 			| RKPM_SLP_CENTER_OFF
+@@ -486,7 +487,7 @@
+ 				regulator-max-microvolt = <1800000>;
+ 
+ 				regulator-state-mem {
+-					regulator-on-in-suspend;
++					regulator-off-in-suspend;
+ 				};
+ 			};
+ 
+@@ -508,7 +509,7 @@
+ 				regulator-max-microvolt = <900000>;
+ 
+ 				regulator-state-mem {
+-					regulator-on-in-suspend;
++					regulator-off-in-suspend;
+ 				};
+ 			};
+ 
+@@ -541,7 +542,7 @@
+ 				regulator-max-microvolt = <3300000>;
+ 
+ 				regulator-state-mem {
+-					regulator-on-in-suspend;
++					regulator-off-in-suspend;
+ 				};
+ 			};
+ 
+@@ -981,7 +982,7 @@
+ 	bus-width = <4>;
+ 	cap-sd-highspeed;
+ 	cap-sdio-irq;
+-	keep-power-in-suspend;
++	cap-power-off-card;
+ 	mmc-pwrseq = <&sdio_pwrseq>;
+ 	non-removable;
+ 	pinctrl-0 = <&sdmmc1_bus4>, <&sdmmc1_clk>, <&sdmmc1_cmd>;

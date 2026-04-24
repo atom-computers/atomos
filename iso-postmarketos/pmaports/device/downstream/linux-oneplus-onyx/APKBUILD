@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_onyx_defconfig
+
+# NOTE: The gcc option CONFIG_NO_ERROR_ON_MISMATCH=y was temporarily added to
+# make the kernel compile with GCC4, the resulting kernel compiles and boots.
+
+pkgname=linux-oneplus-onyx
+pkgver=3.4.0
+pkgrel=10
+pkgdesc="OnePlus X kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="oneplus-onyx"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz gcc4"
+
+# Compiler: GCC 4 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_oneplus_onyx"
+_commit="3d82ae9121f3863c8aa6f49fe5935d975e564138"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	kernel-use-the-gnu89-standard-explicitly.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+a44507d013ec12aadc134daca7ed255da9ec78d5627db6edbf9a3e178b89c292810a1cbe801bc1d98cc3ae2a5bf04239c9d555fa5fa0db701b399c39c02c1013  linux-oneplus-onyx-3d82ae9121f3863c8aa6f49fe5935d975e564138.tar.gz
+9a98ce0b5858ba26ee1c93c99ed5e05745e840ff89209c1731b86163cc4e2fcd1570a15bbd8d613463b9e263f9171a6d1fed4d740b8e63736c1df95a86529ac4  config-oneplus-onyx.armv7
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

@@ -1,0 +1,26 @@
+diff --git a/arch/arm/mach-mt8127/ford/touchpanel/tpd_debug.c b/arch/arm/mach-mt8127/ford/touchpanel/tpd_debug.c
+index aa1515d9..3df17b83 100644
+--- a/arch/arm/mach-mt8127/ford/touchpanel/tpd_debug.c
++++ b/arch/arm/mach-mt8127/ford/touchpanel/tpd_debug.c
+@@ -4,7 +4,7 @@
+ #include <linux/miscdevice.h>
+ #include <linux/i2c.h>
+ #include <linux/delay.h>
+-#include <tpd.h>
++#include "tpd.h"
+ 
+ #ifdef TPD_DEBUG_CODE
+ int tpd_fail_count = 0;
+diff --git a/drivers/thermal/virtual_sensor_cpufreq_cooling.c b/drivers/thermal/virtual_sensor_cpufreq_cooling.c
+index 99c4cae1..705993b1 100644
+--- a/drivers/thermal/virtual_sensor_cpufreq_cooling.c
++++ b/drivers/thermal/virtual_sensor_cpufreq_cooling.c
+@@ -29,7 +29,7 @@
+ #include <linux/thermal.h>
+ #include <linux/cpumask.h>
+ #include <linux/cpu_cooling.h>
+-#include <thermal_core.h>
++#include "thermal_core.h"
+ 
+ #define MAX_STATE	4 /* 0-4 total 5 */
+ 

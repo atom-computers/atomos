@@ -1,0 +1,68 @@
+From 7e74b78bb09db386fba009554f0bbe60c7c18a5a Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Sun, 14 Jul 2019 20:29:24 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: Bindings for new audio driver
+
+Remove old GPIO LEDs for mic switching and move the power management to
+the audio driver. Also specify DAPM routing - modem and bluetooth routes
+are not present because they're currently not used.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 34 ++++++++++++++---------------
+ 1 file changed, 16 insertions(+), 18 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index 013f46d159a1..9321a751a000 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -1224,24 +1224,6 @@
+ 			linux,default-trigger = "gpio";
+ 			default-state = "off";
+ 		};
+-
+-		micbias1 {
+-			label = "MICBIAS1";
+-			gpios = <&gpio TEGRA_GPIO(X, 6) GPIO_ACTIVE_HIGH>;
+-			default-state = "on";
+-		};
+-
+-		micbias2 {
+-			label = "MICBIAS2";
+-			gpios = <&gpio TEGRA_GPIO(H, 3) GPIO_ACTIVE_HIGH>;
+-			default-state = "off";
+-		};
+-
+-		earsel {
+-			label = "EAR_SEL";
+-			gpios = <&gpio TEGRA_GPIO(I, 4) GPIO_ACTIVE_HIGH>;
+-			default-state = "off";
+-		};
+ 	};
+ 
+ 	pmc@7000e400 {
+@@ -1831,5 +1813,21 @@
+ 			 <&tegra_car TEGRA20_CLK_PLL_A_OUT0>,
+ 			 <&tegra_car TEGRA20_CLK_CDEV1>;
+ 		clock-names = "pll_a", "pll_a_out0", "mclk";
++
++		nvidia,ear-sel-gpios = <&gpio TEGRA_GPIO(I, 4) GPIO_ACTIVE_HIGH>;
++		nvidia,int-mic-en-gpios = <&gpio TEGRA_GPIO(X, 6) GPIO_ACTIVE_HIGH>;
++		nvidia,ext-mic-en-gpios = <&gpio TEGRA_GPIO(H, 3) GPIO_ACTIVE_HIGH>;
++		nvidia,hp-det-gpios = <&gpio TEGRA_GPIO(L, 3) GPIO_ACTIVE_HIGH>;
++
++		nvidia,audio-routing =
++			"Int Spk", "SPKOUTLP",
++			"Int Spk", "SPKOUTLN",
++			"Headphone Jack", "HPOUT1L",
++			"Headphone Jack", "HPOUT1R",
++			"Earpiece Spk", "HPOUT2P",
++			"Earpiece Spk", "HPOUT2N",
++			"IN1LP", "Mic Jack",
++			"IN1LN", "Mic Jack";
++		/* TODO: routes for modem and, probably, BT SCO */
+ 	};
+ };
+-- 
+2.22.0
+

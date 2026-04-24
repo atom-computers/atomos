@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+
+description="Run hciattach on ttySAC0 to enable bcm43xx bluetooth"
+
+depend () {
+	before rfkill
+	before bluetooth
+}
+
+start () {
+	ebegin "Starting hciattach-ttySAC0"
+	# we need to unlock an rfkill to be able to use bluetootch
+	if [[ -d /sys/bus/platform/drivers/bcm43xx_bluetooth/bluetooth ]]; then
+		rfkill unblock 0
+		# blocking and unblocking this rfkill requires restarting hciattach
+		# unregister it, so that the UI does not attempt to toggle it
+		# hciuart driver provides its own rfkill switch, so bluetooth can still be disabled
+		echo bluetooth > /sys/bus/platform/drivers/bcm43xx_bluetooth/unbind
+	fi
+	# if hci0 is already present, this means that the service is being restarted, we can just ignore it
+	if ! [[ -d /sys/class/bluetooth/hci0 ]]; then
+		# on the vendor kernel we have to do a manual hciattach
+		# since we unregistered the rfkill, we won't be able to restart, so this cannot be a "real" service
+		hciattach /dev/ttySAC0 bcm43xx 3000000 flow nosleep "$(bootmac -g -b)"
+	fi
+	eend $?
+}

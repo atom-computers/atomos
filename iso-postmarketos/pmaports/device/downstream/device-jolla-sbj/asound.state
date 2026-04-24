@@ -1,0 +1,153 @@
+state.msm8930sitarsnd {
+	control.21 {
+		iface MIXER
+		name 'HPHL Volume'
+		value 6
+		comment {
+			access 'read write'
+			type INTEGER
+			count 1
+			range '0 - 12'
+			dbmin -9999999
+			dbmax 84
+			dbvalue.0 42
+		}
+	}
+	control.22 {
+		iface MIXER
+		name 'HPHR Volume'
+		value 6
+		comment {
+			access 'read write'
+			type INTEGER
+			count 1
+			range '0 - 12'
+			dbmin -9999999
+			dbmax 84
+			dbvalue.0 42
+		}
+	}
+	control.23 {
+		iface MIXER
+		name 'RX1 Digital Volume'
+		value 60
+		comment {
+			access 'read write'
+			type INTEGER
+			count 1
+			range '0 - 124'
+			dbmin 0
+			dbmax 124
+			dbvalue.0 84
+		}
+	}
+	control.24 {
+		iface MIXER
+		name 'RX2 Digital Volume'
+		value 60
+		comment {
+			access 'read write'
+			type INTEGER
+			count 1
+			range '0 - 124'
+			dbmin 0
+			dbmax 124
+			dbvalue.0 84
+		}
+	}
+	control.25 {
+		iface MIXER
+		name 'RX3 Digital Volume'
+		value 60
+		comment {
+			access 'read write'
+			type INTEGER
+			count 1
+			range '0 - 124'
+			dbmin 0
+			dbmax 124
+			dbvalue.0 84
+		}
+	}
+	control.215 {
+		iface MIXER
+		name 'SLIMBUS_0_RX Audio Mixer MultiMedia1'
+		value true
+		comment {
+			access 'read write'
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.260 {
+		iface MIXER
+		name 'RX1 MIX1 INP1'
+		value RX1
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 ZERO
+			item.1 SRC1
+			item.2 SRC2
+			item.3 IIR1
+			item.4 IIR2
+			item.5 RX1
+			item.6 RX2
+			item.7 RX3
+			item.8 RX4
+			item.9 RX5
+		}
+	}
+	control.262 {
+		iface MIXER
+		name 'DAC3 MUX'
+		value INV_RX1
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 ZERO
+			item.1 RX1
+			item.2 INV_RX1
+			item.3 RX2
+		}
+	}
+	control.263 {
+		iface MIXER
+		name 'DAC2 MUX'
+		value RX1
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 ZERO
+			item.1 RX1
+		}
+	}
+	control.264 {
+		iface MIXER
+		name 'DAC1 MUX'
+		value ZERO
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 ZERO
+			item.1 RX1
+			item.2 RX2
+		}
+	}
+	control.319 {
+		iface MIXER
+		name 'SLIM_0_RX Channels'
+		value One
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 One
+			item.1 Two
+		}
+	}
+}

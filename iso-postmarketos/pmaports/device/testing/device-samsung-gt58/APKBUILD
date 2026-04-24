@@ -1,0 +1,54 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=device-samsung-gt58
+pkgdesc="Samsung Galaxy Tab A 8.0 (2015)"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev dtbtool"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	phoc.ini
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+# Backwards compatibility for old kernel variant subpackages
+replaces="$pkgname-kernel-mainline $pkgname-kernel-mainline-modem-lte"
+for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader firmware-samsung-gt58-wcnss-nv"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+9cc3717b0e57d945c86921f2418d774a0462943249170b12197ad700d8e28bc6906ce5ea6a49e2a1fe555d4e4cec60cf879172747b8715022b0ed1fd8cc2d4f6  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+8071b89c832619c74d3bb50d638653aeaab99fee209cde425a7e8425d46d424bad9e8ab76d2d7360bd4c7ff093a712d51c3ca1b6086e1f70812224bbb115b04f  modules-initfs
+ed612b090c1ee512fc257368082fe0c88ca6c98a9d673ece68593739c7a41b4f9dca5d9360de6f84d206f297feba480a9f1982301132e08a14a5ff920a2675a6  phoc.ini
+"

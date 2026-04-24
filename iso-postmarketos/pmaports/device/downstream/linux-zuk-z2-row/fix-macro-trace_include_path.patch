@@ -1,0 +1,44 @@
+diff -ur a/drivers/gpu/msm/adreno_trace.h b/drivers/gpu/msm/adreno_trace.h
+--- a/drivers/gpu/msm/adreno_trace.h	2020-01-20 16:35:42.882012436 -0800
++++ b/drivers/gpu/msm/adreno_trace.h	2020-01-20 16:43:45.557852681 -0800
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE adreno_trace
+ 
+diff -ur a/drivers/gpu/msm/kgsl_trace.h b/drivers/gpu/msm/kgsl_trace.h
+--- a/drivers/gpu/msm/kgsl_trace.h	2020-01-20 16:35:42.882012436 -0800
++++ b/drivers/gpu/msm/kgsl_trace.h	2020-01-20 16:43:45.557852681 -0800
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE kgsl_trace
+ 
+diff -ur a/drivers/net/ethernet/msm/rndis_ipa_trace.h b/drivers/net/ethernet/msm/rndis_ipa_trace.h
+--- a/drivers/net/ethernet/msm/rndis_ipa_trace.h	2020-01-20 16:35:43.034009830 -0800
++++ b/drivers/net/ethernet/msm/rndis_ipa_trace.h	2020-01-20 16:43:45.557852681 -0800
+@@ -77,5 +77,5 @@
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/net/ethernet/msm/
+ #include <trace/define_trace.h>
+diff -ur a/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h b/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h
+--- a/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h	2020-01-20 16:35:43.106008595 -0800
++++ b/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h	2020-01-20 16:43:45.557852681 -0800
+@@ -148,5 +148,5 @@
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/platform/msm/ipa/ipa_v2/
+ #include <trace/define_trace.h>

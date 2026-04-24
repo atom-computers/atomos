@@ -1,0 +1,39 @@
+From 9f6591cedda666e560b0ecfc1200ce4c5c0e41d6 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@z3ntu.xyz>
+Date: Sun, 19 Aug 2018 17:31:58 +0200
+Subject: [PATCH 3/6] Fix includes
+
+---
+ arch/arm/mach-msm/smd_init_dt.c | 2 +-
+ sound/soc/msm/qdsp6v2/rtac.c    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-msm/smd_init_dt.c b/arch/arm/mach-msm/smd_init_dt.c
+index 1766a68bfa87..df88bf5b35c7 100644
+--- a/arch/arm/mach-msm/smd_init_dt.c
++++ b/arch/arm/mach-msm/smd_init_dt.c
+@@ -21,7 +21,7 @@
+ #include <linux/io.h>
+ 
+ #include <mach/msm_ipc_logging.h>
+-#include <smd_private.h>
++#include "smd_private.h"
+ 
+ #define MODULE_NAME "msm_smd"
+ #define IPC_LOG(level, x...) do { \
+diff --git a/sound/soc/msm/qdsp6v2/rtac.c b/sound/soc/msm/qdsp6v2/rtac.c
+index 3e0df21c3bb4..2b6579c762cf 100755
+--- a/sound/soc/msm/qdsp6v2/rtac.c
++++ b/sound/soc/msm/qdsp6v2/rtac.c
+@@ -26,7 +26,7 @@
+ #include <sound/q6afe-v2.h>
+ #include <sound/q6audio-v2.h>
+ #include <sound/apr_audio-v2.h>
+-#include <q6voice.h>
++#include "q6voice.h"
+ #include "audio_acdb.h"
+ 
+ 
+-- 
+2.18.0
+

@@ -1,0 +1,91 @@
+# Co-Maintainer: Viola Guerrera <guerrera.nicola@gmail.com>
+maintainer="Pan Ortiz <panjeoc@proton.me>"
+_flavor="postmarketos-qcom-sm8150"
+pkgname=linux-$_flavor
+pkgver=6.17.0
+pkgrel=2
+pkgdesc="Mainline Kernel fork for SM8150 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/sm8150-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+	"
+
+_tag="v$pkgver-sm8150"
+
+# Source
+source="
+	linux-$_tag.tar.gz::$url/-/archive/$_tag/linux-$_tag.tar.gz
+	config-$_flavor.$arch
+	0001-lid-switch-fix.patch
+	0002-enable-ufs.patch
+	0003-fix-llvm-build.patch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sm8150* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+274270bb0391bca972b1dffae778ff6fc372457b658e9252104d9894c9f24739e25df7021378cf0ac9c650cc417d0cdcdf1baa88bfdcd494920ee183298e1f34  linux-v6.17.0-sm8150.tar.gz
+7b9453ace6fdda1c05bb3ca0e7560bc19750c5a87a7320f1ec5557e7e1c4ecc603d810c94d25cc4b3c38593324860b27055095897ef0a284b842a087c9adee94  config-postmarketos-qcom-sm8150.aarch64
+15422195814314d8f9ce905408d1256bec753ca1b58babc59391c4cb8b4fbbc9034c622129d52964ccceb39e6f4326f0eae5ca9271496e1a0432416ecd09cc1d  0001-lid-switch-fix.patch
+316decafef4528b3d8fa9ce1f2c1588048ae0a99adf088d61372d84ff95ae7bf58e5cc0d03d73201f1735f3d523468d98113ac575714930229434a46385a5c3d  0002-enable-ufs.patch
+61653196d559a725e372597f7a2d8da4f308bc14c610fce6ecc982fab25757dd37a684480b32c1b05547144c1ec14000f6ddf542c605894edb68e7484d40fbf1  0003-fix-llvm-build.patch
+"

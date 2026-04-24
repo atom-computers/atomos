@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-huawei-kiwi
+pkgdesc="Huawei Honor 5X / GR5 (2016)"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916 soc-qcom-msm8939"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+nonfree_firmware() {
+	pkgdesc="Modem/GPU/WiFi/BT/Video firmware"
+	depends="firmware-qcom-adreno-a420 msm-firmware-loader
+		 firmware-huawei-kiwi-venus firmware-huawei-kiwi-wcnss-nv"
+	mkdir "$subpkgdir"
+}
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+77d9bcfb24b1f9d32dea8228fd603c22b50a90661a59972751bd9f91e9903e8a8b1fba0c1b027055f63a6fba613e974165a4553628b7f82d829c9b49f76da7eb  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+96b41eb6b39f8c8bcb6c99ab6b5729ec33d6bc394b2230ed168cf19cba8f86ebae3340b0ef9e15a3a6ee202895cd81f4d8812e5c81c4cc6d087ca9e239023993  modules-initfs
+"

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Welcome
+Exec=postmarketos-welcome --autolaunch
+Icon=org.postmarketos.Welcome
+Terminal=false
+Type=Application
+StartupNotify=true

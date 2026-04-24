@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/karatep_defconfig
+
+pkgname=linux-lenovo-karatep
+pkgver=3.18.124
+pkgrel=0
+pkgdesc="Lenovo K6 Note kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lenovo-karatep"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	gcc4
+"
+# Compiler: GCC 4 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lenovo_msm8937"
+_commit="f23254d4fbeb0e6d8ac866568f69a81b776a6437"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/karthick111/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	proc.S_patch.patch
+	0001-Comment-lines-that-are-sending-Touchscreen-info-to-k.patch
+	0002-Framebuffer-patch-for-MSM8937.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+c4be8501316f62db3b93ec0398bf59fe46f287447d7f5a163940efcdde3f3dd5d4a21e093801a49ad57100d002564bd94af12c545360cd72c6e2a93efb40816b  linux-lenovo-karatep-f23254d4fbeb0e6d8ac866568f69a81b776a6437.tar.gz
+cac45e79e93723d30386b159a7768971d9f8a3c287bca234a96ebb1721a59d8ed084e58173da5dc617dde16a7050127bdb23e98f5bcbc15061616d07eb575665  config-lenovo-karatep.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+bbd16d6e02c792e69ec98013ebe1166d2d03b81b28b9cea2ff0b87fd23146929849339b023180d926a781c251b269c120c00f5132106a1750c8aa3b003a10e00  proc.S_patch.patch
+acb22fbbac4fcff04c9df4c1abc4c6a1f50022a7ec2fe3108621bcca7d862a5b49ca63a5bba1e392101fc7569c3ac98e855cf472e116c8f66c7d999d6cae0cca  0001-Comment-lines-that-are-sending-Touchscreen-info-to-k.patch
+9f73fb305241e04d45717f894d9e1b59aba4ef80bd8af9790dd00c0ba2f59429a8f076386a906f98c8251c473738287c835b9e00fb88e330d942a5af2609a2a9  0002-Framebuffer-patch-for-MSM8937.patch
+"

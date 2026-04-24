@@ -1,0 +1,66 @@
+# Kernel config based on: arch/arm/configs/p6601_defconfig
+# Wiko U Feel is based on Tinno p6601
+
+pkgname=linux-wiko-ufeel
+pkgver=3.18.19
+pkgrel=6
+pkgdesc="Wiko U Feel kernel"
+arch="armv7"
+_carch="arm"
+_flavor="wiko-ufeel"
+url="https://wikomobile.com"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl userspace-rcu sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+## Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="linux-wiko-ufeel"
+_commit="225754d6fb494c6d5993f40451e415450337ba89"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_disable_drvgen.patch
+	01_add_decompiled_stock_dtb_dtsi.patch
+	02_fix_various_include_directives_mt6735.patch
+	03-workaround-loading-wifi-firmware-mt6735.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+
+sha512sums="
+140e5d015ede0ebac771d4bb1e35e0133341dc05fe5c97ebc9f40142e889263722e40b7e7c99f865ad9890c879e85e2468d024d5cf5b8c4f79d74b678188bc6e  linux-wiko-ufeel-225754d6fb494c6d5993f40451e415450337ba89.tar.gz
+a0e4ee304f93f455a170fa74e03383244c40184a73cf8227392233a37514951900cc4059552ef7223dd28a2e35ef8ab63d32d674ec16fbded17ffb4657f21ad0  config-wiko-ufeel.armv7
+8a04940e6f5424df67a3cc4c75dd19be1c9b560859e9db0ae67b766d52982a46156b601698afb80f90b9b99f63ef74e1f6147902b43ec97c25d2b75ba2f8d2b3  00_disable_drvgen.patch
+e2b77554b0c22cacf9e011bd7ccd447c5d530fc23caa25416469ca3df6c2f6c0e11fb28cdf751ea8e3b35e629d8c68410ad4abf50f9fdbe493f6754810d9966d  01_add_decompiled_stock_dtb_dtsi.patch
+1f6d7d043ee8556758e2475ca2d677abf1582f4329eb66cfcd6481a4b3216efd35a0f44d0483a8a3344bb4b5dd24d340327d9216f3069ed4b86e5bf8ffc5412b  02_fix_various_include_directives_mt6735.patch
+02840e4c8d689d5507ab4e66e7c65940aa4335713b265ea745e93daf68cdf4c77aa497e253e6f0caa20fece37d176430d374ada1d9401b0ea552601ef0d7e312  03-workaround-loading-wifi-firmware-mt6735.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ -z "$(grep /mnt/firmware /etc/fstab)" ]; then
+	mkdir -p /mnt/firmware
+	echo "/dev/mmcblk0p1	/mnt/firmware	auto	ro	0	0" >> /etc/fstab
+fi
+
+if [ -z "$(grep /mnt/data /etc/fstab)" ]; then
+	mkdir -p /mnt/data
+	echo "/dev/mmcblk0p38	/mnt/data	auto	ro	0	0" >> /etc/fstab
+fi
+
+if [ -z "$(grep /mnt/persist /etc/fstab)" ]; then
+	mkdir -p /mnt/persist
+	echo "/dev/mmcblk0p29	/mnt/persist	auto	ro	0	0" >> /etc/fstab
+fi

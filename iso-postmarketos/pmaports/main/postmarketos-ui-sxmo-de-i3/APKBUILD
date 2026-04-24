@@ -1,0 +1,57 @@
+# Reference: https://postmarketos.org/uipkg
+# Co-Maintainer: Anjandev Momi <anjan@momi.ca>
+# Co-Maintainer: Maarten van Gompel <proycon@anaproy.nl>
+# Co-Maintainer: Aren Moynihan <aren@peacerevolution.org>
+maintainer="Willow Barraco <contact@willowbarraco.fr>"
+pkgname=postmarketos-ui-sxmo-de-i3
+pkgver=1.18.0 # Bump this so the file names in bpo are correct
+pkgrel=0
+pkgdesc="Simple Mobile: Mobile environment based on SXMO and running on i3"
+url="http://sr.ht/~mil/Sxmo"
+arch="noarch"
+license="AGPL-3.0-only"
+depends="
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+
+	sxmo-utils-i3
+	sxmo-utils-audio-bluetooth
+	"
+install="
+	$pkgname.post-install
+	$pkgname.post-upgrade
+	"
+_pmb_recommends="
+	w3m
+	sfeed
+
+	adwaita-icon-theme
+	clickclack
+	postmarketos-artwork-wallpapers
+	ttyescape
+	xcalc
+	"
+provides="postmarketos-ui-sxmo"
+provider_priority=3
+options="!check"
+subpackages="$pkgname-openrc"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		openrc
+		tinydm-openrc
+		modemmanager-openrc
+		networkmanager-openrc
+		bluez-openrc
+		iio-sensor-proxy-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}

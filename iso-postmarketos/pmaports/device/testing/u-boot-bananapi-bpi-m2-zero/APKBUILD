@@ -1,0 +1,43 @@
+maintainer="User0 <user0thenyancat@proton.me>"
+pkgname=u-boot-bananapi-bpi-m2-zero
+pkgver=2025.01
+pkgrel=0
+pkgdesc="Mainline U-Boot fork for the Banana Pi BPI-M2 Zero"
+arch="armv7"
+_carch="arm"
+license="GPL-2.0"
+url="https://github.com/u-boot/u-boot"
+makedepends="
+	bash
+	bc
+	bison
+	dtc
+	flex
+	gnutls-dev
+	openssl-dev
+	py3-setuptools
+	python3-dev
+	swig
+"
+options="!check !tracedeps pmb:cross-native"
+_repository="u-boot"
+_commit="178f6ecb21fe12ada74a9a1a08093c812b15eea5"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/u-boot/$_repository/archive/$_commit.tar.gz
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+build() {
+	make ARCH="$_carch" bananapi_m2_zero_defconfig
+	make ARCH="$_carch" all
+}
+
+package() {
+	install -Dm644 "$builddir/u-boot-dtb.bin" "$pkgdir/usr/share/u-boot/bananapi-m2-zero/u-boot.bin"
+	install -Dm644 "$builddir/u-boot-sunxi-with-spl.bin" "$pkgdir/usr/share/u-boot/bananapi-m2-zero/u-boot.sunxi"
+}
+
+sha512sums="
+0f9cc03abdc4451a56edcd7ef51bf63fc25f29afdf670c73387f0107e0f9bf5aee98a0cb0efe897c69ebd9f37643df40350d6d48b00418a4b6779be72d1a7614  u-boot-bananapi-bpi-m2-zero-178f6ecb21fe12ada74a9a1a08093c812b15eea5.tar.gz
+"

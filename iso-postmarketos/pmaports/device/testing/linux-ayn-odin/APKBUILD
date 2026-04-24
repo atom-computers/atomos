@@ -1,0 +1,93 @@
+# Based on linux-postmarketos-qcom-sdm845
+#
+# This kernel package can be replaced with linux-postmarketos-qcom-sdm845 once
+# https://gitlab.com/sdm845-mainline/linux/-/merge_requests/91 is merged
+maintainer=""
+_flavor="ayn-odin"
+pkgname=linux-$_flavor
+pkgver=6.7.0
+pkgrel=8
+pkgdesc="Mainline Kernel fork for AYN Odin"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/jenneron/linux"
+license="GPL-2.0-only"
+options="!check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+"
+makedepends="
+	bash
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	zstd
+"
+
+_config="config-$_flavor.$arch"
+_commit="87349bbdebbd62f0a235cdcc31dc25f507fc444f"
+
+# Source
+source="
+	linux-$_commit.tar.gz::https://gitlab.com/jenneron/linux/-/archive/$_commit/linux-$_commit.tar.gz
+	$_config
+	0001-kbuild-Add-fno-builtin-wcslen.patch
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm8* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+baedc6653df9a0c697ddf127dd9d43be12fb54f34c699404ec5d2837f24ca8fc8889e4b5055c84ce0f6be120c4284386acbc8eeb134fe80edc01c26f9d1893be  linux-87349bbdebbd62f0a235cdcc31dc25f507fc444f.tar.gz
+341aa70fe82c8717fa1187d87cdb39ab2adf538b48824aac8c7a33bfb161f17cd01680a09becf99c5f60357a52e146a4dd72e8512a4858d2f2348645729867af  config-ayn-odin.aarch64
+2a5c20bd9da57e42767fa70eb1aa27623e4013b5dadc3f35508e1497fb4bfd53d8775c372eea8c4d95bd12eff43f23c7a4acfb219313dcb7915643804fc73cb2  0001-kbuild-Add-fno-builtin-wcslen.patch
+"

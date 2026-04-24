@@ -1,0 +1,16 @@
+diff --git a/include/configs/rk3588_common.h.orig b/include/configs/rk3588_common.h
+index d57f4a1..089b579 100644
+--- a/include/configs/rk3588_common.h.orig
++++ b/include/configs/rk3588_common.h
+@@ -80,7 +80,9 @@
+ 	"fdt_addr_r=0x08300000\0" \
+ 	"kernel_addr_r=0x00400000\0" \
+ 	"kernel_addr_c=0x05480000\0" \
+-	"ramdisk_addr_r=0x0a200000\0"
++	"kernel_comp_addr_r=0x0a200000\0" \
++	"kernel_comp_size=0x02000000\0" \
++	"ramdisk_addr_r=0xc200000\0"
+ 
+ #include <config_distro_bootcmd.h>
+ 
+

@@ -1,0 +1,33 @@
+maintainer=""
+pkgname=firmware-asus-z00l
+pkgver=3
+pkgrel=0
+pkgdesc="Firmware for ASUS Zenfone 2 Laser (720p) (ZE550KL)"
+url="https://github.com/antony-jr/firmware-asus-z00l-raw"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="d78364b2127e8187f79e271e94dde03f0f722432"
+_repo="firmware-asus-z00l-raw"
+_fwdir="/lib/firmware/postmarketos"
+builddir="$srcdir/$_repo-$_commit"
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/antony-jr/$_repo/archive/$_commit.tar.gz
+"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="ASUS Zenfone 2 Laser WiFi/BT firmware configuration"
+	replaces="firmware-asus-z00l-wcnss"
+	cd "$builddir"
+	install -Dm644 etc-firmware/wlan/prima/WCNSS_qcom_wlan_nv_ze550kl.bin \
+		"$subpkgdir/$_fwdir"/wlan/prima/WCNSS_qcom_wlan_nv.bin
+}
+
+sha512sums="176da0aa399eddb6b9ab582b12bc698af369397a19c28556c39a656b573a5d4b02effe11a97d2f4c81568df03bc7859d999eb5d196a842dde4940cee192b96b3  firmware-asus-z00l-d78364b2127e8187f79e271e94dde03f0f722432.tar.gz"

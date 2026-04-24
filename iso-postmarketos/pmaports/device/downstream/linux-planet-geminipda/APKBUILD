@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/aeon6797_6m_n_halium_defconfig
+
+pkgname=linux-planet-geminipda
+pkgver=3.18.41
+pkgrel=4
+pkgdesc="Gemini PDA kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="planet-geminipda"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6 python3"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="gemini-linux-kernel-3.18"
+_commit="bf7daa4483d5dce94c9d478fc28854f5978d60da"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/gemian/$_repository/archive/$_commit.tar.gz
+	$_config
+	py3-compat.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		O="$_outdir"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+84579ba59ada9166794ec02843616049128c199f9c68b519d3e33056822a22d12921b6589ff058d08e580e877a227a124f999f041e29b6d81a8fde7ce7480b11  linux-planet-geminipda-bf7daa4483d5dce94c9d478fc28854f5978d60da.tar.gz
+1436f595cffc46a9dd9a28432ee3c2349062ca8b47035b5f09d24820140beff7dcbc6d26076781a873fce21394395c582d15b3f3c4c7bc9e6c8f51d76ff8ae57  config-planet-geminipda.aarch64
+9c12d5d2064d2f0b2b35e3c068ed2406c0a7dc8ffbc55712fd0a8411b40b08eb73987c1b2a3e710eea0e83f659c0eae99dbf11d306d43a30cebcafd009459ad6  py3-compat.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

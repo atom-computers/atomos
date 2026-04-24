@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-asus-z010d
+pkgdesc="Asus Zenfone Max ZC550KL"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		 firmware-asus-z010d-wcnss-nv firmware-asus-z010d-venus"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+cdc56a919f26e42030152764ac835a8e4486a1f1d79039b4a3a11701b4d4b228fa38119b56f2c842151668e677063cc1e019e046d1306d8b3f4dc6de4ff35d5c  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+"

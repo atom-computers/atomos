@@ -1,0 +1,26 @@
+# Archived: Downstream port, only for testing. Use mainline port (oneplus-billie2)!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-oneplus-billie2-downstream
+pkgdesc="OnePlus Nord N100 (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-oneplus-billie2 mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+973c7556023409bda16d41b8f8d1988870d8440e5579d08165d291336505428e8fa25ffe303b257f10c2f5980583e441bf30d207aa2d896eb75ce0181870dae3  deviceinfo
+4bc72fb80c18e99c656039f1bcfbdf7c4168e03a5ff5251de650b77e070d52797d68324d2b61f121e475a8370bb66bebf7db2dbf09fc5db75745a5e1f859d2de  kernel-cmdline.conf
+"

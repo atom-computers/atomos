@@ -1,0 +1,32 @@
+From ee9acd76d945aece3b375b56600f88843f5a105f Mon Sep 17 00:00:00 2001
+From: Dzmitry Sankouski <dsankouski@gmail.com>
+Date: Thu, 1 Dec 2022 22:07:08 +0300
+Subject: [PATCH 6/6] bootmenu: loop over menu entries with one key
+
+---
+ cmd/bootmenu.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/cmd/bootmenu.c b/cmd/bootmenu.c
+index 3340be1632..7d9f0b3a46 100644
+--- a/cmd/bootmenu.c
++++ b/cmd/bootmenu.c
+@@ -103,11 +103,15 @@ static char *bootmenu_choice_entry(void *data)
+ 		case KEY_UP:
+ 			if (menu->active > 0)
+ 				--menu->active;
++			else
++			    menu->active = menu->count - 1;
+ 			/* no menu key selected, regenerate menu */
+ 			return NULL;
+ 		case KEY_DOWN:
+ 			if (menu->active < menu->count - 1)
+ 				++menu->active;
++			else
++			    menu->active = 0;
+ 			/* no menu key selected, regenerate menu */
+ 			return NULL;
+ 		case KEY_SELECT:
+-- 
+2.30.2
+

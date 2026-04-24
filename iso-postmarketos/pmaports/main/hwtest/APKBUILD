@@ -1,0 +1,36 @@
+maintainer=""
+pkgname=hwtest
+pkgver=0.7.0
+pkgrel=5
+pkgdesc="Small utility to check hardware functionality on phones"
+url="https://gitlab.com/MartijnBraam/hwtest"
+arch="noarch"
+license="MIT"
+depends="
+	alsa-utils
+	evtest
+	ffmpeg
+	linuxconsoletools
+	py3-dbus
+	py3-setuptools
+	python3
+	v4l-utils
+	"
+makedepends="
+	py3-setuptools
+	python3-dev
+	"
+source="https://gitlab.com/MartijnBraam/hwtest/-/archive/$pkgver/hwtest-$pkgver.tar.gz"
+options="!check" # No tests
+
+build() {
+	python3 setup.py build
+}
+
+package() {
+	python3 setup.py install --prefix=/usr --root="$pkgdir"
+}
+
+sha512sums="
+06055bcab260c047fbe58ed2bf26588397f8386dc5b5445c0deb2adeccf0cfca652464dd317317a04303105e14b6873297261d947e8a3bdddebbfb822a3a03f4  hwtest-0.7.0.tar.gz
+"

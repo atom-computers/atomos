@@ -1,0 +1,136 @@
+author	John Stultz <john.stultz@linaro.org>	2016-02-29 20:23:21 -0800
+committer	John Stultz <john.stultz@linaro.org>	2017-05-12 14:09:02 -0700
+commit	d337a84d6b6adc6d7e315de7faba6694bb25b05e (patch)
+tree	b5cd19a76d8c7590db47bea7845f003bf69ae6d6
+parent	e4b001541f7fc4f142d1f2327bbed779db6193ec (diff)
+download	flo-d337a84d6b6adc6d7e315de7faba6694bb25b05e.tar.gz
+ARM: dts: nexus7: Add regulator tweaks and wcnss entry to support wifi
+Tweak and add some regulator entries that are needed to
+support wifi.
+
+The values here were taken from:
+arch/arm/mach-msm/asustek/flo/board-flo-regulator.c
+in the AOSP msm 3.4 flo branch.
+
+This also adds a wcnss entry so it gets enabled on the board.
+
+Cc: Bjorn Andersson <bjorn.andersson@linaro.org>
+Cc: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Cc: Nicolas Dechesne <nicolas.dechesne@linaro.org>
+Cc: Stephen Boyd <stephen.boyd@linaro.org>
+Cc: Andy Gross <andy.gross@linaro.org>
+Cc: Rob Clark <robdclark@gmail.com>
+Cc: Vinay Simha <simhavcs@gmail.com>
+Cc: David Brown <david.brown@linaro.org>
+Cc: Rob Herring <robh+dt@kernel.org>
+Signed-off-by: John Stults <john.stultz@linaro.org>
+Diffstat
+-rw-r--r--	arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts	42	
+		
+1 files changed, 40 insertions, 2 deletions
+diff --git a/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts b/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts
+index e5fef32..3cae48f 100644
+--- a/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts
++++ b/arch/arm/boot/dts/qcom-apq8064-asus-nexus7-flo.dts
+@@ -82,7 +82,17 @@
+ 					bias-pull-down;
+ 				};
+ 
+-				/* msm otg HSUSB_VDDCX */
++				/* wcnss_wlan.0-iris_vddrfa */
++				s2 {
++					regulator-min-microvolt = <1300000>;
++					regulator-max-microvolt = <1300000>;
++					qcom,switch-mode-frequency = <1600000>;
++				};
++
++				/*
++				 * msm otg HSUSB_VDDCX
++				 * wcnss_wlan.0-riva_vddcx
++				 */
+ 				s3 {
+ 					regulator-min-microvolt = <500000>;
+ 					regulator-max-microvolt = <1150000>;
+@@ -95,6 +105,7 @@
+ 				 * tabla2x-slim-CDC_VDDA_TX
+ 				 * tabla2x-slim-CDC_VDD_CP
+ 				 * tabla2x-slim-VDDIO_CDC
++				 * wcnss_wlan.0-riva_vddpx
+ 				 */
+ 				s4 {
+ 					regulator-min-microvolt	= <1800000>;
+@@ -123,7 +134,10 @@
+ 					bias-pull-down;
+ 				};
+ 
+-				/* msm_otg-HSUSB_1p8 */
++				/*
++				 * msm_otg-HSUSB_1p8
++				 * wcnss_wlan.0-iris_vddxo
++				 */
+ 				l4 {
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+@@ -143,6 +157,12 @@
+ 					regulator-max-microvolt = <2950000>;
+ 				};
+ 
++				/* wcnss_wlan.0-iris_vddpa */
++				l10 {
++					regulator-min-microvolt = <2900000>;
++					regulator-max-microvolt = <2900000>;
++				};
++
+ 				/* mipi_dsi.1-dsi1_avdd */
+ 				l11 {
+ 					regulator-min-microvolt = <3000000>;
+@@ -165,6 +185,12 @@
+ 					bias-pull-down;
+ 				};
+ 
++				/* wcnss_wlan.0-riva_vddmx */
++				l24 {
++					regulator-min-microvolt = <750000>;
++					regulator-max-microvolt = <1150000>;
++				};
++
+ 				/*
+ 				 * tabla2x-slim-CDC_VDDA_A_1P2V
+ 				 * tabla2x-slim-VDDD_CDC_D
+@@ -175,10 +201,15 @@
+ 					bias-pull-down;
+ 				};
+ 
++				/* wcnss_wlan.0-iris_vddio */
+ 				lvs1 {
+ 					bias-pull-down;
+ 				};
+ 
++				/* wcnss_wlan.0-iris_vdddig */
++				lvs2 {
++				};
++
+ 				lvs4 {
+ 					bias-pull-down;
+ 				};
+@@ -196,6 +227,7 @@
+ 				 */
+ 				lvs7 {
+ 					bias-pull-down;
++					regulator-always-on;
+ 				};
+ 			};
+ 		};
+@@ -340,6 +372,12 @@
+ 			};
+ 		};
+ 
++		riva-pil@3204000 {
++			status = "okay";
++			pinctrl-names = "default";
++			pinctrl-0 = <&riva_wlan_pin_a>;
++		};
++
+ 		imem@2a03f000 {
+ 			compatible = "syscon", "simple-mfd";
+ 			reg = <0x2a03f000 0x1000>;

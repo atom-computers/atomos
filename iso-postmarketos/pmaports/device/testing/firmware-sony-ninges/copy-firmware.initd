@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+description="Copy firmware to rootfs"
+
+start() {
+	# Set up directories (if needed)
+	mkdir -p /opt/firmware/modem
+	mkdir -p /opt/firmware/odm
+	mkdir -p /lib/firmware/qcom/venus-4.4
+
+	# Copy all the firmware over (except Venus)
+	rsync -r -l -p --owner=root --group=root --chmod=0755 --exclude 'venus*' /opt/firmware/modem/image/* /lib/firmware/
+
+	# Copy Venus FW over to the correct location
+	rsync -r -l -p --owner=root --group=root --chmod=0755 /opt/firmware/modem/image/venus* /lib/firmware/qcom/venus-4.4
+
+	# Get Adreno & ZAP firmware from ODM package
+	rsync -r -l -p --owner=root --group=root --chmod=0755 /opt/firmware/odm/firmware/* /lib/firmware/qcom
+} 

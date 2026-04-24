@@ -1,0 +1,76 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+
+pkgname=linux-samsung-j7elte
+pkgver=3.10.108
+pkgrel=1
+pkgdesc="Samsung Galaxy J7 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j7elte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	openssl-dev
+	perl
+	linux-headers
+"
+
+# Source
+_repository="android_kernel_samsung_universal7580"
+_commit="2a746c1bc1a41eae05988c153f527c8a5dc72d07"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	fix-vmm-blob-include.patch
+	create-a-file-platform.h-which-is-a-symlink.patch
+	fix-argb.patch
+	samsung-usb-ethaddr.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *j7elte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+b01b78378bb072ab42f6e2c0751a052b99b06c4516d32df4551d97614717be4a30c24ba0b8ddc3cb043b6f04b3c2d408ede490e48402d1ad497831bb0830dbe7  linux-samsung-j7elte-2a746c1bc1a41eae05988c153f527c8a5dc72d07.tar.gz
+23e49e4993a98684717beaca7ea44f2cd4e0079460e573acc93237aa8b1d55115c72a22c0f16f3b8638c5b82ab57ea71ee8c043bf61d89f7cb190711e87d0156  config-samsung-j7elte.aarch64
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+23bf8ef0ad38b38ffa9ddfdee76a32c43b021169c6db6f5b733fd6434169f7c7bb27cdb1232be89475f34f9053211d943e13f5fba565c928256b92b18d636130  fix-vmm-blob-include.patch
+b2b8020948dfa4dc24eec4402aa7c2845ba56e844b2cfb591b4326b372a7748063c9e67d54bf70d841141c7a9203c25766538522d1a6a08e3ca3b8054eface43  create-a-file-platform.h-which-is-a-symlink.patch
+aff2f127c44de0fc3e523834766a5851b48ade0e5cd95f594b36fc17adf3fb0549c70e4cba34a4bbea272fca80d61e0f4615a7195662f38794a1cd96213c7ca2  fix-argb.patch
+bfd0332076724bea2d10e96c81fae41eefb60bfc19f7a21ec849cf2a6b48e4cada694ed6b389ed600e182755d6fdb96f12dcbe81c8e691a2b4602f432fae165a  samsung-usb-ethaddr.patch
+"

@@ -1,0 +1,8 @@
+anx7625
+panel-edp
+hid-generic
+hid-multitouch
+i2c-hid-of
+elan-i2c
+elants-i2c
+cros-ec-keyb

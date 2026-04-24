@@ -1,0 +1,128 @@
+# Co-Maintainer: Clayton Craft <clayton@craftyguy.net>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=postmarketos-initramfs
+pkgver=3.9.6
+pkgrel=0
+pkgdesc="Base files for the postmarketOS initramfs / initramfs-extra"
+url="https://postmarketos.org"
+options="!check"  # no tests
+provides="postmarketos-ramdisk=$pkgver-r$pkgrel"
+provider_priority=10
+makedepends="
+	postmarketos-base-nofde
+"
+depends="
+	blkid
+	btrfs-progs
+	buffyboard
+	busybox-extras
+	bzip2
+	cryptsetup
+	device-mapper
+	devicepkg-utils>=0.2.0
+	dosfstools
+	e2fsprogs
+	e2fsprogs-extra
+	f2fs-tools
+	font-terminus
+	iskey
+	kmod
+	libinput-libs
+	losetup
+	lz4
+	parted
+	postmarketos-fde-unlocker
+	postmarketos-mkinitfs>=2.2
+	udev
+	unudhcpd
+	util-linux-misc
+	xfsprogs
+	xfsprogs-extra
+	xz
+	"
+makedepends="
+	postmarketos-base-nofde
+"
+source="
+	00-default.modules
+	00-default-extra.modules
+	00-initramfs-base.dirs
+	00-initramfs-base.files
+	00-initramfs-extra-base.files
+	init.sh
+	init_functions.sh
+	init_2nd.sh
+	init_functions_2nd.sh
+	mdev.conf
+	unudhcpd.conf
+	"
+arch="noarch"
+license="GPL-2.0-or-later"
+
+build() {
+	mkdir -p "$builddir"
+
+	# Replace <<INITRAMFS_PKG_VERSION>> with the actual version
+	sed "s|<<INITRAMFS_PKG_VERSION>>|$pkgver-r$pkgrel|" \
+		"$srcdir/init.sh" > "$builddir/init.sh"
+}
+
+package() {
+	install -Dm644 "$srcdir/unudhcpd.conf" \
+		"$pkgdir/etc/unudhcpd.conf"
+
+	install -Dm644 "$srcdir"/mdev.conf \
+		-t "$pkgdir"/usr/share/initramfs/
+
+
+	install -Dm644 "$srcdir/init_functions.sh" \
+		"$pkgdir/usr/share/initramfs/init_functions.sh"
+
+	install -Dm644 "$srcdir/init_functions_2nd.sh" \
+		"$pkgdir/usr/share/initramfs/init_functions_2nd.sh"
+
+	install -Dm755 "$builddir/init.sh" \
+		"$pkgdir/usr/share/initramfs/init.sh"
+
+	install -Dm755 "$srcdir/init_2nd.sh" \
+		"$pkgdir/usr/share/initramfs/init_2nd.sh"
+
+	install -Dm644 "$srcdir"/00-initramfs-base.dirs \
+		-t "$pkgdir"/usr/share/mkinitfs/dirs/
+	mkdir -p "$pkgdir"/etc/mkinitfs/dirs
+
+	install -Dm644 "$srcdir"/00-default.modules \
+		-t "$pkgdir"/usr/share/mkinitfs/modules/
+	mkdir -p "$pkgdir"/etc/mkinitfs/modules
+
+	install -Dm644 "$srcdir"/00-default-extra.modules \
+		-t "$pkgdir"/usr/share/mkinitfs/modules-extra/
+	mkdir -p "$pkgdir"/etc/mkinitfs/modules-extra
+
+	install -Dm644 "$srcdir"/00-initramfs-base.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files/
+	mkdir -p "$pkgdir"/etc/mkinitfs/files
+
+	install -Dm644 "$srcdir"/00-initramfs-extra-base.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files-extra/
+	mkdir -p "$pkgdir"/etc/mkinitfs/files-extra
+
+	mkdir -p "$pkgdir"/usr/share/mkinitfs/hooks
+	mkdir -p "$pkgdir"/usr/share/mkinitfs/hooks-extra
+	mkdir -p "$pkgdir"/etc/mkinitfs/hooks
+	mkdir -p "$pkgdir"/etc/mkinitfs/hooks-extra
+}
+
+sha512sums="
+22cdd663c8d153781284511140b7c994cd60f0231a2819dafa67f5a11e2963ac6e392e8f7a9e3b75e7fe5d6d7b0b5e262e1ff1a695637354a124560a5ec3ed8d  00-default.modules
+ace852ba267b3408998970df6042603c8bec1d033066d1c30ed65f1be955fee8644b57882898f10228ec43b912f8f03718b34ddd741b431e5a5c2e76f060a494  00-default-extra.modules
+9c0e8f6f61d5da191e03a1aa9d5d0ceb5baf1eae6dbb9bfb0af59817783525119ac8394b135f303f7b6434a3eab0b49185fb90379e06823db847a4999c75ce33  00-initramfs-base.dirs
+26e391a2c45e4317549153630d7398f01cf374d9a95e2587f0f7153017c50b6640950af60eab3b3fcadef2e8826295445ac1f45567716d3bd5d12e9c87df599b  00-initramfs-base.files
+6d91270b96ce0c745391174201dde63b43a73ae6456c2e1138046beef3548580588fedbeae7cc914079162e99343b45d82c6e6a7ee1d03829aae7697ae52f575  00-initramfs-extra-base.files
+e90596540805662211bd2a2e427ce7cc38f6a30023267f902e23f2bae136b6cd8f4f4716b8fb611be9d671a964edd2ecce03fa32bc8024e29b8375b0097fde0c  init.sh
+ba00a507e26976e438db3125edb016ecae63cff1829ba2b341b521f8678d89f6894f0be5b0964204857384bf1c17a49445ef16f91ed1535f4066ec7718e346cf  init_functions.sh
+55634e5388394acc86a7ba245c35f1f07aff6e352d6973df6a62483ac70485c5b889828c52ff4067049ec4f825174cf0073a77a373f8048c4e252d6811299756  init_2nd.sh
+61acb470a163fb50ad46752781b5ccc5dba6db9170e4250b4dcdfc7572d0316a7a36bc5a383026887a7a59364ee30917790e429b3fce9de590543d1d8410589c  init_functions_2nd.sh
+675e7d5bee39b2df7d322117f8dcaccc274d61beaf4d50ead19bbf2109446d64b1c0aa0c5b4f9846eb6c1c403418f28f6364eff4537ba41120fbfcbc484b7da7  mdev.conf
+ba3275a9af788c7c782322a22a0f144d5e50e3498ea6886486a29331f23ae89cd32d500a3635cfa7cab369afba92edc18aeca64ccbf0cd589061cce23d15b46c  unudhcpd.conf
+"

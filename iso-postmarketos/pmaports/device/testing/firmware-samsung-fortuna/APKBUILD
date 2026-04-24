@@ -1,0 +1,82 @@
+maintainer="Raymond Hackley <wonderfulShrineMaidenOfParadise@postmarketos.org>"
+pkgname=firmware-samsung-fortuna
+pkgver=2
+pkgrel=4
+_name="Samsung Galaxy Grand Prime"
+pkgdesc="Firmware for $_name"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+builddir="$srcdir"
+
+_subpkgname="${pkgname%-fortuna}"
+_variants="
+	fortuna3g
+	gprimeltecan
+	grandprimelte
+"
+
+for _variant in $_variants; do
+	subpackages="$subpackages $_subpkgname-$_variant-wcnss-nv:wcnss_nv_$_variant"
+done
+
+# armv7 only variant(s)
+_variants_armv7="fortunaltezt"
+
+for _variant in $_variants_armv7; do
+	subpackages="$subpackages $_subpkgname-$_variant-wcnss-nv:wcnss_nv_$_variant:armv7"
+done
+
+_wcnss_nv_bin="WCNSS_qcom_wlan_nv.bin"
+source="
+	$_subpkgname-fortuna3g-$_wcnss_nv_bin.base64::https://pastebin.com/raw/Y8DvfvRf
+	$_subpkgname-fortunaltezt-$_wcnss_nv_bin.base64::https://pastebin.com/raw/s25mBaen
+	$_subpkgname-gprimeltecan-$_wcnss_nv_bin.base64::https://pastebin.com/raw/BxjvzZhd
+	$_subpkgname-grandprimelte-$_wcnss_nv_bin.base64::https://pastebin.com/raw/6rPpqqEE
+"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	for _variant in $_variants $_variants_armv7; do
+		base64 -d $_subpkgname-$_variant-$_wcnss_nv_bin.base64 \
+			> $_variant-$_wcnss_nv_bin
+	done
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv_fortuna3g() {
+	pkgdesc="$_name (SM-G530H) WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/fortuna3g-$_wcnss_nv_bin \
+		"$subpkgdir/$_fwdir"/wlan/prima/$_wcnss_nv_bin
+}
+
+wcnss_nv_fortunaltezt() {
+	pkgdesc="$_name (SM-G530Y) WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/fortunaltezt-$_wcnss_nv_bin \
+		"$subpkgdir/$_fwdir"/wlan/prima/$_wcnss_nv_bin
+}
+
+wcnss_nv_gprimeltecan() {
+	pkgdesc="$_name (SM-G530W) WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/gprimeltecan-$_wcnss_nv_bin \
+		"$subpkgdir/$_fwdir"/wlan/prima/$_wcnss_nv_bin
+}
+
+wcnss_nv_grandprimelte() {
+	pkgdesc="$_name (SM-G530FZ) WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/grandprimelte-$_wcnss_nv_bin \
+		"$subpkgdir/$_fwdir"/wlan/prima/$_wcnss_nv_bin
+}
+
+sha512sums="
+8f46dae0009391871764e3e5cfcb39f565116444ae0882ef3b93cf43418a997a8fb260948d2bb1315ffb33faa82565ec352b1bbee573421363e86325b2bf5a9e  firmware-samsung-fortuna3g-WCNSS_qcom_wlan_nv.bin.base64
+0a34532a0c5bbf69bb6a81ec850951b47c9e059a3ea2ab269dac1dfe19de49a51f98d018d899db2517e95f0ac737f82ff0c46df9bfd3e990b44b7b03062cba2e  firmware-samsung-fortunaltezt-WCNSS_qcom_wlan_nv.bin.base64
+7129e4a5ed999d203d5b097abebd434c4293cb65e4eb387e517e52e91ff6e5939a0d8f25eb45efcee986d856689ba0a3e0887087425ce8d0883688891b25fa55  firmware-samsung-gprimeltecan-WCNSS_qcom_wlan_nv.bin.base64
+2c012fdf0abe58c4864f79d6f084ce3857f8f09a9c5d85dd36b1dd3377dcc4745646047a5929e2e70ab755aca3f1506018b7f389fef4ff00d7f396eecd4f908f  firmware-samsung-grandprimelte-WCNSS_qcom_wlan_nv.bin.base64
+"

@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: kernel/arch/arm/configs/fp1_defconfig
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=linux-fairphone-fp1
+pkgver=3.4.5
+pkgrel=10
+pkgdesc="Fairphone 1 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="fairphone-fp1"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl grep coreutils gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_fairphone_FP1"
+_commit="328160cf6ddec4ad417cdf648b61d26cc09f9e73"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/z3ntu/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit/kernel"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	TARGET_BUILD_VARIANT=user TARGET_PRODUCT=ahong89_wet_jb2 \
+		make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+9ab967c0635dc5b3dca457725d25b44cfc391cb8fb5b9417fe5d6636131aecdf36575375f6151496d5269aaaf14cf15a4580aaee6a4699f0644822af66efba06  linux-fairphone-fp1-328160cf6ddec4ad417cdf648b61d26cc09f9e73.tar.gz
+6a3cd0749e5963d3cd3ea99fcd6ec26fda18bc32d63e45093d8fc9d19dfc977f44e4442cc4110510ddeec8ceb7851db8b74329ef3914fe8e501b6d208aacd517  config-fairphone-fp1.armv7
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

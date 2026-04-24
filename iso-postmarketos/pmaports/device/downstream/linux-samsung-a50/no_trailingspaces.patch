@@ -1,0 +1,10 @@
+diff --git a/scripts/setlocalversion b/scripts/setlocalversion
+index e67861812..d1d7791a4 100755
+--- a/scripts/setlocalversion
++++ b/scripts/setlocalversion
+@@ -179,4 +179,4 @@ else
+ 	fi
+ fi
+ 
+-echo "$res"
++echo ""

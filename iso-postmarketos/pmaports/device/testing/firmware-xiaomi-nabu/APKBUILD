@@ -1,0 +1,58 @@
+maintainer="Pan Ortiz <panjeoc@proton.me>"
+pkgname=firmware-xiaomi-nabu
+license="proprietary"
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for Xiaomi Pad 5"
+url="https://gitlab.postmarketos.org/panpanpanpan/nabu-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://gitlab.postmarketos.org/panpanpanpan/nabu-firmware/-/archive/$pkgver/nabu-firmware-$pkgver.tar.gz"
+builddir="$srcdir/nabu-firmware-$pkgver"
+depends="
+	linux-firmware-ath10k
+	linux-firmware-qcom
+	linux-firmware-qca
+	"
+package() {
+
+	# TODO: Replace with a dependency on firmware-qcom-adreno-a640
+	install -Dm644 "$builddir"/a630_sqe.fw -t \
+		"$pkgdir"/lib/firmware/qcom/
+	install -Dm644 "$builddir"/a640_gmu.bin -t \
+		"$pkgdir"/lib/firmware/qcom/
+
+	install -Dm644 "$builddir"/a640_zap.mbn -t \
+		"$pkgdir"/lib/firmware/qcom/sm8150/xiaomi/nabu/
+
+	install -Dm644 "$builddir"/adsp.mbn -t \
+		"$pkgdir"/lib/firmware/qcom/sm8150/xiaomi/nabu/
+
+	install -Dm644 "$builddir"/cdsp.mbn -t \
+		"$pkgdir"/lib/firmware/qcom/sm8150/xiaomi/nabu/
+
+	install -Dm644 "$builddir"/cs35l41* -t \
+		"$pkgdir"/lib/firmware/cirrus/
+
+	mkdir -p "$pkgdir/lib/firmware/qcom/sm8150/xiaomi/nabu/"
+	cp -r "$builddir"/modem* \
+		"$pkgdir/lib/firmware/qcom/sm8150/xiaomi/nabu/"
+
+	install -Dm644 "$builddir"/venus.mbn -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/xiaomi/nabu/"
+
+	install -Dm644 "$builddir"/wlanmdsp.mbn -t \
+		"$pkgdir/lib/firmware/qcom/sm8150/xiaomi/nabu/"
+
+	install -Dm644 "$builddir"/novatek_nt36523_fw.bin -t \
+		"$pkgdir/lib/firmware/novatek/"
+
+	find "$pkgdir/lib/firmware/qcom/sm8150/xiaomi/nabu/" \
+		-type f -exec chmod 0644 {} \;
+
+}
+
+sha512sums="
+1d3686fbca7cf7e6e6e186e8155dfc5bbf63455732478f7e854f1a2e020d83e9821c97145fd1f58ba651a578f8b9a7621e7b9041aa8419a9b7b4839eb2ee8514  nabu-firmware-1.tar.gz
+"

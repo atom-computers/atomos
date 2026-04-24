@@ -1,0 +1,46 @@
+From 4ae995b8dbef63a3253c40aa08e09b16c3008425 Mon Sep 17 00:00:00 2001
+From: JuniorJPDJ <git@juniorjpdj.pl>
+Date: Sun, 28 Mar 2021 03:05:32 +0200
+Subject: [PATCH] configs: add goclever-gcta741l
+
+---
+ configs/goclever-gcta741l_defconfig | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 configs/goclever-gcta741l_defconfig
+
+diff --git a/configs/goclever-gcta741l_defconfig b/configs/goclever-gcta741l_defconfig
+new file mode 100644
+index 0000000000..0c23d3ab04
+--- /dev/null
++++ b/configs/goclever-gcta741l_defconfig
+@@ -0,0 +1,27 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_SPL=y
++CONFIG_MACH_SUN6I=y
++CONFIG_DRAM_CLK=360
++CONFIG_DRAM_ZQ=251
++CONFIG_MMC0_CD_PIN="PA8"
++CONFIG_USB0_VBUS_PIN="AXP0-VBUS-ENABLE"
++CONFIG_USB0_VBUS_DET="AXP0-VBUS-DETECT"
++CONFIG_USB0_ID_DET="PA15"
++CONFIG_AXP_GPIO=y
++CONFIG_VIDEO_LCD_MODE="x:800,y:480,depth:18,pclk_khz:33000,le:14,ri:240,up:3,lo:35,hs:30,vs:13,sync:3,vmode:0"
++# le=-14,up=-3
++CONFIG_VIDEO_LCD_DCLK_PHASE=0
++CONFIG_VIDEO_LCD_BL_EN="PA25"
++CONFIG_VIDEO_LCD_BL_PWM="PH13"
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_SPL_TEXT_BASE=0x60
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_DEFAULT_DEVICE_TREE="sun6i-a31s-goclever-gcta741l"
++CONFIG_AXP_DLDO1_VOLT=3300
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_MUSB_HOST=y
++CONFIG_USB_KEYBOARD=y
++CONFIG_USB_STORAGE=y
++CONFIG_SYS_USB_EVENT_POLL_VIA_INT_QUEUE=y
+-- 
+2.31.0
+

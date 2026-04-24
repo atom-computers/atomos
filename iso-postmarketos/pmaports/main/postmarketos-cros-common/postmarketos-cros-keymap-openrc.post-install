@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rc-update add cros-keyboard-map boot
+rc-update add keyd boot

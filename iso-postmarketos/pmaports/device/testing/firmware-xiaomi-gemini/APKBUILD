@@ -1,0 +1,29 @@
+maintainer="Raffaele Tranquillini (cunidev) <raffaele.tranquillini@gmail.com>"
+pkgname=firmware-xiaomi-gemini
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi 5"
+url="https://gitlab.com/cunidev/firmware-xiaomi-gemini"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+
+_commit="07917ca1673f124413897d94f5660a8a379209b3"
+
+source="
+	$pkgname.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	firmware.files
+	"
+
+package() {
+	cd "$srcdir/$pkgname-$_commit/"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		echo $_i
+		install -Dm644 $_i "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+}
+sha512sums="
+051cbce79879f47f653062801bc67987304382427edac0ca400ec269c49269cf21f36c49ebd7d6f67259b6c5dea7e44e9025146974e1ff9a7ffbad8a08941397  firmware-xiaomi-gemini.tar.gz
+84df460f39bcdbf26c3a081e0bb8ecbd3d3e812ee634306c7d87304b0f05eae63eb11718164b798768b47490136a2943de461e3e35df25423da48fe90954e1bb  firmware.files
+"

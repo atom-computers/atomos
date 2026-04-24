@@ -1,0 +1,26 @@
+# Based on arch/arm64/boot/dts/qcom/spi-panel-gc9307-hlt-28-qvga-cmd.dtsi from
+# the downstream kernel, which is:
+# Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 and
+# only version 2 as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+command 0x11 # exit sleep mode
+delay 120
+command 0xfe
+command 0xef
+command 0x13
+command 0x38
+command 0x20
+command 0x36 0x00
+command 0x3a 0x05
+command 0x35 0x00
+command 0x89 0x0b
+command 0xeb 0x02
+command 0x29 # display on

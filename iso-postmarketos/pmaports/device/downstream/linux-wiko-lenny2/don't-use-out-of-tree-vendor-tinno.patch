@@ -1,0 +1,44 @@
+Author: Antoine Fontaine <antoine.fontaine@epfl.ch>
+
+    No, mediatek, I don't wanna lunch.
+
+    This patch fixup this kind of error:
+
+    cat: can't open '/home/pmos/build/src/linux-wiko-lenny2-204adbdcc01951c8eb33fc8b5543320f760bd3e3/../build.ini': No such file or directory
+    /home/pmos/build/src/linux-wiko-lenny2-204adbdcc01951c8eb33fc8b5543320f760bd3e3/drivers/misc/mediatek/Makefile.custom:11: --PROJECT_NAME -is null--please--do--lunch------
+
+    They are repeated a large number of time.
+    png: https://gitlab.com/postmarketOS/pmaports/uploads/d4d2495df6d8b4e96dca35f5233597aa/photo_2019-12-01_10-15-11.jpg
+
+diff --git a/drivers/misc/mediatek/Makefile.custom b/drivers/misc/mediatek/Makefile.custom
+index c27618ab..c16f4c53 100755
+--- a/drivers/misc/mediatek/Makefile.custom
++++ b/drivers/misc/mediatek/Makefile.custom
+@@ -5,27 +5,6 @@ ARCH_MTK_PROJECT := $(subst ",,$(CONFIG_ARCH_MTK_PROJECT))
+ MTK_CUSTOM_PATH  := $(srctree)/drivers/misc/mediatek
+ 
+ 
+-#guomingyi20150127add start.
+-PROJECT_NAME := $(strip $(subst ro.project =,,$(shell cat $(PWD)/../build.ini |grep ^ro.project)))
+-ifeq ($(strip $(PROJECT_NAME)),)
+-  $(warning --PROJECT_NAME -is null--please--do--lunch--$(TARGET_PRODUCT)-$(TARGET_BUILD_VARIANT)---)
+-endif
+-NEW_MAKE_FILE := $(PWD)/../vendor/tinno/$(ARCH_MTK_PROJECT)/$(PROJECT_NAME)/cust_kcfg/Makefile
+-ifneq ($(wildcard $(NEW_MAKE_FILE)),)
+-  include $(NEW_MAKE_FILE)
+-endif
+-
+-# For cust_battery_meter_table.h cust_battery_meter.h 
+-CUST_PROJECT_DIR := $(PWD)/../vendor/tinno/$(ARCH_MTK_PROJECT)/$(PROJECT_NAME)
+-ifneq ($(wildcard $(CUST_PROJECT_DIR)/kernel/power/cust_*.h),)
+-  ccflags-y += -I$(CUST_PROJECT_DIR)/kernel/power
+-  $(warning ---~~~~~$(CUST_PROJECT_DIR)/kernel/power/cust_*.h------exit~~~~~~~)
+-endif
+-#guomingyi20150127 add end.
+-
+-
+-
+-
+ ifneq ($(CONFIG_ARM64), y)
+ # For arm32, mach folder
+ MTK_PLATFORM_PATH_ROOT := $(srctree)/arch/arm/mach-$(MTK_PLATFORM)

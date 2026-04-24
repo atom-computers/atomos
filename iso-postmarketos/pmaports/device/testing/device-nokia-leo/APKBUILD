@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-nokia-leo
+pkgdesc="Nokia 6300 4G"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="GPL-2.0-only"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8909
+	soc-qcom-msm8916-rproc
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+makedepends="devicepkg-dev mipi-dbi-cmd"
+_panel="nokia,leo-gc9305-hlt-24-panel"
+source="
+	$_panel.txt
+	00-nokia-leo-display.files
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkdir -p "$builddir"
+	mipi-dbi-cmd "$builddir"/"$_panel".bin \
+			"$srcdir"/"$_panel".txt
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	# Package display init sequence
+	install -Dm644 "$builddir"/"$_panel".bin -t \
+			"$pkgdir"/lib/firmware/
+	install -Dm644 "$srcdir"/00-nokia-leo-display.files -t \
+			"$pkgdir"/usr/share/mkinitfs/files/
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="
+		firmware-qcom-adreno-a300
+		msm-firmware-loader
+		firmware-nokia-sparkler-venus
+		firmware-nokia-sparkler-wcnss-nv
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+8583c7d5a97c4efedff3ec554cf682d815fd7b83140c2cab9eec4b6e2e735ce3c012bc3bd97f8bc75adc3483f76ce83a5bf1090d4f3e73a327efc64ca9eca5a7  nokia,leo-gc9305-hlt-24-panel.txt
+c9985232e5e64ddb0906b053e5024c87fa62cc1bcb254260e1ef6afb43d384196e09d41287143bcba61dff616dd6b562a5ca335dbe592fcd8c954642b8085f38  00-nokia-leo-display.files
+34c6269610e41b51b31b293cc3777a2af1776375617aecf001347e8d7e05a13b8bcf4ce82e13938a219493d780003631076dbd2f3f6fd26c249ec96b1b36219e  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+d5dfe844a45cfc4e0844e43b8fb3e1bbcb155e06430188f8d5059fc5ce3c4100fde7f1580b1b54c5318f40d238736b233463582e55b9dd25654e40539e11ed39  modules-initfs
+"

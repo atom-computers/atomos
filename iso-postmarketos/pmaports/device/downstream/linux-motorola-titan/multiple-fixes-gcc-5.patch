@@ -1,0 +1,217 @@
+From 5236526cf8f1586c2afe29d827568e6afa2a0042 Mon Sep 17 00:00:00 2001
+From: ZaneZam <cyxman@yahoo.com>
+Date: Thu, 26 Mar 2015 14:56:22 +0100
+Subject: [PATCH] toolchain: multiple fixes and changes for gcc 5.0.0
+
+---
+ arch/arm/mach-msm/include/mach/qdsp6v2/apr.h               |  2 +-
+ drivers/gpu/msm/Makefile                                   |  3 +++
+ drivers/gpu/msm/adreno_ringbuffer.c                        |  4 ++--
+ drivers/gpu/msm/kgsl_iommu.c                               |  4 ++--
+ .../platform/msm/camera_oppo_v2/jpeg_10/msm_jpeg_sync.c    | 14 +++++++-------
+ drivers/media/video/Makefile                               |  2 ++
+ drivers/mmc/host/Makefile                                  |  2 ++
+ drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c          |  2 +-
+ drivers/video/msm/mdss/Makefile                            |  3 +++
+ drivers/video/msm/mdss/mdss_mdp_pp.c                       |  2 +-
+ fs/fat/Makefile                                            |  2 ++
+ mm/Makefile                                                |  2 ++
+ mm/rmap.c                                                  |  2 +-
+ sound/soc/codecs/Makefile                                  |  3 +++
+ sound/usb/Makefile                                         |  2 ++
+ 19 files changed, 45 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/mach-msm/include/mach/qdsp6v2/apr.h b/arch/arm/mach-msm/include/mach/qdsp6v2/apr.h
+index 9f4acca58d0..63dc87b172e 100644
+--- a/arch/arm/mach-msm/include/mach/qdsp6v2/apr.h
++++ b/arch/arm/mach-msm/include/mach/qdsp6v2/apr.h
+@@ -153,7 +153,7 @@ int apr_get_svc(const char *svc_name, int dest_id, int *client_id,
+ void apr_cb_func(void *buf, int len, void *priv);
+ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
+ 					uint32_t src_port, void *priv);
+-inline int apr_fill_hdr(void *handle, uint32_t *buf, uint16_t src_port,
++int apr_fill_hdr(void *handle, uint32_t *buf, uint16_t src_port,
+ 			uint16_t msg_type, uint16_t dest_port,
+ 			uint32_t token, uint32_t opcode, uint16_t len);
+ 
+diff --git a/drivers/gpu/msm/Makefile b/drivers/gpu/msm/Makefile
+index 8a3993525aa..4bf7b30d4e1 100644
+--- a/drivers/gpu/msm/Makefile
++++ b/drivers/gpu/msm/Makefile
+@@ -1,3 +1,6 @@
++
++EXTRA_CFLAGS += -Wno-array-bounds
++
+ ccflags-y := -Iinclude/uapi/drm -Iinclude/drm -Idrivers/gpu/msm
+ 
+ msm_kgsl_core-y = \
+diff --git a/drivers/gpu/msm/adreno_ringbuffer.c b/drivers/gpu/msm/adreno_ringbuffer.c
+index 1b367c6a3bb..f006e4a02f3 100644
+--- a/drivers/gpu/msm/adreno_ringbuffer.c
++++ b/drivers/gpu/msm/adreno_ringbuffer.c
+@@ -213,7 +213,7 @@ int adreno_ringbuffer_read_pm4_ucode(struct kgsl_device *device)
+  *
+  * Load the pm4 ucode from @start at @addr.
+  */
+-inline int adreno_ringbuffer_load_pm4_ucode(struct kgsl_device *device,
++static inline int adreno_ringbuffer_load_pm4_ucode(struct kgsl_device *device,
+ 			unsigned int start, unsigned int end, unsigned int addr)
+ {
+ 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
+@@ -267,7 +267,7 @@ int adreno_ringbuffer_read_pfp_ucode(struct kgsl_device *device)
+  *
+  * Load the pfp ucode from @start at @addr.
+  */
+-inline int adreno_ringbuffer_load_pfp_ucode(struct kgsl_device *device,
++static inline int adreno_ringbuffer_load_pfp_ucode(struct kgsl_device *device,
+ 			unsigned int start, unsigned int end, unsigned int addr)
+ {
+ 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
+diff --git a/drivers/gpu/msm/kgsl_iommu.c b/drivers/gpu/msm/kgsl_iommu.c
+index 1680a679fb0..6a1f62a8a94 100644
+--- a/drivers/gpu/msm/kgsl_iommu.c
++++ b/drivers/gpu/msm/kgsl_iommu.c
+@@ -993,7 +993,7 @@ static int kgsl_iommu_init_sync_lock(struct kgsl_mmu *mmu)
+  *
+  * Return - int - number of commands.
+  */
+-inline unsigned int kgsl_iommu_sync_lock(struct kgsl_mmu *mmu,
++static inline unsigned int kgsl_iommu_sync_lock(struct kgsl_mmu *mmu,
+ 						unsigned int *cmds)
+ {
+ 	struct kgsl_device *device = mmu->device;
+@@ -1063,7 +1063,7 @@ inline unsigned int kgsl_iommu_sync_lock(struct kgsl_mmu *mmu,
+  *
+  * Return - int - number of commands.
+  */
+-inline unsigned int kgsl_iommu_sync_unlock(struct kgsl_mmu *mmu,
++static inline unsigned int kgsl_iommu_sync_unlock(struct kgsl_mmu *mmu,
+ 					unsigned int *cmds)
+ {
+ 	struct kgsl_device *device = mmu->device;
+diff --git a/drivers/media/video/Makefile b/drivers/media/video/Makefile
+index 26f96cad452..750a92dc22d 100644
+--- a/drivers/media/video/Makefile
++++ b/drivers/media/video/Makefile
+@@ -2,6 +2,8 @@
+ # Makefile for the video capture/playback device drivers.
+ #
+ 
++EXTRA_CFLAGS += -Wno-array-bounds
++
+ tuner-objs	:=	tuner-core.o
+ 
+ msp3400-objs	:=	msp3400-driver.o msp3400-kthreads.o
+diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
+index c0232fa4453..41fe89b9459 100644
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -2,6 +2,8 @@
+ # Makefile for MMC/SD host controller drivers
+ #
+ 
++EXTRA_CFLAGS += -Wno-array-bounds
++
+ obj-$(CONFIG_MMC_ARMMMCI)	+= mmci.o
+ obj-$(CONFIG_MMC_PXA)		+= pxamci.o
+ obj-$(CONFIG_MMC_IMX)		+= imxmmc.o
+diff --git a/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c b/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c
+index 077e8cb2648..c7a661b4c62 100644
+--- a/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c
++++ b/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c
+@@ -876,7 +876,7 @@ static eHalStatus hdd_wmm_sme_callback (tHalHandle hHal,
+       VOS_TRACE( VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                  "%s: Setup failed, not a QoS AP",
+                  __func__);
+-      if (!HDD_WMM_HANDLE_IMPLICIT == pQosContext->handle)
++      if (HDD_WMM_HANDLE_IMPLICIT != pQosContext->handle)
+       {
+          VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO,
+                    "%s: Explicit Qos, notifying userspace",
+diff --git a/drivers/video/msm/mdss/Makefile b/drivers/video/msm/mdss/Makefile
+index 568c020a7c4..00bef01e598 100644
+--- a/drivers/video/msm/mdss/Makefile
++++ b/drivers/video/msm/mdss/Makefile
+@@ -1,3 +1,6 @@
++
++EXTRA_CFLAGS += -Wno-array-bounds
++
+ mdss-mdp3-objs = mdp3.o mdp3_dma.o mdp3_ctrl.o
+ mdss-mdp3-objs += mdp3_ppp.o mdp3_ppp_hwio.o mdp3_ppp_data.o
+ obj-$(CONFIG_FB_MSM_MDSS_MDP3) += mdss-mdp3.o
+diff --git a/drivers/video/msm/mdss/mdss_mdp_pp.c b/drivers/video/msm/mdss/mdss_mdp_pp.c
+index 91549419456..65733b8ee99 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_pp.c
++++ b/drivers/video/msm/mdss/mdss_mdp_pp.c
+@@ -4429,7 +4429,7 @@ int mdss_mdp_ad_input(struct msm_fb_data_type *mfd,
+ 	mutex_lock(&ad->lock);
+ 	if ((!PP_AD_STATE_IS_INITCFG(ad->state) &&
+ 			!PP_AD_STS_IS_DIRTY(ad->sts)) &&
+-			!input->mode == MDSS_AD_MODE_CALIB) {
++			input->mode != MDSS_AD_MODE_CALIB) {
+ 		pr_warn("AD not initialized or configured.");
+ 		ret = -EPERM;
+ 		goto error;
+diff --git a/fs/fat/Makefile b/fs/fat/Makefile
+index e06190322c1..a4f39fae7ec 100644
+--- a/fs/fat/Makefile
++++ b/fs/fat/Makefile
+@@ -2,6 +2,8 @@
+ # Makefile for the Linux fat filesystem support.
+ #
+ 
++EXTRA_CFLAGS += -Wno-array-bounds
++
+ obj-$(CONFIG_FAT_FS) += fat.o
+ obj-$(CONFIG_VFAT_FS) += vfat.o
+ obj-$(CONFIG_MSDOS_FS) += msdos.o
+diff --git a/mm/Makefile b/mm/Makefile
+index 7dab505a3d3..6dca64e2d07 100644
+--- a/mm/Makefile
++++ b/mm/Makefile
+@@ -2,6 +2,8 @@
+ # Makefile for the linux memory manager.
+ #
+ 
++EXTRA_CFLAGS += -Wno-array-bounds
++
+ mmu-y			:= nommu.o
+ mmu-$(CONFIG_MMU)	:= fremap.o highmem.o madvise.o memory.o mincore.o \
+ 			   mlock.o mmap.o mprotect.o mremap.o msync.o rmap.o \
+diff --git a/mm/rmap.c b/mm/rmap.c
+index ecce3eca0b7..95caf999479 100644
+--- a/mm/rmap.c
++++ b/mm/rmap.c
+@@ -566,7 +566,7 @@ void page_unlock_anon_vma(struct anon_vma *anon_vma)
+  * Returns virtual address or -EFAULT if page's index/offset is not
+  * within the range mapped the @vma.
+  */
+-inline unsigned long
++static inline unsigned long
+ vma_address(struct page *page, struct vm_area_struct *vma)
+ {
+ 	pgoff_t pgoff = page->index << (PAGE_CACHE_SHIFT - PAGE_SHIFT);
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index 915b57e9118..aa41a457e0a 100644
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -1,3 +1,6 @@
++
++EXTRA_CFLAGS += -Wno-discarded-array-qualifiers
++
+ snd-soc-88pm860x-objs := 88pm860x-codec.o
+ snd-soc-ac97-objs := ac97.o
+ snd-soc-ad1836-objs := ad1836.o
+diff --git a/sound/usb/Makefile b/sound/usb/Makefile
+index ac256dc4c6b..b744c5aa8bf 100644
+--- a/sound/usb/Makefile
++++ b/sound/usb/Makefile
+@@ -2,6 +2,8 @@
+ # Makefile for ALSA
+ #
+ 
++EXTRA_CFLAGS += -Wno-array-bounds
++
+ snd-usb-audio-objs := 	card.o \
+ 			clock.o \
+ 			endpoint.o \

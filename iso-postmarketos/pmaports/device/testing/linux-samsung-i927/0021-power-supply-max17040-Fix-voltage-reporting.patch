@@ -1,0 +1,30 @@
+From c0a73c04d982dc7e055436b4f101b36f51c8f2e5 Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Sat, 9 Feb 2019 18:47:19 +0300
+Subject: [PATCH] power: supply: max17040: Fix voltage reporting
+
+VCELL register on max17040 reports voltage in 1.25mV steps
+in top-12 bits. Fix volate reporting by taking this
+into account.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ drivers/power/supply/max17040_battery.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/power/supply/max17040_battery.c b/drivers/power/supply/max17040_battery.c
+index 91cafc7bed30..de5e791e0055 100644
+--- a/drivers/power/supply/max17040_battery.c
++++ b/drivers/power/supply/max17040_battery.c
+@@ -105,7 +105,7 @@ static void max17040_get_vcell(struct i2c_client *client)
+ 
+ 	vcell = max17040_read_reg(client, MAX17040_VCELL);
+ 
+-	chip->vcell = vcell;
++	chip->vcell = (vcell >> 4) * 1250;
+ }
+ 
+ static void max17040_get_soc(struct i2c_client *client)
+-- 
+2.22.0
+

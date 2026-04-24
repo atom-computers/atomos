@@ -1,0 +1,29 @@
+# Co-Maintainer: Ingo Reitz <9l@9lo.re>
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+pkgname=firmware-google-trogdor
+pkgver=1
+pkgrel=1
+pkgdesc="Modem firmware for Google Trogdor chromebooks"
+url="https://gitlab.com/jenneron/firmware-google-trogdor"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="bae7f2275cd7ccd73111662e25b124c082f296ea"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/firmware-google-trogdor-$_commit.tar.gz"
+
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	_srcdir="qcom/sc7180-trogdor"
+	_installdir="$pkgdir/lib/firmware/postmarketos/$_srcdir"
+	install -Dm644 "$_srcdir"/modem/mba.mbn -t "$_installdir"/modem
+	install -Dm644 "$_srcdir"/modem/qdsp6sw.mbn -t "$_installdir"/modem
+	install -Dm644 "$_srcdir"/modem-nolte/mba.mbn -t "$_installdir"/modem-nolte
+	install -Dm644 "$_srcdir"/modem-nolte/qdsp6sw.mbn -t "$_installdir"/modem-nolte
+}
+
+sha512sums="
+0f013f5cf62f649dbff139f5454ea0d614cd9a6bacb6d6d05b3bb898c3791e13573f0a5cbf2894f11393635f85ffa260f74da656b40447ff0ea85ec979a68394  firmware-google-trogdor-bae7f2275cd7ccd73111662e25b124c082f296ea.tar.gz
+"

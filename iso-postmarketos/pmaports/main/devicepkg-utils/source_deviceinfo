@@ -1,0 +1,7 @@
+# These scripts must be sourced (not executed) to work properly
+# shellcheck disable=SC1091
+SOURCE_DEVICEINFO_ROOT="${SOURCE_DEVICEINFO_ROOT:-}"
+[ -f "$SOURCE_DEVICEINFO_ROOT/usr/share/deviceinfo/deviceinfo" ] && . "$SOURCE_DEVICEINFO_ROOT/usr/share/deviceinfo/deviceinfo"
+[ -f "$SOURCE_DEVICEINFO_ROOT/etc/deviceinfo" ] && . "$SOURCE_DEVICEINFO_ROOT/etc/deviceinfo"
+
+[ -z "$deviceinfo_arch" ] && { echo "$0: ERROR: deviceinfo file is missing!!"; exit 1; } || true

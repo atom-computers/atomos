@@ -1,0 +1,50 @@
+maintainer="WeirdTreeThing <bradyn127@protonmail.com>"
+pkgname=msm-cros-efs-loader
+pkgver=1.2.1
+pkgrel=0
+pkgdesc="EFS loader for Qualcomm-based Chrome OS devices"
+url="https://gitlab.postmarketos.org/postmarketOS/msm-cros-efs-loader"
+arch="aarch64"
+license="GPL-3.0-or-later"
+_tag="v$pkgver"
+source="$pkgname-$pkgver.tar.gz::$url/-/archive/$_tag/msm-cros-efs-loader-$_tag.tar.gz
+	$pkgname.initd
+	rmtfs.confd
+"
+options="!check !archcheck"
+subpackages="$pkgname-rmtfs $pkgname-openrc $pkgname-systemd"
+builddir="$srcdir/$pkgname-$_tag"
+
+package() {
+	install -Dm755 "$pkgname.sh" "$pkgdir/usr/sbin/$pkgname"
+	install -Dm755 "$srcdir/$pkgname.initd" "$pkgdir/etc/init.d/$pkgname"
+	install -Dm644 "$srcdir/$pkgname-v$pkgver/10-$pkgname.conf" "$pkgdir"/usr/lib/systemd/system/rmtfs.service.d/10-$pkgname.conf
+}
+
+rmtfs() {
+	pkgdesc="RMTFS config for Chrome OS devices"
+	install_if="$pkgname=$pkgver-r$pkgrel rmtfs-openrc"
+	replaces="rmtfs-openrc"
+
+	install -Dm644 "$srcdir"/rmtfs.confd "$subpkgdir"/etc/conf.d/rmtfs
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	default_openrc
+}
+
+systemd() {
+	pkgdesc="Drop-in config for RMTFS to support msm-cros-efs-loader"
+	install_if="$pkgname=$pkgver-r$pkgrel rmtfs systemd"
+
+	default_systemd
+}
+
+sha512sums="
+c2a1ce7a5352175a64a95988815fe5e242dab6f8f3a2990081fd9c4518376de89a370f46e461f4fbe7e82c52cab82f365e8bfc976e23111261bab58bc51aebc2  msm-cros-efs-loader-1.2.1.tar.gz
+a3e902e4dec0bdc7241ea98ef016c0a761f594ac8ee4c67348a4cd5c64de256c0e201b57d4979cf1c175315255a2e35cd2db7ef05c382444511e328834bed56e  msm-cros-efs-loader.initd
+c79a441d1234b53070c356eec0493fba1af502c61e0127fd8d892b7c880571642077a29bcd712a704fd82392125c5542b373119d5f71adb3439ea1f32c17f1c8  rmtfs.confd
+"

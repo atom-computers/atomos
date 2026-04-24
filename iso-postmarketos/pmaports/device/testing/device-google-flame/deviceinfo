@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Google Pixel 4"
+deviceinfo_manufacturer="Google"
+deviceinfo_codename="google-flame"
+deviceinfo_year="2019"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_drm="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_getty="ttyMSM0;115200"
+deviceinfo_boot_filesystem="fat32"
+deviceinfo_dtb="qcom/sm8150-google-flame"
+
+# Required for devices using UFS as storage (instead of e.g. eMMC)
+deviceinfo_rootfs_image_sector_size="4096"
+
+# Load super partitions
+deviceinfo_super_partitions="/dev/sda14 /dev/sda14"
+
+# Google Inc. Nexus/Pixel Device (tether)
+deviceinfo_usb_idVendor="0x18d1"
+deviceinfo_usb_idProduct="0x4ee3"

@@ -1,0 +1,50 @@
+maintainer="leap123 <leap123@canaglie.org>"
+pkgname=device-rockchip-rk322x
+pkgdesc="Generic device package for various Rockchip RK3228/RK3229-based devices"
+pkgver=3
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-rockchip-rk322x
+	linux-postmarketos-rockchip-rk322x
+	linux-firmware-rockchip
+	mkbootimg
+	postmarketos-base
+	u-boot-rockchip-rk322x
+"
+subpackages="$pkgname-xorg:x11"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	xorg.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+x11() {
+	pkgdesc="X11 configuration for Rockchip RK3228/RK3229-based devices"
+	# Shamelessly taken from the Amlogic Aarch64 SOC package which in turn is shamelessly taken from Armbian.
+	# (modified to fit rockchip instead of amlogic ofc)
+	# https://github.com/armbian/build/blob/master/config/sources/families/include/meson64_common.inc
+	install_if="$pkgname xorg-server"
+	install -D -m644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/11-rockchip.conf
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+59034eb8d77d1585f3407f4721db7bde1118285ebc79520645df5028c5d205cc3f87551780987cf7ac87f0f6299aabaadeaff140b36a6a983ce20daeeceacef6  deviceinfo
+c4bb92da673673083bc3e282a048dc950dbc81b2ec83cdb5be2f969bdbc5f6d84a8e7f61390f77560558bc1bbaad391c48cda7fcd148deecba0d7c6414ae3f91  kernel-cmdline.conf
+967c1208357b67bd947853b82fc04db3603c86b159972d67a741eb5970498206b89657337e2d8b6c282f1083f38a93d7a0d5cf7b102a19a81e98bbe46b5741ad  modules-initfs
+dc483ce1abaae00124cff1251ed10f9cc4dd2c1ac03d162fe095371e76fd9b90ee868d760cdda0b19a3faaaba2687133e492c045da9c4726a33abd0480aef893  xorg.conf
+"

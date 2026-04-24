@@ -1,0 +1,71 @@
+# Forked from Alpine for systemd support
+maintainer="Achill Gilgenast <achill@achill.org>"
+pkgname=upower
+_pkgver=1.91.0
+pkgver=9999$_pkgver
+pkgrel=2
+pkgdesc="Power Management Services"
+url="https://upower.freedesktop.org"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-2.0-or-later"
+makedepends="
+	docbook-xsl
+	glib-dev
+	gobject-introspection-dev
+	gtk-doc
+	libgudev-dev
+	libxslt
+	meson
+	udev-dev
+	polkit-dev
+	"
+checkdepends="
+	dbus
+	py3-dbus
+	py3-dbusmock
+	py3-gobject3
+	py3-packaging
+	umockdev-dev
+	"
+_repo_url="https://gitlab.freedesktop.org/upower/upower.git"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang $pkgname-systemd $pkgname-zsh-completion"
+source="https://gitlab.freedesktop.org/upower/upower/-/archive/v$_pkgver/upower-v$_pkgver.tar.bz2
+	0001-fix-self-test-sleep-duration.patch
+	"
+builddir="$srcdir/$pkgname-v$_pkgver"
+
+options="$options !check !pmb:crossdirect" # failure on systemd, ignoring
+
+case "$CARCH" in
+x86)
+	# one test with 40.0 != 40.00000000
+	options="$options !check"
+	;;
+esac
+
+build() {
+	abuild-meson \
+		-Dudevhwdbdir=/usr/lib/udev/hwdb.d/ \
+		-Dudevrulesdir=/usr/lib/udev/rules.d \
+		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
+		-Dman=true \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test -t 5 --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+	# Delete integration tests and its support files.
+	rm -rf "$pkgdir/usr/libexec/upower/" \
+		"$pkgdir/usr/share/installed-tests/upower/upower-integration.test"
+}
+
+sha512sums="
+32801d3ee4c5086221a9f12062b0f2e6765b239f68a562c24ef7808999bb34e299e6acd31acf5c414cf41613709c97b20ad64d252e1d8ddf23183576b156cf93  upower-v1.91.0.tar.bz2
+1b582f31660b82444682b6786913a6eb4e8e13c8370205b31da1bf9328e0d2e62c2596bfb4e82faf25e658f379ddb92d7f3f97ec8ddfdb512339d4d3d663f708  0001-fix-self-test-sleep-duration.patch
+"

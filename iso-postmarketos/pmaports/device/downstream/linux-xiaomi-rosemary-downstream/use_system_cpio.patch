@@ -1,0 +1,10 @@
+--- a/kernel/gen_kheaders.sh
++++ b/kernel/gen_kheaders.sh
+@@ -8,7 +8,7 @@
+ outdir="$(pwd)"
+ tarfile=$1
+ cpio_dir=$outdir/$tarfile.tmp
+-cpio=$KBUILD_SRC/tools/build/cpio
++cpio=cpio
+ dir_list="
+ include/

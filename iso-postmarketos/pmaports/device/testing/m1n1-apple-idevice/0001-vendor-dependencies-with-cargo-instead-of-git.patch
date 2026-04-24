@@ -1,0 +1,71 @@
+From 39aefd78402169b223f581c1f6b40200f8ee417b Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Sat, 17 Jan 2026 14:54:54 -0500
+Subject: [PATCH] rust vendor deps with git
+
+Signed-off-by: Aster Boese <asterboese@mailbox.org>
+---
+ rust/Cargo.lock | 13 +++++++------
+ rust/Cargo.toml |  2 +-
+ 2 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/rust/Cargo.lock b/rust/Cargo.lock
+index 077e0d5..68fb51e 100644
+--- a/rust/Cargo.lock
++++ b/rust/Cargo.lock
+@@ -4,13 +4,14 @@ version = 4
+ 
+ [[package]]
+ name = "bitflags"
+-version = "2.9.2"
++version = "2.10.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "6a65b545ab31d687cff52899d4890855fec459eb6afe0da6417b8a18da87aa29"
++checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
+ 
+ [[package]]
+ name = "fatfs"
+ version = "0.4.0"
++source = "git+https://github.com/rafalh/rust-fatfs.git?rev=4eccb50d011146fbed20e133d33b22f3c27292e7#4eccb50d011146fbed20e133d33b22f3c27292e7"
+ dependencies = [
+  "bitflags",
+  "log",
+@@ -18,9 +19,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "log"
+-version = "0.4.27"
++version = "0.4.29"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
++checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
+ 
+ [[package]]
+ name = "rust"
+@@ -33,9 +34,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "uuid"
+-version = "1.18.0"
++version = "1.19.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "f33196643e165781c20a5ead5582283a7dacbb87855d867fbc2df3f81eddc1be"
++checksum = "e2e054861b4bd027cd373e18e8d8d8e6548085000e41290d95ce0c373a654b4a"
+ 
+ [[package]]
+ name = "versions"
+diff --git a/rust/Cargo.toml b/rust/Cargo.toml
+index c86cfd9..1e963cd 100644
+--- a/rust/Cargo.toml
++++ b/rust/Cargo.toml
+@@ -11,6 +11,6 @@ crate-type = [ "staticlib" ]
+ 
+ # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+ [dependencies]
+-fatfs = { path = "vendor/rust-fatfs", default-features = false, features = ["lfn", "alloc"] }
++fatfs = { git = "https://github.com/rafalh/rust-fatfs.git", rev = "4eccb50d011146fbed20e133d33b22f3c27292e7", default-features = false, features = ["lfn", "alloc"] }
+ uuid = { version = "1.7.0", default-features = false }
+ versions = { path = "./versions" }
+-- 
+2.52.0
+

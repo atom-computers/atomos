@@ -1,0 +1,36 @@
+maintainer=""
+pkgname=libsamsung-ipc
+pkgver=6.0.0004
+pkgrel=2
+pkgdesc="Implementation of Samsung modem protocol"
+url="https://redmine.replicant.us/projects/replicant/wiki/Libsamsung-ipc"
+arch="all"
+license="GPL-2.0-or-later"
+makedepends="autoconf automake libtool openssl-dev linux-headers"
+
+# Replace the last dot with a minus
+_pkgver="$(echo "$pkgver" | sed 's/\([0-9]*\.[0-9]*\)\.*/\1-/')"
+source="$pkgname-$_pkgver.tar.gz::https://git.replicant.us/replicant/hardware_replicant_libsamsung-ipc/snapshot/replicant-$_pkgver.tar.gz
+	0001-i9100-modem-firmware-device-path.patch
+	0002-runtime-device-overrides.patch
+	0003-Use-std-gnu99-for-tools.patch
+	"
+options="!check" # No tests
+
+builddir="$srcdir"/replicant-$_pkgver
+build() {
+	./autogen.sh
+	./configure CFLAGS=-Dloff_t=off_t --prefix=/usr --sysconfdir=/etc
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+37725ffac1e44396e29da12dcb47313bfacddd6df89cb514a34412def788e1716a961ddb8e9b0923d722f7e6c4455a534156099f0dd6d2d0c414a5d57415585c  libsamsung-ipc-6.0-0004.tar.gz
+8751a815c8749e1c098b0231e064fcc475703f0d22125acdd0156bbe9d8cf8859158c5a5ca79f305292ed312694070f62b5c54d70ca4a4a713b5405f173ee1cf  0001-i9100-modem-firmware-device-path.patch
+4309b407d8ac5773a2e37573618a548116adeb5aa40233d52f2afc9f5f24f61684e72c72be6476f245f70e58d163211e4d31931bb95dc4f4cfcafa4dba693d8b  0002-runtime-device-overrides.patch
+863cdcf1e311124c208135a84e11b33b5589ff73d1aa85b3ae2b2fbc956c10beb11b3a12c9bdea6c02412c4403d97a224030c0e11dca1affda218015a56d0cac  0003-Use-std-gnu99-for-tools.patch
+"

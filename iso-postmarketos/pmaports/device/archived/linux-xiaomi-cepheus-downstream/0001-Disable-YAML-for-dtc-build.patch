@@ -1,0 +1,38 @@
+From 87890022e5b2277001aeed0adf429945cfb75ba7 Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Wed, 14 Jul 2021 00:59:01 +0300
+Subject: [PATCH 1/7] Disable YAML for dtc build
+
+-lyaml is not passed to linker for some reason,
+many link errors follow.
+
+Signed-off-by: Alexey Min <alexey.min@gmail.com>
+---
+ scripts/dtc/Makefile | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/scripts/dtc/Makefile b/scripts/dtc/Makefile
+index ae39c56b66a5..e657ba66ad19 100644
+--- a/scripts/dtc/Makefile
++++ b/scripts/dtc/Makefile
+@@ -11,12 +11,12 @@ dtc-objs	+= dtc-lexer.lex.o dtc-parser.tab.o
+ # Source files need to get at the userspace version of libfdt_env.h to compile
+ HOST_EXTRACFLAGS := -I$(src)/libfdt
+ 
+-ifeq ($(wildcard /usr/include/yaml.h),)
++#ifeq ($(wildcard /usr/include/yaml.h),)
+ HOST_EXTRACFLAGS += -DNO_YAML
+-else
+-dtc-objs	+= yamltree.o
+-HOSTLDLIBS_dtc	:= -lyaml
+-endif
++#else
++#dtc-objs	+= yamltree.o
++#HOSTLDLIBS_dtc	:= -lyaml
++#endif
+ 
+ # Generated files need one more search path to include headers in source tree
+ HOSTCFLAGS_dtc-lexer.lex.o := -I$(src)
+-- 
+2.40.1
+

@@ -1,0 +1,136 @@
+# Forked from Alpine to apply mobile adaptivity patches
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=mutter-mobile
+_pkgver=48.0
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="clutter-based window manager and compositor"
+url="https://wiki.gnome.org/Projects/Mutter/"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-2.0-or-later"
+depends="
+	gnome-settings-daemon-mobile
+	gsettings-desktop-schemas
+	mutter-mobile-schemas
+	xkeyboard-config
+	xwayland
+	"
+makedepends="
+	at-spi2-core-dev
+	cairo-dev
+	dbus-dev
+	systemd-dev
+	eudev-dev
+	fribidi-dev
+	gdk-pixbuf-dev
+	glib-dev
+	gnome-desktop-dev
+	gnome-settings-daemon-mobile-dev
+	gobject-introspection-dev
+	graphene-dev
+	gtk+3.0-dev
+	json-glib-dev
+	libcanberra-dev
+	libdisplay-info-dev
+	libdrm-dev
+	libei-dev
+	libgudev-dev
+	libice-dev
+	libinput-dev
+	libsm-dev
+	libwacom-dev
+	libx11-dev
+	libxau-dev
+	libxcb-dev
+	libxcomposite-dev
+	libxcursor-dev
+	libxdamage-dev
+	libxext-dev
+	libxfixes-dev
+	libxi-dev
+	libxinerama-dev
+	libxkbcommon-dev
+	libxkbfile-dev
+	libxrandr-dev
+	libxrender-dev
+	libxtst-dev
+	mesa-dev
+	meson
+	pango-dev
+	pipewire-dev
+	py3-argcomplete
+	py3-docutils
+	startup-notification-dev
+	wayland-dev
+	wayland-protocols
+	xorg-server
+	xwayland-dev
+	"
+options="!check" # Can't be run with release builds
+provides="mutter=$pkgver-r$pkgrel"
+subpackages="$pkgname-dbg $pkgname-dev $pkgname-doc $pkgname-lang $pkgname-schemas::noarch"
+_commit="48.mobile.0"
+_gvdb_commit="b54bc5da25127ef416858a3ad92e57159ff565b3"
+source="mutter-mobile-$_commit.tar.gz::https://gitlab.gnome.org/verdre/mutter-mobile/-/archive/$_commit/mutter-mobile-$_commit.tar.gz
+	https://gitlab.gnome.org/GNOME/gvdb/-/archive/$_gvdb_commit/gvdb-$_gvdb_commit.tar.gz
+	pcver.patch
+	fix-freeze.patch
+	"
+builddir="$srcdir/mutter-mobile-$_commit"
+
+prepare() {
+	default_prepare
+
+	mkdir -p subprojects/gvdb
+	mv "$srcdir"/gvdb*/* subprojects/gvdb
+}
+
+build() {
+	abuild-meson \
+		-Degl_device=true \
+		-Dudev=true \
+		-Dnative_backend=true \
+		-Dintrospection=true \
+		-Dxwayland_path=/usr/bin/Xwayland \
+		-Dremote_desktop=true \
+		-Dprofiler=false \
+		-Dtests=disabled \
+		-Dinstalled_tests=false \
+		. output
+	meson compile ${JOBS:+-j ${JOBS}} -C output
+}
+
+schemas() {
+	pkgdesc="Mutter schemas related files"
+	provides="mutter-schemas=$pkgver-r$pkgrel"
+	depends=""
+
+	amove usr/share/glib-2.0/schemas
+	amove usr/share/GConf/gsettings
+	amove usr/share/gnome-control-center/keybindings
+}
+
+lang() {
+	default_lang
+	provides="mutter-lang=$pkgver-r$pkgrel"
+}
+
+dev() {
+	default_dev
+
+	provides="mutter-dev=$pkgver-r$pkgrel"
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+c1aef60e14662b373ddeab88d7b49f153165ab2bfb63906aeb64f6de9d224ed3d4c9c5b3cd8a7b12ba29b8de8a5b9fa738dfa681e83cd51e7a33d0695b6410f2  mutter-mobile-48.mobile.0.tar.gz
+1cd8d689758cda662737e5ec78d55e4f4c6934b0f429d8cadcec4a423bafd8765040f8d62c51d8797b101fff89df75a7b85e37006ea133ab81e600f205c2ef1e  gvdb-b54bc5da25127ef416858a3ad92e57159ff565b3.tar.gz
+5b4851ba1728f9d539cebdf5feb8e49dffc61c5b8f992e84145b654b0c3cadb4e585a4c1d53a4992132e4472771c97bbad2c261525fb17f91c4715da7eea799d  pcver.patch
+b7d0bea395c47558a089f75c2c30ac04da2ffc60d044364653098dcb30302aeeb839631fc51c5b5673d11f07fe85af645ea6fe9b2ebe107f8fc67541d5a8e3eb  fix-freeze.patch
+"

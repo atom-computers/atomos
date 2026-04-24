@@ -1,0 +1,15 @@
+This is useful for debugging GPS problems on some Qualcomm SoCs (e.g. msm8916),
+since memshare is needed for that to work.
+
+diff --git a/drivers/soc/qcom/memshare/msm_memshare.c b/drivers/soc/qcom/memshare/msm_memshare.c
+index eafbbf42457..1185825b32b 100644
+--- a/drivers/soc/qcom/memshare/msm_memshare.c
++++ b/drivers/soc/qcom/memshare/msm_memshare.c
+@@ -10,6 +10,7 @@
+  * GNU General Public License for more details.
+  *
+  */
++#define DEBUG
+ #include <linux/err.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>

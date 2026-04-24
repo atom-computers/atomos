@@ -1,0 +1,22 @@
+maintainer="Shinjo Park <peremen@gmail.com>"
+pkgname=tizen-mkdzimage
+pkgver=0_git20181203
+pkgrel=1
+_commit="46873d1cab9e17c54f03c1135a7f69ee4540604f"
+pkgdesc="mkdzimage for Tizen-based devices"
+url="https://gitlab.postmarketos.org/peremen/tizen-scripts"
+arch="noarch"
+license="GPL-2.0-only"
+depends="bash"
+source="https://gitlab.postmarketos.org/peremen/tizen-scripts/-/raw/$_commit/scripts/exynos_mkdzimage.sh?inline=false"
+# no tests
+options="!check"
+builddir="$srcdir/"
+
+package() {
+	install -Dm755 "$builddir/exynos_mkdzimage.sh?inline=false" "$pkgdir"/usr/bin/tizen-mkdzimage
+}
+
+sha512sums="
+d7a8b08bf86f0e36948744ec1b7cc5c4ca1e38ee5918a83dc67923dac6441433b7ee5b41bf17c7ea835b89d51c623a4cac5438ab266b9f55c64948355786c16c  exynos_mkdzimage.sh?inline=false
+"

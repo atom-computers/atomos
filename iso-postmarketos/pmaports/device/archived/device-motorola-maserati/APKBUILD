@@ -1,0 +1,29 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-motorola-maserati
+pkgdesc="Motorola Motorola Droid 4"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armhf"
+options="!check !archcheck"
+depends="postmarketos-base devicepkg-utils linux-motorola-maserati"
+makedepends="devicepkg-dev"
+source="deviceinfo 10-safestrap-maserati.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	mkdir -p "$pkgdir"/usr/share/mkinitfs/hooks/
+	install -Dm644 "$srcdir"/10-safestrap-maserati.sh \
+		"$pkgdir"/usr/share/mkinitfs/hooks/
+}
+sha512sums="
+ebd3e5d7dd51b144da8724172aff4fdb5281ce8a159bc8effae2ff68faf24ef004ea8d0239ce99740b88a5aaaa7867d7449f36203f59c5f4a181fb1ff7d1890b  deviceinfo
+f9a4d71ae2736f269863eaf2ca7ef7db764ab38dbead49d7f8ee40a8346c7247a03b2516c871acce4902507381a6518c7ebde7e678e20fa876876910b1529aeb  10-safestrap-maserati.sh
+"

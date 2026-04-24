@@ -1,0 +1,31 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Rockchip rk3228/rk3229-based device"
+deviceinfo_manufacturer="Rockchip"
+deviceinfo_codename="rockchip-rk322x"
+deviceinfo_year="2016"
+deviceinfo_dtb="rk322*"
+deviceinfo_arch="armv7"
+deviceinfo_uboot_boardname="rockchip-rk322x"
+
+# Device related
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+deviceinfo_getty="ttyS2;115200"
+deviceinfo_disable_dhcpd="true"
+deviceinfo_swap_size_recommended="512"
+
+# Installer related
+deviceinfo_dev_internal_storage="/dev/mmcblk1"
+deviceinfo_dev_internal_storage_repartition="true"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"
+deviceinfo_generate_extlinux_config="true"
+deviceinfo_boot_part_start="32768"
+deviceinfo_sd_embed_firmware_step_size="512"
+deviceinfo_sd_embed_firmware="u-boot/rockchip-rk322x/idbloader.img:64,u-boot/rockchip-rk322x/u-boot.itb:16384"

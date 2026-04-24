@@ -1,0 +1,29 @@
+From d70b9beaac828ec2da253c4b6e84b3d1afac5d8a Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Sat, 9 Feb 2019 18:35:00 +0300
+Subject: [PATCH] drm/panel: s6e63m0: disable rotation
+
+Low part of GTCON(IFCTL) register is responsible for flipping/rotation.
+This commit disables default rotation by 180 degrees.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ drivers/gpu/drm/panel/panel-samsung-s6e63m0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c b/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c
+index 142d395ea512..3c84f3c073ae 100644
+--- a/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c
++++ b/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c
+@@ -190,7 +190,7 @@ static void s6e63m0_init(struct s6e63m0 *ctx)
+ 	s6e63m0_dcs_write_seq_static(ctx, MCS_DISCTL,
+ 				     0x02, 0x03, 0x1c, 0x10, 0x10);
+ 	s6e63m0_dcs_write_seq_static(ctx, MCS_IFCTL,
+-				     0x03, 0x00, 0x00);
++				     0x00, 0x00, 0x00);
+ 
+ 	s6e63m0_dcs_write_seq_static(ctx, MCS_PGAMMACTL,
+ 				     0x00, 0x18, 0x08, 0x24, 0x64, 0x56, 0x33,
+-- 
+2.22.0
+

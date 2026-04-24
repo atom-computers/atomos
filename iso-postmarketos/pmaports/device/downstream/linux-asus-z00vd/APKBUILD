@@ -1,0 +1,93 @@
+# Kernel config based on: arch/arm/configs/zc500tg_defconfig
+
+pkgname=linux-asus-z00vd
+pkgver=3.18.41
+pkgrel=7
+pkgdesc="ASUS Zenfone Go kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="asus-z00vd"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev python3"
+
+# Source
+_repository="ZC500TG"
+_commit="7957ae0b17bb46d56a5cddd1d313aec76296aee8"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Danct12/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_fix_warnings.patch
+	02_gcc8_error.patch
+	03_perf_python3.patch
+	04_dct_python3.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+
+	# Remove -Werror from all makefiles
+	local i
+	local makefiles="$(find . -type f -name Makefile)
+		$(find . -type f -name Kbuild)"
+	for i in $makefiles; do
+		sed -i 's/-Werror-/-W/g' "$i"
+		sed -i 's/-Werror//g' "$i"
+	done
+
+	# Requires a out folder for some reason
+	mkdir "$_outdir"
+
+	# Clean up kernel source
+	make O="$_outdir" ARCH="$_carch" ARCH_MTK_PLATFORM="mt6580" clean
+	make O="$_outdir" ARCH="$_carch" ARCH_MTK_PLATFORM="mt6580" mrproper
+
+	# Prepare kernel config ('yes ""' for kernels lacking olddefconfig)
+	cp "$srcdir"/$_config "$builddir"/out/.config
+	yes "" | make O="$_outdir" ARCH="$_carch" ARCH_MTK_PLATFORM="mt6580" oldconfig
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" ARCH_MTK_PLATFORM="mt6580" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	# kernel.release
+	install -D "$_outdir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	# zImage (find the right one)
+	cd "$_outdir/arch/$_carch/boot"
+	_target="$pkgdir/boot/vmlinuz"
+	for _zimg in zImage-dtb Image.gz-dtb *zImage Image; do
+		[ -e "$_zimg" ] || continue
+		msg "zImage found: $_zimg"
+		install -Dm644 "$_zimg" "$_target"
+		break
+	done
+	if ! [ -e "$_target" ]; then
+		error "Could not find zImage in $PWD!"
+		return 1
+	fi
+}
+
+sha512sums="
+eb4575d8d3603097141991bc207a51f3ed9281d6e1432570666aeeb3299c86574e80724e27721e2f64844fe9efdfd99df898138e1d2053f143132d1b0e89414b  linux-asus-z00vd-7957ae0b17bb46d56a5cddd1d313aec76296aee8.tar.gz
+c54c05ebf42f023c8cda98ed0ea8af82c38c8bf61b8fa559adbba8b5a67916b8d3b08e61692dac6e5cb35ebda8b83ed842dd954f095b56a5aa3a3d93ce8f1952  config-asus-z00vd.armv7
+1db0eb57279ab2b0ad70e0f93dfe6faa0d807cf24832c2e55b2c726b43cdece84edfc614e6455cddddbce890de1df80e37fd1805b9fd6ccc259047c5ef7a6ba6  01_fix_warnings.patch
+f60b91c7cffd1704e6ac51d1c352b87f74432fc645deff2ff4feeeffff3c441af425191254f871a999555b3abcd1d199eeba0c12dbef4d9364f4d70df4484976  02_gcc8_error.patch
+c64bbad5e6f33e086d35e8f4e08ffc840b3bfb09fba49f635dd2eb671301cb8e5fd2915b3406a8bb7fce2de6638ce0337adcd14182316b7a5941ff84352744de  03_perf_python3.patch
+b1aef615711138992101466b7fea4762698ba87620a55f748bd66f20a2114122678e85c3bb85ef0ae0d394552d2f4577535086a5d80a878459aadc9a9fb42ce0  04_dct_python3.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

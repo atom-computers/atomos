@@ -1,0 +1,38 @@
+diff --git a/samsung-ipc/ipc.c b/samsung-ipc/ipc.c
+index c116fbb..4bc7fe3 100644
+--- a/samsung-ipc/ipc.c
++++ b/samsung-ipc/ipc.c
+@@ -46,7 +46,9 @@ int ipc_device_detect(void)
+ 	char buffer[4096] = { 0 };
+ 	struct utsname utsname;
+ 	char *name = NULL;
++	const char *name_override = NULL;
+ 	char *board_name = NULL;
++	const char *board_name_override = NULL;
+ 	char *kernel_version = NULL;
+ 	char *line, *p, *c;
+ 	int index = -1;
+@@ -56,6 +58,11 @@ int ipc_device_detect(void)
+ 
+ #ifdef IPC_DEVICE_NAME
+ 	name = strdup(IPC_DEVICE_NAME);
++#else
++	name_override = getenv("IPC_DEVICE_NAME");
++	if (name_override) {
++		name = strdup(name_override);
++	}
+ #endif
+ 
+ #ifdef IPC_DEVICE_BOARD_NAME
+@@ -95,6 +102,11 @@ int ipc_device_detect(void)
+ 
+ 		line = strtok(NULL, "\n");
+ 	}
++
++	board_name_override = getenv("IPC_DEVICE_BOARD_NAME");
++	if (board_name_override) {
++		board_name = strdup(board_name_override);
++	}
+ #endif
+ 
+ #ifdef IPC_DEVICE_KERNEL_VERSION

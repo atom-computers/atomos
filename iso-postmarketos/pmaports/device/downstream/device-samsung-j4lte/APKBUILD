@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendra Manudinata <hendra@manoedinata.com>"
+pkgname=device-samsung-j4lte
+pkgdesc="Samsung Galaxy J4"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-j4lte
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for Samsung Galaxy J4 (j4lte)"
+	depends="firmware-samsung-j4lte"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+af582a4eaba555bfb45983a7c4dad6b976301829b058fd7f3690b3a53376fd7d7047b992cb3f6d034e0ff9efab2002f42649ad80fb2f1492bb726e437d389d1d  deviceinfo
+"

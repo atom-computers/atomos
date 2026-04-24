@@ -1,0 +1,39 @@
+From 73ee594491beeaa8bf76c2e930c8ca0509c14222 Mon Sep 17 00:00:00 2001
+From: Pangwalla <pangwalla@protonmail.com>
+Date: Wed, 1 Mar 2023 22:19:33 -0500
+Subject: [PATCH] remove inline usb driver ax_get_stats
+
+---
+ drivers/net/usb/ax_main.c | 2 +-
+ drivers/net/usb/ax_main.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/usb/ax_main.c b/drivers/net/usb/ax_main.c
+index 837636ed1c35..27c558b2f686 100644
+--- a/drivers/net/usb/ax_main.c
++++ b/drivers/net/usb/ax_main.c
+@@ -711,7 +711,7 @@ void ax_mdio_write(struct net_device *netdev, int phy_id, int reg, int val)
+ 	ax_write_cmd(axdev, AX_ACCESS_PHY, phy_id, (__u16)reg, 2, &res);
+ }
+ 
+-inline struct net_device_stats *ax_get_stats(struct net_device *netdev)
++struct net_device_stats *ax_get_stats(struct net_device *netdev)
+ {
+ 	return &netdev->stats;
+ }
+diff --git a/drivers/net/usb/ax_main.h b/drivers/net/usb/ax_main.h
+index 47c1c04b4c2c..6e88c362b7c9 100644
+--- a/drivers/net/usb/ax_main.h
++++ b/drivers/net/usb/ax_main.h
+@@ -531,7 +531,7 @@ void ax_set_tx_qlen(struct ax_device *dev);
+ 
+ inline void *__rx_buf_align(void *data);
+ void *__tx_buf_align(void *data, u8 tx_align_len);
+-inline struct net_device_stats *ax_get_stats(struct net_device *dev);
++struct net_device_stats *ax_get_stats(struct net_device *dev);
+ void ax_write_bulk_callback(struct urb *urb);
+ 
+ void ax_get_drvinfo(struct net_device *net, struct ethtool_drvinfo *info);
+-- 
+2.39.2
+

@@ -1,0 +1,81 @@
+# Co-Maintainer: jane400 <jane400@postmarketos.org>
+# Contributor: Konrad Dybcio <konradybcio@kernel.org>
+# Contributor: Aster Boese <asterboese@mailbox.org>
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=device-lenovo-21bx
+pkgdesc="Lenovo ThinkPad X13s"
+pkgver=19
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck !strip"
+depends="
+	alsa-ucm-conf
+	dtbloader
+	libmbim-tools
+	linux-firmware-ath11k
+	linux-firmware-qca
+	linux-firmware-qcom
+	linux-postmarketos-qcom-laptop
+	postmarketos-base
+	qmi-utils
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	firmware.files
+	modules-initfs
+	pipewire.conf
+	usbguard.conf
+	kernel-cmdline.conf
+"
+subpackages="
+	$pkgname-pipewire
+	$pkgname-usbguard
+	$pkgname-vulkan
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/firmware.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files
+	install -Dm644 "$srcdir"/pipewire.conf \
+		-t "$pkgdir"/usr/share/pipewire.conf.d
+	install -Dm600 "$srcdir"/usbguard.conf \
+		"$pkgdir"/etc/usbguard/rules.d/"$pkgname".conf
+}
+
+pipewire() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-base-ui-audio-backend-pipewire"
+
+	amove usr/share/pipewire.conf.d/pipewire.conf
+}
+
+vulkan() {
+	install_if="$pkgname=$pkgver-r$pkgrel vulkan-loader"
+	depends="mesa-vulkan-freedreno"
+	mkdir "$subpkgdir"
+}
+
+usbguard() {
+	install_if="$pkgname=$pkgver-r$pkgrel usbguard"
+
+	amove etc/usbguard/rules.d/"$pkgname".conf
+}
+
+sha512sums="
+7a685de71e512b5b2bf21448fb8fc1055bb33c72149acd57e1754c212c40218a2b93ab603d3262c2c37ace051c5872b2fcaeb5379a5beaac680b7a2a0f115a1e  deviceinfo
+5f4e6a80455c8a2ed879bfd457a89f81790824657ed4101e03b7ec288a274e63340f48e2ad5028cf83744263a4529584b1e94c36d10b98912e5b31804fa98ff0  firmware.files
+45d56b8d6157dd7d679d0d4af4866973e6e0365c276fa56c008cbc8373f64626c881b6097ad1b9fa9c0d5b769e61b5a81466d6a773e2848c9ee89f06c0302249  modules-initfs
+52bbb9564ec713db5d46937701b121afe0c6c644fffe189a05766f491b4997b1bbc4c1f90229efb5764d795df8d40a57d4c840ee4b32d426e7a84520364b8bf5  pipewire.conf
+0d0412eb1f01af39000c39391f622640461305d83dae1a53aa7eef640cc17fd265cabca4e4e57dea053c47a4e50f9feb90f12ee5310d5b6425783e83efc5f9d8  usbguard.conf
+7e60772bdefc4fc9d459cf2daa9fe09f605240f261b2e8f046ec992593144d26e0c80863ea3b9cb67025fef8fad45dacf54e022d0d57afb321778a5bb2eadaf4  kernel-cmdline.conf
+"

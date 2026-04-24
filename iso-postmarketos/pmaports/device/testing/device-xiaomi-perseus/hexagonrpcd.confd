@@ -1,0 +1,2 @@
+# Xiaomi Poco F1 specific hexagonrpcd firmware directory
+hexagonrpcd_fw_dir="/usr/share/qcom/sdm845/Xiaomi/perseus"

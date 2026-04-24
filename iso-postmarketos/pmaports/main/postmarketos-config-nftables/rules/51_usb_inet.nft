@@ -1,0 +1,11 @@
+#!/usr/sbin/nft -f
+table inet filter {
+	chain input {
+		iifname "usb*" accept comment "Allow incoming network traffic from USB"
+	}
+	chain forward {
+		iifname "usb*" accept comment "Allow outgoing network traffic from USB"
+		ct state {established, related} counter accept comment "accept established connections"
+	}
+}
+

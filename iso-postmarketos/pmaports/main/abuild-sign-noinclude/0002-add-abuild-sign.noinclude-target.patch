@@ -1,0 +1,54 @@
+From 799ae8a118c7f1f7585217fb4827387ef0a882b0 Mon Sep 17 00:00:00 2001
+From: pmb-test <pmb-test@pmb-test>
+Date: Thu, 22 Nov 2018 09:26:12 +0100
+Subject: [PATCH 2/3] add abuild-sign.noinclude target
+
+---
+ Makefile       | 11 +++++++++++
+ abuild-sign.in |  8 +-------
+ 2 files changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index d2445f3..eeb0d5b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -64,6 +64,17 @@ OBJS-abuild-fetch = abuild-fetch.o
+ 	${SED} ${SED_REPLACE} ${SED_EXTRA} $< > $@
+ 	${CHMOD} +x $@
+ 
++abuild-sign.noinclude: abuild-sign functions.sh
++	[ -e "$@" ] && rm "$@" || true
++	while IFS="" read -r line; do \
++		if [ "$$line" = "@FUNCTIONS_SH@" ]; then  \
++			cat functions.sh >> "$@"; \
++		else \
++			echo "$$line" >> "$@"; \
++		fi; \
++	done < "$<"
++	chmod +x "$@"
++
+ P=$(PACKAGE)-$(VERSION)
+ 
+ all:	$(USR_BIN_FILES) functions.sh
+diff --git a/abuild-sign.in b/abuild-sign.in
+index 7b5b6db..c74bc12 100644
+--- a/abuild-sign.in
++++ b/abuild-sign.in
+@@ -7,13 +7,7 @@
+ #
+ 
+ program_version=@VERSION@
+-datadir=@datadir@
+-
+-if ! [ -f "$datadir/functions.sh" ]; then
+-	echo "$datadir/functions.sh: not found" >&2
+-	exit 1
+-fi
+-. "$datadir/functions.sh"
++@FUNCTIONS_SH@
+ 
+ do_sign() {
+ 	local f i keyname repo
+-- 
+2.17.2
+

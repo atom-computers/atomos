@@ -1,0 +1,44 @@
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=firmware-samsung-n2awifi
+pkgdesc="Firmware for Samsung Galaxy Tab Pro 10.1"
+pkgver=2
+pkgrel=0
+url="https://github.com/exynos5420/android_vendor_samsung_n2a-common"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+_cfg_commit="5a1eb40e80f9de6c6bad9d0cd1438339c41af3ad"
+_cfg_url="https://gitlab.com/Eisenbahnfan/exynos5-firmware/-/raw/$_cfg_commit"
+_fw_commit="81dc97e9d3798e1975c9dfa518f9dc573d9e101b"
+_fw_url="https://github.com/exynos5420/android_vendor_samsung_n2a-common/raw/$_fw_commit"
+source="
+	30-touchscreen-firmware.files
+	BCM4335C0.samsung,n2awifi.hcd::$_fw_url/proprietary/vendor/firmware/bcm4335.hcd
+	brcmfmac4339-sdio.samsung,n2awifi.txt::$_fw_url/proprietary/etc/wifi/nvram_net.txt
+	maxtouch.cfg::$_cfg_url/mXT1664S_n.cfg
+"
+
+package() {
+	cd "$srcdir"
+
+	# Bluetooth
+	install -Dm644 BCM4335C0.samsung,n2awifi.hcd \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Wifi
+	install -Dm644 brcmfmac4339-sdio.samsung,n2awifi.txt \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Touchscreen
+	install -Dm644 maxtouch.cfg \
+		-t "$pkgdir/lib/firmware/postmarketos/"
+	install -Dm644 30-touchscreen-firmware.files \
+		-t "$pkgdir/usr/share/mkinitfs/files/"
+}
+
+sha512sums="
+d92d73d06d88371d8842cca02b9a396414d6f9e879c74afd8fd540c76a97edbd8655d903815a2aed508785b3fe96fa5798fbd1ceb918098b8b788555ba4267cf  30-touchscreen-firmware.files
+17658b6ac3f6cfd8c3d4da1ff59ea9ade15e16c37224535cd1d47adb09586d943a025ef5fae532bdba94580c7845aeabdd941fabf4f8983f62ee2987301dd23e  BCM4335C0.samsung,n2awifi.hcd
+b8e92981cda6f73a877137de3081a4989b4a0a2f824c55c1b2e281489e70ad5cc5ae6e3394555e42ea083bc8ebf95656326bdba523073cbd527bfc329c1e452a  brcmfmac4339-sdio.samsung,n2awifi.txt
+9644a57849ed208037acd65e7f2341aeef8a1298b69d63e631c381d1cf33b19f78bfefa29b3a6110ba9d55468701224605acdce4ac9ba2d36f2fe545f03a608d  maxtouch.cfg
+"

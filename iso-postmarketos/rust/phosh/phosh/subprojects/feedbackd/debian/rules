@@ -1,0 +1,40 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+CONFIGURE_OPTS=--wrap-mode=default -Dudev=true
+
+ifneq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+  CONFIGURE_OPTS += -Dtests=false
+endif
+
+ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+  CONFIGURE_OPTS += -Dgtk_doc=true -Dman=true
+endif
+
+ifneq (,$(filter pkg.feedbackd.media-roles,$(DEB_BUILD_PROFILES)))
+  CONFIGURE_OPTS += -Dmedia-roles=true
+endif
+
+COMMON_PKG=feedbackd-common
+
+docroot := $(CURDIR)/debian/tmp/usr/share/doc/
+
+%:
+	dh $@ --builddirectory=_build
+
+override_dh_installdocs:
+	dh_installdocs -p$(COMMON_PKG) NEWS
+ifeq ($(filter nodoc,$(DEB_BUILD_PROFILES)),)
+	mkdir -p $(docroot)/libfeedback-dev/libfeedback-0
+	mv $(docroot)/libfeedback-0 $(docroot)/libfeedback-dev/
+endif
+	dh_installdocs
+
+override_dh_auto_configure:
+	dh_auto_configure -- $(CONFIGURE_OPTS)
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	dbus-run-session ninja -C _build test
+endif

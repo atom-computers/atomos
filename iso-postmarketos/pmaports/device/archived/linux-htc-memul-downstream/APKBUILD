@@ -1,0 +1,69 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_memul_defconfig
+
+pkgname=linux-htc-memul-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="HTC One Mini 2 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-memul"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool xz"
+
+# Source
+_repository="android_kernel_htc_msm8974-caf_rebase"
+_commit="909c034f8c080b4acbf64921e57a9e4e96322db0"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/nightcore500/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ptrace-fix-ptrace-defect-cause-by-a-merge-fail.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	0001-undefine-DIAG_XPST.patch
+	0002-fix-video-argb-setting.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool --dt-tag "htc,project-id" -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+23e477d471607cbede9632569a05231f480ca47f5d00e8233a8503f40ab01a6a6a7f541d19f653447e14744cad26c9d18ff6e1b94d9154b25fb4cd67dd0c6288  linux-htc-memul-downstream-909c034f8c080b4acbf64921e57a9e4e96322db0.tar.gz
+8ebdd185c7b8eec3170673ed282dc5bb77a67403239a0d909236e8f9de8526ed6810eb107c3416346e917ef548b02850707cf6e1d5dbbe2acee637b61c369af2  config-htc-memul.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+13f82d1ca9b621f026f12f91bbe03d913be41ebed717e9c657e0f3a4d39c0201ba651a7352c2d27b98bb6641b77ccc1b3ee7d4a7c9e91ddb1e347adcb5c9a780  linux3.4-ptrace-fix-ptrace-defect-cause-by-a-merge-fail.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+b98c43fd812329b9f3ac6df6810a24fb1a72a4d8476b7dcf2209ce56a3e5b5fe115b97f2e906cdbecdd46d7229688aae8de85932c1308aba6e8a47cb00fd8dda  0001-undefine-DIAG_XPST.patch
+173af2c693d986a2892d7afc22568c3c692644a23245c0e55b4835b9c2f1e3731fbb5085183663741408a3ec9e128f9ba5390c92aea471d64b062cff4de3656f  0002-fix-video-argb-setting.patch
+"

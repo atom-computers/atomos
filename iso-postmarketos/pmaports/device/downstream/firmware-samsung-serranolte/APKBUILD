@@ -1,0 +1,56 @@
+pkgname=firmware-samsung-serranolte
+# XDA post explains the meaning of the firmware version, which has been translated into the $pkgver
+pkgver=1.1.0
+_ver=I9195XXUCQG1
+pkgrel=0
+_commit="f3c513732580e500fe27000683db268406806ed7"
+_commit_2="fb69a737df5f13c2975fd385a15908389fe5d5bd"
+pkgdesc="Samsung Galaxy S 4 Mini firmware"
+subpackages="$pkgname-modem $pkgname-wlan"
+url="https://forum.xda-developers.com/galaxy-s4-mini/general/modem-samsung-galaxy-s4-mini-gt-i9195-t3390780"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_ver.tar.xz::https://drive.google.com/uc?export=download&id=1bKQ6m9avN6k2puJTZr55dIeGb8B7K_lT
+	$pkgname-$pkgver.tar.gz::https://github.com/j0ki/firmware-samsung-i9195/archive/$_commit.tar.gz
+	$pkgname-$pkgver-2.tar.gz::https://github.com/LineageOS/android_device_samsung_serrano-common/archive/$_commit_2.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05 wcnss.b06 wcnss.mdt"
+_files_2="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+modem() {
+	pkgdesc="Samsung Galaxy S 4 Mini modem firmware"
+
+	cd "$srcdir"
+	for _i in *.b?? *.mdt; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+wlan() {
+	pkgdesc="Samsung Galaxy S4 Mini LTE: wifi firmware"
+	depends="wcnss-wlan"
+
+	cd "$srcdir"/firmware-samsung-i9195-"$_commit"
+	for _i in $_files; do
+		install -Dm644 "$_i" \
+			"$subpkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	cd "$srcdir"/android_device_samsung_serrano-common-"$_commit_2"
+	for _i in $_files_2; do
+		install -Dm644 prima/"$_i" \
+			"$subpkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="
+32e27bf12f40abd9a049562e4830d061518bd9efaf991cdc48c1aa3736bdc8c581eea14fa240fbaead255f83c7692d186f53a491837a662ac6368ca943634684  firmware-samsung-serranolte-I9195XXUCQG1.tar.xz
+fdfd2aeb780a73dcb152e4f3554781c1338b8bd683cdc61e92965c7e0006ad2d88f55b0514e15e13b322ec83cdf11ba9ae2cd49892b4470807966b4ed8f55d5b  firmware-samsung-serranolte-1.1.0.tar.gz
+8ac342f7a332512a4d04cd1c38937abd8634937a1b975b29290a265daf8cb37e0b1d739442e5b50e6c85ab14475f2837373d6994ebd9e6fc1f7fbac3204cc733  firmware-samsung-serranolte-1.1.0-2.tar.gz
+"

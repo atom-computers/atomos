@@ -1,0 +1,53 @@
+# Archived: Downstream port, only for testing. Use mainline port (asus-x00td)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/X00TD_defconfig
+
+pkgname=linux-asus-x00td-downstream
+pkgver=4.4.223
+pkgrel=0
+pkgdesc="Asus ZenFone Max Pro M1 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="asus-x00td"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+# Compiler: GCC 6 (My phone refuses to boot kernel compiled with gcc and goes straight to fastboot mode)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+# Source
+_repository="android_kernel_asus_sdm660"
+_commit="ad8e4cb1207f5bb5abbdc0cd51830bd7912d7c2d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-macro-declare_usb_function.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+84648d1f7e96bf8c14992ce315dc033a9d2f3e46d91ba12e5fdf621ba3fdc58048b9feda9197c2f8f9506a8600fa07484abd4ebcc73d1e98150b65981c4f54cf  linux-asus-x00td-downstream-ad8e4cb1207f5bb5abbdc0cd51830bd7912d7c2d.tar.gz
+67612dd3513592cc8b277476f0cf88af7cdd48cdeec24e9342bbb424bb5ea44bc9a53ea7f5b7d6e3e2f77018aa8b0514004ee28e2dfc1c5326e90ba29f6556e8  config-asus-x00td.aarch64
+8b3934e3c4115e81ac40a3c8022f3134cd89133f7569557ca857b4fd514078c4898b2ba3427986936d029874903711d04d7757d5a87bcb89137073128e51e8f5  fix-macro-declare_usb_function.patch
+"

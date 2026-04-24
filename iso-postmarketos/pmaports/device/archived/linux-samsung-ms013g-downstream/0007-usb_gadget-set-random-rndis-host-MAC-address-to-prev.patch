@@ -1,0 +1,43 @@
+From 2e32a401ea5df22ab899f4da3e5e1b448b2df51a Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Thu, 7 Mar 2019 17:25:48 +0300
+Subject: [PATCH 5/6] usb_gadget: set random rndis host MAC address to prevent
+ zero address
+
+This fixes zero host MAC:
+
+rndis0: MAC f6:45:91:9b:4e:43
+rndis0: HOST MAC 00:00:00:00:00:00
+
+and allows devive to automatically obtain IP addrest on PC host side
+zero MAC address prevented interface from autoconfiguring
+---
+ drivers/usb/gadget/u_ether.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/gadget/u_ether.c b/drivers/usb/gadget/u_ether.c
+index 72c4a992594..c0fc0698697 100644
+--- a/drivers/usb/gadget/u_ether.c
++++ b/drivers/usb/gadget/u_ether.c
+@@ -1075,8 +1075,16 @@ int gether_setup_name(struct usb_gadget *g, u8 ethaddr[ETH_ALEN],
+ 			"using random %s ethernet address\n", "self");
+ 
+ #ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
+-	memcpy(dev->host_mac, ethaddr, ETH_ALEN);
+-	printk(KERN_DEBUG "usb: set unique host mac\n");
++    if ((ethaddr[0] == 0x00) && (ethaddr[1] == 0x00) &&
++        (ethaddr[2] == 0x00) && (ethaddr[3] == 0x00) &&
++        (ethaddr[4] == 0x00) && (ethaddr[5] == 0x00)) {
++        printk(KERN_DEBUG "%s: no unique host MAC was set, generate random\n", __func__);
++        /* we can use random_ether_addr() from include/linux/etherdevice.h */
++        random_ether_addr(ethaddr);
++    } else {
++        printk(KERN_DEBUG "%s: set unique host mac\n", __func__);
++    }
++    memcpy(dev->host_mac, ethaddr, ETH_ALEN);
+ #else
+ 	if (get_ether_addr(host_addr, dev->host_mac))
+ 		dev_warn(&g->dev,
+-- 
+2.21.0
+

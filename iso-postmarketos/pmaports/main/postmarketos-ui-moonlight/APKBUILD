@@ -1,0 +1,28 @@
+maintainer=""
+pkgname=postmarketos-ui-moonlight
+pkgver=1
+pkgrel=3
+pkgdesc="(Wayland) Open Source PC client for NVIDIA GameStream, as used by the NVIDIA Shield"
+# riscv64 blocked by moonlight-qt
+arch="all !riscv64 !armhf"
+url="https://postmarketos.org/"
+license="GPL-3.0-or-later"
+options="!check pmb:drm"
+depends="postmarketos-base-ui-cage"
+source="10-moonlight-qt.sh"
+# https://gitlab.postmarketos.org/postmarketOS/pmbootstrap/-/issues/2347
+_pmb_groups="seat"
+# TODO: use flatpak version here for aarch64, as it uses forked ffmpeg with
+# v4l2-request support.
+# See https://wiki.postmarketos.org/wiki/Hardware_video_acceleration.
+_pmb_recommends="moonlight-qt"
+
+
+package() {
+	install -Dm755 "$srcdir"/10-moonlight-qt.sh \
+		-t "$pkgdir"/usr/share/tinydm/env-wayland.d
+}
+
+sha512sums="
+7b5728645a16e7670506cba05410fd61b5f44cf221b2199b564095fa8eef00af19e7a16c3450ba2a39a78076ee3be2e8924c80f6e58de3b63f8bb57ea5739d6d  10-moonlight-qt.sh
+"

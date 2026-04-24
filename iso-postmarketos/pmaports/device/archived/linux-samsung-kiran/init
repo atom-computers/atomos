@@ -1,0 +1,29 @@
+#!/stage1/busybox sh
+
+# Z1's Samsung kernel does not have initramfs, and directly boots to the system
+# root partition. Recovery and charger mode is differentiated by bootloader 
+# arguments depending on the pressed key. Because cmdline should be handled by 
+# init procedure, we always boot to the initramfs from the ramdisk partition.
+
+_PATH="$PATH"
+export PATH=/stage1
+
+busybox cd /
+busybox date >>boot.txt
+exec >>boot.txt 2>&1
+busybox rm init
+busybox mount -t proc proc /proc
+busybox mount -t sysfs sysfs /sys
+
+# always use the "isorec"-style lzop compressed initramfs
+# from the ramdisk partition
+load_image=/stage1/isorec.cpio
+busybox lzop -dc /dev/block/mmcblk0p17 > ${load_image}
+busybox cpio -i < ${load_image}
+
+busybox umount /sys
+busybox umount /proc
+busybox date >>boot.txt
+busybox rm -fr /stage1 /dev/*
+export PATH="${_PATH}"
+exec /init

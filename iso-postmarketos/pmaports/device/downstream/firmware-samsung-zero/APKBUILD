@@ -1,0 +1,32 @@
+pkgname=firmware-samsung-zero
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for the Samsung Galaxy S6 / S6 edge (zerofltexx/zeroltexx)"
+url="https://github.com/Exynos7420/proprietary_vendor_samsung_zero-common"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="9ff5ecfd76e05e7b8fd2210675af51f3acf2eb95"
+
+_vendor_files_wifi="
+bcmdhd_sta.bin
+nvram_net.txt
+"
+
+for _file in $_vendor_files_wifi; do
+	source="$source $pkgname-$_commit-$_file::$url/raw/nx-10.0/proprietary/system/vendor/etc/wifi/$_file"
+done
+
+
+package() {
+	local file
+	for file in $_vendor_files_wifi; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+		    "$pkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+
+sha512sums="3b7f4bcc544762bb632cb4f47c73550f78d7d06e82503eae761a063b2f8871f177f03f9ee54b79297a798fd9c41868d99b985b38de23396a470dbf4e76bfb266  firmware-samsung-zero-9ff5ecfd76e05e7b8fd2210675af51f3acf2eb95-bcmdhd_sta.bin
+8db9cb1c2ff6e659b8a3689758ae564785b840062864a71286176cf9f51a0e0a85bf081a9c3dfdcd1990bfb3dbf824a51c857ed459ff3fcbeb1e756cdd6add46  firmware-samsung-zero-9ff5ecfd76e05e7b8fd2210675af51f3acf2eb95-nvram_net.txt"

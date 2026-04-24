@@ -1,0 +1,87 @@
+# Co-Maintainer: Ingo Reitz <9l@9lo.re>
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+pkgname=linux-postmarketos-qcom-sc7180
+pkgver=6.18.9
+pkgrel=0
+pkgdesc="Mainline kernel for Qualcomm Snapdragon 7c devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+	python3
+	zstd
+"
+
+# Source
+_config="config-$_flavor.$arch"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-${pkgver//_/-}.tar.xz
+	$_config
+"
+builddir="$srcdir/linux-${_kernver//_/-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img/crOS compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+f7f8e77d6badefb5fd4d7b9ce08eca1a32201906ed390c7cbd8025ec00174fec21cf6b55aae82700bc656662c7f5e86e186edfbd3125f1cae583df1d6c6313a2  linux-6.18.9.tar.xz
+f92cdfb8d04644e19e7831f964475e3b59a044c48d5a6bcdc05be6389dad3dc6122c12f3df50ea47889aa6f6ea5b093c1dec386d889013df01835ba2717c5f87  config-postmarketos-qcom-sc7180.aarch64
+"

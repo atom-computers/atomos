@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/msm8909-y560_defconfig
+
+pkgname=linux-huawei-y560
+pkgver=3.10.49
+pkgrel=2
+pkgdesc="Huawei Ascend Y560-L01 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="huawei-y560"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz dtbtool"
+
+# Source
+_repository="android_kernel_huawei_msm8909"
+_commit="c779e2e5095435970bdf1090b74e1d4877a3dc66"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/KonstaT/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	00_fix_return_address.patch
+	05_fix_mdp3_ctrl_off.patch
+	06_fix_mdss_fb_rgb_mode.patch
+	07_fix_mdss_fb_refresh_rate.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img \
+		"$_outdir/arch/$_carch/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+48f08d292e07f37511ed513a1dafb6771b2943f22f826f331c08c8937f79f40de6635e3d2522b45cc7562a765081760c0d06bf2e8520ce89494ee57a0bc2c49b  linux-huawei-y560-c779e2e5095435970bdf1090b74e1d4877a3dc66.tar.gz
+ad6142a5b0001e32867549f1ea42f9fc834cdc1c217d9549b69f104b2ad5bd50c240adba9d0c5fb6ce17eada69bb7b3d5fbe6385c895037d8057dc29e81b069a  config-huawei-y560.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+fbc61e379403990167853f4c4fbdfa22d7e9661a7eedecf2a75eec2a8008991a82d0a61be844ab4b1c88383f3fa79b43eff10b1039e44ad5a758a173cbf6386b  05_fix_mdp3_ctrl_off.patch
+3f71b90f17cb4d3896169eac20a6ab761a9bd328d872ce7acb52d085497c90e7546aec08f66ccbde07d18fcef3bff6fdfd3cda9f439cdac7cb62aa0ce0e0ab49  06_fix_mdss_fb_rgb_mode.patch
+1f743d3e7f4ac7401167ea35edc7d7e113bd80824c4d53631d7500f33557ff486163f8244786c16506b2e21db6ccbcd8a0f7b26fcf4937efee50b62c074f9a22  07_fix_mdss_fb_refresh_rate.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

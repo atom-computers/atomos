@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+# This script triggers late initialization of some platform
+# drivers that cannot be probed at boot time, because for
+# example they use firmware blobs on partitions that are
+# not mounted during early kernel startup.
+
+depend() {
+	need localmount dev
+	before wlan
+}
+
+start() {
+	ebegin "Starting deferred initcalls"
+	cat /proc/deferred_initcalls
+	eend 0
+}

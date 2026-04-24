@@ -1,0 +1,41 @@
+From b5cf37159427f2589632e30789488e993a725e0c Mon Sep 17 00:00:00 2001
+From: Nathan Chancellor <nathan@kernel.org>
+Date: Fri, 21 Jan 2022 12:39:58 -0700
+Subject: [PATCH 2/3] WIP: arch/powerpc/boot: Use '-z notext' for pseries image
+
+Same reason as commit 4c078c86b4a4 ("powerpc/boot/wrapper: Add "-z
+notext" flag to disable diagnostic").
+
+  ld.lld: error: relocation R_PPC64_ADDR64 cannot be used against symbol '_start'; recompile with -fPIC
+  >>> referenced by crt0.o:(.text+0x8) in archive arch/powerpc/boot/wrapper.a
+
+  ld.lld: error: relocation R_PPC64_ADDR64 cannot be used against symbol '_etext'; recompile with -fPIC
+  >>> referenced by crt0.o:(.text+0x10) in archive arch/powerpc/boot/wrapper.a
+
+  ld.lld: error: relocation R_PPC64_ADDR64 cannot be used against symbol '__bss_start'; recompile with -fPIC
+  >>> referenced by crt0.o:(.text+0x18) in archive arch/powerpc/boot/wrapper.a
+
+  ld.lld: error: relocation R_PPC64_ADDR64 cannot be used against symbol '_end'; recompile with -fPIC
+  >>> referenced by crt0.o:(.text+0x20) in archive arch/powerpc/boot/wrapper.a
+  make[2]: *** [arch/powerpc/boot/Makefile:400: arch/powerpc/boot/zImage.pseries] Error 1
+
+Signed-off-by: Nathan Chancellor <nathan@kernel.org>
+---
+ arch/powerpc/boot/wrapper | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/powerpc/boot/wrapper b/arch/powerpc/boot/wrapper
+index 8dabcf5406b2..2a28695d5bd6 100755
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -302,6 +302,7 @@ pseries)
+     if [ "$format" != "elf32ppc" ]; then
+ 	link_address=
+ 	pie=-pie
++    notext='-z notext'
+     fi
+     make_space=n
+     ;;
+-- 
+2.53.0
+

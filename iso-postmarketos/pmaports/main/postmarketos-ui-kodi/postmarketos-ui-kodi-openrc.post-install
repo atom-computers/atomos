@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rc-update add elogind default
+rc-update add networkmanager default
+rc-update add kodi default

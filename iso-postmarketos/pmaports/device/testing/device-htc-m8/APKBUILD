@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-htc-m8
+pkgdesc="HTC One M8"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-htc-m8
+	linux-postmarketos-qcom-msm8974
+	lk2nd-msm8974-htc-m8
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8974
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+18e52f0cf0fe2c28813ea2ec92fd5058f0fee103b3b28a7d14ed673c23dbea1503faa8999e424c97c75ae6365a03f8cc21acbc10b5df95f64408792cdccc355d  deviceinfo
+37e9814d98e17511ac6dcc18854fff5b82b7a370c8340f6638a8c7c87af34af3e0077a97913572cca09e786ddfe538ccca88eee584ee949f47a3d99e87e57bfb  kernel-cmdline.conf
+"

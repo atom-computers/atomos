@@ -1,0 +1,13 @@
+diff --git a/drivers/iio/afe/iio-rescale.c b/drivers/iio/afe/iio-rescale.c
+index 56e5913ab..e0d5e437f 100644
+--- a/drivers/iio/afe/iio-rescale.c
++++ b/drivers/iio/afe/iio-rescale.c
+@@ -289,7 +289,7 @@ static int rescale_configure_channel(struct device *dev,
+ 	chan->ext_info = rescale->ext_info;
+ 	chan->type = rescale->cfg->type;
+ 
+-	if (iio_channel_has_info(schan, IIO_CHAN_INFO_RAW) &&
++	if (iio_channel_has_info(schan, IIO_CHAN_INFO_RAW) ||
+ 	    (iio_channel_has_info(schan, IIO_CHAN_INFO_SCALE) ||
+ 	     iio_channel_has_info(schan, IIO_CHAN_INFO_OFFSET))) {
+ 		dev_info(dev, "using raw+scale/offset source channel\n");

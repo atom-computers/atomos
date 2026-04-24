@@ -1,0 +1,23 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-vince
+pkgver=4
+pkgrel=2
+_commit="9acb58a25d66314700eeea15c69c4571154f19cc"
+pkgdesc="Firmware files for Xiaomi Redmi 5 Plus"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+source="vince-fw-$_commit.tar.gz::https://github.com/M0Rf30/postmarketos-vendor-xiaomi-vince/archive/$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/postmarketos-vendor-xiaomi-vince-$_commit/gpu"
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/vince"
+
+package() {
+	# GPU firmwares
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+edf6dceb50c34c2bed55365ba8322974df6ecac4aafe04af2a95ab2d9cf7f7f69e3182f77747d676a0c20f097a87a1a61f771bcec570f7b0d0021dbddd5cdfac  vince-fw-9acb58a25d66314700eeea15c69c4571154f19cc.tar.gz
+"

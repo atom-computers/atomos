@@ -1,0 +1,105 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_i9100g_defconfig
+
+pkgname=linux-samsung-i9100g
+pkgver=3.0.101
+pkgrel=0
+pkgdesc="Samsung Galaxy SII (GT-I9100G) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-i9100g"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	findutils
+	busybox-static-armv7
+	xz
+"
+
+# Source
+_repository="android_kernel_samsung_t1"
+_commit="10ca03795f659f6f1fa995e8c300a08c3a133354"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	timeconst.pl-Eliminate-Perl-warning.patch
+	01_fix_aid_net_on_apn_disable.patch
+	init
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare_isorec() {
+	# Use Alpine's busybox.static instead of the pre-compiled busybox shipped
+	# with the source
+	cp -v /usr/$(arch_to_hostspec $arch)/bin/busybox.static \
+		"$builddir"/usr/i9100g_initramfs_files/busybox
+
+	# do not use ramdisk.cpio and ramdisk-recovery-device.cpio, always use
+	# the initramfs from the recovery partition ("isorec"), so we can build
+	# it later and independently from the kernel. also directly boot that
+	# partition, not only when the recovery key combination was used.
+	cd "$builddir"/usr/
+	mv i9100g_initramfs.list i9100g_initramfs.list_old
+	grep -v "../../ramdisk" i9100g_initramfs.list_old > i9100g_initramfs.list
+	cp -v "$srcdir"/init "$builddir"/usr/i9100g_initramfs_files/init
+
+	# Paths supplied to gen_initramfs_list.sh are prefixed with "source/".
+	ln -s "$builddir" "$builddir"/source
+
+	cd "$builddir"
+}
+
+prepare() {
+	default_prepare
+	prepare_isorec
+
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CFLAGS_MODULE="-fno-pic" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 modules_install
+}
+
+sha512sums="
+b50bfa745dfabff5d415833f55e72c0e78d2df4ab14340ce99be94a8ef1871cb23b138b36416d58bd276e3629bfe527520eeff17892ccd000d8b67dba43845b9  linux-samsung-i9100g-10ca03795f659f6f1fa995e8c300a08c3a133354.tar.gz
+44950920f4a8c89ef292e4ae78948eb06231c0866e93cba27a9755f52646e65cc844c8b13dddd8f672428057064865d44c45f0074c726942fc94f74a59f110fe  config-samsung-i9100g.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+1cae09c775d787e877f82cb164b5d68530f4bd9b108b7abaf8192bd85a3d8975456762ce9f563fa766b1c03519e09ef93e177fd6972e439e4aa0c3a5709ea691  01_fix_aid_net_on_apn_disable.patch
+dd4094d5f4ec281d32f12af88cb22a782e497c8e52f69cf60b73ac7d6171fc95f1f8040b3d0ad2ff3f016d22ac1d91c5b522e5d03203534a76742bc55a082af5  init
+"

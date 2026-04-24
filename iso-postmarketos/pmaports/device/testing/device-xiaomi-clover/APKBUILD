@@ -1,0 +1,66 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nickolay Goppen <setotau@mainlining.org>"
+pkgname=device-xiaomi-clover
+pkgdesc="Xiaomi Mi Pad 4"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-clover
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-clover:kernel_clover
+	$pkgname-kernel-cloverlte:kernel_cloverlte
+	$pkgname-kernel-cloverplus:kernel_cloverplus
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs.clover
+	modules-initfs.cloverlte
+	modules-initfs.cloverplus
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_clover() {
+	pkgdesc="For regular Mi Pad 4"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_cloverlte() {
+	pkgdesc="For regular Mi Pad 4 LTE"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_cloverplus() {
+	pkgdesc="For Mi Pad 4 Plus"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+90bbbf645064292f7aa1400345f592d0c55902f5bad1eb378fe1d6d189c460f46c452ec88083c3dc4456e70fe20f2c45fc0765bc36f79745850625ca5f417ec3  deviceinfo
+83366cefaa8481dfe72b44a6373badbfb8f15a6a88bcbaa97735405d6d46a5b9c19b464a84cea703b9294b9500834ad4fa00f61506087b42be64f0348cea64e8  kernel-cmdline.conf
+9549e37b6f572dc27130034a0937380bc8e7e4d45223ca9fca0ef8be662aac0607a24aea0abec5d50b0d56d367d7247897fdeaa50b68004e0ff4ffd79fa0cdba  modules-initfs.clover
+9549e37b6f572dc27130034a0937380bc8e7e4d45223ca9fca0ef8be662aac0607a24aea0abec5d50b0d56d367d7247897fdeaa50b68004e0ff4ffd79fa0cdba  modules-initfs.cloverlte
+cc84349341862a9d141f0b48ec05e33602a2c22c57f8516f6e08dd36315c1d1b7e1e12cfc197dd88cd6c08dda485882c9e895db0da171fe85bdf3e5e8fc92e56  modules-initfs.cloverplus
+"

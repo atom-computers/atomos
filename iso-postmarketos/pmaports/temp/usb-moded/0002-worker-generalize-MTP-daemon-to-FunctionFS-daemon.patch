@@ -1,0 +1,496 @@
+From 651d1b5b3f5ec6419d2e25b0491afcc6f26959d5 Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Sat, 10 May 2025 15:47:28 +0200
+Subject: [PATCH 2/5] [worker] generalize MTP daemon to FunctionFS daemon
+
+MTP daemon handling is a hardcoded version of FunctionFS daemon
+handling. Allow to specify for each dynamic FunctionFS mode which
+daemon command must be executed to start/stop the FunctionFS userspace
+daemon for the USB mode and where the FunctionFS device must be mounted
+for the daemon. This prepares usb-moded to support more FunctionFS
+userspace daemons such as supporting the Android Open Accesory mode.
+
+Signed-off-by: Dylan Van Assche <me@dylanvanassche.be>
+---
+ config/dyn-modes/mtp_mode.ini |   2 +-
+ src/usb_moded-worker.c        | 242 +++++++++++++++++++---------------
+ 2 files changed, 139 insertions(+), 105 deletions(-)
+
+diff --git a/config/dyn-modes/mtp_mode.ini b/config/dyn-modes/mtp_mode.ini
+index 10352f6..22b8a33 100644
+--- a/config/dyn-modes/mtp_mode.ini
++++ b/config/dyn-modes/mtp_mode.ini
+@@ -1,4 +1,4 @@
+ [mode]
+-name = mtp_mode
++name = mtp_ffs_mode
+ module = g_ffs
+ appsync = 1
+diff --git a/src/usb_moded-worker.c b/src/usb_moded-worker.c
+index 272698b..11662e9 100644
+--- a/src/usb_moded-worker.c
++++ b/src/usb_moded-worker.c
+@@ -73,15 +73,15 @@ static const char * const devstate_name[] = {
+ 
+ static bool        worker_thread_p                 (void);
+ bool               worker_bailing_out              (void);
+-static devstate_t  worker_get_mtp_device_state     (void);
+-static void        worker_unmount_mtp_device       (void);
+-static bool        worker_mount_mtp_device         (void);
+-static bool        worker_mode_is_mtp_mode         (const char *mode);
+-static bool        worker_is_mtpd_running          (void);
+-static bool        worker_mtpd_running_p           (void *aptr);
+-static bool        worker_mtpd_stopped_p           (void *aptr);
+-static bool        worker_stop_mtpd                (void);
+-static bool        worker_start_mtpd               (void);
++static devstate_t  worker_get_ffs_device_state     (void);
++static void        worker_unmount_ffs_device       (void);
++static bool        worker_mount_ffs_device         (void);
++static bool        worker_mode_is_ffs_mode         (const char *mode);
++static bool        worker_is_ffs_daemon_running    (void);
++static bool        worker_ffs_daemon_running_p     (void *aptr);
++static bool        worker_ffs_daemon_stopped_p     (void *aptr);
++static bool        worker_run_command_down         (void);
++static bool        worker_run_command_up           (void);
+ static bool        worker_switch_to_charging       (void);
+ const char        *worker_get_kernel_module        (void);
+ bool               worker_set_kernel_module        (const char *module);
+@@ -169,16 +169,16 @@ worker_bailing_out(void)
+ }
+ 
+ /* ------------------------------------------------------------------------- *
+- * MTP_DEVICE
++ * FUNCTIONFS_DEVICE
+  * ------------------------------------------------------------------------- */
+ 
+-/** Check if mtp device is mounted
++/** Check if FunctionFS device is mounted
+  *
+  * Returns DEVSTATE_MOUNTED / DEVSTATE_UNMOUNTED depending
+- * on whether control endpoint file exists in the mtp device
++ * on whether control endpoint file exists in the FunctionFS device
+  * directory.
+  *
+- * Note: If mtp device directory is for some reason not accessible by
++ * Note: If FunctionFS device directory is for some reason not accessible by
+  *       uid=root processes and usb-moded does not have suitable DAC
+  *       override permissions existance of the control endpoint file
+  *       might not be determinable. In these cases DEVSTATE_UNKNOWN
+@@ -190,59 +190,70 @@ worker_bailing_out(void)
+  *         DEVSTATE_UNKNOWN
+  */
+ static devstate_t
+-worker_get_mtp_device_state(void)
++worker_get_ffs_device_state(void)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+     devstate_t state = DEVSTATE_UNKNOWN;
++    const modedata_t *data = worker_get_usb_mode_data();
++    gchar *path = g_strconcat("/dev/", data->ffs_daemon_mountpoint, "/ep0", NULL);
+ 
+-    if( access("/dev/mtp/ep0", F_OK) == 0 )
++    if( access(path, F_OK) == 0 )
+         state = DEVSTATE_MOUNTED;
+     else if( errno == ENOENT )
+         state = DEVSTATE_UNMOUNTED;
+     else
+-        log_warning("/dev/mtp/ep0: %m");
++        log_warning("%s: %m", path);
++
++    log_debug("FunctionFS device state = %s", devstate_name[state]);
++
++    g_free(path);
+ 
+-    log_debug("mtp device state = %s", devstate_name[state]);
+     return state;
+ }
+ 
+-/** Unmount mtp device
++/** Unmount ffs device
+  */
+ static void
+-worker_unmount_mtp_device(void)
++worker_unmount_ffs_device(void)
+ {
+     LOG_REGISTER_CONTEXT;
++    const modedata_t *data = worker_get_usb_mode_data();
++    gchar *command = g_strconcat("/bin/umount ", "/dev/", data->ffs_daemon_mountpoint, NULL);
+ 
+-    if( worker_get_mtp_device_state() != DEVSTATE_UNMOUNTED ) {
+-        log_debug("unmounting mtp device");
+-        common_system("/bin/umount /dev/mtp");
++    if( worker_get_ffs_device_state() != DEVSTATE_UNMOUNTED ) {
++        log_debug("unmounting FunctionFS device");
++        common_system(command);
+     }
++
++    g_free (command);
+ }
+ 
+-/** Mount mtp device
++/** Mount ffs device
+  *
+- * Mount mtp device so that it is accessible by root and the
++ * Mount FunctionFS device so that it is accessible by root and the
+  * currently active user.
+  *
+- * @return true if mtp device was mounted as result of call, false otherwise
++ * @return true if ffs device was mounted as result of call, false otherwise
+  */
+ static bool
+-worker_mount_mtp_device(void)
++worker_mount_ffs_device(void)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+     bool mounted = false;
++    const modedata_t *data = worker_get_usb_mode_data();
++    gchar *directory = g_strconcat("/dev/", data->ffs_daemon_mountpoint, NULL);
+ 
+     /* Fail if control endpoint is already present */
+-    if( worker_get_mtp_device_state() != DEVSTATE_UNMOUNTED ) {
+-        log_err("mtp device already mounted");
++    if( worker_get_ffs_device_state() != DEVSTATE_UNMOUNTED ) {
++        log_err("FunctionFS device already mounted");
+         goto EXIT;
+     }
+ 
+     /* Ensure that device directory exists */
+-    if( mkdir("/dev/mtp", 0755) == -1 && errno != EEXIST ) {
+-        log_err("failed to create /dev/mtp directory: %m");
++    if( mkdir(directory, 0755) == -1 && errno != EEXIST ) {
++        log_err("failed to create %s directory: %m", data->ffs_daemon_mountpoint);
+         goto EXIT;
+     }
+ 
+@@ -257,143 +268,154 @@ worker_mount_mtp_device(void)
+     if( pw )
+         gid = pw->pw_gid;
+ 
+-    /* Attempt to mount mtp device using root uid and primary
++    /* Attempt to mount FunctionFS device using root uid and primary
+      * gid of the current user.
+      */
+-    char cmd[256];
+-    snprintf(cmd, sizeof cmd,
+-             "/bin/mount -o mode=0770,uid=0,gid=%u -t functionfs mtp /dev/mtp",
+-             (unsigned)gid);
++    char command[512];
++    snprintf(command, sizeof command,
++             "/bin/mount -o mode=0770,uid=0,gid=%u -t functionfs %s /dev/%s",
++             (unsigned)gid, data->ffs_daemon_mountpoint, data->ffs_daemon_mountpoint);
+ 
+-    log_debug("mounting mtp device");
+-    if( common_system(cmd) != 0 )
++    log_debug("mounting FunctionFS device");
++    if( common_system(command) != 0 )
+         goto EXIT;
+ 
+     /* Check that control endpoint is present */
+-    if( worker_get_mtp_device_state() != DEVSTATE_MOUNTED ) {
+-        log_err("mtp control not mounted");
++    if( worker_get_ffs_device_state() != DEVSTATE_MOUNTED ) {
++        log_err("FunctionFS control not mounted");
+         goto EXIT;
+     }
+ 
+     mounted = true;
+ 
+ EXIT:
++    g_free (directory);
+     return mounted;
+ }
+ 
+ /* ------------------------------------------------------------------------- *
+- * MTP_DAEMON
++ * FUNCTIONFS_DAEMON
+  * ------------------------------------------------------------------------- */
+ 
+-/** Maximum time to wait for mtpd to start [ms]
++/** Maximum time to wait for FunctionFS daemon to start [ms]
+  *
+  * This needs to include time to start systemd unit
+- * plus however long it might take for mtpd to scan
+- * all files exposed over mtp. On a slow device with
+- * lots of files it can easily take over 30 seconds,
+- * especially during the 1st mtp connect after reboot.
++ * plus however long it might take for FunctionFS
++ * to start up, for example: scanning files over MTP.
++ * On a slow device with lots of files it can easily
++ * take over 30 seconds, especially during the 1st FunctionFS
++ * connect after reboot.
+  *
+  * Use two minutes as some kind of worst case estimate.
+  */
+-static unsigned worker_mtp_start_delay = 120 * 1000;
++static unsigned worker_ffs_daemon_start_delay = 120 * 1000;
+ 
+-/** Maximum time to wait for mtpd to stop [ms]
++/** Maximum time to wait for FunctionFS daemon to stop [ms]
+  *
+  * This is just regular service stop. Expected to
+  * take max couple of seconds, but use someting
+  * in the ballbark of systemd default i.e. 15 seconds
+  */
+-static unsigned worker_mtp_stop_delay  =  15 * 1000;
++static unsigned worker_ffs_daemon_stop_delay  =  15 * 1000;
+ 
+-/** Flag for: We have started mtp daemon
++/** Flag for: We have started FunctionFS daemon
+  *
+  * If we have issued systemd unit start, we should also
+- * issue systemd unit stop even if probing for mtpd
+- * presense gives negative result.
++ * issue systemd unit stop even if probing for FunctionFS
++ * daemon presense gives negative result.
+  */
+-static bool worker_mtp_service_started = false;
++static bool worker_ffs_daemon_service_started = false;
+ 
+-static bool worker_mode_is_mtp_mode(const char *mode)
++static bool worker_mode_is_ffs_mode(const char *mode)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+-    return mode && !strcmp(mode, "mtp_mode");
++    return mode && strstr(mode, "_ffs_mode") != NULL;
+ }
+ 
+-static bool worker_is_mtpd_running(void)
++static bool worker_is_ffs_daemon_running(void)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+-    /* ep0 becomes available when /dev/mtp is mounted.
++    /* ep0 becomes available when ffs_daemon_mountpoint is mounted.
+      *
+-     * ep1, ep2, ep3 exist while mtp daemon is running,
++     * ep1, ep2, ep3 exist while FunctionFS daemon is running,
+      * has ep0 opened and has written config data to it.
+      */
+     static const char * const lut[] = {
+-        "/dev/mtp/ep0",
+-        "/dev/mtp/ep1",
+-        "/dev/mtp/ep2",
+-        "/dev/mtp/ep3",
++        "ep0",
++        "ep1",
++        "ep2",
++        "ep3",
+         0
+     };
+ 
+     bool ack = true;
++    const modedata_t *data = worker_get_usb_mode_data();
+ 
+     for( size_t i = 0; lut[i]; ++i ) {
+-        if( access(lut[i], F_OK) == -1 ) {
++	gchar *path = g_strconcat("/dev/", data->ffs_daemon_mountpoint, "/", lut[i], NULL);
++        if( access(path, F_OK) == -1 ) {
++            log_debug("%s", path);
+             ack = false;
++            g_free (path);
+             break;
+-        }
++        } else
++            g_free (path);
+     }
+ 
+     return ack;
+ }
+ 
+ static bool
+-worker_mtpd_running_p(void *aptr)
++worker_ffs_daemon_running_p(void *aptr)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+     (void)aptr;
+-    return worker_is_mtpd_running();
++    return worker_is_ffs_daemon_running();
+ }
+ 
+ static bool
+-worker_mtpd_stopped_p(void *aptr)
++worker_ffs_daemon_stopped_p(void *aptr)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+     (void)aptr;
+-    return !worker_is_mtpd_running();
++    return !worker_is_ffs_daemon_running();
+ }
+ 
+ static bool
+-worker_stop_mtpd(void)
++worker_run_command_down(void)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+     bool ack = false;
++    const modedata_t *data = worker_get_usb_mode_data();
+ 
+-    if( !worker_mtp_service_started && worker_mtpd_stopped_p(0) ) {
+-        log_debug("mtp daemon is not running");
++    if( !worker_ffs_daemon_service_started && worker_ffs_daemon_stopped_p(0) ) {
++        log_debug("FunctionFS daemon is not running");
+         goto SUCCESS;
+     }
+ 
+-    int rc = common_system("systemctl-user stop buteo-mtp.service");
++    if( data->command_down == NULL)
++        goto SUCCESS;
++
++    int rc = common_system(data->command_down);
+     if( rc != 0 ) {
+-        log_warning("failed to stop mtp daemon; exit code = %d", rc);
++        log_warning("failed to run bring-down command; exit code = %d", rc);
+         goto FAILURE;
+     }
+ 
+-    /* Have succesfully stopped mtp service */
+-    worker_mtp_service_started = false;
++    /* Have succesfully stopped FunctionFS daemon service */
++    worker_ffs_daemon_service_started = false;
+ 
+-    if( common_wait(worker_mtp_stop_delay, worker_mtpd_stopped_p, 0) != WAIT_READY ) {
+-        log_warning("failed to stop mtp daemon; giving up");
++    if( common_wait(worker_ffs_daemon_stop_delay, worker_ffs_daemon_stopped_p, 0) != WAIT_READY ) {
++        log_warning("failed to stop FunctionFS daemon; giving up");
+         goto FAILURE;
+     }
+ 
+-    log_debug("mtp daemon has stopped");
++    log_debug("Bring-down command executed");
+ 
+ SUCCESS:
+     ack = true;
+@@ -403,32 +425,37 @@ FAILURE:
+ }
+ 
+ static bool
+-worker_start_mtpd(void)
++worker_run_command_up(void)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
+     bool ack = false;
++    const modedata_t *data = worker_get_usb_mode_data();
+ 
+-    if( worker_mtpd_running_p(0) ) {
+-        log_debug("mtp daemon is running");
++    if( data->ffs_daemon_mountpoint != NULL && worker_ffs_daemon_running_p(0) ) {
++        log_debug("FunctionFS daemon is already running");
+         goto SUCCESS;
+     }
+ 
+-    /* Have attempted to start mtp service */
+-    worker_mtp_service_started = true;
++    if (data->command_up == NULL)
++        goto SUCCESS;
+ 
+-    int rc = common_system("systemctl-user start buteo-mtp.service");
++    /* Have attempted to start FunctionFS daemon service */
++    worker_ffs_daemon_service_started = true;
++
++    int rc = common_system(data->command_up);
+     if( rc != 0 ) {
+-        log_warning("failed to start mtp daemon; exit code = %d", rc);
++        log_warning("failed to run bring-up command; exit code = %d", rc);
+         goto FAILURE;
+     }
+ 
+-    if( common_wait(worker_mtp_start_delay, worker_mtpd_running_p, 0) != WAIT_READY ) {
+-        log_warning("failed to start mtp daemon; giving up");
++    /* FunctionFS requires the daemon to fully run before enabling UDC */
++    if( data->ffs_daemon_mountpoint != NULL && (common_wait(worker_ffs_daemon_start_delay, worker_ffs_daemon_running_p, 0) != WAIT_READY) ) {
++        log_warning("failed to start FunctionFS daemon; giving up");
+         goto FAILURE;
+     }
+ 
+-    log_debug("mtp daemon has started");
++    log_debug("Bring-up command executed");
+ 
+ SUCCESS:
+     ack = true;
+@@ -722,16 +749,15 @@ worker_switch_to_mode(const char *mode)
+ 
+     log_debug("Cleaning up previous mode");
+ 
+-    /* Either mtp daemon is not needed, or it must be *started* in
+-     * correct phase of gadget configuration when entering mtp mode.
++    /* Either FunctionFS daemon is not needed, or it must be *started* in
++     * correct phase of gadget configuration when entering FunctionFS mode.
+      *
+-     * Similarly, unmount mtp device to make sure sure it gets mounted
++     * Similarly, unmount FunctionFS device to make sure sure it gets mounted
+      * with appropriate uid/gid values when it is actually needed.
+      */
+-    worker_stop_mtpd();
+-    worker_unmount_mtp_device();
+-
+     if( worker_get_usb_mode_data() ) {
++        worker_run_command_down();
++        worker_unmount_ffs_device();
+         modesetting_leave_dynamic_mode();
+         worker_set_usb_mode_data(NULL);
+     }
+@@ -767,14 +793,17 @@ worker_switch_to_mode(const char *mode)
+         worker_set_usb_mode_data(data);
+ 
+         /* When dealing with configfs, we can't enable UDC without
+-         * already having mtpd running */
+-        if( worker_mode_is_mtp_mode(mode) && configfs_in_use() ) {
+-            if( !worker_mount_mtp_device() )
+-                goto FAILED;
+-            if( !worker_start_mtpd() )
++         * already having FunctionFS daemon running */
++        if( worker_mode_is_ffs_mode(mode) && configfs_in_use() ) {
++            if( !worker_mount_ffs_device() )
+                 goto FAILED;
+         }
+ 
++	if (configfs_in_use()) {
++            if( !worker_run_command_up() )
++                goto FAILED;
++	}
++
+         if( !worker_set_kernel_module(data->mode_module) )
+             goto FAILED;
+ 
+@@ -782,12 +811,15 @@ worker_switch_to_mode(const char *mode)
+             goto FAILED;
+ 
+         /* When dealing with android usb, it must be enabled before
+-         * we can start mtpd. Assumption is that the same applies
+-         * when using kernel modules. */
+-        if( worker_mode_is_mtp_mode(mode) && !configfs_in_use() ) {
+-            if( !worker_mount_mtp_device() )
++         * we can start FunctionFS daemon. Assumption is that the
++         * same applies when using kernel modules. */
++        if( worker_mode_is_ffs_mode(mode) && !configfs_in_use() ) {
++            if( !worker_mount_ffs_device() )
+                 goto FAILED;
+-            if( !worker_start_mtpd() )
++        }
++     
++        if( !configfs_in_use() ) {
++     	    if( !worker_run_command_down() )
+                 goto FAILED;
+         }
+ 
+@@ -802,7 +834,9 @@ FAILED:
+     /* Undo any changes we might have might have already done */
+     if( worker_get_usb_mode_data() ) {
+         log_debug("Cleaning up failed mode switch");
+-        worker_stop_mtpd();
++        worker_run_command_down();
++        if( worker_mode_is_ffs_mode(mode))
++            worker_unmount_ffs_device();
+         modesetting_leave_dynamic_mode();
+         worker_set_usb_mode_data(NULL);
+     }
+-- 
+2.49.0
+

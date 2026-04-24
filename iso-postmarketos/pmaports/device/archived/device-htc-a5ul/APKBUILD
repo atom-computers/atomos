@@ -1,0 +1,25 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-htc-a5ul
+pkgdesc="HTC Desire 816"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armhf"
+options="!check !archcheck"
+depends="postmarketos-base linux-htc-a5ul mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo initfs-hook.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+sha512sums="
+6c65eed2a3679a1d016b3ed452c499efc53294fb3b7cc67755849bf31467154ba4e8d453281daac3ea09b54324f91e8379d57a6b138114a7e6e6c03b98903a08  deviceinfo
+765abaad5fda0dfda5e62e1e48414d3eea822198f39d0792171a04d73f86f6273a6e562afab430cbfcdd084412568a0ad03d012e9c40c5564f5cd1b9c0f181eb  initfs-hook.sh
+"

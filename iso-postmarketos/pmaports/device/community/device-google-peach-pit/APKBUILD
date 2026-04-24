@@ -1,0 +1,67 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=device-google-peach-pit
+pkgdesc="Samsung Chromebook 2 (11.6 inch)"
+pkgver=10
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-postmarketos-exynos5
+	postmarketos-base
+	postmarketos-cros-common
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	i3wm/xorg.conf.d/90-tap-to-click.conf
+	ucm/Peach-Pit-I2S-MAX98090.conf
+	ucm/HiFi.conf
+"
+subpackages="
+	$pkgname-i3wm
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Alsa UCM configs
+	install -Dm644 "$srcdir"/Peach-Pit-I2S-MAX98090.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Peach-Pit-I2S-MAX98090/Peach-Pit-I2S-MAX98090.conf
+	install -Dm644 "$srcdir"/HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Peach-Pit-I2S-MAX98090/HiFi.conf
+	ln -s /usr/share/alsa/ucm2/conf.d/Peach-Pit-I2S-MAX98090 \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Peach-Pit-I2S-M
+}
+
+i3wm() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-i3wm"
+	install -Dm644 "$srcdir"/90-tap-to-click.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/90-tap-to-click.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT and MFC firmware"
+	depends="linux-firmware-mrvl linux-firmware-s5p-mfc"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+e0bf8ca7cb16d413b51c24860cd4018f3ee52f9ce4da80367832dd67e7bce5c98b249ccf2e212ee9d13b0e8664fcb8f08e97410f6021e2d465951d74f651cc21  deviceinfo
+fef8383cd86332dbdb247b81791a7e5ca0775f93f5cd2ef5033d1ea340920fcdddf9e6b5c15bcc79562a5da784964503643e184030211019f08e103aafcf4b83  kernel-cmdline.conf
+e12a68f919182cb4e6812a5dd13fce8dc15266d2ac16aa5f0a31034f111cb403c020ebaaa4d94309f4baf2f71379327c57c08029e27c506d152695e9a2b04b2b  modules-initfs
+e53ca475830930ecfc1fd537702e850e2abcb66fbed521cb6c3a2918d762649254bd0244ec93a47b20dfc593ec3afc9bdebdec1759a7bc96dcbe4800f40893da  90-tap-to-click.conf
+6fe67c8f2e09e3e37297eebaf2a86a32671923a5fd4d18e5aeb10e580fb998e4ddb4a691531a0c8f4b4e70c6f0f7e91008dd836ffca8026d59862c6e829fd996  Peach-Pit-I2S-MAX98090.conf
+194b6169168b40592cf1e6b5f3b21aaa24a602869d7aec358cd5e1f06de34e9b0fe3da094e438ef2d3ab5be80275e6c0b6afe7ce92e2365a70e8b5a21a873234  HiFi.conf
+"

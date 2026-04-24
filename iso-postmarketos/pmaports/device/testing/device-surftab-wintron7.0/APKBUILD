@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-surftab-wintron7.0
+pkgdesc="TrekStor SurfTab wintron 7.0"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="grub-x86 postmarketos-base linux-lts"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	deviceinfo
+	modules-initfs
+	grub.cfg
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	mkdir -p "$pkgdir"/boot/grub/
+	install -D -m644 "$srcdir"/grub.cfg \
+		"$pkgdir"/boot/grub/grub.cfg
+}
+
+nonfree_firmware() {
+	pkgdesc="Touchscreen firmware"
+	depends="firmware-surftab-wintron7.0"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+aa2a28a127ec06fd34865c12d36b02ef036b4f1cf7c889225665cb2681d45d7437102289c8cbfa3b7493ec4217502124f6727a0adc700e1bb9dff07654ca26ce  deviceinfo
+5b63f7216a7f00d63ddcc97fab006f28f37f280e21ccb323042d27c72cfcd9b6f18d5153dbbd26afb0e3b604a3c26d7e8847d4a5dfa9ac2e9532a8b6b52c49fc  modules-initfs
+11fa2ef0a8434bdd6ff266f17585ae3f5ec7724a2053ec62c831845dc7cf6d74e690cdb3e67f84c7183e16f0d6a168275942490927143b1287330b45286f27e9  grub.cfg
+"

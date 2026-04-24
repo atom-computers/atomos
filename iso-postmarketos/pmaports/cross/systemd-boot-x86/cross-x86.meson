@@ -1,0 +1,11 @@
+[binaries]
+c = 'i586-alpine-linux-musl-gcc'
+ar = 'i586-alpine-linux-musl-ar'
+strip = 'i586-alpine-linux-musl-strip'
+ld = 'i586-alpine-linux-musl-ld'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86'
+cpu = 'i586'
+endian = 'little'

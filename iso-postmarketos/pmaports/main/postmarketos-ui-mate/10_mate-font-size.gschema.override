@@ -1,0 +1,10 @@
+[org.mate.Marco.general]
+titlebar-font='Sans Bold 12'
+
+[org.mate.caja.desktop]
+font='Sans 12'
+
+[org.mate.interface]
+document-font-name='Sans 12'
+font-name='Sans 12'
+monospace-font-name='Monospace 12'

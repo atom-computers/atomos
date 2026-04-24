@@ -1,0 +1,5 @@
+[General]
+# H264
+videoCodec=0
+# 720p
+videoResolution=2

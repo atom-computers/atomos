@@ -1,0 +1,39 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-hero2lte
+pkgdesc="Samsung Galaxy S7 edge"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	linux-samsung-hero2lte
+	mkbootimg
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for Wi-Fi on the Samsung Galaxy S7 (edge)"
+	depends="firmware-samsung-hero"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+b52b696762d84b5b6e86102e850cfa387df8e1fb91a489681a7357e2c911998696d33201666c7a2c9ffa036ad721691f96e171ee1982e77b3a161de4fe4f1bde  deviceinfo
+cb0731b5e71b427024bb47cd70aa48d3be409a89aa476f3fd4dea8e5b42ef87371a65bbe836bca7da04c0384178ad293b44da8a88557ad04fc57857bef502050  kernel-cmdline.conf
+5a7be3cb8835ffb3783fcd4539de04f7f006c726ac9aea35cdca9e90b2877dc36cf4e314851bf9078f4b2dac061b7265866792d92a79f5232c56a0e17f7910b1  initfs-hook.sh
+"

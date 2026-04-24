@@ -1,0 +1,30 @@
+From 64c147b6a814200934cde9677ef701f639d1af03 Mon Sep 17 00:00:00 2001
+From: Zhuowei Zhang <linux@worthdoingbadly.com>
+Date: Sat, 7 Mar 2020 14:02:02 -0500
+Subject: [PATCH] cam_sensor_io: fix in-tree build
+
+Without this patch, I get:
+
+```
+drivers/media/platform/msm/camera/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h:20:10: fatal error: cam_cci_dev.h: No such file or directory
+```
+---
+ .../msm/camera/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/msm/camera/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h b/drivers/media/platform/msm/camera/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h
+index 9c3c2e310979..bfd07a41befb 100644
+--- a/drivers/media/platform/msm/camera/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h
++++ b/drivers/media/platform/msm/camera/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h
+@@ -17,7 +17,7 @@
+ #include <media/v4l2-subdev.h>
+ #include <media/cam_sensor.h>
+ #include <media/cam_sensor.h>
+-#include "cam_cci_dev.h"
++#include "../cam_cci/cam_cci_dev.h"
+ #include "cam_sensor_io.h"
+ 
+ #define I2C_POLL_TIME_MS 5
+-- 
+2.20.1
+

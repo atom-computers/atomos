@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Dzmitry Sankouski <dsankouski@gmail.com>"
+pkgname=device-samsung-starqltechn
+pkgdesc="Samsung Galaxy S9 SM-G9600"
+pkgver=11
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-sdm845
+	dtc
+	firmware-samsung-sdm845
+	hexagonrpcd>=0.3.2-r3
+	linux-postmarketos-qcom-sdm845
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-pd-mapper
+	u-boot-starqltechn
+	u-boot-tools
+	unl0kr-fbforcerefresh
+	"
+makedepends="devicepkg-dev dtc"
+source="
+	boot_image.its
+	bootscript.sh
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	payload_mock.dts
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	mkdir -p "$pkgdir"/usr/share/u-boot/starqltechn/
+	mkdir "$builddir"
+	payload_mock_dtb="$builddir/payload_mock.dtb"
+	dtc -I dts -O dtb -o "$payload_mock_dtb" "$srcdir/payload_mock.dts"
+	install -D -m644 "$payload_mock_dtb" \
+		"$pkgdir"/usr/share/u-boot/starqltechn/payload_mock.dtb
+	install -D -m644 "$srcdir/"*.its \
+		"$pkgdir"/usr/share/u-boot/starqltechn/
+	install -D -m644 "$srcdir/"bootscript.sh \
+		"$pkgdir"/usr/share/u-boot/starqltechn/
+}
+
+
+sha512sums="
+3047ff60cb25564bec0637030917981653a5a85024b221d58f510585e5b2102dc806f4970976fef0854ea3d5803ea0b545e9b2b5b1045a9868aba2e7eff7f7c1  boot_image.its
+1ae956562df26c458654c178efcba4862ff9a8b55d5f27bb74f1667bb2434f4bf95ec4f3ffc54d7bc84a6d075e9caadf46716dd72bc9d6b7b623ec4f25940f36  bootscript.sh
+d65394db6585ac962d60885c1e2d136317247f3190385ac58f71cc139286df4e0e0e73da63ef84021e3e1d0e7efaba08294501d587d30a0a39d2b70035f00ed6  deviceinfo
+8a5def72b0e6646d4fcbf2de449fca676fab906159b1b90bd309e2db8fb26c55356048c49ab1a9517256c46be6bd80ae5a5346d52e948ac534a596db70b01174  kernel-cmdline.conf
+daafca195c55fa4c4739cf2324ebba375ee76a2029778db8427aab9fe3f9a5c6ac4f2ec1373ccf6f1e6800bddae8fb5f113fefdcedd64799c53959f0b322de84  modules-initfs
+ba782c324c14cf0947c752b51a607ae1b08def885b0cf0afe89d1fcade3491ab2f547551eb08bd8074f608dac46bdcdf75c5c633bd7a15e6eb63a10f30994c82  payload_mock.dts
+"

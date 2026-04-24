@@ -1,0 +1,5 @@
+SUBSYSTEM=="power_supply", ATTRS{type}=="Battery", ATTRS{status}=="Charging", \
+RUN+="/usr/bin/armani_battery_charging.sh"
+SUBSYSTEM=="power_supply", ATTRS{type}=="Battery", ATTRS{status}=="Discharging", \
+RUN+="/usr/bin/armani_battery_discharging.sh"
+

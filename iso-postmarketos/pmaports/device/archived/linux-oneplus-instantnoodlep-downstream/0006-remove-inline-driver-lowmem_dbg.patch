@@ -1,0 +1,39 @@
+From bf7c9c36b612f7bf11cad67e4b693775e0f46f8a Mon Sep 17 00:00:00 2001
+From: Pangwalla <pangwalla@protonmail.com>
+Date: Wed, 1 Mar 2023 22:47:31 -0500
+Subject: [PATCH] remove inline driver lowmem_dbg
+
+---
+ drivers/soc/oplus/lowmem_dbg/lowmem_dbg.h | 2 +-
+ include/soc/oplus/lowmem_dbg.h            | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/soc/oplus/lowmem_dbg/lowmem_dbg.h b/drivers/soc/oplus/lowmem_dbg/lowmem_dbg.h
+index fd07654302b2..843223bde364 100644
+--- a/drivers/soc/oplus/lowmem_dbg/lowmem_dbg.h
++++ b/drivers/soc/oplus/lowmem_dbg/lowmem_dbg.h
+@@ -11,7 +11,7 @@
+ void oplus_lowmem_dbg(bool critical);
+ 
+ #ifndef CONFIG_MTK_ION
+-inline int oplus_is_dma_buf_file(struct file *file);
++int oplus_is_dma_buf_file(struct file *file);
+ #endif /* CONFIG_MTK_ION */
+ #ifdef CONFIG_KSWAPD_DEBUG_STATISTICS
+ int kswapd_debug_init(struct proc_dir_entry *parent);
+diff --git a/include/soc/oplus/lowmem_dbg.h b/include/soc/oplus/lowmem_dbg.h
+index fd07654302b2..843223bde364 100644
+--- a/include/soc/oplus/lowmem_dbg.h
++++ b/include/soc/oplus/lowmem_dbg.h
+@@ -11,7 +11,7 @@
+ void oplus_lowmem_dbg(bool critical);
+ 
+ #ifndef CONFIG_MTK_ION
+-inline int oplus_is_dma_buf_file(struct file *file);
++int oplus_is_dma_buf_file(struct file *file);
+ #endif /* CONFIG_MTK_ION */
+ #ifdef CONFIG_KSWAPD_DEBUG_STATISTICS
+ int kswapd_debug_init(struct proc_dir_entry *parent);
+-- 
+2.39.2
+

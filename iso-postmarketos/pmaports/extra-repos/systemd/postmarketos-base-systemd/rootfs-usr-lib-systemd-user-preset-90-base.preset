@@ -1,0 +1,33 @@
+## user services
+enable call-audio-idle-suspend-workaround.service
+enable dbus-broker.service
+enable dbus.socket
+enable obex.service
+enable pipewire-pulse.socket
+enable pipewire.socket
+enable pulseaudio.socket
+enable wireplumber.service
+enable fbd-alert-slider.service
+enable vvmd.service
+enable mmsd-tng.service
+enable udiskie.service
+enable xdg-desktop-portal-rewrite-launchers.service
+enable systemd-tmpfiles-clean.timer
+enable xdg-user-dirs.service
+enable usb-moded-notify.service
+
+# GNOME
+enable gnome-keyring-daemon.service
+enable gnome-keyring-daemon.socket
+enable sm.puri.Chatty-daemon.service
+
+# xfce4
+enable xfce4-notifyd.service
+enable xfconfd.service
+
+# phosh
+enable cellbroadcastd.service
+enable mobi.phosh.PhoshTour-first-login.service
+
+# Plasma
+enable drkonqi-coredump-launcher.socket

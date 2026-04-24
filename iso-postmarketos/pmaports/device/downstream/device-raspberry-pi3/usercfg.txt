@@ -1,0 +1,28 @@
+boot_delay=0
+
+arm_control=0x200
+
+kernel=vmlinuz-rpi
+initramfs initramfs
+
+gpu_mem=256
+gpu_mem_256=64
+
+# uncomment line to enable serial on ttyS0 on rpi3
+# NOTE: This fixes the core_freq to 250Mh
+#enable_uart=1
+
+# to take advantage of your high speed sd card
+dtparam=sd_overclock=100
+
+# use drm backend ( for weston and wayland )
+dtoverlay=vc4-fkms-v3d
+
+# have a properly sized image
+disable_overscan=1
+
+# for sound over HDMI
+hdmi_drive=2
+
+# Enable audio (loads snd_bcm2835)
+dtparam=audio=on

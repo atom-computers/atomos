@@ -1,0 +1,20 @@
+maintainer=""
+pkgname=firmware-samsung-i927
+pkgver=2
+pkgrel=1
+_commit="ce33751ae5f0681818780945016fd3f139519af4"
+pkgdesc="Samsung SGH-i927 Firmware"
+url="https://github.com/The-Covenant"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/cerg2010cerg2010/i927-firmware/-/archive/$_commit.tar.gz"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/i927-firmware-$_commit"
+
+package() {
+	install -Dm644 brcmfmac4330-sdio.bin \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.bin
+	install -Dm644 brcmfmac4330-sdio.txt \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.txt
+}
+sha512sums="40290d85bfe8512558604142cc6b2ac433ca1e3dae837f3f244229060018aac0f978de24c8cbc8e32c4a6505e811d85c23635d557bc8685fd5becb97f36f3f95  firmware-samsung-i927-ce33751ae5f0681818780945016fd3f139519af4.tar.gz"

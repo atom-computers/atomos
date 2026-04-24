@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="DIAG"
+description="Qualcomm DIAG router"
+
+command="/usr/bin/diag-router"
+
+depend() {
+	before rmtfs
+}
+

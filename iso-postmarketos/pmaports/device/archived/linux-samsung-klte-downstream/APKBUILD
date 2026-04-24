@@ -1,0 +1,99 @@
+# Archived: Downstream port, only for reference. Use mainline port (samsung-klte)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/msm8974_sec_defconfig
+#                         arch/arm/configs/msm8974pro_sec_klte_eur_defconfig
+#                         arch/arm/configs/lineage_klte_pn547_defconfig
+
+pkgname=linux-samsung-klte-downstream
+pkgver=3.4.113
+pkgrel=2
+pkgdesc="Samsung Galaxy S5 downstream kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-klte-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev xz dtbtool devicepkg-dev gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_msm8974"
+_commit="edfd9dd9be89d15c34f653363a9a3c9108146ca0"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001_fix_return_address.patch
+	0002_gpu-msm-fix-gcc5-compile.patch
+	0003-Reduce-battery-and-touchscreen-log-spam.patch
+	0004-fix-video-argb-setting.patch
+	0005-mdss_fb-Always-allow-to-allocate-map-framebuffer-mem.patch
+	0006-Fix-xt_connbytes-compile-warning.patch
+	0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	0008-Backport-vfs-make-O_PATH-file-descriptors-usable-for.patch
+	0009-Backport-cache-the-value-of-file_inode-in-struct-file.patch
+	0010-Backport-shm-add-sealing-API.patch
+	0011-Backport-shm-add-memfd_create-syscall.patch
+	0012-Backport-asm-generic-add-memfd_create-system-call-to-unistd.h.patch
+	0013-Backport-ARM-wire-up-memfd_create-syscall.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+
+	# External modules install
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="
+d0ccc0cde26e6cad7e2b4cffa9d92b4cd7d11e159738935d87cc044a07679e7aed891379fb0e096b12cd1ba7e1855dd72c94ec6da96ff8e936479c59b4d4eb6c  linux-samsung-klte-downstream-edfd9dd9be89d15c34f653363a9a3c9108146ca0.tar.gz
+b93fb3b56d36d4890226a2a3f93f984e0f364e450437fa63fa0953e54ab4fc2371f116b096c83cedd56410e0caec518a743b8c9ee8a063456b3084e4e81288a4  config-samsung-klte-downstream.armv7
+3b4913415bcfe0ff222969f993890c656c7e12b6ee06532bded485d5201c9855b2c87996c5b63423702b89b6b0ca214b5aceeb402571d9c5af084093c157ccb4  0001_fix_return_address.patch
+0fc4b1782dfd3bd94fa9ae8ab74b19713f25e9f4a48dcf830072634f247aa3dd8847f001a3e87e9728e057657efd4ae751510e7c408d9b960c907665ca64e61f  0002_gpu-msm-fix-gcc5-compile.patch
+11d009beffc5b896fea57c7bc1e6b956600f01755c626fb0b95707a6f4b995c6e9828c89e4b5e6e1460b65c3577bf8a70b0c7f61e1513696a9d6633adde20da0  0003-Reduce-battery-and-touchscreen-log-spam.patch
+a48336bbfead6ad0c84d2fce0c40a3f5530aebdff356a6835cceaf59a50a6f860d2f8027703a92927955fbb18857ba78788e010d017bf67730f069b36e96fe87  0004-fix-video-argb-setting.patch
+e3a9b75de461313ee6ba0e547d7fb97d77a749a11416c44b28110673d3a6f7b01305e74f67c06c8cfea97bde5d3d0cd98a457a03a63560125f5bb84f82f116e1  0005-mdss_fb-Always-allow-to-allocate-map-framebuffer-mem.patch
+6bdb3acd4a2d10d59ea16a2147735b94f17070aecebfe55fff724c03335bf1a02cc7539c9fe0a59cb944b6835135fe64956617c8b29847397b2f4df68b602063  0006-Fix-xt_connbytes-compile-warning.patch
+27f890cf82027649ba742b606a87ce6a82f9685b075bb7b50bffec77221e70434ee78d118d39048350537c5ecdad208658967e492eeeb997e7f6884fa78ac696  0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+a2bd1b925ba0e1ba0a68dcb134604abbaddf456426a468662d77bc02f0d09d4d07c0c89001c0973e690e1f7eb9c1cfdd37c2d99ed4cc62f3398582d6b51a7013  0008-Backport-vfs-make-O_PATH-file-descriptors-usable-for.patch
+47894281412f1c9d4266812f089c3f2434c1636d74245f392d4b0b7532096f8f5bd698715d9e10c7be6c70892af45de2d2c657bd276332442890b94e1159f8f8  0009-Backport-cache-the-value-of-file_inode-in-struct-file.patch
+54d71b32b456a3d0abd090c820214240688484f4cadbbde0304bf3cb5246b1aa3893dd85736dc5db2f3d6f9de1f5e84a1adcf5a661a62586452f1002360dc691  0010-Backport-shm-add-sealing-API.patch
+c62d67a5fb28082e86a585b4c64891525db640ce694445f0fb19e67fb8dcd9ccbfbcb6fba8692964fac8b026c39cfa558cf316a7e22828ac13f58f5b9938ef09  0011-Backport-shm-add-memfd_create-syscall.patch
+cbf6e4bdf53b02f897923d0f6eea5320acc6760c3f3ed762e69928ced7e3b6f2a5355df4a2fccf560f010a4a1968e7ae1a3f62c2db299857d6bcc9715d932822  0012-Backport-asm-generic-add-memfd_create-system-call-to-unistd.h.patch
+2f256f6ec9fa7b240dd1f9417622bfd5a8ca4a9ea12cd2ef171540e1425d4171122c0597fe12af913ef60979ef9a3dce8a6c1c523c91020cb9481560901cc92b  0013-Backport-ARM-wire-up-memfd_create-syscall.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

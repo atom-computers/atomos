@@ -1,0 +1,15 @@
+./lib/firmware/postmarketos/qca/crbtfw21.tlv
+./lib/firmware/qcom/sdm845/pixel3/a630_zap.mbn
+./lib/firmware/qcom/sdm845/pixel3/adsp.mbn
+./lib/firmware/qcom/sdm845/pixel3/adspr.jsn
+./lib/firmware/qcom/sdm845/pixel3/adspua.jsn
+./lib/firmware/qcom/sdm845/pixel3/cdsp.mbn
+./lib/firmware/qcom/sdm845/pixel3/cdspr.jsn
+./lib/firmware/qcom/sdm845/pixel3/ipa_fws.mbn
+./lib/firmware/qcom/sdm845/pixel3/mba.mbn
+./lib/firmware/qcom/sdm845/pixel3/modem.mbn
+./lib/firmware/qcom/sdm845/pixel3/modemr.jsn
+./lib/firmware/qcom/sdm845/pixel3/modemuw.jsn
+./lib/firmware/qcom/sdm845/pixel3/slpi.mbn
+./lib/firmware/qcom/sdm845/pixel3/venus.mbn
+./lib/firmware/qcom/sdm845/pixel3/wlanmdsp.mbn

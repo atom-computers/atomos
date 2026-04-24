@@ -1,0 +1,7 @@
+#!/usr/sbin/nft -f
+
+table inet filter {
+	chain input {
+		tcp dport 3389 accept comment "accept RDP"
+	}
+}

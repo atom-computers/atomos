@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/j8y18lte_defconfig
+
+pkgname=linux-samsung-j8y18lte
+pkgver=3.18.124
+pkgrel=1
+pkgdesc="Samsung Galaxy J8 (2018) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j8y18lte"
+url="https://github.com/lucasredelive/android_kernel_samsung_j8y18lte"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	gcc6
+	openssl-dev
+	perl
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+# Source
+_repository="android_kernel_samsung_j8y18lte"
+_commit="7d93ba0a0e4a9e03d2e51da327391b76d8e26d58"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/lucasredelive/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix_mdp_ctrl_off.patch
+	fix_fb.patch
+	fix_fb_h.patch
+	fix_mdss_overlay.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+af23d3c8dd3b220a25f1308c3eb099cdc93fc8afa3e8fdc91c0bcfadeea3cdfa1d8bd89faf597097c5204befd45b7e2b2b9d6db768cfe0e4be65f4322a9d9e88  linux-samsung-j8y18lte-7d93ba0a0e4a9e03d2e51da327391b76d8e26d58.tar.gz
+d523589c66cf835d4c1ee00b7c12ad3e3240b5ecdfe1144e1bf44ade177a0a0ad7a294309bc0333da10210b2b0291d2058a0940a16591dd002eb846b72563dec  config-samsung-j8y18lte.aarch64
+3ccfaf591befba3b67d24134a516352173767cac0479d3011f077866e02a792f3581e50d05110375a8f84876213823d37d3791c4cb82f19f212bc4bee57934c8  fix_mdp_ctrl_off.patch
+cb7edd7bf9642400276ccb1ddf38cc4ed6fd934c0f0fbc43839903dfd9a3d433121d7624f53be309a10e1703024079d25b369016ccadc870dfd31d988dc22b77  fix_fb.patch
+3532faa75cbdbe034082420491abbf61c4a0a744b5d5c676ee9e1de971655dfac77129932baf78ad45ff0f01c3fa139253d1a3ff8461671536a9aebc5d16586a  fix_fb_h.patch
+eb183307dd0b79407c0b6c92cdc9898d2834a8309938e1af14708e94a375c1c68b5f63c0096bae7e29f28d9191dd73c33d0bbf0686fb722daa37bcabc92dea3f  fix_mdss_overlay.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

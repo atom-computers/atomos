@@ -1,0 +1,67 @@
+# Kernel config based on: arch/arm/configs/chaozu_defconfig
+
+pkgname=linux-bq-chaozu
+pkgver=3.18.31
+pkgrel=4
+pkgdesc="Aquaris U kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="bq-chaozu"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_bq_msm8937"
+_commit="9fe7be06bdbbad2d9cb86d9b135d082b4d28b9ea"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	00_fix_rndis_ipa_trace_header_not_found.patch
+	01_prima_gcc6.patch
+	02_prima_misleading_indentation.patch
+	03_fix_u_f_header.patch
+	04_fix_usb_gadget_function.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	$_config"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+c72365057ddc94d0fd051f0a40f12e6eb0ba31b8fc0ad673c352be0924bc96c643726afac5042fd63eca5d79c4366b706da0addad3aa521867c323a3eec542cd  linux-bq-chaozu-9fe7be06bdbbad2d9cb86d9b135d082b4d28b9ea.tar.gz
+9c549714f03c7a7666e8aa7508a48cfdccab7cf3e97fb59c4df8fa97f75492365926f82c4a677c50780d68d4905504dcccbdd6de6344bd8d4b88b2331933ed46  00_fix_rndis_ipa_trace_header_not_found.patch
+184875cf13a180d1c4bbe27d8ad24a8d6bd2e36ec35f9c4326809f1c8938ecebf3844c36ef71f4a0af9077e2506a82b2b4383ffd020dd1918aba1689d77b0c01  01_prima_gcc6.patch
+8cfd728ccf2bf19450dad5d9fe482ba2461dcf43d25440572a1df73b5a2599f4556ddcafd7cd594cb11c8da5767887d4c1585863c8b36335e7b371f7b735307d  02_prima_misleading_indentation.patch
+b408f157cc025d410b38f5aee9be977e670e1ac3f195f6c3a6681446fa0c3887067d62a4f729cfcd058fab42fca355b0265764dc2d21515f6e023ed025f55d41  03_fix_u_f_header.patch
+1f23466d1a864f2d2c67ae4250b0c166ecb7755779bbdad6732808a001cc2826cc1d013c2281d2ca1d5abd7d60d13783f0b9f11bb8359971f2b30b911e627220  04_fix_usb_gadget_function.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+aaf5c6267f0e39ec584b545b50217fde76a2fd4900316219a062c0900a8d422372bbcfd353708fb2346042cf342e9fa9de75f724c7d732e9961bd2aacbe2798b  config-bq-chaozu.armhf
+"

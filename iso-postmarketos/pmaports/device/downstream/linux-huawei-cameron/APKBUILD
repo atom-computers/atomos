@@ -1,0 +1,58 @@
+# Kernel config based on: arch/arm64/configs/carbon_huawei_cmr_defconfig
+
+pkgname=linux-huawei-cameron
+pkgver=4.4.23
+pkgrel=4
+pkgdesc="Huawei Mediapad M5 Pro kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="huawei-cameron"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev python3 dtc"
+
+# Source
+_repository="android_kernel_huawei_hi3660"
+_commit="18cd8140ad09379365bcd9cb50e45662e8747834"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/JohnBergago/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_use_linux_alpine_crosscompile.patch
+	03_add_compression_methods_to_Kconfig.patch
+	04_make_rdr_hisi_adapter_compileable.patch
+	05-disable-huawei-bfmr.patch
+	06-py3-compat.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	mkdir -p "$_outdir"
+	cp "$srcdir/$_config" "$_outdir/.config"
+	rm -f "$builddir/.config"
+	make ARCH="$_carch" O="$_outdir" oldconfig
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" O="$_outdir"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="1da7c7666f1bf8e3fd3931331b1ebf0ab9520fce47d44749c30abcef55856deaced0ffc74c025b323cc83eb36eb7cf9c514bc65eedbead5d40efd3e16ddc0486  linux-huawei-cameron-18cd8140ad09379365bcd9cb50e45662e8747834.tar.gz
+8b7c46d0c9e288f18d298da6e90677c0c260427e7cf0fd2960d244c0f4b5b01494f4559070ea49bc184386d0ddd682d1763b985eed00d442fc1c2cf7f3f9eec7  config-huawei-cameron.aarch64
+5473a038ca5703cf4119957ca3af66972c121aa66fe262a3165e5a0e5714037670a96600eedd0488150ff754ead93f43299587554ca6c05022bb55f780d1cd7a  01_use_linux_alpine_crosscompile.patch
+86afc1337a34524c49e9beaad6506f7038a7413340abc473f8d209a4d3cd6ebbcf8315ae41902427edf97064742c02e2e5bb705a8bcd36d1cae19f76a509e235  03_add_compression_methods_to_Kconfig.patch
+cdc60b6c829df3b014226b9cb506ed71cf005cf5fec8d4339b54a23f052465501aaa4983ec00f33ef301db2e6a70b24a30439b3f6ce8f7c00348c05d3132ec3f  04_make_rdr_hisi_adapter_compileable.patch
+6e420722576111a7ba49f265a66de632631c13d1bdb67553916d2156149226526daedc8298d83a38115c0a7189497cdb92b0daa0a263a92e6093f575e855a6e5  05-disable-huawei-bfmr.patch
+e783a5a775797efd229b049dba9a4eacd74b6dd7de2f37dfc0f9ead7c2ca3e617c162d8b28cec2d68fe5c51bff67a7045441b36b055582f07ff531f1dc445809  06-py3-compat.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch"

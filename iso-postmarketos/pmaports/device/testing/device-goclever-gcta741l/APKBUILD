@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jacek Pruciak <pmos@juniorjpdj.pl>"
+pkgname=device-goclever-gcta741l
+pkgdesc="GoClever Orion 70L"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-allwinner
+	mesa-egl
+	postmarketos-base
+	u-boot-tools
+	u-boot-goclever-gcta741l
+"
+makedepends="devicepkg-dev linux-postmarketos-allwinner u-boot-tools"
+source="
+	deviceinfo
+	u-boot-script.cmd
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/u-boot-script.cmd \
+		"$srcdir"/boot.scr
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# U-Boot boot script
+	install -Dm644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware (rtl8188eu)"
+	depends="linux-firmware-rtlwifi"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+d46fafb69907f5ea97e5c727697d1c9b92d693acb4313f6411ef8f122f934826a614d7e60be115c3d19787f9e8bf5cfd9054482620e87c94f2c08433abf4520a  deviceinfo
+5b8c1d440867a3cee891168a156fb428b14dfeaf0b437da3e4dc1dd1408458bde98b4ce4682dfb0c5f9c5055a0e2c34cc78ba6160b6ca64281f9721d8d02dede  u-boot-script.cmd
+"

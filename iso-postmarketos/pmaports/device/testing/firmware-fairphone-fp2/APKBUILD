@@ -1,0 +1,60 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-fairphone-fp2
+pkgver=17.09.3
+pkgrel=3
+pkgdesc="Firmware for Fairphone 2"
+subpackages="$pkgname-wcnss $pkgname-adsp $pkgname-modem"
+url="https://github.com/FairBlobs/FP2-firmware"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+builddir="$srcdir/FP2-firmware-$pkgver"
+
+# Sources
+_commit="6785087409c73b046d11a5c88225d4177e172a1d"
+_wififiles="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+source="$pkgname-$pkgver.tar.gz::https://github.com/FairBlobs/FP2-firmware/archive/$pkgver.tar.gz"
+for _i in $_wififiles; do
+	source="$source $pkgname-$_commit-$_i::https://raw.githubusercontent.com/LineageOS/android_device_fairphone_FP2/$_commit/wifi/$_i";
+done
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss() {
+	pkgdesc="Fairphone 2 firmware for the Qualcomm Wireless Connectivity Subsystem (WCNSS)"
+
+	cd "$builddir"
+	for _i in wcnss.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+	for _i in $_wififiles; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$subpkgdir/lib/firmware/postmarketos/wlan/prima/$_i"
+	done
+}
+
+adsp() {
+	pkgdesc="Fairphone 2 adsp firmware"
+
+	cd "$builddir"
+	for _i in adsp.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+modem() {
+	pkgdesc="Fairphone 2 modem firmware"
+
+	cd "$builddir"
+	for _i in modem.* mba.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+sha512sums="f4af05a78e58b6f178903823a2bc2d4198dcb37b3a543aaa9fda21683757f880440ca2b138f37f61aafaf197cfad7b729e27f37e26cbd965fb4a772b42a8a881  firmware-fairphone-fp2-17.09.3.tar.gz
+619df454e0dc65ab62894b7f328c015729e8261919032ee9096bb4f983ddd6f7b98dd14f593b4c6b75cf86c09f090a9cde7674f4c8197cda927a2ac47111cd2e  firmware-fairphone-fp2-6785087409c73b046d11a5c88225d4177e172a1d-WCNSS_cfg.dat
+50625167fd5d3de8b834327a518714299972de3bd3077cb10d4317fb8135b52eb2f0d89f696f48e0530ac8d7a20e76ad01e30ebabec405ef241dc8b1cd52d94c  firmware-fairphone-fp2-6785087409c73b046d11a5c88225d4177e172a1d-WCNSS_qcom_cfg.ini
+d29aaefa6e42bd4a2146b79ee0f0fb6698dae34978bf9bebee9cfa96795c0329be1f7e896cf707f121dab35872d4ce9540b3c79c43bdfd98c75c16d2d875ab3c  firmware-fairphone-fp2-6785087409c73b046d11a5c88225d4177e172a1d-WCNSS_qcom_wlan_nv.bin"

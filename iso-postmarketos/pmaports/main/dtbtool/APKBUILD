@@ -1,0 +1,34 @@
+maintainer=""
+pkgname=dtbtool
+pkgver=1.6.0
+pkgrel=7
+pkgdesc="skales dtbtool"
+url="https://github.com/loicpoulain/skales"
+arch="all"
+license="BSD-2-Clause"
+source="
+	https://raw.githubusercontent.com/loicpoulain/skales/c2bfa15aa5bfc4e3f1b32de28e327b80b37db1cf/dtbTool
+	0001-fix-version-detection.patch
+	0002-find-dtb-in-subfolders.patch
+	0003-alternate-dt-tag.patch
+	0004-call-python3.patch
+	"
+options="!check"
+depends="dtc-dev python3"
+builddir="$srcdir/build"
+
+prepare() {
+	mkdir "$builddir"
+	cp "$srcdir"/dtbTool "$builddir"/dtbTool
+	default_prepare
+}
+
+package() {
+	install -D -m755 "$builddir"/dtbTool \
+		"$pkgdir"/usr/bin/dtbTool
+}
+sha512sums="77ad411ff482896919d971c5ef15817a5bee837d5a8827fd4a0449e7a99b8759e3ca2fe3f233b4a3a92c8e386e0457191d8d18755dba842224f5cc64ddb89024  dtbTool
+3ad31e31a883a1773652149e6e2a7d0225422b3c7576ec58d6bb2db28187096712d24684b3e58f26dec72889c0200d60b763e985a1f6ff60edcb1fe05ab58353  0001-fix-version-detection.patch
+a4da4436c9d95d7c3a1980353cea46bf00e1a0e50f4b1e4151db57595dc6cff94d521b468ca463388406b8dc33ac574237a170315ec01a8c240294b052561044  0002-find-dtb-in-subfolders.patch
+c179aac2b401159e744d493068083af8de7f713bc1e121f201c99a7a03a916cb1c9602aeded3eb2505e46126fce40b37c98c3ed110c90c26908f23bfb4385b0e  0003-alternate-dt-tag.patch
+3aca8a5ddb3c0cf801278b74af1088b570feb972e4d66771ae6c6d39e37ad8ad7785b73208d80d05a78b113d3ca38e86c2033a20ac426b2fd52df3278cb01712  0004-call-python3.patch"

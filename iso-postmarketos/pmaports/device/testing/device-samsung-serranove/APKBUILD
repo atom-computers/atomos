@@ -1,0 +1,60 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-serranove
+pkgdesc="Samsung Galaxy S4 Mini Value Edition"
+pkgver=17
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc soc-samsung-msm8916-modem-workaround"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	phoc.ini
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+# Backwards compatibility for old device package names + kernel variants
+_substitutes="device-samsung-serranovelte"
+replaces="$_substitutes $pkgname-kernel-mainline $pkgname-kernel-mainline-modem"
+for pkg in $_substitutes; do replaces="$replaces $pkg-kernel-mainline $pkg-kernel-mainline-modem"; done
+for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader firmware-samsung-serranove-wcnss-nv"
+	replaces="$_substitutes-nonfree-firmware"
+	provides="$replaces=$pkgver-r$pkgrel"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	replaces="$_substitutes-phosh"
+	provides="$replaces=$pkgver-r$pkgrel"
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+3a223367c1fbb06fc03c2007486aaa1903c801b4eb7f01a35c7bb53fdae3bfd7de83463fbda656c36df3284cb3844065981b764ba2f107e4566ba3d5ea6de292  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+0c92ace5c522d039d356e8914c0e0237e11fc38dd05390ba7a89532be659707d2b499ae77b263c5984345caac11fd007bd6d1e279d3426126bc276a0bcd9348b  modules-initfs
+1bc90a1a67309b43435039332b2a1d7e606408c6429b3cb8991a57f53dd4de36fbe471481b6481fbdb098c3819344e8093dd8eab0d34eb3c091ab6d8abd5c087  phoc.ini
+"

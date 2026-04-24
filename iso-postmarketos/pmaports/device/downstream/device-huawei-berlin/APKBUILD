@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="markochk <markochk@proton.me>"
+pkgname=device-huawei-berlin
+pkgdesc="Huawei Honor 6X"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-huawei-berlin
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-huawei-berlin hisi-wlan"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+97e4eb7dc36f0673b4ee4561a8cf71ca555932d242ecab4115d2aef62f1c7486df892fde8c14dc647b0c9ed0b5c97a6c66c48944435409dec31570e2348da7f5  deviceinfo
+e30d7197b06041ce52e0e923c021abbf8f1ed305f6d5657ce3af1b81543d29adcf2755743e4b11bce1ee1badf4b424f22e1de45966b671c1fff8109d1e27aec5  kernel-cmdline.conf
+"

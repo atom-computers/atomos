@@ -1,0 +1,24 @@
+# This patch removes the __ANDROID__ defines that activate the macros needed for
+# the connection gadget system in the kernel.
+# Needed for very obvious reasons.
+
+diff --git a/drivers/usb/gadget/function/f_conn_gadget.ioctl.h b/drivers/usb/gadget/function/f_conn_gadget.ioctl.h
+index aed3e027..3486e7a3 100644
+--- a/drivers/usb/gadget/function/f_conn_gadget.ioctl.h
++++ b/drivers/usb/gadget/function/f_conn_gadget.ioctl.h
+@@ -25,8 +25,6 @@ enum {
+ 	CONN_GADGET_IOCTL_BIND_STATUS_UNBIND = 2
+ };
+ 
+-#if defined(__ANDROID__)||defined(__TIZEN__)
+-
+ enum { 
+ 	CONN_GADGET_IOCTL_NR_0 = 0,
+ 	CONN_GADGET_IOCTL_NR_1,
+@@ -42,6 +40,5 @@ enum {
+ #define CONN_GADGET_IOCTL_BIND_WAIT_NOTIFY	_IOR(CONN_GADGET_IOCTL_MAGIC_SIG, CONN_GADGET_IOCTL_NR_1, int)
+ #define CONN_GADGET_IOCTL_BIND_GET_STATUS	_IOR(CONN_GADGET_IOCTL_MAGIC_SIG, CONN_GADGET_IOCTL_NR_2, int)
+ #define CONN_GADGET_IOCTL_MAX_NR			CONN_GADGET_IOCTL_NR_MAX
+-#endif
+ 
+ #endif

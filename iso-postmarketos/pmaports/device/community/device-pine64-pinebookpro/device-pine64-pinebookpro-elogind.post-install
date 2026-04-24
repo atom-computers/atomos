@@ -1,0 +1,5 @@
+#!/bin/sh
+
+loginctl reload
+
+exit 0

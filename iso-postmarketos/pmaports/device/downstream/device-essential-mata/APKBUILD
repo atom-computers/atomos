@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Avery Dorgan <avery.dorgan@protonmail.com>"
+pkgname=device-essential-mata
+pkgdesc="Essential PH1"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-essential-mata mkbootimg mdss-fb-init-hack"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+04a37761bc83eab5e2d2fc2df0186c473482345e7e7997e82ed7539bb6e6735acc92b7647ca7e6fff36ead3bbbb4ccd050ed15c4577cc29001f0a8b108c2ea1a  deviceinfo
+ac333ac030a6efe911c0b82de21ee1238cff2ca251c5bb8ec581d84aa2012a1790968a454c4154d09e03cb6ac143d05c1143e8efc77f4234971b9272aeb80443  kernel-cmdline.conf
+"

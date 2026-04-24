@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+
+CFLAGS=$(shell pkg-config --cflags libfeedback-0.0)
+LIBS=$(shell pkg-config --libs libfeedback-0.0)
+
+t1: debian/tests/build-test.c
+	gcc -o $@ $(CFLAGS) $< $(LIBS)
+	@echo "Build test of $< succeeded"
+	@rm -f $@

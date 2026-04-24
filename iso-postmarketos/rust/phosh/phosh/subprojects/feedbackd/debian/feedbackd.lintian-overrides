@@ -1,0 +1,1 @@
+feedbackd: appstream-metadata-missing-modalias-provide usr/lib/udev/rules.d/90-feedbackd.rules

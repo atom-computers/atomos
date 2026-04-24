@@ -1,0 +1,24 @@
+pkgname=firmware-samsung-i9105p
+pkgver=1
+pkgrel=0
+_commit="d8aa05127cc7dd5593c9cea2d5cf41e84f7c7e55"
+pkgdesc="Samsung Galaxy SII Plus Firmware"
+url="https://github.com/andixlm/proprietary_vendor_samsung_galaxys2plus-common"
+arch="armv7"
+license="proprietary"
+source="
+	nvram_net.txt
+"
+options="!check !strip !archcheck !spdx !tracedeps"
+builddir="$srcdir"
+depends="firmware-aosp-broadcom-wlan"
+
+package() {
+	# Wifi
+	install -Dm644 "nvram_net.txt" \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd/bcm4330/"nvram_net.txt"
+}
+
+sha512sums="
+df7d09f2e84cd80249debfd0e5bb1ad32b80e64f1f30f83c0c6a3a649725561d8842f189bb5f0bd89cf3fbd588ba55c97a8c4c3c6853eb26174b7520d9cd35c1  nvram_net.txt
+"

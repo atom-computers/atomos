@@ -1,0 +1,22 @@
+diff --git a/drivers/video/broadcom/lcd/nt35510_dsi.c b/drivers/video/broadcom/lcd/nt35510_dsi.c
+index 3cf5aa4b1ad..132f9350365 100644
+--- a/drivers/video/broadcom/lcd/nt35510_dsi.c
++++ b/drivers/video/broadcom/lcd/nt35510_dsi.c
+@@ -337,7 +337,7 @@ esd_detection:
+ 
+ static void nt35510_esd_recovery(void)
+ {
+-#ifdef ILI_ESD_OPERATION
++/*#ifdef ILI_ESD_OPERATION
+     nt35510_esd_reset_set(1);
+ #endif
+ 
+@@ -347,7 +347,7 @@ static void nt35510_esd_recovery(void)
+ 
+ #ifdef ILI_ESD_OPERATION
+     nt35510_esd_reset_set(0);
+-#endif
++#endif*/
+ }
+ 
+ static void esd_work_func(struct work_struct *work)

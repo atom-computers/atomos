@@ -1,0 +1,63 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Achill Gilgenast <achill@achill.org>"
+pkgname=postmarketos-ui-i3wm
+pkgver=2
+pkgrel=2
+pkgdesc="(X11) Tiling WM (keyboard required)"
+url="https://i3wm.org"
+# riscv64 has very unstable builders
+arch="noarch !riscv64"
+license="GPL-3.0-or-later"
+source="
+	i3-exec
+	i3wm-pmos
+	"
+depends="
+	dmenu-virtual
+	dnsmasq
+	elogind
+	feh
+	i3status
+	i3wm
+	tinydm
+	mesa-egl
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	postmarketos-artwork-wallpapers
+	st-virtual
+	xorg-server
+	"
+subpackages="$pkgname-openrc"
+options="!check"
+
+build() {
+	return 0
+}
+
+package() {
+	mkdir -p "$pkgdir"
+	install -D -m644 "$srcdir"/i3wm-pmos \
+		"$pkgdir"/usr/share/i3/config.pmos
+	replaces="i3wm"
+	install -Dm644 "$srcdir"/i3-exec \
+		"$pkgdir"/usr/share/xsessions/i3.desktop
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		elogind-openrc
+		networkmanager-openrc
+		tinydm-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+5160619693a52a1e5d62008abb0b756efb072368120dc72a0d598083aa291fd50d39abc40465950193782467d6a7f80be9934cd058f81596038336fa07e90206  i3-exec
+0a4c8cc279b065e83810107bc09450f6c543937162fe1a9c76fc8a5dd550c2ad599346d3de188b17e8e7e297381d0aff3bf96cbe153a38cfd3fca5af83b13a99  i3wm-pmos
+"

@@ -1,0 +1,61 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ranchu_defconfig
+
+pkgname=linux-xiaomi-cereus
+pkgver=4.9.119
+pkgrel=0
+pkgdesc="Xiaomi Redmi 6 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="xiaomi-cereus"
+url="https://github.com/xiaomi-mt6765/android_kernel_xiaomi_mt6765"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	python3
+"
+
+# Source
+_repository="android_kernel_xiaomi_mt6765"
+_commit="31dbe7b6881b35094fa220a68f6c476c615f10dc"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/xiaomi-mt6765/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-gcc10-extern-YYLOC-global-declaration.patch
+	0002-Port-drvgen-scripts-to-Python3.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+	  KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" KBUILD_VERBOSE=0
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+	  "$_flavor" "$_outdir"
+}
+
+sha512sums="
+c543d691eac482c6bef8c6b5c42cf2643e53745ac437c659de6b31720e5e879cc5ecfab1ac63c60eea24acb7a9e40db5e54d3ac5a461c6136d073bdc1ff3560f  linux-xiaomi-cereus-31dbe7b6881b35094fa220a68f6c476c615f10dc.tar.gz
+601be85e17467b0afb1bb34acc3cb878b70555acf9dc95fe2bec28991c725f7e8c088c28ad7837329a326df5352fad715f82b1b5e6d1a455df2761463bd4e701  config-xiaomi-cereus.armv7
+6d3dd281d69b561ab18693b07b72fe1bc87626a27f72ae1b0f72be2bc42fe45611bf3d8d35543107ac5673ee099a1013b615274f9135627f5b878a9f2cd51b5f  0001-gcc10-extern-YYLOC-global-declaration.patch
+6e8e12268c0c5eff0e3d0964f26678929410138a8783c628953112e449400cf8660e83321cd9cebf34ac74dd008f32dd4b0b6bdfa7097083cbaa23920367f13e  0002-Port-drvgen-scripts-to-Python3.patch
+"

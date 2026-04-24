@@ -1,0 +1,104 @@
+From cffdd39e66d384b3bcc71adad5f2749412782d25 Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Fri, 6 Sep 2019 16:05:13 +0300
+Subject: [PATCH 2/6] Fix TRACE_INCLUDE_PATH paths
+
+Signed-off-by: Alexey Min <alexey.min@gmail.com>
+---
+ drivers/gpu/msm/adreno_trace.h              | 2 +-
+ drivers/gpu/msm/kgsl_trace.h                | 2 +-
+ drivers/net/ethernet/msm/rndis_ipa_trace.h  | 2 +-
+ drivers/platform/msm/ipa/ipa_v2/ipa_trace.h | 2 +-
+ drivers/platform/msm/ipa/ipa_v3/ipa_trace.h | 2 +-
+ drivers/soc/qcom/tracer_pkt_private.h       | 2 +-
+ include/trace/events/msm_cam.h              | 2 +-
+ 7 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/gpu/msm/adreno_trace.h b/drivers/gpu/msm/adreno_trace.h
+index 74c4c4e6e1fa..313f2bb0b117 100644
+--- a/drivers/gpu/msm/adreno_trace.h
++++ b/drivers/gpu/msm/adreno_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm/
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE adreno_trace
+ 
+diff --git a/drivers/gpu/msm/kgsl_trace.h b/drivers/gpu/msm/kgsl_trace.h
+index 6438c6e65b97..088534fe7e4c 100644
+--- a/drivers/gpu/msm/kgsl_trace.h
++++ b/drivers/gpu/msm/kgsl_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm/
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE kgsl_trace
+ 
+diff --git a/drivers/net/ethernet/msm/rndis_ipa_trace.h b/drivers/net/ethernet/msm/rndis_ipa_trace.h
+index c0fc573799f2..1e8dd9a7f282 100644
+--- a/drivers/net/ethernet/msm/rndis_ipa_trace.h
++++ b/drivers/net/ethernet/msm/rndis_ipa_trace.h
+@@ -77,5 +77,5 @@ TRACE_EVENT(
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/net/ethernet/msm/
+ #include <trace/define_trace.h>
+diff --git a/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h b/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h
+index a03a49a33f97..218d3e965943 100644
+--- a/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h
++++ b/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h
+@@ -148,5 +148,5 @@ TRACE_EVENT(
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/platform/msm/ipa/ipa_v2/
+ #include <trace/define_trace.h>
+diff --git a/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h b/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
+index b67899ba894e..9e341ab1d203 100644
+--- a/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
++++ b/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
+@@ -149,5 +149,5 @@ TRACE_EVENT(
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/platform/msm/ipa/ipa_v3/
+ #include <trace/define_trace.h>
+diff --git a/drivers/soc/qcom/tracer_pkt_private.h b/drivers/soc/qcom/tracer_pkt_private.h
+index fc760e6b68d1..5573aec2fe83 100644
+--- a/drivers/soc/qcom/tracer_pkt_private.h
++++ b/drivers/soc/qcom/tracer_pkt_private.h
+@@ -15,7 +15,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM tracer_pkt
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/soc/qcom/
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE tracer_pkt_private
+ 
+diff --git a/include/trace/events/msm_cam.h b/include/trace/events/msm_cam.h
+index b52845407ef0..56f17a701c21 100644
+--- a/include/trace/events/msm_cam.h
++++ b/include/trace/events/msm_cam.h
+@@ -16,7 +16,7 @@
+ #if !defined(_TRACE_MSM_VFE_H) || defined(TRACE_HEADER_MULTI_READ)
+ #define _TRACE_MSM_VFE_H
+ 
+-#include "msm_isp.h"
++#include "../../drivers/media/platform/msm/camera_v2/isp/msm_isp.h"
+ #include <linux/types.h>
+ #include <linux/tracepoint.h>
+ 
+-- 
+2.24.1
+

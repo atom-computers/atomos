@@ -1,0 +1,36 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=device-samsung-v1awifi-downstream
+pkgdesc="Samsung Galaxy Note Pro 12.2 WiFi (Downstream)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-v1awifi-downstream
+	linux-samsung-v1awifi-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream
+	postmarketos-base-downstream-disable-udev-v4l
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+42a631560bf843bebfedbab9c16bcd9399c00e3c352b35e51412b1353894de96d5632fc9c9c0d8247ded4d34cdcaea34b6a5942aa7e5ed67596e45132a7b2fdb  deviceinfo
+"

@@ -1,0 +1,23 @@
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=firmware-b43xx
+pkgver=6.30.163.46
+pkgrel=1
+pkgdesc="Firmware for Broadcom B43xx WiFi chipsets"
+url="https://www.lwfinger.com/b43-firmware/"
+arch="x86_64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-$pkgver.tar.bz2::https://github.com/minios-linux/b43-firmware/releases/download/b43-firmware/broadcom-wl-$pkgver.tar.bz2"
+makedepends="b43-fwcutter"
+builddir="$srcdir"
+
+package() {
+	mkdir -p "$pkgdir"/lib/firmware/postmarketos
+	b43-fwcutter \
+		-w "$pkgdir"/lib/firmware/postmarketos/ \
+		broadcom-wl-"$pkgver".wl_apsta.o
+}
+
+sha512sums="
+0144894fbbb5e8ebab6c423d9bd0f3249be94f2f468a50b8bf721a3b17f1f6e57467c79e87abc8d136bfc92e701ed046885fead892e9a73efa5217d710311ae9  firmware-b43xx-6.30.163.46.tar.bz2
+"

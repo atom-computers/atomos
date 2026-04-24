@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="TuxMan <tuxkun09@gmail.com>"
+pkgname=device-sony-tulip
+pkgdesc="Sony Xperia M4 Aqua"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	device-qcom-msm8916-nonfree-firmware
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8916
+	"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+2190e0ab90969b0ec672d150c6af14ff5fcc634eb3025f6d42deed7490f94fbbc9a1cb7952fd4e8d3db5cce7f49515b11a8774f903aa4b32f85230bb61512087  deviceinfo
+67a15c9304112e80e54e62da1bfc6c4c0b942f3a125723f6d007afaa07232fe61ec14c515570ae9abf2ef35a8bdd2f4e7df892904b79b0c1b0f54073603ac157  kernel-cmdline.conf
+"

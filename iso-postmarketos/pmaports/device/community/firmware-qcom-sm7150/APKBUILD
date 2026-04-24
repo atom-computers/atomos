@@ -1,0 +1,75 @@
+
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=firmware-qcom-sm7150
+pkgver=1
+pkgrel=2
+url="https://github.com/sm7150-mainline"
+pkgdesc="Firmware for Qualcomm SM7150 devices"
+arch="aarch64"
+license="proprietary"
+makedepends="
+	qca-swiss-army-knife
+	zstd
+"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+subpackages="
+	$pkgname-ath10k:ath10k
+"
+depends="
+	$pkgname-ath10k
+	firmware-google-sunfish
+	firmware-qcom-adreno-a630
+	firmware-xiaomi-davinci
+	firmware-xiaomi-surya
+	firmware-xiaomi-sweet
+	firmware-xiaomi-tucana
+	linux-firmware-qca
+"
+
+_ath10k_fw_url="https://github.com/sm7150-mainline/$pkgname-ath10k"
+_ath10k_fw_commit="792c716c85c06861c4d17bce5ec21fba7f0f7de6"
+
+source="
+	30-initramfs-$pkgname.files
+	$pkgname-ath10k-$_ath10k_fw_commit.tar.gz::$_ath10k_fw_url/archive/$_ath10k_fw_commit/$pkgname-ath10k-$_ath10k_fw_commit.tar.gz
+"
+
+build() {
+	cd "$srcdir/$pkgname-ath10k-$_ath10k_fw_commit"
+
+	export ZSTD_CLEVEL=19
+
+	# Create a board-2.bin file - this contains the list of device-specific
+	# bdwlan files and their corresponding calibration variant properties
+	ath10k-bdencoder -c board-2.json
+	zstd --compress board-2.bin
+
+	# Create a firmware-5.bin file - this contains feature information about
+	# the WCN3990 module
+	ath10k-fwencoder --create \
+		--features=wowlan,no-nwifi-decap-4addr-padding,allows-mesh-bcast,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel  \
+		--set-wmi-op-version=tlv --set-htt-op-version=tlv \
+		--set-fw-api=5
+	zstd --compress firmware-5.bin
+}
+
+package() {
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+
+	install -Dm644 \
+		"$srcdir"/"$pkgname-ath10k-$_ath10k_fw_commit"/*.bin.zst \
+		-t "$pkgdir"/lib/firmware/ath10k/WCN3990/hw1.0
+}
+
+ath10k() {
+	pkgdesc="WiFi firmware for Qualcomm SM7150 devices"
+	replaces="linux-firmware-ath10k"
+
+	amove lib/firmware/ath10k/WCN3990/hw1.0/*
+}
+
+sha512sums="
+ee2efa2a26a45abb86247068877f2e977126357e8048ca41e98554917d393bff23e000de6e831a1b435e3304c31e237192f5d9d772c08e59cb29ace37296af74  30-initramfs-firmware-qcom-sm7150.files
+0e548ef14ec0bb1af9c62e25b3b0a98732b46a081d506cc1f0d52145b288b59b88317816c50521364d0f44431a2b5fd814200313095291d981eca80adec9d094  firmware-qcom-sm7150-ath10k-792c716c85c06861c4d17bce5ec21fba7f0f7de6.tar.gz
+"

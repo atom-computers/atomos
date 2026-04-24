@@ -1,0 +1,65 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+maintainer="ky0ko <ky0ko@disroot.org>"
+pkgname=linux-motorola-def
+pkgver=4.14.117
+pkgrel=2
+pkgdesc="Motorola Moto One Hyper kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-def"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev openssl-dev clang dtc"
+
+# Compiler: clang
+# kernel doesn't build with gcc6, and doesn't boot with gcc8
+# stock rom kernel is built with clang 8.0.11
+export CC="clang"
+export HOSTCC="clang"
+
+# Source
+_repository="kernel-msm"
+_commit="765eaec61cf526fabdfe52cdea1ef6aa9415b993"
+_config="config-motorola-def.aarch64"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/MotorolaMobilityLLC/$_repository/archive/$_commit.tar.gz
+	qcom-fix-trace-include-paths.patch
+	dsi-staging-fix-duplicate-static.patch
+	fix-hdcp-case-label.patch
+	fix_ipa_buf_size_mismatch.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		DTC=dtc CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Install kernel modules
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="80fa3677d51cee6e64d7edaf56448bcc3b4f1c0fa56679a0e93986f7d322ce291c65247793dea23aeadaf15308c9b9db7a8e82a0f971e2c41f9dc589ce6d2c96  linux-motorola-def-765eaec61cf526fabdfe52cdea1ef6aa9415b993.tar.gz
+033f71f37cbf2e2b7442e5a8466b0b5f3e07b119a584e7e6768c9e4a6253dc8e053df8277c2c9271c203562b4da9d2a7e7f4200b00709ab8758f18262df5864f  qcom-fix-trace-include-paths.patch
+45cd1dded5c56c93aa80a016ec9a96098633d6b38a02f2614cc0d96737409c24230d22eaaf8a244ce5d2eef07fb34cddcb06aea87e4b7805138cb5ac8c62f7cf  dsi-staging-fix-duplicate-static.patch
+9b459f035f4277172265888a810af53b82de94df700f3dc79398bec585a9b85deed3a36634ae88482fdef9b276b2aa1189386e8646184375cd3042f08bd7acdd  fix-hdcp-case-label.patch
+592d87cbb9532e0311a9d23bc10bdbae9859709993e7b88a7202cd7023e8cc3fcdaa1810a2171771222df2ead44b8de048cb5b10b5088f44607d7c7c5b15da1b  fix_ipa_buf_size_mismatch.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+b1396e45dca85f368e7de0634481b491139fdd525a809809b8f5f6ecd8e6d84b87322e0f788a69ee47030b8c6ee78923db8a72e5c1f5f2657106c7b963f770ce  config-motorola-def.aarch64"

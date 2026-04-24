@@ -1,0 +1,72 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/dior_user_defconfig
+
+pkgname=linux-xiaomi-dior
+pkgver=3.4.0
+pkgrel=3
+pkgdesc="Xiaomi Redmi Note 4G kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="xiaomi-dior"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz dtbtool gcc4"
+
+# Compiler: GCC 4 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+_repository="android_kernel_xiaomi_dior"
+_commit="12f40d54ab4e34dabaeb8dd7979bedc3cc8fa064"
+
+_config="config-$_flavor.$arch"
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/msfkonsole/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	0001-fix-refresh-rate.patch
+	0001-framebuffer-fixes.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$_outdir/arch/arm/boot/dt.img" "$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+540d01d6e6b405a3f20c928a3604840c096e08bdcf7817fbc153c0fed63cff7bccade64bba6ec0dea426475dae5512196d113733b8b9723c5d11611d0ce8706e  linux-xiaomi-dior-12f40d54ab4e34dabaeb8dd7979bedc3cc8fa064.tar.gz
+512b6dfa3d0c913dfbfea7204854efbe8b53cb35511af9492a9ffd39140af4e798934672d661b20afb74e4db33c88843a37e2182d0c53490c1e4299698f28a7d  config-xiaomi-dior.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+5e81c20b0b30c1ab09bd59f1e1b77fcce945a27de8144c68617ddc5e8f10e1f6fa8b1e4cd5d63e43511d61dace46fb26b14a6227a667b9718d44c8b81dbe6100  linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+8aa95783bb2bd7540188e7850d0be16f43f446b33f1f9a8e41922e601e91cf85ca39e041535984b1dc2ed4c0792f6670bd064974136550f415c445df9339dd85  0001-fix-refresh-rate.patch
+16462e2f981eb714b86eed218dea5437e845c64b98a9fabbe7fd88396d24c0feb9561ed00bfa9c2bfe9f3802e4314056880b826c3b4cf9d2409a0d398e1a75c1  0001-framebuffer-fixes.patch
+"

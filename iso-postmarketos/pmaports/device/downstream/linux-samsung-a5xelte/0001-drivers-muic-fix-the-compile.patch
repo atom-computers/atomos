@@ -1,0 +1,68 @@
+This patch was found at https://github.com/LineageOS/android_kernel_samsung_universal7580
+From 86f1b726b84414148ca2eb81229f8e595d6beacd Mon Sep 17 00:00:00 2001
+From: Apavayan Sinha <info@apavayan.com>
+Date: Sun, 24 Jul 2016 15:21:31 +0530
+Subject: [PATCH] drivers: muic: fix the compile
+
+Signed-off-by: Apavayan Sinha <info@apavayan.com>
+---
+ drivers/muic/Makefile           | 18 +++++-------------
+ drivers/muic/universal/Makefile | 19 +++++++++++++++++++
+ 2 files changed, 24 insertions(+), 13 deletions(-)
+ create mode 100644 drivers/muic/universal/Makefile
+
+diff --git a/drivers/muic/Makefile b/drivers/muic/Makefile
+index 86f76acb663..b727ab5a14e 100755
+--- a/drivers/muic/Makefile
++++ b/drivers/muic/Makefile
+@@ -20,17 +20,9 @@ obj-$(CONFIG_MUIC_SM5705_AFC)		+= sm5703-muic-afc.o
+ obj-$(CONFIG_MUIC_S2MU005)		+= s2mu005-muic.o
+ 
+ # MUIC_UNIVERSAL
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_task.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_state.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_apis.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_sysfs.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_debug.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_dt.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_i2c.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_regmap.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/muic_vps.o
+-obj-$(CONFIG_MUIC_UNIVERSAL_SM5703)	+= universal/muic_regmap_sm5703.o
+-obj-$(CONFIG_MUIC_UNIVERSAL_SM5705)	+= universal/muic_regmap_sm5705.o
+-obj-$(CONFIG_MUIC_UNIVERSAL_SM5705_AFC)	+= universal/muic_afc.o
+-obj-$(CONFIG_MUIC_UNIVERSAL_SM5504)	+= universal/muic_regmap_sm5504.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5703)	+= universal/
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5705)	+= universal/
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5705_AFC)	+= universal/
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5504)	+= universal/
+ 
+diff --git a/drivers/muic/universal/Makefile b/drivers/muic/universal/Makefile
+new file mode 100644
+index 00000000000..adadefa2de1
+--- /dev/null
++++ b/drivers/muic/universal/Makefile
+@@ -0,0 +1,19 @@
++#
++# Makefile for muic devices
++#
++
++# MUIC_UNIVERSAL
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_task.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_state.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_apis.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_sysfs.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_debug.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_dt.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_i2c.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_regmap.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= muic_vps.o
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5703)	+= muic_regmap_sm5703.o
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5705)	+= muic_regmap_sm5705.o
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5705_AFC)	+= muic_afc.o
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5504)	+= muic_regmap_sm5504.o
++
+-- 
+2.32.0
+

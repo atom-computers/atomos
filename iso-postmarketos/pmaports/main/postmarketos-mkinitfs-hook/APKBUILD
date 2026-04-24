@@ -1,0 +1,119 @@
+# Co-Maintainer: Casey Connolly <kcxt@postmarketos.org>
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=postmarketos-mkinitfs-hook
+pkgver=1
+pkgrel=0
+pkgdesc="Meta package for mkinitfs hooks"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="postmarketos-mkinitfs"
+subpackages="
+	$pkgname-apx
+	$pkgname-ci
+	$pkgname-debug-shell:debug_shell
+	$pkgname-kernel-panic:kernel_panic
+	$pkgname-maximum-attention:maximum_attention
+	$pkgname-netboot
+	$pkgname-verbose-initfs:verbose_initfs
+	"
+_hooks="
+	00-apx.sh
+	00-kernel-panic.sh
+	00-maximum-attention.sh
+	00-netboot.sh
+	05-ci.sh
+	10-verbose-initfs.sh
+	"
+_files="
+	00-apx.files
+	05-ci.files
+	20-debug-shell.files
+	"
+source="$_hooks $_files 30-netboot.modules"
+# check: no tests
+options="!check"
+
+package() {
+	for hook in $_hooks; do
+			install -Dm755 "$srcdir"/"$hook" \
+				"$pkgdir"/usr/share/mkinitfs/hooks/"$hook"
+	done
+	for file in $_files; do
+			install -Dm644 "$srcdir"/"$hook" \
+				"$pkgdir"/usr/share/mkinitfs/files/"$file"
+	done
+	install -Dm644 "$srcdir"/30-netboot.modules \
+		-t "$pkgdir"/usr/share/mkinitfs/modules/
+}
+
+apx() {
+	pkgdesc="Hook for entering APX on boot for NVIDIA Tegra devices"
+	depends="$depends devmem2"
+
+	amove usr/share/mkinitfs/hooks/00-apx.sh
+	amove usr/share/mkinitfs/files/00-apx.files
+}
+
+ci() {
+	pkgdesc="Hook for doing automated CI tests in the initramfs"
+
+	amove usr/share/mkinitfs/hooks/05-ci.sh
+	amove usr/share/mkinitfs/files/05-ci.files
+}
+
+debug_shell() {
+	pkgdesc="Files for root shell in the initramfs (testing only)"
+	depends="
+		$depends
+		devicepkg-utils
+		evtest
+		fbdebug
+		libinput
+		libinput-tools
+		linuxconsoletools
+		reboot-mode
+		"
+
+	amove usr/share/mkinitfs/files/20-debug-shell.files
+}
+
+kernel_panic() {
+	pkgdesc="Hook to cause a kernel panic after 30 seconds in the initramfs"
+
+	amove usr/share/mkinitfs/hooks/00-kernel-panic.sh
+}
+
+maximum_attention() {
+	pkgdesc="Hook to activate all user-visible outputs in the initramfs"
+
+	amove usr/share/mkinitfs/hooks/00-maximum-attention.sh
+}
+
+netboot() {
+	pkgdesc="Hook to netboot a rootfs using nbd"
+	depends="$depends devicepkg-utils nbd !usb-moded"
+
+	amove usr/share/mkinitfs/hooks/00-netboot.sh
+	amove usr/share/mkinitfs/modules/30-netboot.modules
+}
+
+verbose_initfs() {
+	pkgdesc="Hook to print all shell commands executed by the initramfs to the console"
+
+	amove usr/share/mkinitfs/hooks/10-verbose-initfs.sh
+}
+
+sha512sums="
+9dba7ac8266ed3bd74895a7f1d0353d3a01e6b63c78e9eb6bf33a23a4a86fef647858e2069e7d82f3dac4e9b3f4d7b6239373018212f0dd6dc01ad9f15e18d2a  00-apx.sh
+39be4de98daf4306c15dc8196bcd7649a149e5babccf9860c753d40f1e17ef550556444f65238d30d9dbc3d8610319b0d00f9ff99f128fd8a6bd4cdfb3b38dbe  00-kernel-panic.sh
+9c3ec5bee3bcdd79c8996bf8ee39067121873d705db6e8aa96212bd41c5b9db854e10d9c105e515ed1a5dcc29ac37fa726aa5bd910feb00b5024b76c1dd70059  00-maximum-attention.sh
+c681d0c39eecd9fe5d284e07f9c6f79e41085628abe1c645b8ea3cc4e621fd603fca9db4a555fa689a3268925cb6d23c12baa98986baed452375acd1e3fe26b1  00-netboot.sh
+9c2958c3e7d9c103249308eeebb0476b1a24a0a6f6e841ac7442a9b0d1897e14268bef391ae66cf17b4ac5c45caa046426fee0624d6517ee5830615518ba46be  05-ci.sh
+97d92de64dc870e293a47bb2959877b63f20692030277083e56e499022fc643c1f199a65bd11f8dce9634ac3b80a43dd6934e29de4cf0b53fb2e663f46675a0f  10-verbose-initfs.sh
+3fbe0463aa08e7a1ed8141c2d1d84e0e2ced53dc9b0d3a06dbca4a302bf5d96bc1a2e5c9a9600efc19b57c178326f4f0194a8839bb50de3192d8f19cc92fb980  00-apx.files
+26d665b817a4978dca44e0c697d98e12c58fa7941da86b9e3bfef6ecb0791d55859c0b671c00d7f88cfca688acf0dcc3e593ca5d8dd3cc094f582b49dabea645  05-ci.files
+793760737487d0034d93dd0ff526959cda9cd639f489d417cdd69bc49576b709a37f57cd496afca1fa91d3fd3a3e24a0cf641aeaa4ff2a2bbb27434eca0be1ce  20-debug-shell.files
+3c9c812a6cd25640e6cf4d722cff6c6356d5666ec6009b4c65f89e62211cc406d2cd09e0fdda6b1c1906ee32c3854988ab701cee8811208e3ef666f09e638568  30-netboot.modules
+"

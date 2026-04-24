@@ -1,0 +1,15 @@
+--- android_kernel_samsung_tuna/security/commoncap.c	2013-06-13 11:17:13.000000000 +0200
++++ patched_kernel/security/commoncap.c	2017-05-28 16:51:20.551000000 +0200
+@@ -88,10 +88,12 @@
+ int cap_capable(struct task_struct *tsk, const struct cred *cred,
+ 		struct user_namespace *targ_ns, int cap, int audit)
+ {
++#ifdef CONFIG_ANDROID_PARANOID_NETWORK
+ 	if (cap == CAP_NET_RAW && in_egroup_p(AID_NET_RAW))
+ 		return 0;
+ 	if (cap == CAP_NET_ADMIN && in_egroup_p(AID_NET_ADMIN))
+ 		return 0;
++#endif
+ 
+ 	for (;;) {
+ 		/* The creator of the user namespace has all caps. */

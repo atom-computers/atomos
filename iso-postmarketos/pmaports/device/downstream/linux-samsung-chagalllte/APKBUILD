@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_chagalllte_defconfig
+
+pkgname=linux-samsung-chagalllte
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab S 10.5 LTE kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-chagalllte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	xz
+"
+
+# Source
+_repository="android_kernel_samsung_exynos5420"
+_commit="de0cdcf10dcca77b400f15d83c1edf4f264a0f02"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/exynos5420/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-fix-FIMC-IS-disabling.patch
+	02-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+	fix-check-lxdialog.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+360313e4d32751ba7f577ddd8e7a53d9a0cf3813a305a468711031f7a581d69c274d5ec129c0c614cb184f03fb02d7b7f30ddf92058a17d78ff381f05345645e  linux-samsung-chagalllte-de0cdcf10dcca77b400f15d83c1edf4f264a0f02.tar.gz
+582940f2436a22f64af6125e058a713e71ed9a712a6dac34be37a109b45646ab584a5727f97c5cf316ec62bdb0761c2a458a0ecc4ad24b8be464943bed3fa755  config-samsung-chagalllte.armv7
+00c86b897193340ce4e8184e622d830d16efe9a5c10c12357e5f6ab98193a28f69c0006bdfe0d3429f1136a9820b8f8ff262d07b0314e40f4c7b664013e0b8a6  01-fix-FIMC-IS-disabling.patch
+a3df24c8d9116a3ad3559aac5ce126049e9123df633990ec72facd64ef538ed773e3ac0da233f2e04d99164d590340d598cfb3da3bbea502cf7c2cd3ef08cf24  02-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+c112c8492cb53b81def544bb405fac7627e78e12d481c6749c7e56ebbdc4d6c128b4969b7213140704be045eb622b7953d3c61bf623c661eb6c3976c958fce13  fix-check-lxdialog.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

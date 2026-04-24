@@ -1,0 +1,4437 @@
+https://github.com/Zennoe/android-cve-checker/tree/master/patches/3.4
+From d3752ba7de67976f5f09a7bb2b74d4298eb32f8b Mon Sep 17 00:00:00 2001
+From: Thomas Schmitz <Zennoe@users.noreply.github.com>
+Date: Mon, 24 Jul 2017 21:22:54 +0200
+Subject: [PATCH] Created 3.4 kernel folder. Added patches
+
+All patches listed were written and tested with android_kernel_lge_msm8226.
+---
+ patches/3.4/CVE-2015-8943.patch               |   59 +
+ patches/3.4/CVE-2015-8944.patch               |   30 +
+ patches/3.4/CVE-2015-8955.patch               |  113 +
+ patches/3.4/CVE-2016-0774.patch               |   60 +
+ patches/3.4/CVE-2016-0805.patch               |   55 +
+ patches/3.4/CVE-2016-2185.patch               |  110 +
+ patches/3.4/CVE-2016-2187.patch               |   48 +
+ patches/3.4/CVE-2016-2188.patch               |   44 +
+ patches/3.4/CVE-2016-2488.patch               |   45 +
+ patches/3.4/CVE-2016-2544.patch               |   36 +
+ patches/3.4/CVE-2016-3137.patch               |   47 +
+ patches/3.4/CVE-2016-3857.patch               |   49 +
+ patches/3.4/CVE-2016-3867.patch               |  348 +++
+ patches/3.4/CVE-2016-3903.patch               |   39 +
+ patches/3.4/CVE-2016-6741.patch               |  137 ++
+ patches/3.4/CVE-2016-6741_complementary.patch |   29 +
+ patches/3.4/CVE-2016-6748.patch               |  317 +++
+ patches/3.4/CVE-2016-6751.patch               |   35 +
+ patches/3.4/CVE-2016-6752.patch               |   45 +
+ patches/3.4/CVE-2016-6753.patch               |   29 +
+ patches/3.4/CVE-2016-6757.patch               |  372 ++++
+ patches/3.4/CVE-2016-6791.patch               |   86 +
+ patches/3.4/CVE-2016-7914.patch               | 1873 +++++++++++++++++
+ patches/3.4/CVE-2016-8403.patch               |  119 ++
+ patches/3.4/CVE-2016-8406.patch               |  102 +
+ 25 files changed, 4227 insertions(+)
+ create mode 100644 patches/3.4/CVE-2015-8943.patch
+ create mode 100644 patches/3.4/CVE-2015-8944.patch
+ create mode 100644 patches/3.4/CVE-2015-8955.patch
+ create mode 100644 patches/3.4/CVE-2016-0774.patch
+ create mode 100644 patches/3.4/CVE-2016-0805.patch
+ create mode 100644 patches/3.4/CVE-2016-2185.patch
+ create mode 100644 patches/3.4/CVE-2016-2187.patch
+ create mode 100644 patches/3.4/CVE-2016-2188.patch
+ create mode 100644 patches/3.4/CVE-2016-2488.patch
+ create mode 100644 patches/3.4/CVE-2016-2544.patch
+ create mode 100644 patches/3.4/CVE-2016-3137.patch
+ create mode 100644 patches/3.4/CVE-2016-3857.patch
+ create mode 100644 patches/3.4/CVE-2016-3867.patch
+ create mode 100644 patches/3.4/CVE-2016-3903.patch
+ create mode 100644 patches/3.4/CVE-2016-6741.patch
+ create mode 100644 patches/3.4/CVE-2016-6741_complementary.patch
+ create mode 100644 patches/3.4/CVE-2016-6748.patch
+ create mode 100644 patches/3.4/CVE-2016-6751.patch
+ create mode 100644 patches/3.4/CVE-2016-6752.patch
+ create mode 100644 patches/3.4/CVE-2016-6753.patch
+ create mode 100644 patches/3.4/CVE-2016-6757.patch
+ create mode 100644 patches/3.4/CVE-2016-6791.patch
+ create mode 100644 patches/3.4/CVE-2016-7914.patch
+ create mode 100644 patches/3.4/CVE-2016-8403.patch
+ create mode 100644 patches/3.4/CVE-2016-8406.patch
+
+diff --git a/patches/3.4/CVE-2015-8943.patch b/patches/3.4/CVE-2015-8943.patch
+new file mode 100644
+index 0000000..a5bb95a
+--- /dev/null
++++ b/patches/3.4/CVE-2015-8943.patch
+@@ -0,0 +1,59 @@
++From 8ee577ed10d44d5f05e11bb60d9b0d8679bcb614 Mon Sep 17 00:00:00 2001
++From: Jayant Shekhar <jshekhar@codeaurora.org>
++Date: Tue, 20 Jan 2015 16:12:43 +0530
++Subject: [PATCH] msm: mdss: Unmap only when buffer was mapped
++
++Currently buffer is unmapped if iommu is attached.
++This can lead to potential unmap issues if wrong
++addresses are sent and are tried to unmap without
++mapping. Hence ensure unmap is done only when
++buffer is mapped.
++
++Change-Id: I6d7f1eb1e951cd314a4c3c35551c87930af5118e
++Signed-off-by: Jayant Shekhar <jshekhar@codeaurora.org>
++---
++ drivers/video/msm/mdss/mdss_mdp.h      | 1 +
++ drivers/video/msm/mdss/mdss_mdp_util.c | 4 +++-
++ 2 files changed, 4 insertions(+), 1 deletion(-)
++
++diff --git a/drivers/video/msm/mdss/mdss_mdp.h b/drivers/video/msm/mdss/mdss_mdp.h
++index 00b0cebc04b..6c65a1e62b0 100644
++--- a/drivers/video/msm/mdss/mdss_mdp.h
+++++ b/drivers/video/msm/mdss/mdss_mdp.h
++@@ -300,6 +300,7 @@ struct mdss_mdp_img_data {
++ 	u32 len;
++ 	u32 flags;
++ 	int p_need;
+++	bool mapped;
++ 	struct file *srcp_file;
++ 	struct ion_handle *srcp_ihdl;
++ };
++diff --git a/drivers/video/msm/mdss/mdss_mdp_util.c b/drivers/video/msm/mdss/mdss_mdp_util.c
++index 0b1a154a225..d25b1b65cc4 100644
++--- a/drivers/video/msm/mdss/mdss_mdp_util.c
+++++ b/drivers/video/msm/mdss/mdss_mdp_util.c
++@@ -522,7 +522,7 @@ int mdss_mdp_put_img(struct mdss_mdp_img_data *data)
++ 			pr_err("invalid ion client\n");
++ 			return -ENOMEM;
++ 		} else {
++-			if (is_mdss_iommu_attached()) {
+++			if (data->mapped) {
++ 				int domain;
++ 				if (data->flags & MDP_SECURE_OVERLAY_SESSION)
++ 					domain = MDSS_IOMMU_DOMAIN_SECURE;
++@@ -535,6 +535,7 @@ int mdss_mdp_put_img(struct mdss_mdp_img_data *data)
++ 					msm_ion_unsecure_buffer(iclient,
++ 							data->srcp_ihdl);
++ 				}
+++				data->mapped = false;
++ 			}
++ 			ion_free(iclient, data->srcp_ihdl);
++ 			data->srcp_ihdl = NULL;
++@@ -613,6 +614,7 @@ int mdss_mdp_get_img(struct msmfb_data *img, struct mdss_mdp_img_data *data)
++ 			if (ret && (domain == MDSS_IOMMU_DOMAIN_SECURE))
++ 				msm_ion_unsecure_buffer(iclient,
++ 						data->srcp_ihdl);
+++			data->mapped = true;
++ 		} else {
++ 			ret = ion_phys(iclient, data->srcp_ihdl, start,
++ 				       (size_t *) len);
+diff --git a/patches/3.4/CVE-2015-8944.patch b/patches/3.4/CVE-2015-8944.patch
+new file mode 100644
+index 0000000..cfffcae
+--- /dev/null
++++ b/patches/3.4/CVE-2015-8944.patch
+@@ -0,0 +1,30 @@
++From 465a6856bafc2f627753596c60894b0ec40310f2 Mon Sep 17 00:00:00 2001
++From: Biswajit Paul <biswajitpaul@codeaurora.org>
++Date: Mon, 9 Feb 2015 15:21:12 -0800
++Subject: [PATCH] kernel: Restrict permissions of /proc/iomem.
++
++The permissions of /proc/iomem currently are -r--r--r--. Everyone can
++see its content. As iomem contains information about the physical memory
++content of the device, restrict the information only to root.
++
++Change-Id: If0be35c3fac5274151bea87b738a48e6ec0ae891
++CRs-Fixed: 786116
++Signed-off-by: Biswajit Paul <biswajitpaul@codeaurora.org>
++Signed-off-by: Avijit Kanti Das <avijitnsec@codeaurora.org>
++---
++ kernel/resource.c | 2 +-
++ 1 file changed, 1 insertion(+), 1 deletion(-)
++
++diff --git a/kernel/resource.c b/kernel/resource.c
++index 7203c06273a..e9ba0770ec3 100644
++--- a/kernel/resource.c
+++++ b/kernel/resource.c
++@@ -142,7 +142,7 @@ static const struct file_operations proc_iomem_operations = {
++ static int __init ioresources_init(void)
++ {
++ 	proc_create("ioports", 0, NULL, &proc_ioports_operations);
++-	proc_create("iomem", 0, NULL, &proc_iomem_operations);
+++	proc_create("iomem", S_IRUSR, NULL, &proc_iomem_operations);
++ 	return 0;
++ }
++ __initcall(ioresources_init);
+diff --git a/patches/3.4/CVE-2015-8955.patch b/patches/3.4/CVE-2015-8955.patch
+new file mode 100644
+index 0000000..613ec32
+--- /dev/null
++++ b/patches/3.4/CVE-2015-8955.patch
+@@ -0,0 +1,113 @@
++From 0bbcfb08a2e3a6d5fe83c1e58fca23d01fd88a21 Mon Sep 17 00:00:00 2001
++From: "Suzuki K. Poulose" <suzuki.poulose@arm.com>
++Date: Tue, 17 Mar 2015 18:14:58 +0000
++Subject: [PATCH] ARM: perf: reject groups spanning multiple hardware PMUs
++
++The perf core implicitly rejects events spanning multiple HW PMUs, as in
++these cases the event->ctx will differ. However this validation is
++performed after pmu::event_init() is called in perf_init_event(), and
++thus pmu::event_init() may be called with a group leader from a
++different HW PMU.
++
++The ARM PMU driver does not take this fact into account, and when
++validating groups assumes that it can call to_arm_pmu(event->pmu) for
++any HW event. When the event in question is from another HW PMU this is
++wrong, and results in dereferencing garbage.
++
++This patch updates the ARM PMU driver to first test for and reject
++events from other PMUs, moving the to_arm_pmu and related logic after
++this test. Fixes a crash triggered by perf_fuzzer on Linux-4.0-rc2, with
++a CCI PMU present:
++
++ ---
++CPU: 0 PID: 1527 Comm: perf_fuzzer Not tainted 4.0.0-rc2 #57
++Hardware name: ARM-Versatile Express
++task: bd8484c0 ti: be676000 task.ti: be676000
++PC is at 0xbf1bbc90
++LR is at validate_event+0x34/0x5c
++pc : [<bf1bbc90>]    lr : [<80016060>]    psr: 00000013
++...
++[<80016060>] (validate_event) from [<80016198>] (validate_group+0x28/0x90)
++[<80016198>] (validate_group) from [<80016398>] (armpmu_event_init+0x150/0x218)
++[<80016398>] (armpmu_event_init) from [<800882e4>] (perf_try_init_event+0x30/0x48)
++[<800882e4>] (perf_try_init_event) from [<8008f544>] (perf_init_event+0x5c/0xf4)
++[<8008f544>] (perf_init_event) from [<8008f8a8>] (perf_event_alloc+0x2cc/0x35c)
++[<8008f8a8>] (perf_event_alloc) from [<8009015c>] (SyS_perf_event_open+0x498/0xa70)
++[<8009015c>] (SyS_perf_event_open) from [<8000e420>] (ret_fast_syscall+0x0/0x34)
++Code: bf1be000 bf1bb380 802a2664 00000000 (00000002)
++---[ end trace 01aff0ff00926a0a ]---
++
++Also cleans up the code to use the arm_pmu only when we know that
++we are dealing with an arm pmu event.
++
++Change-Id: I890a2a685d1ecd462287f19907c3de8bedee2c70
++Cc: Will Deacon <will.deacon@arm.com>
++Acked-by: Mark Rutland <mark.rutland@arm.com>
++Acked-by: Peter Ziljstra (Intel) <peterz@infradead.org>
++Signed-off-by: Suzuki K. Poulose <suzuki.poulose@arm.com>
++Signed-off-by: Will Deacon <will.deacon@arm.com>
++---
++ arch/arm/kernel/perf_event.c | 24 ++++++++++++++++++------
++ 1 file changed, 18 insertions(+), 6 deletions(-)
++
++diff --git a/arch/arm/kernel/perf_event.c b/arch/arm/kernel/perf_event.c
++index 5989418ca04..15d45df3fd3 100644
++--- a/arch/arm/kernel/perf_event.c
+++++ b/arch/arm/kernel/perf_event.c
++@@ -343,19 +343,31 @@ out:
++ }
++ 
++ static int
++-validate_event(struct pmu_hw_events *hw_events,
+++validate_event(struct pmu *pmu, struct pmu_hw_events *hw_events,
++ 	       struct perf_event *event)
++ {
++-	struct arm_pmu *armpmu = to_arm_pmu(event->pmu);
+++	struct arm_pmu *armpmu;
++ 	struct hw_perf_event fake_event = event->hw;
++ 	struct pmu *leader_pmu = event->group_leader->pmu;
++ 
++ 	if (is_software_event(event))
++ 		return 1;
++ 
++-	if (event->pmu != leader_pmu || event->state <= PERF_EVENT_STATE_OFF)
+++	/*
+++	 * Reject groups spanning multiple HW PMUs (e.g. CPU + CCI). The
+++	 * core perf code won't check that the pmu->ctx == leader->ctx
+++	 * until after pmu->event_init(event).
+++	 */
+++	if (event->pmu != pmu)
+++		return 0;
+++
+++	if (event->pmu != leader_pmu || event->state < PERF_EVENT_STATE_OFF)
+++		return 1;
+++
+++	if (event->state == PERF_EVENT_STATE_OFF && !event->attr.enable_on_exec)
++ 		return 1;
++ 
+++	armpmu = to_arm_pmu(event->pmu);
++ 	return armpmu->get_event_idx(hw_events, &fake_event) >= 0;
++ }
++ 
++@@ -373,15 +385,15 @@ validate_group(struct perf_event *event)
++ 	memset(fake_used_mask, 0, sizeof(fake_used_mask));
++ 	fake_pmu.used_mask = fake_used_mask;
++ 
++-	if (!validate_event(&fake_pmu, leader))
+++	if (!validate_event(event->pmu, &fake_pmu, leader))
++ 		return -EINVAL;
++ 
++ 	list_for_each_entry(sibling, &leader->sibling_list, group_entry) {
++-		if (!validate_event(&fake_pmu, sibling))
+++		if (!validate_event(event->pmu, &fake_pmu, sibling))
++ 			return -EINVAL;
++ 	}
++ 
++-	if (!validate_event(&fake_pmu, event))
+++	if (!validate_event(event->pmu, &fake_pmu, event))
++ 		return -EINVAL;
++ 
++ 	return 0;
++-- 
++2.13.3
++
+diff --git a/patches/3.4/CVE-2016-0774.patch b/patches/3.4/CVE-2016-0774.patch
+new file mode 100644
+index 0000000..bf2b191
+--- /dev/null
++++ b/patches/3.4/CVE-2016-0774.patch
+@@ -0,0 +1,60 @@
++From f6447b2c1c4846d61c8d5cbc9d9586f2408880e4 Mon Sep 17 00:00:00 2001
++From: Jeff Vander Stoep <jeffv@google.com>
++Date: Wed, 23 Mar 2016 15:32:14 -0700
++Subject: [PATCH] pipe: iovec: Fix OOB read in pipe_read()
++
++Previous upstream *stable* fix 14f81062 was incomplete.
++
++A local process can trigger a system crash with an OOB read on buf.
++This occurs when the state of buf gets out of sync. After an error in
++pipe_iov_copy_to_user() read_pipe may exit having updated buf->offset
++but not buf->len. Upon retrying pipe_read() while in
++pipe_iov_copy_to_user() *remaining will be larger than the space left
++after buf->offset e.g. *remaing = PAGE_SIZE, buf->len = PAGE_SIZE,
++buf->offset = 0x300.
++
++This is fixed by not updating the state of buf->offset until after the
++full copy is completed, similar to how pipe_write() is implemented.
++
++For stable kernels < 3.16.
++
++Bug: 27721803
++Change-Id: Iefffbcc6cfd159dba69c31bcd98c6d5c1f21ff2e
++Signed-off-by: Jeff Vander Stoep <jeffv@google.com>
++---
++ fs/pipe.c | 6 ++++--
++ 1 file changed, 4 insertions(+), 2 deletions(-)
++
++diff --git a/fs/pipe.c b/fs/pipe.c
++index edd1c636bf1..c1ddb284357 100644
++--- a/fs/pipe.c
+++++ b/fs/pipe.c
++@@ -395,7 +395,7 @@ pipe_read(struct kiocb *iocb, const struct iovec *_iov,
++ 			const struct pipe_buf_operations *ops = buf->ops;
++ 			void *addr;
++ 			size_t chars = buf->len, remaining;
++-			int error, atomic;
+++			int error, atomic, offset;
++ 
++ 			if (chars > total_len)
++ 				chars = total_len;
++@@ -409,9 +409,10 @@ pipe_read(struct kiocb *iocb, const struct iovec *_iov,
++ 
++ 			atomic = !iov_fault_in_pages_write(iov, chars);
++ 			remaining = chars;
+++			offset = buf->offset;
++ redo:
++ 			addr = ops->map(pipe, buf, atomic);
++-			error = pipe_iov_copy_to_user(iov, addr, &buf->offset,
+++			error = pipe_iov_copy_to_user(iov, addr, &offset,
++ 						      &remaining, atomic);
++ 			ops->unmap(pipe, buf, addr);
++ 			if (unlikely(error)) {
++@@ -427,6 +428,7 @@ pipe_read(struct kiocb *iocb, const struct iovec *_iov,
++ 				break;
++ 			}
++ 			ret += chars;
+++			buf->offset += chars;
++ 			buf->len -= chars;
++ 
++ 			/* Was it a packet buffer? Clean up and exit */
+diff --git a/patches/3.4/CVE-2016-0805.patch b/patches/3.4/CVE-2016-0805.patch
+new file mode 100644
+index 0000000..bafe826
+--- /dev/null
++++ b/patches/3.4/CVE-2016-0805.patch
+@@ -0,0 +1,55 @@
++From 1e7cf1e770aa8693452bb6c7dda7f43bfc026bf7 Mon Sep 17 00:00:00 2001
++From: Swetha Chikkaboraiah <schikk@codeaurora.org>
++Date: Wed, 27 Jan 2016 11:46:54 +0530
++Subject: [PATCH] msm: perf: Protect buffer overflow due to malicious user
++
++In function krait_pmu_disable_event, parameter hwc comes from
++userspace and is untrusted.The function krait_clearpmu is called
++after the function get_krait_evtinfo.
++Function get_krait_evtinfo as parameter krait_evt_type variable
++which is used to extract the groupcode(reg) which is bound to
++KRAIT_MAX_L1_REG (is 3). After validation,one code path modifies
++groupcode(reg):If this code path executes, groupcode(reg) can be
++3,4, 5, or 6. In krait_clearpmu groupcode used to access array
++krait_functions whose size is 3. Since groupcode can be 3,4,5,6
++accessing array krait_functions lead to bufferoverlflow.
++This change will validate groupcode not to exceed 3 .
++
++Change-Id: I48c92adda137d8a074b4e1a367a468195a810ca1
++CRs-fixed: 962450
++Signed-off-by: Swetha Chikkaboraiah <schikk@codeaurora.org>
++---
++ arch/arm/kernel/perf_event_msm_krait.c | 8 ++++----
++ 1 file changed, 4 insertions(+), 4 deletions(-)
++
++diff --git a/arch/arm/kernel/perf_event_msm_krait.c b/arch/arm/kernel/perf_event_msm_krait.c
++index 1c338f79bab..3f09c4c0754 100644
++--- a/arch/arm/kernel/perf_event_msm_krait.c
+++++ b/arch/arm/kernel/perf_event_msm_krait.c
++@@ -1,5 +1,5 @@
++ /*
++- * Copyright (c) 2011-2012, 2014 The Linux Foundation. All rights reserved.
+++ * Copyright (c) 2011-2012, 2014,2016 The Linux Foundation. All rights reserved.
++  *
++  * This program is free software; you can redistribute it and/or modify
++  * it under the terms of the GNU General Public License version 2 and
++@@ -219,9 +219,6 @@ static unsigned int get_krait_evtinfo(unsigned int krait_evt_type,
++ 	code = (krait_evt_type & 0x00FF0) >> 4;
++ 	group = krait_evt_type & 0x0000F;
++ 
++-	if ((group > 3) || (reg > krait_max_l1_reg))
++-		return -EINVAL;
++-
++ 	if (prefix != KRAIT_EVT_PREFIX && prefix != KRAIT_VENUMEVT_PREFIX)
++ 		return -EINVAL;
++ 
++@@ -232,6 +229,9 @@ static unsigned int get_krait_evtinfo(unsigned int krait_evt_type,
++ 			reg += VENUM_BASE_OFFSET;
++ 	}
++ 
+++	if ((group > 3) || (reg > krait_max_l1_reg))
+++		return -EINVAL;
+++
++ 	evtinfo->group_setval = 0x80000000 | (code << (group * 8));
++ 	evtinfo->groupcode = reg;
++ 	evtinfo->armv7_evt_type = evt_type_base[evt_index][reg] | group;
+diff --git a/patches/3.4/CVE-2016-2185.patch b/patches/3.4/CVE-2016-2185.patch
+new file mode 100644
+index 0000000..3cbd89c
+--- /dev/null
++++ b/patches/3.4/CVE-2016-2185.patch
+@@ -0,0 +1,110 @@
++From bc47a8af553b852acaf2622bb54dee5507f11e20 Mon Sep 17 00:00:00 2001
++From: Vladis Dronov <vdronov@redhat.com>
++Date: Wed, 23 Mar 2016 11:53:46 -0700
++Subject: [PATCH] Input: ati_remote2 - fix crashes on detecting device with
++ invalid descriptor
++
++[ Upstream commit 950336ba3e4a1ffd2ca60d29f6ef386dd2c7351d ]
++
++The ati_remote2 driver expects at least two interfaces with one
++endpoint each. If given malicious descriptor that specify one
++interface or no endpoints, it will crash in the probe function.
++Ensure there is at least two interfaces and one endpoint for each
++interface before using it.
++
++The full disclosure: http://seclists.org/bugtraq/2016/Mar/90
++
++Change-Id: I255a66aad0fac2d6915d1e3bb0834e7137cd0da2
++Reported-by: Ralf Spenneberg <ralf@spenneberg.net>
++Signed-off-by: Vladis Dronov <vdronov@redhat.com>
++Cc: stable@vger.kernel.org
++Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
++Signed-off-by: Sasha Levin <sasha.levin@oracle.com>
++---
++ drivers/input/misc/ati_remote2.c | 36 ++++++++++++++++++++++++++++++------
++ 1 file changed, 30 insertions(+), 6 deletions(-)
++
++diff --git a/drivers/input/misc/ati_remote2.c b/drivers/input/misc/ati_remote2.c
++index f63341f20b9..e8c6a4842e9 100644
++--- a/drivers/input/misc/ati_remote2.c
+++++ b/drivers/input/misc/ati_remote2.c
++@@ -817,26 +817,49 @@ static int ati_remote2_probe(struct usb_interface *interface, const struct usb_d
++ 
++ 	ar2->udev = udev;
++ 
+++	/* Sanity check, first interface must have an endpoint */
+++	if (alt->desc.bNumEndpoints < 1 || !alt->endpoint) {
+++		dev_err(&interface->dev,
+++			"%s(): interface 0 must have an endpoint\n", __func__);
+++		r = -ENODEV;
+++		goto fail1;
+++	}
++ 	ar2->intf[0] = interface;
++ 	ar2->ep[0] = &alt->endpoint[0].desc;
++ 
+++	/* Sanity check, the device must have two interfaces */
++ 	ar2->intf[1] = usb_ifnum_to_if(udev, 1);
+++	if ((udev->actconfig->desc.bNumInterfaces < 2) || !ar2->intf[1]) {
+++		dev_err(&interface->dev, "%s(): need 2 interfaces, found %d\n",
+++			__func__, udev->actconfig->desc.bNumInterfaces);
+++		r = -ENODEV;
+++		goto fail1;
+++	}
+++
++ 	r = usb_driver_claim_interface(&ati_remote2_driver, ar2->intf[1], ar2);
++ 	if (r)
++ 		goto fail1;
+++
+++	/* Sanity check, second interface must have an endpoint */
++ 	alt = ar2->intf[1]->cur_altsetting;
+++	if (alt->desc.bNumEndpoints < 1 || !alt->endpoint) {
+++		dev_err(&interface->dev,
+++			"%s(): interface 1 must have an endpoint\n", __func__);
+++		r = -ENODEV;
+++		goto fail2;
+++	}
++ 	ar2->ep[1] = &alt->endpoint[0].desc;
++ 
++ 	r = ati_remote2_urb_init(ar2);
++ 	if (r)
++-		goto fail2;
+++		goto fail3;
++ 
++ 	ar2->channel_mask = channel_mask;
++ 	ar2->mode_mask = mode_mask;
++ 
++ 	r = ati_remote2_setup(ar2, ar2->channel_mask);
++ 	if (r)
++-		goto fail2;
+++		goto fail3;
++ 
++ 	usb_make_path(udev, ar2->phys, sizeof(ar2->phys));
++ 	strlcat(ar2->phys, "/input0", sizeof(ar2->phys));
++@@ -845,11 +868,11 @@ static int ati_remote2_probe(struct usb_interface *interface, const struct usb_d
++ 
++ 	r = sysfs_create_group(&udev->dev.kobj, &ati_remote2_attr_group);
++ 	if (r)
++-		goto fail2;
+++		goto fail3;
++ 
++ 	r = ati_remote2_input_init(ar2);
++ 	if (r)
++-		goto fail3;
+++		goto fail4;
++ 
++ 	usb_set_intfdata(interface, ar2);
++ 
++@@ -857,10 +880,11 @@ static int ati_remote2_probe(struct usb_interface *interface, const struct usb_d
++ 
++ 	return 0;
++ 
++- fail3:
+++ fail4:
++ 	sysfs_remove_group(&udev->dev.kobj, &ati_remote2_attr_group);
++- fail2:
+++ fail3:
++ 	ati_remote2_urb_cleanup(ar2);
+++ fail2:
++ 	usb_driver_release_interface(&ati_remote2_driver, ar2->intf[1]);
++  fail1:
++ 	kfree(ar2);
+diff --git a/patches/3.4/CVE-2016-2187.patch b/patches/3.4/CVE-2016-2187.patch
+new file mode 100644
+index 0000000..cb9a8ae
+--- /dev/null
++++ b/patches/3.4/CVE-2016-2187.patch
+@@ -0,0 +1,48 @@
++From 965ab8894f9fd3e90095492100c78de150af380e Mon Sep 17 00:00:00 2001
++From: Vladis Dronov <vdronov@redhat.com>
++Date: Thu, 31 Mar 2016 10:53:42 -0700
++Subject: [PATCH] Input: gtco - fix crash on detecting device without endpoints
++
++commit 162f98dea487206d9ab79fc12ed64700667a894d upstream.
++
++The gtco driver expects at least one valid endpoint. If given malicious
++descriptors that specify 0 for the number of endpoints, it will crash in
++the probe function. Ensure there is at least one endpoint on the interface
++before using it.
++
++Also let's fix a minor coding style issue.
++
++The full correct report of this issue can be found in the public
++Red Hat Bugzilla:
++
++https://bugzilla.redhat.com/show_bug.cgi?id=1283385
++
++Change-Id: I8e330f2a3f3f88eb005006dffb163c296aa7d092
++Reported-by: Ralf Spenneberg <ralf@spenneberg.net>
++Signed-off-by: Vladis Dronov <vdronov@redhat.com>
++Cc: stable@vger.kernel.org
++Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
++Signed-off-by: Willy Tarreau <w@1wt.eu>
++---
++ drivers/input/tablet/gtco.c | 8 ++++++++
++ 1 file changed, 8 insertions(+)
++
++diff --git a/drivers/input/tablet/gtco.c b/drivers/input/tablet/gtco.c
++index 89a297801dc..f707464eb95 100644
++--- a/drivers/input/tablet/gtco.c
+++++ b/drivers/input/tablet/gtco.c
++@@ -866,6 +866,14 @@ static int gtco_probe(struct usb_interface *usbinterface,
++ 		goto err_free_buf;
++ 	}
++ 
+++	/* Sanity check that a device has an endpoint */
+++	if (usbinterface->altsetting[0].desc.bNumEndpoints < 1) {
+++		dev_err(&usbinterface->dev,
+++			"Invalid number of endpoints\n");
+++		error = -EINVAL;
+++		goto err_free_urb;
+++	}
+++
++ 	/*
++ 	 * The endpoint is always altsetting 0, we know this since we know
++ 	 * this device only has one interrupt endpoint
+diff --git a/patches/3.4/CVE-2016-2188.patch b/patches/3.4/CVE-2016-2188.patch
+new file mode 100644
+index 0000000..7efa0b8
+--- /dev/null
++++ b/patches/3.4/CVE-2016-2188.patch
+@@ -0,0 +1,44 @@
++From f653fddb51d77c8fa1bcac0f7df54517dbe60d1a Mon Sep 17 00:00:00 2001
++From: Johan Hovold <johan@kernel.org>
++Date: Tue, 7 Mar 2017 16:11:03 +0100
++Subject: [PATCH] USB: iowarrior: fix NULL-deref at probe
++
++commit b7321e81fc369abe353cf094d4f0dc2fe11ab95f upstream.
++
++Make sure to check for the required interrupt-in endpoint to avoid
++dereferencing a NULL-pointer should a malicious device lack such an
++endpoint.
++
++Note that a fairly recent change purported to fix this issue, but added
++an insufficient test on the number of endpoints only, a test which can
++now be removed.
++
++Fixes: 4ec0ef3a8212 ("USB: iowarrior: fix oops with malicious USB descriptors")
++Fixes: 946b960d13c1 ("USB: add driver for iowarrior devices.")
++Change-Id: Ica55241dca314561282c0e1f9b91f96a5aaaf145
++Signed-off-by: Johan Hovold <johan@kernel.org>
++Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
++[bwh: Backported to 3.2: adjust context]
++Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
++---
++ drivers/usb/misc/iowarrior.c | 7 +++++++
++ 1 file changed, 7 insertions(+)
++
++diff --git a/drivers/usb/misc/iowarrior.c b/drivers/usb/misc/iowarrior.c
++index 4fd0dc835ae..f76b0bd4e2f 100644
++--- a/drivers/usb/misc/iowarrior.c
+++++ b/drivers/usb/misc/iowarrior.c
++@@ -802,6 +802,13 @@ static int iowarrior_probe(struct usb_interface *interface,
++ 			/* this one will match for the IOWarrior56 only */
++ 			dev->int_out_endpoint = endpoint;
++ 	}
+++
+++	if (!dev->int_in_endpoint) {
+++		dev_err(&interface->dev, "no interrupt-in endpoint found\n");
+++		retval = -ENODEV;
+++		goto error;
+++	}
+++
++ 	/* we have to check the report_size often, so remember it in the endianess suitable for our machine */
++ 	dev->report_size = usb_endpoint_maxp(dev->int_in_endpoint);
++ 	if ((dev->interface->cur_altsetting->desc.bInterfaceNumber == 0) &&
+diff --git a/patches/3.4/CVE-2016-2488.patch b/patches/3.4/CVE-2016-2488.patch
+new file mode 100644
+index 0000000..a7b0ade
+--- /dev/null
++++ b/patches/3.4/CVE-2016-2488.patch
+@@ -0,0 +1,45 @@
++From f8053f442f036f70de94b8b54d52fcb1163db586 Mon Sep 17 00:00:00 2001
++From: Suman Mukherjee <sumam@codeaurora.org>
++Date: Fri, 4 Mar 2016 14:04:21 +0530
++Subject: [PATCH] Reply More  msm: camera: ispif: Validate VFE num input during
++ reset
++
++Userspace supplies the actual number of used VFEs in session to ISPIF.
++Validate the userspace input value and if found to be invalid, return
++error.
++
++Change-Id: I5379d1f7e6482fc249e155b2df5ba3c8391fdfdd
++CRs-Fixed: 898074
++Signed-off-by: Venu Yeshala <vyeshala@codeaurora.org>
++Signed-off-by: Suman Mukherjee<sumam@codeaurora.org>
++---
++ drivers/media/platform/msm/camera_v2/ispif/msm_ispif.c | 9 ++++++++-
++ 1 file changed, 8 insertions(+), 1 deletion(-)
++
++diff --git a/drivers/media/platform/msm/camera_v2/ispif/msm_ispif.c b/drivers/media/platform/msm/camera_v2/ispif/msm_ispif.c
++index d044c1dae5d..ad3218f7858 100755
++--- a/drivers/media/platform/msm/camera_v2/ispif/msm_ispif.c
+++++ b/drivers/media/platform/msm/camera_v2/ispif/msm_ispif.c
++@@ -1,4 +1,4 @@
++-/* Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+++/* Copyright (c) 2013-2016, The Linux Foundation. All rights reserved.
++  *
++  * This program is free software; you can redistribute it and/or modify
++  * it under the terms of the GNU General Public License version 2 and
++@@ -930,6 +930,13 @@ static irqreturn_t msm_io_ispif_irq(int irq_num, void *data)
++ static int msm_ispif_set_vfe_info(struct ispif_device *ispif,
++ 	struct msm_ispif_vfe_info *vfe_info)
++ {
+++	if (!vfe_info || (vfe_info->num_vfe <= 0) ||
+++		((uint32_t)(vfe_info->num_vfe) > ispif->hw_num_isps)) {
+++		pr_err("Invalid VFE info: %p %d\n", vfe_info,
+++			   (vfe_info ? vfe_info->num_vfe:0));
+++		return -EINVAL;
+++	}
+++
++ 	memcpy(&ispif->vfe_info, vfe_info, sizeof(struct msm_ispif_vfe_info));
++ 
++ 	return 0;
++-- 
++2.13.3
++
+diff --git a/patches/3.4/CVE-2016-2544.patch b/patches/3.4/CVE-2016-2544.patch
+new file mode 100644
+index 0000000..2ef1742
+--- /dev/null
++++ b/patches/3.4/CVE-2016-2544.patch
+@@ -0,0 +1,36 @@
++From 8847127e5945ba541087f95f213c18a41e47e4d8 Mon Sep 17 00:00:00 2001
++From: Takashi Iwai <tiwai@suse.de>
++Date: Tue, 12 Jan 2016 15:36:27 +0100
++Subject: [PATCH] ALSA: seq: Fix race at timer setup and close
++
++ALSA sequencer code has an open race between the timer setup ioctl and
++the close of the client.  This was triggered by syzkaller fuzzer, and
++a use-after-free was caught there as a result.
++
++This patch papers over it by adding a proper queue->timer_mutex lock
++around the timer-related calls in the relevant code path.
++
++Change-Id: I4348466b871fb5c1f8ff425bc1f4d8e41e4efe0b
++Reported-by: Dmitry Vyukov <dvyukov@google.com>
++Tested-by: Dmitry Vyukov <dvyukov@google.com>
++Cc: <stable@vger.kernel.org>
++Signed-off-by: Takashi Iwai <tiwai@suse.de>
++---
++ sound/core/seq/seq_queue.c | 2 ++
++ 1 file changed, 2 insertions(+)
++
++diff --git a/sound/core/seq/seq_queue.c b/sound/core/seq/seq_queue.c
++index f9077361c11..4c9aa462de9 100644
++--- a/sound/core/seq/seq_queue.c
+++++ b/sound/core/seq/seq_queue.c
++@@ -144,8 +144,10 @@ static struct snd_seq_queue *queue_new(int owner, int locked)
++ static void queue_delete(struct snd_seq_queue *q)
++ {
++ 	/* stop and release the timer */
+++	mutex_lock(&q->timer_mutex);
++ 	snd_seq_timer_stop(q->timer);
++ 	snd_seq_timer_close(q);
+++	mutex_unlock(&q->timer_mutex);
++ 	/* wait until access free */
++ 	snd_use_lock_sync(&q->use_lock);
++ 	/* release resources... */
+diff --git a/patches/3.4/CVE-2016-3137.patch b/patches/3.4/CVE-2016-3137.patch
+new file mode 100644
+index 0000000..879db1e
+--- /dev/null
++++ b/patches/3.4/CVE-2016-3137.patch
+@@ -0,0 +1,47 @@
++From 2fed1a09bbb4b2c3862b36812f2c441573057b77 Mon Sep 17 00:00:00 2001
++From: Oliver Neukum <oneukum@suse.com>
++Date: Thu, 31 Mar 2016 12:04:25 -0400
++Subject: [PATCH] USB: cypress_m8: add endpoint sanity check
++
++An attack using missing endpoints exists.
++
++CVE-2016-3137
++
++Change-Id: Ic4fa75a7133dd7b66c91622dec84776c08ae21c3
++Signed-off-by: Oliver Neukum <ONeukum@suse.com>
++CC: stable@vger.kernel.org
++Signed-off-by: Johan Hovold <johan@kernel.org>
++Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
++---
++ drivers/usb/serial/cypress_m8.c | 11 +++++------
++ 1 file changed, 5 insertions(+), 6 deletions(-)
++
++diff --git a/drivers/usb/serial/cypress_m8.c b/drivers/usb/serial/cypress_m8.c
++index b1b846752c4..ce0aea593f2 100644
++--- a/drivers/usb/serial/cypress_m8.c
+++++ b/drivers/usb/serial/cypress_m8.c
++@@ -464,6 +464,11 @@ static int generic_startup(struct usb_serial *serial)
++ 
++ 	dbg("%s - port %d", __func__, port->number);
++ 
+++	if (!port->interrupt_out_urb || !port->interrupt_in_urb) {
+++		dev_err(&port->dev, "required endpoint is missing\n");
+++		return -ENODEV;
+++	}
+++
++ 	priv = kzalloc(sizeof(struct cypress_private), GFP_KERNEL);
++ 	if (!priv)
++ 		return -ENOMEM;
++@@ -633,12 +638,6 @@ static int cypress_open(struct tty_struct *tty, struct usb_serial_port *port)
++ 		cypress_set_termios(tty, port, &priv->tmp_termios);
++ 
++ 	/* setup the port and start reading from the device */
++-	if (!port->interrupt_in_urb) {
++-		dev_err(&port->dev, "%s - interrupt_in_urb is empty!\n",
++-			__func__);
++-		return -1;
++-	}
++-
++ 	usb_fill_int_urb(port->interrupt_in_urb, serial->dev,
++ 		usb_rcvintpipe(serial->dev, port->interrupt_in_endpointAddress),
++ 		port->interrupt_in_urb->transfer_buffer,
+diff --git a/patches/3.4/CVE-2016-3857.patch b/patches/3.4/CVE-2016-3857.patch
+new file mode 100644
+index 0000000..51c4722
+--- /dev/null
++++ b/patches/3.4/CVE-2016-3857.patch
+@@ -0,0 +1,49 @@
++From 9342db9d6bd7a4acfe2233a93012c87c575109db Mon Sep 17 00:00:00 2001
++From: Dave Weinstein <olorin@google.com>
++Date: Thu, 28 Jul 2016 11:55:41 -0700
++Subject: [PATCH] arm: oabi compat: add missing access checks
++
++commit 7de249964f5578e67b99699c5f0b405738d820a2 upstream.
++
++Add access checks to sys_oabi_epoll_wait() and sys_oabi_semtimedop().
++This fixes CVE-2016-3857, a local privilege escalation under
++CONFIG_OABI_COMPAT.
++
++Change-Id: I5ed5fef80c63274b8162bc1fb3ec1c07625e472f
++Reported-by: Chiachih Wu <wuchiachih@gmail.com>
++Reviewed-by: Kees Cook <keescook@chromium.org>
++Reviewed-by: Nicolas Pitre <nico@linaro.org>
++Signed-off-by: Dave Weinstein <olorin@google.com>
++Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
++Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
++---
++ arch/arm/kernel/sys_oabi-compat.c | 8 +++++++-
++ 1 file changed, 7 insertions(+), 1 deletion(-)
++
++diff --git a/arch/arm/kernel/sys_oabi-compat.c b/arch/arm/kernel/sys_oabi-compat.c
++index af0aaebf4de..32884a6006c 100644
++--- a/arch/arm/kernel/sys_oabi-compat.c
+++++ b/arch/arm/kernel/sys_oabi-compat.c
++@@ -275,8 +275,12 @@ asmlinkage long sys_oabi_epoll_wait(int epfd,
++ 	mm_segment_t fs;
++ 	long ret, err, i;
++ 
++-	if (maxevents <= 0 || maxevents > (INT_MAX/sizeof(struct epoll_event)))
+++	if (maxevents <= 0 ||
+++			maxevents > (INT_MAX/sizeof(*kbuf)) ||
+++			maxevents > (INT_MAX/sizeof(*events)))
++ 		return -EINVAL;
+++	if (!access_ok(VERIFY_WRITE, events, sizeof(*events) * maxevents))
+++		return -EFAULT;
++ 	kbuf = kmalloc(sizeof(*kbuf) * maxevents, GFP_KERNEL);
++ 	if (!kbuf)
++ 		return -ENOMEM;
++@@ -313,6 +317,8 @@ asmlinkage long sys_oabi_semtimedop(int semid,
++ 
++ 	if (nsops < 1 || nsops > SEMOPM)
++ 		return -EINVAL;
+++	if (!access_ok(VERIFY_READ, tsops, sizeof(*tsops) * nsops))
+++		return -EFAULT;
++ 	sops = kmalloc(sizeof(*sops) * nsops, GFP_KERNEL);
++ 	if (!sops)
++ 		return -ENOMEM;
+diff --git a/patches/3.4/CVE-2016-3867.patch b/patches/3.4/CVE-2016-3867.patch
+new file mode 100644
+index 0000000..6cd42a5
+--- /dev/null
++++ b/patches/3.4/CVE-2016-3867.patch
+@@ -0,0 +1,348 @@
++From c3764128586df342167d184c3085bb8f6d7bbdcb Mon Sep 17 00:00:00 2001
++From: Skylar Chang <chiaweic@codeaurora.org>
++Date: Fri, 8 Jul 2016 16:20:33 -0700
++Subject: [PATCH] msm: ipa: fix potential race condition ioctls
++
++There are numerous potential race condition
++ioctls in the IPA driver. The fix is to add
++check wherever it copies arguments from
++user-space memory and process.
++
++Change-Id: I5a440f89153518507acdf5dad42625503732e59a
++Signed-off-by: Skylar Chang <chiaweic@codeaurora.org>
++---
++ drivers/platform/msm/ipa/ipa.c | 160 +++++++++++++++++++++++++++++++++--------
++ 1 file changed, 131 insertions(+), 29 deletions(-)
++
++diff --git a/drivers/platform/msm/ipa/ipa.c b/drivers/platform/msm/ipa/ipa.c
++index c93ec5fb8a1..4cbff8787c2 100644
++--- a/drivers/platform/msm/ipa/ipa.c
+++++ b/drivers/platform/msm/ipa/ipa.c
++@@ -188,6 +188,7 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 	struct ipa_ioc_v4_nat_del nat_del;
++ 	struct ipa_ioc_rm_dependency rm_depend;
++ 	size_t sz;
+++	int pre_entry;
++ 
++ 	IPADBG("cmd=%x nr=%d\n", cmd, _IOC_NR(cmd));
++ 
++@@ -236,11 +237,11 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
++-
+++		pre_entry =
+++			((struct ipa_ioc_nat_dma_cmd *)header)->entries;
++ 		pyld_sz =
++ 		   sizeof(struct ipa_ioc_nat_dma_cmd) +
++-		   ((struct ipa_ioc_nat_dma_cmd *)header)->entries *
++-		   sizeof(struct ipa_ioc_nat_dma_one);
+++		   pre_entry * sizeof(struct ipa_ioc_nat_dma_one);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -251,7 +252,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
++-
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_nat_dma_cmd *)param)->entries
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_nat_dma_cmd *)param)->entries,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_nat_dma_cmd((struct ipa_ioc_nat_dma_cmd *)param)) {
++ 			retval = -EFAULT;
++ 			break;
++@@ -276,10 +285,11 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		pre_entry =
+++			((struct ipa_ioc_add_hdr *)header)->num_hdrs;
++ 		pyld_sz =
++ 		   sizeof(struct ipa_ioc_add_hdr) +
++-		   ((struct ipa_ioc_add_hdr *)header)->num_hdrs *
++-		   sizeof(struct ipa_hdr_add);
+++		   pre_entry * sizeof(struct ipa_hdr_add);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -289,6 +299,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_add_hdr *)param)->num_hdrs
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_add_hdr *)param)->num_hdrs,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_add_hdr((struct ipa_ioc_add_hdr *)param)) {
++ 			retval = -EFAULT;
++ 			break;
++@@ -305,10 +324,11 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		pre_entry =
+++			((struct ipa_ioc_del_hdr *)header)->num_hdls;
++ 		pyld_sz =
++ 		   sizeof(struct ipa_ioc_del_hdr) +
++-		   ((struct ipa_ioc_del_hdr *)header)->num_hdls *
++-		   sizeof(struct ipa_hdr_del);
+++		   pre_entry * sizeof(struct ipa_hdr_del);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -318,6 +338,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_del_hdr *)param)->num_hdls
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_del_hdr *)param)->num_hdls,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_del_hdr((struct ipa_ioc_del_hdr *)param)) {
++ 			retval = -EFAULT;
++ 			break;
++@@ -334,10 +363,11 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		pre_entry =
+++			((struct ipa_ioc_add_rt_rule *)header)->num_rules;
++ 		pyld_sz =
++ 		   sizeof(struct ipa_ioc_add_rt_rule) +
++-		   ((struct ipa_ioc_add_rt_rule *)header)->num_rules *
++-		   sizeof(struct ipa_rt_rule_add);
+++		   pre_entry * sizeof(struct ipa_rt_rule_add);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -347,6 +377,16 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_add_rt_rule *)param)->num_rules
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_add_rt_rule *)param)->
+++				num_rules,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_add_rt_rule((struct ipa_ioc_add_rt_rule *)param)) {
++ 			retval = -EFAULT;
++ 			break;
++@@ -363,10 +403,11 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		pre_entry =
+++			((struct ipa_ioc_del_rt_rule *)header)->num_hdls;
++ 		pyld_sz =
++ 		   sizeof(struct ipa_ioc_del_rt_rule) +
++-		   ((struct ipa_ioc_del_rt_rule *)header)->num_hdls *
++-		   sizeof(struct ipa_rt_rule_del);
+++		   pre_entry * sizeof(struct ipa_rt_rule_del);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -376,6 +417,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_del_rt_rule *)param)->num_hdls
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_del_rt_rule *)param)->num_hdls,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_del_rt_rule((struct ipa_ioc_del_rt_rule *)param)) {
++ 			retval = -EFAULT;
++ 			break;
++@@ -392,10 +442,11 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		pre_entry =
+++			((struct ipa_ioc_add_flt_rule *)header)->num_rules;
++ 		pyld_sz =
++ 		   sizeof(struct ipa_ioc_add_flt_rule) +
++-		   ((struct ipa_ioc_add_flt_rule *)header)->num_rules *
++-		   sizeof(struct ipa_flt_rule_add);
+++		   pre_entry * sizeof(struct ipa_flt_rule_add);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -405,6 +456,16 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_add_flt_rule *)param)->num_rules
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_add_flt_rule *)param)->
+++				num_rules,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_add_flt_rule((struct ipa_ioc_add_flt_rule *)param)) {
++ 			retval = -EFAULT;
++ 			break;
++@@ -421,10 +482,11 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		pre_entry =
+++			((struct ipa_ioc_del_flt_rule *)header)->num_hdls;
++ 		pyld_sz =
++ 		   sizeof(struct ipa_ioc_del_flt_rule) +
++-		   ((struct ipa_ioc_del_flt_rule *)header)->num_hdls *
++-		   sizeof(struct ipa_flt_rule_del);
+++		   pre_entry * sizeof(struct ipa_flt_rule_del);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -434,6 +496,16 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_del_flt_rule *)param)->num_hdls
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_del_flt_rule *)param)->
+++				num_hdls,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_del_flt_rule((struct ipa_ioc_del_flt_rule *)param)) {
++ 			retval = -EFAULT;
++ 			break;
++@@ -544,15 +616,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
++-
++-		if (((struct ipa_ioc_query_intf_tx_props *)header)->num_tx_props
++-				> IPA_NUM_PROPS_MAX) {
+++		if (((struct ipa_ioc_query_intf_tx_props *)
+++			header)->num_tx_props > IPA_NUM_PROPS_MAX) {
++ 			retval = -EFAULT;
++ 			break;
++ 		}
++-
++-		pyld_sz = sz + ((struct ipa_ioc_query_intf_tx_props *)
++-				header)->num_tx_props *
+++		pre_entry =
+++			((struct ipa_ioc_query_intf_tx_props *)
+++			header)->num_tx_props;
+++		pyld_sz = sz + pre_entry *
++ 			sizeof(struct ipa_ioc_tx_intf_prop);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++@@ -563,6 +635,16 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_query_intf_tx_props *)
+++			param)->num_tx_props
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_query_intf_tx_props *)
+++				param)->num_tx_props, pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_query_intf_tx_props(
++ 				(struct ipa_ioc_query_intf_tx_props *)param)) {
++ 			retval = -1;
++@@ -579,15 +661,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
++-
++-		if (((struct ipa_ioc_query_intf_rx_props *)header)->num_rx_props
++-				> IPA_NUM_PROPS_MAX) {
+++		if (((struct ipa_ioc_query_intf_rx_props *)
+++			header)->num_rx_props > IPA_NUM_PROPS_MAX) {
++ 			retval = -EFAULT;
++ 			break;
++ 		}
++-
++-		pyld_sz = sz + ((struct ipa_ioc_query_intf_rx_props *)
++-				header)->num_rx_props *
+++		pre_entry =
+++			((struct ipa_ioc_query_intf_rx_props *)
+++			header)->num_rx_props;
+++		pyld_sz = sz + pre_entry *
++ 			sizeof(struct ipa_ioc_rx_intf_prop);
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++@@ -598,6 +680,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_ioc_query_intf_rx_props *)
+++			param)->num_rx_props != pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_ioc_query_intf_rx_props *)
+++				param)->num_rx_props, pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_query_intf_rx_props(
++ 				(struct ipa_ioc_query_intf_rx_props *)param)) {
++ 			retval = -1;
++@@ -614,8 +705,10 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		pre_entry =
+++			((struct ipa_msg_meta *)header)->msg_len;
++ 		pyld_sz = sizeof(struct ipa_msg_meta) +
++-		   ((struct ipa_msg_meta *)header)->msg_len;
+++		   pre_entry;
++ 		param = kzalloc(pyld_sz, GFP_KERNEL);
++ 		if (!param) {
++ 			retval = -ENOMEM;
++@@ -625,6 +718,15 @@ static long ipa_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++ 			retval = -EFAULT;
++ 			break;
++ 		}
+++		/* add check in case user-space module compromised */
+++		if (unlikely(((struct ipa_msg_meta *)param)->msg_len
+++			!= pre_entry)) {
+++			IPAERR("current %d pre %d\n",
+++				((struct ipa_msg_meta *)param)->msg_len,
+++				pre_entry);
+++			retval = -EFAULT;
+++			break;
+++		}
++ 		if (ipa_pull_msg((struct ipa_msg_meta *)param,
++ 				 (char *)param + sizeof(struct ipa_msg_meta),
++ 				 ((struct ipa_msg_meta *)param)->msg_len) !=
+diff --git a/patches/3.4/CVE-2016-3903.patch b/patches/3.4/CVE-2016-3903.patch
+new file mode 100644
+index 0000000..ee2ed0b
+--- /dev/null
++++ b/patches/3.4/CVE-2016-3903.patch
+@@ -0,0 +1,39 @@
++From ac83977f276a0d2484219523b5713ae3748ff84f Mon Sep 17 00:00:00 2001
++From: VijayaKumar T M <vtmuni@codeaurora.org>
++Date: Mon, 25 Jul 2016 11:53:19 +0530
++Subject: [PATCH] msm: camera: sensor: Fix use after free condition
++
++Add a check to return value before calling csid config which will
++otherwise lead to use after free scenario.
++
++CRs-Fixed: 1040857
++Change-Id: I4f4d9e38eeb537875e0d01de0e99913a44dd3f3f
++Signed-off-by: VijayaKumar T M <vtmuni@codeaurora.org>
++---
++ drivers/media/platform/msm/camera_v2/sensor/csid/msm_csid.c | 6 +++++-
++ 1 file changed, 5 insertions(+), 1 deletion(-)
++
++diff --git a/drivers/media/platform/msm/camera_v2/sensor/csid/msm_csid.c b/drivers/media/platform/msm/camera_v2/sensor/csid/msm_csid.c
++index 3b015b9c46b..2641b38ac57 100644
++--- a/drivers/media/platform/msm/camera_v2/sensor/csid/msm_csid.c
+++++ b/drivers/media/platform/msm/camera_v2/sensor/csid/msm_csid.c
++@@ -457,7 +457,7 @@ static long msm_csid_cmd(struct csid_device *csid_dev, void *arg)
++ 			break;
++ 		}
++ 		if (csid_params.lut_params.num_cid < 1 ||
++-			csid_params.lut_params.num_cid > 16) {
+++			csid_params.lut_params.num_cid > MAX_CID) {
++ 			pr_err("%s: %d num_cid outside range\n",
++ 				 __func__, __LINE__);
++ 			rc = -EINVAL;
++@@ -485,6 +485,10 @@ static long msm_csid_cmd(struct csid_device *csid_dev, void *arg)
++ 			}
++ 			csid_params.lut_params.vc_cfg[i] = vc_cfg;
++ 		}
+++		if (rc < 0) {
+++			pr_err("%s:%d failed\n", __func__, __LINE__);
+++			break;
+++		}
++ 		rc = msm_csid_config(csid_dev, &csid_params);
++ 		for (i--; i >= 0; i--)
++ 			kfree(csid_params.lut_params.vc_cfg[i]);
+diff --git a/patches/3.4/CVE-2016-6741.patch b/patches/3.4/CVE-2016-6741.patch
+new file mode 100644
+index 0000000..48b2979
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6741.patch
+@@ -0,0 +1,137 @@
++From 80a1d9978c11f76bbe6d2e622bf2ded18f27e34f Mon Sep 17 00:00:00 2001
++From: VijayaKumar T M <vtmuni@codeaurora.org>
++Date: Wed, 7 Sep 2016 12:53:43 +0530
++Subject: msm: camera: Restructure data handling to be more robust
++
++Use dynamic array allocation instead of static array to
++prevent stack overflow.
++User-supplied number of bytes may result in integer overflow.
++To fix this we check that the num_byte isn't above 8K size.
++
++CRs-Fixed: 1060554
++Change-Id: I9b05b846e5cc3a62b1a0a67be529f09abc764796
++Signed-off-by: VijayaKumar T M <vtmuni@codeaurora.org>
++---
++ .../msm/camera_v2/sensor/io/msm_camera_cci_i2c.c   |  6 ++++
++ .../msm/camera_v2/sensor/io/msm_camera_qup_i2c.c   | 39 ++++++++++++++++++++--
++ 2 files changed, 43 insertions(+), 2 deletions(-)
++
++diff --git a/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_cci_i2c.c b/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_cci_i2c.c
++index 07b7e32..f970233 100644
++--- a/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_cci_i2c.c
+++++ b/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_cci_i2c.c
++@@ -71,6 +71,12 @@ int32_t msm_camera_cci_i2c_read_seq(struct msm_camera_i2c_client *client,
++ 		|| num_byte == 0)
++ 		return rc;
++ 
+++	if (num_byte > I2C_REG_DATA_MAX) {
+++		pr_err("%s: Error num_byte:0x%x exceeds 8K max supported:0x%x\n",
+++			__func__, num_byte, I2C_REG_DATA_MAX);
+++		return rc;
+++	}
+++
++ 	buf = kzalloc(num_byte, GFP_KERNEL);
++ 	if (!buf) {
++ 		pr_err("%s:%d no memory\n", __func__, __LINE__);
++diff --git a/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_qup_i2c.c b/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_qup_i2c.c
++index ee0e9ba..5fd11eb 100644
++--- a/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_qup_i2c.c
+++++ b/drivers/media/platform/msm/camera_v2/sensor/io/msm_camera_qup_i2c.c
++@@ -102,7 +102,7 @@ int32_t msm_camera_qup_i2c_read(struct msm_camera_i2c_client *client,
++ 	enum msm_camera_i2c_data_type data_type)
++ {
++ 	int32_t rc = -EFAULT;
++-	unsigned char buf[client->addr_type+data_type];
+++	unsigned char *buf = NULL;
++ 
++ 	if ((client->addr_type != MSM_CAMERA_I2C_BYTE_ADDR
++ 		&& client->addr_type != MSM_CAMERA_I2C_WORD_ADDR)
++@@ -110,6 +110,17 @@ int32_t msm_camera_qup_i2c_read(struct msm_camera_i2c_client *client,
++ 		&& data_type != MSM_CAMERA_I2C_WORD_DATA))
++ 		return rc;
++ 
+++	if (client->addr_type > UINT_MAX - data_type) {
+++		pr_err("%s: integer overflow prevented\n", __func__);
+++		return rc;
+++	}
+++
+++	buf = kzalloc(client->addr_type+data_type, GFP_KERNEL);
+++	if (!buf) {
+++		pr_err("%s:%d no memory\n", __func__, __LINE__);
+++		return -ENOMEM;
+++	}
+++
++ 	if (client->addr_type == MSM_CAMERA_I2C_BYTE_ADDR) {
++ 		buf[0] = addr;
++ 	} else if (client->addr_type == MSM_CAMERA_I2C_WORD_ADDR) {
++@@ -119,6 +130,8 @@ int32_t msm_camera_qup_i2c_read(struct msm_camera_i2c_client *client,
++ 	rc = msm_camera_qup_i2c_rxdata(client, buf, data_type);
++ 	if (rc < 0) {
++ 		S_I2C_DBG("%s fail\n", __func__);
+++		kfree(buf);
+++		buf = NULL;
++ 		return rc;
++ 	}
++ 
++@@ -128,6 +141,8 @@ int32_t msm_camera_qup_i2c_read(struct msm_camera_i2c_client *client,
++ 		*data = buf[0] << 8 | buf[1];
++ 
++ 	S_I2C_DBG("%s addr = 0x%x data: 0x%x\n", __func__, addr, *data);
+++	kfree(buf);
+++	buf = NULL;
++ 	return rc;
++ }
++ 
++@@ -135,7 +150,7 @@ int32_t msm_camera_qup_i2c_read_seq(struct msm_camera_i2c_client *client,
++ 	uint32_t addr, uint8_t *data, uint32_t num_byte)
++ {
++ 	int32_t rc = -EFAULT;
++-	unsigned char buf[client->addr_type+num_byte];
+++	unsigned char *buf = NULL;
++ 	int i;
++ 
++ 	if ((client->addr_type != MSM_CAMERA_I2C_BYTE_ADDR
++@@ -143,6 +158,22 @@ int32_t msm_camera_qup_i2c_read_seq(struct msm_camera_i2c_client *client,
++ 		|| num_byte == 0)
++ 		return rc;
++ 
+++	if (num_byte > I2C_REG_DATA_MAX) {
+++		pr_err("%s: Error num_byte:0x%x exceeds 8K max supported:0x%x\n",
+++			__func__, num_byte, I2C_REG_DATA_MAX);
+++		return rc;
+++	}
+++	if (client->addr_type > UINT_MAX - num_byte) {
+++		pr_err("%s: integer overflow prevented\n", __func__);
+++		return rc;
+++	}
+++
+++	buf = kzalloc(client->addr_type+num_byte, GFP_KERNEL);
+++	if (!buf) {
+++		pr_err("%s:%d no memory\n", __func__, __LINE__);
+++		return -ENOMEM;
+++	}
+++
++ 	if (client->addr_type == MSM_CAMERA_I2C_BYTE_ADDR) {
++ 		buf[0] = addr;
++ 	} else if (client->addr_type == MSM_CAMERA_I2C_WORD_ADDR) {
++@@ -152,6 +183,8 @@ int32_t msm_camera_qup_i2c_read_seq(struct msm_camera_i2c_client *client,
++ 	rc = msm_camera_qup_i2c_rxdata(client, buf, num_byte);
++ 	if (rc < 0) {
++ 		S_I2C_DBG("%s fail\n", __func__);
+++		kfree(buf);
+++		buf = NULL;
++ 		return rc;
++ 	}
++ 
++@@ -161,6 +194,8 @@ int32_t msm_camera_qup_i2c_read_seq(struct msm_camera_i2c_client *client,
++ 		S_I2C_DBG("Byte %d: 0x%x\n", i, buf[i]);
++ 		S_I2C_DBG("Data: 0x%x\n", data[i]);
++ 	}
+++	kfree(buf);
+++	buf = NULL;
++ 	return rc;
++ }
++ 
++-- 
++cgit v1.1
++
+diff --git a/patches/3.4/CVE-2016-6741_complementary.patch b/patches/3.4/CVE-2016-6741_complementary.patch
+new file mode 100644
+index 0000000..5692c1f
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6741_complementary.patch
+@@ -0,0 +1,29 @@
++From 024cca18bbc49ebbb4c9a09a86056dc68e971523 Mon Sep 17 00:00:00 2001
++From: Zennoe <agrar.pfurtz@gmail.com>
++Date: Mon, 24 Jul 2017 16:42:58 +0200
++Subject: [PATCH] Add I2C_REG_DATA_MAX for size param validation
++
++Patch partially based on https://review.lineageos.org/c/180786/
++
++This patch solves a compile issue occuring whenever CVE-2016-6741 is applied.
++
++Change-Id: I5495e41ffc2e186c3321ff2990ca4679c00432ca
++---
++ include/media/msm_cam_sensor.h | 1 +
++ 1 file changed, 1 insertion(+)
++
++diff --git a/include/media/msm_cam_sensor.h b/include/media/msm_cam_sensor.h
++index cfc39439b048..376fefd01055 100644
++--- a/include/media/msm_cam_sensor.h
+++++ b/include/media/msm_cam_sensor.h
++@@ -10,6 +10,7 @@
++ 
++ #define I2C_SEQ_REG_SETTING_MAX   5
++ #define I2C_SEQ_REG_DATA_MAX      20
+++#define I2C_REG_DATA_MAX          (8*1024)
++ #define MAX_CID                   16
++ 
++ #define I2C_USER_REG_DATA_MAX 1024
++-- 
++2.13.3
++
+diff --git a/patches/3.4/CVE-2016-6748.patch b/patches/3.4/CVE-2016-6748.patch
+new file mode 100644
+index 0000000..ff0540a
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6748.patch
+@@ -0,0 +1,317 @@
++From 2bc4d10037c2ab20c6a0c9b3d2251da10ec563d8 Mon Sep 17 00:00:00 2001
++From: Abdulla Anam <abdullahanam@codeaurora.org>
++Date: Fri, 3 Jun 2016 17:39:42 +0530
++Subject: [PATCH] msm: vidc: use %pK instead of %p which respects kptr_restrict
++ sysctl
++
++Hide kernel pointers from unprivileged ussers by using %pK format-
++specifier instead of %p. This respects the kptr_restrict sysctl
++setting which is by default on. So by default %pK will print zeroes
++as address. echo 1 to kptr_restrict to print proper kernel addresses.
++
++Change-Id: I79cea5a9f30510079e9127fa6f757a5daca7a96c
++CRs-Fixed: 987018
++Signed-off-by: Abdulla Anam <abdullahanam@codeaurora.org>
++Signed-off-by: Bikshapathi Kothapeta <bkotha@codeaurora.org>
++---
++ drivers/media/platform/msm/vidc/hfi_response_handler.c |  6 +++---
++ drivers/media/platform/msm/vidc/msm_v4l2_vidc.c        |  2 +-
++ drivers/media/platform/msm/vidc/msm_vdec.c             |  2 +-
++ drivers/media/platform/msm/vidc/msm_venc.c             |  2 +-
++ drivers/media/platform/msm/vidc/msm_vidc_common.c      | 10 +++++-----
++ drivers/media/platform/msm/vidc/msm_vidc_debug.c       |  2 +-
++ drivers/media/platform/msm/vidc/q6_hfi.c               | 17 ++++++++---------
++ drivers/media/platform/msm/vidc/venus_hfi.c            | 18 +++++++++---------
++ drivers/media/platform/msm/vidc/vidc_hfi.c             |  2 +-
++ 9 files changed, 30 insertions(+), 31 deletions(-)
++
++diff --git a/drivers/media/platform/msm/vidc/hfi_response_handler.c b/drivers/media/platform/msm/vidc/hfi_response_handler.c
++index 032cca4535e..c45ed5f2391 100644
++--- a/drivers/media/platform/msm/vidc/hfi_response_handler.c
+++++ b/drivers/media/platform/msm/vidc/hfi_response_handler.c
++@@ -659,7 +659,7 @@ static void hfi_process_sess_get_prop_buf_req(
++ 	dprintk(VIDC_DBG, "Entered ");
++ 	if (!prop) {
++ 		dprintk(VIDC_ERR,
++-			"hal_process_sess_get_prop_buf_req:bad_prop: %p",
+++			"hal_process_sess_get_prop_buf_req:bad_prop: %pK",
++ 			prop);
++ 		return;
++ 	}
++@@ -836,8 +836,8 @@ static void hfi_process_session_init_done(
++ 	} else {
++ 		sess_close = (struct hal_session *)pkt->session_id;
++ 		if (sess_close) {
++-			dprintk(VIDC_WARN,
++-				"Sess init failed: 0x%x, 0x%p",
+++			dprintk(VIDC_INFO,
+++				"Sess init failed: Deleting session: 0x%x 0x%pK",
++ 				sess_close->session_id, sess_close);
++ 		}
++ 	}
++diff --git a/drivers/media/platform/msm/vidc/msm_v4l2_vidc.c b/drivers/media/platform/msm/vidc/msm_v4l2_vidc.c
++index 58015186abb..83bea1dd79c 100644
++--- a/drivers/media/platform/msm/vidc/msm_v4l2_vidc.c
+++++ b/drivers/media/platform/msm/vidc/msm_v4l2_vidc.c
++@@ -516,7 +516,7 @@ static int __devexit msm_vidc_remove(struct platform_device *pdev)
++ 	struct msm_vidc_core *core;
++ 
++ 	if (!pdev) {
++-		dprintk(VIDC_ERR, "%s invalid input %p", __func__, pdev);
+++		dprintk(VIDC_ERR, "%s invalid input %pK", __func__, pdev);
++ 		return -EINVAL;
++ 	}
++ 	core = pdev->dev.platform_data;
++diff --git a/drivers/media/platform/msm/vidc/msm_vdec.c b/drivers/media/platform/msm/vidc/msm_vdec.c
++index b98364c73ff..97300ce81ec 100644
++--- a/drivers/media/platform/msm/vidc/msm_vdec.c
+++++ b/drivers/media/platform/msm/vidc/msm_vdec.c
++@@ -938,7 +938,7 @@ int msm_vdec_s_parm(struct msm_vidc_inst *inst, struct v4l2_streamparm *a)
++ 		fps = fps - 1;
++ 
++ 	if (inst->prop.fps != fps) {
++-		dprintk(VIDC_PROF, "reported fps changed for %p: %d->%d\n",
+++		dprintk(VIDC_PROF, "reported fps changed for %pK: %d->%d\n",
++ 				inst, inst->prop.fps, fps);
++ 		inst->prop.fps = fps;
++ 
++diff --git a/drivers/media/platform/msm/vidc/msm_venc.c b/drivers/media/platform/msm/vidc/msm_venc.c
++index 8c685c02d90..d92f79a3dd5 100644
++--- a/drivers/media/platform/msm/vidc/msm_venc.c
+++++ b/drivers/media/platform/msm/vidc/msm_venc.c
++@@ -2574,7 +2574,7 @@ int msm_venc_s_parm(struct msm_vidc_inst *inst, struct v4l2_streamparm *a)
++ 		fps = fps - 1;
++ 
++ 	if (inst->prop.fps != fps) {
++-		dprintk(VIDC_PROF, "reported fps changed for %p: %d->%d\n",
+++		dprintk(VIDC_PROF, "reported fps changed for %pK: %d->%d\n",
++ 				inst, inst->prop.fps, fps);
++ 		inst->prop.fps = fps;
++ 		frame_rate.frame_rate = inst->prop.fps * (0x1<<16);
++diff --git a/drivers/media/platform/msm/vidc/msm_vidc_common.c b/drivers/media/platform/msm/vidc/msm_vidc_common.c
++index f563d3b6592..024500963d5 100644
++--- a/drivers/media/platform/msm/vidc/msm_vidc_common.c
+++++ b/drivers/media/platform/msm/vidc/msm_vidc_common.c
++@@ -410,7 +410,7 @@ static int signal_session_msg_receipt(enum command_response cmd,
++ 		struct msm_vidc_inst *inst)
++ {
++ 	if (!inst) {
++-		dprintk(VIDC_ERR, "Invalid(%p) instance id\n", inst);
+++		dprintk(VIDC_ERR, "Invalid(%pK) instance id\n", inst);
++ 		return -EINVAL;
++ 	}
++ 	complete(&inst->completions[SESSION_MSG_INDEX(cmd)]);
++@@ -1029,7 +1029,7 @@ static void handle_session_close(enum command_response cmd, void *data)
++ 		hdev = inst->core->device;
++ 		mutex_lock(&inst->lock);
++ 		if (inst->session) {
++-			dprintk(VIDC_DBG, "cleaning up inst: 0x%p", inst);
+++			dprintk(VIDC_DBG, "cleaning up inst: 0x%pK", inst);
++ 			call_hfi_op(hdev, session_clean,
++ 				(void *) inst->session);
++ 		}
++@@ -1406,7 +1406,7 @@ static void handle_fbd(enum command_response cmd, void *data)
++ 
++ 		if (extra_idx && (extra_idx < VIDEO_MAX_PLANES)) {
++ 			dprintk(VIDC_DBG,
++-			"extradata: userptr = %p;  bytesused = %d; length = %d\n",
+++			"extradata: userptr = %pK;  bytesused = %d; length = %d\n",
++ 			(u8 *)vb->v4l2_planes[extra_idx].m.userptr,
++ 			vb->v4l2_planes[extra_idx].bytesused,
++ 			vb->v4l2_planes[extra_idx].length);
++@@ -2555,7 +2555,7 @@ int msm_comm_qbuf(struct vb2_buffer *vb)
++ 	}
++ 	hdev = core->device;
++ 	if (!hdev) {
++-		dprintk(VIDC_ERR, "Invalid input: %p", hdev);
+++		dprintk(VIDC_ERR, "Invalid input: %pK", hdev);
++ 		return -EINVAL;
++ 	}
++ 
++@@ -3191,7 +3191,7 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
++ 	}
++ 	hdev = core->device;
++ 	if (!hdev) {
++-		dprintk(VIDC_ERR, "Invalid device pointer = %p", hdev);
+++		dprintk(VIDC_ERR, "Invalid device pointer = %pK", hdev);
++ 		return -EINVAL;
++ 	}
++ 
++diff --git a/drivers/media/platform/msm/vidc/msm_vidc_debug.c b/drivers/media/platform/msm/vidc/msm_vidc_debug.c
++index ee91513546d..a805bbd2f5f 100644
++--- a/drivers/media/platform/msm/vidc/msm_vidc_debug.c
+++++ b/drivers/media/platform/msm/vidc/msm_vidc_debug.c
++@@ -316,7 +316,7 @@ struct dentry *msm_vidc_debugfs_init_inst(struct msm_vidc_inst *inst,
++ 		dprintk(VIDC_ERR, "Invalid params, inst: %p\n", inst);
++ 		goto failed_create_dir;
++ 	}
++-	snprintf(debugfs_name, MAX_DEBUGFS_NAME, "inst_%p", inst);
+++	snprintf(debugfs_name, MAX_DEBUGFS_NAME, "inst_%pK", inst);
++ 	dir = debugfs_create_dir(debugfs_name, parent);
++ 	if (!dir) {
++ 		dprintk(VIDC_ERR, "Failed to create debugfs for msm_vidc\n");
++diff --git a/drivers/media/platform/msm/vidc/q6_hfi.c b/drivers/media/platform/msm/vidc/q6_hfi.c
++index 4bc534cdfae..9b2cb985f54 100644
++--- a/drivers/media/platform/msm/vidc/q6_hfi.c
+++++ b/drivers/media/platform/msm/vidc/q6_hfi.c
++@@ -200,7 +200,7 @@ static int q6_hfi_register_iommu_domains(struct q6_hfi_device *device)
++ 	struct iommu_info *iommu_map;
++ 
++ 	if (!device || !device->res) {
++-		dprintk(VIDC_ERR, "Invalid parameter: %p", device);
+++		dprintk(VIDC_ERR, "Invalid parameter: %pK", device);
++ 		return -EINVAL;
++ 	}
++ 
++@@ -218,7 +218,7 @@ static int q6_hfi_register_iommu_domains(struct q6_hfi_device *device)
++ 		domain = iommu_group_get_iommudata(iommu_map->group);
++ 		if (IS_ERR_OR_NULL(domain)) {
++ 			dprintk(VIDC_ERR,
++-					"Failed to get domain data for group %p",
+++					"Failed to get domain data for group %pK",
++ 					iommu_map->group);
++ 			rc = -EINVAL;
++ 			goto fail_group;
++@@ -226,7 +226,7 @@ static int q6_hfi_register_iommu_domains(struct q6_hfi_device *device)
++ 		iommu_map->domain = msm_find_domain_no(domain);
++ 		if (iommu_map->domain < 0) {
++ 			dprintk(VIDC_ERR,
++-					"Failed to get domain index for domain %p",
+++					"Failed to get domain index for domain %pK",
++ 					domain);
++ 			rc = -EINVAL;
++ 			goto fail_group;
++@@ -252,7 +252,7 @@ static void q6_hfi_deregister_iommu_domains(struct q6_hfi_device *device)
++ 	int i = 0;
++ 
++ 	if (!device || !device->res) {
++-		dprintk(VIDC_ERR, "Invalid parameter: %p", device);
+++		dprintk(VIDC_ERR, "Invalid parameter: %pK", device);
++ 		return;
++ 	}
++ 
++@@ -1206,7 +1206,7 @@ static int q6_hfi_iommu_attach(struct q6_hfi_device *device)
++ 	struct iommu_info *iommu_map;
++ 
++ 	if (!device || !device->res) {
++-		dprintk(VIDC_ERR, "Invalid parameter: %p", device);
+++		dprintk(VIDC_ERR, "Invalid parameter: %pK", device);
++ 		return -EINVAL;
++ 	}
++ 
++@@ -1221,7 +1221,7 @@ static int q6_hfi_iommu_attach(struct q6_hfi_device *device)
++ 			rc = IS_ERR(domain) ? PTR_ERR(domain) : -EINVAL;
++ 			break;
++ 		}
++-		dprintk(VIDC_DBG, "Attaching domain(id:%d) %p to group %p",
+++		dprintk(VIDC_DBG, "Attaching domain(id:%d) %pK to group %pK",
++ 				iommu_map->domain, domain, group);
++ 		rc = iommu_attach_group(domain, group);
++ 		if (rc) {
++@@ -1252,7 +1252,7 @@ static void q6_hfi_iommu_detach(struct q6_hfi_device *device)
++ 	int i;
++ 
++ 	if (!device || !device->res) {
++-		dprintk(VIDC_ERR, "Invalid parameter: %p", device);
+++		dprintk(VIDC_ERR, "Invalid parameter: %pK", device);
++ 		return;
++ 	}
++ 
++@@ -1380,7 +1380,7 @@ int q6_hfi_initialize(struct hfi_device *hdev, u32 device_id,
++ 	int rc = 0;
++ 
++ 	if (!hdev || !res || !callback) {
++-		dprintk(VIDC_ERR, "Invalid params: %p %p %p",
+++		dprintk(VIDC_ERR, "Invalid params: %pK %pK %pK",
++ 				hdev, res, callback);
++ 		rc = -EINVAL;
++ 		goto err_hfi_init;
++@@ -1398,4 +1398,3 @@ int q6_hfi_initialize(struct hfi_device *hdev, u32 device_id,
++ err_hfi_init:
++ 	return rc;
++ }
++-
++diff --git a/drivers/media/platform/msm/vidc/venus_hfi.c b/drivers/media/platform/msm/vidc/venus_hfi.c
++index 0de42aef364..8b445c2dec3 100644
++--- a/drivers/media/platform/msm/vidc/venus_hfi.c
+++++ b/drivers/media/platform/msm/vidc/venus_hfi.c
++@@ -662,7 +662,7 @@ static int venus_hfi_unvote_bus(void *dev,
++ 	struct venus_hfi_device *device = dev;
++ 
++ 	if (!device) {
++-		dprintk(VIDC_ERR, "%s invalid device handle %p",
+++		dprintk(VIDC_ERR, "%s invalid device handle %pK",
++ 			__func__, device);
++ 		return -EINVAL;
++ 	}
++@@ -759,7 +759,7 @@ static int venus_hfi_scale_bus(void *dev, int load,
++ 	int bus_vector = 0;
++ 
++ 	if (!device) {
++-		dprintk(VIDC_ERR, "%s invalid device handle %p",
+++		dprintk(VIDC_ERR, "%s invalid device handle %pK",
++ 			__func__, device);
++ 		return -EINVAL;
++ 	}
++@@ -1068,9 +1068,10 @@ ocmem_alloc_failed:
++ static int __unset_free_ocmem(struct venus_hfi_device *device)
++ {
++ 	int rc = 0;
++-	if (!device || !device->res) {
++-		dprintk(VIDC_ERR, "%s Invalid param, device: 0x%p\n",
++-				__func__, device);
+++
+++	if (!device) {
+++		dprintk(VIDC_ERR, "%s invalid device handle %pK",
+++			__func__, device);
++ 		return -EINVAL;
++ 	}
++ 
++@@ -2466,7 +2467,7 @@ static int venus_hfi_session_clean(void *session)
++ 		return -EINVAL;
++ 	}
++ 	sess_close = session;
++-	dprintk(VIDC_DBG, "deleted the session: 0x%p",
+++	dprintk(VIDC_DBG, "deleted the session: 0x%pK",
++ 			sess_close);
++ 	mutex_lock(&((struct venus_hfi_device *)
++ 			sess_close->device)->session_lock);
++@@ -3351,7 +3352,7 @@ static int venus_hfi_register_iommu_domains(struct venus_hfi_device *device,
++ 		domain = iommu_group_get_iommudata(iommu_map->group);
++ 		if (!domain) {
++ 			dprintk(VIDC_ERR,
++-				"Failed to get domain data for group %p",
+++				"Failed to get domain data for group %pK",
++ 				iommu_map->group);
++ 			rc = -EINVAL;
++ 			goto fail_group;
++@@ -3359,7 +3360,7 @@ static int venus_hfi_register_iommu_domains(struct venus_hfi_device *device,
++ 		iommu_map->domain = msm_find_domain_no(domain);
++ 		if (iommu_map->domain < 0) {
++ 			dprintk(VIDC_ERR,
++-				"Failed to get domain index for domain %p",
+++				"Failed to get domain index for domain %pK",
++ 				domain);
++ 			rc = -EINVAL;
++ 			goto fail_group;
++@@ -4021,4 +4022,3 @@ int venus_hfi_initialize(struct hfi_device *hdev, u32 device_id,
++ err_venus_hfi_init:
++ 	return rc;
++ }
++-
++diff --git a/drivers/media/platform/msm/vidc/vidc_hfi.c b/drivers/media/platform/msm/vidc/vidc_hfi.c
++index ef0de370eb0..a9e87a03720 100644
++--- a/drivers/media/platform/msm/vidc/vidc_hfi.c
+++++ b/drivers/media/platform/msm/vidc/vidc_hfi.c
++@@ -61,7 +61,7 @@ void vidc_hfi_deinitialize(enum msm_vidc_hfi_type hfi_type,
++ 			struct hfi_device *hdev)
++ {
++ 	if (!hdev) {
++-		dprintk(VIDC_ERR, "%s invalid device %p", __func__, hdev);
+++		dprintk(VIDC_ERR, "%s invalid device %pK", __func__, hdev);
++ 		return;
++ 	}
++ 
++-- 
++2.13.3
++
+diff --git a/patches/3.4/CVE-2016-6751.patch b/patches/3.4/CVE-2016-6751.patch
+new file mode 100644
+index 0000000..efe4e5d
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6751.patch
+@@ -0,0 +1,35 @@
++From 88c6ce04b9a9b010d27ca89ed80df1f3f6063e94 Mon Sep 17 00:00:00 2001
++From: vivek mehta <mvivek@codeaurora.org>
++Date: Mon, 12 Sep 2016 17:27:06 -0700
++Subject: [PATCH] ASoC: msm: initialize the params array before using it
++
++The params array is used without initialization, which may cause
++security issues. Initialize it as all zero after the definition.
++
++bug: 30902162
++Change-Id: If462fe3d82f139d72547f82dc7eb564f83cb35bf
++Signed-off-by: vivek mehta <mvivek@codeaurora.org>
++---
++ sound/soc/msm/qdsp6v2/msm-compr-q6-v2.c | 2 ++
++ 1 file changed, 2 insertions(+)
++
++diff --git a/sound/soc/msm/qdsp6v2/msm-compr-q6-v2.c b/sound/soc/msm/qdsp6v2/msm-compr-q6-v2.c
++index 3091f4b0449..5b171aebea4 100755
++--- a/sound/soc/msm/qdsp6v2/msm-compr-q6-v2.c
+++++ b/sound/soc/msm/qdsp6v2/msm-compr-q6-v2.c
++@@ -1031,6 +1031,7 @@ static int msm_compr_ioctl(struct snd_pcm_substream *substream,
++ 			struct snd_dec_ddp *ddp =
++ 				&compr->info.codec_param.codec.options.ddp;
++ 			uint32_t params_length = 0;
+++			memset(params_value, 0, MAX_AC3_PARAM_SIZE);
++ 			/* check integer overflow */
++ 			if (ddp->params_length > UINT_MAX/sizeof(int)) {
++ 				pr_err("%s: Integer overflow ddp->params_length %d\n",
++@@ -1075,6 +1076,7 @@ static int msm_compr_ioctl(struct snd_pcm_substream *substream,
++ 			struct snd_dec_ddp *ddp =
++ 				&compr->info.codec_param.codec.options.ddp;
++ 			uint32_t params_length = 0;
+++			memset(params_value, 0, MAX_AC3_PARAM_SIZE);
++ 			/* check integer overflow */
++ 			if (ddp->params_length > UINT_MAX/sizeof(int)) {
++ 				pr_err("%s: Integer overflow ddp->params_length %d\n",
+diff --git a/patches/3.4/CVE-2016-6752.patch b/patches/3.4/CVE-2016-6752.patch
+new file mode 100644
+index 0000000..dc5a8c9
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6752.patch
+@@ -0,0 +1,45 @@
++From 1890c5c24fb7190e56819efefb1cf232da884cc9 Mon Sep 17 00:00:00 2001
++From: Mallikarjuna Reddy Amireddy <mamire@codeaurora.org>
++Date: Thu, 15 Sep 2016 10:44:55 -0700
++Subject: [PATCH] qseecom: Change format specifier %p to %pK
++
++Format specifier %p can leak kernel addresses while not valuing the
++kptr_restrict system settings. When kptr_restrict is set to (1), kernel
++pointers printed using the %pK format specifier will be replaced with
++0's.
++So that %pK will not leak kernel pointers to unprivileged users.
++So change the format specifier from %p to %pK.
++
++Debugging Note : &pK prints only Zeros as address. if you need actual
++address information, pls echo 0 to kptr_restrict.
++$ echo 0 > /proc/sys/kernel/kptr_restrict
++
++Bug: 31498159
++Change-Id: I0baf2be2d5a476e2e4267f20b99d0ddf5492469e
++Signed-off-by: Mallikarjuna Reddy Amireddy <mamire@codeaurora.org>
++---
++ drivers/misc/qseecom.c | 4 ++--
++ 1 file changed, 2 insertions(+), 2 deletions(-)
++
++diff --git a/drivers/misc/qseecom.c b/drivers/misc/qseecom.c
++index d589e688184..933066d59ca 100644
++--- a/drivers/misc/qseecom.c
+++++ b/drivers/misc/qseecom.c
++@@ -1208,7 +1208,7 @@ int __qseecom_process_rpmb_svc_cmd(struct qseecom_dev_handle *data_ptr,
++ 	void *req_buf = NULL;
++ 
++ 	if ((req_ptr == NULL) || (send_svc_ireq_ptr == NULL)) {
++-		pr_err("Error with pointer: req_ptr = %p, send_svc_ptr = %p\n",
+++		pr_err("Error with pointer: req_ptr = %pK, send_svc_ptr = %pK\n",
++ 			req_ptr, send_svc_ireq_ptr);
++ 		return -EINVAL;
++ 	}
++@@ -2412,7 +2412,7 @@ int qseecom_send_command(struct qseecom_handle *handle, void *send_buf,
++ 	if (ret)
++ 		return ret;
++ 
++-	pr_debug("sending cmd_req->rsp size: %u, ptr: 0x%p\n",
+++	pr_debug("sending cmd_req->rsp size: %u, ptr: 0x%pK\n",
++ 			req.resp_len, req.resp_buf);
++ 	return ret;
++ }
+diff --git a/patches/3.4/CVE-2016-6753.patch b/patches/3.4/CVE-2016-6753.patch
+new file mode 100644
+index 0000000..cb01e0b
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6753.patch
+@@ -0,0 +1,29 @@
++From 3d30b6e2e53449b082274d63468adac992fa9e67 Mon Sep 17 00:00:00 2001
++From: Nick Desaulniers <ndesaulniers@google.com>
++Date: Mon, 12 Sep 2016 15:47:42 -0700
++Subject: [PATCH] cgroup: prefer %pK to %p
++
++Prevents leaking kernel pointers when using kptr_restrict.
++
++Bug: 30149174
++Change-Id: I0fa3cd8d4a0d9ea76d085bba6020f1eda073c09b
++Git-repo: https://android.googlesource.com/kernel/msm.git
++Git-commit: 505e48f32f1321ed7cf80d49dd5f31b16da445a8
++Signed-off-by: Srinivasa Rao Kuppala <srkupp@codeaurora.org>
++---
++ kernel/cgroup.c | 2 +-
++ 1 file changed, 1 insertion(+), 1 deletion(-)
++
++diff --git a/kernel/cgroup.c b/kernel/cgroup.c
++index efd8fd20db5..ea66800836d 100644
++--- a/kernel/cgroup.c
+++++ b/kernel/cgroup.c
++@@ -5222,7 +5222,7 @@ static int cgroup_css_links_read(struct cgroup *cont,
++ 		struct css_set *cg = link->cg;
++ 		struct task_struct *task;
++ 		int count = 0;
++-		seq_printf(seq, "css_set %p\n", cg);
+++		seq_printf(seq, "css_set %pK\n", cg);
++ 		list_for_each_entry(task, &cg->tasks, cg_list) {
++ 			if (count++ > MAX_TASKS_SHOWN_PER_CSS) {
++ 				seq_puts(seq, "  ...\n");
+diff --git a/patches/3.4/CVE-2016-6757.patch b/patches/3.4/CVE-2016-6757.patch
+new file mode 100644
+index 0000000..d2e90e6
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6757.patch
+@@ -0,0 +1,372 @@
++From 4d863740cd461007657124a0b6be8287ac5dd335 Mon Sep 17 00:00:00 2001
++From: Abhijit Kulkarni <kabhijit@codeaurora.org>
++Date: Wed, 15 Jun 2016 10:30:50 -0700
++Subject: [PATCH] msm: mdss: hide kernel addresses from unprevileged users
++
++for printing kernel pointers which should be hidden from unprivileged
++users, use %pK which evaluates whether kptr_restrict is set.
++
++Change-Id: I383bd64c8278f26c237bd189435e91843103000b
++CRs-Fixed: 987021
++Signed-off-by: Abhijit Kulkarni <kabhijit@codeaurora.org>
++Signed-off-by: Nirmal Abraham <nabrah@codeaurora.org>
++---
++ drivers/video/msm/mdss/mdp3.c                | 14 +++++++-------
++ drivers/video/msm/mdss/mdss_dsi.c            |  8 ++++----
++ drivers/video/msm/mdss/mdss_dsi_host.c       |  2 +-
++ drivers/video/msm/mdss/mdss_dsi_panel.c      |  8 +++++---
++ drivers/video/msm/mdss/mdss_fb.c             |  6 +++---
++ drivers/video/msm/mdss/mdss_hdmi_tx.c        |  2 +-
++ drivers/video/msm/mdss/mdss_hdmi_util.c      |  2 +-
++ drivers/video/msm/mdss/mdss_mdp.c            |  8 ++++----
++ drivers/video/msm/mdss/mdss_mdp_intf_cmd.c   |  5 ++---
++ drivers/video/msm/mdss/mdss_mdp_intf_video.c |  6 +++---
++ drivers/video/msm/mdss/mdss_mdp_util.c       |  4 ++--
++ drivers/video/msm/mdss/mdss_mdp_wb.c         |  4 ++--
++ 12 files changed, 35 insertions(+), 34 deletions(-)
++
++diff --git a/drivers/video/msm/mdss/mdp3.c b/drivers/video/msm/mdss/mdp3.c
++index 4eca6b5ba17c..b2ef1bddcc79 100644
++--- a/drivers/video/msm/mdss/mdp3.c
+++++ b/drivers/video/msm/mdss/mdp3.c
++@@ -954,7 +954,7 @@ static int mdp3_res_init(void)
++ 
++ 	mdp3_res->ion_client = msm_ion_client_create(-1, mdp3_res->pdev->name);
++ 	if (IS_ERR_OR_NULL(mdp3_res->ion_client)) {
++-		pr_err("msm_ion_client_create() return error (%p)\n",
+++		pr_err("msm_ion_client_create() return error (%pK)\n",
++ 				mdp3_res->ion_client);
++ 		mdp3_res->ion_client = NULL;
++ 		return -EINVAL;
++@@ -1382,7 +1382,7 @@ void mdp3_unmap_iommu(struct ion_client *client, struct ion_handle *handle)
++ 	mutex_lock(&mdp3_res->iommu_lock);
++ 	meta = mdp3_iommu_meta_lookup(table);
++ 	if (!meta) {
++-		WARN(1, "%s: buffer was never mapped for %p\n", __func__,
+++		WARN(1, "%s: buffer was never mapped for %pK\n", __func__,
++ 				handle);
++ 		mutex_unlock(&mdp3_res->iommu_lock);
++ 		goto out;
++@@ -1410,7 +1410,7 @@ static void mdp3_iommu_meta_add(struct mdp3_iommu_meta *meta)
++ 		} else if (meta->table > entry->table) {
++ 			p = &(*p)->rb_right;
++ 		} else {
++-			pr_err("%s: handle %p already exists\n", __func__,
+++			pr_err("%s: handle %pK already exists\n", __func__,
++ 				entry->handle);
++ 			BUG();
++ 		}
++@@ -1471,7 +1471,7 @@ static int mdp3_iommu_map_iommu(struct mdp3_iommu_meta *meta,
++ 	ret = iommu_map_range(domain, meta->iova_addr + padding,
++ 			table->sgl, size, prot);
++ 	if (ret) {
++-		pr_err("%s: could not map %lx in domain %p\n",
+++		pr_err("%s: could not map %lx in domain %pK\n",
++ 			__func__, meta->iova_addr, domain);
++ 			unmap_size = padding;
++ 		goto out2;
++@@ -1596,12 +1596,12 @@ int mdp3_self_map_iommu(struct ion_client *client, struct ion_handle *handle,
++ 		}
++ 	} else {
++ 		if (iommu_meta->flags != iommu_flags) {
++-			pr_err("%s: handle %p is already mapped with diff flag\n",
+++			pr_err("%s: handle %pK is already mapped with diff flag\n",
++ 				__func__, handle);
++ 			ret = -EINVAL;
++ 			goto out_unlock;
++ 		} else if (iommu_meta->mapped_size != iova_length) {
++-			pr_err("%s: handle %p is already mapped with diff len\n",
+++			pr_err("%s: handle %pK is already mapped with diff len\n",
++ 				__func__, handle);
++ 			ret = -EINVAL;
++ 			goto out_unlock;
++@@ -1719,7 +1719,7 @@ done:
++ 		data->addr += img->offset;
++ 		data->len -= img->offset;
++ 
++-		pr_debug("mem=%d ihdl=%p buf=0x%x len=0x%x\n", img->memory_id,
+++		pr_debug("mem=%d ihdl=%pK buf=0x%x len=0x%x\n", img->memory_id,
++ 			 data->srcp_ihdl, data->addr, data->len);
++ 	} else {
++ 		mdp3_put_img(data, client);
++diff --git a/drivers/video/msm/mdss/mdss_dsi.c b/drivers/video/msm/mdss/mdss_dsi.c
++index e0bbc41913af..8d4f1dc7e1f7 100644
++--- a/drivers/video/msm/mdss/mdss_dsi.c
+++++ b/drivers/video/msm/mdss/mdss_dsi.c
++@@ -591,7 +591,7 @@ static int mdss_dsi_off(struct mdss_panel_data *pdata)
++ 
++ 	mutex_lock(&ctrl_pdata->mutex);
++ 	panel_info = &ctrl_pdata->panel_data.panel_info;
++-	printk("%s+: ctrl=%p ndx=%d\n", __func__,
+++	pr_info("%s+: ctrl=%pK ndx=%d\n", __func__,
++ 				ctrl_pdata, ctrl_pdata->ndx);
++ 
++ 	if (pdata->panel_info.type == MIPI_CMD_PANEL)
++@@ -946,7 +946,7 @@ int mdss_dsi_on(struct mdss_panel_data *pdata)
++ 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
++ 				panel_data);
++ 
++-	pr_info("%s+: ctrl=%p ndx=%d\n",
+++	pr_info("%s+: ctrl=%pK ndx=%d\n",
++ 				__func__, ctrl_pdata, ctrl_pdata->ndx);
++ 
++ 	pinfo = &pdata->panel_info;
++@@ -1307,7 +1307,7 @@ int mdss_dsi_cont_splash_on(struct mdss_panel_data *pdata)
++ 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
++ 				panel_data);
++ 
++-	pr_debug("%s+: ctrl=%p ndx=%d\n", __func__,
+++	pr_debug("%s+: ctrl=%pK ndx=%d\n", __func__,
++ 				ctrl_pdata, ctrl_pdata->ndx);
++ 
++ 	WARN((ctrl_pdata->ctrl_state & CTRL_STATE_PANEL_INIT),
++@@ -1832,7 +1832,7 @@ int mdss_dsi_retrieve_ctrl_resources(struct platform_device *pdev, int mode,
++ 		return rc;
++ 	}
++ 
++-	pr_info("%s: ctrl_base=%p ctrl_size=%x phy_base=%p phy_size=%x\n",
+++	pr_info("%s: ctrl_base=%pK ctrl_size=%x phy_base=%pK phy_size=%x\n",
++ 		__func__, ctrl->ctrl_base, ctrl->reg_size, ctrl->phy_io.base,
++ 		ctrl->phy_io.len);
++ 
++diff --git a/drivers/video/msm/mdss/mdss_dsi_host.c b/drivers/video/msm/mdss/mdss_dsi_host.c
++index 8856d0177001..3f3ef84fe9ed 100644
++--- a/drivers/video/msm/mdss/mdss_dsi_host.c
+++++ b/drivers/video/msm/mdss/mdss_dsi_host.c
++@@ -91,7 +91,7 @@ void mdss_dsi_ctrl_init(struct mdss_dsi_ctrl_pdata *ctrl)
++ 	if (mdss_register_irq(ctrl->dsi_hw))
++ 		pr_err("%s: mdss_register_irq failed.\n", __func__);
++ 
++-	pr_debug("%s: ndx=%d base=%p\n", __func__, ctrl->ndx, ctrl->ctrl_base);
+++	pr_debug("%s: ndx=%d base=%pK\n", __func__, ctrl->ndx, ctrl->ctrl_base);
++ 
++ 	init_completion(&ctrl->dma_comp);
++ 	init_completion(&ctrl->mdp_comp);
++diff --git a/drivers/video/msm/mdss/mdss_dsi_panel.c b/drivers/video/msm/mdss/mdss_dsi_panel.c
++index 9e032fa54ee5..ec02e38d306f 100644
++--- a/drivers/video/msm/mdss/mdss_dsi_panel.c
+++++ b/drivers/video/msm/mdss/mdss_dsi_panel.c
++@@ -520,7 +520,7 @@ static int mdss_dsi_panel_partial_update(struct mdss_panel_data *pdata)
++ 				panel_data);
++ 	mipi  = &pdata->panel_info.mipi;
++ 
++-	pr_debug("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
+++	pr_debug("%s: ctrl=%pK ndx=%d\n", __func__, ctrl, ctrl->ndx);
++ 
++ 	caset[1] = (((pdata->panel_info.roi_x) & 0xFF00) >> 8);
++ 	caset[2] = (((pdata->panel_info.roi_x) & 0xFF));
++@@ -1170,7 +1170,8 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
++ 	ctrl = container_of(pdata, struct mdss_dsi_ctrl_pdata,
++ 				panel_data);
++ 
++-	pr_info("%s+: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
+++
+++	pr_info("%s+: ctrl=%pK ndx=%d\n", __func__, ctrl, ctrl->ndx);
++ 
++ 	mipi  = &pdata->panel_info.mipi;
++ 
++@@ -1224,7 +1225,8 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
++ 	ctrl = container_of(pdata, struct mdss_dsi_ctrl_pdata,
++ 				panel_data);
++ 
++-	pr_info("%s+: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
+++
+++	pr_info("%s+: ctrl=%pK ndx=%d\n", __func__, ctrl, ctrl->ndx);
++ 
++ 	mipi  = &pdata->panel_info.mipi;
++ 
++diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
++index dd593078fcda..aafcd435eb21 100644
++--- a/drivers/video/msm/mdss/mdss_fb.c
+++++ b/drivers/video/msm/mdss/mdss_fb.c
++@@ -1655,8 +1655,8 @@ int mdss_fb_alloc_fb_ion_memory(struct msm_fb_data_type *mfd, size_t fb_size)
++ 		goto fb_mmap_failed;
++ 	}
++ 
++-	pr_debug("alloc 0x%zuB vaddr = %p (%pa iova) for fb%d\n", fb_size,
++-			vaddr, &mfd->iova, mfd->index);
+++	pr_info("alloc 0x%xB vaddr = %pK (%pa iova) for fb%d\n", fb_size, vaddr,
+++			&mfd->iova, mfd->index);
++ 
++ 	mfd->fbi->screen_base = (char *) vaddr;
++ 	mfd->fbi->fix.smem_start = (unsigned int) mfd->iova;
++@@ -1747,7 +1747,7 @@ static int mdss_fb_fbmem_ion_mmap(struct fb_info *info,
++ 
++ 			__mdss_fb_set_page_protection(vma, mfd);
++ 
++-			pr_debug("vma=%p, addr=%x len=%ld",
+++			pr_debug("vma=%pK, addr=%x len=%ld",
++ 					vma, (unsigned int)addr, len);
++ 			pr_cont("vm_start=%x vm_end=%x vm_page_prot=%ld\n",
++ 					(unsigned int)vma->vm_start,
++diff --git a/drivers/video/msm/mdss/mdss_hdmi_tx.c b/drivers/video/msm/mdss/mdss_hdmi_tx.c
++index 1bf389ae1d6e..4681ac1fde2e 100644
++--- a/drivers/video/msm/mdss/mdss_hdmi_tx.c
+++++ b/drivers/video/msm/mdss/mdss_hdmi_tx.c
++@@ -838,7 +838,7 @@ static int hdmi_tx_sysfs_create(struct hdmi_tx_ctrl *hdmi_ctrl,
++ 		return rc;
++ 	}
++ 	hdmi_ctrl->kobj = &fbi->dev->kobj;
++-	DEV_DBG("%s: sysfs group %p\n", __func__, hdmi_ctrl->kobj);
+++	DEV_DBG("%s: sysfs group %pK\n", __func__, hdmi_ctrl->kobj);
++ 
++ 	return 0;
++ } /* hdmi_tx_sysfs_create */
++diff --git a/drivers/video/msm/mdss/mdss_hdmi_util.c b/drivers/video/msm/mdss/mdss_hdmi_util.c
++index 6f6c805122d1..a583a00e16ec 100644
++--- a/drivers/video/msm/mdss/mdss_hdmi_util.c
+++++ b/drivers/video/msm/mdss/mdss_hdmi_util.c
++@@ -178,7 +178,7 @@ static void hdmi_ddc_print_data(struct hdmi_tx_ddc_data *ddc_data,
++ 		return;
++ 	}
++ 
++-	DEV_DBG("%s: buf=%p, d_len=0x%x, d_addr=0x%x, no_align=%d\n",
+++	DEV_DBG("%s: buf=%pK, d_len=0x%x, d_addr=0x%x, no_align=%d\n",
++ 		caller, ddc_data->data_buf, ddc_data->data_len,
++ 		ddc_data->dev_addr, ddc_data->no_align);
++ 	DEV_DBG("%s: offset=0x%x, req_len=0x%x, retry=%d, what=%s\n",
++diff --git a/drivers/video/msm/mdss/mdss_mdp.c b/drivers/video/msm/mdss/mdss_mdp.c
++index d3ba05523019..914b64a79033 100644
++--- a/drivers/video/msm/mdss/mdss_mdp.c
+++++ b/drivers/video/msm/mdss/mdss_mdp.c
++@@ -217,7 +217,7 @@ int mdss_register_irq(struct mdss_hw *hw)
++ 	if (!mdss_irq_handlers[hw->hw_ndx])
++ 		mdss_irq_handlers[hw->hw_ndx] = hw;
++ 	else
++-		pr_err("panel %d's irq at %p is already registered\n",
+++		pr_err("panel %d's irq at %pK is already registered\n",
++ 			hw->hw_ndx, hw->irq_handler);
++ 	spin_unlock_irqrestore(&mdss_lock, irq_flags);
++ 
++@@ -1107,7 +1107,7 @@ static u32 mdss_mdp_res_init(struct mdss_data_type *mdata)
++ 
++ 	mdata->iclient = msm_ion_client_create(-1, mdata->pdev->name);
++ 	if (IS_ERR_OR_NULL(mdata->iclient)) {
++-		pr_err("msm_ion_client_create() return error (%p)\n",
+++		pr_err("msm_ion_client_create() return error (%pK)\n",
++ 				mdata->iclient);
++ 		mdata->iclient = NULL;
++ 	}
++@@ -1578,7 +1578,7 @@ static int mdss_mdp_parse_bootarg(struct platform_device *pdev)
++ 	cmd_len = strlen(cmd_line);
++ 	disp_idx = strnstr(cmd_line, "mdss_mdp.panel=", cmd_len);
++ 	if (!disp_idx) {
++-		pr_err("%s:%d:cmdline panel not set disp_idx=[%p]\n",
+++		pr_err("%s:%d:cmdline panel not set disp_idx=[%pK]\n",
++ 				__func__, __LINE__, disp_idx);
++ 		memset(panel_name, 0x00, MDSS_MAX_PANEL_LEN);
++ 		*intf_type = MDSS_PANEL_INTF_INVALID;
++@@ -1598,7 +1598,7 @@ static int mdss_mdp_parse_bootarg(struct platform_device *pdev)
++ 	}
++ 
++ 	if (end_idx <= disp_idx) {
++-		pr_err("%s:%d:cmdline pan incorrect end=[%p] disp=[%p]\n",
+++		pr_err("%s:%d:cmdline pan incorrect end=[%pK] disp=[%pK]\n",
++ 			__func__, __LINE__, end_idx, disp_idx);
++ 		memset(panel_name, 0x00, MDSS_MAX_PANEL_LEN);
++ 		*intf_type = MDSS_PANEL_INTF_INVALID;
++diff --git a/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c b/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c
++index 93db1875d53a..2e37cc9391d6 100755
++--- a/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c
+++++ b/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c
++@@ -527,7 +527,7 @@ static int mdss_mdp_cmd_wait4pingpong(struct mdss_mdp_ctl *ctl, void *arg)
++ 			ctx->rdptr_enabled, ctl->roi_bkup.w,
++ 			ctl->roi_bkup.h);
++ 
++-	pr_debug("%s: intf_num=%d ctx=%p koff_cnt=%d\n", __func__,
+++	pr_debug("%s: intf_num=%d ctx=%pK koff_cnt=%d\n", __func__,
++ 			ctl->intf_num, ctx, atomic_read(&ctx->koff_cnt));
++ 
++ 	rc = wait_event_timeout(ctx->pp_waitq,
++@@ -829,7 +829,7 @@ int mdss_mdp_cmd_start(struct mdss_mdp_ctl *ctl)
++ 	ctx->recovery.fxn = mdss_mdp_cmd_underflow_recovery;
++ 	ctx->recovery.data = ctx;
++ 
++-	pr_debug("%s: ctx=%p num=%d mixer=%d\n", __func__,
+++	pr_debug("%s: ctx=%pK num=%d mixer=%d\n", __func__,
++ 				ctx, ctx->pp_num, mixer->num);
++ 	MDSS_XLOG(ctl->num, ctx->koff_cnt, ctx->clk_enabled,
++ 					ctx->rdptr_enabled);
++@@ -857,4 +857,3 @@ int mdss_mdp_cmd_start(struct mdss_mdp_ctl *ctl)
++ 
++ 	return 0;
++ }
++-
++diff --git a/drivers/video/msm/mdss/mdss_mdp_intf_video.c b/drivers/video/msm/mdss/mdss_mdp_intf_video.c
++index 5ba83487db66..295ebcb6a853 100644
++--- a/drivers/video/msm/mdss/mdss_mdp_intf_video.c
+++++ b/drivers/video/msm/mdss/mdss_mdp_intf_video.c
++@@ -115,7 +115,7 @@ int mdss_mdp_video_addr_setup(struct mdss_data_type *mdata,
++ 
++ 	for (i = 0; i < count; i++) {
++ 		head[i].base = mdata->mdp_base + offsets[i];
++-		pr_debug("adding Video Intf #%d offset=0x%x virt=%p\n", i,
+++		pr_debug("adding Video Intf #%d offset=0x%x virt=%pK\n", i,
++ 				offsets[i], head[i].base);
++ 		head[i].ref_cnt = 0;
++ 		head[i].intf_num = i + MDSS_MDP_INTF0;
++@@ -783,7 +783,7 @@ int mdss_mdp_video_reconfigure_splash_done(struct mdss_mdp_ctl *ctl,
++ 	i = ctl->intf_num - MDSS_MDP_INTF0;
++ 	if (i < mdata->nintf) {
++ 		ctx = ((struct mdss_mdp_video_ctx *) mdata->video_intf) + i;
++-		pr_debug("video Intf #%d base=%p", ctx->intf_num, ctx->base);
+++		pr_debug("video Intf #%d base=%pK", ctx->intf_num, ctx->base);
++ 	} else {
++ 		pr_err("Invalid intf number: %d\n", ctl->intf_num);
++ 		ret = -EINVAL;
++@@ -856,7 +856,7 @@ int mdss_mdp_video_start(struct mdss_mdp_ctl *ctl)
++ 			pr_err("Intf %d already in use\n", ctl->intf_num);
++ 			return -EBUSY;
++ 		}
++-		pr_debug("video Intf #%d base=%p", ctx->intf_num, ctx->base);
+++		pr_debug("video Intf #%d base=%pK", ctx->intf_num, ctx->base);
++ 		ctx->ref_cnt++;
++ 	} else {
++ 		pr_err("Invalid intf number: %d\n", ctl->intf_num);
++diff --git a/drivers/video/msm/mdss/mdss_mdp_util.c b/drivers/video/msm/mdss/mdss_mdp_util.c
++index 0b1a154a225c..50e9d9b620c0 100644
++--- a/drivers/video/msm/mdss/mdss_mdp_util.c
+++++ b/drivers/video/msm/mdss/mdss_mdp_util.c
++@@ -517,7 +517,7 @@ int mdss_mdp_put_img(struct mdss_mdp_img_data *data)
++ 		pr_debug("pmem buf=0x%x\n", data->addr);
++ 		data->srcp_file = NULL;
++ 	} else if (!IS_ERR_OR_NULL(data->srcp_ihdl)) {
++-		pr_debug("ion hdl=%p buf=0x%x\n", data->srcp_ihdl, data->addr);
+++		pr_debug("ion hdl=%pK buf=0x%x\n", data->srcp_ihdl, data->addr);
++ 		if (!iclient) {
++ 			pr_err("invalid ion client\n");
++ 			return -ENOMEM;
++@@ -635,7 +635,7 @@ int mdss_mdp_get_img(struct msmfb_data *img, struct mdss_mdp_img_data *data)
++ 		data->addr += img->offset;
++ 		data->len -= img->offset;
++ 
++-		pr_debug("mem=%d ihdl=%p buf=0x%x len=0x%x\n", img->memory_id,
+++		pr_debug("mem=%d ihdl=%pK buf=0x%x len=0x%x\n", img->memory_id,
++ 			 data->srcp_ihdl, data->addr, data->len);
++ 	} else {
++ 		mdss_mdp_put_img(data);
++diff --git a/drivers/video/msm/mdss/mdss_mdp_wb.c b/drivers/video/msm/mdss/mdss_mdp_wb.c
++index a87b0abca8e1..7296d0401e1d 100644
++--- a/drivers/video/msm/mdss/mdss_mdp_wb.c
+++++ b/drivers/video/msm/mdss/mdss_mdp_wb.c
++@@ -94,7 +94,7 @@ struct mdss_mdp_data *mdss_mdp_wb_debug_buffer(struct msm_fb_data_type *mfd)
++ 		ihdl = ion_alloc(iclient, img_size, SZ_4K,
++ 				 ION_HEAP(ION_SF_HEAP_ID), 0);
++ 		if (IS_ERR_OR_NULL(ihdl)) {
++-			pr_err("unable to alloc fbmem from ion (%p)\n", ihdl);
+++			pr_err("unable to alloc fbmem from ion (%pK)\n", ihdl);
++ 			return NULL;
++ 		}
++ 
++@@ -114,7 +114,7 @@ struct mdss_mdp_data *mdss_mdp_wb_debug_buffer(struct msm_fb_data_type *mfd)
++ 			img->len = img_size;
++ 		}
++ 
++-		pr_debug("ihdl=%p virt=%p phys=0x%lx iova=0x%x size=%u\n",
+++		pr_debug("ihdl=%pK virt=%pK phys=0x%lx iova=0x%x size=%u\n",
++ 			 ihdl, videomemory, mdss_wb_mem, img->addr, img_size);
++ 	}
++ 	return &mdss_wb_buffer;
++-- 
++2.13.3
++
+diff --git a/patches/3.4/CVE-2016-6791.patch b/patches/3.4/CVE-2016-6791.patch
+new file mode 100644
+index 0000000..4e4ce3a
+--- /dev/null
++++ b/patches/3.4/CVE-2016-6791.patch
+@@ -0,0 +1,86 @@
++From 15cfe5f68912235f7fc7a0071106db4e0e854a36 Mon Sep 17 00:00:00 2001
++From: Walter Yang <yandongy@codeaurora.org>
++Date: Wed, 28 Sep 2016 20:11:23 +0800
++Subject: [PATCH] ASoC: msm: lock read/write when add/free audio ion memory
++
++As read/write get access to ion memory region as well, it's
++necessary to lock them when ion memory is about to be added/freed
++to avoid racing cases.
++
++CRs-Fixed: 1071809
++Change-Id: I436ead23c93384961b38ca99b9312a40c50ad03a
++Signed-off-by: Walter Yang <yandongy@codeaurora.org>
++[joel: backport from 3.10]
++Fixes: CVE-2016-6791
++Fixes: CVE-2016-8391
++Signed-off-by: Joel Stanley <joel@jms.id.au>
++---
++ arch/arm/mach-msm/qdsp6v2/audio_utils_aio.c | 24 +++++++++++++++++++-----
++ 1 file changed, 19 insertions(+), 5 deletions(-)
++
++diff --git a/arch/arm/mach-msm/qdsp6v2/audio_utils_aio.c b/arch/arm/mach-msm/qdsp6v2/audio_utils_aio.c
++index b996d29b5f0..fca16673ece 100644
++--- a/arch/arm/mach-msm/qdsp6v2/audio_utils_aio.c
+++++ b/arch/arm/mach-msm/qdsp6v2/audio_utils_aio.c
++@@ -1,6 +1,6 @@
++ /* Copyright (C) 2008 Google, Inc.
++  * Copyright (C) 2008 HTC Corporation
++- * Copyright (c) 2009-2014, The Linux Foundation. All rights reserved.
+++ * Copyright (c) 2009-2016, The Linux Foundation. All rights reserved.
++  *
++  * This software is licensed under the terms of the GNU General Public
++  * License version 2, as published by the Free Software Foundation, and
++@@ -562,6 +562,8 @@ int audio_aio_release(struct inode *inode, struct file *file)
++ 	struct q6audio_aio *audio = file->private_data;
++ 	pr_debug("%s[%p]\n", __func__, audio);
++ 	mutex_lock(&audio->lock);
+++	mutex_lock(&audio->read_lock);
+++	mutex_lock(&audio->write_lock);
++ 	audio->wflush = 1;
++ 	if (audio->enabled)
++ 		audio_aio_flush(audio);
++@@ -576,6 +578,8 @@ int audio_aio_release(struct inode *inode, struct file *file)
++ 	wake_up(&audio->event_wait);
++ 	audio_aio_reset_event_queue(audio);
++ 	q6asm_audio_client_free(audio->ac);
+++	mutex_unlock(&audio->write_lock);
+++	mutex_unlock(&audio->read_lock);
++ 	mutex_unlock(&audio->lock);
++ 	mutex_destroy(&audio->lock);
++ 	mutex_destroy(&audio->read_lock);
++@@ -1347,10 +1351,15 @@ long audio_aio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
++ 		struct msm_audio_ion_info info;
++ 		pr_debug("%s[%p]:AUDIO_REGISTER_ION\n", __func__, audio);
++ 		mutex_lock(&audio->lock);
++-		if (copy_from_user(&info, (void *)arg, sizeof(info)))
+++		if (copy_from_user(&info, (void *)arg, sizeof(info))) {
++ 			rc = -EFAULT;
++-		else
+++		} else {
+++			mutex_lock(&audio->read_lock);
+++			mutex_lock(&audio->write_lock);
++ 			rc = audio_aio_ion_add(audio, &info);
+++			mutex_unlock(&audio->write_lock);
+++			mutex_unlock(&audio->read_lock);
+++		}
++ 		mutex_unlock(&audio->lock);
++ 		break;
++ 	}
++@@ -1358,10 +1367,15 @@ long audio_aio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
++ 		struct msm_audio_ion_info info;
++ 		mutex_lock(&audio->lock);
++ 		pr_debug("%s[%p]:AUDIO_DEREGISTER_ION\n", __func__, audio);
++-		if (copy_from_user(&info, (void *)arg, sizeof(info)))
+++		if (copy_from_user(&info, (void *)arg, sizeof(info))) {
++ 			rc = -EFAULT;
++-		else
+++		} else {
+++			mutex_lock(&audio->read_lock);
+++			mutex_lock(&audio->write_lock);
++ 			rc = audio_aio_ion_remove(audio, &info);
+++			mutex_unlock(&audio->write_lock);
+++			mutex_unlock(&audio->read_lock);
+++		}
++ 		mutex_unlock(&audio->lock);
++ 		break;
++ 	}
+diff --git a/patches/3.4/CVE-2016-7914.patch b/patches/3.4/CVE-2016-7914.patch
+new file mode 100644
+index 0000000..3332710
+--- /dev/null
++++ b/patches/3.4/CVE-2016-7914.patch
+@@ -0,0 +1,1873 @@
++From 00381d60c189024036553989440a39c6c6c22d0c Mon Sep 17 00:00:00 2001
++From: Jerome Marchand <jmarchan@redhat.com>
++Date: Wed, 6 Apr 2016 14:06:48 +0100
++Subject: [PATCH] assoc_array: don't call compare_object() on a node
++
++[ Upstream commit 8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2 ]
++
++Changes since V1: fixed the description and added KASan warning.
++
++In assoc_array_insert_into_terminal_node(), we call the
++compare_object() method on all non-empty slots, even when they're
++not leaves, passing a pointer to an unexpected structure to
++compare_object(). Currently it causes an out-of-bound read access
++in keyring_compare_object detected by KASan (see below). The issue
++is easily reproduced with keyutils testsuite.
++Only call compare_object() when the slot is a leave.
++
++KASan warning:
++==================================================================
++BUG: KASAN: slab-out-of-bounds in keyring_compare_object+0x213/0x240 at
++addr ffff880060a6f838
++Read of size 8 by task keyctl/1655
++=============================================================================
++BUG kmalloc-192 (Not tainted): kasan: bad access detected
++-----------------------------------------------------------------------------
++
++Disabling lock debugging due to kernel taint
++INFO: Allocated in assoc_array_insert+0xfd0/0x3a60 age=69 cpu=1 pid=1647
++	___slab_alloc+0x563/0x5c0
++	__slab_alloc+0x51/0x90
++	kmem_cache_alloc_trace+0x263/0x300
++	assoc_array_insert+0xfd0/0x3a60
++	__key_link_begin+0xfc/0x270
++	key_create_or_update+0x459/0xaf0
++	SyS_add_key+0x1ba/0x350
++	entry_SYSCALL_64_fastpath+0x12/0x76
++INFO: Slab 0xffffea0001829b80 objects=16 used=8 fp=0xffff880060a6f550
++flags=0x3fff8000004080
++INFO: Object 0xffff880060a6f740 @offset=5952 fp=0xffff880060a6e5d1
++
++Bytes b4 ffff880060a6f730: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++00  ................
++Object ffff880060a6f740: d1 e5 a6 60 00 88 ff ff 0e 00 00 00 00 00 00 00
++ ...`............
++Object ffff880060a6f750: 02 cf 8e 60 00 88 ff ff 02 c0 8e 60 00 88 ff ff
++ ...`.......`....
++Object ffff880060a6f760: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f770: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f780: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f790: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f7a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f7b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f7c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f7d0: 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f7e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++Object ffff880060a6f7f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++ ................
++CPU: 0 PID: 1655 Comm: keyctl Tainted: G    B           4.5.0-rc4-kasan+
++Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
++ 0000000000000000 000000001b2800b4 ffff880060a179e0 ffffffff81b60491
++ ffff88006c802900 ffff880060a6f740 ffff880060a17a10 ffffffff815e2969
++ ffff88006c802900 ffffea0001829b80 ffff880060a6f740 ffff880060a6e650
++Call Trace:
++ [<ffffffff81b60491>] dump_stack+0x85/0xc4
++ [<ffffffff815e2969>] print_trailer+0xf9/0x150
++ [<ffffffff815e9454>] object_err+0x34/0x40
++ [<ffffffff815ebe50>] kasan_report_error+0x230/0x550
++ [<ffffffff819949be>] ? keyring_get_key_chunk+0x13e/0x210
++ [<ffffffff815ec62d>] __asan_report_load_n_noabort+0x5d/0x70
++ [<ffffffff81994cc3>] ? keyring_compare_object+0x213/0x240
++ [<ffffffff81994cc3>] keyring_compare_object+0x213/0x240
++ [<ffffffff81bc238c>] assoc_array_insert+0x86c/0x3a60
++ [<ffffffff81bc1b20>] ? assoc_array_cancel_edit+0x70/0x70
++ [<ffffffff8199797d>] ? __key_link_begin+0x20d/0x270
++ [<ffffffff8199786c>] __key_link_begin+0xfc/0x270
++ [<ffffffff81993389>] key_create_or_update+0x459/0xaf0
++ [<ffffffff8128ce0d>] ? trace_hardirqs_on+0xd/0x10
++ [<ffffffff81992f30>] ? key_type_lookup+0xc0/0xc0
++ [<ffffffff8199e19d>] ? lookup_user_key+0x13d/0xcd0
++ [<ffffffff81534763>] ? memdup_user+0x53/0x80
++ [<ffffffff819983ea>] SyS_add_key+0x1ba/0x350
++ [<ffffffff81998230>] ? key_get_type_from_user.constprop.6+0xa0/0xa0
++ [<ffffffff828bcf4e>] ? retint_user+0x18/0x23
++ [<ffffffff8128cc7e>] ? trace_hardirqs_on_caller+0x3fe/0x580
++ [<ffffffff81004017>] ? trace_hardirqs_on_thunk+0x17/0x19
++ [<ffffffff828bc432>] entry_SYSCALL_64_fastpath+0x12/0x76
++Memory state around the buggy address:
++ ffff880060a6f700: fc fc fc fc fc fc fc fc 00 00 00 00 00 00 00 00
++ ffff880060a6f780: 00 00 00 00 00 00 00 00 00 00 00 fc fc fc fc fc
++>ffff880060a6f800: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
++                                        ^
++ ffff880060a6f880: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
++ ffff880060a6f900: fc fc fc fc fc fc 00 00 00 00 00 00 00 00 00 00
++==================================================================
++
++Change-Id: Iea1f0396558b1856b9855ef2765e331565570e17
++Signed-off-by: Jerome Marchand <jmarchan@redhat.com>
++Signed-off-by: David Howells <dhowells@redhat.com>
++cc: stable@vger.kernel.org
++Signed-off-by: Sasha Levin <sasha.levin@oracle.com>
++---
++ lib/assoc_array.c | 1750 +++++++++++++++++++++++++++++++++++++++++++++++++++++
++ 1 file changed, 1750 insertions(+)
++ create mode 100644 lib/assoc_array.c
++
++diff --git a/lib/assoc_array.c b/lib/assoc_array.c
++new file mode 100644
++index 000000000000..03a77f4740c1
++--- /dev/null
+++++ b/lib/assoc_array.c
++@@ -0,0 +1,1750 @@
+++/* Generic associative array implementation.
+++ *
+++ * See Documentation/assoc_array.txt for information.
+++ *
+++ * Copyright (C) 2013 Red Hat, Inc. All Rights Reserved.
+++ * Written by David Howells (dhowells@redhat.com)
+++ *
+++ * This program is free software; you can redistribute it and/or
+++ * modify it under the terms of the GNU General Public Licence
+++ * as published by the Free Software Foundation; either version
+++ * 2 of the Licence, or (at your option) any later version.
+++ */
+++//#define DEBUG
+++#include <linux/slab.h>
+++#include <linux/err.h>
+++#include <linux/assoc_array_priv.h>
+++
+++/*
+++ * Iterate over an associative array.  The caller must hold the RCU read lock
+++ * or better.
+++ */
+++static int assoc_array_subtree_iterate(const struct assoc_array_ptr *root,
+++				       const struct assoc_array_ptr *stop,
+++				       int (*iterator)(const void *leaf,
+++						       void *iterator_data),
+++				       void *iterator_data)
+++{
+++	const struct assoc_array_shortcut *shortcut;
+++	const struct assoc_array_node *node;
+++	const struct assoc_array_ptr *cursor, *ptr, *parent;
+++	unsigned long has_meta;
+++	int slot, ret;
+++
+++	cursor = root;
+++
+++begin_node:
+++	if (assoc_array_ptr_is_shortcut(cursor)) {
+++		/* Descend through a shortcut */
+++		shortcut = assoc_array_ptr_to_shortcut(cursor);
+++		smp_read_barrier_depends();
+++		cursor = ACCESS_ONCE(shortcut->next_node);
+++	}
+++
+++	node = assoc_array_ptr_to_node(cursor);
+++	smp_read_barrier_depends();
+++	slot = 0;
+++
+++	/* We perform two passes of each node.
+++	 *
+++	 * The first pass does all the leaves in this node.  This means we
+++	 * don't miss any leaves if the node is split up by insertion whilst
+++	 * we're iterating over the branches rooted here (we may, however, see
+++	 * some leaves twice).
+++	 */
+++	has_meta = 0;
+++	for (; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++		ptr = ACCESS_ONCE(node->slots[slot]);
+++		has_meta |= (unsigned long)ptr;
+++		if (ptr && assoc_array_ptr_is_leaf(ptr)) {
+++			/* We need a barrier between the read of the pointer
+++			 * and dereferencing the pointer - but only if we are
+++			 * actually going to dereference it.
+++			 */
+++			smp_read_barrier_depends();
+++
+++			/* Invoke the callback */
+++			ret = iterator(assoc_array_ptr_to_leaf(ptr),
+++				       iterator_data);
+++			if (ret)
+++				return ret;
+++		}
+++	}
+++
+++	/* The second pass attends to all the metadata pointers.  If we follow
+++	 * one of these we may find that we don't come back here, but rather go
+++	 * back to a replacement node with the leaves in a different layout.
+++	 *
+++	 * We are guaranteed to make progress, however, as the slot number for
+++	 * a particular portion of the key space cannot change - and we
+++	 * continue at the back pointer + 1.
+++	 */
+++	if (!(has_meta & ASSOC_ARRAY_PTR_META_TYPE))
+++		goto finished_node;
+++	slot = 0;
+++
+++continue_node:
+++	node = assoc_array_ptr_to_node(cursor);
+++	smp_read_barrier_depends();
+++
+++	for (; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++		ptr = ACCESS_ONCE(node->slots[slot]);
+++		if (assoc_array_ptr_is_meta(ptr)) {
+++			cursor = ptr;
+++			goto begin_node;
+++		}
+++	}
+++
+++finished_node:
+++	/* Move up to the parent (may need to skip back over a shortcut) */
+++	parent = ACCESS_ONCE(node->back_pointer);
+++	slot = node->parent_slot;
+++	if (parent == stop)
+++		return 0;
+++
+++	if (assoc_array_ptr_is_shortcut(parent)) {
+++		shortcut = assoc_array_ptr_to_shortcut(parent);
+++		smp_read_barrier_depends();
+++		cursor = parent;
+++		parent = ACCESS_ONCE(shortcut->back_pointer);
+++		slot = shortcut->parent_slot;
+++		if (parent == stop)
+++			return 0;
+++	}
+++
+++	/* Ascend to next slot in parent node */
+++	cursor = parent;
+++	slot++;
+++	goto continue_node;
+++}
+++
+++/**
+++ * assoc_array_iterate - Pass all objects in the array to a callback
+++ * @array: The array to iterate over.
+++ * @iterator: The callback function.
+++ * @iterator_data: Private data for the callback function.
+++ *
+++ * Iterate over all the objects in an associative array.  Each one will be
+++ * presented to the iterator function.
+++ *
+++ * If the array is being modified concurrently with the iteration then it is
+++ * possible that some objects in the array will be passed to the iterator
+++ * callback more than once - though every object should be passed at least
+++ * once.  If this is undesirable then the caller must lock against modification
+++ * for the duration of this function.
+++ *
+++ * The function will return 0 if no objects were in the array or else it will
+++ * return the result of the last iterator function called.  Iteration stops
+++ * immediately if any call to the iteration function results in a non-zero
+++ * return.
+++ *
+++ * The caller should hold the RCU read lock or better if concurrent
+++ * modification is possible.
+++ */
+++int assoc_array_iterate(const struct assoc_array *array,
+++			int (*iterator)(const void *object,
+++					void *iterator_data),
+++			void *iterator_data)
+++{
+++	struct assoc_array_ptr *root = ACCESS_ONCE(array->root);
+++
+++	if (!root)
+++		return 0;
+++	return assoc_array_subtree_iterate(root, NULL, iterator, iterator_data);
+++}
+++
+++enum assoc_array_walk_status {
+++	assoc_array_walk_tree_empty,
+++	assoc_array_walk_found_terminal_node,
+++	assoc_array_walk_found_wrong_shortcut,
+++};
+++
+++struct assoc_array_walk_result {
+++	struct {
+++		struct assoc_array_node	*node;	/* Node in which leaf might be found */
+++		int		level;
+++		int		slot;
+++	} terminal_node;
+++	struct {
+++		struct assoc_array_shortcut *shortcut;
+++		int		level;
+++		int		sc_level;
+++		unsigned long	sc_segments;
+++		unsigned long	dissimilarity;
+++	} wrong_shortcut;
+++};
+++
+++/*
+++ * Navigate through the internal tree looking for the closest node to the key.
+++ */
+++static enum assoc_array_walk_status
+++assoc_array_walk(const struct assoc_array *array,
+++		 const struct assoc_array_ops *ops,
+++		 const void *index_key,
+++		 struct assoc_array_walk_result *result)
+++{
+++	struct assoc_array_shortcut *shortcut;
+++	struct assoc_array_node *node;
+++	struct assoc_array_ptr *cursor, *ptr;
+++	unsigned long sc_segments, dissimilarity;
+++	unsigned long segments;
+++	int level, sc_level, next_sc_level;
+++	int slot;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	cursor = ACCESS_ONCE(array->root);
+++	if (!cursor)
+++		return assoc_array_walk_tree_empty;
+++
+++	level = 0;
+++
+++	/* Use segments from the key for the new leaf to navigate through the
+++	 * internal tree, skipping through nodes and shortcuts that are on
+++	 * route to the destination.  Eventually we'll come to a slot that is
+++	 * either empty or contains a leaf at which point we've found a node in
+++	 * which the leaf we're looking for might be found or into which it
+++	 * should be inserted.
+++	 */
+++jumped:
+++	segments = ops->get_key_chunk(index_key, level);
+++	pr_devel("segments[%d]: %lx\n", level, segments);
+++
+++	if (assoc_array_ptr_is_shortcut(cursor))
+++		goto follow_shortcut;
+++
+++consider_node:
+++	node = assoc_array_ptr_to_node(cursor);
+++	smp_read_barrier_depends();
+++
+++	slot = segments >> (level & ASSOC_ARRAY_KEY_CHUNK_MASK);
+++	slot &= ASSOC_ARRAY_FAN_MASK;
+++	ptr = ACCESS_ONCE(node->slots[slot]);
+++
+++	pr_devel("consider slot %x [ix=%d type=%lu]\n",
+++		 slot, level, (unsigned long)ptr & 3);
+++
+++	if (!assoc_array_ptr_is_meta(ptr)) {
+++		/* The node doesn't have a node/shortcut pointer in the slot
+++		 * corresponding to the index key that we have to follow.
+++		 */
+++		result->terminal_node.node = node;
+++		result->terminal_node.level = level;
+++		result->terminal_node.slot = slot;
+++		pr_devel("<--%s() = terminal_node\n", __func__);
+++		return assoc_array_walk_found_terminal_node;
+++	}
+++
+++	if (assoc_array_ptr_is_node(ptr)) {
+++		/* There is a pointer to a node in the slot corresponding to
+++		 * this index key segment, so we need to follow it.
+++		 */
+++		cursor = ptr;
+++		level += ASSOC_ARRAY_LEVEL_STEP;
+++		if ((level & ASSOC_ARRAY_KEY_CHUNK_MASK) != 0)
+++			goto consider_node;
+++		goto jumped;
+++	}
+++
+++	/* There is a shortcut in the slot corresponding to the index key
+++	 * segment.  We follow the shortcut if its partial index key matches
+++	 * this leaf's.  Otherwise we need to split the shortcut.
+++	 */
+++	cursor = ptr;
+++follow_shortcut:
+++	shortcut = assoc_array_ptr_to_shortcut(cursor);
+++	smp_read_barrier_depends();
+++	pr_devel("shortcut to %d\n", shortcut->skip_to_level);
+++	sc_level = level + ASSOC_ARRAY_LEVEL_STEP;
+++	BUG_ON(sc_level > shortcut->skip_to_level);
+++
+++	do {
+++		/* Check the leaf against the shortcut's index key a word at a
+++		 * time, trimming the final word (the shortcut stores the index
+++		 * key completely from the root to the shortcut's target).
+++		 */
+++		if ((sc_level & ASSOC_ARRAY_KEY_CHUNK_MASK) == 0)
+++			segments = ops->get_key_chunk(index_key, sc_level);
+++
+++		sc_segments = shortcut->index_key[sc_level >> ASSOC_ARRAY_KEY_CHUNK_SHIFT];
+++		dissimilarity = segments ^ sc_segments;
+++
+++		if (round_up(sc_level, ASSOC_ARRAY_KEY_CHUNK_SIZE) > shortcut->skip_to_level) {
+++			/* Trim segments that are beyond the shortcut */
+++			int shift = shortcut->skip_to_level & ASSOC_ARRAY_KEY_CHUNK_MASK;
+++			dissimilarity &= ~(ULONG_MAX << shift);
+++			next_sc_level = shortcut->skip_to_level;
+++		} else {
+++			next_sc_level = sc_level + ASSOC_ARRAY_KEY_CHUNK_SIZE;
+++			next_sc_level = round_down(next_sc_level, ASSOC_ARRAY_KEY_CHUNK_SIZE);
+++		}
+++
+++		if (dissimilarity != 0) {
+++			/* This shortcut points elsewhere */
+++			result->wrong_shortcut.shortcut = shortcut;
+++			result->wrong_shortcut.level = level;
+++			result->wrong_shortcut.sc_level = sc_level;
+++			result->wrong_shortcut.sc_segments = sc_segments;
+++			result->wrong_shortcut.dissimilarity = dissimilarity;
+++			return assoc_array_walk_found_wrong_shortcut;
+++		}
+++
+++		sc_level = next_sc_level;
+++	} while (sc_level < shortcut->skip_to_level);
+++
+++	/* The shortcut matches the leaf's index to this point. */
+++	cursor = ACCESS_ONCE(shortcut->next_node);
+++	if (((level ^ sc_level) & ~ASSOC_ARRAY_KEY_CHUNK_MASK) != 0) {
+++		level = sc_level;
+++		goto jumped;
+++	} else {
+++		level = sc_level;
+++		goto consider_node;
+++	}
+++}
+++
+++/**
+++ * assoc_array_find - Find an object by index key
+++ * @array: The associative array to search.
+++ * @ops: The operations to use.
+++ * @index_key: The key to the object.
+++ *
+++ * Find an object in an associative array by walking through the internal tree
+++ * to the node that should contain the object and then searching the leaves
+++ * there.  NULL is returned if the requested object was not found in the array.
+++ *
+++ * The caller must hold the RCU read lock or better.
+++ */
+++void *assoc_array_find(const struct assoc_array *array,
+++		       const struct assoc_array_ops *ops,
+++		       const void *index_key)
+++{
+++	struct assoc_array_walk_result result;
+++	const struct assoc_array_node *node;
+++	const struct assoc_array_ptr *ptr;
+++	const void *leaf;
+++	int slot;
+++
+++	if (assoc_array_walk(array, ops, index_key, &result) !=
+++	    assoc_array_walk_found_terminal_node)
+++		return NULL;
+++
+++	node = result.terminal_node.node;
+++	smp_read_barrier_depends();
+++
+++	/* If the target key is available to us, it's has to be pointed to by
+++	 * the terminal node.
+++	 */
+++	for (slot = 0; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++		ptr = ACCESS_ONCE(node->slots[slot]);
+++		if (ptr && assoc_array_ptr_is_leaf(ptr)) {
+++			/* We need a barrier between the read of the pointer
+++			 * and dereferencing the pointer - but only if we are
+++			 * actually going to dereference it.
+++			 */
+++			leaf = assoc_array_ptr_to_leaf(ptr);
+++			smp_read_barrier_depends();
+++			if (ops->compare_object(leaf, index_key))
+++				return (void *)leaf;
+++		}
+++	}
+++
+++	return NULL;
+++}
+++
+++/*
+++ * Destructively iterate over an associative array.  The caller must prevent
+++ * other simultaneous accesses.
+++ */
+++static void assoc_array_destroy_subtree(struct assoc_array_ptr *root,
+++					const struct assoc_array_ops *ops)
+++{
+++	struct assoc_array_shortcut *shortcut;
+++	struct assoc_array_node *node;
+++	struct assoc_array_ptr *cursor, *parent = NULL;
+++	int slot = -1;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	cursor = root;
+++	if (!cursor) {
+++		pr_devel("empty\n");
+++		return;
+++	}
+++
+++move_to_meta:
+++	if (assoc_array_ptr_is_shortcut(cursor)) {
+++		/* Descend through a shortcut */
+++		pr_devel("[%d] shortcut\n", slot);
+++		BUG_ON(!assoc_array_ptr_is_shortcut(cursor));
+++		shortcut = assoc_array_ptr_to_shortcut(cursor);
+++		BUG_ON(shortcut->back_pointer != parent);
+++		BUG_ON(slot != -1 && shortcut->parent_slot != slot);
+++		parent = cursor;
+++		cursor = shortcut->next_node;
+++		slot = -1;
+++		BUG_ON(!assoc_array_ptr_is_node(cursor));
+++	}
+++
+++	pr_devel("[%d] node\n", slot);
+++	node = assoc_array_ptr_to_node(cursor);
+++	BUG_ON(node->back_pointer != parent);
+++	BUG_ON(slot != -1 && node->parent_slot != slot);
+++	slot = 0;
+++
+++continue_node:
+++	pr_devel("Node %p [back=%p]\n", node, node->back_pointer);
+++	for (; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++		struct assoc_array_ptr *ptr = node->slots[slot];
+++		if (!ptr)
+++			continue;
+++		if (assoc_array_ptr_is_meta(ptr)) {
+++			parent = cursor;
+++			cursor = ptr;
+++			goto move_to_meta;
+++		}
+++
+++		if (ops) {
+++			pr_devel("[%d] free leaf\n", slot);
+++			ops->free_object(assoc_array_ptr_to_leaf(ptr));
+++		}
+++	}
+++
+++	parent = node->back_pointer;
+++	slot = node->parent_slot;
+++	pr_devel("free node\n");
+++	kfree(node);
+++	if (!parent)
+++		return; /* Done */
+++
+++	/* Move back up to the parent (may need to free a shortcut on
+++	 * the way up) */
+++	if (assoc_array_ptr_is_shortcut(parent)) {
+++		shortcut = assoc_array_ptr_to_shortcut(parent);
+++		BUG_ON(shortcut->next_node != cursor);
+++		cursor = parent;
+++		parent = shortcut->back_pointer;
+++		slot = shortcut->parent_slot;
+++		pr_devel("free shortcut\n");
+++		kfree(shortcut);
+++		if (!parent)
+++			return;
+++
+++		BUG_ON(!assoc_array_ptr_is_node(parent));
+++	}
+++
+++	/* Ascend to next slot in parent node */
+++	pr_devel("ascend to %p[%d]\n", parent, slot);
+++	cursor = parent;
+++	node = assoc_array_ptr_to_node(cursor);
+++	slot++;
+++	goto continue_node;
+++}
+++
+++/**
+++ * assoc_array_destroy - Destroy an associative array
+++ * @array: The array to destroy.
+++ * @ops: The operations to use.
+++ *
+++ * Discard all metadata and free all objects in an associative array.  The
+++ * array will be empty and ready to use again upon completion.  This function
+++ * cannot fail.
+++ *
+++ * The caller must prevent all other accesses whilst this takes place as no
+++ * attempt is made to adjust pointers gracefully to permit RCU readlock-holding
+++ * accesses to continue.  On the other hand, no memory allocation is required.
+++ */
+++void assoc_array_destroy(struct assoc_array *array,
+++			 const struct assoc_array_ops *ops)
+++{
+++	assoc_array_destroy_subtree(array->root, ops);
+++	array->root = NULL;
+++}
+++
+++/*
+++ * Handle insertion into an empty tree.
+++ */
+++static bool assoc_array_insert_in_empty_tree(struct assoc_array_edit *edit)
+++{
+++	struct assoc_array_node *new_n0;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	new_n0 = kzalloc(sizeof(struct assoc_array_node), GFP_KERNEL);
+++	if (!new_n0)
+++		return false;
+++
+++	edit->new_meta[0] = assoc_array_node_to_ptr(new_n0);
+++	edit->leaf_p = &new_n0->slots[0];
+++	edit->adjust_count_on = new_n0;
+++	edit->set[0].ptr = &edit->array->root;
+++	edit->set[0].to = assoc_array_node_to_ptr(new_n0);
+++
+++	pr_devel("<--%s() = ok [no root]\n", __func__);
+++	return true;
+++}
+++
+++/*
+++ * Handle insertion into a terminal node.
+++ */
+++static bool assoc_array_insert_into_terminal_node(struct assoc_array_edit *edit,
+++						  const struct assoc_array_ops *ops,
+++						  const void *index_key,
+++						  struct assoc_array_walk_result *result)
+++{
+++	struct assoc_array_shortcut *shortcut, *new_s0;
+++	struct assoc_array_node *node, *new_n0, *new_n1, *side;
+++	struct assoc_array_ptr *ptr;
+++	unsigned long dissimilarity, base_seg, blank;
+++	size_t keylen;
+++	bool have_meta;
+++	int level, diff;
+++	int slot, next_slot, free_slot, i, j;
+++
+++	node	= result->terminal_node.node;
+++	level	= result->terminal_node.level;
+++	edit->segment_cache[ASSOC_ARRAY_FAN_OUT] = result->terminal_node.slot;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	/* We arrived at a node which doesn't have an onward node or shortcut
+++	 * pointer that we have to follow.  This means that (a) the leaf we
+++	 * want must go here (either by insertion or replacement) or (b) we
+++	 * need to split this node and insert in one of the fragments.
+++	 */
+++	free_slot = -1;
+++
+++	/* Firstly, we have to check the leaves in this node to see if there's
+++	 * a matching one we should replace in place.
+++	 */
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++		ptr = node->slots[i];
+++		if (!ptr) {
+++			free_slot = i;
+++			continue;
+++		}
+++		if (assoc_array_ptr_is_leaf(ptr) &&
+++		    ops->compare_object(assoc_array_ptr_to_leaf(ptr),
+++					index_key)) {
+++			pr_devel("replace in slot %d\n", i);
+++			edit->leaf_p = &node->slots[i];
+++			edit->dead_leaf = node->slots[i];
+++			pr_devel("<--%s() = ok [replace]\n", __func__);
+++			return true;
+++		}
+++	}
+++
+++	/* If there is a free slot in this node then we can just insert the
+++	 * leaf here.
+++	 */
+++	if (free_slot >= 0) {
+++		pr_devel("insert in free slot %d\n", free_slot);
+++		edit->leaf_p = &node->slots[free_slot];
+++		edit->adjust_count_on = node;
+++		pr_devel("<--%s() = ok [insert]\n", __func__);
+++		return true;
+++	}
+++
+++	/* The node has no spare slots - so we're either going to have to split
+++	 * it or insert another node before it.
+++	 *
+++	 * Whatever, we're going to need at least two new nodes - so allocate
+++	 * those now.  We may also need a new shortcut, but we deal with that
+++	 * when we need it.
+++	 */
+++	new_n0 = kzalloc(sizeof(struct assoc_array_node), GFP_KERNEL);
+++	if (!new_n0)
+++		return false;
+++	edit->new_meta[0] = assoc_array_node_to_ptr(new_n0);
+++	new_n1 = kzalloc(sizeof(struct assoc_array_node), GFP_KERNEL);
+++	if (!new_n1)
+++		return false;
+++	edit->new_meta[1] = assoc_array_node_to_ptr(new_n1);
+++
+++	/* We need to find out how similar the leaves are. */
+++	pr_devel("no spare slots\n");
+++	have_meta = false;
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++		ptr = node->slots[i];
+++		if (assoc_array_ptr_is_meta(ptr)) {
+++			edit->segment_cache[i] = 0xff;
+++			have_meta = true;
+++			continue;
+++		}
+++		base_seg = ops->get_object_key_chunk(
+++			assoc_array_ptr_to_leaf(ptr), level);
+++		base_seg >>= level & ASSOC_ARRAY_KEY_CHUNK_MASK;
+++		edit->segment_cache[i] = base_seg & ASSOC_ARRAY_FAN_MASK;
+++	}
+++
+++	if (have_meta) {
+++		pr_devel("have meta\n");
+++		goto split_node;
+++	}
+++
+++	/* The node contains only leaves */
+++	dissimilarity = 0;
+++	base_seg = edit->segment_cache[0];
+++	for (i = 1; i < ASSOC_ARRAY_FAN_OUT; i++)
+++		dissimilarity |= edit->segment_cache[i] ^ base_seg;
+++
+++	pr_devel("only leaves; dissimilarity=%lx\n", dissimilarity);
+++
+++	if ((dissimilarity & ASSOC_ARRAY_FAN_MASK) == 0) {
+++		/* The old leaves all cluster in the same slot.  We will need
+++		 * to insert a shortcut if the new node wants to cluster with them.
+++		 */
+++		if ((edit->segment_cache[ASSOC_ARRAY_FAN_OUT] ^ base_seg) == 0)
+++			goto all_leaves_cluster_together;
+++
+++		/* Otherwise we can just insert a new node ahead of the old
+++		 * one.
+++		 */
+++		goto present_leaves_cluster_but_not_new_leaf;
+++	}
+++
+++split_node:
+++	pr_devel("split node\n");
+++
+++	/* We need to split the current node; we know that the node doesn't
+++	 * simply contain a full set of leaves that cluster together (it
+++	 * contains meta pointers and/or non-clustering leaves).
+++	 *
+++	 * We need to expel at least two leaves out of a set consisting of the
+++	 * leaves in the node and the new leaf.
+++	 *
+++	 * We need a new node (n0) to replace the current one and a new node to
+++	 * take the expelled nodes (n1).
+++	 */
+++	edit->set[0].to = assoc_array_node_to_ptr(new_n0);
+++	new_n0->back_pointer = node->back_pointer;
+++	new_n0->parent_slot = node->parent_slot;
+++	new_n1->back_pointer = assoc_array_node_to_ptr(new_n0);
+++	new_n1->parent_slot = -1; /* Need to calculate this */
+++
+++do_split_node:
+++	pr_devel("do_split_node\n");
+++
+++	new_n0->nr_leaves_on_branch = node->nr_leaves_on_branch;
+++	new_n1->nr_leaves_on_branch = 0;
+++
+++	/* Begin by finding two matching leaves.  There have to be at least two
+++	 * that match - even if there are meta pointers - because any leaf that
+++	 * would match a slot with a meta pointer in it must be somewhere
+++	 * behind that meta pointer and cannot be here.  Further, given N
+++	 * remaining leaf slots, we now have N+1 leaves to go in them.
+++	 */
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++		slot = edit->segment_cache[i];
+++		if (slot != 0xff)
+++			for (j = i + 1; j < ASSOC_ARRAY_FAN_OUT + 1; j++)
+++				if (edit->segment_cache[j] == slot)
+++					goto found_slot_for_multiple_occupancy;
+++	}
+++found_slot_for_multiple_occupancy:
+++	pr_devel("same slot: %x %x [%02x]\n", i, j, slot);
+++	BUG_ON(i >= ASSOC_ARRAY_FAN_OUT);
+++	BUG_ON(j >= ASSOC_ARRAY_FAN_OUT + 1);
+++	BUG_ON(slot >= ASSOC_ARRAY_FAN_OUT);
+++
+++	new_n1->parent_slot = slot;
+++
+++	/* Metadata pointers cannot change slot */
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++)
+++		if (assoc_array_ptr_is_meta(node->slots[i]))
+++			new_n0->slots[i] = node->slots[i];
+++		else
+++			new_n0->slots[i] = NULL;
+++	BUG_ON(new_n0->slots[slot] != NULL);
+++	new_n0->slots[slot] = assoc_array_node_to_ptr(new_n1);
+++
+++	/* Filter the leaf pointers between the new nodes */
+++	free_slot = -1;
+++	next_slot = 0;
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++		if (assoc_array_ptr_is_meta(node->slots[i]))
+++			continue;
+++		if (edit->segment_cache[i] == slot) {
+++			new_n1->slots[next_slot++] = node->slots[i];
+++			new_n1->nr_leaves_on_branch++;
+++		} else {
+++			do {
+++				free_slot++;
+++			} while (new_n0->slots[free_slot] != NULL);
+++			new_n0->slots[free_slot] = node->slots[i];
+++		}
+++	}
+++
+++	pr_devel("filtered: f=%x n=%x\n", free_slot, next_slot);
+++
+++	if (edit->segment_cache[ASSOC_ARRAY_FAN_OUT] != slot) {
+++		do {
+++			free_slot++;
+++		} while (new_n0->slots[free_slot] != NULL);
+++		edit->leaf_p = &new_n0->slots[free_slot];
+++		edit->adjust_count_on = new_n0;
+++	} else {
+++		edit->leaf_p = &new_n1->slots[next_slot++];
+++		edit->adjust_count_on = new_n1;
+++	}
+++
+++	BUG_ON(next_slot <= 1);
+++
+++	edit->set_backpointers_to = assoc_array_node_to_ptr(new_n0);
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++		if (edit->segment_cache[i] == 0xff) {
+++			ptr = node->slots[i];
+++			BUG_ON(assoc_array_ptr_is_leaf(ptr));
+++			if (assoc_array_ptr_is_node(ptr)) {
+++				side = assoc_array_ptr_to_node(ptr);
+++				edit->set_backpointers[i] = &side->back_pointer;
+++			} else {
+++				shortcut = assoc_array_ptr_to_shortcut(ptr);
+++				edit->set_backpointers[i] = &shortcut->back_pointer;
+++			}
+++		}
+++	}
+++
+++	ptr = node->back_pointer;
+++	if (!ptr)
+++		edit->set[0].ptr = &edit->array->root;
+++	else if (assoc_array_ptr_is_node(ptr))
+++		edit->set[0].ptr = &assoc_array_ptr_to_node(ptr)->slots[node->parent_slot];
+++	else
+++		edit->set[0].ptr = &assoc_array_ptr_to_shortcut(ptr)->next_node;
+++	edit->excised_meta[0] = assoc_array_node_to_ptr(node);
+++	pr_devel("<--%s() = ok [split node]\n", __func__);
+++	return true;
+++
+++present_leaves_cluster_but_not_new_leaf:
+++	/* All the old leaves cluster in the same slot, but the new leaf wants
+++	 * to go into a different slot, so we create a new node to hold the new
+++	 * leaf and a pointer to a new node holding all the old leaves.
+++	 */
+++	pr_devel("present leaves cluster but not new leaf\n");
+++
+++	new_n0->back_pointer = node->back_pointer;
+++	new_n0->parent_slot = node->parent_slot;
+++	new_n0->nr_leaves_on_branch = node->nr_leaves_on_branch;
+++	new_n1->back_pointer = assoc_array_node_to_ptr(new_n0);
+++	new_n1->parent_slot = edit->segment_cache[0];
+++	new_n1->nr_leaves_on_branch = node->nr_leaves_on_branch;
+++	edit->adjust_count_on = new_n0;
+++
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++)
+++		new_n1->slots[i] = node->slots[i];
+++
+++	new_n0->slots[edit->segment_cache[0]] = assoc_array_node_to_ptr(new_n0);
+++	edit->leaf_p = &new_n0->slots[edit->segment_cache[ASSOC_ARRAY_FAN_OUT]];
+++
+++	edit->set[0].ptr = &assoc_array_ptr_to_node(node->back_pointer)->slots[node->parent_slot];
+++	edit->set[0].to = assoc_array_node_to_ptr(new_n0);
+++	edit->excised_meta[0] = assoc_array_node_to_ptr(node);
+++	pr_devel("<--%s() = ok [insert node before]\n", __func__);
+++	return true;
+++
+++all_leaves_cluster_together:
+++	/* All the leaves, new and old, want to cluster together in this node
+++	 * in the same slot, so we have to replace this node with a shortcut to
+++	 * skip over the identical parts of the key and then place a pair of
+++	 * nodes, one inside the other, at the end of the shortcut and
+++	 * distribute the keys between them.
+++	 *
+++	 * Firstly we need to work out where the leaves start diverging as a
+++	 * bit position into their keys so that we know how big the shortcut
+++	 * needs to be.
+++	 *
+++	 * We only need to make a single pass of N of the N+1 leaves because if
+++	 * any keys differ between themselves at bit X then at least one of
+++	 * them must also differ with the base key at bit X or before.
+++	 */
+++	pr_devel("all leaves cluster together\n");
+++	diff = INT_MAX;
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++		int x = ops->diff_objects(assoc_array_ptr_to_leaf(node->slots[i]),
+++					  index_key);
+++		if (x < diff) {
+++			BUG_ON(x < 0);
+++			diff = x;
+++		}
+++	}
+++	BUG_ON(diff == INT_MAX);
+++	BUG_ON(diff < level + ASSOC_ARRAY_LEVEL_STEP);
+++
+++	keylen = round_up(diff, ASSOC_ARRAY_KEY_CHUNK_SIZE);
+++	keylen >>= ASSOC_ARRAY_KEY_CHUNK_SHIFT;
+++
+++	new_s0 = kzalloc(sizeof(struct assoc_array_shortcut) +
+++			 keylen * sizeof(unsigned long), GFP_KERNEL);
+++	if (!new_s0)
+++		return false;
+++	edit->new_meta[2] = assoc_array_shortcut_to_ptr(new_s0);
+++
+++	edit->set[0].to = assoc_array_shortcut_to_ptr(new_s0);
+++	new_s0->back_pointer = node->back_pointer;
+++	new_s0->parent_slot = node->parent_slot;
+++	new_s0->next_node = assoc_array_node_to_ptr(new_n0);
+++	new_n0->back_pointer = assoc_array_shortcut_to_ptr(new_s0);
+++	new_n0->parent_slot = 0;
+++	new_n1->back_pointer = assoc_array_node_to_ptr(new_n0);
+++	new_n1->parent_slot = -1; /* Need to calculate this */
+++
+++	new_s0->skip_to_level = level = diff & ~ASSOC_ARRAY_LEVEL_STEP_MASK;
+++	pr_devel("skip_to_level = %d [diff %d]\n", level, diff);
+++	BUG_ON(level <= 0);
+++
+++	for (i = 0; i < keylen; i++)
+++		new_s0->index_key[i] =
+++			ops->get_key_chunk(index_key, i * ASSOC_ARRAY_KEY_CHUNK_SIZE);
+++
+++	blank = ULONG_MAX << (level & ASSOC_ARRAY_KEY_CHUNK_MASK);
+++	pr_devel("blank off [%zu] %d: %lx\n", keylen - 1, level, blank);
+++	new_s0->index_key[keylen - 1] &= ~blank;
+++
+++	/* This now reduces to a node splitting exercise for which we'll need
+++	 * to regenerate the disparity table.
+++	 */
+++	for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++		ptr = node->slots[i];
+++		base_seg = ops->get_object_key_chunk(assoc_array_ptr_to_leaf(ptr),
+++						     level);
+++		base_seg >>= level & ASSOC_ARRAY_KEY_CHUNK_MASK;
+++		edit->segment_cache[i] = base_seg & ASSOC_ARRAY_FAN_MASK;
+++	}
+++
+++	base_seg = ops->get_key_chunk(index_key, level);
+++	base_seg >>= level & ASSOC_ARRAY_KEY_CHUNK_MASK;
+++	edit->segment_cache[ASSOC_ARRAY_FAN_OUT] = base_seg & ASSOC_ARRAY_FAN_MASK;
+++	goto do_split_node;
+++}
+++
+++/*
+++ * Handle insertion into the middle of a shortcut.
+++ */
+++static bool assoc_array_insert_mid_shortcut(struct assoc_array_edit *edit,
+++					    const struct assoc_array_ops *ops,
+++					    struct assoc_array_walk_result *result)
+++{
+++	struct assoc_array_shortcut *shortcut, *new_s0, *new_s1;
+++	struct assoc_array_node *node, *new_n0, *side;
+++	unsigned long sc_segments, dissimilarity, blank;
+++	size_t keylen;
+++	int level, sc_level, diff;
+++	int sc_slot;
+++
+++	shortcut	= result->wrong_shortcut.shortcut;
+++	level		= result->wrong_shortcut.level;
+++	sc_level	= result->wrong_shortcut.sc_level;
+++	sc_segments	= result->wrong_shortcut.sc_segments;
+++	dissimilarity	= result->wrong_shortcut.dissimilarity;
+++
+++	pr_devel("-->%s(ix=%d dis=%lx scix=%d)\n",
+++		 __func__, level, dissimilarity, sc_level);
+++
+++	/* We need to split a shortcut and insert a node between the two
+++	 * pieces.  Zero-length pieces will be dispensed with entirely.
+++	 *
+++	 * First of all, we need to find out in which level the first
+++	 * difference was.
+++	 */
+++	diff = __ffs(dissimilarity);
+++	diff &= ~ASSOC_ARRAY_LEVEL_STEP_MASK;
+++	diff += sc_level & ~ASSOC_ARRAY_KEY_CHUNK_MASK;
+++	pr_devel("diff=%d\n", diff);
+++
+++	if (!shortcut->back_pointer) {
+++		edit->set[0].ptr = &edit->array->root;
+++	} else if (assoc_array_ptr_is_node(shortcut->back_pointer)) {
+++		node = assoc_array_ptr_to_node(shortcut->back_pointer);
+++		edit->set[0].ptr = &node->slots[shortcut->parent_slot];
+++	} else {
+++		BUG();
+++	}
+++
+++	edit->excised_meta[0] = assoc_array_shortcut_to_ptr(shortcut);
+++
+++	/* Create a new node now since we're going to need it anyway */
+++	new_n0 = kzalloc(sizeof(struct assoc_array_node), GFP_KERNEL);
+++	if (!new_n0)
+++		return false;
+++	edit->new_meta[0] = assoc_array_node_to_ptr(new_n0);
+++	edit->adjust_count_on = new_n0;
+++
+++	/* Insert a new shortcut before the new node if this segment isn't of
+++	 * zero length - otherwise we just connect the new node directly to the
+++	 * parent.
+++	 */
+++	level += ASSOC_ARRAY_LEVEL_STEP;
+++	if (diff > level) {
+++		pr_devel("pre-shortcut %d...%d\n", level, diff);
+++		keylen = round_up(diff, ASSOC_ARRAY_KEY_CHUNK_SIZE);
+++		keylen >>= ASSOC_ARRAY_KEY_CHUNK_SHIFT;
+++
+++		new_s0 = kzalloc(sizeof(struct assoc_array_shortcut) +
+++				 keylen * sizeof(unsigned long), GFP_KERNEL);
+++		if (!new_s0)
+++			return false;
+++		edit->new_meta[1] = assoc_array_shortcut_to_ptr(new_s0);
+++		edit->set[0].to = assoc_array_shortcut_to_ptr(new_s0);
+++		new_s0->back_pointer = shortcut->back_pointer;
+++		new_s0->parent_slot = shortcut->parent_slot;
+++		new_s0->next_node = assoc_array_node_to_ptr(new_n0);
+++		new_s0->skip_to_level = diff;
+++
+++		new_n0->back_pointer = assoc_array_shortcut_to_ptr(new_s0);
+++		new_n0->parent_slot = 0;
+++
+++		memcpy(new_s0->index_key, shortcut->index_key,
+++		       keylen * sizeof(unsigned long));
+++
+++		blank = ULONG_MAX << (diff & ASSOC_ARRAY_KEY_CHUNK_MASK);
+++		pr_devel("blank off [%zu] %d: %lx\n", keylen - 1, diff, blank);
+++		new_s0->index_key[keylen - 1] &= ~blank;
+++	} else {
+++		pr_devel("no pre-shortcut\n");
+++		edit->set[0].to = assoc_array_node_to_ptr(new_n0);
+++		new_n0->back_pointer = shortcut->back_pointer;
+++		new_n0->parent_slot = shortcut->parent_slot;
+++	}
+++
+++	side = assoc_array_ptr_to_node(shortcut->next_node);
+++	new_n0->nr_leaves_on_branch = side->nr_leaves_on_branch;
+++
+++	/* We need to know which slot in the new node is going to take a
+++	 * metadata pointer.
+++	 */
+++	sc_slot = sc_segments >> (diff & ASSOC_ARRAY_KEY_CHUNK_MASK);
+++	sc_slot &= ASSOC_ARRAY_FAN_MASK;
+++
+++	pr_devel("new slot %lx >> %d -> %d\n",
+++		 sc_segments, diff & ASSOC_ARRAY_KEY_CHUNK_MASK, sc_slot);
+++
+++	/* Determine whether we need to follow the new node with a replacement
+++	 * for the current shortcut.  We could in theory reuse the current
+++	 * shortcut if its parent slot number doesn't change - but that's a
+++	 * 1-in-16 chance so not worth expending the code upon.
+++	 */
+++	level = diff + ASSOC_ARRAY_LEVEL_STEP;
+++	if (level < shortcut->skip_to_level) {
+++		pr_devel("post-shortcut %d...%d\n", level, shortcut->skip_to_level);
+++		keylen = round_up(shortcut->skip_to_level, ASSOC_ARRAY_KEY_CHUNK_SIZE);
+++		keylen >>= ASSOC_ARRAY_KEY_CHUNK_SHIFT;
+++
+++		new_s1 = kzalloc(sizeof(struct assoc_array_shortcut) +
+++				 keylen * sizeof(unsigned long), GFP_KERNEL);
+++		if (!new_s1)
+++			return false;
+++		edit->new_meta[2] = assoc_array_shortcut_to_ptr(new_s1);
+++
+++		new_s1->back_pointer = assoc_array_node_to_ptr(new_n0);
+++		new_s1->parent_slot = sc_slot;
+++		new_s1->next_node = shortcut->next_node;
+++		new_s1->skip_to_level = shortcut->skip_to_level;
+++
+++		new_n0->slots[sc_slot] = assoc_array_shortcut_to_ptr(new_s1);
+++
+++		memcpy(new_s1->index_key, shortcut->index_key,
+++		       keylen * sizeof(unsigned long));
+++
+++		edit->set[1].ptr = &side->back_pointer;
+++		edit->set[1].to = assoc_array_shortcut_to_ptr(new_s1);
+++	} else {
+++		pr_devel("no post-shortcut\n");
+++
+++		/* We don't have to replace the pointed-to node as long as we
+++		 * use memory barriers to make sure the parent slot number is
+++		 * changed before the back pointer (the parent slot number is
+++		 * irrelevant to the old parent shortcut).
+++		 */
+++		new_n0->slots[sc_slot] = shortcut->next_node;
+++		edit->set_parent_slot[0].p = &side->parent_slot;
+++		edit->set_parent_slot[0].to = sc_slot;
+++		edit->set[1].ptr = &side->back_pointer;
+++		edit->set[1].to = assoc_array_node_to_ptr(new_n0);
+++	}
+++
+++	/* Install the new leaf in a spare slot in the new node. */
+++	if (sc_slot == 0)
+++		edit->leaf_p = &new_n0->slots[1];
+++	else
+++		edit->leaf_p = &new_n0->slots[0];
+++
+++	pr_devel("<--%s() = ok [split shortcut]\n", __func__);
+++	return edit;
+++}
+++
+++/**
+++ * assoc_array_insert - Script insertion of an object into an associative array
+++ * @array: The array to insert into.
+++ * @ops: The operations to use.
+++ * @index_key: The key to insert at.
+++ * @object: The object to insert.
+++ *
+++ * Precalculate and preallocate a script for the insertion or replacement of an
+++ * object in an associative array.  This results in an edit script that can
+++ * either be applied or cancelled.
+++ *
+++ * The function returns a pointer to an edit script or -ENOMEM.
+++ *
+++ * The caller should lock against other modifications and must continue to hold
+++ * the lock until assoc_array_apply_edit() has been called.
+++ *
+++ * Accesses to the tree may take place concurrently with this function,
+++ * provided they hold the RCU read lock.
+++ */
+++struct assoc_array_edit *assoc_array_insert(struct assoc_array *array,
+++					    const struct assoc_array_ops *ops,
+++					    const void *index_key,
+++					    void *object)
+++{
+++	struct assoc_array_walk_result result;
+++	struct assoc_array_edit *edit;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	/* The leaf pointer we're given must not have the bottom bit set as we
+++	 * use those for type-marking the pointer.  NULL pointers are also not
+++	 * allowed as they indicate an empty slot but we have to allow them
+++	 * here as they can be updated later.
+++	 */
+++	BUG_ON(assoc_array_ptr_is_meta(object));
+++
+++	edit = kzalloc(sizeof(struct assoc_array_edit), GFP_KERNEL);
+++	if (!edit)
+++		return ERR_PTR(-ENOMEM);
+++	edit->array = array;
+++	edit->ops = ops;
+++	edit->leaf = assoc_array_leaf_to_ptr(object);
+++	edit->adjust_count_by = 1;
+++
+++	switch (assoc_array_walk(array, ops, index_key, &result)) {
+++	case assoc_array_walk_tree_empty:
+++		/* Allocate a root node if there isn't one yet */
+++		if (!assoc_array_insert_in_empty_tree(edit))
+++			goto enomem;
+++		return edit;
+++
+++	case assoc_array_walk_found_terminal_node:
+++		/* We found a node that doesn't have a node/shortcut pointer in
+++		 * the slot corresponding to the index key that we have to
+++		 * follow.
+++		 */
+++		if (!assoc_array_insert_into_terminal_node(edit, ops, index_key,
+++							   &result))
+++			goto enomem;
+++		return edit;
+++
+++	case assoc_array_walk_found_wrong_shortcut:
+++		/* We found a shortcut that didn't match our key in a slot we
+++		 * needed to follow.
+++		 */
+++		if (!assoc_array_insert_mid_shortcut(edit, ops, &result))
+++			goto enomem;
+++		return edit;
+++	}
+++
+++enomem:
+++	/* Clean up after an out of memory error */
+++	pr_devel("enomem\n");
+++	assoc_array_cancel_edit(edit);
+++	return ERR_PTR(-ENOMEM);
+++}
+++
+++/**
+++ * assoc_array_insert_set_object - Set the new object pointer in an edit script
+++ * @edit: The edit script to modify.
+++ * @object: The object pointer to set.
+++ *
+++ * Change the object to be inserted in an edit script.  The object pointed to
+++ * by the old object is not freed.  This must be done prior to applying the
+++ * script.
+++ */
+++void assoc_array_insert_set_object(struct assoc_array_edit *edit, void *object)
+++{
+++	BUG_ON(!object);
+++	edit->leaf = assoc_array_leaf_to_ptr(object);
+++}
+++
+++struct assoc_array_delete_collapse_context {
+++	struct assoc_array_node	*node;
+++	const void		*skip_leaf;
+++	int			slot;
+++};
+++
+++/*
+++ * Subtree collapse to node iterator.
+++ */
+++static int assoc_array_delete_collapse_iterator(const void *leaf,
+++						void *iterator_data)
+++{
+++	struct assoc_array_delete_collapse_context *collapse = iterator_data;
+++
+++	if (leaf == collapse->skip_leaf)
+++		return 0;
+++
+++	BUG_ON(collapse->slot >= ASSOC_ARRAY_FAN_OUT);
+++
+++	collapse->node->slots[collapse->slot++] = assoc_array_leaf_to_ptr(leaf);
+++	return 0;
+++}
+++
+++/**
+++ * assoc_array_delete - Script deletion of an object from an associative array
+++ * @array: The array to search.
+++ * @ops: The operations to use.
+++ * @index_key: The key to the object.
+++ *
+++ * Precalculate and preallocate a script for the deletion of an object from an
+++ * associative array.  This results in an edit script that can either be
+++ * applied or cancelled.
+++ *
+++ * The function returns a pointer to an edit script if the object was found,
+++ * NULL if the object was not found or -ENOMEM.
+++ *
+++ * The caller should lock against other modifications and must continue to hold
+++ * the lock until assoc_array_apply_edit() has been called.
+++ *
+++ * Accesses to the tree may take place concurrently with this function,
+++ * provided they hold the RCU read lock.
+++ */
+++struct assoc_array_edit *assoc_array_delete(struct assoc_array *array,
+++					    const struct assoc_array_ops *ops,
+++					    const void *index_key)
+++{
+++	struct assoc_array_delete_collapse_context collapse;
+++	struct assoc_array_walk_result result;
+++	struct assoc_array_node *node, *new_n0;
+++	struct assoc_array_edit *edit;
+++	struct assoc_array_ptr *ptr;
+++	bool has_meta;
+++	int slot, i;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	edit = kzalloc(sizeof(struct assoc_array_edit), GFP_KERNEL);
+++	if (!edit)
+++		return ERR_PTR(-ENOMEM);
+++	edit->array = array;
+++	edit->ops = ops;
+++	edit->adjust_count_by = -1;
+++
+++	switch (assoc_array_walk(array, ops, index_key, &result)) {
+++	case assoc_array_walk_found_terminal_node:
+++		/* We found a node that should contain the leaf we've been
+++		 * asked to remove - *if* it's in the tree.
+++		 */
+++		pr_devel("terminal_node\n");
+++		node = result.terminal_node.node;
+++
+++		for (slot = 0; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++			ptr = node->slots[slot];
+++			if (ptr &&
+++			    assoc_array_ptr_is_leaf(ptr) &&
+++			    ops->compare_object(assoc_array_ptr_to_leaf(ptr),
+++						index_key))
+++				goto found_leaf;
+++		}
+++	case assoc_array_walk_tree_empty:
+++	case assoc_array_walk_found_wrong_shortcut:
+++	default:
+++		assoc_array_cancel_edit(edit);
+++		pr_devel("not found\n");
+++		return NULL;
+++	}
+++
+++found_leaf:
+++	BUG_ON(array->nr_leaves_on_tree <= 0);
+++
+++	/* In the simplest form of deletion we just clear the slot and release
+++	 * the leaf after a suitable interval.
+++	 */
+++	edit->dead_leaf = node->slots[slot];
+++	edit->set[0].ptr = &node->slots[slot];
+++	edit->set[0].to = NULL;
+++	edit->adjust_count_on = node;
+++
+++	/* If that concludes erasure of the last leaf, then delete the entire
+++	 * internal array.
+++	 */
+++	if (array->nr_leaves_on_tree == 1) {
+++		edit->set[1].ptr = &array->root;
+++		edit->set[1].to = NULL;
+++		edit->adjust_count_on = NULL;
+++		edit->excised_subtree = array->root;
+++		pr_devel("all gone\n");
+++		return edit;
+++	}
+++
+++	/* However, we'd also like to clear up some metadata blocks if we
+++	 * possibly can.
+++	 *
+++	 * We go for a simple algorithm of: if this node has FAN_OUT or fewer
+++	 * leaves in it, then attempt to collapse it - and attempt to
+++	 * recursively collapse up the tree.
+++	 *
+++	 * We could also try and collapse in partially filled subtrees to take
+++	 * up space in this node.
+++	 */
+++	if (node->nr_leaves_on_branch <= ASSOC_ARRAY_FAN_OUT + 1) {
+++		struct assoc_array_node *parent, *grandparent;
+++		struct assoc_array_ptr *ptr;
+++
+++		/* First of all, we need to know if this node has metadata so
+++		 * that we don't try collapsing if all the leaves are already
+++		 * here.
+++		 */
+++		has_meta = false;
+++		for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++			ptr = node->slots[i];
+++			if (assoc_array_ptr_is_meta(ptr)) {
+++				has_meta = true;
+++				break;
+++			}
+++		}
+++
+++		pr_devel("leaves: %ld [m=%d]\n",
+++			 node->nr_leaves_on_branch - 1, has_meta);
+++
+++		/* Look further up the tree to see if we can collapse this node
+++		 * into a more proximal node too.
+++		 */
+++		parent = node;
+++	collapse_up:
+++		pr_devel("collapse subtree: %ld\n", parent->nr_leaves_on_branch);
+++
+++		ptr = parent->back_pointer;
+++		if (!ptr)
+++			goto do_collapse;
+++		if (assoc_array_ptr_is_shortcut(ptr)) {
+++			struct assoc_array_shortcut *s = assoc_array_ptr_to_shortcut(ptr);
+++			ptr = s->back_pointer;
+++			if (!ptr)
+++				goto do_collapse;
+++		}
+++
+++		grandparent = assoc_array_ptr_to_node(ptr);
+++		if (grandparent->nr_leaves_on_branch <= ASSOC_ARRAY_FAN_OUT + 1) {
+++			parent = grandparent;
+++			goto collapse_up;
+++		}
+++
+++	do_collapse:
+++		/* There's no point collapsing if the original node has no meta
+++		 * pointers to discard and if we didn't merge into one of that
+++		 * node's ancestry.
+++		 */
+++		if (has_meta || parent != node) {
+++			node = parent;
+++
+++			/* Create a new node to collapse into */
+++			new_n0 = kzalloc(sizeof(struct assoc_array_node), GFP_KERNEL);
+++			if (!new_n0)
+++				goto enomem;
+++			edit->new_meta[0] = assoc_array_node_to_ptr(new_n0);
+++
+++			new_n0->back_pointer = node->back_pointer;
+++			new_n0->parent_slot = node->parent_slot;
+++			new_n0->nr_leaves_on_branch = node->nr_leaves_on_branch;
+++			edit->adjust_count_on = new_n0;
+++
+++			collapse.node = new_n0;
+++			collapse.skip_leaf = assoc_array_ptr_to_leaf(edit->dead_leaf);
+++			collapse.slot = 0;
+++			assoc_array_subtree_iterate(assoc_array_node_to_ptr(node),
+++						    node->back_pointer,
+++						    assoc_array_delete_collapse_iterator,
+++						    &collapse);
+++			pr_devel("collapsed %d,%lu\n", collapse.slot, new_n0->nr_leaves_on_branch);
+++			BUG_ON(collapse.slot != new_n0->nr_leaves_on_branch - 1);
+++
+++			if (!node->back_pointer) {
+++				edit->set[1].ptr = &array->root;
+++			} else if (assoc_array_ptr_is_leaf(node->back_pointer)) {
+++				BUG();
+++			} else if (assoc_array_ptr_is_node(node->back_pointer)) {
+++				struct assoc_array_node *p =
+++					assoc_array_ptr_to_node(node->back_pointer);
+++				edit->set[1].ptr = &p->slots[node->parent_slot];
+++			} else if (assoc_array_ptr_is_shortcut(node->back_pointer)) {
+++				struct assoc_array_shortcut *s =
+++					assoc_array_ptr_to_shortcut(node->back_pointer);
+++				edit->set[1].ptr = &s->next_node;
+++			}
+++			edit->set[1].to = assoc_array_node_to_ptr(new_n0);
+++			edit->excised_subtree = assoc_array_node_to_ptr(node);
+++		}
+++	}
+++
+++	return edit;
+++
+++enomem:
+++	/* Clean up after an out of memory error */
+++	pr_devel("enomem\n");
+++	assoc_array_cancel_edit(edit);
+++	return ERR_PTR(-ENOMEM);
+++}
+++
+++/**
+++ * assoc_array_clear - Script deletion of all objects from an associative array
+++ * @array: The array to clear.
+++ * @ops: The operations to use.
+++ *
+++ * Precalculate and preallocate a script for the deletion of all the objects
+++ * from an associative array.  This results in an edit script that can either
+++ * be applied or cancelled.
+++ *
+++ * The function returns a pointer to an edit script if there are objects to be
+++ * deleted, NULL if there are no objects in the array or -ENOMEM.
+++ *
+++ * The caller should lock against other modifications and must continue to hold
+++ * the lock until assoc_array_apply_edit() has been called.
+++ *
+++ * Accesses to the tree may take place concurrently with this function,
+++ * provided they hold the RCU read lock.
+++ */
+++struct assoc_array_edit *assoc_array_clear(struct assoc_array *array,
+++					   const struct assoc_array_ops *ops)
+++{
+++	struct assoc_array_edit *edit;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	if (!array->root)
+++		return NULL;
+++
+++	edit = kzalloc(sizeof(struct assoc_array_edit), GFP_KERNEL);
+++	if (!edit)
+++		return ERR_PTR(-ENOMEM);
+++	edit->array = array;
+++	edit->ops = ops;
+++	edit->set[1].ptr = &array->root;
+++	edit->set[1].to = NULL;
+++	edit->excised_subtree = array->root;
+++	edit->ops_for_excised_subtree = ops;
+++	pr_devel("all gone\n");
+++	return edit;
+++}
+++
+++/*
+++ * Handle the deferred destruction after an applied edit.
+++ */
+++static void assoc_array_rcu_cleanup(struct rcu_head *head)
+++{
+++	struct assoc_array_edit *edit =
+++		container_of(head, struct assoc_array_edit, rcu);
+++	int i;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	if (edit->dead_leaf)
+++		edit->ops->free_object(assoc_array_ptr_to_leaf(edit->dead_leaf));
+++	for (i = 0; i < ARRAY_SIZE(edit->excised_meta); i++)
+++		if (edit->excised_meta[i])
+++			kfree(assoc_array_ptr_to_node(edit->excised_meta[i]));
+++
+++	if (edit->excised_subtree) {
+++		BUG_ON(assoc_array_ptr_is_leaf(edit->excised_subtree));
+++		if (assoc_array_ptr_is_node(edit->excised_subtree)) {
+++			struct assoc_array_node *n =
+++				assoc_array_ptr_to_node(edit->excised_subtree);
+++			n->back_pointer = NULL;
+++		} else {
+++			struct assoc_array_shortcut *s =
+++				assoc_array_ptr_to_shortcut(edit->excised_subtree);
+++			s->back_pointer = NULL;
+++		}
+++		assoc_array_destroy_subtree(edit->excised_subtree,
+++					    edit->ops_for_excised_subtree);
+++	}
+++
+++	kfree(edit);
+++}
+++
+++/**
+++ * assoc_array_apply_edit - Apply an edit script to an associative array
+++ * @edit: The script to apply.
+++ *
+++ * Apply an edit script to an associative array to effect an insertion,
+++ * deletion or clearance.  As the edit script includes preallocated memory,
+++ * this is guaranteed not to fail.
+++ *
+++ * The edit script, dead objects and dead metadata will be scheduled for
+++ * destruction after an RCU grace period to permit those doing read-only
+++ * accesses on the array to continue to do so under the RCU read lock whilst
+++ * the edit is taking place.
+++ */
+++void assoc_array_apply_edit(struct assoc_array_edit *edit)
+++{
+++	struct assoc_array_shortcut *shortcut;
+++	struct assoc_array_node *node;
+++	struct assoc_array_ptr *ptr;
+++	int i;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	smp_wmb();
+++	if (edit->leaf_p)
+++		*edit->leaf_p = edit->leaf;
+++
+++	smp_wmb();
+++	for (i = 0; i < ARRAY_SIZE(edit->set_parent_slot); i++)
+++		if (edit->set_parent_slot[i].p)
+++			*edit->set_parent_slot[i].p = edit->set_parent_slot[i].to;
+++
+++	smp_wmb();
+++	for (i = 0; i < ARRAY_SIZE(edit->set_backpointers); i++)
+++		if (edit->set_backpointers[i])
+++			*edit->set_backpointers[i] = edit->set_backpointers_to;
+++
+++	smp_wmb();
+++	for (i = 0; i < ARRAY_SIZE(edit->set); i++)
+++		if (edit->set[i].ptr)
+++			*edit->set[i].ptr = edit->set[i].to;
+++
+++	if (edit->array->root == NULL) {
+++		edit->array->nr_leaves_on_tree = 0;
+++	} else if (edit->adjust_count_on) {
+++		node = edit->adjust_count_on;
+++		for (;;) {
+++			node->nr_leaves_on_branch += edit->adjust_count_by;
+++
+++			ptr = node->back_pointer;
+++			if (!ptr)
+++				break;
+++			if (assoc_array_ptr_is_shortcut(ptr)) {
+++				shortcut = assoc_array_ptr_to_shortcut(ptr);
+++				ptr = shortcut->back_pointer;
+++				if (!ptr)
+++					break;
+++			}
+++			BUG_ON(!assoc_array_ptr_is_node(ptr));
+++			node = assoc_array_ptr_to_node(ptr);
+++		}
+++
+++		edit->array->nr_leaves_on_tree += edit->adjust_count_by;
+++	}
+++
+++	call_rcu(&edit->rcu, assoc_array_rcu_cleanup);
+++}
+++
+++/**
+++ * assoc_array_cancel_edit - Discard an edit script.
+++ * @edit: The script to discard.
+++ *
+++ * Free an edit script and all the preallocated data it holds without making
+++ * any changes to the associative array it was intended for.
+++ *
+++ * NOTE!  In the case of an insertion script, this does _not_ release the leaf
+++ * that was to be inserted.  That is left to the caller.
+++ */
+++void assoc_array_cancel_edit(struct assoc_array_edit *edit)
+++{
+++	struct assoc_array_ptr *ptr;
+++	int i;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	/* Clean up after an out of memory error */
+++	for (i = 0; i < ARRAY_SIZE(edit->new_meta); i++) {
+++		ptr = edit->new_meta[i];
+++		if (ptr) {
+++			if (assoc_array_ptr_is_node(ptr))
+++				kfree(assoc_array_ptr_to_node(ptr));
+++			else
+++				kfree(assoc_array_ptr_to_shortcut(ptr));
+++		}
+++	}
+++	kfree(edit);
+++}
+++
+++/**
+++ * assoc_array_gc - Garbage collect an associative array.
+++ * @array: The array to clean.
+++ * @ops: The operations to use.
+++ * @iterator: A callback function to pass judgement on each object.
+++ * @iterator_data: Private data for the callback function.
+++ *
+++ * Collect garbage from an associative array and pack down the internal tree to
+++ * save memory.
+++ *
+++ * The iterator function is asked to pass judgement upon each object in the
+++ * array.  If it returns false, the object is discard and if it returns true,
+++ * the object is kept.  If it returns true, it must increment the object's
+++ * usage count (or whatever it needs to do to retain it) before returning.
+++ *
+++ * This function returns 0 if successful or -ENOMEM if out of memory.  In the
+++ * latter case, the array is not changed.
+++ *
+++ * The caller should lock against other modifications and must continue to hold
+++ * the lock until assoc_array_apply_edit() has been called.
+++ *
+++ * Accesses to the tree may take place concurrently with this function,
+++ * provided they hold the RCU read lock.
+++ */
+++int assoc_array_gc(struct assoc_array *array,
+++		   const struct assoc_array_ops *ops,
+++		   bool (*iterator)(void *object, void *iterator_data),
+++		   void *iterator_data)
+++{
+++	struct assoc_array_shortcut *shortcut, *new_s;
+++	struct assoc_array_node *node, *new_n;
+++	struct assoc_array_edit *edit;
+++	struct assoc_array_ptr *cursor, *ptr;
+++	struct assoc_array_ptr *new_root, *new_parent, **new_ptr_pp;
+++	unsigned long nr_leaves_on_tree;
+++	int keylen, slot, nr_free, next_slot, i;
+++
+++	pr_devel("-->%s()\n", __func__);
+++
+++	if (!array->root)
+++		return 0;
+++
+++	edit = kzalloc(sizeof(struct assoc_array_edit), GFP_KERNEL);
+++	if (!edit)
+++		return -ENOMEM;
+++	edit->array = array;
+++	edit->ops = ops;
+++	edit->ops_for_excised_subtree = ops;
+++	edit->set[0].ptr = &array->root;
+++	edit->excised_subtree = array->root;
+++
+++	new_root = new_parent = NULL;
+++	new_ptr_pp = &new_root;
+++	cursor = array->root;
+++
+++descend:
+++	/* If this point is a shortcut, then we need to duplicate it and
+++	 * advance the target cursor.
+++	 */
+++	if (assoc_array_ptr_is_shortcut(cursor)) {
+++		shortcut = assoc_array_ptr_to_shortcut(cursor);
+++		keylen = round_up(shortcut->skip_to_level, ASSOC_ARRAY_KEY_CHUNK_SIZE);
+++		keylen >>= ASSOC_ARRAY_KEY_CHUNK_SHIFT;
+++		new_s = kmalloc(sizeof(struct assoc_array_shortcut) +
+++				keylen * sizeof(unsigned long), GFP_KERNEL);
+++		if (!new_s)
+++			goto enomem;
+++		pr_devel("dup shortcut %p -> %p\n", shortcut, new_s);
+++		memcpy(new_s, shortcut, (sizeof(struct assoc_array_shortcut) +
+++					 keylen * sizeof(unsigned long)));
+++		new_s->back_pointer = new_parent;
+++		new_s->parent_slot = shortcut->parent_slot;
+++		*new_ptr_pp = new_parent = assoc_array_shortcut_to_ptr(new_s);
+++		new_ptr_pp = &new_s->next_node;
+++		cursor = shortcut->next_node;
+++	}
+++
+++	/* Duplicate the node at this position */
+++	node = assoc_array_ptr_to_node(cursor);
+++	new_n = kzalloc(sizeof(struct assoc_array_node), GFP_KERNEL);
+++	if (!new_n)
+++		goto enomem;
+++	pr_devel("dup node %p -> %p\n", node, new_n);
+++	new_n->back_pointer = new_parent;
+++	new_n->parent_slot = node->parent_slot;
+++	*new_ptr_pp = new_parent = assoc_array_node_to_ptr(new_n);
+++	new_ptr_pp = NULL;
+++	slot = 0;
+++
+++continue_node:
+++	/* Filter across any leaves and gc any subtrees */
+++	for (; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++		ptr = node->slots[slot];
+++		if (!ptr)
+++			continue;
+++
+++		if (assoc_array_ptr_is_leaf(ptr)) {
+++			if (iterator(assoc_array_ptr_to_leaf(ptr),
+++				     iterator_data))
+++				/* The iterator will have done any reference
+++				 * counting on the object for us.
+++				 */
+++				new_n->slots[slot] = ptr;
+++			continue;
+++		}
+++
+++		new_ptr_pp = &new_n->slots[slot];
+++		cursor = ptr;
+++		goto descend;
+++	}
+++
+++	pr_devel("-- compress node %p --\n", new_n);
+++
+++	/* Count up the number of empty slots in this node and work out the
+++	 * subtree leaf count.
+++	 */
+++	new_n->nr_leaves_on_branch = 0;
+++	nr_free = 0;
+++	for (slot = 0; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++		ptr = new_n->slots[slot];
+++		if (!ptr)
+++			nr_free++;
+++		else if (assoc_array_ptr_is_leaf(ptr))
+++			new_n->nr_leaves_on_branch++;
+++	}
+++	pr_devel("free=%d, leaves=%lu\n", nr_free, new_n->nr_leaves_on_branch);
+++
+++	/* See what we can fold in */
+++	next_slot = 0;
+++	for (slot = 0; slot < ASSOC_ARRAY_FAN_OUT; slot++) {
+++		struct assoc_array_shortcut *s;
+++		struct assoc_array_node *child;
+++
+++		ptr = new_n->slots[slot];
+++		if (!ptr || assoc_array_ptr_is_leaf(ptr))
+++			continue;
+++
+++		s = NULL;
+++		if (assoc_array_ptr_is_shortcut(ptr)) {
+++			s = assoc_array_ptr_to_shortcut(ptr);
+++			ptr = s->next_node;
+++		}
+++
+++		child = assoc_array_ptr_to_node(ptr);
+++		new_n->nr_leaves_on_branch += child->nr_leaves_on_branch;
+++
+++		if (child->nr_leaves_on_branch <= nr_free + 1) {
+++			/* Fold the child node into this one */
+++			pr_devel("[%d] fold node %lu/%d [nx %d]\n",
+++				 slot, child->nr_leaves_on_branch, nr_free + 1,
+++				 next_slot);
+++
+++			/* We would already have reaped an intervening shortcut
+++			 * on the way back up the tree.
+++			 */
+++			BUG_ON(s);
+++
+++			new_n->slots[slot] = NULL;
+++			nr_free++;
+++			if (slot < next_slot)
+++				next_slot = slot;
+++			for (i = 0; i < ASSOC_ARRAY_FAN_OUT; i++) {
+++				struct assoc_array_ptr *p = child->slots[i];
+++				if (!p)
+++					continue;
+++				BUG_ON(assoc_array_ptr_is_meta(p));
+++				while (new_n->slots[next_slot])
+++					next_slot++;
+++				BUG_ON(next_slot >= ASSOC_ARRAY_FAN_OUT);
+++				new_n->slots[next_slot++] = p;
+++				nr_free--;
+++			}
+++			kfree(child);
+++		} else {
+++			pr_devel("[%d] retain node %lu/%d [nx %d]\n",
+++				 slot, child->nr_leaves_on_branch, nr_free + 1,
+++				 next_slot);
+++		}
+++	}
+++
+++	pr_devel("after: %lu\n", new_n->nr_leaves_on_branch);
+++
+++	nr_leaves_on_tree = new_n->nr_leaves_on_branch;
+++
+++	/* Excise this node if it is singly occupied by a shortcut */
+++	if (nr_free == ASSOC_ARRAY_FAN_OUT - 1) {
+++		for (slot = 0; slot < ASSOC_ARRAY_FAN_OUT; slot++)
+++			if ((ptr = new_n->slots[slot]))
+++				break;
+++
+++		if (assoc_array_ptr_is_meta(ptr) &&
+++		    assoc_array_ptr_is_shortcut(ptr)) {
+++			pr_devel("excise node %p with 1 shortcut\n", new_n);
+++			new_s = assoc_array_ptr_to_shortcut(ptr);
+++			new_parent = new_n->back_pointer;
+++			slot = new_n->parent_slot;
+++			kfree(new_n);
+++			if (!new_parent) {
+++				new_s->back_pointer = NULL;
+++				new_s->parent_slot = 0;
+++				new_root = ptr;
+++				goto gc_complete;
+++			}
+++
+++			if (assoc_array_ptr_is_shortcut(new_parent)) {
+++				/* We can discard any preceding shortcut also */
+++				struct assoc_array_shortcut *s =
+++					assoc_array_ptr_to_shortcut(new_parent);
+++
+++				pr_devel("excise preceding shortcut\n");
+++
+++				new_parent = new_s->back_pointer = s->back_pointer;
+++				slot = new_s->parent_slot = s->parent_slot;
+++				kfree(s);
+++				if (!new_parent) {
+++					new_s->back_pointer = NULL;
+++					new_s->parent_slot = 0;
+++					new_root = ptr;
+++					goto gc_complete;
+++				}
+++			}
+++
+++			new_s->back_pointer = new_parent;
+++			new_s->parent_slot = slot;
+++			new_n = assoc_array_ptr_to_node(new_parent);
+++			new_n->slots[slot] = ptr;
+++			goto ascend_old_tree;
+++		}
+++	}
+++
+++	/* Excise any shortcuts we might encounter that point to nodes that
+++	 * only contain leaves.
+++	 */
+++	ptr = new_n->back_pointer;
+++	if (!ptr)
+++		goto gc_complete;
+++
+++	if (assoc_array_ptr_is_shortcut(ptr)) {
+++		new_s = assoc_array_ptr_to_shortcut(ptr);
+++		new_parent = new_s->back_pointer;
+++		slot = new_s->parent_slot;
+++
+++		if (new_n->nr_leaves_on_branch <= ASSOC_ARRAY_FAN_OUT) {
+++			struct assoc_array_node *n;
+++
+++			pr_devel("excise shortcut\n");
+++			new_n->back_pointer = new_parent;
+++			new_n->parent_slot = slot;
+++			kfree(new_s);
+++			if (!new_parent) {
+++				new_root = assoc_array_node_to_ptr(new_n);
+++				goto gc_complete;
+++			}
+++
+++			n = assoc_array_ptr_to_node(new_parent);
+++			n->slots[slot] = assoc_array_node_to_ptr(new_n);
+++		}
+++	} else {
+++		new_parent = ptr;
+++	}
+++	new_n = assoc_array_ptr_to_node(new_parent);
+++
+++ascend_old_tree:
+++	ptr = node->back_pointer;
+++	if (assoc_array_ptr_is_shortcut(ptr)) {
+++		shortcut = assoc_array_ptr_to_shortcut(ptr);
+++		slot = shortcut->parent_slot;
+++		cursor = shortcut->back_pointer;
+++		if (!cursor)
+++			goto gc_complete;
+++	} else {
+++		slot = node->parent_slot;
+++		cursor = ptr;
+++	}
+++	BUG_ON(!cursor);
+++	node = assoc_array_ptr_to_node(cursor);
+++	slot++;
+++	goto continue_node;
+++
+++gc_complete:
+++	edit->set[0].to = new_root;
+++	assoc_array_apply_edit(edit);
+++	array->nr_leaves_on_tree = nr_leaves_on_tree;
+++	return 0;
+++
+++enomem:
+++	pr_devel("enomem\n");
+++	assoc_array_destroy_subtree(new_root, edit->ops);
+++	kfree(edit);
+++	return -ENOMEM;
+++}
++-- 
++2.13.3
++
+diff --git a/patches/3.4/CVE-2016-8403.patch b/patches/3.4/CVE-2016-8403.patch
+new file mode 100644
+index 0000000..1e44fd2
+--- /dev/null
++++ b/patches/3.4/CVE-2016-8403.patch
+@@ -0,0 +1,119 @@
++From cbecea4e18e5e31a007f0d3f39be549535083f72 Mon Sep 17 00:00:00 2001
++From: Min Chong <mchong@google.com>
++Date: Tue, 11 Oct 2016 17:12:00 -0700
++Subject: [PATCH] usb: diag: change %p to %pK in debug messages
++
++The format specifier %p can leak kernel addresses
++while not valuing the kptr_restrict system settings.
++Use %pK instead of %p, which also evaluates whether
++kptr_restrict is set.
++
++Bug: 31495348
++Change-Id: I7392c2b444794234ebd685735566e7b4fa09c409
++Signed-off-by: Min Chong <mchong@google.com>
++---
++ drivers/usb/gadget/u_data_hsic.c | 22 +++++++++++-----------
++ 1 file changed, 11 insertions(+), 11 deletions(-)
++
++diff --git a/drivers/usb/gadget/u_data_hsic.c b/drivers/usb/gadget/u_data_hsic.c
++index 92653dbb8b8..df45994479c 100644
++--- a/drivers/usb/gadget/u_data_hsic.c
+++++ b/drivers/usb/gadget/u_data_hsic.c
++@@ -150,7 +150,7 @@ static int ghsic_data_alloc_requests(struct usb_ep *ep, struct list_head *head,
++ 	struct usb_request	*req;
++ 	unsigned long		flags;
++ 
++-	pr_debug("%s: ep:%s head:%p num:%d cb:%p", __func__,
+++	pr_debug("%s: ep:%s head:%pK num:%d cb:%pK", __func__,
++ 			ep->name, head, num, cb);
++ 
++ 	for (i = 0; i < num; i++) {
++@@ -266,7 +266,7 @@ static int ghsic_data_receive(void *p, void *data, size_t len)
++ 		return -ENOTCONN;
++ 	}
++ 
++-	pr_debug("%s: p:%p#%d skb_len:%d\n", __func__,
+++	pr_debug("%s: p:%pK#%d skb_len:%d\n", __func__,
++ 			port, port->port_num, skb->len);
++ 
++ 	spin_lock_irqsave(&port->tx_lock, flags);
++@@ -310,7 +310,7 @@ static void ghsic_data_write_tomdm(struct work_struct *w)
++ 	}
++ 
++ 	while ((skb = __skb_dequeue(&port->rx_skb_q))) {
++-		pr_debug("%s: port:%p tom:%lu pno:%d\n", __func__,
+++		pr_debug("%s: port:%pK tom:%lu pno:%d\n", __func__,
++ 				port, port->to_modem, port->port_num);
++ 
++ 		info = (struct timestamp_info *)skb->cb;
++@@ -418,7 +418,7 @@ static void ghsic_data_start_rx(struct gdata_port *port)
++ 	struct timestamp_info	*info;
++ 	unsigned int		created;
++ 
++-	pr_debug("%s: port:%p\n", __func__, port);
+++	pr_debug("%s: port:%pK\n", __func__, port);
++ 	if (!port)
++ 		return;
++ 
++@@ -475,7 +475,7 @@ static void ghsic_data_start_io(struct gdata_port *port)
++ 	struct usb_ep	*ep_out, *ep_in;
++ 	int		ret;
++ 
++-	pr_debug("%s: port:%p\n", __func__, port);
+++	pr_debug("%s: port:%pK\n", __func__, port);
++ 
++ 	if (!port)
++ 		return;
++@@ -527,7 +527,7 @@ static void ghsic_data_connect_w(struct work_struct *w)
++ 		!test_bit(CH_READY, &port->bridge_sts))
++ 		return;
++ 
++-	pr_debug("%s: port:%p\n", __func__, port);
+++	pr_debug("%s: port:%pK\n", __func__, port);
++ 
++ 	ret = data_bridge_open(&port->brdg);
++ 	if (ret) {
++@@ -725,7 +725,7 @@ static int ghsic_data_port_alloc(unsigned port_num, enum gadget_type gtype)
++ 
++ 	platform_driver_register(pdrv);
++ 
++-	pr_debug("%s: port:%p portno:%d\n", __func__, port, port_num);
+++	pr_debug("%s: port:%pK portno:%d\n", __func__, port, port_num);
++ 
++ 	return 0;
++ }
++@@ -834,14 +834,14 @@ int ghsic_data_connect(void *gptr, int port_num)
++ 
++ 	ret = usb_ep_enable(port->in);
++ 	if (ret) {
++-		pr_err("%s: usb_ep_enable failed eptype:IN ep:%p",
+++		pr_err("%s: usb_ep_enable failed eptype:IN ep:%pK",
++ 				__func__, port->in);
++ 		goto fail;
++ 	}
++ 
++ 	ret = usb_ep_enable(port->out);
++ 	if (ret) {
++-		pr_err("%s: usb_ep_enable failed eptype:OUT ep:%p",
+++		pr_err("%s: usb_ep_enable failed eptype:OUT ep:%pK",
++ 				__func__, port->out);
++ 		usb_ep_disable(port->in);
++ 		goto fail;
++@@ -917,7 +917,7 @@ static void dbg_timestamp(char *event, struct sk_buff * skb)
++ 	write_lock_irqsave(&dbg_data.lck, flags);
++ 
++ 	scnprintf(dbg_data.buf[dbg_data.idx], DBG_DATA_MSG,
++-		  "%p %u[%s] %u %u %u %u %u %u\n",
+++		  "%pK %u[%s] %u %u %u %u %u %u\n",
++ 		  skb, skb->len, event, info->created, info->rx_queued,
++ 		  info->rx_done, info->rx_done_sent, info->tx_queued,
++ 		  get_timestamp());
++@@ -991,7 +991,7 @@ static ssize_t ghsic_data_read_stats(struct file *file,
++ 		spin_lock_irqsave(&port->rx_lock, flags);
++ 		temp += scnprintf(buf + temp, DEBUG_DATA_BUF_SIZE - temp,
++ 				"\nName:           %s\n"
++-				"#PORT:%d port#:   %p\n"
+++				"#PORT:%d port#:   %pK\n"
++ 				"data_ch_open:	   %d\n"
++ 				"data_ch_ready:    %d\n"
++ 				"\n******UL INFO*****\n\n"
+diff --git a/patches/3.4/CVE-2016-8406.patch b/patches/3.4/CVE-2016-8406.patch
+new file mode 100644
+index 0000000..1ef8451
+--- /dev/null
++++ b/patches/3.4/CVE-2016-8406.patch
+@@ -0,0 +1,102 @@
++From d7a15270ad80aff21d09aaea9c0e98e03e541b50 Mon Sep 17 00:00:00 2001
++From: Min Chong <mchong@google.com>
++Date: Thu, 13 Oct 2016 17:15:35 -0700
++Subject: [PATCH] netfilter: Change %p to %pK in debug messages
++
++The format specifier %p can leak kernel addresses
++while not valuing the kptr_restrict system settings.
++Use %pK instead of %p, which also evaluates whether
++kptr_restrict is set.
++
++Bug: 31796940
++Change-Id: Ia2946d6b493126d68281f97778faf578247f088e
++Signed-off-by: Min Chong <mchong@google.com>
++---
++ net/netfilter/nf_conntrack_core.c | 20 ++++++++++----------
++ 1 file changed, 10 insertions(+), 10 deletions(-)
++
++diff --git a/net/netfilter/nf_conntrack_core.c b/net/netfilter/nf_conntrack_core.c
++index 1c118edd4b794..d9b86c2e96e24 100644
++--- a/net/netfilter/nf_conntrack_core.c
+++++ b/net/netfilter/nf_conntrack_core.c
++@@ -188,7 +188,7 @@ EXPORT_SYMBOL_GPL(nf_ct_invert_tuple);
++ static void
++ clean_from_lists(struct nf_conn *ct)
++ {
++-	pr_debug("clean_from_lists(%p)\n", ct);
+++	pr_debug("clean_from_lists(%pK)\n", ct);
++ 	hlist_nulls_del_rcu(&ct->tuplehash[IP_CT_DIR_ORIGINAL].hnnode);
++ 	hlist_nulls_del_rcu(&ct->tuplehash[IP_CT_DIR_REPLY].hnnode);
++ 
++@@ -203,7 +203,7 @@ destroy_conntrack(struct nf_conntrack *nfct)
++ 	struct net *net = nf_ct_net(ct);
++ 	struct nf_conntrack_l4proto *l4proto;
++ 
++-	pr_debug("destroy_conntrack(%p)\n", ct);
+++	pr_debug("destroy_conntrack(%pK)\n", ct);
++ 	NF_CT_ASSERT(atomic_read(&nfct->use) == 0);
++ 	NF_CT_ASSERT(!timer_pending(&ct->timeout));
++ 
++@@ -234,7 +234,7 @@ destroy_conntrack(struct nf_conntrack *nfct)
++ 	if (ct->master)
++ 		nf_ct_put(ct->master);
++ 
++-	pr_debug("destroy_conntrack: returning ct=%p to slab\n", ct);
+++	pr_debug("destroy_conntrack: returning ct=%pK to slab\n", ct);
++ 	nf_conntrack_free(ct);
++ }
++ 
++@@ -496,7 +496,7 @@ __nf_conntrack_confirm(struct sk_buff *skb)
++ 	/* No external references means no one else could have
++ 	   confirmed us. */
++ 	NF_CT_ASSERT(!nf_ct_is_confirmed(ct));
++-	pr_debug("Confirming conntrack %p\n", ct);
+++	pr_debug("Confirming conntrack %pK\n", ct);
++ 
++ 	spin_lock_bh(&nf_conntrack_lock);
++ 
++@@ -826,7 +826,7 @@ init_conntrack(struct net *net, struct nf_conn *tmpl,
++ 	spin_lock_bh(&nf_conntrack_lock);
++ 	exp = nf_ct_find_expectation(net, zone, tuple);
++ 	if (exp) {
++-		pr_debug("conntrack: expectation arrives ct=%p exp=%p\n",
+++		pr_debug("conntrack: expectation arrives ct=%pK exp=%pK\n",
++ 			 ct, exp);
++ 		/* Welcome, Mr. Bond.  We've been expecting you... */
++ 		__set_bit(IPS_EXPECTED_BIT, &ct->status);
++@@ -916,14 +916,14 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
++ 	} else {
++ 		/* Once we've had two way comms, always ESTABLISHED. */
++ 		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
++-			pr_debug("nf_conntrack_in: normal packet for %p\n", ct);
+++			pr_debug("nf_conntrack_in: normal packet for %pK\n", ct);
++ 			*ctinfo = IP_CT_ESTABLISHED;
++ 		} else if (test_bit(IPS_EXPECTED_BIT, &ct->status)) {
++-			pr_debug("nf_conntrack_in: related packet for %p\n",
+++			pr_debug("nf_conntrack_in: related packet for %pK\n",
++ 				 ct);
++ 			*ctinfo = IP_CT_RELATED;
++ 		} else {
++-			pr_debug("nf_conntrack_in: new packet for %p\n", ct);
+++			pr_debug("nf_conntrack_in: new packet for %pK\n", ct);
++ 			*ctinfo = IP_CT_NEW;
++ 		}
++ 		*set_reply = 0;
++@@ -1065,7 +1065,7 @@ void nf_conntrack_alter_reply(struct nf_conn *ct,
++ 	/* Should be unconfirmed, so not in hash table yet */
++ 	NF_CT_ASSERT(!nf_ct_is_confirmed(ct));
++ 
++-	pr_debug("Altering reply tuple of %p to ", ct);
+++	pr_debug("Altering reply tuple of %pK to ", ct);
++ 	nf_ct_dump_tuple(newreply);
++ 
++ 	ct->tuplehash[IP_CT_DIR_REPLY].tuple = *newreply;
++@@ -1640,7 +1640,7 @@ int nf_conntrack_init_net(struct net *net)
++ 		goto err_stat;
++ 	}
++ 
++-	net->ct.slabname = kasprintf(GFP_KERNEL, "nf_conntrack_%p", net);
+++	net->ct.slabname = kasprintf(GFP_KERNEL, "nf_conntrack_%pK", net);
++ 	if (!net->ct.slabname) {
++ 		ret = -ENOMEM;
++ 		goto err_slabname;

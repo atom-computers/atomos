@@ -1,0 +1,53 @@
+From 64ef5f3811adb12d3dd82293687855f6b24e95ee Mon Sep 17 00:00:00 2001
+From: Adrian Vovk <adrianvovk@gmail.com>
+Date: Tue, 8 Jul 2025 20:56:18 -0400
+Subject: [PATCH 2/4] Revert "main: Notify gnome-session when we're ready"
+
+This reverts commit 1747a59aa5d44f4d7b74e1f1fee1d48174a1ce5a.
+
+gnome-session is no longer a service manager, and thus doesn't need to
+be notified of our readiness like this. We now do this exclusively
+through systemd
+
+Part-of: <https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/3806>
+Signed-off-by: Achill Gilgenast <achill@achill.org>
+---
+ js/ui/main.js | 15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/js/ui/main.js b/js/ui/main.js
+index 6674bb20ca51..252cfef8c191 100644
+--- a/js/ui/main.js
++++ b/js/ui/main.js
+@@ -334,7 +334,6 @@ async function _initializeUI() {
+     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+         Shell.util_sd_notify();
+         global.context.notify_ready();
+-        _notifyGnomeSessionReady();
+         return GLib.SOURCE_REMOVE;
+     });
+ 
+@@ -399,20 +398,6 @@ async function _initializeUI() {
+     });
+ }
+ 
+-async function _notifyGnomeSessionReady() {
+-    try {
+-        let params = GLib.Variant.new('(ss)', ['org.gnome.Shell.desktop', '']);
+-        await Gio.DBus.session.call(
+-            'org.gnome.SessionManager',
+-            '/org/gnome/SessionManager',
+-            'org.gnome.SessionManager',
+-            'RegisterClient', params, null,
+-            Gio.DBusCallFlags.NONE, -1, null);
+-    } catch (e) {
+-        log(`Error notifying gnome-session that we're ready: ${e.message}`);
+-    }
+-}
+-
+ function _handleShowWelcomeScreen() {
+     const lastShownVersion = global.settings.get_string(WELCOME_DIALOG_LAST_SHOWN_VERSION);
+     if (Util.GNOMEversionCompare(WELCOME_DIALOG_LAST_TOUR_CHANGE, lastShownVersion) > 0) {
+-- 
+2.53.0
+

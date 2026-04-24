@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy A52s 5G"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-a52sxq"
+deviceinfo_year="2021"
+deviceinfo_dtb="a52sxq"
+deviceinfo_arch="aarch64"
+
+# Data from bootimg_analyze
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_header_version="3"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+
+# From Porting guide
+deviceinfo_rootfs_image_sector_size="4096"

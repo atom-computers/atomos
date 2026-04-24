@@ -1,0 +1,43 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-beelink-gt1
+pkgver=5
+pkgrel=0
+pkgdesc="Beelink gt1 (Ultimate)"
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base u-boot-amlogic-beelink-gt1 soc-amlogic-aarch64 linux-postmarketos-amlogic"
+makedepends="devicepkg-dev"
+provides="$pkgname-kernel-amlogic=$pkgver-r$pkgrel $pkgname-kernel-alpine=$pkgver-r$pkgrel"
+replaces="$pkgname-kernel-amlogic=$pkgver-r$pkgrel $pkgname-kernel-alpine=$pkgver-r$pkgrel"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	asound.state
+	deviceinfo kernel-cmdline.amlogic.conf kernel-cmdline.alpine.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/asound.state \
+		"$pkgdir"/var/lib/alsa/asound.state
+}
+
+nonfree_firmware() {
+	pkgdesc="Beelink gt1 Firmware"
+	depends="firmware-beelink-gt1 linux-firmware-meson"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+a38e33d5bce26549c73f9aad2988ef8d7e7a3bbb28ac37348545fe7edb935be1b51dbdf8a857fb9d49be7e6eab7d40ac2f11fdcd618487747b809f7236ccf57b  asound.state
+ebd4eadeba93f857d9b0ae25dc2a87b22ff819d3578ee3f0116a8502db048eaaf14c43f9829f22c0acf25c8441cad01b6cf10bc601bea7d04ff337f87e377ee1  deviceinfo
+cf9d03ab06004b4629bde4eff29028ffb07edc512a08c397f773dc49bed1aa2aead46496333c530f51bc10b653eb3ac706966cbc86997cdc37c7518b24acc368  kernel-cmdline.amlogic.conf
+cf9d03ab06004b4629bde4eff29028ffb07edc512a08c397f773dc49bed1aa2aead46496333c530f51bc10b653eb3ac706966cbc86997cdc37c7518b24acc368  kernel-cmdline.alpine.conf
+52948c2884a6f6384e12b7a598f70878526d0d3293c214425170145231144ec7de805c038641741a4a5d75b50e554f6a3fa3769784a674217ed032f9b6a233c8  modules-initfs
+"

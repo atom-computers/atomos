@@ -1,0 +1,12 @@
+Patch description to silence apkbuild linter
+--- msm8937/drivers/iommu/arm-smmu.c	2020-03-20 21:37:03.859877919 -0400
++++ msm8937/drivers/iommu/arm-smmu.c	2020-03-20 21:39:30.947875693 -0400
+@@ -2824,7 +2824,7 @@
+ 		}
+ 
+ 		cfg->num_streamids = 1;
+-		ret = msm_pcie_configure_sid(dev, &sid, &tmp);
++		ret = 1; //msm_pcie_configure_sid(dev, &sid, &tmp);
+ 		if (ret) {
+ 			dev_err(dev,
+ 				"Couldn't configure SID through PCI-e driver: %d\n",

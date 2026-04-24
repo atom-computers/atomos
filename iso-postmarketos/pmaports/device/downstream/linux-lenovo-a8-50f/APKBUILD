@@ -1,0 +1,81 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lcsh8735_6tb_a8_l_defconfig
+
+pkgname=linux-lenovo-a8-50f
+pkgver=3.10.65
+pkgrel=0
+pkgdesc="Lenovo TAB 2 A8-50F kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lenovo-a8-50f"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	gcc6
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+
+# Source
+_repository="linux-lenovo-a8-50f"
+_commit="b214410c2654a9c33b90e88047dd2564dc38d402"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Oreeeee/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	fix-check-lxdialog.patch
+	0001-Add-netfilter-headers-and-files.patch
+	0002-Adjust-paths-to-firmware-blobs.patch
+	0003-Remove-mmap-capability-from-mt_soc_pcm_dl1-audio-dri.patch
+	0004-Pregenerate-DrvGen-s-output.patch
+	0005-Remove-explicit-cross-compiler-setting.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		KCFLAGS="-std=gnu89 -Wno-error -Wno-unused-function -Wno-strict-prototypes -Wno-return-type -Wno-discarded-qualifiers"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+0e11b69e348d8fe1c4e814dcf3c80638e26beb2d289f07796197179fc6b1e5ef4805afa01556d55e035c993ea97fa2663c84d8aad9555158c8b71e69e422ffe2  linux-lenovo-a8-50f-b214410c2654a9c33b90e88047dd2564dc38d402.tar.gz
+96019c052b3d919019b7a977dc1d941f4767b92ccf72faed2916aa058355d35cb60dee7cae618eb0c8145dd4a813f422d60d2b81f5ac314d5f4f451a1727ee2e  config-lenovo-a8-50f.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+9b3cfb101fc0b3518f04a4f29b4b51db3cd5f7e8ac71248d9369da731965310f19d199116f7e557893295a55924a60bff3b70d483d77ca22c37747af3f45f84f  0001-Add-netfilter-headers-and-files.patch
+f17807eb52fe3b72f80c98b31aa6a5a7571b84b43b0b4cb8407c7302860449c57493d40ea1107874f5a3f45d2dbcb544efdaee6bc8e5f318cab03999ea356615  0002-Adjust-paths-to-firmware-blobs.patch
+e800f0a6482d1da5361d4e918cfeb9043b8b260344492c9c61388d3421389e58a59ca0c79ac7388617bbc4612908046320a7865d1853cb4bef4edbdb5d4c86ad  0003-Remove-mmap-capability-from-mt_soc_pcm_dl1-audio-dri.patch
+c9314708aedd729e032c4de3d783e5559dbf247372a4a5d27ea0f3ec38273c355b6ca8cb9ffa2288610ffa4840899597952f46484283fddd19b9ed8668762d7f  0004-Pregenerate-DrvGen-s-output.patch
+ff69caf75aacfc500fcec0de28c19edc82b9513b3eae8058b975b23315c134065e65a82fd37925afeaf4be29a527107d84ff85b7fe9d4d078db2803a6c6d0b76  0005-Remove-explicit-cross-compiler-setting.patch
+"

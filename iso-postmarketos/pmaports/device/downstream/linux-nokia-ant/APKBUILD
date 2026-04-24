@@ -1,0 +1,92 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ANT_defconfig
+
+pkgname=linux-nokia-ant
+pkgver=4.14.186
+pkgrel=0
+pkgdesc="HMD Global Nokia 1 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="nokia-ant"
+url="https://nokiaphones-opensource.azureedge.net/download/phones/Nokia1Plus_V3.13B_OSS.tar.bz2"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	android-tools
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	gcompat
+	linux-headers
+	openssl-dev
+	perl
+	xz
+"
+
+# Source: backup of https://nokiaphones-opensource.azureedge.net/download/phones/Nokia1Plus_V3.13B_OSS.tar.bz2
+_repository="linux-nokia-ant"
+_commit="f34b871adebfd992293dc385640efeec8aaa92e4"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/halamix2/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-check-lxdialog.patch
+	fix-assembly-flags.patch
+	float-division.patch
+	double-definiton.patch
+	inline-functions.patch
+	fix-dtb-generation.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+
+	# Remove -Werror from all makefiles
+	local i
+	local makefiles="$(find . -type f -name Makefile)"
+	for i in $makefiles; do
+		sed -i 's/-Werror-/-W/g' "$i"
+		sed -i 's/-Werror//g' "$i"
+	done
+
+
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	make modules_install dtbs_install \
+		O="$_outdir" \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+	mv "$pkgdir"/boot/dtbs/mt6739.dtb "$pkgdir"/boot/dtbs/mt6739.dtb.orig
+	mkdtboimg create "$pkgdir"/boot/dtbs/mt6739.dtb "$pkgdir"/boot/dtbs/mt6739.dtb.orig
+	rm "$pkgdir"/boot/dtbs/mt6739.dtb.orig
+}
+
+sha512sums="
+9ff6976ebb12c056efe2944afa0fedcc0bc78a3b50a6e0556a0c9acf6051511b29c90307c4a9c36044870f7daac46ac168a9fd5d48a8252a4d33220254e7ee37  linux-nokia-ant-f34b871adebfd992293dc385640efeec8aaa92e4.tar.gz
+c1abfd2c5c16600a90b2960fc7a0a80658913f80d19fa8bbb1aa1c7782e56854e92a9631f3f109fe5cd1e74b233189808b5680a07a50d09855d625e34e71d0b2  config-nokia-ant.armv7
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+ab05f64fb8335e3470359dfcf7e11bf545e7800b350cf19ee722c714f2072cb3ebbd898717eeac98de745bd71926285be349188fd8c9d65b9c73197cb1e93ff7  fix-assembly-flags.patch
+b2b351e861de81004238897a181ec687e7d2e51b43021ec4be319b99c8e6c1e64ebe8c80ad46f49a53f79185fff72db17336c1b5e4e53123967560f2c23693cd  float-division.patch
+61a533dc854469a9ef25a6ce6df9e35342688c27927592e3ea9d2cee262dcf342953fb071e9c623577f42e84bd108cb56745ec6ec3ee9c28c91e8fde8d3373b3  double-definiton.patch
+9d799b4fabe1965bc547a50e3962a7cf2325b020a5ce800f7812e5358ba345a9727f30e55d8cf1107a346d8edf53350facf5c318d1c8fe851c3aa45a760d7697  inline-functions.patch
+a7df8f35a946f68120fa9165089477b56e36458472fe5f5e3305093a91eede2aac36845bf20876886db9956e4c4f65c851f286089860efef86fc0fce3f3906cb  fix-dtb-generation.patch
+"

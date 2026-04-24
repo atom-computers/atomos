@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jan Paszkowski <janmpaszkowski@proton.me>"
+pkgname=device-sony-pdx215
+pkgdesc="Sony Xperia 1 III"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-sony-pdx215
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-qbootctl
+"
+
+makedepends="devicepkg-dev"
+_pmb_recommends="
+	firmware-sony-pdx215
+	linux-firmware-qca
+	linux-firmware-qcom
+"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+9c7bc283666f2d35f0939180e004de70b6b648dbd039d7356f8fb9be86abf12e52dabaebbcb95610b7edf483e4e94d9ea6131650b11584f3371f082e5e279efd  deviceinfo
+"

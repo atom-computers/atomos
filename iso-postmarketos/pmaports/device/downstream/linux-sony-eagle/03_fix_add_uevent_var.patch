@@ -1,0 +1,29 @@
+From dec4cfa22eee1a74f4a5a5c50cafc8056f308d4b Mon Sep 17 00:00:00 2001
+From: Jiangli Yuan <a6808c@motorola.com>
+Date: Thu, 3 Jul 2014 03:39:12 +0800
+Subject: [PATCH] kobject: Fix "add_uevent_var: too many keys" warn.
+
+ Double the UEVENT_NUM_ENVP to 64 to fix the "too many keys" warn.
+
+Signed-off-by: Jiangli Yuan <a6808c@motorola.com>
+Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+---
+ include/linux/kobject.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/linux/kobject.h b/include/linux/kobject.h
+index 939b11268c86..e96b2d868230 100644
+--- a/include/linux/kobject.h
++++ b/include/linux/kobject.h
+@@ -28,7 +28,7 @@
+ #include <linux/atomic.h>
+ 
+ #define UEVENT_HELPER_PATH_LEN		256
+-#define UEVENT_NUM_ENVP			32	/* number of env pointers */
++#define UEVENT_NUM_ENVP			64	/* number of env pointers */
+ #define UEVENT_BUFFER_SIZE		2048	/* buffer for the variables */
+ 
+ /* path to the userspace helper executed on an event */
+-- 
+2.24.1
+

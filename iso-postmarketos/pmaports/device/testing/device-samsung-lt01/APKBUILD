@@ -1,0 +1,78 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=device-samsung-lt01
+pkgdesc="Samsung Galaxy Tab 3 8.0"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	mkbootimg
+	postmarketos-base
+	"
+_pmb_recommends="$pkgname-nonfree-firmware"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-kernel-wifi:kernel_wifi
+	$pkgname-kernel-3g:kernel_3g
+	$pkgname-kernel-lte:kernel_lte
+"
+source="
+	deviceinfo
+	ucm/TAB3.conf
+	ucm/HiFi.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	_tab3_audio_dir="$pkgdir/usr/share/alsa/ucm2/conf.d/TAB3"
+
+	# Alsa UCM configs
+	install -Dm644 "$srcdir"/TAB3.conf \
+		-t "$_tab3_audio_dir"
+	install -Dm644 "$srcdir"/HiFi.conf \
+		-t "$_tab3_audio_dir"
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi, Bluetooth, MFC firmware"
+	depends="
+		firmware-samsung-lt01-bluetooth
+		firmware-samsung-lt01-wifi
+		linux-firmware-s5p-mfc
+		"
+	mkdir "$subpkgdir"
+}
+
+kernel_wifi() {
+	pkgdesc="WiFi variant (SM-T310)"
+	depends="linux-postmarketos-exynos4"
+	devicepkg_subpackage_kernel "$startdir" "$pkgname" "$subpkgname"
+}
+
+kernel_3g() {
+	pkgdesc="3G variant (SM-T311)"
+	depends="linux-postmarketos-exynos4"
+	devicepkg_subpackage_kernel "$startdir" "$pkgname" "$subpkgname"
+}
+
+kernel_lte() {
+	pkgdesc="LTE variant (SM-T315)"
+	depends="linux-postmarketos-exynos4"
+	devicepkg_subpackage_kernel "$startdir" "$pkgname" "$subpkgname"
+}
+
+sha512sums="
+7aeb6ecb81eb06d26da769ae19c1d96dc05dd067d1c4abbf910b4700a8118a575c94c3ff9a61c661c19c2a5e69cf172b58466bcde9f8cdbecc3c5a7f141cd23c  deviceinfo
+caa81e8ab6753c0ca24c22fb6742288765dfbf2469b8b8c35c5789edfcee546ef1c3b14ad6e540c417f434258399300f17d312b58157635eafab134587ef94cc  TAB3.conf
+fc3610233f53a6e44491b2337b18bbfd42bb2f70d3f3aa70044449505ab12e91c582aa0c248fed28fe2017f4e9eaebac299545aa80117388d31409634a5f8e38  HiFi.conf
+"

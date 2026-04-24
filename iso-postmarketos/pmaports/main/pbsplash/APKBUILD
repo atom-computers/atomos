@@ -1,0 +1,28 @@
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=pbsplash
+pkgdesc="postmarketOS boot splash screen"
+pkgver=0.3.1
+pkgrel=1
+url="https://git.sr.ht/~calebccff/pbsplash"
+arch="all"
+options="!check" # no testsuite
+license="GPL-3.0"
+source="$pkgname-$pkgver.tar.gz::https://git.sr.ht/~calebccff/pbsplash/archive/$pkgver.tar.gz"
+makedepends="meson tfblib linux-headers"
+
+build() {
+	abuild-meson . output
+	meson compile ${JOBS:+-j ${JOBS}} -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+	touch pbsplash
+	install -Dm644 pbsplash \
+		"$pkgdir"/usr/share/mkinitfs-triggers/pbsplash
+
+}
+
+sha512sums="
+2e0cca120b97c67d23befc996d6888c80ec9b90e64b98c80a6473b4117f89bf23538737a385b7e7392456185e21ae58afe19d3399535aed67c7152146f7f452a  pbsplash-0.3.1.tar.gz
+"

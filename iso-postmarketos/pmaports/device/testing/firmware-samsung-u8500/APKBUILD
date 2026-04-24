@@ -1,0 +1,27 @@
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
+pkgname=firmware-samsung-u8500
+pkgver=2
+pkgrel=1
+pkgdesc="Firmware for Samsung Galaxy devices based on ST-Ericsson U8500"
+url="https://github.com/evokelektrique/samsung-u8500"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="32362bbb61aac3e48d5e30d7ae506a31204469c0"
+source="https://github.com/evokelektrique/samsung-u8500/archive/$_commit.tar.gz"
+builddir="$srcdir/samsung-u8500-$_commit/brcm"
+replaces="firmware-samsung-golden"
+
+_fwdir="/lib/firmware/postmarketos/brcm"
+_files="BCM4330B1.hcd BCM4330B1.samsung,codina.hcd BCM4330B1.samsung,gavini.hcd BCM4330B1.samsung,janice.hcd BCM4334B0.hcd BCM4334B0.samsung,golden.hcd BCM4334B0.samsung,kyle.hcd BCM4334B0.samsung,skomer.hcd brcmfmac4330-sdio.bin brcmfmac4330-sdio.samsung,codina.bin brcmfmac4330-sdio.samsung,codina.txt brcmfmac4330-sdio.samsung,gavini.bin brcmfmac4330-sdio.samsung,gavini.txt brcmfmac4330-sdio.samsung,janice.bin brcmfmac4330-sdio.samsung,janice.txt brcmfmac4334-sdio.bin brcmfmac4334-sdio.samsung,golden.bin brcmfmac4334-sdio.samsung,golden.txt brcmfmac4334-sdio.samsung,kyle.bin brcmfmac4334-sdio.samsung,kyle.txt brcmfmac4334-sdio.samsung,skomer.bin brcmfmac4334-sdio.samsung,skomer.txt"
+
+package() {
+	mkdir -p "$pkgdir/$_fwdir"
+	for file in $_files; do
+		install -m644 "$file" "$pkgdir/$_fwdir"
+	done
+}
+
+sha512sums="
+b1aa65ba9f772dbb519892fcc5115cf1526199d36060d02aad83855f3a32f241c720500c6975937aec2a522c917dc09cd68163d0c9daf8bdab537a48baefd914  32362bbb61aac3e48d5e30d7ae506a31204469c0.tar.gz
+"

@@ -1,0 +1,27 @@
+maintainer="exkc <exxxxkc@getgoogleoff.me>"
+pkgname=firmware-radxa-zero
+pkgver=1
+pkgrel=0
+pkgdesc="Broadcom firmware for Radxa Zero"
+url="https://github.com/armbian/firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="e2c95c9994b87d28e517495a9a52f0b3f634bcf9"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	mkdir -p "$pkgdir"
+	cd "$srcdir/firmware-$_commit"
+	install -Dm644 brcm/brcmfmac43456-sdio.bin -t "$pkgdir/$_fwdir"/brcm
+	install -Dm644 brcm/brcmfmac43456-sdio.clm_blob -t "$pkgdir/$_fwdir"/brcm
+	install -Dm644 brcm/brcmfmac43456-sdio.txt -t "$pkgdir/$_fwdir"/brcm
+	install -Dm644 brcm/BCM4345C5.hcd -t "$pkgdir/$_fwdir"/brcm
+}
+
+sha512sums="
+296c6e96a42d01d883669fef9ccfffe4b4bf1e3192e8182023a132b0cfc2b063377c3db90af1944a50f575bdfddae4ef1797dc5a98b4424f6cdc1ea3a657367f  firmware-radxa-zero-e2c95c9994b87d28e517495a9a52f0b3f634bcf9.tar.gz
+"

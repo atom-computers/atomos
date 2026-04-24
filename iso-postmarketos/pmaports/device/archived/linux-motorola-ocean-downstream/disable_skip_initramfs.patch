@@ -1,0 +1,27 @@
+From a865df5045656fc9f7ebeaf77f5b417f0d2b9249 Mon Sep 17 00:00:00 2001
+From: Erfan Abdi <erfangplus@gmail.com>
+Date: Mon, 16 Mar 2020 04:20:23 +0330
+Subject: [PATCH] init: initramfs: disable do_skip_initramfs
+Body: Additional info(added by gavodavo): On Android AB devices, this
+option is set to 1 because in there it doesn't really need the ramdisk,
+so it boots directly into the /system partition. We need this
+ramdisk on Linux though, so we need to disable the skipping.
+
+Change-Id: Ic2ef95f803f49cb6779966ed5175b34782e1db64
+---
+ init/initramfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init/initramfs.c b/init/initramfs.c
+index bf3af10c500a..858631138dd0 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -613,7 +613,7 @@ static int __init skip_initramfs_param(char *str)
+ {
+ 	if (*str)
+ 		return 0;
+-	do_skip_initramfs = 1;
++	do_skip_initramfs = 0;
+ 	return 1;
+ }
+ __setup("skip_initramfs", skip_initramfs_param);

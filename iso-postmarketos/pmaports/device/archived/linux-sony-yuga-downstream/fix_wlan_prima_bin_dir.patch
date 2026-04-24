@@ -1,0 +1,25 @@
+From b1e8176d056d0e85f78e37d6ee31b9751efd3f8b Mon Sep 17 00:00:00 2001
+From: Georg Veichtlbauer <georg.veichtlbauer@gmail.com>
+Date: Mon, 2 May 2016 11:54:02 +0200
+Subject: [PATCH] Revert "driver: prima: load patched firmware"
+
+This reverts commit 31b78d424c38d9e832ded513b30bd2afd33e16d8.
+
+Change-Id: I056a402192b216176b374fceeedd9219bc20b0d8
+---
+ drivers/staging/prima/CORE/VOSS/inc/wlan_hdd_misc.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/prima/CORE/VOSS/inc/wlan_hdd_misc.h b/drivers/staging/prima/CORE/VOSS/inc/wlan_hdd_misc.h
+index 48924d69f5b..570a96f65ad 100644
+--- a/drivers/staging/prima/CORE/VOSS/inc/wlan_hdd_misc.h
++++ b/drivers/staging/prima/CORE/VOSS/inc/wlan_hdd_misc.h
+@@ -47,7 +47,7 @@
+ #define WLAN_INI_FILE              "wlan/prima/WCNSS_qcom_cfg.ini"
+ #define WLAN_CFG_FILE              "wlan/prima/WCNSS_cfg.dat"
+ #define WLAN_FW_FILE               ""
+-#define WLAN_NV_FILE               "../../../data/misc/wifi/prima/WCNSS_qcom_wlan_nv.bin"
++#define WLAN_NV_FILE               "wlan/prima/WCNSS_qcom_wlan_nv.bin"
+ #define WLAN_COUNTRY_INFO_FILE     "wlan/prima/WCNSS_wlan_country_info.dat"
+ #define WLAN_HO_CFG_FILE           "wlan/prima/WCNSS_wlan_ho_config"
+ #else

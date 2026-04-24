@@ -1,0 +1,64 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/milito_defconfig
+maintainer="Augustas Stankevicius <augustas.stankevicius@gmail.com>"
+pkgname=linux-xiaomi-monet
+pkgver=4.19.325
+pkgrel=0
+pkgdesc="Xiaomi Mi 10 Lite 5G kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-monet"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	findutils
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	xz
+"
+
+export CC="clang"
+export HOSTCC="clang"
+
+_repository="android_kernel_xiaomi_sm7250"
+_commit="bf6ad6ec272d0d25c35ec41dcd0a02129638ce28"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+}
+
+sha512sums="
+b1a22324eae5cf1fe745321858b43901e6f8be8a3382492c8f55ab65b1c9ba53de0624c590867771807b3393281b45e5a0fc799c7c03b40b9f255011b8feeb11  linux-xiaomi-monet-bf6ad6ec272d0d25c35ec41dcd0a02129638ce28.tar.gz
+b3a6006636fc3b697744adefa47930d13c94e6eb675daf4ee7e2fcedfcf1386d687466e093adb1234e01d9fc8d08ba1b13f346a8c3666d4d100843b1fd345265  config-xiaomi-monet.aarch64
+"

@@ -1,0 +1,22 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Apple iPhone X (Global)"
+deviceinfo_manufacturer="Apple"
+deviceinfo_codename="apple-d22"
+deviceinfo_year="2017"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_getty="ttySAC0;115200"
+deviceinfo_rootfs_image_sector_size="4096"
+deviceinfo_screen_width="1125"
+deviceinfo_screen_height="2346"
+
+# Bootloader decompresses initfs while running at low CPU frequency
+deviceinfo_create_initfs_extra="true"
+
+# Bootloader related

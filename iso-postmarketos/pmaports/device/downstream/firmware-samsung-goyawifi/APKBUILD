@@ -1,0 +1,37 @@
+pkgname=firmware-samsung-goyawifi
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Samsung T110 (goyawifi)"
+url="https://github.com/T110-pmOS/marvell_firmware_sd8777"
+arch="armv7"
+license="custom:proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Sources
+_commit="f2fb533f70b6f9bcf89d170a9822f8035b357024"
+source="$pkgname-$_commit.tar.gz::https://github.com/T110-pmOS/marvell_firmware_sd8777/archive/$_commit.tar.gz"
+builddir="$srcdir/marvell_firmware_sd8777-$_commit/"
+
+package() {
+	# Wi-Fi & BT firmware
+	install -Dm644 "$builddir"/SDIO8777_SDIO_SDIO.bin \
+		"$pkgdir"/lib/firmware/postmarketos/mrvl/SDIO8777_SDIO_SDIO.bin
+	install -Dm644 "$builddir"/sd8777_uapsta.bin \
+		"$pkgdir"/lib/firmware/postmarketos/mrvl/sd8777_uapsta.bin
+
+	# Firmware configuration
+	install -Dm644 "$builddir"/WlanCalData_ext.conf \
+		"$pkgdir"/lib/firmware/postmarketos/mrvl/WlanCalData_ext.conf
+	install -Dm644 "$builddir"/bt_cal_data.conf \
+		"$pkgdir"/lib/firmware/postmarketos/mrvl/bt_cal_data.conf
+	install -Dm644 "$builddir"/bt_init_cfg.conf \
+		"$pkgdir"/lib/firmware/postmarketos/mrvl/bt_init_cfg.conf
+	install -Dm644 "$builddir"/cal_data.conf \
+		"$pkgdir"/lib/firmware/postmarketos/mrvl/cal_data.conf
+	install -Dm644 "$builddir"/reg_alpha2 \
+		"$pkgdir"/lib/firmware/postmarketos/mrvl/reg_alpha2
+}
+
+sha512sums="
+e1b5f4e136a775d309fb2edf8d6734f0f6442e361b8b6db67b7688cb8bbb02f4c2a945d31f137f77ebdb1de2942c7439a0008a0b6d650f1d531841e148243c2a  firmware-samsung-goyawifi-f2fb533f70b6f9bcf89d170a9822f8035b357024.tar.gz
+"

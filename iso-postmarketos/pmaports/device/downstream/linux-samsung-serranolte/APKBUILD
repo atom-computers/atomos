@@ -1,0 +1,62 @@
+# Kernel config based on: arch/arm/configs/{samsung_serrano_defconfig, msm8930_serrano_eur_lte_defconfig}
+
+pkgname=linux-samsung-serranolte
+pkgver=3.4.113
+pkgrel=4
+pkgdesc="Samsung Samsung Galaxy S4 Mini kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-serranolte"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_msm8930-common"
+_commit="c4b753a5d44f42cee2191ecf5504bccdf53c838d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_msm-fix-perf_trace_counters.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_fix-video-argb-setting.patch
+	04_usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+7ce3621f50e0c615795eed17fa5178ba2d2c3165b9267f80f088305f8cb591c704129d841cb4c82496f185a59669dccf61b527dbf21b548a923bdb96b666dc2d  linux-samsung-serranolte-c4b753a5d44f42cee2191ecf5504bccdf53c838d.tar.gz
+0adc8f464d3b96484bb6a1e1282d8d6ae804a1ccddcbbccf09491c5c385dc23500940147532ebe59b3bd5bf3bcec32a89a5843ae0b2ec7f9bd824e99e4b08118  config-samsung-serranolte.armv7
+f85ced49ee2f2461adea68dac0a10452aa809a7d41d869092d94eb085344919a9a385dec0c48011f4601ca4f441700f7fe49075c7eca4fb2d66b01f7d413ccb7  01_msm-fix-perf_trace_counters.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+e3083c260ed9c4fc0d83f43106700b6173876dbfae072f6e6696ac6785a4dc17771fbcb3e21601e04ed29a11bf0f7a2a09ad549375e0c34cea245c7f2e2bcbbd  03_fix-video-argb-setting.patch
+27f890cf82027649ba742b606a87ce6a82f9685b075bb7b50bffec77221e70434ee78d118d39048350537c5ecdad208658967e492eeeb997e7f6884fa78ac696  04_usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

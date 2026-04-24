@@ -1,0 +1,47 @@
+# Archived: Downstream port, only for testing. Use mainline port (qcom-msm89x7)!
+# Reference: <https://postmarketos.org/vendorkernel>
+
+pkgname=linux-nokia-panther-downstream
+pkgver=4.9.186
+pkgrel=0
+pkgdesc="Nokia 4.2 Kernel (Downstream)"
+arch="aarch64"
+_carch="arm64"
+_flavor="nokia-panther"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev dtc flex openssl-dev perl linux-headers"
+
+# Source
+_repository="nokia_4.2_kernel"
+_commit="7eb6784e9116b3f4008a18d5740005d0d788f120"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/garethppls/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	export DTC_EXT=dtc
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+
+sha512sums="
+f903fa4fb6c4f79e9bcc61f332ccc90746a3339bc3a3b2cf60e3ac47799362b99da9fa3ae89b74c8fc5271e00fc7fa887fb9af3b9c3ae5f7153371348c970b6a  linux-nokia-panther-downstream-7eb6784e9116b3f4008a18d5740005d0d788f120.tar.gz
+85ffb4ed3dd0b5a75c15d9299b3289bc33a3d788b9a79585dee542000b9b52dca73f5bfece958478938a541435de89d8a64ac15784f6186645047de46be01283  config-nokia-panther.aarch64
+"

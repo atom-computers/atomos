@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Autologin on tty1, let busybox autoconfigure 2-6
+autologin="$(getent passwd 10000 | cut -d ":" -f 1)"
+for i in 1 2 3 4 5 6; do
+	old="^tty$i::respawn:/sbin/getty 38400 tty$i"
+	new="# tty$i::respawn:/sbin/getty 38400 tty$i"
+	[ "$i" == "1" ] && new="tty1::respawn:/bin/login -f $autologin"
+	sed -i -e "s.$old.$new.g" /etc/inittab
+done

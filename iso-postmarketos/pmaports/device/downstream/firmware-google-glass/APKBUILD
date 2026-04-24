@@ -1,0 +1,42 @@
+pkgname=firmware-google-glass
+pkgver=1
+pkgrel=1
+pkgdesc="Google Glass Firmware"
+url="https://github.com/GlassHack/firmware"
+arch="armhf"
+license="proprietary"
+options="!check !strip !tracedeps pmb:cross-native"
+
+# Source
+_commit="43eda88c424fdca5c7712af7ff5cbed5a43dfbca"
+
+_url_base="https://github.com/GlassHack/firmware/raw/$_commit"
+
+source="
+	$_commit-NVM2::$_url_base/firmware/NVM2
+	$_commit-bcm4330.hcd::$_url_base/firmware/bcm4330.hcd
+	$_commit-ducati-m3-core0-2gb.xem3::$_url_base/firmware/ducati-m3-core0-2gb.xem3
+	$_commit-ducati-m3-core0.xem3::$_url_base/firmware/ducati-m3-core0.xem3
+	$_commit-fw_bcmdhd.bin::$_url_base/firmware/fw_bcmdhd.bin
+	$_commit-glasshub.s19::$_url_base/firmware/glasshub.s19
+	$_commit-tesla-dsp.xe64T::$_url_base/firmware/tesla-dsp.xe64T
+	$_commit-bcmdhd.cal::$_url_base/calibration/bcmdhd.cal
+"
+
+package() {
+	for filename in NVM2 bcm4330.hcd ducati-m3-core0-2gb.xem3 \
+		ducati-m3-core0.xem3 fw_bcmdhd.bin glasshub.s19 \
+		tesla-dsp.xe64T bcmdhd.cal
+	do
+		install -Dm644 "$srcdir/$_commit-$filename" \
+			"$pkgdir/lib/firmware/postmarketos/$filename"
+	done
+}
+sha512sums="d2d2449e6e5a8ffc1e4752bd7836bb3b8f7b7f8bef16d3caffbdb2a0cc4e414de58c6b1475f1c7e08389a3a4c731ed5940e7438193cc00238a781c7bb0ebe8f3  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-NVM2
+0b207cd8de13466fa811cca2df6bb537a51db1754bd81a1c84a6b77abf2af5e5c27fc4f49f1e66333320822c86d5a281c3619f72d0ace5de06da3b2c520b49e1  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-bcm4330.hcd
+bb6493899a52c51a0ce53c6fdb73ac1909772deb2154532bcd5f87bddb92bfc35d382a73b4b95050baf531e48dbf24e5b1879f712a47d09e20bba083cfb00783  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-ducati-m3-core0-2gb.xem3
+0d4dbb4e488dfb62be7100d12fb9888452a9a02476a54c796299ea9f52a56bdf5559fdc7f133c8f966792ef930c576c5615ea594c8474cb3f0a888126666353f  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-ducati-m3-core0.xem3
+6195facf1f0c37eb15ea479011ce88c6d64c88626970de344fce8f10e17667d7ec7aee79df7e98e9f62cfd56fbb3d45069d97fe3fee4605bdab75ab5e86cc3bc  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-fw_bcmdhd.bin
+6b53128e54a94ef6e465a81c51e61aef4fec5f6b2354597e4a9395017dc36adc8444c7f6f0b1266c5ab5b2e11c438d0d8e1b673d3e4b903882bac7e3bd7cd726  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-glasshub.s19
+4acb3b64dcbdee6f641cbf242c4e7ee0092f43a720c7ba565bee53d48969f30c672d892c510f2430f52907e8031c88914702e8cd01d3abbdd8150b93d7d8a1ee  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-tesla-dsp.xe64T
+4b3f7b0a8a424d12471004b23098e7c58bd408cabf8b5b7c8118aef2f945d126b4633daafdd1b6d6eb618fec958257abb72545a2952068b7e6514ccca0c0d228  43eda88c424fdca5c7712af7ff5cbed5a43dfbca-bcmdhd.cal"

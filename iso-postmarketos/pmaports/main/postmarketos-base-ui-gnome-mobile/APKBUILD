@@ -1,0 +1,36 @@
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=postmarketos-base-ui-gnome-mobile
+pkgver=1
+pkgrel=2
+pkgdesc="Meta package for shared configuration for GNOME Mobile and Phosh UIs"
+url="https://postmarketos.org"
+# armhf: postmarketos-tweaks-setting-definitions -> phosh-mobile-settings
+arch="noarch !armhf"
+license="GPL-3.0-or-later"
+depends="
+	postmarketos-base-ui-gnome
+	"
+source="
+	20-volume-keys-input.rules
+	"
+options="!check"
+
+_pmb_recommends="
+	calls
+	chatty
+	mobile-config-firefox
+	postmarketos-tweaks-setting-definitions
+	ttyescape
+"
+
+package() {
+	mkdir -p "$pkgdir"
+	install -Dm644 "$srcdir"/20-volume-keys-input.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/20-volume-keys-input.rules
+}
+
+sha512sums="
+767a85bf3ad83b5edaa98add07f960bcaae9c48ee75533ae8b216aa73c453fc928ae599b2598d6c630968dd48314d3bec554c00eda57e9ae99895589430b4399  20-volume-keys-input.rules
+"

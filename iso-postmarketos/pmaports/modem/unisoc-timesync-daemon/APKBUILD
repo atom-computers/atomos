@@ -1,0 +1,43 @@
+maintainer="Affe Null <affenull2345@gmail.com>"
+pkgname=unisoc-timesync-daemon
+pkgver=0_git20250619
+_commit="5b137db011231e0f9dfa3d3d23aebadb30700806"
+pkgrel=2
+pkgdesc="NV item daemon for Unisoc modems"
+url="https://git.abscue.de/linux-mainlining/unisoc-timesync-daemon"
+arch="aarch64"
+license="BSD-3-Clause"
+subpackages="$pkgname-openrc $pkgname-systemd"
+source="$url/-/archive/$_commit/unisoc-timesync-daemon-$_commit.tar.gz
+	unisoc-timesync-daemon.initd
+	90-unisoc-timesync-daemon.preset
+	"
+options="!check" # no tests
+builddir="$srcdir/unisoc-timesync-daemon-$_commit"
+
+build() {
+	gcc -o unisoc-timesync-daemon unisoc-timesync-daemon.c
+}
+
+package() {
+	install -Dm755 unisoc-timesync-daemon -t "$pkgdir"/usr/sbin
+
+	install -Dm755 "$srcdir"/unisoc-timesync-daemon.initd \
+		"$pkgdir"/etc/init.d/unisoc-timesync-daemon
+
+	install -Dm644 "$builddir"/unisoc-timesync-daemon.service \
+		-t "$pkgdir"/usr/lib/systemd/system
+	install -Dm644 "$srcdir"/90-unisoc-timesync-daemon.preset \
+		-t "$pkgdir"/usr/lib/systemd/system-preset
+}
+
+openrc() {
+	install="$subpkgname.post-install"
+	default_openrc
+}
+
+sha512sums="
+be4297461d482fd3acf739804c1fe5a7cef840c3b329cf11bf691f434b2a4d8ebdc4093934cb1eed3e781ce65861f0b103258a76c46816a211fa78a8aaae3a37  unisoc-timesync-daemon-5b137db011231e0f9dfa3d3d23aebadb30700806.tar.gz
+492fe8d8da7b9578bd0cd552a2cdbaf219590770cacbe42acff967a534be150957252f96a5b5cc93995ebade25f233ccb214b285ff2f3740f901d4bea9aa94bb  unisoc-timesync-daemon.initd
+c85fa86de3499ee3144c6e18e8c88a359a99a9c5d7e1c5104c23c9daab375306130d55858cfe8a70e7d2da317eb4eee6ac09ea3c5b07a7cef63cb3b5d7158fc2  90-unisoc-timesync-daemon.preset
+"

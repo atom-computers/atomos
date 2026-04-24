@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-oneplus-bacon
+pkgver=10
+pkgrel=0
+pkgdesc="OnePlus One"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	firmware-oneplus-bacon-adsp
+	firmware-oneplus-bacon-modem
+	firmware-oneplus-bacon-wcnss
+	firmware-qcom-adreno-a330
+	linux-postmarketos-qcom-msm8974
+	lk2nd-msm8974
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8974
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+93f303831bcc54666edd522afb0ad7d1ceb51f610a8bb165be8e78858fb30bf1af31033ff71dd498fda5556ef63d147efa0267baa8aeefa50f70c26c04577f3d  deviceinfo
+ba352ba64f8c81fc984281d94c1418ba83ad00812631061b48765068c64887bffc653c8806abc0b9eb83067cdd4b0274d9252c72e86dac8bc595f47de31252bb  kernel-cmdline.conf
+fd639faebbee2c0c2c227710678376e0d039b7d96a62103f7ba7e6304d7060023f09064918e93a125465d20d125c0334225680521a7aeae5a43d77d7360c180c  modules-initfs
+"

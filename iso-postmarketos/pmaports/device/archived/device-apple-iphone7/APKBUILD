@@ -1,0 +1,27 @@
+# Archived: Replaced by apple-idevice
+
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jonas Heinrich <onny@project-insanity.org>"
+pkgname=device-apple-iphone7
+pkgdesc="Apple iPhone 7"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-apple-iphone7"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+1c91367a815f8d9c3cc295af21928175d792607a37704bf99b7af8e73a00a9a91842cb2c98e16b9216962bf946f1947469d7432bac04710cf2397225ead68741  deviceinfo
+"

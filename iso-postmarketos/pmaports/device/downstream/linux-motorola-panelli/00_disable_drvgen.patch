@@ -1,0 +1,37 @@
+diff --git a/Makefile b/Makefile
+index 1ad63f5..af7a7c0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1494,13 +1494,13 @@ image_name:
+ 	@echo $(KBUILD_IMAGE)
+ 
+ # Clear a bunch of variables before executing the submake
+-tools/: FORCE
+-	$(Q)mkdir -p $(objtree)/tools
+-	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/
++#tools/: FORCE
++#	$(Q)mkdir -p $(objtree)/tools
++#	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/
+ 
+-tools/%: FORCE
+-	$(Q)mkdir -p $(objtree)/tools
+-	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/ $*
++#tools/%: FORCE
++#	$(Q)mkdir -p $(objtree)/tools
++#	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/ $*
+ 
+ # Single targets
+ # ---------------------------------------------------------------------------
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index 2fe43be..845dcd1 100644
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -300,7 +300,7 @@ MTK_PROJECT := $(CONFIG_ARCH_MTK_PROJECT:"%"=%)
+ export MTK_PLATFORM MTK_PROJECT MTK_TARGET_PROJECT
+ KBUILD_CPPFLAGS += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ KBUILD_CPPFLAGS += -I$(srctree)/arch/arm/mach-mediatek/include/
+--include $(srctree)/scripts/drvgen/drvgen.mk
++#-include $(srctree)/scripts/drvgen/drvgen.mk
+ archprepare: $(DRVGEN_FILE_LIST)
+ dtbs: $(DRVGEN_FILE_LIST)
+ 

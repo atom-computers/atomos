@@ -1,0 +1,15 @@
+diff --git a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -197,11 +197,6 @@
+ CROSS_COMPILE   ?= ../PLATFORM/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+ #CROSS_COMPILE   ?= /opt/toolchains/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+ 
+-ifeq ($(shell uname -s),Linux)
+-  ifeq ($(shell uname -m),x86_64)
+-    override CROSS_COMPILE	:= $(srctree)/../../../prebuilts/linaro/linux-x86/aarch64/bin/aarch64-linux-gnu-
+-  endif
+-endif
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)

@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Martin Kunze <kunzemartin5@gmail.com>"
+pkgname=device-zte-v0720
+pkgdesc="ZTE Blade V7 Lite"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-zte-v0720
+	postmarketos-base
+	mkbootimg
+"
+makedepends="devicepkg-dev android-tools"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+e4dff4cdf2db218917ef084c1fea72a6a77d46f4069d0e184e2fc9d4dc914adb922bf2adc7a138edbe67dd7900ba5ef18862976b0b713a6381e8a944fd415c96  deviceinfo
+4426432f1f71b3c371fc7bea4c3b3cf8070b5a076e64466c22fd3417b27d33c4f3f7592cb3636395e4445d2ab1b19f4962933a8c59438e0d983dc9d68687e07e  kernel-cmdline.conf
+"

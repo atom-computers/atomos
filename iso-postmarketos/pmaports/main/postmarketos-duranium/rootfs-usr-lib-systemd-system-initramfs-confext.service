@@ -1,0 +1,15 @@
+[Unit]
+Description=Merge confext images into sysroot /etc
+ConditionPathExists=/etc/initrd-release
+ConditionDirectoryNotEmpty=|/sysroot/usr/lib/confexts
+ConditionDirectoryNotEmpty=|/sysroot/var/lib/confexts
+RequiresMountsFor=/sysroot/usr
+After=initrd-root-fs.target
+Before=initrd-fs.target initrd-parse-etc.service
+
+[Service]
+Type=oneshot
+ExecStart=systemd-confext --mutable=yes --root=/sysroot refresh
+
+[Install]
+WantedBy=initrd.target

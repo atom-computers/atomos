@@ -1,0 +1,41 @@
+This patch was found at https://github.com/LineageOS/android_kernel_samsung_universal7580
+From 9e05ad50d4d9c63ec149ee4f8d902e84a1077000 Mon Sep 17 00:00:00 2001
+From: Apavayan Sinha <info@apavayan.com>
+Date: Sun, 24 Jul 2016 15:51:34 +0530
+Subject: [PATCH] drivers: media: fix compiling
+
+Signed-off-by: Apavayan Sinha <info@apavayan.com>
+---
+ drivers/media/platform/exynos/fimc-is2/Makefile             | 2 +-
+ .../media/platform/exynos/fimc-is2/hardware/api/Makefile    | 6 ++++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/media/platform/exynos/fimc-is2/hardware/api/Makefile
+
+diff --git a/drivers/media/platform/exynos/fimc-is2/Makefile b/drivers/media/platform/exynos/fimc-is2/Makefile
+index 6d95fe1e5fd..116e6112ade 100644
+--- a/drivers/media/platform/exynos/fimc-is2/Makefile
++++ b/drivers/media/platform/exynos/fimc-is2/Makefile
+@@ -33,7 +33,7 @@ obj-$(CONFIG_VIDEO_EXYNOS_FIMC_IS) += fimc-is.o
+ obj-$(CONFIG_VIDEO_EXYNOS_FIMC_IS) += sensor/
+ obj-$(CONFIG_VIDEO_EXYNOS_FIMC_IS) += ischain/
+ obj-$(CONFIG_VIDEO_EXYNOS_FIMC_IS) += vendor/
+-obj-$(CONFIG_USE_HOST_FD_LIBRARY) += hardware/api/fimc-is-api-fd.o
++obj-$(CONFIG_USE_HOST_FD_LIBRARY) += hardware/api/
+ 
+ EXTRA_CFLAGS += -Idrivers/media/platform/exynos/fimc-is2
+ EXTRA_CFLAGS += -Idrivers/media/platform/exynos/fimc-is2/include
+diff --git a/drivers/media/platform/exynos/fimc-is2/hardware/api/Makefile b/drivers/media/platform/exynos/fimc-is2/hardware/api/Makefile
+new file mode 100644
+index 00000000000..6baa7336c69
+--- /dev/null
++++ b/drivers/media/platform/exynos/fimc-is2/hardware/api/Makefile
+@@ -0,0 +1,6 @@
++obj-$(CONFIG_USE_HOST_FD_LIBRARY) += fimc-is-api-fd.o
++
++EXTRA_CFLAGS += -Idrivers/media/platform/exynos/fimc-is2
++EXTRA_CFLAGS += -Idrivers/media/platform/exynos/fimc-is2/include
++EXTRA_CFLAGS += -Idrivers/media/platform/exynos/fimc-is2/vendor
++EXTRA_CFLAGS += -Idrivers/media/platform/exynos/fimc-is2/hardware/api
+-- 
+2.32.0
+

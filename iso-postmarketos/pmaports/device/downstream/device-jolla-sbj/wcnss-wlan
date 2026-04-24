@@ -1,0 +1,2 @@
+# configure sleep time before activating wifi as client
+wcnssdelay=1

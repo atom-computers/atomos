@@ -1,0 +1,12 @@
+--- a/net/ipv6/addrconf.c	2022-02-08 08:17:30.000000000 +0300
++++ b/net/ipv6/addrconf.c	2024-08-06 00:58:50.314960285 +0300
+@@ -2125,6 +2125,9 @@
+ 	 * - If < 0, put routes into table dev->ifindex + (-rt_table).
+ 	 */
+ 	struct inet6_dev *idev = in6_dev_get(dev);
++	if (!idev) {
++		return 0;
++	}
+ 	u32 table;
+ 	int sysctl = idev->cnf.accept_ra_rt_table;
+ 	if (sysctl == 0) {

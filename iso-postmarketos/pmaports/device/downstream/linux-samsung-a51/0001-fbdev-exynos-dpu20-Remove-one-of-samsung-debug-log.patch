@@ -1,0 +1,44 @@
+From 6aeec5b9d57036a00984e45daa89630628e7e3a3 Mon Sep 17 00:00:00 2001
+From: map220v <map220v300@gmail.com>
+Date: Sat, 16 Jan 2021 16:21:16 +0300
+Subject: [PATCH] fbdev: exynos: dpu20: Remove one of samsung debug log
+
+This seems to fix, or at least reduce, random kernel panic.
+
+[hm: Reword commit message]
+Signed-off-by: Hendra Manudinata <manoedinata@gmail.com>
+---
+ drivers/video/fbdev/exynos/dpu20/dpp_drv.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/fbdev/exynos/dpu20/dpp_drv.c b/drivers/video/fbdev/exynos/dpu20/dpp_drv.c
+index 1ded5e85cb..40a1cf8464 100644
+--- a/drivers/video/fbdev/exynos/dpu20/dpp_drv.c
++++ b/drivers/video/fbdev/exynos/dpu20/dpp_drv.c
+@@ -20,7 +20,7 @@
+ #include "dpp.h"
+ #include "decon.h"
+ 
+-int dpp_log_level = 6;
++int dpp_log_level = 0;
+ 
+ struct dpp_device *dpp_drvdata[MAX_DPP_CNT];
+ 
+@@ -40,10 +40,10 @@ void dpp_op_timer_handler(unsigned long arg)
+ 
+ 	dpp_dump(dpp);
+ 
+-	if (dpp->dpp_config->config.compression)
+-		dpp_info("Compression Source is %s of DPP[%d]\n",
+-			dpp->dpp_config->config.dpp_parm.comp_src == DPP_COMP_SRC_G2D ?
+-			"G2D" : "GPU", dpp->id);
++	//if (dpp->dpp_config->config.compression)
++	//	dpp_info("Compression Source is %s of DPP[%d]\n",
++	//		dpp->dpp_config->config.dpp_parm.comp_src == DPP_COMP_SRC_G2D ?
++	//		"G2D" : "GPU", dpp->id);
+ 
+ 	dpp_info("DPP[%d] irq hasn't been occured", dpp->id);
+ }
+-- 
+2.34.1
+

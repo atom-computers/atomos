@@ -1,0 +1,56 @@
+diff --git a/include/mach/charging.h b/include/mach/charging.h
+index a6c2a4cb..49379bba 100644
+--- a/include/mach/charging.h
++++ b/include/mach/charging.h
+@@ -43,12 +43,13 @@
+ #define BAT_LOG_CRTI 1
+ #define BAT_LOG_FULL 2
+ 
+-#define battery_xlog_printk(num, fmt, args...) \
+-  do { \
+-    if (Enable_BATDRV_LOG >= (int)num) { \
+-      pr_notice(fmt, ##args); \
+-    } \
+-  } while (0)
++//#define battery_xlog_printk(num, fmt, args...) \
++//  do { \
++//    if (Enable_BATDRV_LOG >= (int)num) { \
++//      pr_notice(fmt, ##args); \
++//    } \
++//  } while (0)
++#define battery_xlog_printk(num, fmt, args...) do {} while (0)
+ 
+ 
+ /* ============================================================ */
+diff --git a/drivers/power/mediatek/battery_common.c b/drivers/power/mediatek/battery_common.c
+index 92228b5d..6c3d42cd 100755
+--- a/drivers/power/mediatek/battery_common.c
++++ b/drivers/power/mediatek/battery_common.c
+@@ -2789,10 +2789,10 @@ void mt_battery_GetBatteryData(void)
+ 	if (g_battery_soc_ready == KAL_FALSE)
+ 		g_battery_soc_ready = KAL_TRUE;
+ 
+-	pr_notice("AvgVbat=(%d),bat_vol=(%d),AvgI=(%d),I=(%d),VChr=(%d),AvgT=(%d),T=(%d),pre_SOC=(%d),SOC=(%d),ZCV=(%d)\n",
+-			BMT_status.bat_vol, bat_vol, BMT_status.ICharging, ICharging,
+-			BMT_status.charger_vol, BMT_status.temperature, temperature,
+-			previous_SOC, BMT_status.SOC, BMT_status.ZCV);
++//	pr_notice("AvgVbat=(%d),bat_vol=(%d),AvgI=(%d),I=(%d),VChr=(%d),AvgT=(%d),T=(%d),pre_SOC=(%d),SOC=(%d),ZCV=(%d)\n",
++//			BMT_status.bat_vol, bat_vol, BMT_status.ICharging, ICharging,
++//			BMT_status.charger_vol, BMT_status.temperature, temperature,
++//			previous_SOC, BMT_status.SOC, BMT_status.ZCV);
+ 
+ 
+ }
+diff --git a/drivers/power/mediatek/linear_charging.c b/drivers/power/mediatek/linear_charging.c
+index c3bf6a0c..2dd6e5ba 100644
+--- a/drivers/power/mediatek/linear_charging.c
++++ b/drivers/power/mediatek/linear_charging.c
+@@ -310,7 +310,7 @@ static void mtk_ta_vchr_select(int i,int ta_v_chr_candidate[], int ta_charging_c
+ 
+ 	current_vchr = battery_meter_get_charger_voltage();
+ 	if(ta_current_level != 5000 && current_vchr >= 4900) {	/* pattern error before, so reset vchr to 5V */
+-		battery_xlog_printk(BAT_LOG_CRTI, "mtk_ta_vchr_select() : curr_VChr=%d, ta_current_level=%d\n",current_vchr,ta_current_level);
++//		battery_xlog_printk(BAT_LOG_CRTI, "mtk_ta_vchr_select() : curr_VChr=%d, ta_current_level=%d\n",current_vchr,ta_current_level);
+ 
+ 		mtk_ta_reset_vchr();
+ 	}

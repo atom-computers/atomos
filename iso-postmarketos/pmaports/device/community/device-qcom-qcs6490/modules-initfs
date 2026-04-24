@@ -1,0 +1,13 @@
+ax88179_178a
+display-connector
+gpio-sbu-mux
+lontium-lt9611
+mii
+msm
+nvme
+r8169
+realtek
+rtc-ds1307
+simple-bridge
+usbnet
+xhci-pci-renesas

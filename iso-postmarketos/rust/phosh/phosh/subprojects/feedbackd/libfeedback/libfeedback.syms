@@ -1,0 +1,6 @@
+LIBFEEDBACK_0_0_0 {
+	global:
+		lfb_*;
+	local:
+		*;
+};

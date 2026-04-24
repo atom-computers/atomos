@@ -1,0 +1,346 @@
+From 7eb61f15ce600cd647b33d28b86cb0e15eca3f3d Mon Sep 17 00:00:00 2001
+From: Jan Paszkowski <janmpaszkowski@proton.me>
+Date: Fri, 27 Feb 2026 12:53:09 +0100
+Subject: [PATCH] Sagami DTS patch with panel
+
+---
+ .../qcom/sm8350-sony-xperia-sagami-pdx214.dts |  13 +-
+ .../qcom/sm8350-sony-xperia-sagami-pdx215.dts |  41 +++++
+ .../dts/qcom/sm8350-sony-xperia-sagami.dtsi   | 160 ++++++++++++++++--
+ 3 files changed, 197 insertions(+), 17 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx214.dts b/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx214.dts
+index e6824c8c2774..d92af88fb4c0 100644
+--- a/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx214.dts
++++ b/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx214.dts
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause
+ /*
+  * Copyright (c) 2021, Konrad Dybcio <konrad.dybcio@somainline.org>
++ * Copyright (c) 2025, Marijn Suijten <marijn.suijten@somainline.org>
+  */
+ 
+ /dts-v1/;
+@@ -12,10 +13,14 @@ / {
+ 	compatible = "sony,pdx214-generic", "qcom,sm8350";
+ };
+ 
+-&framebuffer {
+-	width = <1080>;
+-	height = <2520>;
+-	stride = <(1080 * 4)>;
++// &framebuffer {
++// 	width = <1080>;
++// 	height = <2520>;
++// 	stride = <(1080 * 4)>;
++// };
++
++&panel {
++	compatible = "samsung,ana6707-amb650yl01";
+ };
+ 
+ &pm8350b_gpios {
+diff --git a/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx215.dts b/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx215.dts
+index c6f402c3ef35..e2d895bb1d0f 100644
+--- a/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx215.dts
++++ b/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami-pdx215.dts
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause
+ /*
+  * Copyright (c) 2021, Konrad Dybcio <konrad.dybcio@somainline.org>
++ * Copyright (c) 2025, Marijn Suijten <marijn.suijten@somainline.org>
+  */
+ 
+ /dts-v1/;
+@@ -67,6 +68,46 @@ slg51000_a_ldo7: ldo7 {
+ 	};
+ };
+ 
++&mdss_dsi0 {
++	qcom,dual-dsi-mode;
++	qcom,sync-dual-dsi;
++	qcom,master-dsi;
++};
++
++&mdss_dsi1 {
++	/* DSI1 is slave, so use DSI0 clocks */
++	assigned-clock-parents = <&mdss_dsi0_phy 0>,
++				 <&mdss_dsi0_phy 1>;
++	vdda-supply = <&pm8350_l6>;
++	qcom,dual-dsi-mode;
++	qcom,sync-dual-dsi;
++	status = "okay";
++};
++
++&mdss_dsi1_out {
++	remote-endpoint = <&panel_in_1>;
++	data-lanes = <0 1 2 3>;
++};
++
++&mdss_dsi1_phy  {
++	vdds-supply = <&pm8350_l5>;
++	status = "okay";
++};
++
++&panel {
++	compatible = "samsung,ana6707-amb650yl01";
++};
++
++&panel_ports {
++	port@1 {
++		reg = <1>;
++
++		panel_in_1: endpoint {
++			remote-endpoint = <&mdss_dsi1_out>;
++		};
++	};
++};
++
+ &pm8350b_gpios {
+ 	gpio-line-names = "CAM_PWR_A_CS", /* GPIO_1 */
+ 			  "NC",
+diff --git a/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami.dtsi b/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami.dtsi
+index 7ae1eb0a7cce..283a3069904d 100644
+--- a/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami.dtsi
++++ b/arch/arm64/boot/dts/qcom/sm8350-sony-xperia-sagami.dtsi
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause
+ /*
+  * Copyright (c) 2021, Konrad Dybcio <konrad.dybcio@somainline.org>
++ * Copyright (c) 2025, Marijn Suijten <marijn.suijten@somainline.org>
+  */
+ 
+ #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+@@ -38,11 +39,27 @@ framebuffer: framebuffer@e1000000 {
+ 			stride = <(1096 * 4)>;
+ 			format = "a8r8g8b8";
+ 			/*
+-			 * That's (going to be) a lot of clocks, but it's necessary due
++			 * That's a lot of clocks, but it's necessary due
+ 			 * to unused clk cleanup & no panel driver yet
+ 			 */
+ 			clocks = <&gcc GCC_DISP_HF_AXI_CLK>,
+ 				 <&gcc GCC_DISP_SF_AXI_CLK>;
++			// clocks =
++			// 	 <&dispcc DISP_CC_MDSS_AHB_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_BYTE0_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_BYTE0_INTF_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_BYTE1_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_BYTE1_INTF_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_ESC0_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_ESC1_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_MDP_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_PCLK0_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_PCLK1_CLK>,
++			// 	 <&dispcc DISP_CC_MDSS_VSYNC_CLK>,
++			// 	 <&gcc GCC_DISP_HF_AXI_CLK>,
++			// 	 <&gcc GCC_DISP_SF_AXI_CLK>;
++			// power-domains = <&dispcc MDSS_GDSC>, <&rpmhpd RPMHPD_MMCX>;
+ 		};
+ 	};
+ 
+@@ -104,6 +121,20 @@ ramoops@ffc00000 {
+ 		};
+ 	};
+ 
++	vreg_vddr: vddr-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "vddr";
++		/* Unknown voltage ranges.. :( */
++		/* Bootloader splash mandates it's on at boot */
++		regulator-boot-on;
++		regulator-always-on;
++		gpio = <&tlmm 154 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-0 = <&disp_vddr_en>;
++		pinctrl-names = "default";
++	};
++
+ 	vph_pwr: vph-pwr-regulator {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vph_pwr";
+@@ -115,10 +146,10 @@ vph_pwr: vph-pwr-regulator {
+ 	};
+ };
+ 
+-&adsp {
+-	status = "okay";
+-	firmware-name = "qcom/sm8350/Sony/sagami/adsp.mbn";
+-};
++// &adsp {
++// 	status = "okay";
++// 	firmware-name = "qcom/sm8350/Sony/sagami/adsp.mbn";
++// };
+ 
+ &apps_rsc {
+ 	regulators-0 {
+@@ -468,9 +499,25 @@ pmr735a_l7: ldo7 {
+ 	};
+ };
+ 
+-&cdsp {
++// &cdsp {
++// 	status = "okay";
++// 	firmware-name = "qcom/sm8350/Sony/sagami/cdsp.mbn";
++// };
++
++&gpi_dma0 {
+ 	status = "okay";
+-	firmware-name = "qcom/sm8350/Sony/sagami/cdsp.mbn";
++};
++
++&gpi_dma1 {
++	status = "okay";
++};
++
++&gpu {
++	status = "okay";
++
++	zap-shader {
++		firmware-name = "qcom/sm8350/Sony/sagami/a660_zap.mbn";
++	};
+ };
+ 
+ &i2c1 {
+@@ -485,6 +532,18 @@ &i2c4 {
+ 	clock-frequency = <400000>;
+ 
+ 	/* Samsung Touchscreen (needs I2C GPI DMA) @ 48 */
++	touchscreen@48 {
++		compatible = "samsung,s6sy761";
++		reg = <0x48>;
++		interrupt-parent = <&tlmm>;
++		interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
++		// vdd-supply = <&pm8350c_l2>;
++		// avdd-supply = <&pm8350c_l3>;
++
++		pinctrl-names = "default";
++		// pinctrl-0 = <&ts_reset_default &ts_int_default>;
++		pinctrl-0 = <&ts_int_default>;
++	};
+ };
+ 
+ &i2c11 {
+@@ -559,11 +618,63 @@ &ipa {
+ 	status = "okay";
+ };
+ 
+-&mpss {
++&mdss {
++	status = "okay";
++};
++
++&mdss_dsi0 {
++	vdda-supply = <&pm8350_l6>;
++	status = "okay";
++
++	panel: panel@0 {
++		reg = <0>;
++
++		reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
++
++		vci-supply = <&pm8350c_l13>;
++		// tsvddh-supply = <&pm8350c_l3>;
++		tsio-supply = <&pm8350c_l2>;
++		vddio-supply = <&pm8350c_l12>;
++		vddr-supply = <&vreg_vddr>;
++		// ab-supply = <&ab>;
++		// ibb-supply = <&ibb>;
++
++		pinctrl-0 = <&disp_reset_n &disp_vsync_active>;
++		pinctrl-names = "default";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		panel_ports: ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++
++				panel_in_0: endpoint {
++					remote-endpoint = <&mdss_dsi0_out>;
++				};
++			};
++		};
++	};
++};
++
++&mdss_dsi0_out {
++	remote-endpoint = <&panel_in_0>;
++	data-lanes = <0 1 2 3>;
++};
++
++&mdss_dsi0_phy {
++	vdds-supply = <&pm8350_l5>;
+ 	status = "okay";
+-	firmware-name = "qcom/sm8350/Sony/sagami/modem.mbn";
+ };
+ 
++// &mpss {
++// 	status = "okay";
++// 	firmware-name = "qcom/sm8350/Sony/sagami/modem.mbn";
++// };
++
+ &pm8350_gpios {
+ 	gpio-line-names = "ASSIGN1_THERM", /* GPIO_1 */
+ 			  "LCD_ID",
+@@ -655,10 +766,10 @@ &sdhc_2 {
+ 	status = "okay";
+ };
+ 
+-&slpi {
+-	status = "okay";
+-	firmware-name = "qcom/sm8350/Sony/sagami/slpi.mbn";
+-};
++// &slpi {
++// 	status = "okay";
++// 	firmware-name = "qcom/sm8350/Sony/sagami/slpi.mbn";
++// };
+ 
+ &spi14 {
+ 	status = "okay";
+@@ -879,6 +990,21 @@ ts_int_default: ts-int-default-state {
+ 		bias-disable;
+ 	};
+ 
++	disp_reset_n: disp-reset-n-state {
++		pins = "gpio24";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++		output-high;
++	};
++
++	disp_vsync_active: disp-vsync-active-state {
++		pins = "gpio82";
++		function = "mdp_vsync";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
+ 	sdc2_card_det_active: sd-card-det-active-state {
+ 		pins = "gpio92";
+ 		function = "gpio";
+@@ -892,6 +1018,14 @@ sdc2_card_det_sleep: sd-card-det-sleep-state {
+ 		drive-strength = <2>;
+ 		bias-disable;
+ 	};
++
++	disp_vddr_en: disp-vddr-en-state {
++		pins = "gpio154";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++		output-high;
++	};
+ };
+ 
+ /* BIG WARNING! DO NOT TOUCH UFS, YOUR DEVICE WILL DIE! */
+-- 
+2.53.0
+

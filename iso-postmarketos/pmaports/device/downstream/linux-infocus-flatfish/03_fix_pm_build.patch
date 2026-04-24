@@ -1,0 +1,21 @@
+gen_check_code crashes so we need to use the old cp method.
+---
+diff --git a/arch/arm/mach-sun6i/pm/standby/Makefile b/arch/arm/mach-sun6i/pm/standby/Makefile
+index d7208dd9bfc..aefac0d5741 100755
+--- a/arch/arm/mach-sun6i/pm/standby/Makefile
++++ b/arch/arm/mach-sun6i/pm/standby/Makefile
+@@ -134,8 +134,7 @@ resume1:
+ 
+ 	rm -rf *.o ../*.o
+ 
+-	#cp resume1.bin ./super/resume/resume1.code
+-	./gen_check_code ./resume1.bin ./super/resume/resume1.code 
++	cp resume1.bin ./super/resume/resume1.code
+ 	
+ 	@echo ----------------------------------------
+ 	@echo well done!
+@@ -143,4 +142,3 @@ resume1:
+ 
+ clean:
+ 	-rm *.o *.map *.lst *.bin *.elf *.exe dram/*.o
+-

@@ -1,0 +1,23 @@
+# Archived: Kernel does not build anymore
+maintainer="ky0ko <ky0ko@disroot.org>"
+pkgname=firmware-motorola-def
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for Motorola One Hyper"
+url="https://github.com/goshhhy/motorola-def-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+# Sources
+_commit="8575cc1ad407a37126beb625a7d53581af02cfb4"
+source="https://github.com/goshhhy/motorola-def-firmware/archive/$_commit.tar.gz"
+
+package() {
+	cd "$srcdir/motorola-def-firmware-$_commit/files"
+	for _i in *; do
+		install -Dm644 $_i "$pkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+sha512sums="eb9840066863775a2d4edd06849438be41cfa765b557bab30d3ef69b1c1d715ec67b876d4dff18a7fb29a6aaeccab78702da3ce137876e087f162bf669b68766  8575cc1ad407a37126beb625a7d53581af02cfb4.tar.gz"

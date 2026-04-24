@@ -1,0 +1,48 @@
+maintainer=""
+pkgname=firmware-lenovo-a6020
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for Lenovo Vibe K5"
+url="https://github.com/ArrowOS-Devices/android_vendor_lenovo_A6020"
+subpackages="$pkgname-wcnss-nv:wcnss_nv $pkgname-venus:venus"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="pil-squasher"
+_repository="android_vendor_lenovo_A6020"
+_commit="66b5f6663ab52bb4ad7b38eb5a55deefb9af83f3"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+builddir="$srcdir/$_repository-$_commit/proprietary/etc/firmware"
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	# venus.mbn exists already but seems a bit different
+	cp variant/A6020a40/venus.b01 venus.b01
+	cp variant/A6020a40/venus.mdt venus.mdt
+	pil-squasher venus2.mbn venus.mdt
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+venus() {
+	pkgdesc="Lenovo Vibe K5 video firmware"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to link venus.mbn to venus.mdt
+	# Older kernels look for venus.mdt, newer ones directly for venus.mbn
+	install -Dm644 "$builddir"/venus2.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mbn
+	ln -s venus.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mdt
+}
+
+wcnss_nv() {
+	pkgdesc="Lenovo Vibe K5 WiFi/BT firmware configuration"
+	cd "$builddir/wlan/prima"
+	install -Dm644 WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+863d953663d8e070402460ddf8d4f550ce30e3e5ef3cca182cbd6770fc5269f533d81ae0c69c5254e929639dda58398f45694accb22597049ff91e0fb0ee92ca  firmware-lenovo-a6020-66b5f6663ab52bb4ad7b38eb5a55deefb9af83f3.tar.gz
+"

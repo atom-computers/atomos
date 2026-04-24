@@ -1,0 +1,3 @@
+[submodule "subprojects/gmobile"]
+	path = subprojects/gmobile
+	url = https://gitlab.gnome.org/World/Phosh/gmobile.git

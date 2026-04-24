@@ -1,0 +1,111 @@
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_core/cam_context.h b/drivers/media/platform/msm/camera_oppo/cam_core/cam_context.h
+index ffceea22a..77e53ea58 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_core/cam_context.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_core/cam_context.h
+@@ -16,7 +16,7 @@
+ #include <linux/mutex.h>
+ #include <linux/spinlock.h>
+ #include <linux/kref.h>
+-#include "cam_req_mgr_interface.h"
++#include "../cam_req_mgr/cam_req_mgr_interface.h"
+ #include "cam_hw_mgr_intf.h"
+ 
+ /* Forward declarations */
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_isp/isp_hw_mgr/hw_utils/include/cam_isp_packet_parser.h b/drivers/media/platform/msm/camera_oppo/cam_isp/isp_hw_mgr/hw_utils/include/cam_isp_packet_parser.h
+index e3f2ce26e..de3506163 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_isp/isp_hw_mgr/hw_utils/include/cam_isp_packet_parser.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_isp/isp_hw_mgr/hw_utils/include/cam_isp_packet_parser.h
+@@ -16,7 +16,7 @@
+ #include <linux/types.h>
+ #include <uapi/media/cam_isp.h>
+ #include "cam_isp_hw_mgr_intf.h"
+-#include "cam_ife_hw_mgr.h"
++#include "../cam_ife_hw_mgr.h"
+ #include "cam_hw_intf.h"
+ #include "cam_packet_util.h"
+ 
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_cci/cam_cci_dev.h b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_cci/cam_cci_dev.h
+index 0c190a481..0274229cf 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_cci/cam_cci_dev.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_cci/cam_cci_dev.h
+@@ -30,9 +30,9 @@
+ #include <media/v4l2-event.h>
+ #include <media/v4l2-ioctl.h>
+ #include <media/v4l2-subdev.h>
+-#include <cam_sensor_cmn_header.h>
++#include "../cam_sensor_utils/cam_sensor_cmn_header.h"
+ #include <cam_io_util.h>
+-#include <cam_sensor_util.h>
++#include "../cam_sensor_utils/cam_sensor_util.h"
+ #include <cam_subdev.h>
+ #include <cam_cpas_api.h>
+ #include "cam_cci_hwreg.h"
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h
+index e68df8065..8ecca87c6 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_i2c.h
+@@ -17,7 +17,7 @@
+ #include <media/v4l2-subdev.h>
+ #include <media/cam_sensor.h>
+ #include <media/cam_sensor.h>
+-#include "cam_cci_dev.h"
++#include "../cam_cci/cam_cci_dev.h"
+ #include "cam_sensor_io.h"
+ 
+ #define I2C_POLL_TIME_MS 5
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_io.h b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_io.h
+index ec5ed25c0..464598295 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_io.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_io/cam_sensor_io.h
+@@ -15,7 +15,7 @@
+ 
+ #include <media/cam_sensor.h>
+ 
+-#include "cam_sensor_cmn_header.h"
++#include "../cam_sensor_utils/cam_sensor_cmn_header.h"
+ 
+ #define CCI_MASTER 1
+ #define I2C_MASTER 2
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
+index dfca9ab63..deab98fdf 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
+@@ -18,7 +18,7 @@
+ #include <linux/gpio.h>
+ #include <linux/of_gpio.h>
+ #include <linux/of.h>
+-#include <cam_sensor_cmn_header.h>
++#include "cam_sensor_cmn_header.h"
+ #include <cam_req_mgr_util.h>
+ #include <cam_req_mgr_interface.h>
+ #include <cam_mem_mgr.h>
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_sync/cam_sync_util.h b/drivers/media/platform/msm/camera_oppo/cam_sync/cam_sync_util.h
+index ae7d5421e..c5cfb0a72 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_sync/cam_sync_util.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_sync/cam_sync_util.h
+@@ -14,7 +14,7 @@
+ #define __CAM_SYNC_UTIL_H__
+ 
+ 
+-#include <cam_sync_api.h>
++#include "cam_sync_api.h"
+ #include "cam_sync_private.h"
+ #include "cam_debug_util.h"
+ 
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h b/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h
+index 90ec56669..a4c5e52d7 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h
+@@ -23,9 +23,9 @@
+ 
+ #include <linux/tracepoint.h>
+ #include <media/cam_req_mgr.h>
+-#include "cam_req_mgr_core.h"
+-#include "cam_req_mgr_interface.h"
+-#include "cam_context.h"
++#include "../cam_req_mgr/cam_req_mgr_core.h"
++#include "../cam_req_mgr/cam_req_mgr_interface.h"
++#include "../cam_core/cam_context.h"
+ 
+ TRACE_EVENT(cam_context_state,
+ 	TP_PROTO(const char *name, struct cam_context *ctx),

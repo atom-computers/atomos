@@ -1,0 +1,51 @@
+From f6aa3276d210bd04f9ea3e2c97f977304153073a Mon Sep 17 00:00:00 2001
+From: Andreas Kemnade <andreas@kemnade.info>
+Date: Wed, 11 Feb 2026 10:01:56 +0100
+Subject: [PATCH] fix tasklet struct function pointer
+
+If CONFIG_CFI is enabled, it gets triggered
+
+Signed-off-by: Andreas Kemnade <andreas@kemnade.info>
+---
+ core/mesh/rtw_mesh.c               | 2 +-
+ hal/rtl8188f/sdio/rtl8189fs_recv.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/core/mesh/rtw_mesh.c b/core/mesh/rtw_mesh.c
+index f2ae344..be75af3 100644
+--- a/core/mesh/rtw_mesh.c
++++ b/core/mesh/rtw_mesh.c
+@@ -3106,7 +3106,7 @@ void rtw_mesh_init_mesh_info(_adapter *adapter)
+ 
+ 	_rtw_init_queue(&minfo->mpath_tx_queue);
+ 	tasklet_init(&minfo->mpath_tx_tasklet
+-		, (void *)mpath_tx_tasklet_hdl
++		, mpath_tx_tasklet_hdl
+ 		, (unsigned long)adapter);
+ 
+ 	rtw_mrc_init(adapter);
+diff --git a/hal/rtl8188f/sdio/rtl8189fs_recv.c b/hal/rtl8188f/sdio/rtl8189fs_recv.c
+index 852f3df..e823098 100644
+--- a/hal/rtl8188f/sdio/rtl8189fs_recv.c
++++ b/hal/rtl8188f/sdio/rtl8189fs_recv.c
+@@ -187,7 +187,7 @@ exit:
+ 	return ret;
+ }
+ 
+-static void rtl8188fs_recv_tasklet(void *priv)
++static void rtl8188fs_recv_tasklet(unsigned long priv)
+ {
+ 	_adapter *adapter = (_adapter *)priv;
+ 	s32 ret;
+@@ -449,7 +449,7 @@ s32 rtl8188fs_init_recv_priv(PADAPTER padapter)
+ 
+ 	/* 3 2. init tasklet */
+ 	tasklet_init(&precvpriv->recv_tasklet,
+-		     (void *)rtl8188fs_recv_tasklet,
++		     rtl8188fs_recv_tasklet,
+ 		     (unsigned long)padapter);
+ 	goto exit;
+ 
+-- 
+2.47.3
+

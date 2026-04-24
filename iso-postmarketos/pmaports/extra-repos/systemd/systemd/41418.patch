@@ -1,0 +1,29 @@
+From f933badfd5250ecdf40d6ee84d96f2f618edbed4 Mon Sep 17 00:00:00 2001
+From: Valentin David <me@valentindavid.com>
+Date: Mon, 30 Mar 2026 09:54:38 +0200
+Subject: [PATCH] discover-image: Ignore sysupdate temporary files
+
+Sysupdate temporary file names do not match their extension-release names. So
+they will always fail. That makes enabling any other sysexts/confexts fail
+which has catastrophic consequences. Unfortunately since 260, sysupdate
+leaves temporary files for long time instead just while downloading. So
+this kind of failure now happens much more often.
+---
+ src/shared/discover-image.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/shared/discover-image.c b/src/shared/discover-image.c
+index 6b4493b960b60..6b9954913498c 100644
+--- a/src/shared/discover-image.c
++++ b/src/shared/discover-image.c
+@@ -1112,6 +1112,10 @@ int image_discover(
+                         if (dot_or_dot_dot(fname))
+                                 continue;
+ 
++                        /* Ignore sysupdate temporary files */
++                        if (startswith(fname, ".sysupdate."))
++                                continue;
++
+                         fname_path = path_join(search_path, fname);
+                         if (!fname_path)
+                                 return -ENOMEM;

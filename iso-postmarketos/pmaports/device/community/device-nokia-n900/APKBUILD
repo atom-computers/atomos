@@ -1,0 +1,311 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Danct12 <danct12@disroot.org>"
+pkgname=device-nokia-n900
+pkgver=51
+pkgrel=5
+pkgdesc="Nokia N900"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	alsa-utils
+	evtest
+	kbd
+	kbd-bkeymaps
+	linux-firmware-ti-connectivity
+	linux-postmarketos-omap
+	ofono
+	postmarketos-base
+	u-boot-tools
+	wl1251-cal
+"
+makedepends="
+	devicepkg-dev
+	u-boot-tools
+	kbd
+	kbd-bkeymaps
+"
+install="
+	$pkgname.post-install
+	$pkgname-openrc.post-install
+"
+subpackages="
+	$pkgname-foot
+	$pkgname-i3blocks
+	$pkgname-i3wm
+	$pkgname-openrc
+	$pkgname-upower
+	$pkgname-sway
+	$pkgname-wayland
+	$pkgname-x11
+	$pkgname-xkeyboard-config:xkeyboard_config
+"
+source="
+	10-initfs-input.files
+	10-initfs-keymap.sh
+	acpi.map
+	acpi_handler.sh
+	asound.state.headset
+	asound.state.speakers
+	backlight-enable.sh
+	bq27k-options.conf
+	bq27k-monitor.sh
+	device-nokia-n900.start
+	deviceinfo
+	etc-profile.d-25wlr-pixman.sh
+	modules-initfs
+	i3blocks/i3blocks.conf
+	i3blocks/scripts/battery-bq27200
+	i3blocks/scripts/calendar
+	i3blocks/scripts/ofono
+	i3blocks/scripts/wifi
+	i3wm/config-checker
+	i3wm/i3wm.conf
+	i3wm/pwr-key-handler.sh
+	keymaps/40-xkb.conf
+	keymaps/rx51_ch.map
+	keymaps/rx51_fise.map
+	keymaps/rx51_it.map
+	keymaps/rx51_ptes.map
+	keymaps/rx51_us.map
+	lock.sh
+	modem-load.conf
+	modem-opts.conf
+	modules.blocklist
+	pointercal
+	sway/etc-sway-config.d-nokia-n900.conf
+	sway/etc-xdg-foot-foot.ini
+	sway/usr-bin-sway-bar-hack.sh
+	sway/usr-bin-sway-saver.sh
+	uboot-script.cmd
+	udev/10-nokia-modem.rules
+	udev/15-bq27k.rules
+	udev/90-touchscreen-dev.rules
+	upower.conf
+	xkb-keymap
+	xorg.conf
+	xresources
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n postmarketos -d "$srcdir"/uboot-script.cmd "$srcdir"/boot.scr
+	cd "$srcdir"
+	mkdir keymaps
+
+	for i in ../keymaps/*.map; do
+		gzip -ck "$i" > keymaps/"${i%.*}.map.gz"
+		loadkeys -b $i > keymaps/"${i%.*}.bmap"
+		gzip keymaps/"${i%.*}.bmap"
+	done
+	return 0
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+	install -D -m644 "$srcdir"/backlight-enable.sh \
+		"$pkgdir"/usr/share/mkinitfs/hooks/00-$pkgname-backlight.sh
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+	install -D -m644 "$srcdir"/asound.state.speakers \
+		"$pkgdir"/var/lib/alsa/asound.state.speakers
+	install -D -m644 "$srcdir"/asound.state.headset \
+		"$pkgdir"/var/lib/alsa/asound.state.headset
+	install -Dm644 "$srcdir"/10-initfs-input.files \
+		"$pkgdir"/usr/share/mkinitfs/files/10-initfs-input.files
+	install -Dm644 "$srcdir"/10-initfs-keymap.sh \
+		"$pkgdir"/usr/share/mkinitfs/hooks/10-initfs-keymap.sh
+	install -Dm755 "$srcdir"/$pkgname.start \
+		"$pkgdir"/etc/local.d/$pkgname.start
+	install -Dm755 "$srcdir"/bq27k-monitor.sh \
+		"$pkgdir"/usr/bin/bq27k-monitor
+
+	# Udev rules
+	install -D -m644 "$srcdir"/90-touchscreen-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-touchscreen-dev.rules
+	install -D -m644 "$srcdir"/10-nokia-modem.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/10-nokia-modem.rules
+	install -D -m644 "$srcdir"/15-bq27k.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/15-bq27xxx-battery.rules
+
+	# Keymap
+	install -D -m644 "$srcdir"/keymaps/rx51_us.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/us/rx51_us.bmap.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_ch.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/ch/rx51_ch.bmap.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_it.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/it/rx51_it.bmap.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_fise.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/fi/rx51_fi.bmap.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_fise.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/se/rx51_se.bmap.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_ptes.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/pt/rx51_pt.bmap.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_ptes.bmap.gz \
+		"$pkgdir"/usr/share/bkeymaps/es/rx51_es.bmap.gz
+
+	install -D -m644 "$srcdir"/keymaps/rx51_us.map.gz \
+		"$pkgdir"/usr/share/keymaps/us/rx51_us.map.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_ch.map.gz \
+		"$pkgdir"/usr/share/keymaps/ch/rx51_ch.map.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_it.map.gz \
+		"$pkgdir"/usr/share/keymaps/it/rx51_it.map.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_fise.map.gz \
+		"$pkgdir"/usr/share/keymaps/fi/rx51_fi.map.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_fise.map.gz \
+		"$pkgdir"/usr/share/keymaps/se/rx51_se.map.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_ptes.map.gz \
+		"$pkgdir"/usr/share/keymaps/pt/rx51_pt.map.gz
+	install -D -m644 "$srcdir"/keymaps/rx51_ptes.map.gz \
+		"$pkgdir"/usr/share/keymaps/es/rx51_es.map.gz
+
+	# Kernel module management
+	install -D -m644 "$srcdir"/modem-load.conf \
+		"$pkgdir"/usr/lib/modules-load.d/10-nokia-modem.conf
+	install -D -m644 "$srcdir"/modem-opts.conf \
+		"$pkgdir"/usr/lib/modprobe.d/nokia-modem.conf
+	install -D -m644 "$srcdir"/modules.blocklist \
+		"$pkgdir"/usr/lib/modprobe.d/n900-module-blocklist.conf
+	install -D -m644 "$srcdir"/bq27k-options.conf \
+		"$pkgdir"/usr/lib/modprobe.d/bq27xxx-battery.conf
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	depends="unclutter-xfixes scrot xdotool xinput xrdb xset"
+	mkdir "$pkgdir"/etc/acpi
+	install -D -m755 "$srcdir"/acpi_handler.sh \
+		"$pkgdir"/etc/acpi/handler.sh
+	install -D -m644 "$srcdir"/acpi.map \
+		"$pkgdir"/etc/acpi.map
+	install -D -m644 "$srcdir"/40-xkb.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/40-xkb.conf
+	install -D -m644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/11-n900.conf
+	install -Dm755 "$srcdir"/lock.sh \
+		"$subpkgdir"/usr/bin/lock.sh
+	install -Dm644 "$srcdir"/xresources \
+		"$subpkgdir"/usr/share/X11/Xresources-mobile
+}
+
+xkeyboard_config() {
+	install_if="$pkgname=$pkgver-r$pkgrel xkeyboard-config"
+	replaces="xkeyboard-config"
+	install -D -m644 "$srcdir"/xkb-keymap \
+		"$subpkgdir"/usr/share/xkeyboard-config-2/symbols/nokia_vndr/nokiarx51
+}
+
+i3wm() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-i3wm"
+	depends="brightnessctl i3blocks rxvt-unicode sxmo-dmenu upower"
+	install -D -m644 "$srcdir"/i3wm.conf \
+		"$subpkgdir"/etc/xdg/i3/config
+	install -D -m755 "$srcdir"/config-checker \
+		"$subpkgdir"/usr/bin/i3-config-checker
+	install -D -m755 "$srcdir"/pwr-key-handler.sh \
+		"$subpkgdir"/usr/bin/pwr-key-handler
+}
+
+upower() {
+	install_if="$pkgname=$pkgver-r$pkgrel upower"
+	replaces="upower"
+	install -Dm644 "$srcdir"/upower.conf \
+		"$subpkgdir"/etc/UPower/UPower.conf
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="wl1251-cal-openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sway() {
+	depends="brightnessctl foot i3blocks jq upower"
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sway"
+	install -D -m644 "$srcdir"/etc-sway-config.d-nokia-n900.conf \
+		"$subpkgdir"/etc/sway/config.d/nokia-n900.conf
+	install -D -m755 "$srcdir"/usr-bin-sway-saver.sh \
+		"$subpkgdir"/usr/bin/sway-saver.sh
+	install -D -m755 "$srcdir"/usr-bin-sway-bar-hack.sh \
+		"$subpkgdir"/usr/bin/sway-bar-hack.sh
+}
+
+foot() {
+	install_if="$pkgname=$pkgver-r$pkgrel foot"
+	replaces="foot"
+	install -D -m 644 "$srcdir"/etc-xdg-foot-foot.ini \
+		"$subpkgdir"/etc/xdg/foot/foot.ini
+}
+
+i3blocks() {
+	install_if="$pkgname=$pkgver-r$pkgrel i3blocks"
+	install -D -m644 "$srcdir"/i3blocks.conf \
+		"$subpkgdir"/etc/xdg/i3blocks/config
+	install -D -m755 "$srcdir"/battery-bq27200 \
+		"$subpkgdir"/usr/share/i3blocks/battery-bq27200
+	install -D -m755 "$srcdir"/ofono \
+		"$subpkgdir"/usr/share/i3blocks/ofono
+	install -D -m755 "$srcdir"/calendar \
+		"$subpkgdir"/usr/share/i3blocks/calendar
+	install -D -m755 "$srcdir"/wifi \
+		"$subpkgdir"/usr/share/i3blocks/wifi
+}
+
+wayland() {
+	# This is only useful on wlroots, but it has too many verions in Alpine
+	# at the moment to come up with a sane install_if
+	install_if="$pkgname=$pkgver-r$pkgrel wayland-libs-server"
+	install -D -m644 "$srcdir"/etc-profile.d-25wlr-pixman.sh \
+		"$subpkgdir"/etc/profile.d/25wlr-pixman.sh
+}
+
+sha512sums="
+4887bc1f9a3559614bf3092511114be4a824a4e94bec6dfda31f52b877f92b38164568c8223cab22234a1edf818f9e3b4af0d7f7244c9880bc3399fa4cb0ce37  10-initfs-input.files
+4656d3b3ced0a86e2d6315c89322899f646a689e9cb64609aa8ad5a676b23d93706d8a37f3be6f6b12c6b1e8501b7d26ecafecf27322333850513a6805c61910  10-initfs-keymap.sh
+2e6c324c2a0627fb37ee2feff249d6c828116a9c1a32d572481dddc12648c98b726eb3a475838398742f76a60e3f2249d7707502360473b8bf2e794bf22f57ce  acpi.map
+b2c2033f8a77a18dc0c5192e0304f60e3c2a2a7d132c2072ab0dd6ee1a5b2a8c7e6396165411534468311a254663ae887cbaf23816f8b17893dd28e99e549790  acpi_handler.sh
+5b87071834313a389f83d29f86f6e3ea108d0921f17dc918be7a46de7e74c73a4418044ef600a0fbf72c8fad22b7730dcd5bfe3d6d01d76bf01556f8540f0b32  asound.state.headset
+67acc17a33bc75113300393b4a5bba15319014032407e774d079abf310368e75f4f697dbb4856ba2d2d8ea184b056bb33561f42918de3ee91ab6a77df89a133c  asound.state.speakers
+3d55e34b95791636e44a5f41754f3d0de039dbba41f7a556d43a95c9e64afcfa930046b4b96b40020b6f196096ffba93514682927e32fa4488686fdd19c6da5a  backlight-enable.sh
+344ec50cee2a4d864debad12810a83070ab8257f9f07dcfa9be3eea1d8b26f3ab4fbe322fe05a384152b40fc5e1481df51d191624c7062186dd70f95a0784ea8  bq27k-options.conf
+c5b8e03ca9f720a794f2593a3e938640cbd91ac44dd761079bbf4614a0d288a9d7b72de8ed2493c062dc9f37be580bea529f454d2335f55b7a9f4d14024b42a9  bq27k-monitor.sh
+e6bbac8de1a198ba716f44ade76606e1e0adcc574156b855ac41be5eb5308389d3277fd89cc34b119fbc33d9801ab9f79a6ff213392596bff40bc17e931c05ef  device-nokia-n900.start
+b1ebed32232ca1890ed6a47372ce45f4ee004fcb76defc6f67048cfa7361d6e02ebd365a6370ba7c26d410e67926a6fada863f07aa18d7098dbdea1a3b057415  deviceinfo
+1c7499eb84948eb5b73d58474b1b71a5f2f63116a2a3e1f9a4238064dcf6c152ccefa108bd4ab1074712a2319111c8fdd4bfcf0dbe4d26b5a319404def1b11d2  etc-profile.d-25wlr-pixman.sh
+4efca73b4053e00b2a24ef3e79ead3da43b0e6db4f3447721fa9084b1c280e65f1ddaadd390d6073e26b6c635bb14f804fcf3c54d8ebf9df73eff80deff59d80  modules-initfs
+a8152e94262629e11abdd8809d187c3b7ed1866a6128fb1f435e17e72120536ac8114262e66df6decb2627743027f2b923ddbe8a94e3e844099b6fad02ec252b  i3blocks.conf
+6c6a70667f37807089adbb343c09d1f62d47b8e6c9c0a54f44790b822f8bff3dccae73341ef736b799fd6740bbd6e1f48e6e122c2e08520f71f6ad7434a47d2c  battery-bq27200
+d9ef88c714e9fce8822f63b7a9d7fc3e1ed472c8c876b44ba524d44efea322839f13ddd2fa652420608427ecf7279bfaac302c9b67667f32796ca21da332164d  calendar
+82038d38f94cb975a8d38914afca49b64957446bef7490ab684efa1df47ede2ea1c769045789bb9fded673345eea01911fbbf85fdb54c28685cad8022bfaafac  ofono
+d7f79fa0887110b85dfb676bd426fa76764fbbb8093df89184552838ddb703b62500f61d7cfa8decdb75a542e3ef577cc71ee4c12ed14d6a76827a3f5aa13073  wifi
+d7d1599a9952fd02d3cfbeaa6b3307251e765f98a9eb723237c94f585831cc8f11d9d30dbc0352e3b008224dec12b820cf86fa28a5e5ac303cfd03d80b8872f5  config-checker
+c95afd02124e53f0de1ef33e7bbee12a15ae2d4d629a201157ed9d428288365241dfc3358fc7055154845f9df986fd975a2ebd4de384b8e175cb45f26b2fa38d  i3wm.conf
+63ec5a88f4385fd944477d0b7ca7061745b061337cba8d3c779826aa96a94dda79bfca4fb3456234f6adbdb483e660d3cf6ccefd8576d23a70f52e3f44f0edb4  pwr-key-handler.sh
+181187db6d88b872233f594759373f32fd08065ee340b60f0c3ff06396d99f4b1250192d70a054fcc9e51e067f6cc063c62b7d8dfff3427b292f1d0c766db206  40-xkb.conf
+dc585e11bf4e06e36c5c62bcc024eaacecc30437d9da5257df14be05e247a2f2bc208874be3058edc6f87cc2877da2ecafd2f627d9b465d4fd24475fc21fdc71  rx51_ch.map
+0a3e58a3a81c463937caf508a76461b4cc43f593f0817a52b6581fdd132cc894c0960fe7b950b6e6bfac1fad15cd9dd230c103fcf08a30b44ef7d8fbe31cea28  rx51_fise.map
+082a5166e38296b097e873b0b4aeaf007e594d3bf4470c74e91ee3efedcf28ad25cd55c23dd63e460339898ae08e77e111b0e1092fa5e661db90bb40732103a1  rx51_it.map
+6e4e8b10a41d0957968736f5d780f14c7070b03913d80859cb07180e9cec9a36bbc9c639748765e48962772640974f5491627520cc36bd3d6c9d01748f9ddaff  rx51_ptes.map
+e440ed7a3070c17e003b86b72dbe6d8194d01b577ca8dd56dd066f216b6dda32bb965c780950f1789a66f7c948290016b048da9f1cf63aba9e11d7e7fd6873ba  rx51_us.map
+83374ba470dc6c34e11c62e91e90a96614d76ae7ce240dd830cb1b2f07f9a72c83e5b50e07e49885a72b9caf25fd586c4ea26452a73baf8bab1d2b4490a107ab  lock.sh
+157b27feebcfddf800a1ffd8c6e369d2b58e5db25b1a44b4443dada8d9fe74abb91d036b9f0e97769bbafbdc72020b5637313682c6932fe7b0bddb9ebebbad42  modem-load.conf
+695feac7f69a0ec8c5e007cdb651adcc3492f1c6236e7fd183edec2a5e25cb957d3ace630ea5fdb87fd703e35ac368f1d097c2f881ecb52c9cfd433564db2a6c  modem-opts.conf
+862ebc7cd2d7a1b3d41b10701b8418308c89eb0732eb99c42ec1091d48e08db9421727f67a3272b7309549798d59afb1b8d7d2fa48d1447b208fcb2329472d4d  modules.blocklist
+143c21f0b18a016d37cb44178e9daea09f128a90769b48353c03c3f245cb9b1f7e773b9ccee084973fc78ddd7a18c2642e54888a85bda7c7daecddc9a8c62eff  pointercal
+0342c1518b832e8db65c349147c478905e2bf3319abc36a1031c17b1513f969dd4e0423d98b99b64d51f1f7871e21d8764b5af54018c7e09a03cb44717459f47  etc-sway-config.d-nokia-n900.conf
+45da074b597a47825146ae1f3712538210e2ebe1c459f98a8189ccfc7c16ed54d221999b5890785c92aa750c6295dee7e920ef7f97d415d4212f8c0fea29169f  etc-xdg-foot-foot.ini
+49db3826d42a57951bdfe7d651de6d20277edcda094fd98aeaf0a859b4a88ff9df340915d77b32dc8481fc6ea23f02a2ed4b70c28a3c93cbac4a8182ebbc4ca1  usr-bin-sway-bar-hack.sh
+8ca33e8e8bb5da1c4de562db3a96ff3481d42344d9cabe532730665231cce491c777526ed35a4872bee768f48e5573f35bc034757740f8b57a570d409004b241  usr-bin-sway-saver.sh
+42f916d87dd305111028992a1107bf6fe108bebbd782ae8edd065e76505db2b3a75e57515970c3e40cb0d1b7e83097a1bba92785be13df7c3fd80959a8d9c5c1  uboot-script.cmd
+465b9a0d2b46d0981c64b47cb1f656c2456a90b91b1751a2efad10af38a96030dd99108b1fd76ce31bf1ea0f236d55bed38b114d6bd712f09f8968de034c946c  10-nokia-modem.rules
+1acc441b9f83dc91fd65fa3f89b8205bfd72a465286bc181b4e7e92dd4b8c0bc5c20a18dab46ff3ee8ae70940efd7d767b3dfb920edb4c74377bd418b838693d  15-bq27k.rules
+c6012aef28b096141b924fced226ec99fb93eb53b69c064a8887d8fecdf8dc08a3ba3db399e18d88374c6ef4c59013a30699c7e4d76e5cb771040582573a0527  90-touchscreen-dev.rules
+9b99feee42dd6bdd122769994c786d3127c41e0aa3321f19c82a9d3845cf07b522908621a31cbddd9599fe18c5c37127d9b4be4255cd7fa8e0e8983bf73eb41b  upower.conf
+4de54d007bd354461fe4d6d455fe3f29694c132a3996c79b68070d606b5ca1839f9027202ebb731035f0bf6504b42fbd5ab15c7b47b7f308ce768a84d45024c4  xkb-keymap
+a91f98daa60efa2beb2ff6b405097f92edca5f1bbb9e7675499139be52ca2570712f8f06f9032ef29f636f99c8f8da8b992f746eab6424aac04260c16158bcc2  xorg.conf
+183dfdd545ba05e216209b1abe45e4af4e0ee16b2e73cff0e7ea7b9524ee35a1cf85213a77f32a1a94287aee6546885dbd71c6de1f4f1a1e2961e638ff27cdf6  xresources
+"

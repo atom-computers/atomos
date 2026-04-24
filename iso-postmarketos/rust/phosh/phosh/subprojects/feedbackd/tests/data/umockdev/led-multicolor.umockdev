@@ -1,0 +1,46 @@
+P: /devices/platform/led-controller/leds/rgb:status
+E: CURRENT_TAGS=:seat:
+E: FEEDBACKD_TYPE=led
+E: ID_FOR_SEAT=leds-platform-led-controller
+E: ID_PATH=platform-led-controller
+E: ID_PATH_TAG=platform-led-controller
+E: OF_COMPATIBLE_N=0
+E: OF_FULLNAME=/led-controller/multi-led
+E: OF_NAME=multi-led
+E: SUBSYSTEM=leds
+E: TAGS=:seat:
+A: brightness=0\n
+L: device=../../../led-controller
+A: max_brightness=248\n
+A: multi_index=blue green red\n
+A: multi_intensity=248 0 0\n
+A: pattern=
+A: power/control=auto\n
+A: power/runtime_active_time=0\n
+A: power/runtime_status=unsupported\n
+A: power/runtime_suspended_time=0\n
+A: repeat=-1\n
+A: trigger=none kbd-scrolllock kbd-numlock kbd-capslock kbd-kanalock kbd-shiftlock kbd-altgrlock kbd-ctrllock kbd-altlock kbd-shiftllock kbd-shiftrlock kbd-ctrlllock kbd-ctrlrlock disk-activity disk-read disk-write mtd nand-disk heartbeat backlight cpu cpu0 cpu1 cpu2 cpu3 panic mmc1 mmc0 usb-gadget usb-host tps6598x-source-psy-0-003f-online bq25890-charger-0-online max170xx_battery-charging-or-full max170xx_battery-charging max170xx_battery-full max170xx_battery-charging-blink-full-solid timer rfkill-any rfkill-none rfkill0 rfkill1 rfkill2 rfkill3 bluetooth-power [pattern] phy2rx phy2tx phy2assoc phy2radio rfkill6\n
+
+P: /devices/platform/led-controller
+E: DRIVER=leds_pwm_multicolor
+E: ID_PATH=platform-led-controller
+E: ID_PATH_TAG=platform-led-controller
+E: MODALIAS=of:Nled-controllerT(null)Cpwm-leds-multicolor
+E: OF_COMPATIBLE_0=pwm-leds-multicolor
+E: OF_COMPATIBLE_N=1
+E: OF_FULLNAME=/led-controller
+E: OF_NAME=led-controller
+E: SUBSYSTEM=platform
+L: driver=../../../bus/platform/drivers/leds_pwm_multicolor
+A: driver_override=(null)\n
+A: modalias=of:Nled-controllerT(null)Cpwm-leds-multicolor\n
+L: of_node=../../../firmware/devicetree/base/led-controller
+A: power/control=auto\n
+A: power/runtime_active_time=0\n
+A: power/runtime_status=unsupported\n
+A: power/runtime_suspended_time=0\n
+L: supplier:platform:30670000.pwm=../../virtual/devlink/platform:30670000.pwm--platform:led-controller
+L: supplier:platform:30680000.pwm=../../virtual/devlink/platform:30680000.pwm--platform:led-controller
+L: supplier:platform:30690000.pwm=../../virtual/devlink/platform:30690000.pwm--platform:led-controller
+

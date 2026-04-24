@@ -1,0 +1,64 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_karnak_defconfig
+
+pkgname=linux-amazon-karnak
+pkgver=3.19.0
+pkgrel=1
+pkgdesc="Amazon Fire HD 8 (2018) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="amazon-karnak"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	gcc6
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_amazon_karnak"
+_commit="65a221f465b34d967ca0ec115569ca71dd136a96"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mt8163/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+b207d358aba0fdf3cf6ad2c4af9807a60da0d2752583c4c559a708cd3612872752801a8a60c2c5ecb3a0388c98a4484625712958ff528f4329e92789c1a885f2  linux-amazon-karnak-65a221f465b34d967ca0ec115569ca71dd136a96.tar.gz
+54fad6f1d52b1cb7874d77c0ff3893c498c9462c71626640fdec209e4b8481f30eade279ba371427e1c7829546326957f960dc48967fdbc3b47dfb791dcf0426  config-amazon-karnak.aarch64
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

@@ -1,0 +1,23 @@
+From 4462b31a33dbd72840269bdccb4aa447f14c9a6c Mon Sep 17 00:00:00 2001
+From: LONELY-WOLF <zvenayte@gmail.com>
+Date: Thu, 4 Jul 2019 12:13:46 +0300
+Subject: [PATCH] [decon] suppress unblank warning
+
+---
+ drivers/video/fbdev/exynos/dpu_9810/decon_dsi.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/video/fbdev/exynos/dpu_9810/decon_dsi.c b/drivers/video/fbdev/exynos/dpu_9810/decon_dsi.c
+index 07a084d805af..0b9ade4351a2 100644
+--- a/drivers/video/fbdev/exynos/dpu_9810/decon_dsi.c
++++ b/drivers/video/fbdev/exynos/dpu_9810/decon_dsi.c
+@@ -928,8 +928,7 @@ int decon_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
+ 
+ 	if ((!IS_DECON_HIBER_STATE(decon) && IS_DECON_OFF_STATE(decon)) ||
+ 			decon->state == DECON_STATE_INIT) {
+-		decon_warn("%s: decon%d state(%d), UNBLANK missed\n",
+-				__func__, decon->id, decon->state);
++//		decon_warn("%s: decon%d state(%d), UNBLANK missed\n", __func__, decon->id, decon->state);
+ 		return 0;
+ 	}
+ 

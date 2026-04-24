@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=device-samsung-gt510
+pkgdesc="Samsung Galaxy Tab A 9.7 (2015)"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	pointercal
+	phoc.ini
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+# Backwards compatibility for old kernel variant subpackages
+replaces="$pkgname-kernel-mainline $pkgname-kernel-mainline-modem-lte"
+for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader firmware-samsung-gt510-wcnss-nv"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+064e7b8136e29c44ba15271ab971c31eac566892b40408e5048e8d2914ff070ea293888473d6064fc4df134b623be0917a2a03c5f64a2d8f256402e0d5d23ada  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+77e32266772a201ba42d91586dce32bd93ff81f1a49c5f5b157847e3107d0b2c9a2f0478b383416ca37ddfb820fe6c9147abe8ccd7e07ad704c3c4c9d4683f3a  modules-initfs
+6aedd5eeac4d21356678f5399f3f0946392c9a7477ac21d39b8e761133dc8ed67adb4966647314f71d5263483ab68cad92847dacff95ffa45eabfc33c9f405b5  pointercal
+ed612b090c1ee512fc257368082fe0c88ca6c98a9d673ece68593739c7a41b4f9dca5d9360de6f84d206f297feba480a9f1982301132e08a14a5ff920a2675a6  phoc.ini
+"

@@ -1,0 +1,68 @@
+#!/bin/sh
+# FIXME: vendor/product IDs, USB function, and network addresses should be
+# configurable, perhaps via a config file or kernel cmdline parameters.
+
+CONFIGFS="/sys/kernel/config/usb_gadget"
+HOST_IP="172.16.42.1"
+
+# No UDC = no gadget support (e.g. laptop), exit silently
+if [ -z "$(ls /sys/class/udc 2>/dev/null)" ]; then
+    echo "No UDC found, skipping USB gadget setup"
+    exit 0
+fi
+
+if ! mountpoint -q /sys/kernel/config; then
+    modprobe configfs
+    mount -t configfs configfs /sys/kernel/config
+fi
+
+GADGET="$CONFIGFS/g1"
+mkdir -p "$GADGET"
+
+echo "0x1d6b" > "$GADGET/idVendor"   # Linux Foundation
+echo "0x0104" > "$GADGET/idProduct"  # Multifunction Composite Gadget
+
+mkdir -p "$GADGET/strings/0x409"
+echo "postmarketOS"        > "$GADGET/strings/0x409/manufacturer"
+echo "Duranium Debug"      > "$GADGET/strings/0x409/product"
+echo "duranium-debug"      > "$GADGET/strings/0x409/serialnumber"
+
+# Try ncm first, fall back to rndis
+USB_FUNCTION="ncm.usb0"
+if ! mkdir -p "$GADGET/functions/$USB_FUNCTION" 2>/dev/null; then
+    USB_FUNCTION="rndis.usb0"
+    mkdir -p "$GADGET/functions/$USB_FUNCTION"
+fi
+
+# Set a random host-side MAC so the host doesn't get confused across reboots
+# NOTE: should eventually be configurable or derived from device identity
+RANDOM_MAC="$(dd if=/dev/urandom bs=6 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n' | sed 's/\(..\)/\1:/g;s/:$//')"
+# locally administered, unicast
+BYTE1="$(printf '%02x' $(( 0x$(echo "$RANDOM_MAC" | cut -c1-2) | 0x02 & 0xfe )))"
+RANDOM_MAC="${BYTE1}$(echo "$RANDOM_MAC" | cut -c3-)"
+
+mkdir -p "$GADGET/configs/c.1/strings/0x409"
+echo "USB network" > "$GADGET/configs/c.1/strings/0x409/configuration"
+ln -sf "$GADGET/functions/$USB_FUNCTION" "$GADGET/configs/c.1/"
+
+UDC="$(for _udc in /sys/class/udc/*/; do basename "$_udc"; break; done)"
+echo "$UDC" > "$GADGET/UDC"
+
+# Wait briefly for the interface to appear
+IFACE=""
+for _ in $(seq 1 20); do
+    IFACE="$(cat "$GADGET/functions/$USB_FUNCTION/ifname" 2>/dev/null || true)"
+    [ -n "$IFACE" ] && break
+    sleep 0.1
+done
+
+if [ -z "$IFACE" ]; then
+    echo "ERROR: USB gadget interface did not appear"
+    exit 1
+fi
+
+ip link set "$IFACE" up
+ip addr add "$HOST_IP/24" dev "$IFACE"
+
+echo "$IFACE" > /run/usb-gadget-iface
+echo "USB gadget up on $IFACE ($HOST_IP)"

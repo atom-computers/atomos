@@ -1,0 +1,63 @@
+# Automatically generated aport, do not edit!
+# Generator: pmbootstrap aportgen musl-x86
+
+# Stub for apkbuild-lint
+if [ -z "$(type -t arch_to_hostspec)" ]; then
+	arch_to_hostspec() { :; }
+fi
+
+maintainer=""
+pkgname=musl-x86
+pkgver=1.2.6
+pkgrel=2
+arch="x86_64"
+subpackages="musl-dev-x86:package_dev"
+
+_arch="x86"
+_mirror="http://dl-4.alpinelinux.org/alpine/"
+
+url="https://musl-libc.org"
+license="MIT"
+options="!check !strip"
+pkgdesc="the musl library (lib c) implementation for $_arch"
+
+_target="$(arch_to_hostspec $_arch)"
+
+source="
+	musl-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-$pkgver-r$pkgrel.apk
+	musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-dev-$pkgver-r$pkgrel.apk
+"
+
+package() {
+	mkdir -p "$pkgdir/usr/$_target"
+	cd "$pkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+}
+package_dev() {
+	mkdir -p "$subpkgdir/usr/$_target"
+	cd "$subpkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+
+	# symlink everything from /usr/$_target/usr/*
+	# to /usr/$_target/* so the cross-compiler gcc does not fail
+	# to build.
+	for _dir in include lib; do
+		mkdir -p "$subpkgdir/usr/$_target/$_dir"
+		cd "$subpkgdir/usr/$_target/usr/$_dir"
+		for i in *; do
+			cd "$subpkgdir/usr/$_target/$_dir"
+			ln -s /usr/$_target/usr/$_dir/$i $i
+		done
+	done
+}
+
+sha512sums="
+f731bafa153e7b3ea212cc4e13d5c843227374a13530188131184c32f13907057f66af65ff7889a01f7c2b46bae7087f712b09e97ff879e2ed263ebec37432bf  musl-1.2.6-r2-x86-edge.apk
+afc7894a31de08bcfa6b28604625ad7e6cf8cd61394d34bd2ed50ea07c9d4e7ad212cb668439f51599ce2c946a326e196ee01503fe196a4a8dce973ae51d57ef  musl-dev-1.2.6-r2-x86-edge.apk
+"

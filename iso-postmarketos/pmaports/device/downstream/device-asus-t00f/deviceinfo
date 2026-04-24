@@ -1,0 +1,21 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Asus Zenfone 5"
+deviceinfo_manufacturer="Asus"
+deviceinfo_codename="asus-t00f"
+deviceinfo_year="2014"
+deviceinfo_arch="x86"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1280"
+deviceinfo_dev_touchscreen="/dev/input/event1"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_flash_pagesize="2048"
+

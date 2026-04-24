@@ -1,0 +1,69 @@
+# Kernel config based on: arch/arm64/configs/ze550kl_defconfig
+
+pkgname=linux-asus-z00t
+pkgver=3.10.108
+pkgrel=5
+pkgdesc="Zenfone 2 Laser/Selfie (1080p) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="asus-z00t"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_asus_msm8916"
+_commit="5fd66aa9219bf9aaa504aa3cb2dae7a3de5238f7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_fix_gcc6_errors.patch
+	02_mdss_fb_refresh_rate.patch
+	05_dtb-fix.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm64/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm64/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+2a43545d07b4b477749ac4eaf793e0e7cf105699264d4bd97df20904a3039f421330825dc8c7f9f741387dc3dd9c48b716de6c797048a1f9f358fee97f68fa85  linux-asus-z00t-5fd66aa9219bf9aaa504aa3cb2dae7a3de5238f7.tar.gz
+f485f3fa4f17d7cdfe103bfa7e16b2e492ddf2bd724964d6b8f4df3fe87421650c817856787925585061b322ee5f5d4e73733fd424588d7ffb20d39bb2f796ca  config-asus-z00t.aarch64
+972e98523d6ef06342e69a09e979bdd86904cf7f9a843b519b37791e531b680182564a2ab537c94629c3589f4e775b2c39de04c64e210a0f8b6f10745c3596f1  01_fix_gcc6_errors.patch
+a8c955bf718f155011e980f3d0948be98e1fee5649f418299a4851780543019daf7afa406aa7b0829375645107e4e6fbf241026b0cabe2b2ac895a47df83d2d8  02_mdss_fb_refresh_rate.patch
+0e5ebee2f1b0005fcae4f313219c0b6481b3d044c7167e0fb18b72db0eae49aef7b281cd29e0fa1e653fc5585064c990085ca68f920348c3d9d9ea9524d1baa6  05_dtb-fix.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

@@ -1,0 +1,90 @@
+# Co-Maintainer: Joel Selvaraj <foss@joelselvaraj.com>
+# Stable Linux kernel with patches for SDM845 devices
+# Kernel config based on: arch/arm64/configs/defconfig and sdm845.config
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+_flavor="postmarketos-qcom-sdm845"
+pkgname=linux-$_flavor
+pkgver=6.16.7
+pkgrel=6
+pkgdesc="Mainline Kernel fork for SDM845 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/sdm845-mainline/linux"
+license="GPL-2.0-only"
+options="!check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	installkernel
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+	zstd
+"
+
+_tag="sdm845-6.16.7-r0"
+_defconfig="defconfig"
+
+# Source
+source="
+	linux-$_tag.tar.gz::https://gitlab.com/sdm845-mainline/linux/-/archive/$_tag/linux-$_tag.tar.gz
+	config-postmarketos-qcom-sdm845.aarch64
+	0001-arm64-dts-qcom-sdm845-xiaomi-beryllium-Fix-compatibl.patch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sdm8* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+803d2cf85b248c3da41a9c9178d69d211eccf5d1adb72acd5343e09cbb65782f727e579939287c91712c69a862bed7344a0e2bc893c2791a971b6fed95ec6f1a  linux-sdm845-6.16.7-r0.tar.gz
+0f0e17d761f9b89f798e9126ae46a007eb7ed844fddb7aba9ebd946d3f28cfeb2fb295698d6a4c9f6e5a77ce7edd8b9be7edc28f97904d40575618c38e661788  config-postmarketos-qcom-sdm845.aarch64
+fbd04f5f429ca1067dadb4209d5279e5fd3cfb4a5ae5957e8e189488109a6cf44d27aa1f38cceb78e1cc360d3020b0c4342ca768243eb6ba7460093a1306b98c  0001-arm64-dts-qcom-sdm845-xiaomi-beryllium-Fix-compatibl.patch
+"

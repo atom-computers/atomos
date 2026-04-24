@@ -1,0 +1,56 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_nash_defconfig
+
+pkgname=linux-motorola-nash
+pkgver=4.4.235
+pkgrel=2
+pkgdesc="Motorola Moto Z2 Force kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-nash"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="android_kernel_motorola_msm8998"
+_commit="01625f8274aa4e16d5b4f64ea21bfed74958ad0f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-virtual-terminal.patch
+	remove_bootloader_cmdline_opts.patch
+	mdss-panel-to-fb-var.patch
+	99_framebuffer.patch
+	f_fs_module_inittest.patch
+	f_hid_module_inittest.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="ecccc68b1e9b81e7ec73b0613393ad1d551bcdff93a3c7f08ec1d4cdb2d91660e51726ab58aa691aba6860793271cead9702c2b454eaf5f390138d1f11027540  linux-motorola-nash-01625f8274aa4e16d5b4f64ea21bfed74958ad0f.tar.gz
+46969c15d4a67b2379e4dc54700bdaeb445455b1dc90c431e3b38e308d437412204bc374e6f3ae306e2d72debe09298e5d827c93c7de7d4f73362cfa927e3d5e  config-motorola-nash.aarch64
+a62883a325d858eaff4e44e7e1f85f84803ee8360073f83f9657ba5bf1676618ff77e7e62971ecdfb661956ba081196bc2618179d4d7cafadf528d2aa00062cd  fix-virtual-terminal.patch
+9ce867c4254b537ef5d2485780c26b72da8a3a8767ba71557f3b48d6c550e0e14c8c3e575b31bf65d2878f08a8a4926e48a1c2f1be534bf80a7a57f58313b0fd  remove_bootloader_cmdline_opts.patch
+d5b868c64b8ebddcf74cb3aa478f30f0897af1e14e4fc42d977921104a6c568cc0bf36fc8a3b0f538cd3ca2ebf59244fdf23186a903259e5acc14d1c4ef4ccc3  mdss-panel-to-fb-var.patch
+d64746ff65de81cc894e33cd8f9b3bf0a5ee9e979d95f67a50a4c0bc7072aa459632841db4b64b68cfc01fa3503d2e8122d03f177932a5f0fbe0ddad5db3bb4d  99_framebuffer.patch
+bb9adbcd1df17f9197a9d66bacd0103164182ff3813a3b346128c88244135f40de3c3c7c6dd9391df47d9dccd5fd35ffcc248e0abae51214d09a2f5e7d960c31  f_fs_module_inittest.patch
+895f1eaf0fce84e8be8bc6fb6715b2e9a4bd121b7a99774c786a68eb96c55aff00e60aacfb3317c3fdc52e7363d646fc0556da0af252cc7bd84a9cc7544d1878  f_hid_module_inittest.patch"

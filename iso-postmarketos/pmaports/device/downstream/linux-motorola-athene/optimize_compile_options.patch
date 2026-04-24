@@ -1,0 +1,22 @@
+This is compile optimization for motorola-athene.
+diff --git a/Makefile b/Makefile
+index f29988bb..1f2e5384 100644
+--- a/Makefile
++++ b/Makefile
+@@ -351,11 +351,11 @@ CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
+ 
+ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
+ 		  -Wbitwise -Wno-return-void $(CF)
+-CFLAGS_MODULE   =
+-AFLAGS_MODULE   =
+-LDFLAGS_MODULE  =
+-CFLAGS_KERNEL	=
+-AFLAGS_KERNEL	=
++CFLAGS_MODULE   = -DMODULE -mtune=cortex-a53
++AFLAGS_MODULE   = -DMODULE -mtune=cortex-a53 -pipe
++LDFLAGS_MODULE  = 
++CFLAGS_KERNEL	= -mtune=cortex-a53
++AFLAGS_KERNEL	= -mtune=cortex-a53 -pipe
+ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
+ 
+ 

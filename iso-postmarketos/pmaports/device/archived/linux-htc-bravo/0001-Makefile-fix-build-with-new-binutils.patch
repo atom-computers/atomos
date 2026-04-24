@@ -1,0 +1,29 @@
+From 1438b6973b3cb8ed3f0bd726edf51354eec40149 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@z3ntu.xyz>
+Date: Wed, 6 Nov 2019 22:44:03 +0100
+Subject: [PATCH] Makefile: fix build with new binutils
+
+Recent binutils complain when the linker script is passed multiple
+times, which is the case here:
+
+error: linker script file '/<cut>/scripts/module-common.lds' appears multiple times
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 5732638bf57..930acff3dcf 100644
+--- a/Makefile
++++ b/Makefile
+@@ -360,7 +360,7 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
+ MODFLAGS	= -DMODULE -march=armv7-a -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -ffast-math -fsingle-precision-constant
+ CFLAGS_MODULE   = $(MODFLAGS)
+ AFLAGS_MODULE   = $(MODFLAGS) -pipe
+-LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
++LDFLAGS_MODULE  =
+ CFLAGS_KERNEL	= -march=armv7-a -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -ffast-math -fsingle-precision-constant
+ AFLAGS_KERNEL	= -march=armv7-a -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -ffast-math -fsingle-precision-constant -pipe
+ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
+-- 
+2.24.0
+

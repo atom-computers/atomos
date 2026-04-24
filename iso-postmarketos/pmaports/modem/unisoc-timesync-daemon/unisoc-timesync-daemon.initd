@@ -1,0 +1,8 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="unisoc-timesync-daemon"
+description="Unisoc time sync daemon"
+
+command="/usr/sbin/unisoc-timesync-daemon"
+command_args="/dev/wwan0sprdtime0"

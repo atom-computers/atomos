@@ -1,0 +1,14 @@
+If kernel repo does not contain files for wireguard,remove them.
+diff --git a/net/Kconfig b/net/Kconfig
+index c55d58ed..d0a16496 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -75,7 +75,7 @@ config INET
+ 	  Short answer: say Y.
+ 
+ if INET
+-source "net/wireguard/Kconfig"
++# source "net/wireguard/Kconfig"
+ source "net/ipv4/Kconfig"
+ source "net/ipv6/Kconfig"
+ source "net/netlabel/Kconfig"

@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="exkc <exxxxkc@getgoogleoff.me>"
+pkgname=device-amediatech-x96-mini
+pkgver=5
+pkgrel=0
+pkgdesc="Amediatech X96 mini"
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base u-boot-amlogic-amediatech-x96-mini soc-amlogic-aarch64 linux-postmarketos-amlogic"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="asound.state deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/asound.state \
+		"$pkgdir"/var/lib/alsa/asound.state
+}
+
+nonfree_firmware() {
+	pkgdesc="Amediatech X96 mini firmware"
+	depends="linux-firmware-meson"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+981ef458837524b2b1922e7bc5abd4936d629e3f83e92062b46597cef985b65fdb90900de1ef93a7d741b9b0ac4b41cef9c3c2625181ff0e10effc22cb2fa3a3  asound.state
+eee027b5ca603bfcb4e047147f4b80508178a616a702b8ad46debcf60a82fcc7bed3e52618b243508e170e532a4650349af7ea71c6ff9f5be1696e5363b7dcef  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+b9f3e1902c17909de928c99868265a257ba5873f6ea6aa1097ad10721f59d68342d50ee51992472ecd23722f7664a13dd15f4e26071a40595c7c3e5161e533d7  modules-initfs
+"

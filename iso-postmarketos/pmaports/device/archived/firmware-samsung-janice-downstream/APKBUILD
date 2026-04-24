@@ -1,0 +1,23 @@
+# Archived: Downstream port, only for reference. Use mainline port (samsung-janice)!
+
+pkgname=firmware-samsung-janice-downstream
+pkgver=1
+pkgrel=0
+_commit="e24d9687e7fda4f94fc6652d137ed8e703930c3a"
+pkgdesc="Samsung Galaxy S Advance Firmware"
+url="https://github.com/Epirex/android_vendor_samsung_u8500"
+arch="armhf"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/Epirex/android_vendor_samsung_u8500/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/android_vendor_samsung_u8500-$_commit"
+
+package() {
+	# Wifi
+	for _i in bcmdhd_sta.bin nvram_net.txt; do
+		install -Dm644 janice/system/etc/wifi/"$_i" \
+		"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="0f1a0ab978662728311cde4d055be9e1162e5eb71eda7117b6b5eba335e373cabd70ee3005755bd469c18eea872ccbf2bf9d09a357c825fd3e5b96060ba19137  firmware-samsung-janice-downstream-e24d9687e7fda4f94fc6652d137ed8e703930c3a.tar.gz"

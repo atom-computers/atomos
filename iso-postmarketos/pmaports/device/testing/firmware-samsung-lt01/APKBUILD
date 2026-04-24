@@ -1,0 +1,59 @@
+maintainer="knuxify <knuxify@gmail.com>"
+pkgname=firmware-samsung-lt01
+pkgver=1.1
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab 3 8.0 firmware"
+url="https://github.com/gr8nole/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+_url="https://raw.githubusercontent.com/gr8nole/proprietary_vendor_samsung"
+_commit="38ea48dbc6a683874aaf3376b63fc97ff3823459"
+source="
+	bcm4334.hcd-$_commit::$_url/$_commit/lt01-common/proprietary/system/bin/bcm4334.hcd
+	brcmfmac4334-sdio.samsung,t310-$_commit.bin::$_url/$_commit/lt01wifi/proprietary/system/etc/wifi/bcmdhd_sta.bin_b2
+	brcmfmac4334-sdio.samsung,t310-$_commit.txt::$_url/$_commit/lt01wifi/proprietary/system/etc/wifi/nvram_net.txt
+	brcmfmac4334-sdio.samsung,t311-$_commit.bin::$_url/$_commit/lt013g/proprietary/system/etc/wifi/bcmdhd_sta.bin_b2
+	brcmfmac4334-sdio.samsung,t311-$_commit.txt::$_url/$_commit/lt013g/proprietary/system/etc/wifi/nvram_net.txt
+	brcmfmac4334-sdio.samsung,t315-$_commit.bin::$_url/$_commit/lt01lte/proprietary/system/etc/wifi/bcmdhd_sta.bin_b2
+	brcmfmac4334-sdio.samsung,t315-$_commit.txt::$_url/$_commit/lt01lte/proprietary/system/etc/wifi/nvram_net.txt
+	"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/proprietary_vendor_samsung-$_commit"
+subpackages="
+	$pkgname-bluetooth
+	$pkgname-wifi
+"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+bluetooth() {
+	depends="$pkgname"
+
+	install -Dm644 "$srcdir"/bcm4334.hcd-$_commit \
+		"$subpkgdir"/lib/firmware/brcm/BCM4334B0.hcd
+}
+
+wifi() {
+	depends="$pkgname"
+	local _device
+	local _ext
+
+	for _device in t310 t311 t315; do
+		for _ext in bin txt; do
+			install -Dm644 "$srcdir"/brcmfmac4334-sdio.samsung,$_device-$_commit.$_ext \
+				"$subpkgdir"/lib/firmware/brcm/brcmfmac4334-sdio.samsung,$_device.$_ext
+		done
+	done
+}
+
+sha512sums="
+c688c49c291223bccd5e123c8654f9faf6e203bfd82179ea811f7d450e2c746d68fbd5d98e821daf839ea51df70ffbce32e1ae13b09b6ad90fe3de11337d5af7  bcm4334.hcd-38ea48dbc6a683874aaf3376b63fc97ff3823459
+53905353608a4e3cd27f38e51935fea278884799156b1dfd7ba56c6b5490cc5fa56caac65e26e921e8acc53628a750e7d20d17b0737b306df1df316278431c03  brcmfmac4334-sdio.samsung,t310-38ea48dbc6a683874aaf3376b63fc97ff3823459.bin
+1359b10a0cd043f02fa939e827e24aaa35cf03eee5e5a78f83437899c86e78d5b973b36a61535211bab5dd7e6d210065c1f81addd716caaac147fbfc6c70bac2  brcmfmac4334-sdio.samsung,t310-38ea48dbc6a683874aaf3376b63fc97ff3823459.txt
+3ebfc2770e0b7be669331d52d9c0ff24b7cecc09569fb1a717942f7cf9cd9c88dcaeee3b9f149edc92a2a50fe5550d6d0b5b4b69b84e7eff36ea3fceca477900  brcmfmac4334-sdio.samsung,t311-38ea48dbc6a683874aaf3376b63fc97ff3823459.bin
+81b722b2d5eb3446606a7b10001aeed7af8a8139379c8525d5ddd990a5b10dd3e2103c498d65c0e31cbda7bafc0988dc25b2d227b20dcdf88c5dc57eaa771956  brcmfmac4334-sdio.samsung,t311-38ea48dbc6a683874aaf3376b63fc97ff3823459.txt
+f937b255dc1c6dc45134401cdb096a1b548fdb3370a2544c5f4f81f0443dfcdc8f0390e3ee45bef07252a97292fd26405d65c7655b81db40a736867cee2404c7  brcmfmac4334-sdio.samsung,t315-38ea48dbc6a683874aaf3376b63fc97ff3823459.bin
+547780ac164b4a7a989965b1561fb318ae30187d2ad45ec0add001c037f2a732abcc73acf8be6f0aee55d28eccb89b992f7d30acd9872d1998682d9110eec09e  brcmfmac4334-sdio.samsung,t315-38ea48dbc6a683874aaf3376b63fc97ff3823459.txt
+"

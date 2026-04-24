@@ -1,0 +1,36 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-markw
+pkgdesc="Xiaomi Redmi 4 Prime"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-markw
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8953
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+66f3e546eed8410e9049213efd44694d7e81abb579348f5fda8e8226e8a2dab59ec47335ff045c6b8b2a041f949ce2b6fe350b30e69b2cbee79c93cc21e459be  deviceinfo
+0cba88d7ede62dc7c47feefb27d10e58e4c93498bec97cd274a1d10c4f16dff06c5472ed555170e0392a57c9269cc50bf550523f41bf1ba6c600af533302574b  modules-initfs
+"

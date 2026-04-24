@@ -1,0 +1,92 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_RMX1851_defconfig
+
+pkgname=linux-realme-rmx1851
+pkgver=4.9.217
+pkgrel=0
+pkgdesc="Realme 3 Pro kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="realme-rmx1851"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_realme_sdm710"
+_commit="e172e0dcbb71312e3b50dd9c10835874b5022f1b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/HyperTeam/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix_bluetooth_include_paths.patch
+	fix_camera_include_paths.patch
+	fix_charger_includes.patch
+	fix_makefile_wrapper_script.patch
+	fix_qcacld_errors.patch
+	fix_trace_includes_0001.patch
+	fix_trace_includes_0002.patch
+	fix_trace_includes_0003.patch
+	fix_techpack_kbuild.patch
+	remove_bootloader_cmdline_opts.patch
+	fix_fbdev_trace.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		dtbs
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+
+	# Not working for some reason
+	# make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+	# 	 KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+	#	 INSTALL_DTBS_PATH="$pkgdir/boot/dtbs" dtbs_install
+
+	cp -ra "$_outdir/arch/arm64/boot/dts" "$pkgdir/usr/share/dtb"
+}
+
+sha512sums="
+ec182b39fcfcd14b331eb468942ff18d7dd066af2139eafb2f1596ddd22be18b63aba46fb33513f9d3e90d50099802766aafa39dbd9076ed5bd263a8b2963189  linux-realme-rmx1851-e172e0dcbb71312e3b50dd9c10835874b5022f1b.tar.gz
+9d1ef899eac4fc09e0b131c3248ee2ec02dac725480c1d4d13815a384be14d21982bc74348d7e766bab3cfa097dfebeae666522b6ed3ecc31bca54795bd40aef  config-realme-rmx1851.aarch64
+5292b53cd14bd4effd9ca41345e9d9b658c863d014e376e39f3cbc31d75ce18f9020642b1289470063f69b49f81721d46b5eb549636d784bd6bccf98ce7a60f8  fix_bluetooth_include_paths.patch
+dcbcc980a4f8d0f870c52244ef3dafab52cc53cfa63dc95eccd76e707194ff74daf0fc3b9a984929be717f63b63ddddb3679beb749d8e7cdc7de9c20a994875b  fix_camera_include_paths.patch
+93c1adc00dcd5ff3557fd64e85a93bf5699dac10d4c8ef00ef32c01de4dbf48ede00c6b95c2528b96b011598124da723c0f9c8f6b06437763767401ecf5c24b7  fix_charger_includes.patch
+c8d97d591f4b139fd43b1cf4bbb43e85ba802776f20592064ea11b73f1473a9004ae8027f7ceeb25596335fba7bf61324649e691d56dacaaf59a8ed21a3b897b  fix_makefile_wrapper_script.patch
+a4fd63f7b625dfa33857791e60ead8f441ec352eba0871573fcce3d329f17f65582ba5d41af239894e93b476ab91fbe313a93683299132cef7ee1966b41cd542  fix_qcacld_errors.patch
+0a8f5cd036618fb0420d08acaad4ba398de81534f6e02e27146ed3888eb9a851fe19925456bdb30cb9a6cbe14cff90c371444e7205aa181f5544441e1c70556c  fix_trace_includes_0001.patch
+dd50d0541edef946dd857676b3054bda4132de29e46f53beb5a756f1fe05ea4100ce4f546be498eed29e3cef558571903fc31d15bc6e02dbcddef0fb33e1f108  fix_trace_includes_0002.patch
+8d202261b4cfe5e7086e7390f6f783e4fc723120bc8bbb2ab02ab445d2a44064a10028cfedee20cc38d4af3a74d53ae4f429d1bba79fe45c1361ef88193ac96d  fix_trace_includes_0003.patch
+313f9c1def33e1fc78e82571787ed151659421981a9ef8cd5c9e652af5f4bffa6118fd82ad5069e3c93450ce4a8cca72b0323ab3a30a8df799beb996438a7b06  fix_techpack_kbuild.patch
+9ce867c4254b537ef5d2485780c26b72da8a3a8767ba71557f3b48d6c550e0e14c8c3e575b31bf65d2878f08a8a4926e48a1c2f1be534bf80a7a57f58313b0fd  remove_bootloader_cmdline_opts.patch
+e6d420ecc371279dc4d76b75059e9c783114ca586318f9ab63fed3a030b8460a3eb6ed805f3b44ca6da1dc4389787b4b2530fa05a4be8c0036e81b425e65d513  fix_fbdev_trace.patch
+"

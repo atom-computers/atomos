@@ -1,0 +1,31 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-sony-leo-downstream
+pkgdesc="Sony Xperia Z3 (Downstream)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-sony-leo-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+bac0ab03d48168c7ca6d152af12a85891392b59933de299df08589738635d581aa5f21516a392144fcaebaa2e017aca0c74e1da812efd02e464194f698ff11e6  deviceinfo
+"

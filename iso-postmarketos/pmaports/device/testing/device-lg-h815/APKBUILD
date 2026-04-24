@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-lg-h815
+pkgdesc="LG G4 (h815)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+depends="
+	linux-postmarketos-qcom-msm8994
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+13d91cf057d2ef7c23dc4276fa48ab5e873b7ae1d8e4e197f708bee10498c331c6d8b6bcd2e011987ac2cb7442d310af760fabcc495997b1f84f56c33363a2d7  deviceinfo
+d3324765c6a9cafebf9e01d3bf50b8f1144e738cae6503783a19582179addfeb04551d24ee9d9899fb799b992eb863129e0c6dc90dde21394e3746ff6df1f6ec  kernel-cmdline.conf
+"

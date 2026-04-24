@@ -1,0 +1,62 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Raffaele Tranquillini (cunidev) <raffaele.tranquillini@gmail.com>"
+pkgname=device-xiaomi-gemini
+pkgdesc="Xiaomi Mi 5"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8996
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8996
+	soc-qcom-msm8996-ucm
+	"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware $pkgname-phosh"
+
+source="
+	deviceinfo
+	modules-initfs
+	pointercal
+	phoc.ini
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/Modem/Venus/ADSP/SLPI/WiFi/Bluetooth Firmware"
+	depends="
+		firmware-xiaomi-gemini
+		linux-firmware-ath10k
+		linux-firmware-qca
+		soc-qcom-msm8996-nonfree-firmware
+		"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+
+sha512sums="
+dd948c8e1780b0adc4023fbe09e69d6cabf06db1047e4bf09dc4c0dd88b237a7ce03bd19c4a39fa5b2a31a522eb27d63d6f7697577c3bc6c7833d911ac2805f2  deviceinfo
+4f420e410ed05d617659e8ec1d86b9d3b1514caabe1836cde06d6950f4d92e2b96ad9df7d91061019513aa23971d24a3c394e36abd4f3fbc4a9db5420037c2c4  modules-initfs
+e9ee9c1404b41ba15eafff3f728ff6e0e78dc17e9a88483fca92db1aa3efe0e4d5bf26142e533c4ff12b1bf8ce04ccabb7ca0f93aaea586d5b30910282aad237  pointercal
+38409d4ce48db4624539dbfd695d3c6e1596a29fd7c3004a41368b28cba646495d05360420ad728f82c63d6ddeeca71d09944df06ebaca120aedd9cc2b436eb3  phoc.ini
+"

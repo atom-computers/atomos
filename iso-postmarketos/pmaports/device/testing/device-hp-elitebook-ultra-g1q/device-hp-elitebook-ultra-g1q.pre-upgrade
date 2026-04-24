@@ -1,0 +1,70 @@
+#!/bin/sh -e
+#
+# Handle packages that were moved from depends to _pmb_recommends by nuking
+# apk from orbit, adding the packages to world and then re-running it.
+
+# The old version of the package is passed in as the second argument
+OLD_VER="$2"
+NEW_VER="$1"
+old_ver_less() {
+	[ "$(apk version -t "$OLD_VER" "$1")" = "<" ]
+}
+
+# For a given upgrade, ensure that certain package are in
+# the world file, otherwise fail with a nice message letting
+# the user know how to manually add them
+ensure_installed() {
+	# $1: version to check
+	# $@: list of packages
+	local missing ver cmd
+
+	ver="$1"
+	shift
+
+	# Only applicable if upgrading from a version older
+	# than $ver, otherwise we're all good here.
+	if ! old_ver_less "$ver"; then
+		return
+	fi
+
+	# Determine which packages in our list aren't in /etc/apk/world
+	# these packages were moved from depends to _pmb_recommends and
+	# must be manually installed to ensure we don't break booting
+	missing="$(printf '%s\n' "$@" | grep -v -f /etc/apk/world | tr '\n' ' ')"
+	# None missing? then we're good!
+	[[ -n "$missing" ]] || return
+
+	printf '\n\n'
+	printf 'ERROR: some packages that your device might need are no longer installed\n'
+	printf '       automatically. To ensure your device continues to function as expected\n'
+	printf '       plese run the following command:\n\n'
+	printf '       apk add '
+	printf '%s ' $missing
+	printf '\n'
+
+	return 0
+}
+
+# We migrated everything that isn't required on ALL
+# platforms from depends to recommends in 12-r2. Since
+# we can't know which packages are in use, the user must
+# manually add them all to their world file for now. They
+# can uninstall any unused ones after the upgrade at their
+# own risk.
+ensure_installed 12-r2 \
+	linux-firmware-qcom \
+	linux-firmware-ath10k \
+	linux-firmware-ath11k \
+	linux-firmware-ath12k \
+	linux-firmware-qca \
+	linux-firmware-rtw88 \
+	firmware-siliconlabs-rs9116 \
+	firmware-brcm43752 \
+	soc-qcom-qbootctl \
+	rmtfs \
+	pd-mapper \
+	tqftpserv \
+	bootmac \
+	woa-firmware-yoinker \
+	dtbloader
+

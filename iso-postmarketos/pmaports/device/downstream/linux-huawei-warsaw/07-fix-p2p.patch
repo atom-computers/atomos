@@ -1,0 +1,13 @@
+diff --git a/drivers/connectivity/hisi/wifi/wal/wal_linux_cfg80211.c b/drivers/connectivity/hisi/wifi/wal/wal_linux_cfg80211.c
+index 5c7a7673e063..f62bf39cb149 100755
+--- a/drivers/connectivity/hisi/wifi/wal/wal_linux_cfg80211.c
++++ b/drivers/connectivity/hisi/wifi/wal/wal_linux_cfg80211.c
+@@ -5660,7 +5660,7 @@ OAL_STATIC oal_wireless_dev_stru * wal_cfg80211_add_virtual_intf(oal_wiphy_stru
+             pst_net_dev       = pst_p2p0_hmac_vap->pst_p2p0_net_device;
+             pst_wdev          = pst_net_dev->ieee80211_ptr;
+ #endif
+-            return pst_wdev;
++            return ERR_PTR(-EINVAL);
+         case NL80211_IFTYPE_P2P_CLIENT:
+             en_vap_mode = WLAN_VAP_MODE_BSS_STA;
+             en_p2p_mode = WLAN_P2P_CL_MODE;

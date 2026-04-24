@@ -1,0 +1,6 @@
+panel-edp
+hid-generic
+hid-multitouch
+i2c-hid-of
+elan-i2c
+cros-ec-keyb

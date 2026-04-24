@@ -1,0 +1,11 @@
+diff -urN a/arch/arm/boot/dts/sprd-scx35_sp7731gea.dts b/arch/arm/boot/dts/sprd-scx35_sp7731gea.dts
+--- a/arch/arm/boot/dts/sprd-scx35_sp7731gea.dts	2019-04-17 15:09:15.184868111 +0500
++++ b/arch/arm/boot/dts/sprd-scx35_sp7731gea.dts	2019-04-17 14:56:57.613786000 +0500
+@@ -33,6 +33,7 @@
+ 	model = "Spreadtrum SP8835EB board";
+ 	compatible = "sprd,sp8835eb";
+ 	sprd,sc-id = <8830 1 0x20000>;
++	qcom,msm-id = <8830 1 0x20000>;
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 	interrupt-parent = <&gic>;

@@ -1,0 +1,22 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Libre Computer AML-S805X-AC-V1.0"
+deviceinfo_manufacturer="Libre Computer"
+deviceinfo_codename="librecomputer-lafrite"
+deviceinfo_year="2019"
+deviceinfo_dtb="amlogic/meson-gxl-s805x-libretech-ac"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+deviceinfo_screen_width="800"
+deviceinfo_screen_height="600"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"
+deviceinfo_generate_extlinux_config="true"

@@ -1,0 +1,25 @@
+maintainer=""
+pkgname=firmware-lg-m216
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for LG K10"
+url="https://github.com/cristianc/firmware"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://github.com/cristianc/firmware/raw/main/m216.tar.xz"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="LG K10 WiFi/BT firmware"
+	install -Dm644 "$srcdir"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="8b236fc772bfa857d7dfb6ad2d815af554605e3f89bf66f2a2e0cbc2562146a7b5888298abc8f7010ed7e5b5e7f7555aacd7d9d73ec33f0474078705e61d3a38  m216.tar.xz"

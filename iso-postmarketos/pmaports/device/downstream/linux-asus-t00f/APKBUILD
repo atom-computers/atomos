@@ -1,0 +1,60 @@
+# Kernel config based on: arch/x86/configs/lineage_T00F_defconfig
+
+pkgname=linux-asus-t00f
+pkgver=3.10.107
+pkgrel=5
+pkgdesc="Asus Zenfone 5 kernel fork"
+arch="x86"
+_carch="x86"
+_flavor="asus-t00f"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_asus_T00F"
+_commit="ffd0a7e6f0d4ccb951f3e39aa805d9c7c6cb3291"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/zf5/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_ipc-shm-fix-redefinition-of-shm_rcu_free.patch
+	02_drivers-external_drivers-remove-unused-constants.patch
+	03_ipc-fix-undefined-references.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	x86-relocs-Make-per_cpu_load_addr-static.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="98ae9cabe828b9aa3ea38c01f2294398bde4e7dbc470acb87d404d65f7526a416892c2e9a6ca9dacb69d8fe30e6b61a230beb1c4d234e16d126b3c4197564945  linux-asus-t00f-ffd0a7e6f0d4ccb951f3e39aa805d9c7c6cb3291.tar.gz
+11010d8e7b5a663e1e9dcae7571ef3a13e7b8acd53fecc5df322f6e07860d3b1ba0c40a5a9fae59efdd1d88f2b4a6ffbdc3662929710f31bbbf8c8a333584ccd  config-asus-t00f.x86
+0f6a9be41ed61b8407a146e8ccbc5a7abbcffe150cbba01345fcfa8e31a1554274dc2d79015f0ea68f9b394e4af5bd7040e992b3950cf03d2ce1f2454fc0d529  01_ipc-shm-fix-redefinition-of-shm_rcu_free.patch
+e55a90bc89a956d83b3d978e3fae871c781544571a667468b89a9f68b626b8d39a3000ea43ae276d5e069c1ca1b2309e72a1e7b6bae53e1d78500d054de3bbd2  02_drivers-external_drivers-remove-unused-constants.patch
+7dd36856b2a56216172df1a89a1c7a1cd408141605b1d0bac1a3ecd2d57d0cb1fd58ccf9dea56983597a5432947ca8bdb8789740cb968d9898ba4e36bd6d2d7e  03_ipc-fix-undefined-references.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+08e13b88b043e6de0ff1e563487e1d0292c1fd54160a6384448934dd83776d1f4f7b3f3a1bf5b4471320336026d59efa55b14f3ca3982d4170df0aca3066e955  x86-relocs-Make-per_cpu_load_addr-static.patch"

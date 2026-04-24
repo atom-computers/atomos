@@ -1,0 +1,25 @@
+unchanged:
+--- a/drivers/misc/mediatek/connectivity/common/conn_soc/core/include/wmt_conf.h
++++ b/drivers/misc/mediatek/connectivity/common/conn_soc/core/include/wmt_conf.h
+@@ -31,7 +31,7 @@
+ ********************************************************************************
+ */
+ #define CUST_CFG_WMT "WMT_SOC.cfg"
+-#define CUST_CFG_WMT_PREFIX "/system/etc/firmware/"
++#define CUST_CFG_WMT_PREFIX "/lib/firmware/postmarketos"
+ 
+ /*******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+only in patch2:
+unchanged:
+--- a/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
++++ b/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
+@@ -78,7 +78,7 @@ do { \
+ #endif
+ 
+ #define WMT_CFG_FILE "WMT_SOC.cfg"
+-#define WMT_CFG_FILE_PREFIX "/system/etc/firmware/"
++#define WMT_CFG_FILE_PREFIX "/lib/firmware/postmarketos"
+ 
+ /*******************************************************************************
+ *                             D A T A   T Y P E S

@@ -1,0 +1,70 @@
+maintainer="WeirdTreeThing <bradyn127@protonmail.com>"
+pkgname=cros-keyboard-map
+pkgdesc="Keyboard mapping for Chrome OS devices"
+pkgver=0_git20251218
+pkgrel=1
+url="https://github.com/WeirdTreeThing/cros-keyboard-map"
+license="BSD-3-Clause"
+arch="aarch64 armv7 x86_64" # there are no cros devices of other arches
+depends="keyd python3"
+
+case "$CARCH" in
+aarch64|armv7)
+	depends="$depends py3-libfdt"
+	;;
+esac
+
+options="!check !archcheck !tracedeps"
+subpackages="$pkgname-openrc $pkgname-systemd"
+_repo="WeirdTreeThing/cros-keyboard-map"
+_commit="146753f3646a13f069bf3ea1e2fb8ebbe0d1b46a"
+source="
+	cros-keyboard-map-$_commit::https://raw.githubusercontent.com/$_repo/$_commit/cros-keyboard-map.py
+	$pkgname.initd
+	$pkgname.confd
+	$pkgname.service
+	$pkgname.env
+	$pkgname.tmpfiles
+"
+
+package() {
+	# Script
+	install -Dm755 "$srcdir/cros-keyboard-map-$_commit" \
+		"$pkgdir"/usr/bin/pmos-generate-cros-keymap
+
+	# OpenRC service
+	install -Dm755 "$srcdir/$pkgname.initd" \
+		"$pkgdir/etc/init.d/$pkgname"
+	install -Dm644 "$srcdir"/$pkgname.confd \
+		"$pkgdir/etc/conf.d/$pkgname"
+
+	# We generate config in runtime with a service, thus make a symlink for
+	# keyd config to a file in /tmp that will be generated with the service
+	_dir="$pkgdir/etc/keyd"
+	mkdir -p "$_dir"
+	ln -s /tmp/cros-keymap/keyd.conf "$_dir"/default.conf
+}
+
+systemd() {
+	install_if="$pkgname=$pkgver-r$pkgrel systemd"
+	# Service file
+	install -Dm644 "$srcdir/$pkgname.service" \
+		"$subpkgdir/usr/lib/systemd/system/$pkgname.service"
+	# Config file for systemd use (environment file)
+	install -Dm644 "$srcdir/$pkgname.env" \
+		"$subpkgdir/etc/$pkgname"
+	# Tmpfiles to create the config directory
+	install -Dm644 "$srcdir/$pkgname.tmpfiles" \
+		"$subpkgdir/usr/lib/tmpfiles.d/$pkgname.conf"
+
+	default_systemd
+}
+
+sha512sums="
+20b14d36425e407dca0a4498021ed86f0377f004258328901d432dff899c009b4063998781411fda79675ccc302ca55b5607ce19cac350c3d4507b9b014047aa  cros-keyboard-map-146753f3646a13f069bf3ea1e2fb8ebbe0d1b46a
+bcb3bfa30b3e670dca3c90168eb71d9eef4cad6b098dc878e8b572102f43f958ac5f9af603df393cabf4278ee4232714d626ada9d5ac22174ed7ceac17176c3d  cros-keyboard-map.initd
+81d435d611927bc69d49cf4ed7f1fe3df33f001aec27397a8683b827ba9f5d5b3bfa0a3ab2b58d07b275e49e0300c0d91b5a1930b023791e312e55569b329dcb  cros-keyboard-map.confd
+91b28c481327c26890dab8be062a21541a6b5622af324a351f47c64e6a3f5fbafce04026c12f5e9e6fe1407329b4f348be8681bef00ea9e6b1fd3ffa9178b95c  cros-keyboard-map.service
+56e6bdf46acf0514e9e593833490011c35f3b52e42dff5aabb0ea9d08ab679059dabafb416c6dbf6420714fd85618c0cb1ff6a2f9c3f66b14b32793fec8d505d  cros-keyboard-map.env
+316e3fb9b7441f07051547bb89940f05f92703d1311f36471528d24d4618ee020c7f0ea30aa656c58f7358e8a18f5ce4e0fa25c6c814fc2b8530adcd2c6c1bd3  cros-keyboard-map.tmpfiles
+"

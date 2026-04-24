@@ -1,0 +1,74 @@
+#!/bin/sh
+# switch the sysupdate channel between main (production) and staging.
+set -eu
+
+SYSUPDATE_DIR=/usr/lib/sysupdate.d
+OVERRIDE_DIR=/etc/sysupdate.d
+BASE_URL="https://duranium.postmarketos.org/images/"
+
+usage() {
+	echo "Usage: $0 [-h|--help] [main|staging]"
+	echo "With no arguments, print the current channel."
+}
+
+case "${1:-}" in
+	-h|--help)
+		usage
+		exit 0
+		;;
+	""|main|staging)
+		;;
+	*)
+		usage >&2
+		exit 1
+		;;
+esac
+
+get_channel() {
+	for f in "$OVERRIDE_DIR"/*.transfer; do
+		[ -f "$f" ] || continue
+		if grep -q '/images/staging/' "$f"; then
+			echo "staging"
+			return
+		fi
+	done
+	echo "main"
+}
+
+if [ -z "${1:-}" ]; then
+	get_channel
+	exit 0
+fi
+
+if [ "$(id -u)" -ne 0 ]; then
+	echo "error: changing channel requires root" >&2
+	exit 1
+fi
+
+channel="$1"
+
+if [ "$channel" = "main" ]; then
+	for f in "$OVERRIDE_DIR"/*.transfer; do
+		[ -f "$f" ] || continue
+		if grep -q '/images/staging/' "$f"; then
+			rm "$f"
+		fi
+	done
+	echo "Switched to main"
+	exit 0
+fi
+
+# staging
+mkdir -p "$OVERRIDE_DIR"
+for transfer in "$SYSUPDATE_DIR"/*.transfer; do
+	[ -f "$transfer" ] || continue
+
+	grep -q "^Path=.*$BASE_URL" "$transfer" || continue
+
+	name=$(basename "$transfer")
+	# NOTE: if there are changes to .transfer files in the image, the changes won't
+	# make it into the override...
+	sed 's|/images/|/images/staging/|' "$transfer" > "$OVERRIDE_DIR/$name"
+done
+
+echo "Switched to staging"

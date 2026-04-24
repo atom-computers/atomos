@@ -1,0 +1,52 @@
+# U-boot with patches to make the Samsung S9 boot
+maintainer="Dzmitry Sankouski <dsankouski@gmail.com>"
+pkgname=u-boot-starqltechn
+pkgver=2023.01_rc2
+pkgrel=3
+pkgdesc="U-Boot bootloader for the Samsung SM-G9600 starqltechn"
+url="https://source.denx.de/u-boot"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+makedepends="
+	bc
+	bison
+	dtc
+	flex
+	openssl-dev
+	py3-setuptools
+	python3-dev
+	swig
+	"
+options="!archcheck !check !strip"
+_ubootver=2023.01-rc2
+source="
+	https://source.denx.de/u-boot/u-boot/-/archive/v$_ubootver/u-boot-v$_ubootver.tar.gz
+	0001-starqltechn-enable-serial-console.patch
+	0002-sdm845-save-relocaddr-to-env-variables.patch
+	0003-input-do-not-override-console-when-stdin-and-device-.patch
+	0004-wip-input-driver-for-gpio-buttons.patch
+	0005-starqltechn-use-button-kbd-driver-for-navigating-boo.patch
+	0006-bootmenu-loop-over-menu-entries-with-one-key.patch
+	"
+builddir="$srcdir/u-boot-v$_ubootver"
+
+build() {
+	make HOSTCC=gcc ARCH=arm starqltechn_defconfig
+	make
+}
+
+package() {
+	install -D -m644 $builddir/"u-boot.bin" \
+		"$pkgdir/usr/share/u-boot/starqltechn/u-boot.bin"
+}
+
+sha512sums="
+5e570a0070cd31bb4d9541542532229dbe15e28955428e8a6659de5e4140c89f82d635045d5594e6b9cc6b4bb3037ea4e2c6236433d65a7c814a0ec9c0f32004  u-boot-v2023.01-rc2.tar.gz
+068453a2eb3e2e6a950a31cd014f1dd4eed99f327f09aae69f4e4e55edf99cbef640d2361ada5844c5a02b2242c5668800d6b88599886c257764378615b351f8  0001-starqltechn-enable-serial-console.patch
+ba3b62e7428e40f8a95e7ada27528f8b866daea5c0a4addc6a8520198ae8d6ec89b5dcd325080e24ce00c5ad9be460801789b120b864f6bbd17609be442f1fe6  0002-sdm845-save-relocaddr-to-env-variables.patch
+71aa514ffbbdf2ca267f89eff84dfa8e76904e280ab5196e9e8446c6d54100661aacd0027e504f31c489d20d71481880f5615eabb079125003a60e93c0d6370a  0003-input-do-not-override-console-when-stdin-and-device-.patch
+72b78a26737d9ee21854b71036ec5e31206be7cfe70e11ba583eb3e699da674db0db45ce9e51c30f1935aa8bcfa8ed6157899f129de55fb5966892490e6e7eb3  0004-wip-input-driver-for-gpio-buttons.patch
+552eb9b05ba74dda0eb571b48cc8492377c627c96bacb061973ce8b34c01f3cd2003cd9759d89e620ede08ebfa88d854fc0cd5c12b3f8b208406f08d1aca8886  0005-starqltechn-use-button-kbd-driver-for-navigating-boo.patch
+e6217387c7e5f5766602feca99d3973c0a1780069d279e279b413425dc7ab1b6f4227eb0d108f17e6ccbeddb6ab99c5a6b236678980cf5a77dbff36fd1b1d2b0  0006-bootmenu-loop-over-menu-entries-with-one-key.patch
+"

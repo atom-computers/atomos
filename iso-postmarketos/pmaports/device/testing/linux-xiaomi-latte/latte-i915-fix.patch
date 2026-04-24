@@ -1,0 +1,121 @@
+diff --color -u a/drivers/gpu/drm/i915/display/intel_display_driver.c b/drivers/gpu/drm/i915/display/intel_display_driver.c
+--- a/drivers/gpu/drm/i915/display/intel_display_driver.c	2025-04-27 15:25:09.834101149 +0800
++++ b/drivers/gpu/drm/i915/display/intel_display_driver.c	2025-04-27 15:33:23.685520296 +0800
+@@ -226,6 +226,8 @@
+ 	if (ret)
+ 		goto cleanup_bios;
+ 
++	intel_init_quirks(display);
++
+ 	/* FIXME: completely on the wrong abstraction layer */
+ 	ret = intel_power_domains_init(display);
+ 	if (ret < 0)
+@@ -267,8 +269,6 @@
+ 	if (ret)
+ 		goto cleanup_vga_client_pw_domain_dmc;
+ 
+-	intel_init_quirks(display);
+-
+ 	intel_fbc_init(display);
+ 
+ 	return 0;
+diff --color -u a/drivers/gpu/drm/i915/display/intel_display_power.c b/drivers/gpu/drm/i915/display/intel_display_power.c
+--- a/drivers/gpu/drm/i915/display/intel_display_power.c	2025-04-27 15:25:09.834101149 +0800
++++ b/drivers/gpu/drm/i915/display/intel_display_power.c	2025-04-27 15:31:38.759355555 +0800
+@@ -23,6 +23,7 @@
+ #include "intel_pcode.h"
+ #include "intel_pmdemand.h"
+ #include "intel_pps_regs.h"
++#include "intel_quirks.h"
+ #include "intel_snps_phy.h"
+ #include "skl_watermark.h"
+ #include "skl_watermark_regs.h"
+@@ -492,8 +493,14 @@ __intel_display_power_get_domain(struct intel_display *display,
+ 	if (intel_display_power_grab_async_put_ref(display, domain))
+ 		return;
+ 
+-	for_each_power_domain_well(display, power_well, domain)
++	for_each_power_domain_well(display, power_well, domain) {
++		if (domain == POWER_DOMAIN_INIT &&
++			intel_has_quirk(display, QUIRK_NO_VLV_DISP_PW_DPIO_CMN_BC_INIT) &&
++			i915_power_well_instance(power_well)->id == VLV_DISP_PW_DPIO_CMN_BC)
++			continue;
++
+ 		intel_power_well_get(display, power_well);
++	}
+ 
+ 	power_domains->domain_use_count[domain]++;
+ }
+@@ -589,7 +596,13 @@ __intel_display_power_put_domain(struct intel_display *display,
+ 	power_domains->domain_use_count[domain]--;
+ 
+-	for_each_power_domain_well_reverse(display, power_well, domain)
++	for_each_power_domain_well_reverse(display, power_well, domain) {
++		if (domain == POWER_DOMAIN_INIT &&
++			intel_has_quirk(display, QUIRK_NO_VLV_DISP_PW_DPIO_CMN_BC_INIT) &&
++			i915_power_well_instance(power_well)->id == VLV_DISP_PW_DPIO_CMN_BC)
++			continue;
++
+ 		intel_power_well_put(display, power_well);
++	}
+ }
+ 
+ static void __intel_display_power_put(struct intel_display *display,
+diff --color -u a/drivers/gpu/drm/i915/display/intel_display_power_well.c b/drivers/gpu/drm/i915/display/intel_display_power_well.c
+--- a/drivers/gpu/drm/i915/display/intel_display_power_well.c	2025-04-27 15:25:09.834101149 +0800
++++ b/drivers/gpu/drm/i915/display/intel_display_power_well.c	2025-04-27 15:25:50.880302395 +0800
+@@ -66,7 +66,7 @@
+ 			   struct i915_power_well *power_well);
+ };
+ 
+-static const struct i915_power_well_instance *
++const struct i915_power_well_instance *
+ i915_power_well_instance(const struct i915_power_well *power_well)
+ {
+ 	return &power_well->desc->instances->list[power_well->instance_idx];
+diff --color -u a/drivers/gpu/drm/i915/display/intel_display_power_well.h b/drivers/gpu/drm/i915/display/intel_display_power_well.h
+--- a/drivers/gpu/drm/i915/display/intel_display_power_well.h	2025-04-27 15:25:09.834101149 +0800
++++ b/drivers/gpu/drm/i915/display/intel_display_power_well.h	2025-04-27 15:26:38.682005203 +0800
+@@ -129,6 +129,7 @@
+ struct i915_power_well *lookup_power_well(struct intel_display *display,
+ 					  enum i915_power_well_id id);
+ 
++const struct i915_power_well_instance *i915_power_well_instance(const struct i915_power_well *power_well);
+ void intel_power_well_enable(struct intel_display *display,
+ 			     struct i915_power_well *power_well);
+ void intel_power_well_disable(struct intel_display *display,
+diff --color -u a/drivers/gpu/drm/i915/display/intel_quirks.c b/drivers/gpu/drm/i915/display/intel_quirks.c
+--- a/drivers/gpu/drm/i915/display/intel_quirks.c	2025-04-27 15:25:09.834558483 +0800
++++ b/drivers/gpu/drm/i915/display/intel_quirks.c	2025-04-27 15:35:01.128380326 +0800
+@@ -78,6 +78,12 @@
+ 	drm_info(display->drm, "Applying Fast Wake sync pulse count quirk\n");
+ }
+ 
++static void quirk_no_vlv_disp_pw_dpio_cmn_bc_init(struct intel_display *display)
++{
++	intel_set_quirk(display, QUIRK_NO_VLV_DISP_PW_DPIO_CMN_BC_INIT);
++	drm_info(display->drm, "Applying no dpio-common-bc powerwell init quirk\n");
++}
++
+ struct intel_quirk {
+ 	int device;
+ 	int subsystem_vendor;
+@@ -253,5 +259,7 @@
+ 	/* HP Notebook - 14-r206nv */
+ 	{ 0x0f31, 0x103c, 0x220f, quirk_invert_brightness },
++	/* Xiaomi Mi Pad 2 */
++	{ 0x22b0, 0x1d72, 0x1502, quirk_no_vlv_disp_pw_dpio_cmn_bc_init },
+ };
+ 
+ static const struct intel_dpcd_quirk intel_dpcd_quirks[] = {
+diff --color -u a/drivers/gpu/drm/i915/display/intel_quirks.h b/drivers/gpu/drm/i915/display/intel_quirks.h
+--- a/drivers/gpu/drm/i915/display/intel_quirks.h	2025-04-27 15:25:09.834558483 +0800
++++ b/drivers/gpu/drm/i915/display/intel_quirks.h	2025-04-27 15:33:54.634332191 +0800
+@@ -20,6 +20,7 @@
+	QUIRK_INVERT_BRIGHTNESS,
+ 	QUIRK_LVDS_SSC_DISABLE,
+ 	QUIRK_NO_PPS_BACKLIGHT_POWER_HOOK,
+ 	QUIRK_FW_SYNC_LEN,
++	QUIRK_NO_VLV_DISP_PW_DPIO_CMN_BC_INIT,
+ };
+ 

@@ -1,0 +1,24 @@
+# Archived: Kernel does not build anymore
+maintainer="Théo Friberg <fsmnarmosta@posteo.net>"
+pkgname=firmware-samsung-nevisp
+pkgver=1
+pkgrel=0
+pkgdesc="Non-free firmware for the Samsung Galaxy Fame (wifi)"
+url="https://github.com/wulsic/android_vendor_samsung_nevisp"
+arch="armv7"
+license="other:proprietary"
+options="!tracedeps pmb:cross-native"
+
+# Sources
+_commit="fbbefae4c3b06978d0e2948211a8138bb6a6a11c"
+source="$pkgname-$_commit.tar.gz::https://github.com/wulsic/android_vendor_samsung_nevisp/archive/$_commit.tar.gz"
+builddir="$srcdir/android_vendor_samsung_nevisp-$_commit"
+
+package() {
+	install -Dm644 "$builddir"/proprietary/etc/wifi/nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd.cal
+	install -Dm644 "$builddir"/proprietary/etc/wifi/bcmdhd_sta.bin_b2 \
+		"$pkgdir"/lib/firmware/postmarketos/fw_bcmdhd.bin_b2
+}
+
+sha512sums="9e27f2fe1c897d9fcf8d4736a35bab729079842f7f18e29c0d02fe63e7321400af40541b235b7ae80f9ad551489ba14bbe8fea2539106a6394f612e298876033  firmware-samsung-nevisp-fbbefae4c3b06978d0e2948211a8138bb6a6a11c.tar.gz"

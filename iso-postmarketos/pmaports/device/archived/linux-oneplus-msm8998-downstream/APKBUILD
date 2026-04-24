@@ -1,0 +1,65 @@
+# Archived: EoL downstream kernel, only for reference. Use mainline kernel (linux-postmarketos-qcom-msm8998)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineage_oneplus5_defconfig (https://git.io/JvmDf)
+pkgname=linux-oneplus-msm8998-downstream
+pkgver=4.4.217
+pkgrel=0
+pkgdesc="OnePlus 5/5T downstream kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="oneplus-msm8998-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6 openssl-dev"
+
+# Compiler: GCC 6 (latest doesn't boot to initramfs)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="op5"
+_commit="dac686aa9a9491551e70a6d35d8636f823eb97e9"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/android-linux-stable/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-use-relative-header-includes.patch
+	0002-fix-TRACE_INCLUDE_PATH-paths.patch
+	0003-fix-synaptics_s3320-touchscreen-driver-input.patch
+	0004-disable-interfering-bt_power-rfkill.patch
+	0005-update-msm8998-qpnp-rtc-driver-src-with-sm8150.patch
+	0006-disable-various-spammy-driver-logging.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+fea5a566ce4f1ef93e08cdd4d0edb3afe358105865b8583231cdeaccaaa3484d567230fdd4b3cea5e77fa1b7ff9bf9486b8d1ba1c757fc3477db35d9a93f3db4  linux-oneplus-msm8998-downstream-dac686aa9a9491551e70a6d35d8636f823eb97e9.tar.gz
+2fa4fe807711b7595c92488f3f16c287b40663dd16cea22e406e57a6c888a9151987490fb910c48ca766af398ed6612336df7c7662234a839429d15de1256599  config-oneplus-msm8998-downstream.aarch64
+f369bb6510a5c0581eb2db6ef565d0e93e117b5960c91f52bebd5aa931d65fe91bdc0ec9673107756aa1b5118208d75af116925630aed9025a8f5e303ae1f980  0001-use-relative-header-includes.patch
+a484dc777b37b43eb54f8beb20eef51b7a9177928f97f1b200951c6ece70805e7fa3762f4ad0686525021254fd1f0b5d36c207cf27a04ec65cfe55f88c3d1c12  0002-fix-TRACE_INCLUDE_PATH-paths.patch
+a29c158497e8ef4afddce57e42e54de81629ddf85df4a229282b528ec63475bfa5ed4cc6ff5f77d22300c7124655807355aa7b0cc25d8b02e122b752777f677a  0003-fix-synaptics_s3320-touchscreen-driver-input.patch
+1afb3a4e6af51d073a6e9d3352b0b5ab2918018d2ada972e72209eba3fc5b98926e691ff0d641a9d03a4ce8030e6ed15dff54b3720c751ab7134db53bfd2e685  0004-disable-interfering-bt_power-rfkill.patch
+44031dfaa8fe9a073924fd3549ebb158d32ec2925f29f0a0ca6b1959fb4597dd32232035253bd896985a7d81235c1fbdd917347d7ff5257103be8ee4bb02e5fe  0005-update-msm8998-qpnp-rtc-driver-src-with-sm8150.patch
+083da52f3a2bfa745104690773539426afff3150e81ea25a377d51f7253d83f6eedfb62644907171e142db114435cc6a3e0627b9dc04a99ae6e5796dc8159209  0006-disable-various-spammy-driver-logging.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"

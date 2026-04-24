@@ -1,0 +1,31 @@
+pkgname=firmware-lenovo-karate
+pkgver=1
+pkgrel=1
+_commit="5ce975ce101adbd775002dc0bb73ba9ddbbd717f"
+pkgdesc="Firmware files for Lenovo K6 Power"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+depends="wcnss-wlan"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+source="$pkgname-$_commit.tar.gz::https://github.com/drebrez/vendor_lenovo_karate/archive/$_commit.tar.gz"
+builddir="$srcdir/vendor_lenovo_karate-$_commit"
+
+package() {
+	# /lib/firmware/postmarketos
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b09
+		wcnss.b10 wcnss.b11 wcnss.b12 wcnss.mdt"
+	for _i in $_files; do
+		install -Dm644 "$_i" "$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	# /lib/firmware/postmarketos/wlan/prima
+	_files="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin
+		WCNSS_wlan_dictionary.dat"
+	for _i in $_files; do
+		install -Dm644 wlan/prima/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="a3aacdfcf2ce79558587a36dcd8d964e2b7374fb44a4600e9d1e6d13db92ed357f2761c5c0a9ce45e3038ce9ed46e599cec7c3ae5bce8178b6eb90a0907f7ec1  firmware-lenovo-karate-5ce975ce101adbd775002dc0bb73ba9ddbbd717f.tar.gz"

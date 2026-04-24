@@ -1,0 +1,56 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-fairphone-fp3
+pkgdesc="Fairphone 3"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-fairphone-fp3-adreno
+	firmware-fairphone-fp3-adsp
+	firmware-fairphone-fp3-audio
+	firmware-fairphone-fp3-modem
+	firmware-fairphone-fp3-venus
+	firmware-fairphone-fp3-wcnss
+	firmware-qcom-adreno-a530
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-modem-uim-selection
+	postmarketos-base
+	qbootctl
+	rmtfs
+	soc-qcom-msm8953
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-openrc"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		openrc
+		qbootctl-openrc
+	"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+ff5a4c50ded16274fc24b7df8b7d811914f6b702a9e766b057416700cacd12083391c368ce7d73074b9044b2182fa9572850bffad1c2bdb4ce80dc8fd804dc11  deviceinfo
+003e5228a2b2825f24cb8b4842e3c3f72b99225f0aef3cda5bb2de4e4beb5e1c84800ba48c6cf1b84fe042bd039912e67c545c00981b604db0c0f0bcb546f7c5  kernel-cmdline.conf
+ec97421455049f425912a6365fe453d1c9db55d0983266147739c1c52efc287185638a36f6e2d26c526344f3896019c1e2d86e2bcc751474ddaa578ff39db3ed  modules-initfs
+"

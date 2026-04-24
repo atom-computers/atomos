@@ -1,0 +1,121 @@
+Source: feedbackd
+Section: x11
+Priority: optional
+Maintainer: Guido Günther <agx@sigxcpu.org>
+Build-Depends:
+ dbus,
+ debhelper-compat (= 13),
+ dh-sequence-gir,
+ dh-sequence-installsysusers,
+ gsettings-desktop-schemas <!nocheck>,
+ gi-docgen <!nodoc>,
+ gir1.2-gio-2.0-dev <!nogir>,
+ json-glib-tools,
+ libgirepository1.0-dev <!nogir>,
+ libglib2.0-dev,
+ libgmobile-dev,
+ libgudev-1.0-dev,
+ libgsound-dev,
+ libjson-glib-dev,
+ libumockdev-dev,
+ meson,
+ pkgconf,
+ python3-docutils <!nodoc>,
+ systemd-dev,
+ umockdev,
+ valac,
+Standards-Version: 4.6.2
+Homepage: https://gitlab.freedesktop.org/feedbackd/feedbackd
+Rules-Requires-Root: no
+
+Package: feedbackd
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ feedbackd-common (>= ${source:Version}),
+ sound-theme-freedesktop,
+Recommends:
+ gsettings-desktop-schemas,
+Breaks:
+ feedbackd-device-themes (<< 0.8.0~),
+Description: DBus service for haptic/visual/audio feedback
+ Feedbackd is a DBus activated daemon that provides haptic/
+ visual/audio feedback based on events selected from configurable
+ profiles.
+ .
+ This package contains the daemon.
+
+Package: feedbackd-common
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Breaks:
+ feedbackd (<< 0.0.0+git20200304),
+Replaces:
+ feedbackd (<< 0.0.0+git20200304),
+Description: Shared files for feedbackd
+ Feedbackd is a DBus activated daemon that provides haptic/
+ visual/audio feedback based on events selected from configurable
+ profiles.
+ .
+ This package contains the architecture-independent shared files.
+
+Package: libfeedback-0.0-0
+Architecture: any
+Multi-Arch: same
+Section: libs
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends: feedbackd (>= ${binary:Version})
+Description: Library for managing haptic/visual/audio feedback
+ Feedbackd is a DBus activated daemon that provides haptic/
+ visual/audio feedback based on events selected from configurable
+ profiles.
+ .
+ This package contains the shared libraries for applications
+ interfacing with Feedbackd and the API documentation.
+
+Package: libfeedback-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Depends:
+ gir1.2-lfb-0.0 (= ${binary:Version}),
+ libfeedback-0.0-0 (= ${binary:Version}),
+ libglib2.0-dev,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Development files for libfeedback
+ Feedbackd is a DBus activated daemon that provides haptic/
+ visual/audio feedback based on events selected from configurable
+ profiles.
+ .
+ This package contains development files and Vala bindings to use when
+ writing applications that interface with feedbackd.
+
+Package: gir1.2-lfb-0.0
+Architecture: any
+Multi-Arch: same
+Section: introspection
+Depends:
+ ${gir:Depends},
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: GObject introspection data for libfeedback
+ Feedbackd is a DBus activated daemon that provides haptic/
+ visual/audio feedback based on events selected from configurable
+ profiles.
+ .
+ This package contains introspection data for the libfeedback library.
+
+Package: wireplumber-xdg-media-roles
+Architecture: all
+Section: sound
+Build-Profiles: <pkg.feedbackd.media-roles>
+Depends:
+ wireplumber (>= 0.5.13),
+Description: Default media role configuration
+ Media role configuration to use role based routing with wireplubmer.

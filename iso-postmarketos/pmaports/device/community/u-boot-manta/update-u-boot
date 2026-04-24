@@ -1,0 +1,112 @@
+#!/bin/sh
+
+partition=/dev/mmcblk0p3
+verbose=
+dryrun=
+imagedir=/usr/share/u-boot/
+skip_delay=
+
+die() {
+	echo "ERROR: $@"
+	exit 1
+}
+
+usage() {
+	cat <<EOF
+usage: $0 [-n,--dry-run] [-i,--imagedir <imagedir>] [-s|--skip-delay]
+
+options:
+
+ -p, --partition <partition> Specify partition to flash u-boot to
+						  (current default: ${partition}) 
+
+ -i,--imagedir <imagedir> Specify u-boot image directory
+                          (current default: ${imagedir:-none})
+
+ -n,--dry-run             Print commands but don't execute them
+
+ -s,--skip-delay          Skip delay and flash the image immediately 
+
+EOF
+}
+
+validate_checksum() {
+	file="$1"
+	file_sha512="$file.sha512"
+	file_size=$(stat -c%s $file)
+	partition="$2"
+	bs="$3"
+
+	checksum0=$(cat $file_sha512 | awk {'print $1'})
+	checksum1=$(dd if=$partition bs=1 count=$file_size status=none | sha512sum | awk {'print $1'})
+	if [ "$checksum0" != "$checksum1" ]; then
+		echo "File: $checksum0"
+		echo "Part: $checksum1"
+		die "Checksum failed"
+	fi
+	echo "Successful U-Boot image checksum verification on $partition :"
+	echo -e "\t$checksum1"
+}
+
+while [ $# -gt 0 ]; do
+	opt="$1"
+	shift
+	case "$opt" in
+	-p|--partition)
+		partition="$1"
+		shift
+		;;
+	-i|--imagedir)
+		imagedir="$1"
+		shift
+		;;
+	-n|--dry-run)
+		dryrun="echo"
+		;;
+	-s|--skip-delay)
+		skip_delay="yes"
+		;;
+        --)
+                break
+                ;;
+        -*)
+                usage
+                exit 1
+                ;;
+        esac
+done
+
+echo "/!\ WARNING:"
+echo "This upgrade may not work reliably, postmarketOS might not boot anymore!"
+echo
+read -p "Continue? (y/n) [n]: " -n 1 -r
+echo
+case "$REPLY" in
+	y|Y) ;;
+	*) exit 1 ;;
+esac
+
+if [ -z "$dryrun" ]; then
+	if [ -z "$skip_delay" ]; then
+		echo "Updating $board u-boot in $device in 3 seconds..."
+		sleep 3
+	else
+		echo "Updating $board u-boot in $device"
+	fi
+fi
+
+(
+set -e
+	[ -e "$imagedir/samsung-manta/" ] || die "manta images not installed, apk add u-boot-manta"
+	$dryrun echo "Generating android boot image..."
+	$dryrun dd if=/dev/zero of=/tmp/ramdisk iflag=fullblock bs=4b count=1
+	$dryrun gzip /tmp/ramdisk
+	$dryrun mkbootimg --kernel "$imagedir"samsung-manta/u-boot.bin --ramdisk /tmp/ramdisk.gz --base "0x40000000" --kernel_offset "0x00008000" --ramdisk_offset "0x01000000" --tags_offset "0x00000100" --second_offset "0x00f00000" --pagesize "2048" -o /tmp/aboot.img
+	$dryrun sha512sum /tmp/aboot.img > /tmp/aboot.img.sha512
+	$dryrun dd if=/tmp/aboot.img of=$partition bs=512 oflag=direct status=none
+	[ -z "$dryrun" ] && validate_checksum /tmp/aboot.img $partition 512
+	$dryrun rm -f /tmp/aboot.img /tmp/ramdisk.gz /tmp/ramdisk /tmp/aboot.img.sha512
+$dryrun sync
+) || die "U-Boot installation in $partition failed"
+
+[ -z "$dryrun" ] && echo "Completed successfully."

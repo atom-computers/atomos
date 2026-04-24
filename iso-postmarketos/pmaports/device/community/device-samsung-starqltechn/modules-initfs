@@ -1,0 +1,11 @@
+gpi
+i2c-algo-bit
+i2c-gpio
+max77693-haptic
+max77705
+pwm-clk
+s2dos05-regulator
+s6sy761
+sec-core
+sec-irq
+uinput

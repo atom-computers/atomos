@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=MATE Terminal
+TryExec=mate-terminal
+Exec=mate-terminal --maximize
+Icon=utilities-terminal
+Type=Application
+StartupNotify=true

@@ -1,0 +1,40 @@
+{
+  "name" : "test",
+  "profiles" : [
+    {
+      "name" : "full",
+      "feedbacks" : [
+        {
+          "type"       : "Dummy",
+          "event-name" : "test-dummy-00",
+          "duration"   : 16
+        },
+        {
+          "type"       : "Dummy",
+          "event-name" : "test-dummy-10",
+          "duration"   : 32
+        }
+      ]
+    },
+    {
+      "name" : "quiet",
+      "feedbacks" : [
+        {
+          "type"       : "Dummy",
+          "event-name" : "test-dummy-10",
+          "duration"   : 48
+        }
+      ]
+    },
+    {
+      "name" : "silent",
+      "feedbacks" : [
+        {
+          "type"       : "Dummy",
+          "event-name" : "test-dummy-10",
+          "duration"   : 64
+        }
+      ]
+    }
+  ]
+}

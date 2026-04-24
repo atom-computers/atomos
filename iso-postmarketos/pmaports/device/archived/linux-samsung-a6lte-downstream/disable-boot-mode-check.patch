@@ -1,0 +1,11 @@
+--- a/drivers/staging/samsung/sec_batt.c	2022-02-08 08:17:27.000000000 +0300
++++ b/drivers/staging/samsung/sec_batt.c	2024-02-20 00:28:52.680748950 +0300
+@@ -20,6 +20,8 @@
+ 
+ static int sec_bat_is_lpm_check(char *str)
+ {
++	int lpcharge = 0;
++
+ 	if (strncmp(str, "charger", 7) == 0)
+ 		lpcharge = 1;
+ 

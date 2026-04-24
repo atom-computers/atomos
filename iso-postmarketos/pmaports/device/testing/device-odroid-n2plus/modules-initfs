@@ -1,0 +1,12 @@
+fixed
+meson_gxbb_wdt
+meson_wdt
+meson-gx-mmc
+dw_hdmi
+drm_display_helper
+cec
+display_connector
+drm_kms_helper
+drm
+meson_drm
+meson_dw_hdmi

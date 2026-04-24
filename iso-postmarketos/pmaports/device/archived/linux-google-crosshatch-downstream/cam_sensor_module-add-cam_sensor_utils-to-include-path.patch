@@ -1,0 +1,21 @@
+From ee1dca58283c0a91c0b4ec3ba6622acc69a77ba1 Mon Sep 17 00:00:00 2001
+From: Zhuowei Zhang <linux@worthdoingbadly.com>
+Date: Sat, 7 Mar 2020 17:02:58 -0500
+Subject: [PATCH] cam_sensor_module: add cam_sensor_utils to includes
+
+---
+ drivers/media/platform/msm/camera/cam_sensor_module/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/media/platform/msm/camera/cam_sensor_module/Makefile b/drivers/media/platform/msm/camera/cam_sensor_module/Makefile
+index 2954349cbef4..4b0469139dbd 100644
+--- a/drivers/media/platform/msm/camera/cam_sensor_module/Makefile
++++ b/drivers/media/platform/msm/camera/cam_sensor_module/Makefile
+@@ -9,3 +9,4 @@ obj-$(CONFIG_SPECTRA_CAMERA) += cam_flash/
+ obj-$(CONFIG_SPECTRA_CAMERA) += cam_eeprom/
+ obj-$(CONFIG_SPECTRA_CAMERA) += cam_ois/
+ obj-$(CONFIG_CAMERA_FW_UPDATE) += cam_fw_update/
++subdir-ccflags-y += -Idrivers/media/platform/msm/camera/cam_sensor_module/cam_sensor_utils
+-- 
+2.20.1
+

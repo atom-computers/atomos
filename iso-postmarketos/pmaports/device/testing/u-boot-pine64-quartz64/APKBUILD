@@ -1,0 +1,79 @@
+maintainer=""
+pkgname=u-boot-pine64-quartz64
+pkgver=2023.04_git20232303
+pkgrel=1
+pkgdesc="u-boot bootloader for the Quartz64 (RK3566)"
+url="https://gitlab.com/a-wai/u-boot-pinenote"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+options="!check"
+
+subpackages="$pkgname-a:quartz64_model_a $pkgname-b:quartz64_model_b"
+
+makedepends="$depends_dev
+	bc
+	bison
+	dtc
+	flex
+	libfdt
+	make
+	openssl-dev
+	py3-elftools
+	py3-setuptools
+	python3-dev
+	swig
+"
+
+_commit="cc3eb4da9a66769911ca2005301391f9cc9316f4"
+_ram_commit="9e44f3e17cc51378df294fcd909be48c0f07b47b"
+_bl31_commit="7fac639ad6e3949ddb571cc9646c564d9af2bdeb"
+
+builddir=$srcdir/u-boot-rockchip-$_commit
+
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Kwiboo/u-boot-rockchip/archive/$_commit.tar.gz
+	ram_init.bin::https://github.com/rockchip-linux/rkbin/raw/$_ram_commit/bin/rk35/rk3566_ddr_1056MHz_v1.16.bin
+	bl31.elf::https://github.com/rockchip-linux/rkbin/raw/$_bl31_commit/bin/rk35/rk3568_bl31_v1.42.elf
+	libfdt.i_shipped-use-SWIG_AppendOutput.patch
+"
+
+build() {
+	export ROCKCHIP_TPL=$srcdir/ram_init.bin
+	export BL31=$srcdir/bl31.elf
+	make quartz64-a-rk3566_defconfig
+	make
+	mv u-boot-rockchip.bin u-boot-rockchip-quartz64-a.bin
+
+	make quartz64-b-rk3566_defconfig
+	make
+	mv u-boot-rockchip.bin u-boot-rockchip-quartz64-b.bin
+}
+
+package() {
+	mkdir -p "$pkgdir"/usr/share/u-boot
+}
+
+quartz64_model_a() {
+	mkdir -p "$subpkgdir"/usr/share/u-boot
+	install -Dm644 $builddir/u-boot-rockchip-quartz64-a.bin \
+		-t "$subpkgdir"/usr/share/u-boot/
+	ln -s ./u-boot-rockchip-quartz64-a.bin \
+		"$subpkgdir"/usr/share/u-boot/u-boot-rockchip-quartz64.bin
+}
+
+quartz64_model_b() {
+	mkdir -p "$subpkgdir"/usr/share/u-boot
+	install -Dm644 $builddir/u-boot-rockchip-quartz64-b.bin \
+		-t "$subpkgdir"/usr/share/u-boot/
+	ln -s ./u-boot-rockchip-quartz64-b.bin \
+		"$subpkgdir"/usr/share/u-boot/u-boot-rockchip-quartz64.bin
+
+}
+
+sha512sums="
+e230d6449deb3f0c8d1e5ecb1897a0eddcaf8479e25d2c98d627c4a6cc7ac1f564673f0164d48457c66596a454fa9f783b09445aed10fdff36688038a8a74769  u-boot-pine64-quartz64-cc3eb4da9a66769911ca2005301391f9cc9316f4.tar.gz
+4cac163b76bfe405dbe3889ed146c9e2af384862b9c9e17e6bad3ad036a206e7160deee0a319eff5d25d512b3ab89d313183fde6848da6117540363f4416dad8  ram_init.bin
+97ce818a8b6f6434811a2b2a31bbac0863badc89696bd9e6a2596e37faf8dc5c948adc86bd159bff5570628270cfcb322fe28728a501ccc9371ac8848473c3ba  bl31.elf
+016ef30dbbb1021dad4f58eeda3f5a5e89ff3a76dbc69e8e4cf6a3fc3983aef998cfe1087abb4b21bb2f859bd5cffe26c1da42d13f1c3d2e3c053c399f38720b  libfdt.i_shipped-use-SWIG_AppendOutput.patch
+"

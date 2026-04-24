@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Delay modem powerup to avoid crashing
+rc-update del rmtfs boot
+rc-update add rmtfs default

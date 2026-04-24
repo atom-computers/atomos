@@ -1,0 +1,25 @@
+commit 2e4d471d6bc1f092227638d590735a7e905fd798
+Author: Firstbober <firstbober@tutanota.com>
+Date:   Sat Aug 14 20:49:43 2021 +0200
+
+    fix_ft5364i_makefile
+
+diff --git a/drivers/input/touchscreen/ft5364i/Makefile b/drivers/input/touchscreen/ft5364i/Makefile
+index b0d3513b..0372e325 100644
+--- a/drivers/input/touchscreen/ft5364i/Makefile
++++ b/drivers/input/touchscreen/ft5364i/Makefile
+@@ -3,9 +3,11 @@
+ #
+ 
+ # Each configuration option enables a list of files.
+-obj-$(CONFIG_TOUCHSCREEN_FT5364I) += fts_ts.o 
++obj-$(CONFIG_TOUCHSCREEN_FT5364I) += fts_ts.o $(fts_ts-y)
+ #obj-y += fts_ts.o 
+ fts_ts-y += focaltech_core.o focaltech_ctl.o focaltech_ex_fun.o focaltech_gesture.o focaltech_flash.o 
+ extlibs :=$(PWD)/drivers/input/touchscreen/ft5364i/ft_gesture_64bit_lib_v1.0_20140820.a 
+-ldflagobj-y += fts_ts.o 
+-obj-y s-y +=--whole-archive $(extlibs) --no-whole-archive
++#LDFLAGS += --whole-archive $(extlibs) --no-whole-archive
++#ldflagobj-y += fts_ts.o 
++#obj-y s-y +=--whole-archive $(extlibs) --no-whole-archive
++

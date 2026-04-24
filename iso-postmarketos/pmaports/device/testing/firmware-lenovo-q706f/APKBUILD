@@ -1,0 +1,89 @@
+maintainer=""
+pkgname=firmware-lenovo-q706f
+pkgver=20240726
+pkgrel=2
+pkgdesc="Firmware for Lenovo Xiaoxin Pad Pro 12.6 (Lenovo Tab P12 Pro)"
+subpackages="
+	$pkgname-adreno
+	$pkgname-adsp
+	$pkgname-cdsp
+	$pkgname-cirrus
+	$pkgname-hexagonfs
+	$pkgname-slpi
+	$pkgname-venus
+	"
+url="https://github.com/silime/lenovo-sm8250-q706f-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="1be73450f1aaa6896c59fc1768a4fc98abe7cbda"
+source="$pkgname.zip::https://github.com/silime/lenovo-sm8250-q706f-firmware/archive/$_commit.zip"
+builddir="$srcdir/lenovo-sm8250-q706f-firmware-$_commit"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+# lenovo q706f boots with secure boot, it can only load signed firmwares.
+adreno() {
+	pkgdesc="Lenovo q706f adreno firmware"
+	depends="firmware-qcom-adreno-a650"
+	ls "$builddir"
+	install -Dm644 "$builddir"/sm8250/q706f/a650_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8250/q706f/"
+}
+
+adsp() {
+	pkgdesc="Lenovo q706f adsp firmware"
+
+	install -Dm644 "$builddir"/sm8250/q706f/adsp* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8250/q706f/"
+}
+
+cdsp() {
+	pkgdesc="Lenovo q706f cdsp firmware"
+
+	install -Dm644 "$builddir"/sm8250/q706f/cdsp* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8250/q706f/"
+}
+
+cirrus() {
+	pkgdesc="Lenovo q706f cirrus firmware"
+
+	install -Dm644 "$builddir"/cirrus/cs35l45* -t \
+		"$subpkgdir/lib/firmware/cirrus/"
+}
+
+hexagonfs() {
+	pkgdesc="Lenovo q706f hexagonfs files"
+
+	mkdir -p "$subpkgdir"/usr/share/qcom/sm8250/Lenovo
+	cp -r "$builddir"/hexagonfs/ \
+		"$subpkgdir"/usr/share/qcom/sm8250/Lenovo/q706f
+
+	# Remove files that we don't need - for now
+	rm -r "$subpkgdir"/usr/share/qcom/sm8250/Lenovo/q706f/acdb/
+	rm -r "$subpkgdir"/usr/share/qcom/sm8250/Lenovo/q706f/dsp/
+
+	find "$subpkgdir/usr/share/qcom/sm8250/Lenovo/q706f/" \
+		-type f -exec chmod 0644 {} \;
+}
+
+slpi() {
+	pkgdesc="Lenovo q706f slpi firmware"
+
+	install -Dm644 "$builddir"/sm8250/q706f/slpi* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8250/q706f/"
+}
+
+venus() {
+	pkgdesc="Lenovo q706f venus firmware"
+
+	install -Dm644 "$builddir"/sm8250/q706f/venus.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8250/q706f/"
+}
+
+sha512sums="
+7bf6f56c92dd743828c32dfc51e0f8ce44fe81a5d8388097d5b7801cae7b1679c12052283b55423058547e76944e7de917d734c114f0f520f4fb065875fac3db  firmware-lenovo-q706f.zip
+"

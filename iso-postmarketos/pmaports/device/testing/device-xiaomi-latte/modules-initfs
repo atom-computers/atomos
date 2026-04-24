@@ -1,0 +1,21 @@
+# emmc module
+sdhci-acpi
+mmc_block
+
+# USB
+xhci_pci
+xhci_hub
+usbkbd
+
+# Torch Screen
+i2c-hid-acpi
+hid-multitouch
+
+# filesystem drivers
+btrfs
+
+# Debug shell Usage
+dwc3
+dwc3_pci
+
+snd_soc_rt5659

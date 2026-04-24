@@ -1,0 +1,41 @@
+From b307cbc85399f0aeee3747e1ace50ca036f77c96 Mon Sep 17 00:00:00 2001
+From: Will Deacon <will.deacon@arm.com>
+Date: Tue, 2 Jul 2019 02:47:26 +0300
+Subject: [PATCH 4/5] asm-generic: add memfd_create system call to unistd.h
+
+Commit 9183df25fe7b ("shm: add memfd_create() syscall") added a new
+system call (memfd_create) but didn't update the asm-generic unistd
+header.
+
+This patch adds the new system call to the asm-generic version of
+unistd.h so that it can be used by architectures such as arm64.
+
+Cc: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: David Herrmann <dh.herrmann@gmail.com>
+Signed-off-by: Will Deacon <will.deacon@arm.com>
+---
+ include/asm-generic/unistd.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/include/asm-generic/unistd.h b/include/asm-generic/unistd.h
+index ae8513b32af..a4fafc379f5 100644
+--- a/include/asm-generic/unistd.h
++++ b/include/asm-generic/unistd.h
+@@ -693,9 +693,13 @@ __SC_COMP(__NR_process_vm_writev, sys_process_vm_writev, \
+           compat_sys_process_vm_writev)
+ #define __NR_seccomp 277
+ __SYSCALL(__NR_seccomp, sys_seccomp)
++/*#define __NR_getrandom 278
++__SYSCALL(__NR_getrandom, sys_getrandom) unfortunately getrandom is not backported yet */
++#define __NR_memfd_create 279
++__SYSCALL(__NR_memfd_create, sys_memfd_create)
+ 
+ #undef __NR_syscalls
+-#define __NR_syscalls 278
++#define __NR_syscalls 280
+ 
+ /*
+  * All syscalls below here should go away really,
+-- 
+2.20.1
+

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Xfce Screensaver
+Comment=Launch screensaver and locker program
+Icon=org.xfce.ScreenSaver
+Exec=xfce4-screensaver
+NoDisplay=true

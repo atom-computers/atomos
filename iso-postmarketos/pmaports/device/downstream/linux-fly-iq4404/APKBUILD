@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/vanzo6572_wet_l_defconfig
+
+pkgname=linux-fly-iq4404
+pkgver=3.10.89
+pkgrel=6
+pkgdesc="Fly Spark kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="fly-iq4404"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: >GCC 6 (Hangs on disk load)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel-3.10-iq4404_mt6572"
+_commit="a619869f394bc2f00226efa230bc33894648af4e"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ave4/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	# kernel.release
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	cd "$builddir/arch/$_carch/boot"
+	install -Dm644 zImage "$pkgdir/boot/vmlinuz"
+}
+
+sha512sums="
+ae53fe32e91a46ddc553ca6ea27bebb9ec3bb0dd01f15336d4570fa789c04ec1a52146fdd03f7ee409f16a11f8f90625546b447a39d7b6d2f10032c91283788e  linux-fly-iq4404-a619869f394bc2f00226efa230bc33894648af4e.tar.gz
+93076f9283db947bd4d269ce26ad8aabd94ef697045b8f520c381c513590013031e39baac72b81bd54753bf8ea02a1d92b0ac0891259f699c233fe84d3252f60  config-fly-iq4404.armv7
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

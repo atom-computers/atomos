@@ -1,0 +1,8 @@
+drm-dp-aux-bus
+panel-edp
+drm-kms-helper
+cros-ec-keyb
+sbs-battery
+tps65090-charger
+uas
+sd-mod

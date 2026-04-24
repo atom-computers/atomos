@@ -1,0 +1,29 @@
+diff --git a/drivers/video/sprdfb/Kconfig b/drivers/video/sprdfb/Kconfig
+index def1f31..b06c6cf 100644
+--- a/drivers/video/sprdfb/Kconfig
++++ b/drivers/video/sprdfb/Kconfig
+@@ -182,6 +182,11 @@ config FB_LCD_ILI9341
+        depends on FB_SC8825 || FB_SCX35 || FB_SCX15
+        default n
+ 
++config FB_LCD_ILI9340
++       boolean "support ILI9340 mcu panel"
++       depends on FB_SC8825 || FB_SCX35 || FB_SCX15
++       default n
++
+ config FB_LCD_ILI9806E_RGB_SPI
+        boolean "support ILI9806E panel rgb spi"
+        depends on FB_SC8825 || FB_SCX35 || FB_SCX15
+diff --git a/drivers/video/sprdfb/lcd/Makefile b/drivers/video/sprdfb/lcd/Makefile
+index ac5d5c4..ada4ee0 100644
+--- a/drivers/video/sprdfb/lcd/Makefile
++++ b/drivers/video/sprdfb/lcd/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_FB_LCD_ILI9486)  += lcd_ili9486.o
+ obj-$(CONFIG_FB_LCD_ILI9486_RGB_SPI) += lcd_ili9486_rgb_spi.o
+ obj-$(CONFIG_FB_LCD_NT51017_MIPI_LVDS) += lcd_nt51017_mipi_lvds.o
+ obj-$(CONFIG_FB_LCD_HX8369B_MIPI) += lcd_hx8369b_mipi.o
++obj-$(CONFIG_FB_LCD_ILI9340) += lcd_ili9340.o
+ obj-$(CONFIG_FB_LCD_ILI9341) += lcd_ili9341.o
+ obj-$(CONFIG_FB_LCD_ST7789V_MCU)  += lcd_st7789v_mcu.o
+ obj-$(CONFIG_FB_LCD_NT35502_MIPI) += lcd_nt35502_mipi.o
+ obj-$(CONFIG_FB_LCD_NT35502_MIPI) += lcd_nt35502_mipi.o

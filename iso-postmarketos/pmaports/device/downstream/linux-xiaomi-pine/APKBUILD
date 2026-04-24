@@ -1,0 +1,59 @@
+# Reference: https://github.com/LineageOS/android_kernel_xiaomi_sdm439/tree/lineage-20
+# Kernel config based on: arch/arm64/configs/lineageos_mi439_defconfig
+
+pkgname=linux-xiaomi-pine
+pkgver=4.9.337
+pkgrel=1
+pkgdesc="Xiaomi Redmi 7A kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-pine"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_xiaomi_sdm439"
+_commit="2bcfae17be1b3e70d41ee89f6fed7825627d952b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="
+491349581f0e0ffcbf59c20367f6d2e1a4f82d909b17398bc80db2711f543f845ddad4b8f0d0ae31f5a876e2ce1873315935700c1a42cd1f9abff1aa0d4253ae  linux-xiaomi-pine-2bcfae17be1b3e70d41ee89f6fed7825627d952b.tar.gz
+fb1c6eea21b075eaa20b95c63b18988315686b42e455c396c16ab782f6fc4edf80def5256a087b753d1f28af3e583e8ee5817acb32f4108e202dca425494998a  config-xiaomi-pine.aarch64
+"

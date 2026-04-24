@@ -1,0 +1,9 @@
+
+initramfs-unit-tests:
+  extends: .package-test
+  script:
+    - .ci/lib/testlib.sh main/postmarketos-initramfs/tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_REF_PROTECTED == "false"
+      changes:
+        - main/postmarketos-initramfs/*.sh

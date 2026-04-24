@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Qualcomm RBx"
+deviceinfo_manufacturer="Qualcomm"
+deviceinfo_codename="qcom-rbx"
+deviceinfo_year="2020"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_no_framebuffer="true"
+# uncomment to enable a getty on the serial port
+deviceinfo_getty="ttyMSM0;115200"
+deviceinfo_boot_filesystem="fat32"
+
+# Look ma! no hands!
+# u-boot picks the right DTB for us, no need to specify it manually.
+# deviceinfo_dtb=""
+deviceinfo_initfs_compression="zstd:fast"
+
+# Required for devices using UFS as storage (instead of e.g. eMMC)
+deviceinfo_rootfs_image_sector_size="4096"

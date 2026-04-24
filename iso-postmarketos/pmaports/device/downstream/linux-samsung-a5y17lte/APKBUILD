@@ -1,0 +1,104 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineage-a5y17lte_defconfig
+
+pkgname=linux-samsung-a5y17lte
+pkgver=3.18.140
+pkgrel=0
+pkgdesc="Samsung Galaxy A5 (2017) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a5y17lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc devicepkg-dev dtbtool-exynos elfutils-dev gcc6 gmp-dev installkernel linux-headers perl sed"
+
+# Source
+_repository="android_kernel_samsung_universal7880"
+_commit="725aa5ab01e5a1272f34f01764f09009edf32777"
+_qca_commit="48f9ab5d5c161549be098997fa0e3602c1547213"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	qcacld-$_qca_commit.tar.gz::https://github.com/codeauroraforum/quic-la-platform-vendor-qcom-opensource-wlan-qcacld-2.0/archive/$_qca_commit.tar.gz
+	$_config
+	fix_firmware_path.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	qcacld-2.0.config
+	disable_wlan_werror.qcapatch
+	skbuff_increased.patch
+	disable_knox.patch
+	debug_muic.patch
+	s2muu004-reduce-chatter.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_qcaclddir="$srcdir/quic-la-platform-vendor-qcom-opensource-wlan-qcacld-2.0-$_qca_commit"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+	prepare_modules
+}
+
+prepare_modules() {
+	cd $_qcaclddir
+	patch -p1 -i "$srcdir"/disable_wlan_werror.qcapatch
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	build_modules
+
+	dtbTool-exynos --pagesize 2048 --platform 0x50a6 --subtype 0x217584da \
+		-o "arch/arm64/boot/dtb.img" $(find "arch/arm64/boot/dts/" -name *a5y17lte*.dtb)
+}
+
+build_modules() {
+	(
+		set -a
+		source "$srcdir"/qcacld-2.0.config
+		# Use GCC-6, because when compiled with GCC-10 it fails to initialize:
+		# "module wlan: overflow in relocation type 261 val ffffffbffc000000"
+		make M=$_qcaclddir WLAN_ROOT=$_qcaclddir modules ARCH="$_carch" CC="${CC:-gcc}"
+	)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	mkdir -p "$pkgdir"/lib/modules/$pkgver
+	cp -v "$builddir"/modules.builtin "$pkgdir"/lib/modules/$pkgver
+	make INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 M=$_qcaclddir modules_install
+
+	# Create a fake modules.order to ensure depmod runs correctly
+	touch "$pkgdir"/lib/modules/"$pkgver"/modules.order
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm64/boot/dtb.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+f3aaeb94386d6847c2407bc89b2a23c083324ed1c7cf095cbd40a72335efe642d4bbc755848e508b9caa09d0c75adb2064134461ed5e1d7d1a76b8c7007c8a4b  linux-samsung-a5y17lte-725aa5ab01e5a1272f34f01764f09009edf32777.tar.gz
+1dfcf7d1965d1a4fa86ac05d4408f1ffbedaf864689e0228d09d3d964fca08edf33dcf77bb0ab4dfcf1f8a37d6ee300c9e480457710745f9f5b7df9587e265e8  qcacld-48f9ab5d5c161549be098997fa0e3602c1547213.tar.gz
+ee89743e520abf5b477cace95d7e8f271ca7aef2f3b257def46b624e4bd8b4701e529060f4df4cafd9d9b804b2de395a973677b35d1f9f6bda6074c267f44c55  config-samsung-a5y17lte.aarch64
+9b13cccc9323f343d0aa676de6c6a83f34815cf06656adfa7ba20b559d94fc46c04b1508f1db22d12a14d4cdd531994f548b77a4a4d7d07481ee88a56564c0c9  fix_firmware_path.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+b5f7aed0d4c78fcd9ea6f65e11606c4d33004b45eed39017baa8b0a78db801396aa04ba7cd3a4a669c23f878f5462ae1b5f753e0e26b65c9962fd1e98855e524  0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+83a432ab7e3ee3cae47b0c751cf0a268f4291411789a1cf9187ef003a0f09b46316c0669e92bd91d3062b3d020005e67aea6fbf48b8ef87ba9b7f3a86a44612b  qcacld-2.0.config
+23278ca0660f17723506ca5befea757d736bd2cf4f01bccfaf4c154f94d42828fc2f49fd599f3295623a65f85b3b89bea18389a65c63f82f0496a92e8e6d8d72  disable_wlan_werror.qcapatch
+f763033e73f5a00ad42273c11058446ff365d09d5f204c828d111aa48bc816baca74c333cbd2fa61c21ccdebc7329d0a3cfe971f5991026cb5abe7871b51a32b  skbuff_increased.patch
+24fde35d01ecc706120d808ca7283e302f6de2d66bb0c58af855b9033f6e815261ed38719d3eb93129b52c2db58f1045993abd9a1d16e264b4fcfa74c01a9c40  disable_knox.patch
+d40153e1d86d407301ff3e6824b8445bf259bffdd50179149f67012b42829e565ce9dbeeeb2eca34bb14ddabcc694dd28793e6faa4f44a88f962e33490766ff7  debug_muic.patch
+399e5ab5f4ff662b9f892c351373bd1fb535461c7f230c531378436e9c9f61429a90447c0f5ce1b872a026b03c0104c9483e9cb2577ba044e5415da805deda39  s2muu004-reduce-chatter.patch
+"

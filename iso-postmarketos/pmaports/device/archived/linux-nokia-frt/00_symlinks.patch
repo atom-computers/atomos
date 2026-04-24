@@ -1,0 +1,171 @@
+this patch contains required symlinks and includes
+---
+diff --git a/drivers/misc/mediatek/btcvsd/inc/mt6735/AudioBTCVSDDef.h b/drivers/misc/mediatek/btcvsd/inc/mt6735/AudioBTCVSDDef.h
+new file mode 120000
+index 000000000000..039aa8632a90
+--- /dev/null
++++ b/drivers/misc/mediatek/btcvsd/inc/mt6735/AudioBTCVSDDef.h
+@@ -0,0 +1 @@
++../../AudioBTCVSDDef.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/cmdq/v2/cmdq_def.h b/drivers/misc/mediatek/cmdq/v2/cmdq_def.h
+index 9383c5860a00..b01dfddab473 100644
+--- a/drivers/misc/mediatek/cmdq/v2/cmdq_def.h
++++ b/drivers/misc/mediatek/cmdq/v2/cmdq_def.h
+@@ -22,7 +22,7 @@
+ #ifdef CMDQ_COMMON_ENG_SUPPORT
+ #include "cmdq_engine_common.h"
+ #else
+-#include "cmdq_engine.h"
++#include "mt6735/cmdq_engine.h"
+ #endif
+ 
+ #define CMDQ_SPECIAL_SUBSYS_ADDR (99)
+diff --git a/drivers/misc/mediatek/ext_disp/extd_factory.c b/drivers/misc/mediatek/ext_disp/extd_factory.c
+index 92c137980092..505dd793ab61 100644
+--- a/drivers/misc/mediatek/ext_disp/extd_factory.c
++++ b/drivers/misc/mediatek/ext_disp/extd_factory.c
+@@ -17,7 +17,7 @@
+ #include "extd_log.h"
+ #include "extd_factory.h"
+ #include "extd_info.h"
+-#include "external_display.h"
++#include "mt6735m/external_display.h"
+ 
+ #include "dpi_dvt_test.h"
+ 
+diff --git a/drivers/misc/mediatek/ext_disp/extd_multi_control.c b/drivers/misc/mediatek/ext_disp/extd_multi_control.c
+index 52dd1f77b6b5..e6277c4eb37c 100644
+--- a/drivers/misc/mediatek/ext_disp/extd_multi_control.c
++++ b/drivers/misc/mediatek/ext_disp/extd_multi_control.c
+@@ -16,8 +16,8 @@
+ 
+ #include "extd_multi_control.h"
+ #include "disp_drv_platform.h"
+-#include "external_display.h"
+-#include "extd_platform.h"
++#include "mt6735m/external_display.h"
++#include "mt6735m/extd_platform.h"
+ #include "extd_log.h"
+ #include "mtk_ovl.h"
+ 
+diff --git a/drivers/misc/mediatek/include/mt-plat/mt6735/include/mach/mt_gpufreq.h b/drivers/misc/mediatek/include/mt-plat/mt6735/include/mach/mt_gpufreq.h
+new file mode 120000
+index 000000000000..878f8cd06d0d
+--- /dev/null
++++ b/drivers/misc/mediatek/include/mt-plat/mt6735/include/mach/mt_gpufreq.h
+@@ -0,0 +1 @@
++../../../../../base/power/mt6735/mt_gpufreq.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/include/mt-plat/mt_sd.h b/drivers/misc/mediatek/include/mt-plat/mt_sd.h
+new file mode 120000
+index 000000000000..578ca29d2b38
+--- /dev/null
++++ b/drivers/misc/mediatek/include/mt-plat/mt_sd.h
+@@ -0,0 +1 @@
++../../../../mmc/host/mediatek/mt6735/mt_sd.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/m4u/2.0/m4u_reg.h b/drivers/misc/mediatek/m4u/2.0/m4u_reg.h
+new file mode 120000
+index 000000000000..8b49936c55bf
+--- /dev/null
++++ b/drivers/misc/mediatek/m4u/2.0/m4u_reg.h
+@@ -0,0 +1 @@
++../mt6735/mt6735m/m4u_reg.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/m4u/mt6735/m4u_priv.h b/drivers/misc/mediatek/m4u/mt6735/m4u_priv.h
+index ec1f9d6a2993..9b5fd8ba67d3 100644
+--- a/drivers/misc/mediatek/m4u/mt6735/m4u_priv.h
++++ b/drivers/misc/mediatek/m4u/mt6735/m4u_priv.h
+@@ -25,9 +25,9 @@
+ #endif
+ 
+ #include "m4u.h"
+-#include "m4u_reg.h"
++#include "mt6735m/m4u_reg.h"
+ #include "../2.0/m4u_pgtable.h"
+-#include "m4u_platform.h"
++#include "mt6735m/m4u_platform.h"
+ 
+ #define M4UMSG(string, args...)	pr_err("M4U"string, ##args)
+ #define M4UINFO(string, args...) pr_debug("M4U"string, ##args)
+diff --git a/drivers/misc/mediatek/uart/include/platform_uart.h b/drivers/misc/mediatek/uart/include/platform_uart.h
+new file mode 120000
+index 000000000000..7850df5513d1
+--- /dev/null
++++ b/drivers/misc/mediatek/uart/include/platform_uart.h
+@@ -0,0 +1 @@
++../mt6735/platform_uart.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/include/ddp_mmp.h b/drivers/misc/mediatek/video/include/ddp_mmp.h
+new file mode 120000
+index 000000000000..226e7f918f41
+--- /dev/null
++++ b/drivers/misc/mediatek/video/include/ddp_mmp.h
+@@ -0,0 +1 @@
++../mt6735/ddp_mmp.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/include/disp_debug.h b/drivers/misc/mediatek/video/include/disp_debug.h
+new file mode 120000
+index 000000000000..f474a1e460ce
+--- /dev/null
++++ b/drivers/misc/mediatek/video/include/disp_debug.h
+@@ -0,0 +1 @@
++../mt6735/disp_debug.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/include/disp_event.h b/drivers/misc/mediatek/video/include/disp_event.h
+new file mode 120000
+index 000000000000..551dd22ee806
+--- /dev/null
++++ b/drivers/misc/mediatek/video/include/disp_event.h
+@@ -0,0 +1 @@
++../mt6735/disp_event.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_drv.h b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_drv.h
+new file mode 120000
+index 000000000000..611b18a27478
+--- /dev/null
++++ b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_drv.h
+@@ -0,0 +1 @@
++../ddp_drv.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_dump.h b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_dump.h
+new file mode 120000
+index 000000000000..527ca2cc5745
+--- /dev/null
++++ b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_dump.h
+@@ -0,0 +1 @@
++../ddp_dump.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_hal.h b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_hal.h
+new file mode 120000
+index 000000000000..4a859796c458
+--- /dev/null
++++ b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_hal.h
+@@ -0,0 +1 @@
++../ddp_hal.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_info.h b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_info.h
+new file mode 120000
+index 000000000000..3902fed2f81c
+--- /dev/null
++++ b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_info.h
+@@ -0,0 +1 @@
++../ddp_info.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_path.h b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_path.h
+new file mode 120000
+index 000000000000..c2a88d4cbbcc
+--- /dev/null
++++ b/drivers/misc/mediatek/video/mt6735/mt6735m/ddp_path.h
+@@ -0,0 +1 @@
++../ddp_path.h
+\ No newline at end of file
+diff --git a/drivers/misc/mediatek/video/mt6735/mt6735m/disp_assert_layer.h b/drivers/misc/mediatek/video/mt6735/mt6735m/disp_assert_layer.h
+new file mode 120000
+index 000000000000..8eb3b6685798
+--- /dev/null
++++ b/drivers/misc/mediatek/video/mt6735/mt6735m/disp_assert_layer.h
+@@ -0,0 +1 @@
++../disp_assert_layer.h
+\ No newline at end of file

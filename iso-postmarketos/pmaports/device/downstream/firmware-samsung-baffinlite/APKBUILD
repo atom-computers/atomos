@@ -1,0 +1,22 @@
+pkgname=firmware-samsung-baffinlite
+pkgver=1
+pkgrel=0
+_commit="d7195e553eed22f58835d24ecdea40e97bf639f4"
+pkgdesc="Samsung Galaxy Grand Neo Firmware"
+url="https://github.com/SamsungBCM-GrandNeo/android_vendor_samsung_baffinlite"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/SamsungBCM-GrandNeo/android_vendor_samsung_baffinlite/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps"
+builddir="$srcdir/android_vendor_samsung_baffinlite-$_commit"
+depends="firmware-aosp-broadcom-wlan"
+
+package() {
+	# Wifi
+	for _i in bcmdhd_sta.bin nvram_net.txt; do
+		install -Dm644 proprietary/etc/wifi/"$_i" \
+		"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="d89032dfbae9044f4318b719abee21e6bdaba7a03c082c04531b2ec306246db3b6f35c23520e33c802ce9d4444e41b6e2cea6107a83a7a25fda1a89fbae16113  firmware-samsung-baffinlite-d7195e553eed22f58835d24ecdea40e97bf639f4.tar.gz"

@@ -1,0 +1,35 @@
+From 8c520ab87b8213a340c0c86a88b24e4d90e3a457 Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Tue, 24 Jun 2025 22:44:50 +0700
+Subject: [PATCH 5/7] HACK: decon_7570: Swap red & blue offset
+
+Based on [1], to make red & blue properly rendered.
+
+[1] https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/master/device/testing/linux-samsung-xcover4lte/02-swap-red-blue.patch?ref_type=heads
+
+Signed-off-by: Hendra Manudinata <manoedinata@gmail.com>
+---
+ drivers/video/fbdev/exynos/decon_7570/decon-int_drv.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/fbdev/exynos/decon_7570/decon-int_drv.c b/drivers/video/fbdev/exynos/decon_7570/decon-int_drv.c
+index 7695b674..b3010c98 100644
+--- a/drivers/video/fbdev/exynos/decon_7570/decon-int_drv.c
++++ b/drivers/video/fbdev/exynos/decon_7570/decon-int_drv.c
+@@ -440,11 +440,11 @@ int decon_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ 	case 24:
+ 		/* our 24bpp is unpacked, so 32bpp */
+ 		var->bits_per_pixel	= 32;
+-		var->red.offset		= 16;
++		var->red.offset		= 0;
+ 		var->red.length		= 8;
+ 		var->green.offset	= 8;
+ 		var->green.length	= 8;
+-		var->blue.offset	= 0;
++		var->blue.offset	= 16;
+ 		var->blue.length	= 8;
+ 		break;
+ 
+-- 
+2.43.0
+

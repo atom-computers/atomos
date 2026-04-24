@@ -1,0 +1,78 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Alec Su (AlecJY) <ae40515@yahoo.com.tw>"
+pkgname=device-xiaomi-natrium
+pkgdesc="Xiaomi Mi 5s Plus"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8996
+	mesa-egl
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8996
+	soc-qcom-msm8996-ucm
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-phosh
+	"
+
+source="
+	deviceinfo
+	modules-initfs
+	pointercal
+	phoc.ini
+	30-gpu-firmware.files
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/Modem/Venus/ADSP/SLPI/WiFi/Bluetooth Firmware"
+	depends="
+		firmware-xiaomi-natrium
+		linux-firmware-ath10k
+		linux-firmware-qca
+		soc-qcom-msm8996-nonfree-firmware
+		"
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" -t \
+		"$subpkgdir/usr/share/mkinitfs/files"
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	mkdir -p "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+
+sha512sums="
+aca5508c9a258dde80cd4a09683089b0d021546b106396eacce9a4504e8e99e161a6bc5e4c5cf9c6ae89288f685bda347a4c434351defcf0517d18683ab1ae22  deviceinfo
+4f420e410ed05d617659e8ec1d86b9d3b1514caabe1836cde06d6950f4d92e2b96ad9df7d91061019513aa23971d24a3c394e36abd4f3fbc4a9db5420037c2c4  modules-initfs
+e9ee9c1404b41ba15eafff3f728ff6e0e78dc17e9a88483fca92db1aa3efe0e4d5bf26142e533c4ff12b1bf8ce04ccabb7ca0f93aaea586d5b30910282aad237  pointercal
+38409d4ce48db4624539dbfd695d3c6e1596a29fd7c3004a41368b28cba646495d05360420ad728f82c63d6ddeeca71d09944df06ebaca120aedd9cc2b436eb3  phoc.ini
+4babc3e499cbc3fab555d3d939b34e763d31ee8e36f3766f3b0bc8c6d1e2ec67f119b87e4a5bc898ad6881b9da98c06f184a567dc9f96b08857ee185ff05f6ae  30-gpu-firmware.files
+"

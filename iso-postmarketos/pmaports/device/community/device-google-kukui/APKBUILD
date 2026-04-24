@@ -1,0 +1,80 @@
+# Co-Maintainer: Alicja Michalska <ellyqw@mainlining.org>
+# Co-Maintainer: Ingo Reitz <9l@9lo.re>
+maintainer="WeirdTreeThing <bradyn127@protonmail.com>"
+pkgname=device-google-kukui
+pkgdesc="Google Kukui Chromebooks"
+pkgver=13
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-cros
+	depthcharge-tools
+	linux-postmarketos-mediatek-mt81
+	postmarketos-base
+	postmarketos-cros-common
+	soc-mediatek-mt8183
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+# provides and replaces to switch old installations to this package
+provides="
+	device-google-burnet=$pkgver-r$pkgrel
+	device-google-cerise=$pkgver-r$pkgrel
+	device-google-cozmo=$pkgver-r$pkgrel
+	device-google-damu=$pkgver-r$pkgrel
+	device-google-fennel=$pkgver-r$pkgrel
+	device-google-fennel14=$pkgver-r$pkgrel
+	device-google-juniper=$pkgver-r$pkgrel
+	device-google-kakadu=$pkgver-r$pkgrel
+	device-google-kappa=$pkgver-r$pkgrel
+	device-google-katsu=$pkgver-r$pkgrel
+	device-google-kenzo=$pkgver-r$pkgrel
+	device-google-kodama=$pkgver-r$pkgrel
+	device-google-krane=$pkgver-r$pkgrel
+	device-google-makomo=$pkgver-r$pkgrel
+	device-google-stern=$pkgver-r$pkgrel
+	device-google-willow=$pkgver-r$pkgrel
+"
+replaces="
+	device-google-burnet
+	device-google-cerise
+	device-google-cozmo
+	device-google-damu
+	device-google-fennel
+	device-google-fennel14
+	device-google-juniper
+	device-google-kakadu
+	device-google-kappa
+	device-google-katsu
+	device-google-kenzo
+	device-google-kodama
+	device-google-krane
+	device-google-makomo
+	device-google-stern
+	device-google-willow
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT firmware"
+	depends="linux-firmware-ath10k linux-firmware-qca linux-firmware-mediatek"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+f4f2560477dfd8d02c03ed110000966784e01b05ec5a7e26ac16ffabdc6bafc53f52892ba24a164743c917c57bf5d614a548c384d1038c557aa53604449fafc9  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+8e95624610dae7d18684056396c9e82635ddce7303d6770e965f9372ffa101fdfd5f8337bc7368004890e9836798663a98c142c52ed63795877ea37ac8da56af  modules-initfs
+"

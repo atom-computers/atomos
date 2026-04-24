@@ -1,0 +1,28 @@
+maintainer="Alistair Francis <alistair@alistair23.me>"
+pkgname=librem5-agps
+pkgver=0.4.0_git20230318
+pkgrel=0
+_commit="cb83d92fe5523cc5435fa62a6114349ef3b18a3c"
+pkgdesc="Convenience scripts for seeding GNSS almanac and ephemeris on the Librem 5"
+url="https://source.puri.sm/angus.ainslie/librem5-agps"
+arch="aarch64"
+license="MIT"
+depends="python3 py3-dbus py3-nmea2 py3-requests gnss-share socat yad"
+options="!check"
+builddir="$srcdir/librem5-agps-$_commit"
+
+source="https://source.puri.sm/angus.ainslie/librem5-agps/-/archive/$_commit/librem5-agps-$_commit.tar.gz"
+
+package() {
+	# Manually install the scripts that currently work on pmOS
+	install -Dm755 usr/bin/gnss-config \
+		-t "$pkgdir"/usr/bin/
+	install -Dm755 usr/bin/gnss-test \
+		-t "$pkgdir"/usr/bin/
+
+	install -Dm755 usr/share/applications/* -t "$pkgdir"/usr/share/applications/
+}
+
+sha512sums="
+e185c18474bd5a6aebe0c4be6746fd6ea0af8d9bc2cd414fe8772005e086da0d00c8d4d23757e4580c0eb6751cae6c216f019ef8949016ecdc81009df43d2c68  librem5-agps-cb83d92fe5523cc5435fa62a6114349ef3b18a3c.tar.gz
+"

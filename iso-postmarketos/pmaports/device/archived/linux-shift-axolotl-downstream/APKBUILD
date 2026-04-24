@@ -1,0 +1,52 @@
+# Archived: Downstream port, only for testing. Use mainline port (shift-axolotl)!
+# This kernel is mostly used for bringing up new features on mainline, thus archived
+# Reference: <https://postmarketos.org/vendorkernel>
+pkgname=linux-shift-axolotl-downstream
+pkgver=4.9.329
+pkgrel=0
+pkgdesc="SHIFT axolotl downstream kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="shift-axolotl-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6 openssl-dev"
+
+# Compiler: GCC 6 (latest doesn't boot to initramfs)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_shift_sdm845"
+_commit="0181dcc21fb32de34c5bd331cfd834598d9ff54f"
+_config="config-$_flavor.$arch"
+_outdir="out"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/SHIFTPHONES/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+2eb971b84b9471f4b7ac6af071b100684ab2f7c2c509ebccf1ad402ae228ed61c3cd68bc05e71f761e84f0b2b52ee1299d05751260a790afa470c7b4a5293e91  linux-shift-axolotl-downstream-0181dcc21fb32de34c5bd331cfd834598d9ff54f.tar.gz
+9fb1e5e3dce284daa95c9e7890e4096c655d8a3763c2f39e3a7812bf1b6e27b8b3bccdf7d02e8cda1ed8b3d2519ab5caf6f183344d5f3d7da3771ebec3085580  config-shift-axolotl-downstream.aarch64
+"

@@ -1,0 +1,5 @@
+# BT unblocked
+SUBSYSTEM=="rfkill", ATTR{name}=="bcm43xx Bluetooth", ACTION=="change", ENV{RFKILL_STATE}=="1", RUN+="/etc/init.d/hciattach start"
+
+# BT blocked
+SUBSYSTEM=="rfkill", ATTR{name}=="bcm43xx Bluetooth", ACTION=="change", ENV{RFKILL_STATE}=="0", RUN+="/etc/init.d/hciattach stop"

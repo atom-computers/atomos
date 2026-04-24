@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-htc-pme
+pkgdesc="HTC 10"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-htc-pme mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+65374d7bf7e77bffc18b26131fe0427d4bd36c4a69c9ad4cdb3214cef348569284b3242d0542c29be5f2196fc32dbdad4aa40b137ec04cf25826d44fd99ddcef  deviceinfo
+8b344f97f629bd406fa7dbfa254c9d4687ee59fd60233958cba54ef8fbe19ab78198eb3a94f25ee3e37a0df06701a6cd7802644170144a7afd8308620385ba47  kernel-cmdline.conf
+"

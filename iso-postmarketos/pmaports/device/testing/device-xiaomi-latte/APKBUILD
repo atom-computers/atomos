@@ -1,0 +1,94 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# bootx64.efi is shimx64.efi from fedora
+maintainer=""
+pkgname=device-xiaomi-latte
+pkgdesc="XiaoMi Pad2"
+pkgver=2
+pkgrel=0
+url="https://github.com/Qs315490/linux_latte"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	linux-xiaomi-latte
+	linux-firmware-brcm
+	oem-intel
+	postmarketos-base
+	zstd
+	btrfs-progs
+	irqbalance
+	udisks2
+"
+makedepends="devicepkg-dev rpm2cpio"
+
+_fedora_packages_url="https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages"
+source="
+	deviceinfo
+	modules-initfs
+	alsa-ucm-conf/cht-bsw-rt5659.conf
+	alsa-ucm-conf/HiFi.conf
+	keyboard.hwdb
+	BCM4356A2.hcd::https://github.com/Qs315490/linux_latte/raw/refs/heads/main/fix_file/BCM4356A2.hcd
+	MOK.cer
+	shim-x64.x86_64.rpm::$_fedora_packages_url/s/shim-x64-15.8-3.x86_64.rpm
+	grub2-efi-x64.x86_64.rpm::$_fedora_packages_url/g/grub2-efi-x64-2.12-40.fc43.x86_64.rpm
+	grub.cfg
+"
+
+unpack() {
+	rpm2cpio "$SRCDEST/shim-x64.x86_64.rpm" | cpio -id
+	rpm2cpio "$SRCDEST/grub2-efi-x64.x86_64.rpm" | cpio -id
+}
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# If you change the all 'm' setting to 'y' in the kconfig, you need to uncomment this line.
+	# echo "/lib/firmware" >> "$pkgdir/usr/share/mkinitfs/files/00-$pkgname-modules.files"
+
+	# Firmware for Xiaomi Mi Pad 2
+	install -Dm755 "$SRCDEST/BCM4356A2.hcd" \
+		"$pkgdir/lib/firmware/brcm/BCM4356A2.hcd"
+
+	# ALSA Use Case Manager configuration for Xiaomi Mi Pad 2
+	install -Dm755 "alsa-ucm-conf/cht-bsw-rt5659.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Intel/cht-bsw-rt5659/cht-bsw-rt5659.conf"
+	install -Dm755 "alsa-ucm-conf/HiFi.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Intel/cht-bsw-rt5659/HiFi.conf"
+	install -dm755 "$pkgdir/usr/share/alsa/ucm2/conf.d/cht-bsw-rt5659"
+	ln -sf ../../Intel/cht-bsw-rt5659/cht-bsw-rt5659.conf \
+		"$pkgdir/usr/share/alsa/ucm2/conf.d/cht-bsw-rt5659/cht-bsw-rt5659.conf"
+
+	# on Screen Touch Keyboard configuration for Xiaomi Mi Pad 2
+	install -Dm755 "keyboard.hwdb" \
+		"$pkgdir/usr/lib/udev/hwdb.d/61-keyboard.hwdb"
+
+	# Shim Secure Boot loader
+	install -Dm755 "boot/efi/EFI/fedora/shimx64.efi" "$pkgdir/boot/efi/boot/bootx64.efi"
+	install -Dm755 "boot/efi/EFI/fedora/mmx64.efi" "$pkgdir/boot/efi/boot/mmx64.efi"
+
+	# GRUB Secure Boot loader
+	install -Dm755 "boot/efi/EFI/fedora/grubx64.efi" "$pkgdir/boot/efi/boot/grubx64.efi"
+	install -Dm755 "grub.cfg" "$pkgdir/boot/efi/boot/grub.cfg"
+
+
+	# Secure Boot certificate
+	install -Dm755 "MOK.cer" "$pkgdir/boot/MOK.cer"
+}
+
+sha512sums="
+82541effd0edc467350ac0cf22cef0de2e89e24c7c78bf1a3be4b34da3cd41cd7f46def7e71cf4e256af3ea82f8387ddbfd910f4ec7aafd1018f1f5a948d825d  deviceinfo
+b6079f37aa1beea10f522f8bf94ad6040a0253393fb40b9ee09bb2a76b7f3eea9a424f3ec9f60206edeff8f24a38b0f0159b371c4cc28b7db738f475c4488576  modules-initfs
+e8bf62d308049427a438e411f499cf554016170f91225ef7a5b7b02ab3b296fd3f603187b0a9e0cbed89ba80081a754a52e5af1333fa1d28ed296c513569b7ac  cht-bsw-rt5659.conf
+265b86a9f0fc377d1bf800be59a96704f8263b7b614df12d7f26fc8b9105c35060ac661d059a1348cbc2b0788ca8131c14aad3ab5038c0d7253d0daf7e0d75a2  HiFi.conf
+9d0e4e17090739a11b9ddd336455343567d49665a5222b3fcfe4b8b73da7233ff13a5ca8aded44fc38345c0c8c4938dcd6b96528165fe8d47b30036dedf0ce7c  keyboard.hwdb
+fa34874f938d7532d80ee3395d93f1c957260c08f77671074266e3c3c3ca7190b8200668af96b0861ed5b961522d5088921cd3d4af236d287945a7527f75f916  BCM4356A2.hcd
+5fdeb5fc0c7fdc61d1a948abc69168966c2c7893a18f54e7583a564555b4a8a360fc24999580d9498ba55d7db63493468c3f4f4690a0f40a7105bb408da6d305  MOK.cer
+fa1b522380c81254fd4f356e411ad6b29b82307fc3d9da94f79fc12197a01c542f0646d90540427af786bb97a1baee74afd7c7d85245ad7b66a143571c9456f3  shim-x64.x86_64.rpm
+f6de8a85db78db54065442356ffff07a4898c0d4397e24415f6fba2f937375a271d3134b8acb5f6295abdde3ec90c32e10d0552abcca6687240513303a06bdc8  grub2-efi-x64.x86_64.rpm
+1d0c3bdf590ec870d026237697c7094098c526cf26eb465786e36490d591e0e05a62c3869fe8a14beec0511c57f0dad4fcde6cbcaa385a3461a0e7cadd26e097  grub.cfg
+"

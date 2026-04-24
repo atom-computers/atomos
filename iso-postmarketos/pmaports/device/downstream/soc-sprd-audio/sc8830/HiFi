@@ -1,0 +1,156 @@
+SectionVerb {
+	EnableSequence [
+		cdev "hw:sprdphone"
+		cset "name='Speaker Function' 0"
+		cset "name='HeadPhone Function' 0"
+		cset "name='HPL Playback Volume' 11"
+		cset "name='HPR Playback Volume' 11"
+		cset "name='SPKL Playback Volume' 11"
+		cset "name='SPKR Playback Volume' 11"
+		cset "name='ADCL Capture Volume' 12"
+		cset "name='ADCR Capture Volume' 12"
+		cset "name='DACL Playback Volume' 5"
+		cset "name='DACR Playback Volume' 5"
+		cset "name='EAR Playback Volume' 10"
+	]
+
+	DisableSequence [
+		cdev "hw:sprdphone"	
+	]
+
+	Value {
+		CapturePCM "hw:sprdphone,0"
+		PlaybackPCM "hw:sprdphone,0"
+	}
+}
+
+SectionDevice."Earpiece" {
+	Comment "Earpiece speaker"
+
+	ConflictingDevice [
+		"Headphones"
+		"Speaker"
+	]
+
+	EnableSequence [
+		cdev "hw:sprdphone"
+		cset "name='Earpiece Function' 1"
+	]
+
+	DisableSequence [
+		cdev "hw:sprdphone"
+		cset "name='Earpiece Function' 0"
+	]
+
+	Value {
+		PlaybackChannels "2"
+	}
+}
+
+SectionDevice."Speaker" {
+	Comment "Speaker"
+
+	ConflictingDevice [
+		"Earpiece"
+		"Headphones"
+	]
+
+	EnableSequence [
+		cdev "hw:sprdphone"
+		cset "name='SPKL Mixer DACLSPKL Switch' 1"
+		cset "name='Speaker Function' 1"
+	]
+
+	DisableSequence [
+		cdev "hw:sprdphone"
+		cset "name='SPKL Mixer DACLSPKL Switch' 0"
+		cset "name='Speaker Function' 0"
+	]
+
+	Value {
+		PlaybackChannels "2"
+	}
+}
+
+SectionDevice."Headphones" {
+	Comment "Headphones"
+	
+	ConflictingDevice [
+		"Earpiece"
+		"Speaker"
+	]
+
+	EnableSequence [
+		cdev "hw:sprdphone"
+		cset "name='DACL Playback Volume' 7"
+		cset "name='DACR Playback Volume' 7"
+		cset "name='HPL Mixer DACLHPL Switch' 1"
+		cset "name='HPR Mixer DACRHPR Switch' 1"
+		cset "name='HeadPhone Function' 1"
+	]
+
+	DisableSequence [
+		cdev "hw:sprdphone"
+		cset "name='HeadPhone Function' 0"
+		cset "name='HPL Mixer DACLHPL Switch' 0"
+		cset "name='HPR Mixer DACRHPR Switch' 0"
+		cset "name='DACL Playback Volume' 5"
+		cset "name='DACR Playback Volume' 5"
+	]
+
+	Value {
+		PlaybackChannels "2"
+	}
+}
+
+SectionDevice."Headset" {
+	Comment "Headset Microphone"
+
+	ConflictingDevice [
+		"Handset"
+	]
+
+	EnableSequence [
+		cdev "hw:sprdphone"
+		cset "name='ADCL Mixer HPMICADCL Switch' 1"
+		cset "name='ADCR Mixer HPMICADCR Switch' 1"
+		cset "name='HP Mic Function' 1"
+	]
+
+	DisableSequence [
+		cdev "hw:sprdphone"
+		cset "name='HP Mic Function' 0"
+		cset "name='ADCL Mixer HPMICADCL Switch' 0"
+		cset "name='ADCR Mixer HPMICADCR Switch' 0"
+	]
+
+	Value {
+		CaptureChannels "1"
+	}
+}
+
+SectionDevice."Handset" {
+	Comment "Handset microphone"
+
+	ConflictingDevice [
+		"Headset"
+	]
+
+	EnableSequence [
+		cdev "hw:sprdphone"
+		cset "name='ADCL Mixer MainMICADCL Switch' 1"
+		cset "name='ADCR Mixer MainMICADCR Switch' 1"
+		cset "name='Mic Function' 1"
+	]
+
+	DisableSequence [
+		cdev "hw:sprdphone"
+		cset "name='Mic Function' 0"
+		cset "name='ADCL Mixer MainMICADCL Switch' 0"
+		cset "name='ADCR Mixer MainMICADCR Switch' 0"
+	]
+
+	Value {
+		CaptureChannels "2"
+	}
+}

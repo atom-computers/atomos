@@ -1,0 +1,103 @@
+# Archived: Downstream kernel, only for testing. Use linux-postmarketos-exynos7870.
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/on7xelteswa_00_defconfig
+
+pkgname=linux-samsung-on7xelte-downstream
+pkgver=3.18.14
+pkgrel=0
+pkgdesc="Samsung Galaxy J7 Prime kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-on7xelte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	findutils
+	flex
+	gcc4
+	openssl-dev
+	perl
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+# Compiler: GCC 4 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="on7xelte"
+_commit="dc426ce2d91179926c0fd9ab7d2404fbac4a55d0"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/exynos7870-mainline/downstream/$_repository/-/archive/$_commit/$_repository-$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	disable-fimc-is2.patch
+	fix-usb-gadget-random-mac.patch
+	disable-charging-bootmode.patch
+	decon-fb-colors.patch
+	proc_S-remove-text-init-line.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	export ANDROID_MAJOR_VERSION=o
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	# Samsung's kernels are built in-tree.
+	# Copy some missing files to the output directory.
+	mkdir -p "$_outdir/init/"
+	mkdir -p "$_outdir/firmware/"
+	cp init/vmm.elf "$_outdir/init/vmm.elf"
+	cp firmware/gnss_firmware.bin "$_outdir/firmware/gnss_firmware.bin"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *exynos7870*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+nonfree_firmware() {
+	pkgdesc="Proprietary Firmware Blobs"
+	depends="firmware-samsung-on7xelte"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+88cad50360ca1687067e8adba0a5c2d023ddeb20fdf8e7752d626b7173e20b1ee8532265ea3a3395506ed9464379d8039c70e8721ba3f86b70ec44860b01bb96  linux-samsung-on7xelte-downstream-dc426ce2d91179926c0fd9ab7d2404fbac4a55d0.tar.gz
+0ae84b5fa2f292419e6d513eda614ff533828b04127de491c9d2984fe159b3b7811aaba37c667aae38f405e8557ca343f7cad5d529d0e183e4b84367ecf8e2ff  config-samsung-on7xelte.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+f429f40a8195e81d1c3ef86a5736bb29e09f3daaa2f415b9a992fb4dc8011c961c7b48fc97e08c3180ebacf8c2b97a5560022a9340eb44464e8ef98f3758e19e  disable-fimc-is2.patch
+0d56ba508408dc31961ad688f7fd960b0008851fd5729088658095417781b99962740e0c64d162a26f8389e4b4dc88e291252e7935e896fc70bf73c23150caea  fix-usb-gadget-random-mac.patch
+32e51c6171bcb72b15f5f11a9c9b3279e03e630f2ea6d14b66fbfdd8a8c1587bdb7e88698197e9a81e05c47dba08d13c1ff4a5e4692d14b042f07dd2006c1cc0  disable-charging-bootmode.patch
+5bd204239a5daff9f990757178398707ae5ec64f823ed9ec72a8d50ebe6d5f0a3cc9743e0d775094da4b3a7566f1ccceb56f39f3b0234d08ca05e537d86271ec  decon-fb-colors.patch
+99946ae80a642bb3daa34f55156c3803a813d60cc3863da422925f0a9a9564db66d3065633944080982b89d6448be40195687af68bfe65a34d870cd2eeba0aec  proc_S-remove-text-init-line.patch
+"

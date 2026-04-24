@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-htc-memul
+pkgdesc="HTC One Mini 2"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-htc-memul-adsp
+	firmware-htc-memul-modem
+	firmware-htc-memul-wcnss
+	firmware-qcom-adreno-a330
+	linux-postmarketos-qcom-msm8226
+	lk2nd-msm8226-htc-memul
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8226
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+d8585ad8cebeaa03118198339d962aa1952cc893d26d0c7dc19e2a5e2e2676fad9adb266b9cc6b4dc24759c066014fc89339ec950c250545dfc11c144d18e9f9  deviceinfo
+cba683b9d0bce86fda8166e1c99dc5ced1f9dbc9ea7c595075f7f5a72fc3462617412246c5c62b70c3bd89fd3a68b57ee823d3124e4b61cf53c23ba0c2efda24  kernel-cmdline.conf
+9ebe6ca9e371b5091e4e47ecbe3ec0c72d055e4bc2281880119eb0dee4c56b71f20f7d3cf1f1cb62e6814604e745fb17bbbfcfed2fec42398871e50b17685533  modules-initfs
+"

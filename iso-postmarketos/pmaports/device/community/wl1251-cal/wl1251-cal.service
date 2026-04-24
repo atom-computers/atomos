@@ -1,0 +1,13 @@
+[Unit]
+Description=Extract wl1251 calibration data
+RequiresMountsFor=/sys /dev
+Before=systemd-udevd.service
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/calibrate-wl1251
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target

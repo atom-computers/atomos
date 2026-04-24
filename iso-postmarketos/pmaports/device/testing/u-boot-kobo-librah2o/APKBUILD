@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# before releasing updates, do a test run in RAM using uuu
+maintainer=""
+pkgname=u-boot-kobo-librah2o
+pkgver=2020.10
+pkgrel=0
+pkgdesc="U-Boot for Kobo Libra H2O, based on freescale fork"
+arch="armv7"
+_carch="arm"
+license="GPL-2.0"
+url="https://github.com/akemnade/u-boot-fslc"
+makedepends="$depends_dev bc dtc bison flex"
+options="!check"
+
+_repository="u-boot-fslc"
+_commit="fcf25705fc8b57cb22c81b2d352e9a06269911be"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/akemnade/$_repository/archive/$_commit.tar.gz
+	u-boot-env.txt
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+build() {
+	make ARCH="$_carch" mx6sllclarahd_defconfig
+	make ARCH="$_carch" DEVICE_TREE=imx6sll-kobo-librah2o
+	tools/mkenvimage -p 0 -s 8192 -o u-boot-env.bin "$srcdir/u-boot-env.txt"
+}
+
+package() {
+	install -D -m644 "$builddir/u-boot-dtb.imx" "$pkgdir/usr/share/u-boot/kobo-librah2o/u-boot.imx"
+	install -D -m644 "$builddir/u-boot-env.bin" "$pkgdir/usr/share/u-boot/kobo-librah2o/u-boot-env.bin"
+}
+
+sha512sums="
+6a9c3f5d2ad806ab9529f0c8fc19213098aae620c5bf34e5cc273453bf007266a674489deff18ffa82e8826280192dbc443b024a3f878836021ae6c062be4189  u-boot-kobo-librah2o-fcf25705fc8b57cb22c81b2d352e9a06269911be.tar.gz
+1efcff185bc3d4b8efbbd174305c248fb871ba7b2efd6ab9532a1c6bf2811448464e02c4606846563ffce0070e652e5aa6b6c937e1778dc6b7b626de6f33c7f5  u-boot-env.txt
+"

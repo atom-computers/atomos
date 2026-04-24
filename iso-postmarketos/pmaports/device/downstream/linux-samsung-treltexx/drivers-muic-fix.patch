@@ -1,0 +1,114 @@
+Fixes error:
+
+drivers/muic/universal/muic_state.c:363:1: fatal error: opening dependency file drivers/muic/universal/.muic_state.o.d: No such file or directory
+
+This commit is basically the same as (part of)
+https://github.com/jcadduono/android_kernel_samsung_universal3475/commit/8b34f9d012cc
+
+diff --git a/drivers/muic/Kconfig b/drivers/muic/Kconfig
+index 9de6622d5791..ff3a5a0757a6 100644
+--- a/drivers/muic/Kconfig
++++ b/drivers/muic/Kconfig
+@@ -168,30 +168,11 @@ config MUIC_SM5502_SUPPORT_AUDIODOCK
+ 	help
+           If you say yes here you will get support for AUDIO DOCK
+ 
+-config MUIC_UNIVERSAL
+-	bool "UNIVERSAL MUIC"
+-	depends on USE_MUIC
+-	default n
+-	help
+-	  If you say yes here you will get support for various MUIC chips.
+-
+-config MUIC_UNIVERSAL_SM5703
+-	bool "SM5703 MUIC"
+-	depends on USE_MUIC
+-	default n
+-	help
+-	  If you say yes here you will get support for the SM5703 MUIC chip.
+-
+-config MUIC_UNIVERSAL_MAX77849
+-	bool "MAX77849 MUIC"
+-	depends on USE_MUIC
+-	default n
+-	help
+-	  If you say yes here you will get support for the MAX77849 MUIC chip.
+-
+ config MUIC_HV_FORCE_LIMIT
+     bool "Force limit AFC QC MAX CHG VOLTAGE"
+     depends on HV_MUIC_MAX77843_AFC
+     default n
+     help
+-      If you say yes here you will add function of limit afc charging volatage.
+\ No newline at end of file
++      If you say yes here you will add function of limit afc charging voltage.
++
++source "drivers/muic/universal/Kconfig"
+diff --git a/drivers/muic/Makefile b/drivers/muic/Makefile
+index 4c99f107570e..6188662c5b6e 100644
+--- a/drivers/muic/Makefile
++++ b/drivers/muic/Makefile
+@@ -15,15 +15,4 @@ obj-$(CONFIG_MUIC_FSA9480)		+= fsa9480.o
+ obj-$(CONFIG_MUIC_SM5502)		+= sm5502-muic.o
+ 
+ # MUIC_UNIVERSAL
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_task.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_state.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_apis.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_sysfs.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_debug.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_dt.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_i2c.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_regmap.o
+-obj-$(CONFIG_MUIC_UNIVERSAL)	+= universal/muic_vps.o
+-obj-$(CONFIG_MUIC_UNIVERSAL_SM5703)		+= universal/muic_regmap_sm5703.o
+-obj-$(CONFIG_MUIC_UNIVERSAL_S2MM001)	+= universal/muic_regmap_s2mm001b.o
+-obj-$(CONFIG_MUIC_UNIVERSAL_MAX77849)	+= universal/muic_regmap_max77849.o
++obj-$(CONFIG_MUIC_UNIVERSAL)		+= universal/
+diff --git a/drivers/muic/universal/Kconfig b/drivers/muic/universal/Kconfig
+new file mode 100644
+index 000000000000..802ca2dd8a22
+--- /dev/null
++++ b/drivers/muic/universal/Kconfig
+@@ -0,0 +1,22 @@
++# MUIC_UNIVERSAL
++
++config MUIC_UNIVERSAL
++	bool "UNIVERSAL MUIC"
++	depends on USE_MUIC
++	default n
++	help
++	  If you say yes here you will get support for various MUIC chips.
++
++config MUIC_UNIVERSAL_SM5703
++	bool "SM5703 MUIC"
++	depends on USE_MUIC
++	default n
++	help
++	  If you say yes here you will get support for the SM5703 MUIC chip.
++
++config MUIC_UNIVERSAL_MAX77849
++	bool "MAX77849 MUIC"
++	depends on USE_MUIC
++	default n
++	help
++	  If you say yes here you will get support for the MAX77849 MUIC chip.
+diff --git a/drivers/muic/universal/Makefile b/drivers/muic/universal/Makefile
+new file mode 100644
+index 000000000000..2beb93df6b3c
+--- /dev/null
++++ b/drivers/muic/universal/Makefile
+@@ -0,0 +1,13 @@
++# MUIC_UNIVERSAL
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_task.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_state.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_apis.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_sysfs.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_debug.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_dt.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_i2c.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_regmap.o
++obj-$(CONFIG_MUIC_UNIVERSAL)	        += muic_vps.o
++obj-$(CONFIG_MUIC_UNIVERSAL_SM5703)	+= muic_regmap_sm5703.o
++obj-$(CONFIG_MUIC_UNIVERSAL_S2MM001)	+= muic_regmap_s2mm001b.o
++obj-$(CONFIG_MUIC_UNIVERSAL_MAX77849)	+= muic_regmap_max77849.o

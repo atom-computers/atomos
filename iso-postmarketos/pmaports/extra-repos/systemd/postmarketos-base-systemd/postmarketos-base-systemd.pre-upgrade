@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# NOTE: we don't want to use apk's protected_paths here, as
+# creation of .apk-new files can be disabled via `--clean-protected`
+# $1: path to file
+retain_old() {
+	if [ -f "$1" ]; then
+		cp "$1" "$1".old
+	else
+		touch "$1.old"
+	fi
+}
+
+retain_old /usr/lib/systemd/system-preset/90-base.preset
+retain_old /usr/lib/systemd/user-preset/90-base.preset

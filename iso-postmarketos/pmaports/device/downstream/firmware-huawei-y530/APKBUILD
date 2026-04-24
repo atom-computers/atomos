@@ -1,0 +1,30 @@
+pkgname=firmware-huawei-y530
+pkgver=1
+pkgrel=3
+_commit="86bf384e1c37ee328988b9ec8769f6d321f931de"
+pkgdesc="Firmware files for Huawei Ascend Y530"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://github.com/drebrez/vendor_huawei_y530/archive/$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_huawei_y530-$_commit"
+
+package() {
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07
+		wcnss.b08 wcnss.b09 wcnss.mdt"
+	for _i in $_files; do
+		install -D -m644 wifi/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	_files="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin
+		WCNSS_hw_wlan_nv.bin"
+	for _i in $_files; do
+		install -D -m644 wifi/wlan/prima/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="b21d719ad6abe178ef1e846d13a8fad24fa83b191e66dd041953409aa95f8f9be620c507ea9e9fd12b847deafd66d0b7986f6cb9c5c4e0fb272a7fcf88eb15cc  firmware-huawei-y530-86bf384e1c37ee328988b9ec8769f6d321f931de.tar.gz"

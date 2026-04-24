@@ -1,0 +1,25 @@
+From 34f8d3f8c997a1aa176d8c896a728760fcb31c22 Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Wed, 14 Jul 2021 09:30:56 +0300
+Subject: [PATCH 5/7] Use real mkdtboimg, don't use python2 one
+
+---
+ scripts/Makefile.lib | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index 89cf8123ef0a..97ee47ca432c 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -336,7 +336,7 @@ dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
+ # mkdtimg
+ #----------------------------------------------------------------------------
+ quiet_cmd_mkdtimg = DTBOIMG $@
+-cmd_mkdtimg = python2 $(srctree)/scripts/dtc/mkdtboimg.py create $@ --page_size=4096 $(filter-out FORCE,$^)
++cmd_mkdtimg = mkdtboimg create $@ --page_size=4096 $(filter-out FORCE,$^)
+ 
+ # cat
+ # ---------------------------------------------------------------------------
+-- 
+2.40.1
+

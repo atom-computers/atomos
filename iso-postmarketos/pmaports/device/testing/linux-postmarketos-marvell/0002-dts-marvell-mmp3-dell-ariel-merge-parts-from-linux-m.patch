@@ -1,0 +1,236 @@
+From 8e7d5e50da61a33481fe0523f913870091d721c2 Mon Sep 17 00:00:00 2001
+From: Robert Eckelmann <longnoserob@gmail.com>
+Date: Sun, 21 Dec 2025 12:51:32 +0900
+Subject: [PATCH 2/3] dts/marvell/mmp3-dell-ariel: merge parts from linux-mmp
+
+Signed-off-by: Robert Eckelmann <longnoserob@gmail.com>
+---
+ arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts | 165 +++++++++++++++++-
+ 1 file changed, 156 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts b/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
+index fe6df364a9eb..28a67cc8976c 100644
+--- a/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
++++ b/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
+@@ -2,7 +2,7 @@
+ /*
+  * Dell Wyse 3020 a.k.a. "Ariel" a.k.a. Tx0D (T00D, T10D)
+  *
+- * Copyright (C) 2019 Lubomir Rintel <lkundrak@v3.sk>
++ * Copyright (C) 2019,2020 Lubomir Rintel <lkundrak@v3.sk>
+  */
+ 
+ /dts-v1/;
+@@ -31,15 +31,62 @@ memory@0 {
+ 		device_type = "memory";
+ 	};
+ 
+-	ec_input_spi: spi {
+-		compatible = "spi-gpio";
++	reserved-memory {
+ 		#address-cells = <1>;
+-		#size-cells = <0>;
++		#size-cells = <1>;
++		ranges;
++
++		display_reserved: framebuffer {
++			compatible = "marvell,mmp2-framebuffer",
++				     "marvell,armada-framebuffer";
++			size = <0x04000000>;
++			alignment = <0x04000000>;
++			no-map;
++		};
++	};
++
++	dvi-connector-0 {
++		compatible = "dvi-connector";
++		ddc-i2c-bus = <&twsi5>;
++		hpd-gpios = <&gpio 62 GPIO_ACTIVE_LOW>;
++		digital;
++		analog;
++
++		port {
++			dvi0_in: endpoint {
++				remote-endpoint = <&encoder_out>;
++			};
++		};
++	};
++
++	dvi-connector-1 {
++		compatible = "dvi-connector";
++		ddc-i2c-bus = <&twsi6>;
++		hpd-gpios = <&gpio 59 GPIO_ACTIVE_LOW>;
++		digital;
+ 
+-		num-chipselects = <0>;
+-		sck-gpios = <&gpio 55 GPIO_ACTIVE_HIGH>;
+-		miso-gpios = <&gpio 57 GPIO_ACTIVE_HIGH>;
+-		mosi-gpios = <&gpio 58 GPIO_ACTIVE_HIGH>;
++		port {
++			dvi1_in: endpoint {
++				remote-endpoint = <&hdmi0_out>;
++			};
++		};
++	};
++
++	sound-card {
++		compatible = "audio-graph-card";
++		label = "Dell Ariel";
++		dais = <&sspa0_dai>;
++		routing = "Headphones", "HPL",
++			  "Headphones", "HPR",
++			  "Speaker External", "SPKLN",
++			  "Speaker External", "SPKLP",
++			  "Speaker External", "SPKRN",
++			  "Speaker External", "SPKRP",
++			  "MIC1N", "Mic Jack",
++			  "MIC1P", "Mic Jack";
++		widgets = "Headphone", "Headphones",
++			  "Speaker", "Speaker External",
++			  "Microphone", "Mic Jack";
+ 	};
+ };
+ 
+@@ -98,10 +145,60 @@ rtc@68 {
+ 		reg = <0x68>;
+ 		status = "okay";
+ 	};
++
++	regulator@19 {
++		compatible = "marvell,88pg867";
++		reg = <0x19>;
++
++		vcpu: buck1 {
++			regulator-name = "vdd_1v8";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-boot-on;
++			regulator-always-on;
++		};
++	};
+ };
+ 
+ &twsi3 {
+ 	status = "okay";
++
++	vga-dvi-encoder@76 {
++		compatible = "chrontel,ch7033";
++		reg = <0x76>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				encoder_in: endpoint {
++					remote-endpoint = <&lcd0_out>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				encoder_out: endpoint {
++					remote-endpoint = <&dvi0_in>;
++				};
++			};
++		};
++	};
++
++	audio-codec@30 {
++		compatible = "marvell,88ce156";
++		reg = <0x30>;
++
++		port {
++			ce156_0: endpoint {
++				mclk-fs = <256>;
++				clocks = <&audio_clk 0>;
++				remote-endpoint = <&sspa0_0>;
++			};
++		};
++	};
+ };
+ 
+ &twsi4 {
+@@ -117,6 +214,26 @@ embedded-controller@58 {
+ 	};
+ };
+ 
++&twsi5 {
++	status = "okay";
++};
++
++&twsi6 {
++	status = "okay";
++};
++
++&lcd0 {
++	status = "okay";
++};
++
++&lcd0_out {
++	remote-endpoint = <&encoder_in>;
++};
++
++&hdmi0_out {
++	remote-endpoint = <&dvi1_in>;
++};
++
+ &ssp1 {
+ 	status = "okay";
+ 	cs-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+@@ -129,9 +246,11 @@ firmware-flash@0 {
+ 	};
+ };
+ 
+-&ec_input_spi {
++&ssp2 {
+ 	status = "okay";
+ 	cs-gpios = <&gpio 56 GPIO_ACTIVE_LOW>;
++	//pinctrl-names = "default";
++	//pinctrl-0 = <&ssp2_pins>;
+ 
+ 	power-button@0 {
+ 		reg = <0>;
+@@ -142,6 +261,33 @@ power-button@0 {
+ 	};
+ };
+ 
++&asram {
++	status = "okay";
++};
++
++&adma0 {
++	status = "okay";
++};
++
++&audio_clk {
++	status = "okay";
++};
++
++&sspa0 {
++	status = "okay";
++	dmas = <&adma0 0>, <&adma0 1>;
++	dma-names = "tx", "rx";
++
++	sspa0_dai: port {
++		sspa0_0: endpoint {
++			remote-endpoint = <&ce156_0>;
++			frame-master;
++			bitclock-master;
++			dai-format = "i2s";
++		};
++	};
++};
++
+ &gpu_2d {
+ 	status = "okay";
+ };
+@@ -149,3 +295,4 @@ &gpu_2d {
+ &gpu_3d {
+ 	status = "okay";
+ };
++
+-- 
+2.52.0
+

@@ -1,0 +1,14 @@
+diff --git a/arch/arm/boot/dts/ti/omap/twl6030.dtsi b/arch/arm/boot/dts/ti/omap/twl6030.dtsi
+index 9d588cfaa..ac033debf 100644
+--- a/arch/arm/boot/dts/ti/omap/twl6030.dtsi
++++ b/arch/arm/boot/dts/ti/omap/twl6030.dtsi
+@@ -102,4 +102,9 @@ gpadc {
+ 		interrupts = <3>;
+ 		#io-channel-cells = <1>;
+ 	};
++
++	twl_pwrbutton: pwrbutton {
++		compatible = "ti,twl6030-pwrbutton";
++		interrupts = <0>;
++	};
+ };

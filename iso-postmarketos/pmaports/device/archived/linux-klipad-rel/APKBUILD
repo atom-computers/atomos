@@ -1,0 +1,61 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: config extracted from stock (prebuilt) kernel
+
+pkgname=linux-klipad-rel
+pkgver=4.4.167
+pkgrel=2
+pkgdesc="KLIPAD Klipad Tablet kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="klipad-rel"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Fix Python errors (more recent kernels, not 4.4)
+#  export TEMP_LN_DIR="$(mktemp -d)"
+#  export PATH="$PATH:$TEMP_LN_DIR"
+#  ln -s /usr/bin/python3 "$TEMP_LN_DIR/python"
+
+# Source
+_repository="kernel"
+_commit="27f039b43ada8d0301867505ce9a91d8b5c604bc" # 4.19: "08e8386122b77fdbf16779195cf722f4b8c02384"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/rockchip-linux/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+	02_reduce_lzo_compression.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="a864bab7f7c5fb01322d471d4e3600ab0757a7ece4bb785843225dc54e265934dd5088180b9a17c90479882c6588b6d479bcfea7f986ff4cc349752395c73c2d  linux-klipad-rel-27f039b43ada8d0301867505ce9a91d8b5c604bc.tar.gz
+9524c2d8914b08f29d9582456fd1aa4a4a04d2e1a0a568fddd016c1fc6bbf194650c077401fb2d2841e40bdf003ae0ef27b5743da4766c9b558074c695211967  config-klipad-rel.armv7
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+0faff5eeb9b121e0a2152108b444337c2ea757dc4cb1d63335038d6a16f1e4281be27dd09a3cf9974352b8cd2b3f20ba9aecb905bd186387929397ad2fdbda50  02_reduce_lzo_compression.patch"

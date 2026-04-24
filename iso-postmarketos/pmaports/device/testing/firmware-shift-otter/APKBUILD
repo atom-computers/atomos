@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Alexander Martinz <amartinz@shiftphones.com>
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=firmware-shift-otter
+pkgver=20250417
+pkgrel=1
+pkgdesc="Firmware for SHIFTphone 8"
+url="https://github.com/SomeBlobs/firmware-shift-otter"
+arch="aarch64"
+license="proprietary"
+makedepends="bash pil-squasher"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="28e9784221d11a49f6cebe8df637244a6fc91e30"
+source="https://github.com/SomeBlobs/firmware-shift-otter/archive/$_commit/firmware-shift-otter-$_commit.tar.gz"
+builddir="$srcdir/firmware-shift-otter-$_commit"
+
+build() {
+	make prepare
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+6dd0eeb86d0f70b972a527ac8e2b27b119c6430763f103d74795378da9444f3e1608aa9fb9ef6ad36eb19757ad0a119d582a99401c264fe415513abf75841a92  firmware-shift-otter-28e9784221d11a49f6cebe8df637244a6fc91e30.tar.gz
+"

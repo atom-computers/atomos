@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/vendor/lineage-a52sxq_defconfig
+
+pkgname=linux-samsung-a52sxq
+pkgver=5.4.254
+pkgrel=0
+pkgdesc="Samsung Galaxy A52s 5G kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a52sxq"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	cpio
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	tar
+	xz
+"
+
+# Source
+_repository="android_kernel_samsung_sm7325"
+_commit="12334aaea98147c1739de857b4f36f8949a3f095"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-camera-include-paths.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	mkdir -p  "$pkgdir"/usr/share/dtb
+	cp "$_outdir"/arch/arm64/boot/dts/vendor/qcom/yupik.dtb "$pkgdir"/usr/share/dtb/a52sxq.dtb
+}
+
+sha512sums="
+0fe044ef320cee92384f0cd606a52d30935ae04cb6098c466bb95f2bca2b929c1adf483eff990d97a36900ca579cc4d432a1545c2eb62a097549e66597916da4  linux-samsung-a52sxq-12334aaea98147c1739de857b4f36f8949a3f095.tar.gz
+baf724d9d48b264583cd113ae5ead553bb622519d455e8cc9dd7d195166869868d5919afe4e886eed38b88bf9e8bd6bc1c2890cbfa70a73dc10745593722ba80  config-samsung-a52sxq.aarch64
+026ebb85188141c30ad379a23df3b9bda1a914d307e75cc0d1e41bea05ec4d990af21cb2fed8f995c351ca9a6a7dce57508fba57c66b8ec8ce73da63047210d5  fix-camera-include-paths.patch
+"

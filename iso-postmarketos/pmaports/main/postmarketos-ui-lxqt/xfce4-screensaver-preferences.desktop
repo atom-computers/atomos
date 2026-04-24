@@ -1,0 +1,11 @@
+# This file adds a menu entry for Xfce Screensaver by removing "OnlyShowIn=XFCE".
+# It overrides the corresponding desktop file in /usr/share/applications.
+[Desktop Entry]
+Type=Application
+Name=Xfce Screensaver
+Comment=Set your screensaver preferences
+Icon=org.xfce.ScreenSaver
+Exec=xfce4-screensaver-preferences
+Categories=Settings;DesktopSettings
+Terminal=false
+StartupNotify=true

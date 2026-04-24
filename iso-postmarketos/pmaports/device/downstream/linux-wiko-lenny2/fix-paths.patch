@@ -1,0 +1,19 @@
+commit d44b9ce183b40505e95e784cc67054890f946ffd
+Author: Antoine Fontaine <antoine.fontaine@epfl.ch>
+Date:   Wed Nov 27 02:18:46 2019 +0100
+
+    fix bad path
+
+diff --git a/drivers/misc/mediatek/gpu/mt6580/mali/mali/Kbuild b/drivers/misc/mediatek/gpu/mt6580/mali/mali/Kbuild
+index d3176cb4..4291be00 100755
+--- a/drivers/misc/mediatek/gpu/mt6580/mali/mali/Kbuild
++++ b/drivers/misc/mediatek/gpu/mt6580/mali/mali/Kbuild
+@@ -201,7 +201,7 @@ endif
+ ccflags-y += -DSVN_REV_STRING=\"$(DRIVER_REV)\"
+ 
+ VERSION_STRINGS :=
+-VERSION_STRINGS += API_VERSION=$(shell cd $(DRIVER_DIR); grep "\#define _MALI_API_VERSION" $(FILES_PREFIX)include/linux/mali/mali_utgard_uk_types.h | cut -d' ' -f 3 )
++VERSION_STRINGS += API_VERSION=$(shell cd $(DRIVER_DIR); grep "\#define _MALI_API_VERSION" $(PWD)/drivers/misc/mediatek/gpu/mt6580/mali/mali/include/linux/mali/mali_utgard_uk_types.h | cut -d' ' -f 3 )
+ VERSION_STRINGS += REPO_URL=$(REPO_URL)
+ VERSION_STRINGS += REVISION=$(DRIVER_REV)
+ VERSION_STRINGS += CHANGED_REVISION=$(CHANGED_REVISION)

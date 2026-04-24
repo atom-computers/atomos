@@ -1,0 +1,3 @@
+# Touchscreen
+SUBSYSTEM=="input", ATTRS{name}=="synaptics-rmi-touchscreen", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1"

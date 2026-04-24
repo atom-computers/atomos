@@ -1,0 +1,39 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-i9100-downstream
+pkgver=2
+pkgrel=0
+pkgdesc="Samsung Galaxy SII (Downstream)"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	firmware-samsung-i9100
+	libsamsung-ipc
+	linux-firmware-s5p-mfc
+	linux-samsung-i9100-downstream
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+options="!check !archcheck"
+source="
+	deviceinfo
+	90-android-touch-dev.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/etc/udev/rules.d/90-android-touch-dev.rules
+}
+
+sha512sums="
+1fc1face147e6e5eb03c49b9dcc52dce2e8ecc66157010223d2838ec362ba6a7db51a9bddeb599309b28db4cd857ad1be6f95476283e894bd2974bfbb13e1d04  deviceinfo
+089635daddd88eec35451bfe98dc3713035e3623c896dd21305b990ecf422e8fbb54e010cf347919bbb3a7385f639ab119280477fe0783df3228168d97d96fc6  90-android-touch-dev.rules
+"

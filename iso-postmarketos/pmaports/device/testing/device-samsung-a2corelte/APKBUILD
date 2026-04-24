@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="methanal <baclofen@tuta.io>"
+pkgname=device-samsung-a2corelte
+pkgdesc="Samsung Galaxy A2 Core"
+pkgver=4
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	dtbtool-exynos
+	linux-postmarketos-exynos7870
+	mesa-dri-simpledrm
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Proprietary firmware blobs for $pkgdesc"
+	depends="firmware-samsung-a2corelte"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+6b635ecff86cb93d9e7c506cf9238e946293486890f1154f6c5bbe6c860f45461aa3ee1cee88fbe9332ccb9834b817c8c85bef9bf3b95f5261645ef4629fdfb3  deviceinfo
+"

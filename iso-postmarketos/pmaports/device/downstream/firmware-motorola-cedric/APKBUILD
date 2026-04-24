@@ -1,0 +1,32 @@
+pkgname=firmware-motorola-cedric
+pkgver=1
+pkgrel=1
+_commit="5d90d65c31a1d3da14900e553faeedf9af3de689"
+pkgdesc="Firmware files for Motorola Moto G5"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://github.com/Hacker1245/vendor_motorola_cedric/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_motorola_cedric-$_commit"
+
+package() {
+	# /lib/firmware/postmarketos
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06
+		 wcnss.b09 wcnss.b10 wcnss.b11 wcnss.b12 wcnss.mdt"
+	for _i in $_files; do
+		install -D -m644 "$_i" "$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	# /lib/firmware/postmarketos/wlan/prima
+	_files="WCNSS_qcom_cfg.ini
+		WCNSS_qcom_wlan_nv.bin WCNSS_wlan_dictionary.dat"
+	for _i in $_files; do
+		install -D -m644 wlan/prima/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+
+sha512sums="24b769e23511ef0b2be67d812d231ec5060954bf77d166e5fbc312e2ed489378abb1729d5a5c157ce98024448f0408edaf983c37f7966b84b6e3de43ac31a961  firmware-motorola-cedric-5d90d65c31a1d3da14900e553faeedf9af3de689.tar.gz"

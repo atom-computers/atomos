@@ -1,0 +1,15 @@
+[Unit]
+Description=Enable compressed swap in memory using zram
+DefaultDependencies=no
+Before=swap.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=30sec
+ExecCondition=sh -c '. /usr/share/misc/source_deviceinfo'
+ExecStart=/usr/bin/zramstart
+ExecStop=/usr/bin/zramstop
+
+[Install]
+WantedBy=swap.target

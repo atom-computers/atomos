@@ -1,0 +1,24 @@
+Replace broken custom cert list script with mainline 3.18.19 version
+---
+
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 9f8b0d8..a61e4a7 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -144,12 +144,12 @@ endif
+ 
+ kernel/system_certificates.o: $(obj)/x509_certificate_list
+ 
+-quiet_cmd_extract_certs  = EXTRACT_CERTS   $(patsubst "%",%,$(2))
+-	cmd_extract_certs  = scripts/extract-cert $(2) $@ || ( rm $@; exit 1)
++quiet_cmd_x509certs  = CERTS   $@
++      cmd_x509certs  = cat $(X509_CERTIFICATES) /dev/null >$@ $(foreach X509,$(X509_CERTIFICATES),; echo "  - Including cert $(X509)")
+ 
+ targets += $(obj)/x509_certificate_list
+-$(obj)/x509_certificate_list: scripts/extract-cert $(X509_CERTIFICATES) $(obj)/.x509.list FORCE
+-	$(call if_changed,extract_certs,verity-keys)
++$(obj)/x509_certificate_list: $(X509_CERTIFICATES) $(obj)/.x509.list
++	$(call if_changed,x509certs)
+ 
+ targets += $(obj)/.x509.list
+ $(obj)/.x509.list:

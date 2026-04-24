@@ -1,0 +1,22 @@
+From e950e514cd6b45f8d1512eef1c959769183caf56 Mon Sep 17 00:00:00 2001
+From: Alexandros Feuerstein <32029275+afeuerstein@users.noreply.github.com>
+Date: Tue, 13 Jul 2021 11:19:58 +0200
+Subject: [PATCH] Update ipa_hw_stats.c
+
+---
+ drivers/platform/msm/ipa/ipa_v3/ipa_hw_stats.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/platform/msm/ipa/ipa_v3/ipa_hw_stats.c b/drivers/platform/msm/ipa/ipa_v3/ipa_hw_stats.c
+index 1b900a27173b..d1e40689709a 100644
+--- a/drivers/platform/msm/ipa/ipa_v3/ipa_hw_stats.c
++++ b/drivers/platform/msm/ipa/ipa_v3/ipa_hw_stats.c
+@@ -2253,7 +2253,7 @@ static ssize_t ipa_debugfs_enable_disable_drop_stats(struct file *file,
+ 		goto bail;
+ 	}
+ 
+-	missing = copy_from_user(dbg_buff, ubuf, count);
++	missing = _copy_from_user(dbg_buff, ubuf, count);
+ 	if (missing) {
+ 		ret = -EFAULT;
+ 		goto bail;

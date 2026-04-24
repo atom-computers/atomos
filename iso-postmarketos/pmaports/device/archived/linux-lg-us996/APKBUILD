@@ -1,0 +1,71 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_us996_defconfig
+
+pkgname=linux-lg-us996
+pkgver=3.18.113
+pkgrel=2
+pkgdesc="LG V20 (us996) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lg-us996"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	perl
+	sed
+	installkernel
+	bash
+	flex
+	gcc6
+	gmp-dev
+	bc
+	linux-headers
+	elfutils-dev
+	devicepkg-dev
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lge_msm8996"
+_commit="c0cf2a6e4ccceb664492ca47b8b1c9f9d4a680c2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	fix_include_paths.patch
+	vdsomunge_upstream.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+bc15ff2fc2f452fc3e30704c36800e029a1911d5852b113b47f48264fcf43266ad1185cc69a5e8978bb9c091b94ef36f40a607545199546e0a554269de3ae71a  linux-lg-us996-c0cf2a6e4ccceb664492ca47b8b1c9f9d4a680c2.tar.gz
+9ef29a250902e6f896788e1d443a86848f7bc762d21a72c89cc306a02844dfc1b709296cc12b3391339fcfed2b762ae14950d0686150d7507c28f3ef1fd723cc  config-lg-us996.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+531e8d26eb5a152e051d582f8e626b62299193b5099f953135ed944239a9eadab0d0cfb3c4566d3e86706d61a59dcf3b04d7760621b926e619d13944d5af387f  fix_include_paths.patch
+19a6c3445bfd8057e4fabe1709f3d2344f3a99fef49b44636c07a18ba8791fab1bcff77f93aadff887946ae6f83c9d86e1c28f9b88d03c6ba156704d430b4470  vdsomunge_upstream.patch
+"

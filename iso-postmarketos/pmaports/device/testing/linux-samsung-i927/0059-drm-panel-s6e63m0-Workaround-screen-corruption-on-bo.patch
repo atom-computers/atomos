@@ -1,0 +1,51 @@
+From 41a364dd10b44827986f6713932b297a79bd4778 Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Sun, 14 Jul 2019 22:42:00 +0300
+Subject: [PATCH] drm/panel: s6e63m0: Workaround screen corruption on boot
+
+The panel driver gets probed before PMIC, so the regulator_bulk_get() call
+fails with EPROBE_DEFER, making the driver to probe later in the boot
+process. However, the screen gets corrupted in some time with noise
+displayed. To resolve this, reset GPIO is now requested before the
+regulator, setting the panel to the reset state.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ drivers/gpu/drm/panel/panel-samsung-s6e63m0.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c b/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c
+index db2c34adf26d..753906c32fe0 100644
+--- a/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c
++++ b/drivers/gpu/drm/panel/panel-samsung-s6e63m0.c
+@@ -449,6 +449,13 @@ static int s6e63m0_probe(struct spi_device *spi)
+ 	ctx->enabled = false;
+ 	ctx->prepared = false;
+ 
++	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
++	if (IS_ERR(ctx->reset_gpio)) {
++		DRM_DEV_ERROR(dev, "cannot get reset-gpios %ld\n",
++			      PTR_ERR(ctx->reset_gpio));
++		return PTR_ERR(ctx->reset_gpio);
++	}
++
+ 	ctx->supplies[0].supply = "vdd3";
+ 	ctx->supplies[1].supply = "vci";
+ 	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
+@@ -458,13 +465,6 @@ static int s6e63m0_probe(struct spi_device *spi)
+ 		return ret;
+ 	}
+ 
+-	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+-	if (IS_ERR(ctx->reset_gpio)) {
+-		DRM_DEV_ERROR(dev, "cannot get reset-gpios %ld\n",
+-			      PTR_ERR(ctx->reset_gpio));
+-		return PTR_ERR(ctx->reset_gpio);
+-	}
+-
+ 	spi->bits_per_word = 9;
+ 	spi->mode = SPI_MODE_3;
+ 	ret = spi_setup(spi);
+-- 
+2.22.0
+

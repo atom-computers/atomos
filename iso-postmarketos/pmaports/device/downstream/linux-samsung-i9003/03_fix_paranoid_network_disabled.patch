@@ -1,0 +1,51 @@
+This fixes compilation with ANDROID_PARANOID_NETWORK disabled. Without this
+patch, compilation breaks with:
+
+/home/pmos/build/src/android_kernel_samsung_latona-7b8d73dd32e6cd21107f9a963a32a5ed237a6e78/security/commoncap.c:
+In function 'cap_capable':
+/home/pmos/build/src/android_kernel_samsung_latona-7b8d73dd32e6cd21107f9a963a32a5ed237a6e78/security/commoncap.c:91:40:
+error: 'AID_NET_RAW' undeclared (first use in this function)
+  if (cap == CAP_NET_RAW && in_egroup_p(AID_NET_RAW))
+                                        ^~~~~~~~~~~
+/home/pmos/build/src/android_kernel_samsung_latona-7b8d73dd32e6cd21107f9a963a32a5ed237a6e78/security/commoncap.c:91:40:
+note: each undeclared identifier is reported only once for each function it
+appears in
+/home/pmos/build/src/android_kernel_samsung_latona-7b8d73dd32e6cd21107f9a963a32a5ed237a6e78/security/commoncap.c:93:42:
+error: 'AID_NET_ADMIN' undeclared (first use in this function)
+  if (cap == CAP_NET_ADMIN && in_egroup_p(AID_NET_ADMIN))
+---
+From e9a85c71afa38ee304e71c86ca7d74ed4658318c Mon Sep 17 00:00:00 2001
+From: Tushar Behera <tushar.behera@linaro.org>
+Date: Mon, 26 Mar 2012 16:54:15 +0530
+Subject: [PATCH] security: Add proper checks for Android specific capability
+ checks
+
+Commit b641072 ("security: Add AID_NET_RAW and AID_NET_ADMIN capability
+check in cap_capable().") introduces additional checks for AID_NET_xxx
+macros. Since the header file including those macros are conditionally
+included, the checks should also be conditionally executed.
+
+Change-Id: Iaec5208d5b95a46b1ac3f2db8449c661e803fa5b
+Signed-off-by: Tushar Behera <tushar.behera@linaro.org>
+Signed-off-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+---
+ security/commoncap.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 897af00e477..0051ac2d058 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -80,10 +80,12 @@ int cap_netlink_send(struct sock *sk, struct sk_buff *skb)
+ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+ 		int cap, int audit)
+ {
++#ifdef CONFIG_ANDROID_PARANOID_NETWORK
+ 	if (cap == CAP_NET_RAW && in_egroup_p(AID_NET_RAW))
+ 		return 0;
+ 	if (cap == CAP_NET_ADMIN && in_egroup_p(AID_NET_ADMIN))
+ 		return 0;
++#endif
+ 
+ 	for (;;) {
+ 		/* The creator of the user namespace has all caps. */

@@ -1,0 +1,12 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+        compatible = "licheepi,licheepi-zero";
+        fragment@0 {
+                target-path = "/soc/i2c@1c2ac00";
+                __overlay__ {
+                        status = "okay";
+                };
+        };
+};

@@ -1,0 +1,43 @@
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=firmware-wileyfox-crackling
+pkgver=5
+pkgrel=2
+pkgdesc="Firmware for Wileyfox Swift"
+url="https://rizzotherat.gitlab.io/firmware/"
+subpackages="$pkgname-venus $pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="pil-squasher"
+source="https://rizzotherat.gitlab.io/firmware/crackling.tar.xz"
+builddir="$srcdir"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	# venus.mbn exists already but seems a bit different
+	pil-squasher venus2.mbn venus.mdt
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+venus() {
+	pkgdesc="Wileyfox Swift video firmware"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to link venus.mbn to venus.mdt
+	# Older kernels look for venus.mdt, newer ones directly for venus.mbn
+	install -Dm644 "$srcdir"/venus2.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mbn
+	ln -s venus.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mdt
+}
+
+wcnss_nv() {
+	pkgdesc="Wileyfox Swift WiFi/BT firmware configuration"
+	replaces="firmware-wileyfox-crackling-wcnss"
+	install -Dm644 "$srcdir"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="44e5c6d2ab28576548689bf43ecf5ac0a2ee42a49e0f993a459a59f80063775a00976bfe1a7db8d82ff82b92bf502832bf1c61ab456a131696f2fa5e09af16b3  crackling.tar.xz"

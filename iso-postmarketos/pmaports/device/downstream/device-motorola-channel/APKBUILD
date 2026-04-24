@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jean-Etienne Tremblay <jean.etienne.tremblay@gmail.com>"
+pkgname=device-motorola-channel
+pkgdesc="Motorola G7 Play"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+options="!check !archcheck"
+depends="postmarketos-base linux-motorola-channel mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-motorola-channel-wcnss wcnss-wlan"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+cdfa19839aa97b78b48a0a9e4b18ad492af54343746680268a5dec62aad09f49721072ec0e4381baaa803b7be6bc9661c3a4fe1297759be4c3c300bff9da5fef  deviceinfo
+7db8661fb9eaeb17196334d49b3843c750dac81ba631d3632431aad540ea0501bd633bfa88e00d8c2e7470af980181c0d32124135a68ef47c041b67710b5d4cf  kernel-cmdline.conf
+"

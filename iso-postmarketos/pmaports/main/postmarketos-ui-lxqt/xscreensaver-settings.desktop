@@ -1,0 +1,10 @@
+# This file removes the menu entry for XScreenSaver Settings by option "NoDisplay=true".
+# It overrides the corresponding desktop file in /usr/share/applications.
+[Desktop Entry]
+Type=Application
+Name=XScreenSaver Settings
+Comment=Change screensaver properties
+Icon=xscreensaver
+Exec=xscreensaver-settings
+Terminal=false
+NoDisplay=true

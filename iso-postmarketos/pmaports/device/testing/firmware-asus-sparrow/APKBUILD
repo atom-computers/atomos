@@ -1,0 +1,46 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-asus-sparrow
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for ASUS ZenWatch 2"
+subpackages="
+	$pkgname-adsp
+	$pkgname-wifi
+	"
+url="https://github.com/FairBlobs/sparrow-firmware"
+arch="armv7"
+license="proprietary"
+_commit="10927f6b3f2033dc0c53a63a9e4301a3f763f2d1"
+builddir="$srcdir/sparrow-firmware-$_commit"
+source="$pkgname-$_commit.tar.gz::https://github.com/FairBlobs/sparrow-firmware/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pkgdesc="ASUS ZenWatch 2 - ADSP firmware"
+
+	cd "$builddir"
+	for _i in adsp.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+wifi() {
+	pkgdesc="ASUS ZenWatch 2 - WiFi/Bluetooth firmware"
+
+	cd "$builddir"
+	install -Dm644 BCM43430A1.hcd \
+		"$subpkgdir"/lib/firmware/brcm/BCM43430A1.hcd
+	install -Dm644 brcmfmac43430-sdio.asus,sparrow.bin \
+		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430-sdio.asus,sparrow.bin
+	install -Dm644 brcmfmac43430-sdio.asus,sparrow.txt \
+		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430-sdio.asus,sparrow.txt
+}
+
+sha512sums="
+079b0fff52f32faf859c4f1bcd56318103d08b425c39bc98c4eb25b5cb07d1cc6755e0e2bf157ea44a15070febb2c4e4b0b50f71c625305acd569280c9ece907  firmware-asus-sparrow-10927f6b3f2033dc0c53a63a9e4301a3f763f2d1.tar.gz
+"

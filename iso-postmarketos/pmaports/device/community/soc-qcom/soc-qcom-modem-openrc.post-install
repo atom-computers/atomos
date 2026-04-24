@@ -1,0 +1,5 @@
+#!/bin/sh
+rc-update add q6voiced default
+rc-update add modem-gnss default
+rc-update add rmtfs default
+rc-update add msm-modem-uim-selection default

@@ -1,0 +1,12 @@
+diff -Naur kernel/drivers/video/msm/mdss/mdss_fb.c kernel-changed/drivers/video/msm/mdss/mdss_fb.c
+--- kernel/drivers/video/msm/mdss/mdss_fb.c	2020-04-26 22:22:08.386388683 +0530
++++ kernel-changed/drivers/video/msm/mdss/mdss_fb.c	2020-04-27 01:35:05.748597845 +0530
+@@ -1216,7 +1216,7 @@
+ 					boot_mode_lpm, boot_mode_recovery);
+ 
+ 	/* Incase of Normal Booting, Do not reserve FB memory */
+-	if ((!boot_mode_lpm) && (!boot_mode_recovery)){
++	if (0){
+ 		/* Normal Booting */
+ 		mfd->fbi->screen_base = NULL;
+ 		mfd->fbi->fix.smem_start = 0;

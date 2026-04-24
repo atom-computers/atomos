@@ -1,0 +1,23 @@
+diff --git a/Makefile b/Makefile
+index c9e396333..1bd619ed0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -348,7 +348,7 @@ include scripts/Kbuild.include
+ # Make variables (CC, etc...)
+ AS		= $(CROSS_COMPILE)as
+ LD		= $(CROSS_COMPILE)ld
+-REAL_CC		= $(CROSS_COMPILE)gcc
++CC		= $(CROSS_COMPILE)gcc
+ LDGOLD		= $(CROSS_COMPILE)ld.gold
+ CPP		= $(CC) -E
+ AR		= $(CROSS_COMPILE)ar
+@@ -364,9 +364,6 @@ PERL		= perl
+ PYTHON		= python
+ CHECK		= sparse
+ 
+-# Use the wrapper for the compiler.  This wrapper scans for new
+-# warnings and causes the build to stop upon encountering them
+-CC		= $(PYTHON) $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
+ 
+ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
+ 		  -Wbitwise -Wno-return-void $(CF)

@@ -1,0 +1,22 @@
+maintainer="Adam Thiede <me@adamthiede.com>"
+pkgname=firmware-powervr-gx6250
+pkgver=1.0.6503725
+pkgrel=0
+pkgdesc="Firmware for PowerVR GX6250"
+url="https://gitlab.freedesktop.org/frankbinns/linux-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="13bf97f44704a7ed279bc784f8a995fc540909a7"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/linux-firmware-$_commit.tar.gz"
+
+builddir="$srcdir/linux-firmware-$_commit"
+
+package() {
+	install -Dm644 powervr/* -t "$pkgdir"/lib/firmware/powervr
+}
+
+sha512sums="
+809e7c09b00a3a04cd7a10619ebb2e033e4cb6dd7b191a47d33a7d15bf9c5ce86e3f8eeb06b3c517b261ceb71533525ada583e733299a498b9aa6740035d6291  firmware-powervr-gx6250-13bf97f44704a7ed279bc784f8a995fc540909a7.tar.gz
+"

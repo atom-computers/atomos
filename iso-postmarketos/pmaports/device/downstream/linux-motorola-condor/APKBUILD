@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cm_condor_defconfig
+
+pkgname=linux-motorola-condor
+pkgver=3.4.112
+pkgrel=4
+pkgdesc="Motorola Moto E (1st gen) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="motorola-condor"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool coreutils xz"
+
+# Source
+_repository="android_kernel_motorola_msm8610"
+_commit="1f33ddf2acf97544fc509bb2546aec7907c56bc1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	fix_slow_boot_emmc_timeout.patch
+	fix_bad_kernel_backport.patch
+	fix_redish_display.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" CONFIG_NO_ERROR_ON_MISMATCH=y
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img \
+		"$_outdir/arch/$_carch/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+375de04e128a0f03189f793851bc4df0e80d8cc35644df2145b484f5f44a679848e53a1eeb26259cbea66d23d850f6037f65693f206c93c96ddac7bd9f9e533a  linux-motorola-condor-1f33ddf2acf97544fc509bb2546aec7907c56bc1.tar.gz
+54bfd7e131fb8c301e3d116931ce315ebe14e8c1f3a2adf25aedfb088012284f79cc34dc7ed7e1381c09b8ca7cc3760d0fdfb70ef1d4954f819d1cb26148e4d5  config-motorola-condor.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+e4d2a3ee6807659fe2bbbbdea4f9b4934b04ed1714ccdfea14dead5c8bc46cd9ebb93a98e2ff350382b0aa09bc4a6a00884f2b920082fdd6ab3a758a20b8e224  fix_slow_boot_emmc_timeout.patch
+4bcd16d8d828a82b96a8c62b42adcb4f717ca83d6724b6dea6850103a61c9d74f52b5caf0f1c4a26a7f3e2e991f33e13e3d532ef319a95cac6f187b3f0dbcda1  fix_bad_kernel_backport.patch
+be4e8d353dcf265aab7e31090e9514ca5f2303b8a2fa8f641654e3bff2a178af336b87e267c3fcc1aaa6c8204962d00c35fccabe56c02fc8d49bcb2620ba83fb  fix_redish_display.patch
+"

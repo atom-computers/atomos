@@ -1,0 +1,3 @@
+u gdm 42 "GNOME Display Manager" /var/lib/gdm
+u gdm-greeter 43 "GNOME Display Manager" /var/lib/gdm-greeter
+m gdm-greeter gdm

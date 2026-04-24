@@ -1,0 +1,60 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/m86_user_defconfig
+
+pkgname=linux-meizu-turbo
+pkgver=3.10.61
+pkgrel=5
+pkgdesc="Meizu Pro 5 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="meizu-turbo"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="m576"
+_commit="2d3fa1ca1fbc8b52c75b2bcc3784b7e52085768b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/meizuosc/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	0001-Get-rid-of-Android-toolchain-binaries-in-Makefile.patch
+	0002-Make-exynos_ufs_ctrl_hci_core_clk-visible-to-other-T.patch
+	0003-Remove-hard-coded-denial-of-ro-attr-change-for-SD.patch
+	0004-Remove-loopy-symlink.patch
+	0005-Use-Samsung-MFC-from-A810.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+3e2fed72982aa58ae4fb403f70a0141680e01188c8c82c9272478b5fc9022de8ef7f229c44f6d07f0aa14904d6c1fb2f5fd3233440ea9f42702987ca165ce0ce  linux-meizu-turbo-2d3fa1ca1fbc8b52c75b2bcc3784b7e52085768b.tar.gz
+3866e1fa14ab044f0f279b2adfe3fe9eccb4ee1b90b81e538e9c4a719937950d061bc5f8af0970dc20faf58ec69ca5005711adacdd26717c77b25e3e674cf8a5  config-meizu-turbo.aarch64
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+1ebe72fe30dc92015b518ebc6eed9145a71b6a71efecd130757013831bcc1ba75e40dce5b8708028c8604ab9737d7679fce941dd879fcddf0b290d5d02cafae9  0001-Get-rid-of-Android-toolchain-binaries-in-Makefile.patch
+9669953f33404ebbceb91ac20c9023e76c35c5d21c2a506917139f58f16d5670ee085c366199b9a154fe4b5c6bfd59ed5a0af9fc06d7e92c2bf0b876f66e44b6  0002-Make-exynos_ufs_ctrl_hci_core_clk-visible-to-other-T.patch
+f81ec28b6bcf59ed842ccf1fe6549d847b804a54d0e705f60c68e3cb07f776763c7ddd2168dacc1d23c4b0c6602bae84c3a921b4df7f2545ae2597c54c4dd4c1  0003-Remove-hard-coded-denial-of-ro-attr-change-for-SD.patch
+8b43266d761e952624e477ce281ea6d6e9b4243ce149ce56487799faeb2ad58b3916b9aa6f8b905715132c20c8d55e59e1e7e3c69ad05f42e79461e181f26b23  0004-Remove-loopy-symlink.patch
+f62c152bc7832a31d4d148d9b2f378be70f82a5ae4d32a82da52291e00cbe82dfefe72dd1383ec9a6e801d94bbf114728c8988d7cc2219beb7ae93eada886e68  0005-Use-Samsung-MFC-from-A810.patch
+"

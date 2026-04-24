@@ -1,0 +1,24 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-kylepro
+pkgdesc="Samsung Galaxy Trend Plus"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-kyleproxx mkbootimg msm-fb-refresher firmware-samsung-kyleproxx"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+f35a01560af2a3a675ee70a3e2b7876cefd49f850cd95032fdb2506ce0b91a525705cf305a7324ae1dafb41d94f7dd918ed9bae60155c6be7dd1efd580450f9c  deviceinfo
+"

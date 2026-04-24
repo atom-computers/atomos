@@ -1,0 +1,126 @@
+From 6a40398dee7a21df9da032aa2f8b6c5cc08453c0 Mon Sep 17 00:00:00 2001
+From: "@exkc" <exkc@exkc.moe>
+Date: Thu, 30 Mar 2023 19:58:52 +0800
+Subject: [PATCH] add x96-mini support
+
+---
+ arch/arm/dts/meson-gxl-s905w-x96-mini.dts | 38 ++++++++++++++
+ configs/x96_mini_defconfig                | 62 +++++++++++++++++++++++
+ 2 files changed, 100 insertions(+)
+ create mode 100644 arch/arm/dts/meson-gxl-s905w-x96-mini.dts
+ create mode 100644 configs/x96_mini_defconfig
+
+diff --git a/arch/arm/dts/meson-gxl-s905w-x96-mini.dts b/arch/arm/dts/meson-gxl-s905w-x96-mini.dts
+new file mode 100644
+index 0000000000..bd69f88973
+--- /dev/null
++++ b/arch/arm/dts/meson-gxl-s905w-x96-mini.dts
+@@ -0,0 +1,38 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2023 Karl Chan <exxxxkc@getgoogleoff.me>.
++ * Based on meson-gxl-s905w-tx3-mini.dts:
++ *
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/leds/common.h>
++
++#include "meson-gxl-s905x.dtsi"
++#include "meson-gx-p23x-q20x.dtsi"
++
++/ {
++	compatible = "amediatech,x96-mini", "amlogic,s905w", "amlogic,meson-gxl";
++	model = "Shenzhen Amediatech Technology Co., X96 Mini";
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x0 0x0 0x40000000>; /* 1 GiB or 2 GiB */
++	};
++	
++	leds {
++		compatible = "gpio-leds";
++
++		led-0 {
++			label = "x96-mini:blue:power";
++			gpios = <&gpio GPIODV_24 GPIO_ACTIVE_HIGH>;
++			default-state = "on";
++		};
++	};
++
++};
++
++&usb {
++	dr_mode = "host";
++};
+diff --git a/configs/x96_mini_defconfig b/configs/x96_mini_defconfig
+new file mode 100644
+index 0000000000..5d88b83067
+--- /dev/null
++++ b/configs/x96_mini_defconfig
+@@ -0,0 +1,62 @@
++CONFIG_ARM=y
++CONFIG_ARCH_MESON=y
++CONFIG_TEXT_BASE=0x01000000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
++CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x20000000
++CONFIG_ENV_SIZE=0x2000
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="meson-gxl-s905w-x96-mini"
++CONFIG_DM_RESET=y
++CONFIG_MESON_GXL=y
++CONFIG_DEBUG_UART_BASE=0xc81004c0
++CONFIG_DEBUG_UART_CLOCK=24000000
++CONFIG_IDENT_STRING=" x96-mini"
++CONFIG_SYS_LOAD_ADDR=0x1000000
++CONFIG_DEBUG_UART=y
++CONFIG_REMAKE_ELF=y
++CONFIG_OF_BOARD_SETUP=y
++CONFIG_CONSOLE_MUX=y
++# CONFIG_DISPLAY_CPUINFO is not set
++CONFIG_MISC_INIT_R=y
++CONFIG_SYS_MAXARGS=32
++# CONFIG_CMD_BDI is not set
++# CONFIG_CMD_IMI is not set
++CONFIG_CMD_ADC=y
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_LOADS is not set
++CONFIG_CMD_MMC=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_USB_MASS_STORAGE=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_REGULATOR=y
++CONFIG_OF_CONTROL=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_SARADC_MESON=y
++CONFIG_MMC_MESON_GX=y
++CONFIG_PHY_MESON_GXL=y
++CONFIG_DM_MDIO=y
++CONFIG_DM_MDIO_MUX=y
++CONFIG_ETH_DESIGNWARE_MESON8B=y
++CONFIG_MDIO_MUX_MMIOREG=y
++CONFIG_MESON_GXL_USB_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_MESON_GXL=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DEBUG_UART_ANNOUNCE=y
++CONFIG_DEBUG_UART_SKIP_INIT=y
++CONFIG_MESON_SERIAL=y
++CONFIG_SYSINFO=y
++CONFIG_SYSINFO_SMBIOS=y
++CONFIG_USB=y
++CONFIG_DM_USB_GADGET=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_XHCI_DWC3=y
++CONFIG_USB_DWC3=y
++# CONFIG_USB_DWC3_GADGET is not set
++CONFIG_USB_DWC3_MESON_GXL=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_GADGET_VENDOR_NUM=0x1b8e
++CONFIG_USB_GADGET_PRODUCT_NUM=0xfada
++CONFIG_OF_LIBFDT_OVERLAY=y
+-- 
+2.39.2

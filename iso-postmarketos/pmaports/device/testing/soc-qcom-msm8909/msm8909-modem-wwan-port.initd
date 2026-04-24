@@ -1,0 +1,48 @@
+#!/sbin/openrc-run
+
+# Based on msm-modem-uim-selection.initd
+
+name="Modem WWAN port"
+description="Activate the WWAN port on the embedded QMI modem"
+
+depend() {
+	need rmtfs
+	before ofono
+	before modemmanager
+}
+
+# All of the logic is placed in the service start method as we want to block
+# other services while the modem isn't ready yet.
+start() {
+	# libqmi must be present to use this script.
+	if ! [ -x "$(command -v qmicli)" ]
+	then
+		eend 1 'qmicli is not installed.'
+		return 1
+	fi
+
+	# Prepare a qmicli command with desired modem path.
+	# The modem may appear after some delay, wait for it.
+	count=0
+	while [ -z "$QMICLI_MODEM" ] && [ "$count" -lt "45" ]
+	do
+		# Check if QRTR is available
+		if qmicli --silent -pd qrtr://0 --uim-noop > /dev/null
+		then
+			QMICLI_MODEM="qmicli --silent -pd qrtr://0"
+			veinfo "Using qrtr://0"
+		fi
+		sleep 1
+		count=$((count+1))
+	done
+	veinfo "Waited $count seconds for modem device to appear"
+
+	if [ -z "$QMICLI_MODEM" ]
+	then
+		eend 2 'No modem available.'
+		return 2
+	fi
+
+	$QMICLI_MODEM --dpm-open-port=hw-data-ep-type=bam-dmux,hw-data-ep-iface-number=1,hw-data-rx-id=1,hw-data-tx-id=1 > /dev/null
+	eend $?
+}

@@ -1,0 +1,12 @@
+Samsung decided (for some reason) that it was a good idea to hardcode the cross-compiler. This does not play nice with any sane build system, so I patched it.
+--- a/Makefile
++++ b/Makefile
+@@ -198,7 +198,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ #ARCH		?= $(SUBARCH)
+ #CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+ ARCH		?= arm64
+-CROSS_COMPILE= ../PLATFORM/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.8/bin/aarch64-linux-android-
++CROSS_COMPILE ?= ../PLATFORM/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.8/bin/aarch64-linux-android-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)

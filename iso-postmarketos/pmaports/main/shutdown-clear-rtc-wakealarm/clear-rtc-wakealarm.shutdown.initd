@@ -1,0 +1,7 @@
+#!/sbin/openrc-run
+
+description="Clear RTC wake alarm during shutdown"
+
+start() {
+	echo 0 >/sys/class/rtc/rtc0/wakealarm
+}

@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# msm-firmware-loader<1.8.0 mounts things on /lib read-only, breaking the
+# migration. And it needs a reboot to take effect. Since we cannot warranty
+# upgrades are in a safe state, if there is something mounted on /lib, just
+# wait for the next -base upgrade for executing the /usr-merge.
+if mount | grep "on /lib" ; then
+    echo "WARNING: There is something mounted on /lib, skipping the /usr merge"
+    exit 0
+fi
+
+if [ -d /bin -a ! -L /bin ] || \
+       [ -d /sbin -a ! -L /sbin ] || \
+       [ -d /lib -a ! -L /lib ]; then
+    echo "INFO: /usr merge dryrun to check for errors"
+    if merge-usr --dryrun ; then
+        echo "INFO: Doing the /usr merge"
+        merge-usr
+        exit $?
+    else
+        echo "* ERROR: The /usr merge was not attempted due to filesystem"
+        echo "* conflicts. Your installation might have deviated from stock in"
+        echo "* unsupported ways. If you can resolve the conflicts yourself,"
+        echo "* you can try running 'doas merge-usr --dryrun', and if there are"
+        echo "* no more conflicts, 'doas merge-usr'. Otherwise, feel free to"
+        echo "* ask for help commenting in"
+        echo "* https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/6389"
+        exit 1
+    fi
+fi

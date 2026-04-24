@@ -1,0 +1,48 @@
+
+maintainer="Joel Selvaraj <foss@joelselvaraj.com>"
+pkgname=firmware-xiaomi-beryllium
+pkgver=8
+pkgrel=2
+pkgdesc="Firmware for Xiaomi Poco F1"
+url="https://gitlab.com/sdm845-mainline/firmware-xiaomi-beryllium"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-qca linux-firmware-ath10k"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps textrels pmb:cross-native"
+
+_commit="5a797a180ddee8edabd5e6c9d0d3566f257ec4c3"
+
+source="$pkgname.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	firmware.files
+	sensor.files
+	mount-matrix.patch
+	"
+
+builddir="$srcdir/$pkgname-$_commit"
+subpackages="$pkgname-sensors:firmware_sensors"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname-$_commit/$_i" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+}
+
+firmware_sensors() {
+	pkgdesc="Files to be included to add sensor support"
+	depends="$pkgname"
+	install_if="$pkgname-nonfree-firmware"
+	mkdir "$subpkgdir"
+
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname-$_commit/$_i" "$pkgdir/$_i"
+	done < "$srcdir/sensor.files"
+}
+
+sha512sums="
+babe3ec1abde42f21f1943357a28548cb89c3df4f860a1c3bdef22782e38b77ff6e1fcf6dce44de4ba771da4c61bfad97df25520ff2b466288a081fd7a13cf7e  firmware-xiaomi-beryllium.tar.gz
+d41eb4cfd7b1fa932a6471162e1edb15f637be9b3b66648827916d5f3a03ebcae24b158b574916070a6d8a22cd8c0ac1bbcbafab8de6aba3b4932fa6bfb23bb1  firmware.files
+445600490c81091ec51b0ce50297e960f214d9848242e8dc35689ce40e5a7469e8d495d64b61e1a89d38aa6695cbd012f7f1cdd8c5e94cce0c1c64f2c833dba3  sensor.files
+9337e243aee9e56bb9f9e297dfe5084b3a97b87ac36bcaf66f6f4d07cbb39c7b73d024afe07fdadef254c569ba9f2d3067324478c35175592ff8abb2ff19e930  mount-matrix.patch
+"

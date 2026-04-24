@@ -1,0 +1,3 @@
+# Be compatible with the fix to CVE 2024-41024.
+# It's safe to assume it's the same as SDM670.
+SUBSYSTEM=="misc", KERNEL=="fastrpc-adsp-secure", SYMLINK="fastrpc-adsp"

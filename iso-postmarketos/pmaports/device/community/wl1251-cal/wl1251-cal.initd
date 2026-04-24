@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+description="Update wl1251 calibration data"
+
+depend()
+{
+	before udev
+}
+
+start()
+{
+	# attempt to fetch NVS, but allow it to fail
+	calibrate-wl1251 || true
+	eend $?
+}

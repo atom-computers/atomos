@@ -1,0 +1,56 @@
+From d4d61b9d0fa62e4047f0c40b81755f2b051184fa Mon Sep 17 00:00:00 2001
+From: smallsolar <solarcene@protonmail.com>
+Date: Sat, 1 Nov 2025 21:37:42 +0000
+Subject: [PATCH] linux-samsung-a5y17lte: changed pr_info to pr_debug in the
+ s2muu004 driver as the irq triggers printing 6 lines each time it fires and
+ is too much chatter in dmesg and the message itself doesn't really add
+ anything
+
+---
+ drivers/mfd/s2mu004_irq.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/mfd/s2mu004_irq.c b/drivers/mfd/s2mu004_irq.c
+index 10784e84c5d..fa801d19aeb 100644
+--- a/drivers/mfd/s2mu004_irq.c
++++ b/drivers/mfd/s2mu004_irq.c
+@@ -165,23 +165,23 @@ static irqreturn_t s2mu004_irq_thread(int irq, void *data)
+ 	/* CHG_INT1 ~ INT2 */
+ 	ret = s2mu004_read_reg(s2mu004->i2c, S2MU004_REG_SC_INT1,
+ 				&irq_reg[CHG_INT1]);
+-	pr_info("%s: charger interrupt1(0x%02x)\n",
++	pr_debug("%s: charger interrupt1(0x%02x)\n",
+ 			__func__, irq_reg[CHG_INT1]);
+ 
+ 	ret = s2mu004_read_reg(s2mu004->i2c, S2MU004_REG_SC_INT2,
+ 				&irq_reg[CHG_INT2]);
+-	pr_info("%s: charger interrupt2(0x%02x)\n",
++	pr_debug("%s: charger interrupt2(0x%02x)\n",
+ 			__func__, irq_reg[CHG_INT2]);
+ 
+ 	/* AFC_INT */
+ 	ret = s2mu004_read_reg(s2mu004->i2c, S2MU004_REG_AFC_INT,
+ 				&irq_reg[AFC_INT]);
+-	pr_info("%s: AFC interrupt(0x%02x)\n",
++	pr_debug("%s: AFC interrupt(0x%02x)\n",
+ 			__func__, irq_reg[AFC_INT]);
+ 
+ 	ret = s2mu004_read_reg(s2mu004->i2c, 0x48,
+ 				&temp_vdadc);
+-	pr_info("%s: 0x48 (0x%02x)\n",
++	pr_debug("%s: 0x48 (0x%02x)\n",
+ 			__func__, temp_vdadc);
+ 
+ 	/* MUIC INT1 ~ INT2 */
+@@ -198,7 +198,7 @@ static irqreturn_t s2mu004_irq_thread(int irq, void *data)
+ 	if (!(chg_status & 0xE0) && (irq_reg[CHG_INT1] & 0x80))
+ 		irq_reg[MUIC_INT2] |= 0x80;
+ 
+-	pr_info("%s: muic interrupt(0x%02x, 0x%02x)\n", __func__,
++	pr_debug("%s: muic interrupt(0x%02x, 0x%02x)\n", __func__,
+ 			irq_reg[MUIC_INT1], irq_reg[MUIC_INT2]);
+ 
+ 	/* Apply masking */
+-- 
+2.51.1
+

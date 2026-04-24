@@ -1,0 +1,87 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Casey Connolly <kcxt@postmarketos.org>
+# Co-Maintainer: Dylan Van Assche <me@dylanvanassche.be>
+maintainer="Alexander Martinz <amartinz@shiftphones.com>"
+pkgname=device-shift-axolotl
+pkgdesc="SHIFT6mq"
+pkgver=21
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-sdm845
+	fwupd>=1.8.6
+	linux-postmarketos-qcom-sdm845
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-pd-mapper
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+	q6voiced.conf
+	81-libssc-shift-axolotl.rules
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-pmtest
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Modem, GPU and WiFi Firmware, also needed for osk-sdl"
+	depends="
+		firmware-shift-sdm845>=20230815-r2
+		hexagonrpcd>=0.3.2-r3
+		hexagonrpcd
+		soc-qcom-modem
+	"
+
+	install -Dm644 "$srcdir"/81-libssc-shift-axolotl.rules -t "$subpkgdir"/usr/lib/udev/rules.d/
+	install -Dm644 "$srcdir"/q6voiced.conf \
+		"$subpkgdir"/etc/conf.d/q6voiced
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$subpkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+pmtest() {
+	depends="postmarketos-test-bootrr qrtr firmware-shift-sdm845 postmarketos-test-unl0kr"
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+7304e795a2969d251110b223a29acbaaf42811522f50b42cb6dae03afff697845c8af9be04f312137e8c4973092f87b0eb6ba5650c6086e277df171c0610303f  deviceinfo
+f16e550f623522be29027954c69a956eb6543f2f608a4c6b37c1a3983403a3edaa24e70aa42dbe88e76216991aba867b48c7341c9b8a81f675902d6223937b51  kernel-cmdline.conf
+5966325963a3a62c919b5f39f7bc56e1785f192f50c40a6cc644a2fea0c9b8dd083e287ef43c59c2b9cab5c88d65266b0cd9cf1f5110924950bd250be5385622  hexagonrpcd.confd
+4dc84207c5ca84b33b74139c8b0c9ce5baa8bcb1068df9943c478c02abcf8daccb88e06af63f120a434a115e277008e899305bd5239d8669436cb269889040e9  modules-initfs
+2a3cbdad5aa91181d24a4e56e63986af6accf887c64fa4d1b6ddad1926e29050243c4b1e2fd892d38ca7c16e24dff8545a16552e5749ae31b6d01bf428468e51  q6voiced.conf
+3bd3a82b88a7aca4e2df2f5522cee7a98d017994f1dc1a965a7e386be9c17632b9cdbe013feb737dec12e99d74f54a9e4599144193bb57ec18e6d6a18c94cf1f  81-libssc-shift-axolotl.rules
+"

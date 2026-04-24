@@ -1,0 +1,28 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy A53 5G"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-a53x"
+deviceinfo_year="2022"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+deviceinfo_flash_method="heimdall-bootimg"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_dtb_second="false"
+deviceinfo_flash_heimdall_partition_kernel="boot"
+deviceinfo_flash_heimdall_partition_rootfs="system"
+# Partitions for flashing
+deviceinfo_super_partitions="/dev/block/sda30 /dev/block/sda30"
+
+# Odin/flasher stuff
+deviceinfo_usb_idProduct="0x685d"
+deviceinfo_usb_idVendor="0x04e8"

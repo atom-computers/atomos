@@ -1,0 +1,12 @@
+diff --git a/configs/radxa-cm5-rpi-cm4-io-rk3588s_defconfig.orig b/configs/radxa-cm5-rpi-cm4-io-rk3588s_defconfig
+index 72ca6e7cb..bd1b0289d 100644
+--- a/configs/radxa-cm5-rpi-cm4-io-rk3588s_defconfig.orig
++++ b/configs/radxa-cm5-rpi-cm4-io-rk3588s_defconfig
+@@ -23,6 +23,7 @@ CONFIG_TARGET_EVB_RK3588=y
+ CONFIG_SPL_LIBDISK_SUPPORT=y
+ CONFIG_SPL_SPI_FLASH_SUPPORT=y
+ CONFIG_SPL_SPI_SUPPORT=y
++# CONFIG_SPL_SPI_LOAD is not set
+ CONFIG_DEFAULT_DEVICE_TREE="rk3588s-radxa-cm5-rpi-cm4-io"
+ CONFIG_DEBUG_UART=y
+ CONFIG_FIT=y

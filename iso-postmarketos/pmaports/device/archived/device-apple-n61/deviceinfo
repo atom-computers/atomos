@@ -1,0 +1,17 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Apple iPhone 6"
+deviceinfo_manufacturer="Apple"
+deviceinfo_codename="apple-n61"
+deviceinfo_year="2014"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_screen_width="750"
+deviceinfo_screen_height="1334"
+
+# Bootloader related

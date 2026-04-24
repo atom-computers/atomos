@@ -1,0 +1,34 @@
+
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=firmware-odroid-xu4
+pkgver=2020.01
+pkgrel=4
+pkgdesc="Firmware for ODROID XU4"
+url="https://github.com/hardkernel/u-boot"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="xu4-bl1.bin.hardkernel::https://github.com/hardkernel/u-boot/raw/u-boot_v$pkgver/board/hardkernel/odroid-xu3/bl1.bin.hardkernel
+	xu4-bl2.bin.hardkernel::https://github.com/hardkernel/u-boot/raw/u-boot_v$pkgver/board/hardkernel/odroid-xu3/bl2.bin.hardkernel.1mb_uboot
+	xu4-tzsw.bin.hardkernel::https://github.com/hardkernel/u-boot/raw/u-boot_v$pkgver/board/hardkernel/odroid-xu3/tzsw.bin.hardkernel
+	"
+_pmb_recommends="linux-firmware-s5p-mfc linux-firmware-rtl_nic"
+
+package() {
+	# Trim bl1.bin.hardkernel to 15360 bytes
+	# See https://forum.odroid.com/viewtopic.php?f=93&t=42724
+	truncate -s15360 "$srcdir"/xu4-bl1.bin.hardkernel
+
+	# Install firmware
+	install -D -m644 "$srcdir"/xu4-bl1.bin.hardkernel \
+		"$pkgdir"/usr/share/u-boot/odroid-xu3/bl1.bin
+	install -D -m644 "$srcdir"/xu4-bl2.bin.hardkernel \
+		"$pkgdir"/usr/share/u-boot/odroid-xu3/bl2.bin
+	install -D -m644 "$srcdir"/xu4-tzsw.bin.hardkernel \
+		"$pkgdir"/usr/share/u-boot/odroid-xu3/tzsw.bin
+}
+sha512sums="
+db2d53673a36c8c186804996354ca3dea8621444596751a1cf51140149a9cce2cdb368417290046393828e943af256bb609a65d30569c95c51105ee82e6cac20  xu4-bl1.bin.hardkernel
+cc9951cdd8b4e11d244a8b4a3d8d287759b7faddcea462ddb94cc05249afe456bb67791641eeca70580264af044dac92987a8f8309ff10ad2cd9f406cedfd6cb  xu4-bl2.bin.hardkernel
+434f6b479ead6b5d25877bb615df4281f95d1637d4171354f4bf324f8a1d7df3855e0a696aa204285c3298b45bf7d1e0ad4c27a88bc705f4cff1f082754f444f  xu4-tzsw.bin.hardkernel
+"

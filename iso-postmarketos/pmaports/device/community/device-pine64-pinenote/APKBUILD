@@ -1,0 +1,306 @@
+maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
+pkgname=device-pine64-pinenote
+pkgdesc="Pine64 PineNote"
+pkgver=12
+pkgrel=0
+_commit="28d2c05ab4e80a7972611cd3188f3e8be4197f6a"
+url="https://postmarketos.org"
+license="GPL-3.0-only"
+arch="aarch64"
+options="!check !archcheck"
+# py3-numpy used by rockchip_ebc management libraries
+depends="
+	linux-pine64-pinenote
+	postmarketos-base
+	py3-numpy
+	systemd-boot
+	u-boot-pine64-pinenote
+"
+makedepends="devicepkg-dev sed python3"
+# pinenote-dist repo provides some management scripts for pinenote and sway
+# although for now we only source waveform scripts
+source="
+	pinenote-dist-$_commit.tar.gz::https://git.sr.ht/~hrdl/pinenote-dist/archive/$_commit.tar.gz
+	waveform-extract-use-lib.patch
+	sway-wayland-sessions-use-dbus.patch
+	sway-waybar-config-fix-endless-interval-and-invisible-icons.patch
+	sway-sane-scale.patch
+	sway-nwg-menu-fix-css-path.patch
+
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	partition-table.txt
+
+	pinenote-init-waveform.initd
+	30-eink-waveform.files
+	50-touchscreen.conf
+	panfrost.conf
+	tinydm-ebc-workaround-systemd.conf
+	tinydm-ebc-workaround-openrc.initd
+"
+subpackages="
+	$pkgname-nonfree-firmware
+	$pkgname-nonfree-firmware-openrc:firmware_openrc
+	$pkgname-nonfree-firmware-systemd:firmware_systemd
+	$pkgname-openrc
+	$pkgname-sway
+	$pkgname-sway-hrdl
+	$pkgname-systemd
+	$pkgname-xournalpp
+	$pkgname-x11
+"
+builddir="$srcdir"/pinenote-dist-$_commit
+
+prepare() {
+	default_prepare
+
+	# use sh for scripts packaged in main pkg
+	sed -i 's|#!/bin/bash|#!/bin/sh|' \
+		bin/before_sleep.sh \
+		bin/after_resume.sh
+}
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$builddir"/etc/libinput/local-overrides.quirks \
+		-t "$pkgdir"/etc/libinput
+
+	# modprobe rules
+	# cd because shellcheck-grep gets confused by usage of etc/modprobe.d
+	(
+		cd "$builddir"/etc
+
+		install -Dm644 \
+			./modprobe.d/rockchip_ebc.conf \
+			./modprobe.d/wifi.conf \
+			-t "$pkgdir"/usr/lib/modprobe.d
+
+		# udev rules
+		install -Dm644 \
+			./udev/rules.d/81-libinput-pinenote.rules \
+			./udev/rules.d/83-backlight.rules \
+			./udev/rules.d/84-rockchip-ebc-power.rules \
+			-t "$pkgdir"/usr/lib/udev/rules.d
+	)
+
+	# bins
+	# rockchip_ebc_dump_buffers.py binary to dump whatever is on the screen framebuffer for debugging
+	# {before,after}_sleep.sh hooks to put a splash screen when sleeping and shutdown backlight
+	install -Dm755 \
+		"$builddir"/bin/rockchip_ebc_dump_buffers.py \
+		"$builddir"/bin/before_sleep.sh \
+		"$builddir"/bin/after_resume.sh \
+		-t "$pkgdir"/usr/bin
+
+	# python library used by rockchip_ebc_dump_buffers and waveform extraction on first boot
+	local _site_packages_path="$(python -c 'import site; print(site.getsitepackages())' | sed -e "s|\['||" -e "s|'\]||")"
+	install -Dm755 "$builddir"/bin/rockchip_ebc_custom_ioctl.py \
+		-t "$pkgdir"/$_site_packages_path
+
+	# panfront sometimes insists on loading after rockchip_ebc
+	install -Dm644 "$srcdir"/panfrost.conf \
+		-t "$pkgdir"/usr/lib/modprobe.d
+}
+
+hrdl() {
+	pkgdesc="Opinionated sway UI by hrdl optimized for the Pinenote"
+	install="$subpkgname.post-install $subpkgname.post-deinstall"
+	depends="
+		adwaita-icon-theme
+		bash
+		brightnessctl
+		coreutils
+		font-noto
+		font-noto-emoji
+		iio-sensor-proxy
+		jq
+		kitty
+		lisgd
+		network-manager-applet
+		nwg-menu
+		papirus-icon-theme
+		postmarketos-ui-sway
+		py3-dbus-next
+		py3-i3ipc
+		py3-pillow
+		py3-pydbus
+		rot8
+		squeekboard
+		swaybg
+		swayidle
+		thunar
+		tinydm
+		ttf-font-awesome
+		waybar
+		wtype
+		wtype
+		"
+
+	# allows overwrite of menu-start.css
+	replaces="nwg-menu"
+
+	# greetd config
+	install -Dm644  \
+		"$builddir"/etc/greetd/environments \
+		"$builddir"/etc/greetd/sway-config \
+		-t "$subpkgdir"/etc/greetd
+
+	# sway configs
+	# nwg-menu hardcodes this location
+	install -Dm644 \
+		"$builddir"/etc/sway_hrdl/sway/colorscheme \
+		"$builddir"/etc/sway_hrdl/sway/config \
+		-t "$subpkgdir"/etc/sway_hrdl/sway
+	install -Dm644 \
+		"$builddir"/etc/sway_hrdl/waybar/config \
+		"$builddir"/etc/sway_hrdl/waybar/style.css \
+		-t "$subpkgdir"/etc/sway_hrdl/waybar
+	install -Dm644 \
+		"$builddir"/etc/sway_hrdl/nwg-panel/menu-start.css \
+		-t "$subpkgdir"/usr/share/nwg-menu/
+
+	# wayland session
+	install -Dm644 \
+		"$builddir"/wayland-sessions/sway_hrdl.desktop \
+		-t "$subpkgdir"/usr/share/wayland-sessions
+
+	# bins
+	install -Dm755 \
+		"$builddir"/bin/launch_lisgd.sh \
+		"$builddir"/bin/toggle_menu.sh \
+		"$builddir"/bin/sway_rotate.sh \
+		"$builddir"/bin/sway_workspace \
+		"$builddir"/bin/toggle_onscreen_keyboard.py \
+		"$builddir"/bin/sway_dbus_integration.py \
+		"$builddir"/bin/sway_hrdl \
+		"$builddir"/bin/waybar_hrdl \
+		-t "$subpkgdir"/usr/bin
+}
+
+xournalpp() {
+	install_if="$pkgname=$pkgver-r$pkgrel xournalpp"
+	depends="xournalpp"
+
+	install -Dm644 \
+		"$builddir"/config/xournalpp/settings.xml \
+		"$builddir"/config/xournalpp/toolbar.ini \
+		-t "$subpkgdir"/etc/skel/.config/xournalpp
+}
+
+firmware() {
+	pkgdesc="WiFi, Bluetooth and display firmware"
+	depends="linux-firmware-cypress linux-firmware-brcm"
+	replaces="firmware-pine64-pinenote"
+
+	# waveform firmware is provided locally via /dev/disk/by-label/waveform
+	# extracted using waveform_exctract.sh, then adapted to kernel using wbf_to_custom.py
+	# initd or systemd service execute these on first boot
+	install -Dm644 "$srcdir"/30-eink-waveform.files \
+		"$subpkgdir"/usr/share/mkinitfs/files/30-eink-waveform.files
+	install -Dm755 \
+		"$builddir"/bin/wbf_to_custom.py \
+		"$builddir"/bin/read_file.py \
+		"$builddir"/bin/waveform_extract.sh \
+		-t "$subpkgdir"/usr/libexec/pinenote
+
+	# create empty waveform firmware so that initial mkinitfs doesn't fail
+	mkdir -p "$subpkgdir"/lib/firmware/rockchip
+	touch "$subpkgdir"/lib/firmware/rockchip/ebc.wbf
+	touch "$subpkgdir"/lib/firmware/rockchip/custom_wf.bin
+
+	# symbolic link for wifi firmware to where drivers expects it
+	mkdir -p "$subpkgdir"/lib/firmware/brcm
+	ln -s ../cypress/cyfmac43455-sdio.bin.zst "$subpkgdir"/lib/firmware/brcm/brcmfmac43455-sdio.pine64,pinenote-v1.2.bin.zst
+}
+
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel sway"
+	install="$subpkgname.post-upgrade"
+
+	# dummy subpackage to allow seamless upgrade from 7-r0 to 8-r0,
+	# which renamed `sway` to `sway-hrdl. Executes post-upgrade script
+	# that changes default tinydm session back to vanilla sway, with
+	# instructions to `apk add device-pine64-pinenote-sway-hrdl` to
+	# use the opinionated non-default configuration
+	# TODO: remove in preparation for v26.06 release
+	mkdir -p "$subpkgdir"
+}
+
+openrc() {
+	# rockchip_ebc sometimes fails to load the initial waveform.
+	# This forces a reload before starting tinydm
+	install="$subpkgname.post-install"
+	install -Dm755 "$srcdir"/tinydm-ebc-workaround-openrc.initd \
+		"$subpkgdir"/etc/init.d/tinydm-ebc
+
+	# source `install_if`, `pkgdesc` and `depends`
+	default_openrc
+}
+
+systemd() {
+	# post-install enables tinydm if tinydm-ebc was enabled
+	# enables seamless upgrade 7-r0 to 8-r0
+	# TODO: remove in preparation for v26.06
+	install="$subpkgname.post-install"
+
+	# rockchip_ebc sometimes fails to load the initial waveform.
+	# This forces a reload before starting tinydm
+	install -Dm644 \
+		"$srcdir"/tinydm-ebc-workaround-systemd.conf \
+		"$subpkgdir"/usr/lib/systemd/system/tinydm.service.d/override.conf
+
+	# source `install_if`, `pkgdesc` and `depends`
+	default_systemd
+}
+
+firmware_openrc() {
+	install="$subpkgname.post-install"
+	install -Dm755 "$srcdir"/pinenote-init-waveform.initd \
+		"$subpkgdir"/etc/init.d/pinenote-init-waveform
+
+	# source `install_if`, `pkgdesc` and `depends`
+	default_openrc
+}
+
+firmware_systemd() {
+	install -Dm644 \
+		"$builddir"/systemd/pinenote-hrdl-extract-waveform.service \
+		"$builddir"/systemd/pinenote-hrdl-convert-waveform.service \
+		-t "$subpkgdir"/usr/lib/systemd/system
+
+	# source `install_if`, `pkgdesc` and `depends`
+	default_systemd
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+
+	# xorg touchscreen settings
+	install -Dm644 "$srcdir"/50-touchscreen.conf \
+		-t "$subpkgdir"/usr/share/X11/xorg.conf.d
+}
+
+sha512sums="
+4b6548a05dcdbe1ddda97dba58d625407fb553f90817e8e678b97e28603f64aab9a31fa18bda654c06638f3be21d7a6936786197f93f715e7d03a07e380873c5  pinenote-dist-28d2c05ab4e80a7972611cd3188f3e8be4197f6a.tar.gz
+780ece54589b4483461cc07917d9ca6f13222435872386d65c34ff6798758f28d81e913777d41b745e7bb0f53950b8f610ce361f2fe146937afd4080ae2aa904  waveform-extract-use-lib.patch
+16f5c226d1366ebd0efc5bdc92a33ae184773a17ce593bdb71c60f1a091de13b2d39bedee43c46c01229e36d60f3688626a1b1ae08eab2c235ac6f5f0fc3d6a8  sway-wayland-sessions-use-dbus.patch
+82babd0aa02084c7a05f7b2e3a6d74db373588cd612d4d75f5ec79db895d8bdda4fcde784a1b8340df33a8c5f26204151d55a9d9b9dd2cc317cef623f51b626e  sway-waybar-config-fix-endless-interval-and-invisible-icons.patch
+4a02a3fb225b16290fbc469da5acba8438e959c0471743950ae125ede6b75b61e1772d900bd1f7c5fca55222cf430cae6c953d6065553ea3594babf33b569405  sway-sane-scale.patch
+7effcd37bbf2cab66ccb57ab976de63c93bd03795ccd82f317fbfb16216da287ada4410d9b168057e651fa4d769588d1f0efa713caa28c5b71ba6b73909ae33c  sway-nwg-menu-fix-css-path.patch
+cd6d7bfa3881e299c911d17db676f974f00e4e63e37101da5e0bfae90458305d0638637444f2f4df42121316efd883e4a062d1e12f4c549d9d86200fd39ac85d  deviceinfo
+3a229912fad5d6aa8942fa987872cb0141c064f4bbbed813e9bcd0594ee4bdbf7c8715becb9e071c66ccd5f8b01cb8676686d8cdcf99b7a1f1abb1c9de38f7d4  kernel-cmdline.conf
+e0d3ac808e7a4f05df327a824e30dc54864908e31f4a643f6e85f054ab812eeb28fef647eb52ae85bfad7d40c9cd81c43c1cdc575de5dbc04304d74862d9772c  modules-initfs
+df0565391a66eed53ed817d3d1415bef000f9ed33ef2e8aa3016be3ecc21dd4a357e57838979d2710256776666dc01bfee8bf8a95b08a20a62d46cfbd8ac6c35  partition-table.txt
+29710d80112f8797adf7e3dfd54771d8752d29cb265532e235fe406e380056ac846929568ddbe5110bbd74da337e2f8cd905e4092c14bc94aea07dc83f39aa6e  pinenote-init-waveform.initd
+8f7a5ad2f407de8c474d54dfdb9cc099c96e8918fc123f8b2a8ff911d7e1c7ca6fe30f9cea8ee2f0c1ba5f3e53359193d0683ca912f0b66e79a12814ce38dd98  30-eink-waveform.files
+ac433eebbc35a48561837495997aee4e55510b979bc0d8e3bafb761bc1be5b4bdeed2f456369dcbc582688aefd07c63966b0d72b6ffa99e84cfd868e677f02c8  50-touchscreen.conf
+6ba6638754e00908243de2f73ed6898dac03638a200dcf7b7cd9684757355ee1eb0ac874af0f971ad2e054c1a8c471867bdaea4d9aaf7eea6d3cf81ac7dd73a2  panfrost.conf
+3b95a2292a7367d228f281a1f0e031fffb3d26748350d7010d26b18a3fb46bceb214b083e0c8e2d5fe318c67ae3776663ad78fef83ce9030529d3a89b581b703  tinydm-ebc-workaround-systemd.conf
+2432031a5785eecf84697c70e7ed17d4b10b9a36ebb73969b0016aefbc4feb1768b144031966fdf478c47f7b1032566975aa4affcbb66293c5f348e1d2151b37  tinydm-ebc-workaround-openrc.initd
+"

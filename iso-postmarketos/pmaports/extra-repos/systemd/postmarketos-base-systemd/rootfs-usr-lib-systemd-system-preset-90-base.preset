@@ -1,0 +1,135 @@
+# overrides for systemd
+disable systemd-network*
+disable systemd-homed*
+disable systemd-journald-audit.socket
+enable systemd-time-wait-sync.service
+
+# starting multipathd on systems with no multipath hardware can soft-hang
+# boot, so disable it by default
+disable multipathd.service
+
+# for basically all Uis
+## system services
+enable ModemManager.service
+enable NetworkManager.service
+enable NetworkManager-wait-online.service
+enable apk-polkit-server.service
+enable bluetooth.service
+enable haveged.service
+enable hkdm.service
+enable kill-pbsplash.service
+enable shutdown-splash.service
+enable nftables.service
+enable postmarketos-tweakd.service
+enable rtkit-daemon.service
+enable sleep-inhibitor.service
+enable sshd.service
+enable systemd-rfkill.service
+enable tinydm.service
+enable udisks2.service
+enable cups.path
+enable cups.socket
+enable postmarketos-zram-swap.service
+enable systemd-oomd.service
+enable alsa-restore.service
+enable alsa-state.service
+# Note: tuned-ppd can be dbus activated but it and tuned are being enabled here
+# so that they start at boot without waiting for a user to login.
+enable tuned.service
+enable tuned-ppd.service
+enable irqbalance.service
+enable usb-moded.service
+enable dbus-broker.service
+enable avahi-daemon.service
+
+# Note: technically these two shouldn't be enabled at the same time, but
+# pmos-base-wifi provides should make sure that only one is installed at the
+# same time.
+enable iwd.service
+enable wpa_supplicant.service
+
+# UIs:
+enable greetd.service
+
+## plasma
+enable hfd-service.service
+enable urfkill.service
+
+enable plasma-mobile.service
+disable sddm.service
+enable plasmalogin.service
+
+enable drkonqi-coredump-processor@.service
+
+## gnome
+enable gdm.service
+
+## optional dependency of gnome-usage
+enable vnstat.service
+
+## fbkeyboard
+enable fbkeyboard.service
+
+## kodi
+enable kodi.service
+
+## COSMIC
+enable cosmic-greeter.service
+
+## mate / xfce
+enable lightdm.service
+
+# Waydroid
+enable sensorfwd.service
+enable waydroid-container.service
+enable waydroid-sensors.service
+
+# Device specifics:
+# TODO: i like the idea of device/soc specific presets, we should move this out of here
+enable adsp-audio.service
+enable bootmac-bluetooth.service
+enable gesture.service
+enable gnss-share
+enable swclock-offset-boot.service
+enable swclock-offset-shutdown.service
+enable msm-firmware-loader.service
+enable msm-firmware-loader-unpack.service
+
+## sensors
+enable hexagonrpcd-adsp-rootpd.service
+enable hexagonrpcd-adsp-sensorspd.service
+enable hexagonrpcd-sdsp.service
+enable iio-sensor-proxy.service
+enable hfd-service.service
+
+## qcom
+enable 81voltd.service
+enable diag-router.service
+enable msm-modem-uim-selection.service
+enable pd-mapper.service
+enable q6voiced.service
+enable qbootctl.service
+enable qrtr-ns.service
+enable rmtfs.service
+enable tqftpserv.service
+
+## pixel3a
+enable modem-gnss.service
+
+## pinephone{,-pro}
+enable eg25-manager.service
+
+## chromebook
+enable keyd.service
+enable cros-keyboard-map.service
+
+## librem5
+enable l5-brcm-bt-enable.service
+enable librem5-base-defaults.librem5-lockdown-support.service
+
+## nokia n900
+enable wl1251-cal.service
+
+## pinenote
+enable pinenote-hrdl-convert-waveform.service
+enable pinenote-hrdl-extract-waveform.service

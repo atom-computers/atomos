@@ -1,0 +1,6 @@
+panel-samsung-s6e3fc1
+msm
+i2c-qup
+bq27xxx_battery_i2c
+rmi_i2c
+qcom_spmi_haptics

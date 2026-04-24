@@ -1,0 +1,4 @@
+#!/bin/sh
+# the Wi-Fi firmware will keep crashing if diag-router isn't running
+# https://gitlab.com/msm8998-mainline/linux/-/issues/28
+rc-update add diag-router boot

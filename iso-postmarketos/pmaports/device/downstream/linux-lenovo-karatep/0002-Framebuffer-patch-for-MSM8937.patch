@@ -1,0 +1,113 @@
+From 6c22adc0802e2585a4b7e6f8c786a9b295953138 Mon Sep 17 00:00:00 2001
+From: Kacper <semis2309@gmail.com>
+Date: Wed, 6 Mar 2024 20:17:18 +0100
+Subject: [PATCH] Framebuffer patch for MSM8937
+
+---
+ drivers/video/msm/mdss/mdss_fb.c          | 26 ++++++++++++++---------
+ drivers/video/msm/mdss/mdss_fb.h          |  3 +--
+ drivers/video/msm/mdss/mdss_mdp_overlay.c |  2 +-
+ 3 files changed, 18 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index ba5e7173087e..f6a02325d90e 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -2006,7 +2006,7 @@ static void mdss_panel_validate_debugfs_info(struct msm_fb_data_type *mfd)
+ 		if (is_panel_split(mfd) && pdata->next)
+ 			mdss_fb_validate_split(pdata->panel_info.xres,
+ 					pdata->next->panel_info.xres, mfd);
+-		mdss_panelinfo_to_fb_var(panel_info, var);
++		mdss_panelinfo_to_fb_var(mfd);
+ 		if (mdss_fb_send_panel_event(mfd, MDSS_EVENT_CHECK_PARAMS,
+ 							panel_info))
+ 			pr_err("Failed to send panel event CHECK_PARAMS\n");
+@@ -2136,7 +2136,7 @@ static int mdss_fb_blank_unblank(struct msm_fb_data_type *mfd)
+ 		 * programmed in the controller.
+ 		 * Update this info in the upstream structs.
+ 		 */
+-		mdss_panelinfo_to_fb_var(panel_info, var);
++		mdss_panelinfo_to_fb_var(mfd);
+ 
+ 		/* Start the work thread to signal idle time */
+ 		if (mfd->idle_time)
+@@ -2868,7 +2868,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 		return ret;
+ 	}
+ 
+-	mdss_panelinfo_to_fb_var(panel_info, var);
++	mdss_panelinfo_to_fb_var(mfd);
+ 
+ 	fix->type = panel_info->is_3d_panel;
+ 	if (mfd->mdp.fb_stride)
+@@ -3566,7 +3566,7 @@ static void mdss_fb_update_resolution(struct msm_fb_data_type *mfd,
+ 	}
+ 	var->xres_virtual = var->xres;
+ 	var->yres_virtual = pinfo->yres * mfd->fb_page;
+-	mdss_panelinfo_to_fb_var(pinfo, var);
++	mdss_panelinfo_to_fb_var(mfd);
+ }
+ 
+ int mdss_fb_atomic_commit(struct fb_info *info,
+@@ -3788,9 +3788,13 @@ static void mdss_fb_var_to_panelinfo(struct fb_var_screeninfo *var,
+ 		pinfo->mipi.dsi_pclk_rate = pinfo->clk_rate;
+ }
+ 
+-void mdss_panelinfo_to_fb_var(struct mdss_panel_info *pinfo,
+-						struct fb_var_screeninfo *var)
++void mdss_panelinfo_to_fb_var(struct msm_fb_data_type *mfd)
+ {
++	if (!mfd) return -EINVAL;
++	struct mdss_panel_info *pinfo = mfd->panel_info;
++	struct fb_info *fbi = mfd->fbi;
++	struct fb_var_screeninfo *var = &fbi->var;
++	
+ 	u32 frame_rate;
+ 
+ 	var->xres = mdss_fb_get_panel_xres(pinfo);
+@@ -3825,10 +3829,12 @@ void mdss_panelinfo_to_fb_var(struct mdss_panel_info *pinfo,
+ 	if (pinfo->physical_height)
+ 		var->height = pinfo->physical_height;
+ 
+-	pr_debug("ScreenInfo: res=%dx%d [%d, %d] [%d, %d]\n",
+-		var->xres, var->yres, var->left_margin,
+-		var->right_margin, var->upper_margin,
+-		var->lower_margin);
++	if (fbi->mode){
++		printk("Updating mdss fb mode from fb var\n");
++		fb_var_to_videomode(fbi->mode, var);
++	}
++	
++	printk("ScreenInfo: res=%dx%d [%d, %d] [%d, %d]\n",var->xres, var->yres, var->left_margin,var->right_margin, var->upper_margin,var->lower_margin);
+ }
+ 
+ /**
+diff --git a/drivers/video/msm/mdss/mdss_fb.h b/drivers/video/msm/mdss/mdss_fb.h
+index 336a751d52b0..8cff2d5e8929 100644
+--- a/drivers/video/msm/mdss/mdss_fb.h
++++ b/drivers/video/msm/mdss/mdss_fb.h
+@@ -468,7 +468,6 @@ int mdss_fb_async_position_update(struct fb_info *info,
+ 
+ u32 mdss_fb_get_mode_switch(struct msm_fb_data_type *mfd);
+ void mdss_fb_report_panel_dead(struct msm_fb_data_type *mfd);
+-void mdss_panelinfo_to_fb_var(struct mdss_panel_info *pinfo,
+-						struct fb_var_screeninfo *var);
++void mdss_panelinfo_to_fb_var(struct msm_fb_data_type *mfd);
+ void mdss_fb_calc_fps(struct msm_fb_data_type *mfd);
+ #endif /* MDSS_FB_H */
+diff --git a/drivers/video/msm/mdss/mdss_mdp_overlay.c b/drivers/video/msm/mdss/mdss_mdp_overlay.c
+index 821521d9da5e..ad3b1f483336 100644
+--- a/drivers/video/msm/mdss/mdss_mdp_overlay.c
++++ b/drivers/video/msm/mdss/mdss_mdp_overlay.c
+@@ -3846,7 +3846,7 @@ int mdss_mdp_dfps_update_params(struct msm_fb_data_type *mfd,
+ 	 * data, so any further call to get the screen
+ 	 * info has the updated timings.
+ 	 */
+-	mdss_panelinfo_to_fb_var(&pdata->panel_info, var);
++	mdss_panelinfo_to_fb_var(mfd);
+ 
+ 	MDSS_XLOG(dfps);
+ 	mutex_unlock(&mdp5_data->dfps_lock);
+-- 
+2.34.1
+

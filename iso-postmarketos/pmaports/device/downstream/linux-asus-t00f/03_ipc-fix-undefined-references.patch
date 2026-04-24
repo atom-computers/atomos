@@ -1,0 +1,96 @@
+From 4b344128fe59fc307aeb36bea6169fb91dbcf489 Mon Sep 17 00:00:00 2001
+From: Peter Mann <pm@xdd.sk>
+Date: Sun, 28 Jan 2018 14:13:06 +0100
+Subject: [PATCH 1/1] ipc: fix undefined references
+
+---
+ ipc/msg.c |  7 +++++--
+ ipc/sem.c | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+), 2 deletions(-)
+
+diff --git a/ipc/msg.c b/ipc/msg.c
+index bcf96720f..32aaaab15 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -218,7 +218,8 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
+ 		return id;
+ 	}
+ 
+-	msg_unlock(msq);
++	ipc_unlock_object(&msq->q_perm);
++	rcu_read_unlock();
+ 
+ 	return msq->q_perm.id;
+ }
+@@ -726,7 +727,9 @@ long do_msgsnd(int msqid, long mtype, void __user *mtext,
+ 		rcu_read_unlock();
+ 		schedule();
+ 
+-		ipc_lock_by_ptr(&msq->q_perm);
++		rcu_read_lock();
++		ipc_lock_object(&msq->q_perm);
++
+ 		ipc_rcu_putref(msq, ipc_rcu_free);
+ 		if (msq->q_perm.deleted) {
+ 			err = -EIDRM;
+diff --git a/ipc/sem.c b/ipc/sem.c
+index 269aefeb1..b305649f3 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -196,6 +196,53 @@ void __init sem_init (void)
+ 				IPC_SEM_IDS, sysvipc_sem_proc_show);
+ }
+ 
++/**
++ * unmerge_queues - unmerge queues, if possible.
++ * @sma: semaphore array
++ *
++ * The function unmerges the wait queues if complex_count is 0.
++ * It must be called prior to dropping the global semaphore array lock.
++ */
++static void unmerge_queues(struct sem_array *sma)
++{
++    struct sem_queue *q, *tq;
++
++    /* complex operations still around? */
++    if (sma->complex_count)
++        return;
++    /*
++     * We will switch back to simple mode.
++     * Move all pending operation back into the per-semaphore
++     * queues.
++     */
++    list_for_each_entry_safe(q, tq, &sma->pending_alter, list) {
++        struct sem *curr;
++        curr = &sma->sem_base[q->sops[0].sem_num];
++
++        list_add_tail(&q->list, &curr->pending_alter);
++    }
++    INIT_LIST_HEAD(&sma->pending_alter);
++}
++
++/**
++ * merge_queues - Merge single semop queues into global queue
++ * @sma: semaphore array
++ *
++ * This function merges all per-semaphore queues into the global queue.
++ * It is necessary to achieve FIFO ordering for the pending single-sop
++ * operations when a multi-semop operation must sleep.
++ * Only the alter operations must be moved, the const operations can stay.
++ */
++static void merge_queues(struct sem_array *sma)
++{
++    int i;
++    for (i = 0; i < sma->sem_nsems; i++) {
++        struct sem *sem = sma->sem_base + i;
++
++        list_splice_init(&sem->pending_alter, &sma->pending_alter);
++    }
++}
++
+ static void sem_rcu_free(struct rcu_head *head)
+ {
+ 	struct ipc_rcu *p = container_of(head, struct ipc_rcu, rcu);
+-- 
+2.14.3
+

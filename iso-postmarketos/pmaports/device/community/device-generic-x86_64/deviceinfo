@@ -1,0 +1,17 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="generic x86_64 system"
+deviceinfo_manufacturer="generic"
+deviceinfo_codename="generic-x86_64"
+deviceinfo_year="1999"
+deviceinfo_arch="x86_64"
+
+# Device related
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"

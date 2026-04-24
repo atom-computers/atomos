@@ -1,0 +1,13 @@
+[Unit]
+Description=Bluetooth attachment for brcmfmac driver
+After=sys-bus-sdio-drivers-brcmfmac-mmc1:0001:1.device
+BindsTo=sys-bus-sdio-drivers-brcmfmac-mmc1:0001:1.device
+StopWhenUnneeded=true
+
+[Install]
+WantedBy=default.target
+
+[Service]
+Type=forking
+ExecStart=sh -c '/usr/bin/hciattach -s 115200 /dev/ttymxc3 bcm43xx 1500000 || /usr/bin/hciattach -s 1500000 /dev/ttymxc3 bcm43xx 1500000'
+Restart=on-abort

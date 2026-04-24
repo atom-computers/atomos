@@ -3,21 +3,27 @@ set -euo pipefail
 
 usage() {
     cat >&2 <<'EOF'
-Usage: build-image.sh [profile-env] [--without-overview-chat-ui]
+Usage: build-image.sh [profile-env] [--without-overview-chat-ui] [--without-home-bg]
 
 Options:
   --without-overview-chat-ui, --skip-overview-chat-ui
       Skip building/installing atomos-overview-chat-ui during image build.
+  --without-home-bg, --skip-home-bg
+      Skip building/installing atomos-home-bg during image build.
 EOF
 }
 
 PROFILE_ENV=""
 BUILD_OVERVIEW_CHAT_UI=1
+BUILD_HOME_BG=1
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --without-overview-chat-ui|--skip-overview-chat-ui)
             BUILD_OVERVIEW_CHAT_UI=0
+            ;;
+        --without-home-bg|--skip-home-bg)
+            BUILD_HOME_BG=0
             ;;
         -h|--help)
             usage
@@ -545,6 +551,134 @@ verify_overview_chat_ui_install() {
         'test -x /usr/local/bin/atomos-overview-chat-ui && test -x /usr/bin/atomos-overview-chat-ui && test -x /usr/libexec/atomos-overview-chat-ui && test -x /usr/libexec/atomos-overview-chat-submit'
 }
 
+verify_home_bg_install() {
+    echo "=== Verify atomos-home-bg install in rootfs ==="
+    pmb chroot -r -- /bin/sh -eu -c \
+        'test -x /usr/local/bin/atomos-home-bg && test -x /usr/bin/atomos-home-bg && test -x /usr/libexec/atomos-home-bg && test -d /usr/share/atomos-home-bg'
+}
+
+# Final rootfs assertion right before resync: prove that the rootfs chroot
+# actually carries the AtomOS-patched vendor phosh + the Rust binaries we
+# expect to ship. Without this, silent package-solver regressions between
+# promote_local_vendor_phosh_into_rootfs and resync (e.g.
+# install-atomos-agents.sh:59 `apk upgrade --no-interactive` re-solving the
+# world and replacing our phosh with upstream) produce a stock-phosh image
+# without any build-time error. This turns that failure mode into a hard
+# exit 9 with a precise diagnostic.
+verify_final_rootfs_customizations() {
+    echo "=== Final rootfs verification (pre-resync) ==="
+    local must_have_overview="${BUILD_OVERVIEW_CHAT_UI:-1}"
+    local must_have_home_bg="${BUILD_HOME_BG:-1}"
+    local must_have_vendor_phosh="${USE_VENDOR_PHOSH:-0}"
+    pmb chroot -r -- /bin/sh -eu -c '
+        fail=0
+        if [ "'"$must_have_vendor_phosh"'" = "1" ]; then
+            if ! test -x /usr/libexec/phosh; then
+                echo "FINAL-VERIFY FAIL: /usr/libexec/phosh missing" >&2
+                fail=1
+            else
+                # Two independent vendor-phosh signals. EITHER is sufficient;
+                # we only fail if BOTH are absent.
+                #
+                # (1) Installed pkgver carries a `_p<digits>` suffix that
+                #     abuild stamps on `pmbootstrap build --src=...` builds
+                #     but NEVER on stock Alpine edge phosh. This is the
+                #     strongest possible signal: it comes from apk'"'"'s
+                #     installed-package database, not from guessing the
+                #     binary content.
+                #
+                # (2) strings(1) of /usr/libexec/phosh finds one of the
+                #     AtomOS markers. `atomos-overview-chat-submit` is the
+                #     most reliable here because it is a string literal in
+                #     the C source (spawn argv), so the compiler embeds it
+                #     directly in .rodata where `strings` can see it even
+                #     after -O2 / strip. The two GtkBuilder widget ids
+                #     `atomos-home-chat-entry` and `atomos-apps-toggle`
+                #     live inside the embedded .gresource bundle which is
+                #     gzip-compressed by default on Alpine, so `strings`
+                #     cannot see them without decompressing the resource
+                #     blob first. We keep them as a best-effort bonus but
+                #     do NOT require them.
+                installed_ver=""
+                if command -v apk >/dev/null 2>&1; then
+                    # `apk info -v phosh` emits e.g. "phosh-0.54.0_p20260422014925-r0".
+                    installed_ver="$(apk info -v phosh 2>/dev/null | sed -n "s/^phosh-//p")"
+                fi
+                pkgver_has_p_suffix=0
+                case "$installed_ver" in
+                    *_p[0-9]*) pkgver_has_p_suffix=1 ;;
+                esac
+
+                strings_has_submit=0
+                if command -v strings >/dev/null 2>&1; then
+                    if strings /usr/libexec/phosh 2>/dev/null | grep -q "atomos-overview-chat-submit"; then
+                        strings_has_submit=1
+                    fi
+                fi
+
+                # Best-effort diagnostic for the two gresource markers; not
+                # required, just logged so we can see what got picked up.
+                gresource_markers=""
+                if command -v strings >/dev/null 2>&1; then
+                    for marker in atomos-home-chat-entry atomos-apps-toggle; do
+                        if strings /usr/libexec/phosh 2>/dev/null | grep -q "$marker"; then
+                            gresource_markers="${gresource_markers} ${marker}"
+                        fi
+                    done
+                fi
+
+                if [ "$pkgver_has_p_suffix" -eq 1 ] || [ "$strings_has_submit" -eq 1 ]; then
+                    echo "final-verify: vendor phosh confirmed"
+                    echo "  installed pkgver: ${installed_ver:-<apk-info-unavailable>} (has _p<timestamp> suffix: $pkgver_has_p_suffix)"
+                    echo "  strings atomos-overview-chat-submit marker: $strings_has_submit"
+                    if [ -n "$gresource_markers" ]; then
+                        echo "  bonus gresource-visible markers detected:${gresource_markers}"
+                    else
+                        echo "  gresource-embedded widget ids (atomos-home-chat-entry / atomos-apps-toggle) not visible via strings - expected when .gresource is gzip-compressed; ignore."
+                    fi
+                else
+                    echo "FINAL-VERIFY FAIL: /usr/libexec/phosh does not look like the AtomOS vendor build." >&2
+                    echo "  installed pkgver: ${installed_ver:-<apk-info-unavailable>}" >&2
+                    echo "  pkgver _p<timestamp> suffix: $pkgver_has_p_suffix (expected 1)" >&2
+                    echo "  strings atomos-overview-chat-submit marker: $strings_has_submit (expected 1)" >&2
+                    echo "  Vendor phosh was promoted earlier but subsequently replaced." >&2
+                    echo "  Re-run make build-qemu, or set ATOMOS_SKIP_FINAL_VERIFY=1 to downgrade to WARN." >&2
+                    fail=1
+                fi
+            fi
+        fi
+        if [ "'"$must_have_overview"'" = "1" ]; then
+            for p in /usr/local/bin/atomos-overview-chat-ui /usr/bin/atomos-overview-chat-ui /usr/libexec/atomos-overview-chat-ui /usr/libexec/atomos-overview-chat-submit; do
+                if ! test -x "$p"; then
+                    echo "FINAL-VERIFY FAIL: $p missing" >&2
+                    fail=1
+                fi
+            done
+            [ "$fail" -eq 0 ] && echo "final-verify: atomos-overview-chat-ui binary + launcher + submit helper present"
+        fi
+        if [ "'"$must_have_home_bg"'" = "1" ]; then
+            for p in /usr/local/bin/atomos-home-bg /usr/bin/atomos-home-bg /usr/libexec/atomos-home-bg; do
+                if ! test -x "$p"; then
+                    echo "FINAL-VERIFY FAIL: $p missing" >&2
+                    fail=1
+                fi
+            done
+            if ! test -d /usr/share/atomos-home-bg; then
+                echo "FINAL-VERIFY FAIL: /usr/share/atomos-home-bg missing" >&2
+                fail=1
+            fi
+            [ "$fail" -eq 0 ] && echo "final-verify: atomos-home-bg binary + launcher + content dir present"
+        fi
+        if [ "$fail" -ne 0 ]; then
+            if [ "${ATOMOS_SKIP_FINAL_VERIFY:-0}" = "1" ]; then
+                echo "WARN: final rootfs verification failed; continuing because ATOMOS_SKIP_FINAL_VERIFY=1." >&2
+                exit 0
+            fi
+            exit 9
+        fi
+    '
+}
+
 verify_overview_chat_ui_launcher_contract() {
     echo "=== Verify atomos-overview-chat-ui launcher contract in rootfs ==="
     pmb chroot -r -- /bin/sh -eu -c "
@@ -655,10 +789,169 @@ verify_vendor_phosh_origin() {
     '
 }
 
+# Stage the locally-built vendor phosh/phoc/phosh-mobile-settings APK
+# artifacts directly into the rootfs chroot filesystem at
+# /tmp/atomos-vendor-phosh/ from the HOST, bypassing pmbootstrap bind-mount
+# semantics.
+#
+# Background: pmbootstrap 3.9 bind-mounts <WORK>/packages to
+# /mnt/pmbootstrap/packages only during its `install` command, NOT for
+# subsequent `chroot -r` invocations. That means the APK files
+# `recover_edge_repo_from_any_local_phosh_artifacts` wrote to the host at
+# <WORK>/packages/edge/<arch>/phosh-*.apk are INVISIBLE from inside the
+# rootfs chroot where promote_local_vendor_phosh_into_rootfs runs.
+#
+# Fix: on the host, walk every place pmbootstrap / the recovery helpers
+# could have dropped the APK (host workdir, native chroot, buildroot
+# chroot) and copy the newest build-version-matching files straight into
+# <PMB_WORK>/chroot_rootfs_<device>/tmp/atomos-vendor-phosh/ via plain
+# filesystem I/O + sudo. promote_local_vendor_phosh_into_rootfs then finds
+# them at /tmp/atomos-vendor-phosh/ inside the chroot and
+# `apk add --upgrade --allow-untrusted` the whole set in one transaction.
+stage_vendor_phosh_apks_into_rootfs_chroot() {
+    if [ "$PMOS_UI" != "phosh" ] || [ "$USE_VENDOR_PHOSH" != "1" ]; then
+        return 0
+    fi
+    if [ -z "${PMB_WORK_OVERRIDE:-}" ]; then
+        echo "stage_vendor_phosh_apks_into_rootfs_chroot: WARN PMB_WORK_OVERRIDE unset; skipping" >&2
+        return 0
+    fi
+    local chroot_root stage_host_path arch
+    chroot_root="${PMB_WORK_OVERRIDE}/chroot_rootfs_${PMOS_DEVICE}"
+    if [ ! -d "$chroot_root" ]; then
+        echo "stage_vendor_phosh_apks_into_rootfs_chroot: WARN rootfs chroot not found at $chroot_root; skipping" >&2
+        return 0
+    fi
+    arch="${ATOMOS_PHOSH_BUILD_ARCH:-aarch64}"
+    stage_host_path="${chroot_root}/tmp/atomos-vendor-phosh"
+
+    # Candidate source dirs on the HOST, in the order the newest-wins logic
+    # below walks them. Cover every layout we have ever observed from
+    # pmb+abuild (host workdir, native chroot, buildroot chroot).
+    local -a search_dirs=(
+        "${PMB_WORK_OVERRIDE}/packages/edge/${arch}"
+        "${PMB_WORK_OVERRIDE}/packages/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/packages/edge/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/packages/systemd-edge/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_native/home/pmos/packages/edge/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_native/home/pmos/packages/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_native/home/pmos/packages/edge/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_buildroot_${arch}/home/pmos/packages/edge/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_buildroot_${arch}/home/pmos/packages/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_buildroot_${arch}/home/pmos/packages/edge/pmos/${arch}"
+    )
+
+    _atomos_find_newest_apk_for_pkg() {
+        local pkg="$1" latest="" d f
+        for d in "${search_dirs[@]}"; do
+            [ -d "$d" ] || continue
+            for f in "$d"/"${pkg}"-*.apk; do
+                [ -f "$f" ] || continue
+                if [ -z "$latest" ] || [ "$f" -nt "$latest" ]; then
+                    latest="$f"
+                fi
+            done
+        done
+        printf '%s' "$latest"
+    }
+
+    # pmbootstrap build --src=rust/phosh/phosh --force phosh produces the
+    # whole phosh subpackage set for the build's pkgver timestamp (phosh +
+    # libphosh + phosh-schemas + phosh-systemd + phosh-portalsconf +
+    # phosh-lang + phosh-doc + phosh-dev + libphosh-dev + phosh-dbg). Stage
+    # every subpackage we can find from the same source dir, so apk add
+    # --upgrade installs a consistent version set instead of leaving the
+    # rootfs with a mix of 0.54.0_p<ts>-r0 (our phosh) and 0.54.0-r0 (stock
+    # phosh-schemas/phosh-systemd/...). phoc and phosh-mobile-settings are
+    # SEPARATE pmaports packages that our --src=phosh build does NOT produce;
+    # their entries below are best-effort and will be empty in the default
+    # pipeline, which is correct (stock phoc is untouched by AtomOS's
+    # modifications; the AtomOS markers live in phosh proper).
+    local phosh_src
+    phosh_src="$(_atomos_find_newest_apk_for_pkg phosh)"
+
+    if [ -z "$phosh_src" ]; then
+        echo "stage_vendor_phosh_apks_into_rootfs_chroot: no local phosh-*.apk found under host workdir" >&2
+        echo "  searched:" >&2
+        local d
+        for d in "${search_dirs[@]}"; do
+            echo "    $d (exists: $( [ -d "$d" ] && echo yes || echo no ))" >&2
+        done
+        return 0
+    fi
+
+    local phosh_base phosh_ver
+    phosh_base="$(basename "$phosh_src")"
+    phosh_ver="${phosh_base#phosh-}"
+    phosh_ver="${phosh_ver%.apk}"
+
+    local -a runner=()
+    if ! mkdir -p "$stage_host_path" 2>/dev/null; then
+        if command -v sudo >/dev/null 2>&1; then
+            runner=(sudo)
+            sudo mkdir -p "$stage_host_path"
+        else
+            echo "stage_vendor_phosh_apks_into_rootfs_chroot: WARN cannot create $stage_host_path and sudo unavailable; skipping" >&2
+            return 0
+        fi
+    fi
+    "${runner[@]}" rm -f "$stage_host_path"/*.apk 2>/dev/null || true
+
+    local -a pkg_candidates=(
+        phosh
+        libphosh
+        phosh-schemas
+        phosh-systemd
+        phosh-portalsconf
+        phosh-lang
+        phosh-doc
+        phosh-dev
+        libphosh-dev
+        phosh-dbg
+        phoc
+        phosh-mobile-settings
+    )
+
+    local staged=""
+    local pkg src candidate_exact
+    for pkg in "${pkg_candidates[@]}"; do
+        src=""
+        for d in "${search_dirs[@]}"; do
+            [ -d "$d" ] || continue
+            candidate_exact="$d/${pkg}-${phosh_ver}.apk"
+            if [ -f "$candidate_exact" ]; then
+                src="$candidate_exact"
+                break
+            fi
+        done
+        if [ -z "$src" ]; then
+            src="$(_atomos_find_newest_apk_for_pkg "$pkg")"
+        fi
+        [ -n "$src" ] && [ -f "$src" ] || continue
+        if "${runner[@]}" cp -f "$src" "$stage_host_path/"; then
+            staged="${staged} $(basename "$src")"
+        else
+            echo "stage_vendor_phosh_apks_into_rootfs_chroot: WARN failed to stage $src" >&2
+        fi
+    done
+    "${runner[@]}" chmod -R u+rwX,go+rX "$stage_host_path" 2>/dev/null || true
+
+    if [ -z "$staged" ]; then
+        echo "stage_vendor_phosh_apks_into_rootfs_chroot: WARN no apk files staged (every copy failed?)" >&2
+        return 0
+    fi
+    echo "stage_vendor_phosh_apks_into_rootfs_chroot: staged into ${stage_host_path}:${staged}"
+    unset -f _atomos_find_newest_apk_for_pkg
+}
+
 promote_local_vendor_phosh_into_rootfs() {
     if [ "$PMOS_UI" != "phosh" ] || [ "$USE_VENDOR_PHOSH" != "1" ]; then
         return 0
     fi
+    # Always (re-)stage from host first so /tmp/atomos-vendor-phosh/ in the
+    # rootfs chroot has the newest local APKs even when pmbootstrap bind
+    # mounts have gone missing between install and here.
+    stage_vendor_phosh_apks_into_rootfs_chroot
     echo "=== Prefer local vendor phosh APK artifacts in rootfs ==="
     pmb chroot -r -- /bin/sh -eu -c '
         arch="$(apk --print-arch 2>/dev/null || true)"
@@ -667,11 +960,19 @@ promote_local_vendor_phosh_into_rootfs() {
         find_latest_local_apk() {
             pkg="$1"
             latest=""
+            # /tmp/atomos-vendor-phosh first: that is our host-staged copy,
+            # filled directly from the build-host filesystem and immune to
+            # pmbootstrap /mnt/pmbootstrap/packages mount quirks. The other
+            # dirs are kept as fallbacks in case the caller bypassed the
+            # host staging step.
             for d in \
+                "/tmp/atomos-vendor-phosh" \
                 "/mnt/pmbootstrap/packages/edge/${arch}" \
                 "/mnt/pmbootstrap/packages/pmos/${arch}" \
+                "/mnt/pmbootstrap/packages/edge/pmos/${arch}" \
                 "/home/pmos/packages/edge/${arch}" \
-                "/home/pmos/packages/pmos/${arch}"
+                "/home/pmos/packages/pmos/${arch}" \
+                "/home/pmos/packages/edge/pmos/${arch}"
             do
                 [ -d "$d" ] || continue
                 for f in "$d"/"${pkg}"-*.apk; do
@@ -684,35 +985,74 @@ promote_local_vendor_phosh_into_rootfs() {
             printf "%s" "$latest"
         }
 
-        phoc_apk="$(find_latest_local_apk phoc)"
+        # phosh is the one package we MUST find. phoc + phosh-mobile-settings
+        # are separate pmaports packages that our --src=rust/phosh/phosh
+        # build does NOT produce, so they are normally absent from the
+        # staged set - that is expected, stock phoc+phosh-mobile-settings
+        # are untouched by AtomOS modifications (markers live in phosh
+        # proper, not phoc). Requiring phoc here would make promote a
+        # permanent no-op for the default vendor-phosh path.
         phosh_apk="$(find_latest_local_apk phosh)"
-        settings_apk="$(find_latest_local_apk phosh-mobile-settings)"
 
-        if [ -z "$phoc_apk" ] || [ -z "$phosh_apk" ]; then
-            echo "WARN: local vendor phosh APK artifacts not found in mounted repos; skipping forced local install." >&2
+        if [ -z "$phosh_apk" ]; then
+            echo "WARN: local vendor phosh APK not found in /tmp/atomos-vendor-phosh or fallback mount paths; skipping forced local install." >&2
+            echo "  dir listings:" >&2
+            for d in /tmp/atomos-vendor-phosh /mnt/pmbootstrap/packages/edge/$arch /home/pmos/packages/edge/$arch; do
+                if [ -d "$d" ]; then
+                    echo "    $d:" >&2
+                    ls -la "$d" >&2 2>&1 | head -n 20 || true
+                else
+                    echo "    $d: (missing)" >&2
+                fi
+            done
             exit 0
         fi
 
-        set +e
-        if [ -n "$settings_apk" ]; then
-            apk add --upgrade --allow-untrusted "$phoc_apk" "$phosh_apk" "$settings_apk" >/dev/null
-            rc=$?
-        else
-            apk add --upgrade --allow-untrusted "$phoc_apk" "$phosh_apk" >/dev/null
-            rc=$?
+        # Install EVERY apk that we host-staged under /tmp/atomos-vendor-phosh
+        # in one transaction so the full set (phosh + libphosh +
+        # phosh-schemas + phosh-systemd + phosh-portalsconf + ...) gets
+        # upgraded to our AtomOS build in lockstep. Without this, apk
+        # would only upgrade phosh and leave e.g. phosh-schemas at stock
+        # 0.54.0-r0 while phosh is at 0.54.0_p<ts>-r0 - a version skew
+        # that can hide AtomOS schema/UI additions at runtime.
+        stage_apks=""
+        if [ -d /tmp/atomos-vendor-phosh ]; then
+            for f in /tmp/atomos-vendor-phosh/*.apk; do
+                [ -f "$f" ] || continue
+                stage_apks="$stage_apks $f"
+            done
         fi
+        if [ -z "$stage_apks" ]; then
+            # Fallback: at least force the single newest phosh.apk from
+            # whichever path find_latest_local_apk resolved. This path is
+            # taken when host staging silently failed (mkdir/sudo gap) but
+            # phosh still surfaced via the mount paths.
+            stage_apks="$phosh_apk"
+        fi
+
+        echo "apk add --upgrade --allow-untrusted${stage_apks}"
+        set +e
+        apk add --upgrade --allow-untrusted $stage_apks >/dev/null
+        rc=$?
         set -e
         if [ "$rc" -ne 0 ]; then
-            echo "WARN: failed to force-install local vendor phosh APK artifacts (exit $rc); continuing." >&2
+            echo "WARN: failed to force-install local vendor phosh APK artifacts (exit $rc); retrying one-by-one for diagnostics..." >&2
+            set +e
+            for apk_file in $stage_apks; do
+                if ! apk add --upgrade --allow-untrusted "$apk_file" >/dev/null 2>&1; then
+                    echo "  per-apk fail: $apk_file" >&2
+                fi
+            done
+            set -e
+            # Do not exit non-zero; verify_final_rootfs_customizations will
+            # catch the case where phosh markers are still missing after this.
             exit 0
         fi
 
         echo "Installed local vendor phosh artifacts:"
-        echo "  phoc: $phoc_apk"
-        echo "  phosh: $phosh_apk"
-        if [ -n "$settings_apk" ]; then
-            echo "  phosh-mobile-settings: $settings_apk"
-        fi
+        for apk_file in $stage_apks; do
+            echo "  $apk_file"
+        done
     '
 }
 
@@ -935,7 +1275,41 @@ if [ "$BUILD_OVERVIEW_CHAT_UI" -eq 1 ]; then
     bash "$ROOT_DIR/scripts/overview-chat-ui/install-overview-chat-ui.sh" "$PROFILE_ENV_SOURCE"
     verify_overview_chat_ui_install
 else
-    echo "=== Skip atomos-overview-chat-ui (flag enabled) ==="
+    echo "=== Skip atomos-overview-chat-ui (BUILD_OVERVIEW_CHAT_UI=0) ==="
+fi
+
+# atomos-home-bg: webview-backed home background surface. Same pattern as
+# overview-chat-ui: cross-build the aarch64-musl binary against the pmOS
+# rootfs sysroot, then drop the binary + lifecycle launcher + placeholder
+# content into the rootfs chroot. Disable with --without-home-bg /
+# BUILD_HOME_BG=0 when the WebKit + GTK4 dev-lib pull is undesirable.
+if [ "$BUILD_HOME_BG" -eq 1 ]; then
+    # Gracefully skip when the home-bg build+install helpers are not present
+    # on this checkout. The scripts/home-bg/ tree + rust/atomos-home-bg/
+    # crate ship together; a build host that cloned atomos from a tag cut
+    # before those additions were committed (or pulled a branch that does
+    # not carry them) should not hard-fail just because of home-bg.
+    HOME_BG_BUILD="$ROOT_DIR/scripts/home-bg/build-atomos-home-bg.sh"
+    HOME_BG_INSTALL="$ROOT_DIR/scripts/home-bg/install-atomos-home-bg.sh"
+    if [ ! -f "$HOME_BG_BUILD" ] || [ ! -f "$HOME_BG_INSTALL" ]; then
+        echo "=== Skip atomos-home-bg (helper scripts missing on this host) ==="
+        echo "    missing: $HOME_BG_BUILD" >&2
+        echo "    missing: $HOME_BG_INSTALL" >&2
+        echo "    To enable: commit scripts/home-bg/ + rust/atomos-home-bg/ to" >&2
+        echo "    the branch being built here, or set WITHOUT_HOME_BG=1 explicitly" >&2
+        echo "    to silence this notice." >&2
+        # Disable the subsequent final-verify requirement so the downstream
+        # verify_final_rootfs_customizations does not look for binaries we
+        # intentionally did not build.
+        BUILD_HOME_BG=0
+    else
+        bash "$HOME_BG_BUILD" "$PROFILE_ENV_SOURCE"
+        bash "$HOME_BG_INSTALL" "$PROFILE_ENV_SOURCE"
+        verify_home_bg_install
+    fi
+    unset HOME_BG_BUILD HOME_BG_INSTALL
+else
+    echo "=== Skip atomos-home-bg (BUILD_HOME_BG=0) ==="
 fi
 
 WALLPAPER_SRC="$ROOT_DIR/data/wallpapers/gargantua-black.jpg"
@@ -950,7 +1324,27 @@ bash "$ROOT_DIR/scripts/phosh/apply-atomos-phosh-dconf.sh" "$PROFILE_ENV_SOURCE"
 ATOMOS_LOCK_PARITY=1 bash "$ROOT_DIR/scripts/rootfs/apply-overlay.sh" "$PROFILE_ENV_SOURCE"
 verify_overview_chat_ui_launcher_contract
 
+# Re-promote vendor phosh after every apk-mutating customization step has
+# run. install-atomos-agents.sh and install-bt-tools.sh both run
+# `apk update` + `apk add` inside the rootfs chroot; the former also has
+# an `apk upgrade --no-interactive` fallback
+# (scripts/rootfs/install-atomos-agents.sh:59) that re-solves the package
+# world and can replace our locally-built vendor phosh with a newer stock
+# phosh from the live Alpine mirror without any build-time error.
+# Re-running promote_local_vendor_phosh_into_rootfs here force-installs
+# the local phosh subpackage set again so the final rootfs chroot (and
+# therefore the resync'd disk image) definitely carries the AtomOS-patched
+# phosh.
+promote_local_vendor_phosh_into_rootfs
+verify_vendor_phosh_origin
+
 echo "=== Resync rootfs and export image ==="
+# Hard-fail RIGHT BEFORE resync if the rootfs chroot is missing the things
+# we expect to land in the exported image. Without this assert, silent
+# regressions between "promote vendor phosh" and "resync" (e.g. apk
+# upgrade replaying against a live mirror) produce a stock-phosh image
+# without any error code.
+verify_final_rootfs_customizations
 bash "$ROOT_DIR/scripts/rootfs/resync-rootfs-to-disk-image.sh" "$PROFILE_ENV_SOURCE"
 bash "$ROOT_DIR/scripts/rootfs/rootfs-diagnostic.sh" "$PROFILE_ENV_SOURCE" || true
 bash "$ROOT_DIR/scripts/export/export.sh" "$PROFILE_ENV_SOURCE" "$BUILD_DIR"

@@ -1,0 +1,88 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Joel Selvaraj <foss@joelselvaraj.com>"
+pkgname=device-xiaomi-beryllium
+pkgdesc="Xiaomi Poco F1"
+pkgver=18
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	mkbootimg
+	alsa-ucm-conf-sdm845
+	soc-qcom
+	soc-qcom-pd-mapper
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-kernel-tianma:kernel_tianma
+	$pkgname-kernel-ebbg:kernel_ebbg
+"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs.ebbg
+	modules-initfs.tianma
+	q6voiced.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/q6voiced.conf \
+		"$pkgdir"/etc/conf.d/q6voiced
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU, venus, modem and sensor firmware"
+	depends="
+		firmware-xiaomi-beryllium
+		hexagonrpcd>=0.3.2-r3
+		soc-qcom-modem
+		hexagonrpcd
+	"
+
+	amove etc/conf.d/q6voiced
+	amove usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+kernel_tianma() {
+	pkgdesc="Tianma Panel. To know which panel your device use and the status of the port, Visit the Poco F1 wiki page: https://wiki.postmarketos.org/wiki/Xiaomi_Poco_F1_(xiaomi-beryllium)"
+	depends="linux-postmarketos-qcom-sdm845"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_ebbg() {
+	pkgdesc="EBBG Panel. To know which panel your device use and the status of the port, Visit the Poco F1 wiki page: https://wiki.postmarketos.org/wiki/Xiaomi_Poco_F1_(xiaomi-beryllium)"
+	depends="linux-postmarketos-qcom-sdm845"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+5d48f17dcec44653e749191d4f236350e9ff0166df77b711f357dca6d74a1af7dfa768a2caa1dc309c2651d004edd0ab7846305513488f74d3ea7ae11da6168d  deviceinfo
+f16e550f623522be29027954c69a956eb6543f2f608a4c6b37c1a3983403a3edaa24e70aa42dbe88e76216991aba867b48c7341c9b8a81f675902d6223937b51  kernel-cmdline.conf
+52079045a0c1f48628d891bf8867f5c1802152fce8e2c4bd787630f1f5e4c9b386bfc373e464cb053688350ac678dbc3c407a76a31a1ae700ca67764d0d384f1  hexagonrpcd.confd
+cab76675b9c48eb1ce0691b31667d17ee73ecf21439a7f7c9c2ba96344e3bf4ad713ebc685298d6e32ad589ba26f429cd6b0d200338b50d136ad1a29758e4214  modules-initfs.ebbg
+175a7d859956a029b91a1105b93c4113b07ab5cfe932294dd369808059ed03471625f64ce90e5146a65c0bb26417470d8f7c02e48dfacf2d016ce5b2c28cee76  modules-initfs.tianma
+3a4a9322839d4b3ef9d79668a37840a9f444954759ae3c512e694051d2f9a2573db42ad6c4c1a5c75eeb861232a27ba1a8cef9b503decd54ead25a96e3dd6f98  q6voiced.conf
+"

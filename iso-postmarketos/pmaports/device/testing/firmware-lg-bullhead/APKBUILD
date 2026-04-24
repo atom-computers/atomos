@@ -1,0 +1,23 @@
+maintainer="Petr Vorel <petr.vorel@gmail.com>"
+pkgname=firmware-lg-bullhead
+pkgver=0.1
+pkgrel=1
+pkgdesc="Firmware for lg-bullhead"
+url="https://github.com/undevdecatos/firmware-lg-bullhead"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="1052f2f7c3e2cedc71706751e88ef3e97f07bb0e"
+
+source="firmware-lg-bullhead-$_commit.tar.gz::https://github.com/undevdecatos/firmware-lg-bullhead/archive/$_commit.tar.gz"
+
+package() {
+	for path in "$srcdir/$pkgname-$_commit"/*; do
+		if test -f "$path"; then
+			install -Dm644 -t"$pkgdir/lib/firmware/postmarketos" "$path"
+		fi
+	done
+}
+
+sha512sums="401cab0cfb8eddf0074eaf2c0ea7236cdbd8389903d72c18967725ea02e43df05c1248fb9640e71735138a18759187826cb93d3cc14c70f36fc2664057285a9c  firmware-lg-bullhead-1052f2f7c3e2cedc71706751e88ef3e97f07bb0e.tar.gz"

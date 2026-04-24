@@ -1,0 +1,36 @@
+# Archived: replaced by device-nvidia-tegra-armv7
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-acer-picasso
+pkgdesc="Acer Iconia Tab A500"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-postmarketos-grate mkbootimg xf86-video-opentegra"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Acer Iconia Tab A500 WiFi & BT firmware"
+	depends="firmware-acer-picasso"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+137e3c001e03c7d12f15a8f36bc93ed820973884cb1271af09b3138ef8d1e7eea67daf3ff76238df4e9e16c701d1bc2e94923cec373af10b9224fe64dca755fd  deviceinfo
+ada484ae0b3fe08f2884920e45092ea269ae50085f178c27b61655914cea39fb979027d98dc88b3d474ffbdb7bd4417ec5ba08a6b6527fc1fcebc3ef9595360e  modules-initfs
+"

@@ -1,0 +1,135 @@
+From b13fc38acae2bdffc1c4fda9c642276fba0884d3 Mon Sep 17 00:00:00 2001
+From: Mithil Bavishi <bavishimithil@gmail.com>
+Date: Thu, 20 Oct 2022 20:46:30 +0530
+Subject: [PATCH 3/3] arm/dts: Add espresso10 support
+
+---
+ arch/arm/boot/dts/ti/omap/Makefile                    |  1 +
+ .../arm/boot/dts/ti/omap/omap4-samsung-espresso10.dts | 103 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 89 insertions(+)
+ create mode 100644 arch/arm/boot/dts/ti/omap/omap4-samsung-espresso10.dts
+
+diff --git a/arch/arm/boot/dts/ti/omap/Makefile b/arch/arm/boot/dts/ti/omap/Makefile
+index c0c55b1a7..51f6b70df 100644
+--- a/arch/arm/boot/dts/ti/omap/Makefile
++++ b/arch/arm/boot/dts/ti/omap/Makefile
+@@ -96,6 +96,7 @@ dtb-$(CONFIG_ARCH_OMAP4) += \
+ 	omap4-panda-a4.dtb \
+ 	omap4-panda-es.dtb \
+ 	omap4-samsung-espresso7.dtb \
++	omap4-samsung-espresso10.dtb \
+ 	omap4-sdp.dtb \
+ 	omap4-sdp-es23plus.dtb \
+ 	omap4-var-dvk-om44.dtb \
+diff --git a/arch/arm/boot/dts/ti/omap/omap4-samsung-espresso10.dts b/arch/arm/boot/dts/ti/omap/omap4-samsung-espresso10.dts
+new file mode 100644
+index 000000000..3fa4b18bd
+--- /dev/null
++++ b/arch/arm/boot/dts/ti/omap/omap4-samsung-espresso10.dts
+@@ -0,0 +1,103 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/dts-v1/;
++
++#include "omap4-samsung-espresso-common.dtsi"
++#include <dt-bindings/power/summit,smb347-charger.h>
++/ {
++	model = "Samsung Galaxy Tab 2 (10 inch)";
++	compatible = "samsung,espresso10", "ti,omap4430", "ti,omap4";
++
++	i2c-gpio-5 {
++	       smb347: charger@6 {
++       	        compatible = "summit,smb347";
++               	reg = <0x6>; // 0x0C >> 1
++
++	               interrupt-parent = <&gpio2>;
++	               interrupts = <0 IRQ_TYPE_EDGE_BOTH>;
++
++	               summit,enable-usb-charging;
++	               summit,enable-charge-control = <SMB3XX_CHG_ENABLE_SW>;
++	               summit,chip-temperature-threshold-celsius = <120>;
++	               summit,usb-current-limit-microamp = <1800000>;
++	       };
++	};
++
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pinctrl-names = "default";
++		pinctrl-0 = <&backlight_pins>;
++		pwms = <&pwm10 0 1600 0>;
++		power-supply = <&reg_lcd>;
++		enable-gpios = <&gpio3 31 GPIO_ACTIVE_HIGH>;
++		brightness-levels = <0 4 8 16 32 64 128 255>;
++		default-brightness-level = <7>;
++	};
++
++	panel {
++		compatible ="samsung,ltn070nl01", "panel-lvds";
++		power-supply = <&reg_lcd>;
++		width-mm = <223>;
++		height-mm = <125>;
++		data-mapping = "jeida-24";
++		backlight = <&backlight>;
++
++		panel-timing {
++			clock-frequency = <69818000>;
++
++			hback-porch = <64>;
++			hactive = <1280>;
++			hfront-porch = <16>;
++			hsync-len = <48>;
++
++			vback-porch = <11>;
++			vactive = <800>;
++			vfront-porch = <16>;
++			vsync-len = <3>;
++
++			hsync-active = <0>;
++			vsync-active = <0>;
++			de-active = <1>;
++			pixelclk-active = <1>;
++		};
++	
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&bridge_out>;
++			};
++		};
++	};
++};
++
++&i2c3 {
++	touchscreen: synaptics-rmi4-i2c@20 {
++		compatible = "syna,rmi4-i2c";
++		reg = <0x20>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		interrupt-parent = <&gpio2>;
++		interrupts = <14 IRQ_TYPE_EDGE_FALLING>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&touch_pins>;
++
++		avdd-supply = <&reg_touch_ldo_en>;
++		vdd-supply = <&vcxio>;
++
++		syna,reset-delay-ms = <200>;
++		syna,startup-delay-ms = <200>;
++
++		touchscreen-size-x = <1279>;
++		touchscreen-size-y = <799>;
++
++		rmi4-f01@1 {
++			reg = <0x01>;
++			syna,nosleep-mode = <1>;
++		};
++
++		rmi4-f11@11 {
++			reg = <0x11>;
++			syna,sensor-type = <1>;
++		};
++	};
++};
+-- 
+2.25.1
+

@@ -1,0 +1,374 @@
+diff --git a/etc/sway_hrdl/waybar/config b/etc/sway_hrdl/waybar/config
+index f31a30e..76e041f 100644
+--- a/etc/sway_hrdl/waybar/config
++++ b/etc/sway_hrdl/waybar/config
+@@ -72,15 +72,15 @@
+             "critical": 15
+         },
+         // Connected to AC
+-        "format": " {icon} {capacity}%", // Icon: bolt
++        "format": "\uF0E7 {icon} {capacity}%", // Icon: bolt
+         // Not connected to AC
+         "format-discharging": "{capacity}% {icon}",
+         "format-icons": [
+-            "", // Icon: battery-full
+-            "", // Icon: battery-three-quarters
+-            "", // Icon: battery-half
+-            "", // Icon: battery-quarter
+-            ""  // Icon: battery-empty
++            "\uF244", // Icon: battery-full
++            "\uF243", // Icon: battery-three-quarters
++            "\uF242", // Icon: battery-half
++            "\uF241", // Icon: battery-quarter
++            "\uF240"  // Icon: battery-empty
+         ],
+         "min-length": 5,
+         "tooltip": true
+@@ -94,13 +94,13 @@
+ 
+     "clock#date": {
+       "interval": 10,
+-      "format": "  {:%e %b %Y}", // Icon: calendar-alt
++      "format": "\uF073  {:%e %b %Y}", // Icon: calendar-alt
+       "tooltip-format": "{:%e %B %Y}"
+     },
+ 
+     "cpu": {
+         "interval": 5,
+-        "format": "  {usage}%", // Icon: microchip
++        "format": "\uF2DB  {usage}%", // Icon: microchip
+         "states": {
+           "warning": 70,
+           "critical": 90
+@@ -109,7 +109,7 @@
+ 
+     "memory": {
+         "interval": 5,
+-        "format": "  {}%", // Icon: memory
++        "format": "\uF538  {}%", // Icon: memory
+         "states": {
+             "warning": 70,
+             "critical": 90
+@@ -131,259 +131,221 @@
+       "interval": 5,
+       "format": "{icon}  {temperatureC}°C",
+       "format-icons": [
+-          "", // Icon: temperature-empty
+-          "", // Icon: temperature-quarter
+-          "", // Icon: temperature-half
+-          "", // Icon: temperature-three-quarters
+-          ""  // Icon: temperature-full
++          "\uF2CB", // Icon: temperature-empty
++          "\uF2CA", // Icon: temperature-quarter
++          "\uF2C9", // Icon: temperature-half
++          "\uF2C8", // Icon: temperature-three-quarters
++          "\uF2C8"  // Icon: temperature-full
+       ],
+       "tooltip": true,
+-      "hwmon-path": "/sys/class/hwmon/hwmon3/temp1_input",
++      "hwmon-path": "/sys/class/hwmon/hwmon3/temp1_input"
+     },
+ 
+     "custom/kill": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF00D",
+       "on-click": "swaymsg kill",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/winleft": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF104",
+       "on-click": "swaymsg move left",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/winright": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF105",
+       "on-click": "swaymsg move right",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/winup": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF106",
+       "on-click": "swaymsg move up",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/windown": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF107",
+       "on-click": "swaymsg move down",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/splitv": {
+       "format": "/|",
+-      "interval": "once",
+       "on-click": "swaymsg splitv",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/splith": {
+       "format": "/-",
+-      "interval": "once",
+       "on-click": "swaymsg splith",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/mvws_prev": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF100",
+       "on-click": "sway_workspace move prev",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/gows_prev": {
+-      "format": "<",
+-      "interval": "once",
++      "format": "\u2190",
+       "on-click": "sway_workspace goto prev",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/gows_next": {
+-      "format": ">",
+-      "interval": "once",
++      "format": "\u2192",
+       "on-click": "sway_workspace goto next",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/mvws_next": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF101",
+       "on-click": "sway_workspace move next",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/okb": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF11C",
+       "on-click": "toggle_onscreen_keyboard.py",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/smenu": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF277",
+       "on-click": "toggle_menu.sh",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/ws1": {
+       "format": "1",
+-      "interval": "once",
+       "on-click": "swaymsg workspace number 1",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/ws2": {
+       "format": "2",
+-      "interval": "once",
+       "on-click": "swaymsg workspace number 2",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/ws3": {
+       "format": "3",
+-      "interval": "once",
+       "on-click": "swaymsg workspace number 3",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/ws4": {
+       "format": "4",
+-      "interval": "once",
+       "on-click": "swaymsg workspace number 4",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/ws5": {
+       "format": "5",
+-      "interval": "once",
+       "on-click": "swaymsg workspace number 5",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/blc_down": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF063\uF186",
+       "on-click": "brightnessctl --device=backlight_cool set 10%-",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/blc_up": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF186\uF062",
+       "on-click": "brightnessctl --device=backlight_cool set 10%+",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/blw_down": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF063\uF185",
+       "on-click": "brightnessctl --device=backlight_warm set 10%-",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/blw_up": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF185\uF062",
+       "on-click": "brightnessctl --device=backlight_warm set 10%+",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "idle_inhibitor": {
+       "format": "{icon}",
+       "format-icons": {
+-        "activated": "",
+-        "deactivated": ""
++        "activated": "\uF06E",
++        "deactivated": "\uF070"
+       },
+-      "min-length": 5,
++      "min-length": 5
+     },
+     "custom/ebc_dump_buffers": {
+-      "format": "🐃",
+-      "interval": "once",
++      "format": "\u2707",
+       "on-click": "rockchip_ebc_dump_buffers.py",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/ebc_cycle_driver_mode": {
+-      "format": "🚲",
+-      "interval": "once",
++      "format": "\u2727",
++      "format-alt": "\u2726",
+       "on-click": "python -c 'import rockchip_ebc_custom_ioctl as reci; reci.cycle_driver_mode()'",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/ebc_refresh": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uf2f1",
+       "on-click": "dbus-send --type=method_call --dest=org.pinenote.ebc_custom / org.pinenote.ebc_custom.GlobalRefresh",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/rotate_0": {
+-      "format": "R0",
+-      "interval": "once",
++      "format": "\u25AC",
+       "on-click": "sway_rotate.sh rotnormal",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/rotate_90": {
+-      "format": "R90",
+-      "interval": "once",
++      "format": "\u25AE",
+       "on-click": "sway_rotate.sh rotright",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/rotate_180": {
+       "format": "R180",
+-      "interval": "once",
+       "on-click": "sway_rotate.sh rotinvert",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/rotate_270": {
+       "format": "R270",
+-      "interval": "once",
+       "on-click": "sway_rotate.sh rotleft",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "custom/key_pageup": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF102",
+       // "on-click": "wtype -P page_up",
+       "on-click": "swaymsg resize grow width 10px; swaymsg resize grow height 10px",
+       "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+     "custom/key_pagedown": {
+-      "format": "",
+-      "interval": "once",
++      "format": "\uF103",
+       // "on-click": "wtype -P page_down",
+       "on-click": "swaymsg resize shrink width 10px; swaymsg resize shrink height 10px",
+       "min-length": 5,
+-      "tooltip": false,
+-    },
+-
+-    "custom/battery_watts": {
+-      "exec": "battery_watts.sh",
+-      "format": " {}W",
+-      "interval": 10,
+-      "min-length": 5,
+-      "tooltip": false,
++      "tooltip": false
+     },
+ 
+     "tray": {

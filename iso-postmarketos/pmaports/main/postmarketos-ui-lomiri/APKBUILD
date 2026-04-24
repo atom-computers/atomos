@@ -1,0 +1,126 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=postmarketos-ui-lomiri
+pkgver=5
+pkgrel=0
+pkgdesc="(Wayland) The convergent desktop environment (Experimental)"
+url="https://lomiri.com/"
+# ppc64le: Missing lomiri-weather-app
+# loongarch64: Missing lomiri-docviewer-app
+arch="noarch !armhf !ppc64le !riscv64 !loongarch64"
+license="GPL-3.0-or-later"
+depends="
+	bluez
+	hfd-service
+	lomiri
+	lomiri-indicator-location
+	lomiri-location-service
+	lomiri-notifications
+	lomiri-system-settings
+	polkit-elogind
+	postmarketos-artwork-wallpapers-gnome
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	postmarketos-base-ui-qt-tweaks
+	postmarketos-base-ui-qt-wayland
+	postmarketos-base-ui-tinydm
+	postmarketos-base-ui-wifi
+	repowerd
+	sensorfw
+	superd
+	tinydm
+	xwayland
+"
+_pmb_recommends="
+	ayatana-indicator-messages
+	ayatana-indicator-sound
+	deviceinfo-converter
+	font-noto
+	font-noto-extra
+	font-noto-emoji
+	lomiri-calculator-app
+	lomiri-clock-app
+	lomiri-docviewer-app
+	lomiri-filemanager-app
+	lomiri-gallery-app
+	lomiri-sounds
+	lomiri-terminal-app
+	lomiri-weather-app
+	maliit-keyboard
+	morph-browser
+	postmarketos-artwork-wallpapers
+	ttyescape
+	xdg-user-dirs
+	yaru-icon-theme
+	yaru-theme
+"
+subpackages="
+	$pkgname-openrc
+"
+source="
+	000-gschema.override
+	lomiri.desktop
+	set-xdg-env.sh
+	start_lomiri.sh
+	superd/ayatana-indicator-bluetooth.service
+	superd/ayatana-indicator-datetime.service
+	superd/ayatana-indicator-messages.service
+	superd/ayatana-indicator-power.service
+	superd/ayatana-indicator-session.service
+	superd/ayatana-indicator-sound.service
+	superd/lomiri-indicator-location.service
+	superd/lomiri-indicator-network.service
+"
+options="!check pmb:drm"
+
+package() {
+	install -Dm644 "$srcdir"/000-gschema.override \
+		"$pkgdir"/usr/share/glib-2.0/schemas/000-postmarketos.gschema.override
+	install -Dm644 "$srcdir"/lomiri.desktop \
+		"$pkgdir"/usr/share/wayland-sessions/lomiri.desktop
+	install -Dm755 "$srcdir"/start_lomiri.sh \
+		"$pkgdir"/usr/bin/start_lomiri
+	install -Dm755 "$srcdir"/set-xdg-env.sh \
+		"$pkgdir"/etc/profile.d/set-xdg-env.sh
+
+	# Disable setup wizard
+	mkdir -p "$pkgdir"/etc/skel/.config/lomiri
+	touch "$pkgdir"/etc/skel/.config/lomiri/wizard-has-run
+}
+
+openrc() {
+	install_if="$pkgname openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		openrc
+		postmarketos-base-ui-bluez-openrc
+		postmarketos-base-ui-elogind
+	"
+
+	# superd is only needed on OpenRC
+	mkdir -p "$subpkgdir"/etc/superd/services/
+	for file in "$srcdir"/*.service; do
+		filename=$(basename $file)
+		# Install service
+		install -Dm644 "$file" \
+			"$subpkgdir"/usr/share/superd/services/"$filename"
+		# Enable by default
+		ln -s /usr/share/superd/services/"$filename" \
+			"$subpkgdir"/etc/superd/services/"$filename"
+	done
+}
+
+sha512sums="
+a77a61508a6f00f1ac036726226798ff9165cb167877a1a6e22c8ea78e8c4348b54884c0bed458ac9a85727ee1500f14317803b1d7e647b8f38d09d864df0227  000-gschema.override
+26d677d1b4e1e4d358e947bce880746b6bad6f7c4700f7e675acf126c5125004d4d6b1508810fa39526fa3a0a2e5547c64cd6d41f1dfeec09a6a549dcbdb97c8  lomiri.desktop
+2272a77324d1b04aac5f9ab47f083e5200290ec4281617f553725083f010cb359bbdd3376894cc3b8d30e428355eeedea88f22af98a59986af1b64fb97f4de27  set-xdg-env.sh
+89c1f9c85fe8b3021fb1440cee6e1760af54d9b3882fd48a2974f30e1979e0816414086f92e3c4a1d7d5e409843030bb084bd11e21e852df883d013ab961be6d  start_lomiri.sh
+d1daa16ca8a8e23db5d3cf26de555393e9104904bbe7bafd3c147cc6a0b6ff7b77ae8799b4ad46389d4457d1e331be5d5867821673af0a6063a032345a7cb70e  ayatana-indicator-bluetooth.service
+bfb29d9940b7f23801dae31ead72d0f5c2a149d89d2e562d6303a865461f81e028c634461fdf6288cf2685c7a374c4a284b1bd991566be370f5f03c0ad550178  ayatana-indicator-datetime.service
+6ad5a28e27509296054dfd356a8a3fe54dd836b297c6a3a5fb1d43ab43350e549bc0f3367ba186ea69aa244bb9db80f8189a8257cff2b5bbfa809e82d7125d9e  ayatana-indicator-messages.service
+2b793f473d7e670951e0fda21b6ac3dd3b62a33e8195f3583c2c1c264f872fbe9edd52b37dfd675a0ab61028c5a247702b17f0e2a06153dc0ee24a6910117a94  ayatana-indicator-power.service
+4ab675d03d698c0414b38e7d0a1119d8096f8f22371daa997788893f5a36183b89bf03ce28c63253bf97f4a79c628eb2f1c21cf4823fda00e6f9d008e3e89ad3  ayatana-indicator-session.service
+24dc86bc4884739844906b28071ca4d7a153e8c34fbc1105110733a18680115bc84de419c982ad9b38e04b7412c6d7bab997380f185cb6cb1f4544fe8adaee19  ayatana-indicator-sound.service
+184e23694fc5d44b6d26304e7e63e83afc4c4e7eee91e1fcc33b2fbb27e279e11fa99cbbcf3b5d98a0fa74bbcaaba9d496a9eaef1ff7b334c6a1d7da383878a2  lomiri-indicator-location.service
+7b58606410ba852dde9cb94ec5592a2089d8bf4b68bfafc752d84672b2ec2bf884bd8de2ae68c235e5c9d01f6b5dcf719521af37348fd6eca138fcd6713c5dbc  lomiri-indicator-network.service
+"

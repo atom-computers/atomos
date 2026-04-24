@@ -1,0 +1,27 @@
+option('introspection', type: 'feature', value: 'auto')
+option('vapi', type: 'boolean', value: true)
+
+option('udev',
+       type: 'boolean', value: true,
+       description: 'Whether to install the udev rules')
+option('daemon',
+       type: 'boolean', value: true,
+       description: 'Whether to build the daemon')
+option('gtk_doc',
+       type: 'boolean', value: false,
+       description: 'Whether to generate the API reference for Libfeedback')
+option('man',
+       type: 'boolean', value : false,
+       description : 'generate man pages (requires rst2man)')
+option('tests',
+       type: 'boolean', value: true,
+       description: 'Whether to compile unit tests')
+option('systemd_user_unit_dir',
+       type: 'string', value: '',
+       description: 'Directory for systemd user units')
+option('systemd_sysusers_dir',
+       type: 'string', value: '',
+       description: 'Directory for sysusers configuration')
+option('media-roles',
+       type: 'boolean', value: false,
+       description: 'Use media roles')

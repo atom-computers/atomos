@@ -1,0 +1,87 @@
+diff -Naur k2ul-jb-3.4.10-cl157896-2-clone/arch/arm/mm/init.c k2ul-jb-3.4.10-cl157896-2/arch/arm/mm/init.c
+--- k2ul-jb-3.4.10-cl157896-2-clone/arch/arm/mm/init.c	2013-07-04 09:45:43.000000000 +0200
++++ k2ul-jb-3.4.10-cl157896-2/arch/arm/mm/init.c	2019-05-27 17:27:17.141150059 +0200
+@@ -97,7 +97,7 @@
+ 	int free = 0, total = 0, reserved = 0;
+ 	int shared = 0, cached = 0, slab = 0, i;
+ 	struct meminfo * mi = &meminfo;
+-	unsigned long kgsl_alloc = kgsl_get_alloc_size(0);
++//unsigned long kgsl_alloc = kgsl_get_alloc_size(0);
+ 	int ion_alloc = ion_iommu_heap_dump_size();
+ 
+ 	printk("Mem-info:\n");
+@@ -143,7 +143,7 @@
+ 	printk("%d slab pages\n", slab);
+ 	printk("%d pages shared\n", shared);
+ 	printk("%d pages swap cached\n", cached);
+-	printk("KGSL_ALLOC: %8lu kB\n", kgsl_alloc >> 10);
++	//printk("KGSL_ALLOC: %8lu kB\n", kgsl_alloc >> 10);
+ 	printk("ION_ALLOC:  %8d kB\n", ion_alloc >> 10);
+ }
+ 
+diff -Naur k2ul-jb-3.4.10-cl157896-2-clone/fs/proc/meminfo.c k2ul-jb-3.4.10-cl157896-2/fs/proc/meminfo.c
+--- k2ul-jb-3.4.10-cl157896-2-clone/fs/proc/meminfo.c	2013-07-04 09:47:08.000000000 +0200
++++ k2ul-jb-3.4.10-cl157896-2/fs/proc/meminfo.c	2019-05-27 17:38:40.642919168 +0200
+@@ -29,7 +29,7 @@
+ 	unsigned long pages[NR_LRU_LISTS];
+ 	int lru;
+ 	unsigned long ion_alloc  = ion_iommu_heap_dump_size();
+-	unsigned long kgsl_alloc = kgsl_get_alloc_size(1);
++//unsigned long kgsl_alloc = kgsl_get_alloc_size(1);
+ 	unsigned long subtotal;
+ 
+ #define K(x) ((x) << (PAGE_SHIFT - 10))
+@@ -52,7 +52,7 @@
+ 		K(global_page_state(NR_SLAB_RECLAIMABLE) + global_page_state(NR_SLAB_UNRECLAIMABLE)) +
+ 		(global_page_state(NR_KERNEL_STACK) * THREAD_SIZE / 1024) +
+ 		K(global_page_state(NR_PAGETABLE)) +
+-		(vmi.alloc >> 10) + (kgsl_alloc >> 10) + (ion_alloc >> 10);
++		//(vmi.alloc >> 10) + (kgsl_alloc >> 10) + (ion_alloc >> 10);
+ 
+ 	printk("MemFree:        %8lu kB\n"
+ 			"Buffers:        %8lu kB\n"
+@@ -65,7 +65,7 @@
+ 			"KernelStack:    %8lu kB\n"
+ 			"VmallocAlloc:   %8lu kB\n"
+ 			"ION_Alloc:      %8lu kB\n"
+-			"KGSL_Alloc:     %8lu kB\n"
++			//"KGSL_Alloc:     %8lu kB\n"
+ 			"Subtotal:       %8lu kB\n",
+ 			K(i.freeram),
+ 			K(i.bufferram),
+@@ -78,7 +78,7 @@
+ 			global_page_state(NR_KERNEL_STACK) * THREAD_SIZE / 1024,
+ 			(vmi.alloc >> 10),
+ 			(ion_alloc >> 10),
+-			(kgsl_alloc >> 10),
++			//(kgsl_alloc >> 10),
+ 			subtotal);
+ }
+ 
+@@ -91,7 +91,7 @@
+ 	long cached;
+ 	unsigned long pages[NR_LRU_LISTS];
+ 	int lru;
+-	unsigned long kgsl_alloc = kgsl_get_alloc_size(0);
++//unsigned long kgsl_alloc = kgsl_get_alloc_size(0);
+ 
+ #define K(x) ((x) << (PAGE_SHIFT - 10))
+ 	si_meminfo(&i);
+@@ -161,7 +161,7 @@
+ 		"VmallocUserMap: %8lu kB\n"
+ 		"VmallocVpage:   %8lu kB\n"
+ 		"VmallocChunk:   %8lu kB\n"
+-		"KGSL_ALLOC:     %8lu kB\n"
++		//"KGSL_ALLOC:     %8lu kB\n"
+ 		"ION_ALLOC:      %8d kB\n"
+ #ifdef CONFIG_MEMORY_FAILURE
+ 		"HardwareCorrupted: %5lu kB\n"
+@@ -227,7 +227,7 @@
+ 		vmi.usermap >> 10,
+ 		vmi.vpages >> 10,
+ 		vmi.largest_chunk >> 10,
+-		kgsl_alloc >> 10,
++		//kgsl_alloc >> 10,
+ 		ion_iommu_heap_dump_size() >> 10
+ #ifdef CONFIG_MEMORY_FAILURE
+ 		,atomic_long_read(&mce_bad_pages) << (PAGE_SHIFT - 10)

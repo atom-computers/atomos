@@ -1,0 +1,21 @@
+--- a/drivers/staging/android/mtk_ion/mtk/ion_drv.h
++++ b/drivers/staging/android/mtk_ion/mtk/ion_drv.h
+@@ -10,6 +10,8 @@
+ 
+ #include <ion.h>
+ 
++#define ion_phys_addr_t phys_addr_t
++
+ #define BACKTRACE_SIZE 10
+ 
+ #define ION_RECORD_TOTAL_SIZE_SUPPORT
+--- a/drivers/staging/android/mtk_ion/ion.h
++++ b/drivers/staging/android/mtk_ion/ion.h
+@@ -181,6 +181,6 @@
+  * holding a reference.
+  */
+ int ion_phys(struct ion_client *client, struct ion_handle *handle,
+-	     ion_phys_addr_t *addr, size_t *len);
++	     phys_addr_t *addr, size_t *len);
+ 
+ #endif /* _LINUX_ION_H */

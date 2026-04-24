@@ -1,0 +1,11 @@
+--- a/drivers/gpu/arm/t8xx/r22p0/mali_kbase_core_linux.c	2022-12-10 16:42:44.274410909 +0100
++++ b/drivers/gpu/arm/t8xx/r22p0/mali_kbase_core_linux.c	2022-12-10 16:44:08.294593787 +0100
+@@ -278,7 +278,7 @@
+  * Older versions, before v4.6, of the kernel doesn't have
+  * kstrtobool_from_user(), except longterm 4.4.y which had it added in 4.4.28
+  */
+-static int kstrtobool_from_user(const char __user *s, size_t count, bool *res)
++int kstrtobool_from_user(const char __user *s, size_t count, bool *res)
+ {
+ 	char buf[32];
+ 

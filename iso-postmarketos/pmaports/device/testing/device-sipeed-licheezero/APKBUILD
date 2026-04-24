@@ -1,0 +1,67 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-sipeed-licheezero
+pkgdesc="Sipeed Lichee Zero"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-stable
+	postmarketos-base
+	u-boot-sunxi
+	u-boot-tools
+"
+makedepends="
+	devicepkg-dev
+	dtc
+	u-boot-tools
+"
+source="
+	deviceinfo
+	modules-initfs
+	uboot-script.cmd
+	overlay.txt
+	overlay/i2c0-user.dts
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/uboot-script.cmd \
+		"$srcdir"/boot.scr
+
+	dtc \
+		-@ \
+		-I dts \
+		-O dtb \
+		-o "$srcdir"/i2c0-user.dtbo \
+		"$srcdir"/i2c0-user.dts
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+	install -Dm644 "$srcdir"/overlay.txt \
+		"$pkgdir"/boot/overlay.txt
+	install -Dm644 "$srcdir"/i2c0-user.dtbo \
+		"$pkgdir"/boot/overlay/i2c0-user.dtbo
+}
+
+sha512sums="
+e937e4c0b1ef952cb04b4c70e3d25524396493760cea962a147ed242be73d6707309008577a9a96659e8505a26965fbad96c205f789a79686f111d649b6a30d0  deviceinfo
+27b3ef04bea6d690099c1928f80bac63f9bfa94e6cea61f847dcd078f385af7895d176f7916f6c6203ccb9f5724a27d7ff94b62c8af746b36cb7aacd8741175b  modules-initfs
+c1a4923c97065218be249ae32d4067c454f15e7a4949fbf6012dae03062f16783385d52982d9e49d03d46979f3a50a6f6a8f26c42887e120062302ec94f49452  uboot-script.cmd
+3893ee2b0d8ddd018cc909d8157d79e6637fe546670430899c463452fd92ae9d9d6c4d212631d93b55e838f29b9e34fd22ab58a3ce628fec75a2d21944f8313d  overlay.txt
+8980f09f9afd276d0373545f203ee362f663ae055bf87df22e8085e8a4e53a4e46e96e2b4f8adb24b1dc77fffdf050fb8663008a742ad77c6cfbc50e3aff043f  i2c0-user.dts
+"

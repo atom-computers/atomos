@@ -1,0 +1,78 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_matissewifi_defconfig
+
+pkgname=linux-samsung-matissewifi-downstream
+pkgver=3.4.0
+pkgrel=5
+pkgdesc="Samsung Galaxy Tab 4 10.1 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-matissewifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev dtbtool devicepkg-dev"
+
+# Source
+_repository="android_kernel_samsung_matissewifi"
+_commit="0761bc76449b73747698b76a155883342192106f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/GalaxyTab4/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	timeconst.pl-Eliminate-Perl-warning.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	00_smd_private.patch
+	02_mdss_mdp_trace.patch
+	03_qdsp6v2.patch
+	04_q6voice.patch
+	random_mac.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" CONFIG_DEBUG_SECTION_MISMATCH=y
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+fe9bfcd7b16519b60d555492db9ca1f9afe5574da93931221b8aae3b06ac768ead456414e08a9aa08cde57ae5d07a59c9052d6decd15e1cc56ce379c4c712ec4  linux-samsung-matissewifi-0761bc76449b73747698b76a155883342192106f.tar.gz
+d2f023427c60f90bf95190627473938c1335e6c37eaa6809ac6e81bb422072a356a5b31dfc7445f9631e78352621054eae641c87958da22caf05afabac1080c6  config-samsung-matissewifi.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+25217ec622dbcb811c9a7375c6e360f313e58c8433a300c9a9afd3f17712ec0d322e16501c72c49fef9e38a2d3a69718401bf4269977fccd075a4a57d8458c5d  linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+39892cc41e484c51dccc29cadea475aaf99772bafb19231086b614b9eaee520843cd9361c89a6780229961e0ebf4bbf0e115d0e30f8302944b78091fcf7900e7  00_smd_private.patch
+8dd3c227af5c379eedecdabe64a481de3e8241431b5d3d3984ffad65ee74706860115eb1b797afe05f6c360f6696bcb7165fa7d634a4a7a147d98f45cbb5246d  02_mdss_mdp_trace.patch
+1465b7f08dd4d7956c6651da3767648db085f4af8014fd3b24547626ba608734a0c6d8e86ffe086d81817c29f0d8e284e21a3ba50f51cd94ab42935bc124ad30  03_qdsp6v2.patch
+4e7484eaa142e013c9aee12053d91a65983f7629d2b923566d4431143fa0529988dbc28b01dee21336995090ce8127b2ba79208bf61df359632bfeebae9c6618  04_q6voice.patch
+27f890cf82027649ba742b606a87ce6a82f9685b075bb7b50bffec77221e70434ee78d118d39048350537c5ecdad208658967e492eeeb997e7f6884fa78ac696  random_mac.patch
+"

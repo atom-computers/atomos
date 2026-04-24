@@ -1,0 +1,49 @@
+--- a/Makefile
++++ b/Makefile
+@@ -319,8 +319,7 @@
+ # Alternatively CROSS_COMPILE can be set in the environment.
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+-ARCH            ?= arm64
+-CROSS_COMPILE   ?= $(srctree)/toolchain/clang/host/linux-x86/clang-r383902/bin/aarch64-linux-gnu-
++ARCH		?= $(SUBARCH)
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+@@ -386,7 +385,7 @@
+ OBJSIZE		= llvm-size
+ STRIP		= llvm-strip
+ else
+-CC		= $(srctree)/toolchain/clang/host/linux-x86/clang-r383902/bin/clang
++CC		= $(CROSS_COMPILE)gcc
+ LD		= $(CROSS_COMPILE)ld
+ AR		= $(CROSS_COMPILE)ar
+ NM		= $(CROSS_COMPILE)nm
+--- a/kernel/gen_kheaders.sh
++++ b/kernel/gen_kheaders.sh
+@@ -8,7 +8,6 @@
+ outdir="$(pwd)"
+ tarfile=$1
+ cpio_dir=$outdir/$tarfile.tmp
+-cpio=$KBUILD_SRC/tools/build/cpio
+ 
+ dir_list="
+ include/
+@@ -59,7 +58,7 @@
+ pushd $srctree > /dev/null
+ for f in $dir_list;
+ 	do find "$f" -name "*.h";
+-done | $cpio --quiet -pd $cpio_dir
++done | cpio --quiet -pd $cpio_dir
+ 
+ popd > /dev/null
+ 
+@@ -67,7 +66,7 @@
+ # happen with out of tree builds. Just silence CPIO for now.
+ for f in $dir_list;
+ 	do find "$f" -name "*.h";
+-done | $cpio --quiet -pd $cpio_dir >/dev/null 2>&1
++done | cpio --quiet -pd $cpio_dir >/dev/null 2>&1
+ 
+ 
+ # Remove comments except SDPX lines

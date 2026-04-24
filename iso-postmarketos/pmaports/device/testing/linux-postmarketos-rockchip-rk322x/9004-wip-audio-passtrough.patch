@@ -1,0 +1,111 @@
+Patch from https://github.com/rk-unofficial-cfw/LibreELEC.tv/blob/le12-rk322x-wip/projects/Rockchip/devices/RK322X/patches/linux/default/linux-9004-wip-audio-passtrough.patch
+
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.c b/drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.c
+index d7e65c869415..2ea9f69d312b 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.c
+@@ -40,8 +40,11 @@ static int dw_hdmi_i2s_hw_params(struct device *dev, void *data,
+ {
+ 	struct dw_hdmi_i2s_audio_data *audio = data;
+ 	struct dw_hdmi *hdmi = audio->hdmi;
++	int sample_width = hparms->sample_width;
++	int ca = hparms->cea.channel_allocation;
+ 	u8 conf0 = 0;
+ 	u8 conf1 = 0;
++	u8 conf2 = 0;
+ 	u8 inputclkfs = 0;
+
+ 	/* it cares I2S only */
+@@ -57,6 +60,17 @@ static int dw_hdmi_i2s_hw_params(struct device *dev, void *data,
+ 	inputclkfs	= HDMI_AUD_INPUTCLKFS_64FS;
+ 	conf0		= (HDMI_AUD_CONF0_I2S_SELECT | HDMI_AUD_CONF0_I2S_EN0);
+
++	if (fmt->bit_fmt == SNDRV_PCM_FORMAT_IEC958_SUBFRAME_LE) {
++		conf2 |= HDMI_AUD_CONF2_NLPCM;
++		if (hparms->channels == 8)
++			conf2 |= HDMI_AUD_CONF2_HBR;
++
++		sample_width = 21;
++		ca = 0;
++	}
++
++	hdmi_write(audio, conf2, HDMI_AUD_CONF2);
++
+ 	/* Enable the required i2s lanes */
+ 	switch (hparms->channels) {
+ 	case 7 ... 8:
+@@ -70,10 +84,13 @@ static int dw_hdmi_i2s_hw_params(struct device *dev, void *data,
+ 		/* Fall-thru */
+ 	}
+
+-	switch (hparms->sample_width) {
++	switch (sample_width) {
+ 	case 16:
+ 		conf1 = HDMI_AUD_CONF1_WIDTH_16;
+ 		break;
++	case 21:
++		conf1 = HDMI_AUD_CONF1_WIDTH_21;
++		break;
+ 	case 24:
+ 	case 32:
+ 		conf1 = HDMI_AUD_CONF1_WIDTH_24;
+@@ -104,7 +121,7 @@ static int dw_hdmi_i2s_hw_params(struct device *dev, void *data,
+ 	dw_hdmi_set_sample_rate(hdmi, hparms->sample_rate);
+ 	dw_hdmi_set_channel_status(hdmi, hparms->iec.status);
+ 	dw_hdmi_set_channel_count(hdmi, hparms->channels);
+-	dw_hdmi_set_channel_allocation(hdmi, hparms->cea.channel_allocation);
++	dw_hdmi_set_channel_allocation(hdmi, ca);
+
+ 	hdmi_write(audio, inputclkfs, HDMI_AUD_INPUTCLKFS);
+ 	hdmi_write(audio, conf0, HDMI_AUD_CONF0);
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.h b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.h
+index 1999db05bc3b..bff849a336f7 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.h
++++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.h
+@@ -917,8 +917,13 @@ enum {
+ 	HDMI_AUD_CONF1_MODE_BURST_1 = 0x60,
+ 	HDMI_AUD_CONF1_MODE_BURST_2 = 0x80,
+ 	HDMI_AUD_CONF1_WIDTH_16 = 0x10,
++	HDMI_AUD_CONF1_WIDTH_21 = 0x15,
+ 	HDMI_AUD_CONF1_WIDTH_24 = 0x18,
+
++/* AUD_CONF1 field values */
++	HDMI_AUD_CONF2_NLPCM = 0x02,
++	HDMI_AUD_CONF2_HBR = 0x01,
++
+ /* AUD_CTS3 field values */
+ 	HDMI_AUD_CTS3_N_SHIFT_OFFSET = 5,
+ 	HDMI_AUD_CTS3_N_SHIFT_MASK = 0xe0,
+diff -ruPN linux/sound/soc/rockchip/rockchip_i2s.c linux-new/sound/soc/rockchip/rockchip_i2s.c
+--- linux/sound/soc/rockchip/rockchip_i2s.c	2023-08-11 12:08:27.000000000 +0200
++++ linux-new/sound/soc/rockchip/rockchip_i2s.c	2023-08-16 16:15:37.839774276 +0200
+@@ -391,6 +391,9 @@
+ 	case SNDRV_PCM_FORMAT_S32_LE:
+ 		val |= I2S_TXCR_VDW(32);
+ 		break;
++        case SNDRV_PCM_FMTBIT_IEC958_SUBFRAME_LE:
++                val |= I2S_TXCR_VDW(21);
++                break;
+ 	default:
+ 		return -EINVAL;
+ 	}
+@@ -693,7 +696,8 @@
+ 					SNDRV_PCM_FMTBIT_S16_LE |
+ 					SNDRV_PCM_FMTBIT_S20_3LE |
+ 					SNDRV_PCM_FMTBIT_S24_LE |
+-					SNDRV_PCM_FMTBIT_S32_LE;
++					SNDRV_PCM_FMTBIT_S32_LE |
++					SNDRV_PCM_FMTBIT_IEC958_SUBFRAME_LE;
+ 
+ 		i2s->playback_dma_data.addr = res->start + I2S_TXDR;
+ 		i2s->playback_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+@@ -714,7 +718,8 @@
+ 				       SNDRV_PCM_FMTBIT_S16_LE |
+ 				       SNDRV_PCM_FMTBIT_S20_3LE |
+ 				       SNDRV_PCM_FMTBIT_S24_LE |
+-				       SNDRV_PCM_FMTBIT_S32_LE;
++				       SNDRV_PCM_FMTBIT_S32_LE |
++				       SNDRV_PCM_FMTBIT_IEC958_SUBFRAME_LE;
+ 
+ 		i2s->capture_dma_data.addr = res->start + I2S_RXDR;
+ 		i2s->capture_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;

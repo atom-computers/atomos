@@ -1,0 +1,56 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_m7_defconfig
+
+pkgname=linux-htc-m7
+pkgver=3.4.10
+pkgrel=5
+pkgdesc="HTC One M7 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-m7"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_htc_m7"
+_commit="f6eb6496406f5a06cdd4716e494082d78df70e83"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-don-t-hardcode-cross_compile-in-makefile.patch
+	0002-change-lzop-9-to-lzop-6.patch
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.0-fix-piggy.lzo.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+7014029604b8c448c7d2d6302b9404521d89b12a3df687f3aee10e73cd49b3c31fbd5a3db92c082eeda93e0e83b00487d0ee5e6311f4f9fcb32a4eb139d0d231  linux-htc-m7-f6eb6496406f5a06cdd4716e494082d78df70e83.tar.gz
+618dae0f4e950af6f2a2b5b0dad2d812808d43145c33696cb3218664997d02364aa089dcde139e9c476ea2012dde23ca511e1c470fd4944e8abc745799c0d955  config-htc-m7.armv7
+129e844aadc30b214ed41968b8a0246d21b224b3e7eecc8b056ec6cef122eb5dbdba3927d5db1499e7335211b74f8b38bf756fa48f099a87921e260d99eb27bc  0001-don-t-hardcode-cross_compile-in-makefile.patch
+526bf8554203b2cde43ccb145589f8f0114f06bbc335b8eb606ec1bb1849824f087cf362bf5ea4f0b84e660de5648fe753995a109ade7aaa11f2bf7ca48d233f  0002-change-lzop-9-to-lzop-6.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+8837c884060d87232ba3fa9fce0e815d7ddf33c82ad49260426fe83754baa2f4d92a36a17561083ac8b3674564b7433b3141cacc63b520deec52bbcc1d92d5c9  linux3.0-fix-piggy.lzo.S.patch
+"

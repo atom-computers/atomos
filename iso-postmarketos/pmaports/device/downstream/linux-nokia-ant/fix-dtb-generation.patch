@@ -1,0 +1,12 @@
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 86e591cc2..7cdfc71ff 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -1069,6 +1069,7 @@ dtb-$(CONFIG_ARCH_ZX) += zx296702-ad1.dtb
+ dtb-$(CONFIG_ARCH_ASPEED) += aspeed-bmc-opp-palmetto.dtb \
+ 	aspeed-bmc-opp-romulus.dtb \
+ 	aspeed-ast2500-evb.dtb
++dtb-$(CONFIG_MACH_MT6739) += mt6739.dtb
+ endif
+ 
+ dtstree		:= $(srctree)/$(src)

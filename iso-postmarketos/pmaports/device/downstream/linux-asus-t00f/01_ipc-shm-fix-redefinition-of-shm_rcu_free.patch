@@ -1,0 +1,32 @@
+From 5c347fdb1f28ee2a7b58161985551a5431a5f886 Mon Sep 17 00:00:00 2001
+From: Peter Mann <pm@xdd.sk>
+Date: Sun, 5 Nov 2017 15:15:36 +0100
+Subject: [PATCH 1/1] ipc/shm: fix redefinition of 'shm_rcu_free'
+
+---
+ ipc/shm.c | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 0001bf90..ddfad445 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -176,15 +176,6 @@ static void shm_rcu_free(struct rcu_head *head)
+ 	ipc_rcu_free(head);
+ }
+ 
+-static void shm_rcu_free(struct rcu_head *head)
+-{
+-	struct ipc_rcu *p = container_of(head, struct ipc_rcu, rcu);
+-	struct shmid_kernel *shp = ipc_rcu_to_struct(p);
+-
+-	security_shm_free(shp);
+-	ipc_rcu_free(head);
+-}
+-
+ static inline void shm_rmid(struct ipc_namespace *ns, struct shmid_kernel *s)
+ {
+ 	ipc_rmid(&shm_ids(ns), &s->shm_perm);
+-- 
+2.13.6
+

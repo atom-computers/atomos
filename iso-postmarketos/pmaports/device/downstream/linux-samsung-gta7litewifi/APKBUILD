@@ -1,0 +1,88 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+
+pkgname=linux-samsung-gta7litewifi
+pkgver=4.19.191
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab A7 Lite kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-gta7litewifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	android-tools
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	cpio
+	gzip
+	xz
+"
+# Source
+_repository="kernel_samsung_gta7litewifi"
+_commit="d7b62c296e4b021c1d3d278034038518a5d88d8c"
+_config="config-$_flavor.$arch"
+source="
+	$_repository-$_commit.tar.gz::https://codeberg.org/lowendlibre/kernel_samsung_gta7litewifi/archive/d7b62c296e4b021c1d3d278034038518a5d88d8c.tar.gz
+	$_config
+	fix_hardcoded_toolchain.patch
+	fix_broken_inline_functions.patch
+	fix_broken_assert_check.patch
+	fix_struct_names.patch
+"
+builddir="$srcdir/$_repository"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	# Gzipping the kernel, not as an unpacker program, but as a real gzip archive, is required for it to boot.
+	# And because of that, we need to remove the uncompressed kernel and replace it with the compressed kernel.
+	# If you do not do that, you will get a bootloader error like this while trying to boot it:
+	# [5349] panic (caller 0x48037667): [5349] decompress kernel image fail!!!
+
+	if [ -f "$_outdir"/arch/arm64/boot/Image ]
+	then
+		rm "$_outdir"/arch/arm64/boot/Image
+	fi
+
+	mv "$_outdir"/arch/arm64/boot/Image.gz "$_outdir"/arch/arm64/boot/Image
+
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	# We also need to convert the kernel DTB into a proper android dtb image with the 64-byte header
+
+	mv "$pkgdir"/boot/dtbs/mediatek/mt6765.dtb "$pkgdir"/boot/dtbs/mediatek/mt6765.dtb.bak
+	mkdtboimg create "$pkgdir"/boot/dtbs/mediatek/mt6765.dtb "$pkgdir"/boot/dtbs/mediatek/mt6765.dtb.bak
+	rm "$pkgdir"/boot/dtbs/mediatek/mt6765.dtb.bak
+}
+
+sha512sums="
+f05a92b19cd521f62f0cac1fcd28405f3e85f3f8edb34ec483ef099f467536fc85baa9734a4f050ca966742a0c1ca651809768405315ea452104ce9817d33dd7  kernel_samsung_gta7litewifi-d7b62c296e4b021c1d3d278034038518a5d88d8c.tar.gz
+602e848744624b972cd14fd4f968fd71faf9b202590d514fd3be3223cf6d5244ef328988f233dce6c3465195544c05ed73a51ca5c8e11d7a3e715f971627dcae  config-samsung-gta7litewifi.aarch64
+d6982a5b955e470ebf99330c391ef8269c0d0c3b54a63e49701eef6031cab5095968ba256eb908832a896ff29498ca2aa7f73771aea5837295aae3ff0cff4001  fix_hardcoded_toolchain.patch
+3c45e4748b03164b88780f20a86e21a79e81e5486a0d380226382c5ae40a23a36bd6ccfab4ed221b54a30015203e9ab22ea6876b7c6e166cf6b0c4bc6574ea79  fix_broken_inline_functions.patch
+b63051f0a6114827ce4378d59e0eca96f4c9d9d78a105b79ebb6ddc1cb317e908b15a6538414b4f2cac79a066168478868987c1dfc40715b1db9f646513d530b  fix_broken_assert_check.patch
+f3b85bad2186b5c23177856432c97f08dcb0220e9e68ce14bcab8ab9b6c7b484c6299d8e2610c912dbb8b16a9a70f94d32c03ff6f5284c95a20c22a17ed15409  fix_struct_names.patch
+"

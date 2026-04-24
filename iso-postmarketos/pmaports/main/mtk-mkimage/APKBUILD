@@ -1,0 +1,18 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=mtk-mkimage
+pkgver=1
+pkgrel=3
+pkgdesc="Append MediaTek header to boot.img files for Mediatek devices"
+url="https://web.archive.org/web/20181218141542/http://rex-shen.net/customize-flash-mt6589-rom/"
+arch="all"
+license="GPL-3.0-or-later"
+source="https://gist.githubusercontent.com/ollieparanoid/6eaaba3d520cf938cee10c72eb31f0a8/raw/80ba45e32e358935a11083e7a847ce582906961a/mtk_mkimage.sh"
+# no tests
+options="!check"
+builddir="$srcdir/"
+
+package() {
+	install -Dm755 mtk_mkimage.sh "$pkgdir"/usr/bin/mtk-mkimage
+}
+
+sha512sums="7709b7abf20fa69eb7ae3f58648f6cefdf85130a2422755c143be05e4f59436f4231bba3965a04da1fe45fdabbdb314a99e08a380c17a4d6d8c1d062d18d074c  mtk_mkimage.sh"

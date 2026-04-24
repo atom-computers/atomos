@@ -1,0 +1,15 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-base-nofde
+pkgver=39
+pkgrel=2
+pkgdesc="Dummy unlocker package for systems without FDE"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+options="!check"
+provider_priority=1
+provides="postmarketos-fde-unlocker=0.0.0"
+
+package() {
+	mkdir -p "$pkgdir"
+}

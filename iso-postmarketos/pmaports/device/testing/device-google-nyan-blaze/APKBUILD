@@ -1,0 +1,86 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Robert Eckelmann <longoserob@postmarketos.org>
+maintainer="WeirdTreeThing <bradyn127@protonmail.com>"
+pkgname=device-google-nyan-blaze
+pkgdesc="HP Chromebook 14 G3"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-google-nyan>=6.1.27-r0
+	postmarketos-base
+	postmarketos-cros-common
+"
+subpackages="
+	$pkgname-mpv-wayland:mpv_wayland
+	$pkgname-mpv-xorg:mpv_xorg
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-sway
+"
+makedepends="devicepkg-dev"
+source="
+	30-xusb-firmware.files
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	modprobe.d/gpu.conf
+	mpv/mpv.conf.wayland
+	mpv/mpv.conf.xorg
+	sway/tinydm/10-no-hardware-cursor.sh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Block nouveau as it is in very bad condition
+	install -Dm644 "$srcdir"/gpu.conf \
+		"$pkgdir"/usr/lib/modprobe.d/gpu.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT, USB and GPU firmware"
+	depends="linux-firmware-mrvl linux-firmware-nvidia"
+
+	# Firmware needed to boot from USB
+	install -Dm644 "$srcdir"/30-xusb-firmware.files \
+		"$subpkgdir"/usr/share/mkinitfs/files/30-xusb-firmware.files
+}
+
+mpv_wayland() {
+	# Looks like wayland libs are installed with some x11 UIs too, so match wlroots here
+	install_if="$pkgname=$pkgver-r$pkgrel mpv wlroots"
+	install -Dm644 "$srcdir"/mpv.conf.wayland \
+		"$subpkgdir"/etc/mpv/mpv.conf
+}
+
+mpv_xorg() {
+	install_if="$pkgname=$pkgver-r$pkgrel mpv xorg-server"
+	install -Dm644 "$srcdir"/mpv.conf.xorg \
+		"$subpkgdir"/etc/mpv/mpv.conf
+}
+
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sway"
+	install -Dm755 "$srcdir"/10-no-hardware-cursor.sh \
+		"$subpkgdir"/usr/share/tinydm/env-wayland.d/10-no-hardware-cursor.sh
+}
+
+sha512sums="
+793688374d77efaf050c187d296d7fd55243773a1257b4d8adfa4cda50d4c0cacc035fb3d419a4b608989ed920636048680d900afe8a712f2166edf51552087a  30-xusb-firmware.files
+d341d5c98867e530c3eb86ec2703a41f008f0e2c42074e52f81f3f92ca33c99bde4b95d2b63c51a589ea16333167ff34945fbc6b25dd84e6116cc308f459ecc8  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+8cf99819584972f96c2342d6fa945bea13f0f374d1525d3b35c41137f4cce71ade20b927072e16c1e354f2a62018bd6c9bed2923a0afa127cc0b9bd645fc3937  modules-initfs
+e6c5382b6f7dd10f350136d65a714de3ae337978c3ca88e63f016b4a42be87b422d2388fbf6d6a2feba15516fb9b409f6c5ff08968829e6fc2d1e8aeb9d3c508  gpu.conf
+8f9dc3c7caeab6c5321dc2bf498f1a03a793f23cb776763316bc356b9d433d7a3337e61154069464dcda200bf390b99f3be8f657a40c6d2f6be3cbc6fb751080  mpv.conf.wayland
+d6bc39df48ba0e985a796426039205335adf1c91b9c150b05a4239339fc78b1748b3a83c699de69e9a5829f29573a323f40788da58ed15b1951de1eab7e31c3d  mpv.conf.xorg
+8ddd237b14e8eea34b8716d155cdf199cf681b1287b482c8e184656d6d0440f018a2d46478c8b45eb790a1e71cfcfefd0f66798cd0b226647f11088549cfae64  10-no-hardware-cursor.sh
+"

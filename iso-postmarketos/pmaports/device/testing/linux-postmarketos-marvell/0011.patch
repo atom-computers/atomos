@@ -1,0 +1,108 @@
+From 4c71a98b6316cd973215558dddb99d7adc360676 Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@armlinux.org.uk>
+Date: Sun, 24 Jun 2018 14:03:31 +0100
+Subject: [PATCH] drm/armada: add detection of DT LCD controllers for probing
+
+Using a virtual device is deprecated, so we have no option but to
+detect the presence of available LCD controllers in DT and probe
+all LCD controllers together within one DRM device.
+
+Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
+---
+ drivers/gpu/drm/armada/armada_drv.c | 52 +++++++++++++++++++++++++----
+ 1 file changed, 45 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/gpu/drm/armada/armada_drv.c b/drivers/gpu/drm/armada/armada_drv.c
+index a2ceaf9f4e7bfe..f3f52fbeae9025 100644
+--- a/drivers/gpu/drm/armada/armada_drv.c
++++ b/drivers/gpu/drm/armada/armada_drv.c
+@@ -234,11 +234,6 @@ static int armada_drm_probe(struct platform_device *pdev)
+ {
+ 	struct component_match *match = NULL;
+ 	struct device *dev = &pdev->dev;
+-	int ret;
+-
+-	ret = drm_of_component_probe(dev, component_compare_dev_name, &armada_master_ops);
+-	if (ret != -EINVAL)
+-		return ret;
+ 
+ 	if (dev->platform_data) {
+ 		char **devices = dev->platform_data;
+@@ -261,6 +256,22 @@ static int armada_drm_probe(struct platform_device *pdev)
+ 				armada_add_endpoints(dev, &match, d->of_node);
+ 			put_device(d);
+ 		}
++	} else {
++		struct device_node *np;
++
++		for_each_compatible_node(np, NULL, "marvell,armada-lcdc") {
++			if (!of_device_is_available(np))
++				continue;
++
++			drm_of_component_match_add(dev, &match, component_compare_of, np);
++		}
++
++		for_each_compatible_node(np, NULL, "marvell,armada-lcdc") {
++			if (!of_device_is_available(np))
++				continue;
++
++			armada_add_endpoints(dev, &match, np);
++		}
+ 	}
+ 
+ 	return component_master_add_with_match(&pdev->dev, &armada_master_ops,
+@@ -297,8 +308,11 @@ static struct platform_driver armada_drm_platform_driver = {
+ 	.id_table = armada_drm_platform_ids,
+ };
+ 
++static struct platform_device *armada_device;
++
+ static int __init armada_drm_init(void)
+ {
++	struct device_node *np;
+ 	int ret;
+ 
+ 	if (drm_firmware_drivers_only())
+@@ -306,16 +320,40 @@ static int __init armada_drm_init(void)
+ 
+ 	ret = platform_driver_register(&armada_lcd_platform_driver);
+ 	if (ret)
+-		return ret;
++		goto err_lcd;
++
+ 	ret = platform_driver_register(&armada_drm_platform_driver);
+ 	if (ret)
+-		platform_driver_unregister(&armada_lcd_platform_driver);
++		goto err_drm;
++
++	for_each_compatible_node(np, NULL, "marvell,armada-lcdc") {
++		if (!of_device_is_available(np))
++			continue;
++
++		of_node_put(np);
++		armada_device = platform_device_register_simple(
++					"armada-drm", -1, NULL, 0);
++		if (IS_ERR(armada_device)) {
++			ret = PTR_ERR(armada_device);
++			goto err_dev;
++		}
++		break;
++	}
++	return 0;
++
++ err_dev:
++	platform_driver_unregister(&armada_drm_platform_driver);
++ err_drm:
++	platform_driver_unregister(&armada_lcd_platform_driver);
++ err_lcd:
+ 	return ret;
+ }
+ module_init(armada_drm_init);
+ 
+ static void __exit armada_drm_exit(void)
+ {
++	if (armada_device)
++		platform_device_unregister(armada_device);
+ 	platform_driver_unregister(&armada_drm_platform_driver);
+ 	platform_driver_unregister(&armada_lcd_platform_driver);
+ }

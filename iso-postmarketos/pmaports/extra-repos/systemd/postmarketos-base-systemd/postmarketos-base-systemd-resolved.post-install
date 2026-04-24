@@ -1,0 +1,5 @@
+#!/bin/sh
+
+[ "$(realpath /etc/resolv.conf)" == /run/systemd/resolve/stub-resolv.conf ] && exit 0
+rm -f /etc/resolv.conf
+ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf

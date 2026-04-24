@@ -1,0 +1,26 @@
+From a1f772d445488501c26e69855c11764a99c0ed36 Mon Sep 17 00:00:00 2001
+From: Edwin <edwin@manjaro.lan>
+Date: Fri, 12 Feb 2021 21:30:59 +0800
+Subject: [PATCH] fix-refresh-rate
+
+---
+ drivers/video/msm/mdss/mdss_fb.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index 030d4129fc8..37f0bc664f0 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -1246,7 +1246,8 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 	var->left_margin = panel_info->lcdc.h_back_porch;
+ 	var->right_margin = panel_info->lcdc.h_front_porch;
+ 	var->hsync_len = panel_info->lcdc.h_pulse_width;
+-	var->pixclock = panel_info->clk_rate / 1000;
++    // var->pixclock = panel_info->clk_rate / 1000;
++    var->pixclock = 1000000 / 60;
+ 
+ 	/* id field for fb app  */
+ 
+-- 
+2.30.0
+

@@ -1,0 +1,24 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Raspberry Pi 5"
+deviceinfo_manufacturer="Raspberry Pi"
+deviceinfo_codename="raspberry-pi5"
+deviceinfo_year="2023"
+deviceinfo_arch="aarch64"
+deviceinfo_disable_dhcpd="true"
+deviceinfo_getty="ttyAMA10;115200"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1920"
+deviceinfo_screen_height="1080"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat16"
+# The following line is required for NVMe/M.2 installs:
+deviceinfo_partition_type="msdos"
+deviceinfo_generate_cmdline_txt="true"

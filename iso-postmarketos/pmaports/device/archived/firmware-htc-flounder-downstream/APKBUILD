@@ -1,0 +1,34 @@
+# Archived: Downstream port, only for testing. Use mainline port (htc-flounder)!
+pkgname=firmware-htc-flounder-downstream
+pkgver=1.0
+pkgrel=0
+_commit="27024f568d1eee70c4a12f3f46aec33f6ee2f225"
+pkgdesc="Firmware for the HTC Google Nexus 9"
+url="https://github.com/Alexandroid99/vendor_htc_flounder"
+arch="aarch64"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/Alexandroid99/vendor_htc_flounder/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_htc_flounder-$_commit"
+
+_files1="bcm20795_firmware.ncd bcm4350b1.hcd bcm4350c0.hcd bcm4354.hcd bcmdhd.cal
+	fw_bcmdhd.bin fw_bcmdhd_apsta.bin maxim_fp35.bin nvavp_aacdec_ucode.bin
+	nvavp_aud_ucode.bin nvavp_mp3dec_ucode.bin nvavp_os_0ff00000.bin
+	nvavp_os_8ff00000.bin nvavp_os_eff00000.bin nvavp_os_f7e00000.bin
+	nvavp_vid_ucode_alt.bin rt5677_elf_vad sar0_CY8C.img sar1_CY8C.img
+	sensor_hub.img synaptics.img touch_fusion.cfg"
+_files2="NETB_img.bin fecs.bin gpccs.bin gpmu_ucode.bin nvhost_msenc031.fw
+	nvhost_tsec.fw vic03_ucode.bin"
+
+package() {
+	for _i in $_files1; do
+	install -Dm644 firmware/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	for _i in $_files2; do
+	install -Dm644 firmware/tegra13x/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/tegra13x/"$_i"
+	done
+}
+sha512sums="c6beb210233f938f1bbcb06ff99566a4755959c865978d4897f82ffdfc3c292a075fdb34e332a8965953a4ec7aec7e36ebd142036e3879b70e835d3b0e8a1543  firmware-htc-flounder-downstream-27024f568d1eee70c4a12f3f46aec33f6ee2f225.tar.gz"

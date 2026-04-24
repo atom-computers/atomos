@@ -1,0 +1,15 @@
+From: Martin Kunze <martin@martinkunze.com>
+Date: Tue, 22 Jul 2025 00:21:30 +0200
+
+This patch aims to fix all errors caused by compiler specific vararg arguments in macros
+
+--- a/kernel/power/tuxonice_userui.c
++++ b/kernel/power/tuxonice_userui.c
+@@ -318,7 +318,5 @@
+ 	if (ui_helper_data.pid == -1)
+ 		pr_err("%s\n", lastheader);
+-	else
+-		toi_message(0, TOI_STATUS, 1, lastheader, NULL);
+ }
+ 
+ /**

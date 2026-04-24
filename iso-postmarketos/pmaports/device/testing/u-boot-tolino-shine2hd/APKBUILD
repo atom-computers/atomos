@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=u-boot-tolino-shine2hd
+pkgver=2023.10
+pkgrel=0
+pkgdesc="U-Boot for Tolino Shine 2 HD"
+arch="armv7"
+_carch="arm"
+license="GPL-2.0"
+url="https://github.com/akemnade/u-boot-fslc"
+makedepends="bash bc dtc bison flex openssl-dev"
+options="!check !tracedeps pmb:cross-native"
+
+install="$pkgname.post-upgrade"
+_repository="u-boot-fslc"
+_commit="4518da106aae1a8ce97d8ca41c248b79fcec63ed"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/akemnade/$_repository/archive/$_commit.tar.gz
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+build() {
+	make ARCH="$_carch" mx6sltolinoshine3_defconfig
+	scripts/config -e ENV_IS_IN_EXT4
+	scripts/config -d ENV_IS_IN_MMC
+	scripts/config --set-str ENV_EXT4_INTERFACE "mmc"
+	scripts/config --set-str ENV_EXT4_DEVICE_AND_PART "0:1"
+	scripts/config --set-str ENV_EXT4_FILE "/uboot.env"
+	make ARCH="$_carch" DEVICE_TREE=imx6sl-tolino-shine2hd
+}
+
+package() {
+	install -D -m644 "$builddir/u-boot-dtb.imx" "$pkgdir/usr/share/u-boot/tolino-shine2hd/u-boot.imx"
+}
+
+sha512sums="
+664c2780aad4ae86e411fe71a8d0e0cf98ca7ef98c3daed9e20b4e88e930bb3f0ca2073052d0481338505c29e7641c0fa54efb320398acf7f659c57193fcd7e7  u-boot-tolino-shine2hd-4518da106aae1a8ce97d8ca41c248b79fcec63ed.tar.gz
+"

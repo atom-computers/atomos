@@ -1,0 +1,75 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/pixi4_5_defconfig
+
+pkgname=linux-alcatel-5010d
+pkgver=3.18.19
+pkgrel=3
+pkgdesc="Alcatel OneTouch Pixi 4 (5) 5010D kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="alcatel-5010d"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	gcc6
+	openssl-dev
+	perl
+"
+
+# Use GCC 6
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_author="Er2ch"
+_repository="linux-ot-5010d"
+_commit="0d82a5ab369dce2f6df876f31359d0394f750f67"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/$_author/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	gcc8-fix-put-user.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	0001-Include-cust.dtsi-don-t-run-python2-drvgen.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_USER="er2" \
+		KBUILD_BUILD_HOST="kitchen" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" ""
+}
+
+sha512sums="
+0045132d42f6afa721c62aef484ec9f5395fe031ba825a02860f95a28a57d2387ba9255b4baa95e003f7b1f222597cf8d24c7452e849c7dce50637702e0faa13  linux-alcatel-5010d-0d82a5ab369dce2f6df876f31359d0394f750f67.tar.gz
+774096ffca52525ee4bb37a146b304fe5264806be854340969b307bf795fe5937b64701d2b8c5b72a4d71996167d66db4557ed4f4c884e2daffe8f0e15126d77  config-alcatel-5010d.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+ab3e3349341cbbec81240499f059e4c7b4ab65d2548e9fa91b65c226f47e3a8747bc8eb2263fa20cbd540e89115e2aedf3626f6535c3390fe988c731fe4cfe18  0001-Include-cust.dtsi-don-t-run-python2-drvgen.patch
+"

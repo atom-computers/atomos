@@ -1,0 +1,49 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-realme-porsche
+pkgdesc="Realme GT 2"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-realme-porsche
+	linux-firmware-ath11k
+	linux-realme-porsche
+	mkbootimg
+	postmarketos-base
+	soc-qcom-sm8350
+"
+makedepends="
+	devicepkg-dev
+	dtc
+	android-tools
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	empty-realme-porsche.dts
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	dtc -O dtb -o "$srcdir/empty-realme-porsche.dtbo" -b 0 -@ \
+		"$srcdir/empty-realme-porsche.dts"
+
+	mkdtboimg create "$srcdir/dtbo.img" --page_size=4096 \
+		"$srcdir/empty-realme-porsche.dtbo"
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir/dtbo.img" "$pkgdir/boot/dtbo.img"
+}
+
+sha512sums="
+d173a8eab2bd832882b34e67fd9976eaa11bbfbfd081548fa087899666c281a7599ac2650040baa0e2b95a7b2f322adc90677325807b46365f3d95621e76f434  deviceinfo
+2b5d4ffa85b94bb81e21883c64955480fb09d50f7dd52118763f6b0b136ba7e3efe08ef29a759fa00ec1d7d0a9e87ba08d41f378452e0f41ff9881db34ec777c  kernel-cmdline.conf
+bbc201f65ee01de96ecedc856e7a9aebfb0e421daa2f25a7eb57f61ac9bd7412caefb9f68ac572dfd26f0d1f9752c4033291694f51c4cb5162d7c767beb8a152  empty-realme-porsche.dts
+"

@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/tank_defconfig
+
+pkgname=linux-amazon-tank
+pkgver=3.10.54
+pkgrel=4
+pkgdesc="Amazon Fire TV Stick (2nd Gen) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-tank"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc4 xz"
+
+# Compiler: GCC 4 (doesn't compile with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_amazon_mt8127"
+_commit="2861aa5f5e0bbb526072d75f24ef3af875519234"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/cmtank/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	01_ozmo_fix_trace.patch
+	02_thermal_fix_include.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+bef51789afd0174f0c88d7cd1f038a754e85a8fa2a159036f154d08b8812e7fcee762d9e231cf1397b66afb846f453e00aae98f74c4c143d83b57b7c83616fe9  linux-amazon-tank-2861aa5f5e0bbb526072d75f24ef3af875519234.tar.gz
+29983a05cd184cfcccfb8c4b3c02fe7b786c57a774637b744f41e8a991962ebcf7fe0208bebbffb724d20eedbbe4bc80a5808c2394ef2e1018342bf34cd0a156  config-amazon-tank.armv7
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+0aa0b433e0b74751351c6782b168b91ffb1cf4c4d305ff1e3e39f3cc4f6321d5e3488a531a1fcac0bb92a2997002d5c1608a55573a7bbf43e32cb612b04793b8  01_ozmo_fix_trace.patch
+158eeb7905fd341432f21a9a16921468285c14dd4a044228119a232e1ce9c77e30c513f62737ebdb40fb27cf4d30542cdb4e62bf2982f8827e195c10d7d40d16  02_thermal_fix_include.patch
+"

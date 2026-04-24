@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config is based on arch/arm64/configs/douglas_debug_defconfig
+#
+# However, this didn't seem to work initially as the generated config
+# file via pmbootstrap was somehow missing CONFIG_USB_G_ANDROID. I then
+# output of the kernel build script provided by Amazon, which printed
+# out the .config used for building the kernel.
+
+pkgname=linux-amazon-douglas
+pkgver=3.18.19
+pkgrel=5
+pkgdesc="Amazon Fire HD 8 (2017) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="amazon-douglas"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+# Compiler: GCC 6
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel_douglas"
+_commit="4ff2b5a4534e275748920ba4ad105af36495bf89"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/shuhaowu/$_repository/archive/$_commit.tar.gz
+	$_config
+	disable-sound.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+eb3804fcbadb268429640a5171ea4788cf8974444a1aa1005801902dbce1c4d67d88cb43d0cee259dc082161a92b285de0a0d18d721220f6d2dff84a179a7dc5  linux-amazon-douglas-4ff2b5a4534e275748920ba4ad105af36495bf89.tar.gz
+a5c13415c5133eb71a40a71dc84c8d4f3ded3cc11650e46bfb9ffba2c01490f5008e659407c5977bd62a83069af23740f36d7236f6dfee0c5adad6d831772122  config-amazon-douglas.aarch64
+aed9fd018a6367214dd00aad9c376c93ed356efbd74e21b49316ab0a21bc372a2077eeed8810f66464544c5bbc7bca6c46985ef42e6cb8f95ad94a1644130d1c  disable-sound.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

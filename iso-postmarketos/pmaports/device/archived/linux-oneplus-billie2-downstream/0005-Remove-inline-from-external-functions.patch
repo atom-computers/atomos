@@ -1,0 +1,51 @@
+From c9b57d68eb48b1f9626e82d45313466b4b3e4a15 Mon Sep 17 00:00:00 2001
+From: Iskren Chernev <me@iskren.info>
+Date: Mon, 22 Feb 2021 19:23:15 +0200
+Subject: [PATCH 5/6] Remove inline from external functions
+
+Signed-off-by: Iskren Chernev <me@iskren.info>
+---
+ fs/f2fs/f2fs.h    | 4 ++--
+ fs/f2fs/segment.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index 76f02a621ed95..016be262190d2 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -3802,8 +3802,8 @@ static inline bool is_journalled_quota(struct f2fs_sb_info *sbi)
+ 
+ extern int f2fs_odiscard_enable;
+ 
+-extern inline void wake_up_odiscard_of2fs(struct f2fs_sb_info *sbi);
+-extern inline void wake_up_otrim_of2fs(struct f2fs_sb_info *sbi);
++extern void wake_up_odiscard_of2fs(struct f2fs_sb_info *sbi);
++extern void wake_up_otrim_of2fs(struct f2fs_sb_info *sbi);
+ 
+ enum {
+ 	F2FS_TRIM_START,
+diff --git a/fs/f2fs/segment.c b/fs/f2fs/segment.c
+index bbd60419054f5..f8c95e94a58c1 100644
+--- a/fs/f2fs/segment.c
++++ b/fs/f2fs/segment.c
+@@ -5167,7 +5167,7 @@ static int select_discard_type_of2fs(struct f2fs_sb_info *sbi, int expect_discar
+ 	return DPOLICY_BG;
+ }
+ 
+-inline void wake_up_odiscard_of2fs(struct f2fs_sb_info *sbi)
++void wake_up_odiscard_of2fs(struct f2fs_sb_info *sbi)
+ {
+ 	struct discard_cmd_control *dcc = SM_I(sbi)->dcc_info;
+ 
+@@ -5178,7 +5178,7 @@ inline void wake_up_odiscard_of2fs(struct f2fs_sb_info *sbi)
+ }
+ 
+ 
+-inline void wake_up_otrim_of2fs(struct f2fs_sb_info *sbi)
++void wake_up_otrim_of2fs(struct f2fs_sb_info *sbi)
+ {
+ 	struct discard_cmd_control *dcc = SM_I(sbi)->dcc_info;
+ 
+-- 
+2.30.1
+

@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: (kernel/samsung/msm8976/)arch/arm64/configs/gts210velte_defconfig
+
+pkgname=linux-samsung-gts210velte
+pkgver=3.10.102
+pkgrel=6
+pkgdesc="Samsung Galaxy Tab S2 9.7 LTE (SM-T819) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-gts210velte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev dtbtool gcc6 devicepkg-dev"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+# gts210velte uses msm8976 kernel
+_repository="android_kernel_samsung_msm8976"
+_commit="f6ab8eed124e3adc1c90d9f3106abd21c0bd0397"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_fix_msm_dba.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		C_INCLUDE_PATH="./arch/arm/mach-msm:./sound/soc/msm/qdsp6v2" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	# As path is symlinked from arm64 to arm, dtb files end up below arm, not arm64
+	echo dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm64/boot/dt.img" "arch/arm/boot/dts/"
+	# Generate master DTB (deviceinfo_bootimg_qcdt).
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm64/boot/dt.img" "arch/arm/boot/dts/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm64/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+4fd6cbb31e389bdc50defb586d4a2d86d8bb51556b45b8f974c5ecb11de4900d36d0af65090f61664e32a48a7cef3f89f57157b460f4d6d5d05fa71e1400a099  linux-samsung-gts210velte-f6ab8eed124e3adc1c90d9f3106abd21c0bd0397.tar.gz
+a1d6a2d9568ff28e0fab964a514947466687370408ca0c21bdd83754822889d5691a81aa3f92d8d845e619db9817d4c64684db5b7ce2a079fdaf3ab6b112426b  config-samsung-gts210velte.aarch64
+7e765cb696fa8c3dfbc305b05cbf1fad85fb9572613d5391e945341dae5974a745f4906c795dc841e5562b19ab77d5257f9741e514af2c2573aa4bb8b262ce51  01_fix_msm_dba.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+cat 1>&2 <<EOF
+*
+* IMPORTANT: The 'device-purism-librem5-nonfree-firmware' package is required
+* to have functional WiFi with this kernel!
+* Install this package manually if it is not installed before rebooting, or
+* else WiFi will no longer work.
+*
+EOF

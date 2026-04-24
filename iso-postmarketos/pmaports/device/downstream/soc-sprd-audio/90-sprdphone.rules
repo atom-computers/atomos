@@ -1,0 +1,6 @@
+# Init
+ATTRS{id}=="sprdphone", RUN+="/usr/bin/alsaucm -c sprdphone set _verb HiFi set _enadev Speaker"
+
+# Jack detection
+SUBSYSTEM=="switch",ATTRS{state}=="[1-4]",RUN+="/usr/bin/alsaucm -c sprdphone set _verb HiFi set _disdev Speaker set _enadev Headphones"
+SUBSYSTEM=="switch",ATTRS{state}=="0",RUN+="/usr/bin/alsaucm -c sprdphone set _verb HiFi set _disdev Headphones set _enadev Speaker"

@@ -1,0 +1,64 @@
+# Kernel config based on: arch/arm/configs/aosp_shinano_scorpion_defconfig
+
+pkgname=linux-sony-scorpion
+pkgver=3.10.84
+pkgrel=5
+pkgdesc="Xperia Z3 Tablet Compact kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="sony-scorpion"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel"
+_commit="1cc4f02f27228698213af5dac9ff690ea0e27d55"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/lowtraxx/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_Input-sentelic-use-static-inline-instead-of-inline.patch
+	00_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+	02_reduce_lzo_compression.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.0-fix-piggy.lzo.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+a3e1bd39f25da9b695fceb0282c036721352c52b7e495f37dc578d6076462c8495cbcf0714e3b03b66e564d08430f0bda6aee40ef45c437028b37ae162cace9b  linux-sony-scorpion-1cc4f02f27228698213af5dac9ff690ea0e27d55.tar.gz
+36181b0a1ddab98ef4f2cd68d33e4a25c1c8f61f1ae750e9f28d04393f98accae0af8c0cb30049ce10814da3baaf04a1cb560f96789ebfb69e5f261f4992fd89  config-sony-scorpion.armhf
+2d77d90b501aa8afbf81629e73fc0a2055b373942975f58277e43f398d0835b3dbbff4a1118137ec82873ba90a254fea87c1d73ba7708578f1779bd0b4c6ff2d  00_Input-sentelic-use-static-inline-instead-of-inline.patch
+5c49f6ff6773a7dc3067d2b1359648fe7a9f758b6c068d6fa69d9aaf24a291ba8022c960317d926aabc11d020a71b20c4e81a6fcf9b21ef66d9b6d065bae23e9  00_Input-lifebook-use-static-inline-instead-of-inline-i.patch
+ef5b912c26fea4ab882592bdf7487942c64b123de8d25d08d976f29743f311742ee2f773bf2d110ddb5095f254dbb0bd4487c5cfce77311929082599199e7ebd  02_reduce_lzo_compression.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+8837c884060d87232ba3fa9fce0e815d7ddf33c82ad49260426fe83754baa2f4d92a36a17561083ac8b3674564b7433b3141cacc63b520deec52bbcc1d92d5c9  linux3.0-fix-piggy.lzo.S.patch
+"

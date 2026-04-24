@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Add firmware partition mount points
+mkdir /data
+mkdir /persist
+mkdir /modem
+
+# Add firmware partitions to fstab
+if [ -z "$(grep /data /etc/fstab)" ]; then
+    echo "/dev/mmcblk0p29     /data       ext4    defaults        0       2" >> /etc/fstab
+fi
+
+if [ -z "$(grep /persist /etc/fstab)" ]; then
+    echo "/dev/mmcblk0p13     /persist    ext4    defaults        0       2" >> /etc/fstab
+fi
+
+if [ -z "$(grep /modem /etc/fstab)" ]; then
+    echo "/dev/mmcblk0p1      /modem      vfat    defaults        0       2" >> /etc/fstab
+fi
+
+exit 0

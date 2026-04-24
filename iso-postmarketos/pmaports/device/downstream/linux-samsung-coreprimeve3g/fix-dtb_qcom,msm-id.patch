@@ -1,0 +1,13 @@
+Just change rev01 with your device that is compatible in case boot.img did not boot.
+
+--- a/arch/arm/boot/dts/sprd-scx35_coreprimeve3g_rev01.dts	2025-09-06 12:37:25.096656766 +0200
++++ b/arch/arm/boot/dts/sprd-scx35_coreprimeve3g_rev01.dts	2025-09-06 12:39:34.634844768 +0200
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 1 0x20000>;
++	qcom,msm-id = <8830 2 0x20000>;
+ 	chosen {
+ 		bootargs = "loglevel=7 init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+

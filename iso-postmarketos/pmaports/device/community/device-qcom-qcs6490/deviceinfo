@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Qualcomm QCS6490 Device"
+deviceinfo_manufacturer="Qualcomm"
+deviceinfo_codename="qcom-qcs6490"
+deviceinfo_year="2025"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_disable_dhcpd="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot-bootpart"
+# Different devices have different partition layouts
+# The Rubik Pi 3 has a LUN with efi, persist and system partitions,
+# while the Dragon Q6A has no fixed partition layout.
+# People installing the Dragon Q6A will not be using fastboot, while
+# those using the Rubik Pi 3 may, so cater to its needs.
+deviceinfo_flash_fastboot_partition_kernel="efi"
+deviceinfo_flash_fastboot_partition_rootfs="system"
+deviceinfo_getty="ttyMSM0;115200"
+deviceinfo_boot_filesystem="fat32"
+# Required for devices using UFS as storage (instead of e.g. eMMC)
+deviceinfo_rootfs_image_sector_size="4096"

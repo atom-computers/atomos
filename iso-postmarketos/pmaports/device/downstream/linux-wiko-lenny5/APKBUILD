@@ -1,0 +1,79 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/k400_defconfig
+
+pkgname=linux-wiko-lenny5
+pkgver=3.18.79
+pkgrel=3
+pkgdesc="Wiko Lenny 5 Kernel"
+arch="armv7"
+_carch="arm"
+_flavor="wiko-lenny5"
+url="https://wikomobile.com"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	linux-headers
+	openssl
+	perl
+	gcc6
+	libc6-compat
+"
+
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_commit="521b3081fabf46d6c5cd533679a987135384863f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/parthibx24/android_kernel_wiko_k300/archive/$_commit.tar.gz
+	$_config
+	fix_dts_headers.patch
+	vdsomunge_upstream.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	0001-Include-cust.dtsi-don-t-run-python2-drvgen.patch
+	head.s-fix.patch
+	proc-v7-fix.patch
+	piggy.gzip.s-fix.patch
+"
+
+builddir="$srcdir/android_kernel_wiko_k300-$_commit"
+
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+c2a33b380898bbdae613328261ff8b3b3bac58263122bb1636a9d43ce1667e7d3ba1d1d8c02801559c3e7da4657628fe4743407be16e26d7bbbe7ad867abc584  linux-wiko-lenny5-521b3081fabf46d6c5cd533679a987135384863f.tar.gz
+efdb0d3ba7a6e0525bf278db628affd881d2e67f7cc454e8921daa42b9921d46764c2bd304bf533e00f7332f02c523ac7c2eaf6982808d8db9d10ca278573b34  config-wiko-lenny5.armv7
+2287abb30b410f5ba13ee6dc1bb603789f9eeda9eda4a982263354aa303501b37742d8f8758b92d1edc32622505ce05e6c545257534b8c65dc8093606195d825  fix_dts_headers.patch
+19a6c3445bfd8057e4fabe1709f3d2344f3a99fef49b44636c07a18ba8791fab1bcff77f93aadff887946ae6f83c9d86e1c28f9b88d03c6ba156704d430b4470  vdsomunge_upstream.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+f74ea59d7b43cf65cbf46417c7028152ef39c0234da5aef1a7f72d30dcc56a701cb374a87079fce2194d5e6807686ed46bd846db5f39090a28be745abe014ba6  0001-Include-cust.dtsi-don-t-run-python2-drvgen.patch
+b396a1586f9746054f54534891baab8c9c20f49630f74ec99ce7c0f34fdf2f91b0891d747e7cc576be5695056a5453f6595b50e38718db84c4bde11d4dfa7c5f  head.s-fix.patch
+f1218ddaf456e53945c647cc4e3459acc2a1ec33e20f746cf3d74950fcdbfe50e0eee6e9dadc386f4aecba1495e35f2f24f30325d7fcf1e51d9bd8d648072fad  proc-v7-fix.patch
+40aac5e96cc9e2c2b5d66665b60311a2eccd001669e98415e48e6f22be344fad01bc6ef6aa125854586a7f930a0623afcbc899accae38bf7dabd457b681fc5ec  piggy.gzip.s-fix.patch
+"

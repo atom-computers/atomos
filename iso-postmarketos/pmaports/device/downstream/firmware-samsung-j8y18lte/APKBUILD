@@ -1,0 +1,25 @@
+pkgname=firmware-samsung-j8y18lte
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for Samsung Galaxy J8 (2018)"
+url="https://github.com/lucasredelive/firmware-samsung-j8y18lte"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="d3574f77a5492a5fb36e1fe3c5257a597500d207"
+builddir="$srcdir/firmware-samsung-j8y18lte-$_commit"
+source="$pkgname.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	firmware.files"
+
+package() {
+	for i in $(cat "$srcdir"/firmware.files); do
+		install -Dm644 "$i" "$pkgdir/$i"
+	done
+}
+
+sha512sums="
+2d55450e7b841c45a68f571000287d17beeb351d3c5f361263cff85702123c3af843c8387346ee8c8103ce85210ce2738e5da985156c3bb26d96d4cc48d5c5a0  firmware-samsung-j8y18lte.tar.gz
+2f9bea448bdeff6b408bba46dccbb3324d7d38de8b63a5571d392a85bdb33895c74a3f2576a37835312e017e2e398c463e133277fa6a7de34583654276d1ee03  firmware.files
+"

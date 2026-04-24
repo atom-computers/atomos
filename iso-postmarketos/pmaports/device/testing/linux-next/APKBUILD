@@ -1,0 +1,96 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=linux-next
+pkgver=7.0_git20260313
+pkgrel=0
+_nextver="${pkgver#*_git}"
+pkgdesc="Linux next kernel"
+arch="armv7 aarch64"
+case "$CARCH" in
+	aarch64) _carch="arm64";_defconfig="defconfig";;
+	# FIXME: We should not be using qcom_defconfig. Instead we should be using multi_v7_defconfig.
+	# The problem is two-fold:
+	# - We need to reduce the amount of mainline kernels.
+	# - We need to find a way to not duplicate upstream defconfigs into our repo.
+	# Please see: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/6133#note_468011
+	armv7) _carch="arm";_defconfig="qcom_defconfig";;
+esac
+_flavor="generic-trailblazer"
+url="https://kernel.org"
+license="GPL-2.0-only"
+# FIXME: kconfigcheck isn't supported since we use fragments
+options="!strip !check !tracedeps pmb:cross-native"
+source="
+	https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/snapshot/linux-next-next-$_nextver.tar.gz
+	devices.config
+	pmos.config
+"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	clang-libclang
+	devicepkg-dev
+	elfutils-dev
+	findutils
+	flex
+	git
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	zstd
+"
+builddir="$srcdir/linux-next-next-$_nextver"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/pmos.config" "$builddir"/arch/"$_carch"/configs/
+	cp "$srcdir/devices.config" "$builddir"/arch/"$_carch"/configs/
+
+	# Generate .config
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-next-$_nextver" \
+		"$_defconfig" pmos.config devices.config
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	if [ "$CARCH" != "armv7" ]; then
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+	fi
+
+	mkdir -p "$pkgdir"/boot
+
+	make LLVM=1 zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/next-"$_nextver"/kernel.release
+}
+
+sha512sums="
+a11b700e6f3ccaaa244f59a5307715280a212428b835b9d7a9b65cb40fe0bfc744c847bdd119f0970f427190046683018b91ef04ce975cb930636834b9b2103b  linux-next-next-20260313.tar.gz
+08ec500bd2f40c1c80e56ebd938d4e54af71972fdf00c4dfe8a911cf094e1c296766276010470bfa26c68093c90bcae01266acc5e59fa0ec4620d4becc2c53d4  devices.config
+25c07558cc7dc82485957c82246bbf1eef4a4188f007546b27336fcd84507b387c8afc3d0feb2a2760e90ccde804ff7d7112be38831bba92d5a1988780a42cdd  pmos.config
+"

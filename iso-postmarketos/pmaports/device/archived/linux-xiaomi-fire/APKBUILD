@@ -1,0 +1,88 @@
+# Archived: depended on by device-xiaomi-fire
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/fire_defconfig
+pkgname=linux-xiaomi-fire
+pkgver=4.19.191
+pkgrel=0
+pkgdesc="Xiaomi Redmi 12 4G kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-fire"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	android-tools
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	cpio
+	gzip
+	xz
+	clang
+"
+
+export CC="clang"
+export HOSTCC="clang"
+
+# Source
+_repository="Xiaomi_Kernel_OpenSource"
+_commit="1d1aedfe40b2f5fd06c783b752af0197f38966eb"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/MiCode/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix_kernel_genheaders.patch
+	fix_broken_inline_functions.patch
+	primary_display_fix.patch
+	add-mt6768-dtb.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	if [ -f "$_outdir"/arch/arm64/boot/Image ]; then
+		rm "$_outdir"/arch/arm64/boot/Image
+	fi
+
+	mv "$_outdir"/arch/arm64/boot/Image.gz "$_outdir"/arch/arm64/boot/Image
+
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	# We also need to convert the kernel DTB into a proper android dtb image with the 64-byte header
+	mv "$pkgdir"/boot/dtbs/mediatek/mt6768.dtb "$pkgdir"/boot/dtbs/mediatek/mt6768.dtb.bak
+	mkdtboimg create "$pkgdir"/boot/dtbs/mediatek/mt6768.dtb "$pkgdir"/boot/dtbs/mediatek/mt6768.dtb.bak
+	rm "$pkgdir"/boot/dtbs/mediatek/mt6768.dtb.bak
+}
+
+sha512sums="
+d90442e481e6e9589e4e758e095cb246e427fe89607a8b83e2d93f821df0ab1ef71596acd54a08a9cdd1d811fbf2fdc9220d2c40fc3399b0b44b7463076ed33b  linux-xiaomi-fire-1d1aedfe40b2f5fd06c783b752af0197f38966eb.tar.gz
+45b743eafd5c4eb6aeaaec24df1a7e531f21d0d5a6ea52668f389fd6a6870b381113f8d4755c80e5eb47298cab519c8f323b0480470156efddbcc2491e071dd5  config-xiaomi-fire.aarch64
+e683d72073caf32864963b213d9210ad88e675eb5595028f916e6d15d6d4bdcea46e59f7e3615670c4a4e35e048dcee9b6e372559ee5126d243946439c9e3dbb  fix_kernel_genheaders.patch
+3c45e4748b03164b88780f20a86e21a79e81e5486a0d380226382c5ae40a23a36bd6ccfab4ed221b54a30015203e9ab22ea6876b7c6e166cf6b0c4bc6574ea79  fix_broken_inline_functions.patch
+4829b15f0682d5d016da83e44b2b75b221c7415598cf5c4377490146ed7f6f36e7e037ae053698fefb922af293c4415f0409e68398d91285c68b35a87e0929a2  primary_display_fix.patch
+580337b2ada8a2684ac5d1beddf8ecbaa23a3e36e21bdae8abc83ff25182c0324bbaf0eb7a05d0d81feb269508a243f087c0a11b8520e1f4251465a5c3a7481b  add-mt6768-dtb.patch
+"

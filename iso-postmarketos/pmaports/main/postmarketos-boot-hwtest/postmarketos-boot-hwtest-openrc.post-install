@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Enable ofono
+rc-update add ofono default

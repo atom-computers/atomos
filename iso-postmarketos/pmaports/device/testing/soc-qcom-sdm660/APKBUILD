@@ -1,0 +1,54 @@
+# Co-Maintainer: Max Buchholz <max.buchholz@gmx.de>
+maintainer="Alexey Minnekhanov <alexeymin@postmarketos.org>"
+pkgname=soc-qcom-sdm660
+pkgdesc="Common package for Qualcomm SDM630/636/660 devices"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps pmb:cross-native"
+depends="
+	alsa-ucm-conf-qcom-sdm660
+	swclock-offset
+"
+subpackages="
+	$pkgname-rproc
+	$pkgname-rproc-openrc:rproc_openrc
+"
+source="sdm660-adreno-quirks.sh"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	install -Dm755 sdm660-adreno-quirks.sh -t "$pkgdir/etc/profile.d/"
+}
+
+rproc() {
+	pkgdesc="Modem and Wifi services and configuration"
+	depends="
+		bootmac
+		msm-modem
+		qcom-diag
+		rmtfs
+		tqftpserv
+	"
+
+	mkdir -p "$subpkgdir"
+}
+
+rproc_openrc() {
+	install_if="$pkgname-rproc=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		qcom-diag-openrc
+		rmtfs-openrc
+		tqftpserv-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+51aa3f86fe461ee520ca181142ac12563897eea711530b9ca8c092f539c303b449e129336375d356dfdcf28333618c03a43bcf346f956e74ff99bee8f0012f3a  sdm660-adreno-quirks.sh
+"

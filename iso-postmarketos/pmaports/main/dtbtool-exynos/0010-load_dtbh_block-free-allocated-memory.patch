@@ -1,0 +1,147 @@
+From 6c418bf000af76959df27e21fd06ca49847ce65d Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 30 Jun 2025 17:05:44 +0200
+Subject: [PATCH] load_dtbh_block: free allocated memory
+
+---
+ dtbtool-exynos.c | 57 +++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 44 insertions(+), 13 deletions(-)
+
+diff --git a/dtbtool-exynos.c b/dtbtool-exynos.c
+index efb6baecc828..256ccce4069a 100644
+--- a/dtbtool-exynos.c
++++ b/dtbtool-exynos.c
+@@ -188,16 +188,17 @@ void add_dtb_file(char ***dtb_files_ptr, int *dtb_count_ptr, const char *filenam
+ }
+ 
+ static void *load_dtbh_block(char **dtb_files, unsigned pagesize,
+-				 uint32_t platform_code, uint32_t subtype_code,
+-				 unsigned *_sz)
++			     uint32_t platform_code, uint32_t subtype_code,
++			     unsigned *_sz)
+ {
+ 	const unsigned pagemask = pagesize - 1;
+-	struct dt_entry *new_entries;
++	struct dt_entry *new_entries = NULL;
+ 	struct dt_entry *entries = NULL;
+ 	struct dt_entry *entry;
+-	struct dt_blob *blob;
++	struct dt_blob *blob = NULL;
+ 	struct dt_blob *blob_list = NULL;
+ 	struct dt_blob *last_blob = NULL;
++	struct dt_blob *tmp_blob = NULL;
+ 	unsigned new_count;
+ 	unsigned entry_count = 0;
+ 	unsigned offset;
+@@ -210,15 +211,19 @@ static void *load_dtbh_block(char **dtb_files, unsigned pagesize,
+ 	const unsigned *prop_hw_rev_end;
+ 	const unsigned *prop_compatible;
+ 	int len;
+-	void *dtb;
+-	char *dtbh;
++	void *dtb = NULL;
++	char *dtbh = NULL;
+ 	char **fname;
+ 	unsigned c;
++	bool fail = false;
+ 
+ 	for (fname = dtb_files; *fname; fname++) {
+ 		dtb = load_file(*fname, &dtb_sz);
+-		if (!dtb || !dtb_sz)
++		if (!dtb || !dtb_sz) {
+ 			error("failed to read dtb '%s'", *fname);
++			fail = true;
++			goto cleanup;
++		}
+ 
+ 		if (fdt_check_header(dtb) != 0) {
+ 			warnx("'%s' is not a valid dtb, skipping", *fname);
+@@ -262,8 +267,12 @@ static void *load_dtbh_block(char **dtb_files, unsigned pagesize,
+ 				ntohl(prop_hw_rev[0]), ntohl(prop_hw_rev_end[0]));
+ 
+ 		blob = calloc(1, sizeof(struct dt_blob));
+-		if (!blob)
++		if (!blob) {
+ 			error("failed to allocate memory");
++			free(dtb);
++			fail = true;
++			goto cleanup;
++		}
+ 
+ 		blob->payload = dtb;
+ 		blob->size = dtb_sz;
+@@ -278,8 +287,11 @@ static void *load_dtbh_block(char **dtb_files, unsigned pagesize,
+ 		blob_sz += (blob->size + pagemask) & ~pagemask;
+ 		new_count = entry_count + 1;
+ 		new_entries = realloc(entries, new_count * sizeof(struct dt_entry));
+-		if (!new_entries)
++		if (!new_entries) {
+ 			error("failed to allocate memory");
++			fail = true;
++			goto cleanup;
++		}
+ 
+ 		entries = new_entries;
+ 		entry = &entries[entry_count];
+@@ -299,7 +311,8 @@ static void *load_dtbh_block(char **dtb_files, unsigned pagesize,
+ 
+ 	if (!entry_count) {
+ 		warnx("unable to locate any dtbs in the given path");
+-		return 0;
++		fail = true;
++		goto cleanup;
+ 	}
+ 
+ 	hdr_sz += sizeof(uint32_t); /* eot marker */
+@@ -324,8 +337,11 @@ static void *load_dtbh_block(char **dtb_files, unsigned pagesize,
+ 	 * All parts are now gathered, so build the dt block
+ 	 */
+ 	dtbh = calloc(hdr_sz + blob_sz, 1);
+-	if (!dtbh)
+-		fail("failed to allocate memory");
++	if (!dtbh) {
++		error("failed to allocate memory");
++		fail = true;
++		goto cleanup;
++	}
+ 
+ 	offset = 0;
+ 
+@@ -352,7 +368,20 @@ static void *load_dtbh_block(char **dtb_files, unsigned pagesize,
+ 
+ 	*_sz = hdr_sz + blob_sz;
+ 
+-	return dtbh;
++cleanup:
++	if (entries)
++		free(entries);
++	tmp_blob = blob_list;
++	while (tmp_blob) {
++		struct dt_blob *next = tmp_blob->next;
++		free(tmp_blob->payload);
++		free(tmp_blob);
++		tmp_blob = next;
++	}
++	if (fail)
++		return NULL;
++	else
++		return dtbh;
+ }
+ 
+ void free_dtb_files(char **dtb_files) {
+@@ -447,10 +476,12 @@ int main(int argc, char **argv)
+ 	if (write(fd, dt_data, dt_size) != dt_size) {
+ 		unlink(dt_img);
+ 		close(fd);
++		free(dt_data);
+ 		free_dtb_files(dtb_files);
+ 		fail("failed writing '%s': %s", dt_img, strerror(errno));
+ 	}
+ 
++	free(dt_data);
+ 	free_dtb_files(dtb_files);
+ 	close(fd);
+ 
+-- 
+2.50.0
+

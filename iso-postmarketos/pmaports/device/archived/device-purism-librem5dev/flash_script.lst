@@ -1,0 +1,23 @@
+uuu_version 1.0.1
+
+# Note: This script is meant to be used by uuu running in the native chroot, so
+# all paths are relative to the native chroot and not to the device rootfs
+# chroot.
+
+SDP: boot -f /mnt/rootfs_purism-librem5dev/usr/share/u-boot/librem5/devkit-boot.img
+
+SDPU: delay 1000
+SDPU: write -f  /mnt/rootfs_purism-librem5dev/usr/share/u-boot/librem5/devkit-boot.img -offset 0x57c00
+SDPU: jump
+
+SDPV: delay 1000
+SDPV: write -f /mnt/rootfs_purism-librem5dev/usr/share/u-boot/librem5/devkit-boot.img -skipspl
+SDPV: jump
+
+SDPS: boot -f /mnt/rootfs_purism-librem5dev/usr/share/u-boot/librem5/devkit-boot.img
+
+FB: ucmd mmc dev 0
+FB: ucmd setenv fastboot_dev mmc
+FB: ucmd setenv mmcdev 0
+FB: flash -raw2sparse all /home/pmos/rootfs/purism-librem5dev.img
+FB: Done

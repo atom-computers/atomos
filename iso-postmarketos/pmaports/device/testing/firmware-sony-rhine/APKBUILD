@@ -1,0 +1,47 @@
+maintainer=""
+pkgname=firmware-sony-rhine
+pkgver=2
+pkgrel=1
+pkgdesc="Firmware files for Sony Rhine platform"
+url="https://github.com/TheMuppets/proprietary_vendor_sony"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07
+	wcnss.b08 wcnss.b09 wcnss.mdt"
+_files_prima="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+_commit="bf15795df1d1dcd61d37f6215c1eda47e669d54e"
+_url="https://github.com/TheMuppets/proprietary_vendor_sony/raw/$_commit/rhine-common/proprietary/etc/firmware"
+for _i in $_files; do
+	source="$source $pkgname-$_commit-$_i::$_url/$_i"
+done
+for _i in $_files_prima; do
+	source="$source $pkgname-$_commit-$_i::$_url/wlan/prima/$_i"
+done
+
+package() {
+	for _i in $_files; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files_prima; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="dadeef01a73e997926143af3c7b9dec03399958ed2447d7b42f3a1764337c5bd17368b77f0e3a9ea371083895815e9cb2eee4884348c78abb7c96609398e24a3  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b00
+c0982fd64bc65b4b926989af743e4fa2183caa8e77b9302547cd0449862a84e640fe412640d1566d9f7e5c7f60a880ab4f0ffefc2ded87d5dee534136e872180  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b01
+7b2540a56478fe88d05420808584d2968dc7402a3df6aadd4954c506f6e547490b4df0d4e9c4f35b874ad041caed7e857ddc3ab39abce4a7151eef5187744c22  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b02
+98a6005379b7eba296fe0d47e018d054dcd9340d6c1268c0b304519224c2845f9d76dc14324edc351a70af13305cc8ae884e489969519ea0ff8d74585d78653f  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b04
+79f93c73210c18e6084f28fb32558c2b0d9d24bda12d21121db309dc962f5d8687b7d8c55c88235972829132f71d96dc4528fdabc75105a2a9ed60180e633802  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b06
+0b6cbac838dfe7f47ea1bd0df00ec282fdf45510c92161072ccfb84035390c4da743d9c3b954eaa1b0f86fc9861b23cc6c8667ab232c11c686432ebb5c8c3f27  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b07
+6033893c75b32cc906bcabdff02fdbbbb75f0b4d568962b38ea023c00b2273f90bce4482358d4ecc64c22bceaa628d55d17877c8301a1406f67c55c86fc08723  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b08
+e260f244e3655fbf480511189303ce85c014638278ea59f85e2eaa043f5c13162ccdbd75ada9490add38b9bb7675e77532c3d915926c91ba03b83bb44465d73f  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.b09
+308ee0be85f1caa728687d5d8ca56f547acf63a05d46b38e49c0a4307326088d92b9c567e496d220b5132f1a03e0e6d8ab5b6e56f6dbe4119a66be74d2c8182d  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-wcnss.mdt
+62306e85731554865190a6fd73de59bdb27b544825d4df3434c6fc392adf1869bcab9070ce2f60a55a82598ada06e33345ee3f9ae28eb0371fb441a3f58be2cb  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-WCNSS_cfg.dat
+3a5effd450762dcda6515a9fb5e92c2c0c97043cb0078bd1bafebb397681959550aa06685dee43135faec2475aef9fbbc7f998f49c284338d6007ebcf9d88bed  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-WCNSS_qcom_cfg.ini
+aeb68eb2c62297121c50115e536dd4c39bd323bbf1c83cb8a1fd65e4703d1b979588da7d715dcfde330ce3a85e698235206b9bf0e7e09e875707e5265d31adac  firmware-sony-rhine-bf15795df1d1dcd61d37f6215c1eda47e669d54e-WCNSS_qcom_wlan_nv.bin"

@@ -1,0 +1,13 @@
+diff --git a/drivers/power/idol347/smb1360-charger-fg.c b/drivers/power/idol347/smb1360-charger-fg.c
+index bc8859cd9a2..5ae109b9ff2 100644
+--- a/drivers/power/idol347/smb1360-charger-fg.c
++++ b/drivers/power/idol347/smb1360-charger-fg.c
+@@ -3408,7 +3408,7 @@ disable_access:
+ 
+ 		if (chip->soc_min != -EINVAL) {
+ 			if (is_between(chip->soc_min, 0, 100)) {
+-				reg = DIV_ROUND_UP(chip->soc_min * MAX_8_BITS,
++				reg = DIV_ROUND_CLOSEST(chip->soc_min * MAX_8_BITS,
+ 									100);
+ 				pr_debug("soc_min=%d reg=%x\n",
+ 						chip->soc_min, reg);

@@ -1,0 +1,17 @@
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index ff9d7c549..79e3b88cd 100644
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -103,9 +103,9 @@ endif
+ KBUILD_CFLAGS	+= $(lseinstr) $(brokengasinst) $(vdso32)
+ 
+ #ifdef CONFIG_SOC_EXYNOS9610
+-ifeq ($(cc-name),gcc)
+-KBUILD_CFLAGS   += -mcpu=cortex-a73.cortex-a53 -mtune=cortex-a73.cortex-a53
+-endif
++#ifeq ($(cc-name),gcc)
++#KBUILD_CFLAGS   += -mcpu=cortex-a73.cortex-a53 -mtune=cortex-a73.cortex-a53
++#endif
+ ifeq ($(cc-name),clang)
+ KBUILD_CFLAGS   += -march=armv8-a+crypto+crc+sha2+aes -mtune=cortex-a53 \
+                   -mcpu=cortex-a53+crypto+crc+sha2+aes

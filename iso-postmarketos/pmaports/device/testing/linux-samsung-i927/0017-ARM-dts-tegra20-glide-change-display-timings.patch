@@ -1,0 +1,43 @@
+From 58b7bd9f4079d0e855b7a21976427ed7266c20db Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Thu, 7 Feb 2019 13:37:04 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: change display timings
+
+Fix the image being shifted upwards and make refresh rate a bit faster
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index c582512936a6..76493614f6df 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -1237,18 +1237,18 @@
+ 
+ 			display-timings {
+ 				timing {
+-					clock-frequency = <24000000>;
++					clock-frequency = <25000000>;
+ 					hactive = <480>;
+ 					vactive = <800>;
+ 					hfront-porch = <16>;
+-					vfront-porch = <28>;
+-					hback-porch = <14>;
+-					vback-porch = <1>;
++					vfront-porch = <27>; // 28
++					hback-porch = <16>;
++					vback-porch = <2>; // 1
+ 					hsync-len = <2>;
+ 					vsync-len = <2>;
+ 					hsync-active = <0>;
+ 					vsync-active = <0>;
+-					nvidia,h-ref-to-sync = <0>;
++					nvidia,h-ref-to-sync = <1>; // 0
+ 					nvidia,v-ref-to-sync = <1>;
+ 				};
+ 			};
+-- 
+2.22.0
+

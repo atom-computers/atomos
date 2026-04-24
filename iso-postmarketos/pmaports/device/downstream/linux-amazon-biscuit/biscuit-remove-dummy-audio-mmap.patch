@@ -1,0 +1,49 @@
+remove mmap capability from amazon mt8163 pcm audio driver
+
+For reasons known only to MediaTek, the pcm driver used by most amazon devices
+of this era provide a fake zero page address whenever a mmap is attempted.
+Naturally, this causes a kernel panic when an audio server like pulseaudio
+attempts to mmap the sound device using the fake address. Remove this dummy
+page function and remove mmap flags from the driver description so pulse
+handles the device correctly.
+
+Verified on amazon-biscuit (Echo Dot 2G) but may also apply to other MT8163
+devices like karnak and douglas. MT8127 devices like ford appear to pull this
+dummy page trick as well, so a modified patch may work there.
+diff --git a/sound/soc/mediatek/mt_soc_audio_8163_amzn/mt_soc_pcm_dl1_i2s0Dl1.c b/sound/soc/mediatek/mt_soc_audio_8163_amzn/mt_soc_pcm_dl1_i2s0Dl1.c
+index b68f2fa..afaaba8 100644
+--- a/sound/soc/mediatek/mt_soc_audio_8163_amzn/mt_soc_pcm_dl1_i2s0Dl1.c
++++ b/sound/soc/mediatek/mt_soc_audio_8163_amzn/mt_soc_pcm_dl1_i2s0Dl1.c
+@@ -124,8 +124,7 @@ static const struct snd_kcontrol_new Audio_snd_I2S0dl1_controls[] = {
+ 
+ static struct snd_pcm_hardware mtk_I2S0dl1_hardware = {
+ 
+-	.info = (SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_INTERLEAVED |
+-		SNDRV_PCM_INFO_RESUME | SNDRV_PCM_INFO_MMAP_VALID),
++	.info = (SNDRV_PCM_INFO_INTERLEAVED | SNDRV_PCM_INFO_RESUME),
+ 	.formats = SND_SOC_ADV_MT_FMTS,
+ 	.rates = SOC_HIGH_USE_RATE,
+ 	.rate_min = SOC_HIGH_USE_RATE_MIN,
+@@ -888,14 +887,6 @@ static int mtk_pcm_I2S0dl1_silence(struct snd_pcm_substream *substream,
+ 	return 0;
+ }
+ 
+-static void *dummy_page[2];
+-
+-static struct page *mtk_I2S0dl1_pcm_page(struct snd_pcm_substream *substream, unsigned long offset)
+-{
+-	pr_debug("%s\n", __func__);
+-	return virt_to_page(dummy_page[substream->stream]);	/* the same page */
+-}
+-
+ static struct snd_pcm_ops mtk_I2S0dl1_ops = {
+ 
+ 	.open = mtk_pcm_I2S0dl1_open,
+@@ -908,7 +899,6 @@ static struct snd_pcm_ops mtk_I2S0dl1_ops = {
+ 	.pointer = mtk_pcm_I2S0dl1_pointer,
+ 	.copy = mtk_pcm_I2S0dl1_copy,
+ 	.silence = mtk_pcm_I2S0dl1_silence,
+-	.page = mtk_I2S0dl1_pcm_page,
+ };
+ 
+ static struct snd_soc_platform_driver mtk_I2S0dl1_soc_platform = {

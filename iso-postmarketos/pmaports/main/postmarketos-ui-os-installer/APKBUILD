@@ -1,0 +1,108 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-ui-os-installer
+pkgver=10
+pkgrel=0
+pkgdesc="UI for installing postmarketOS"
+url="https://gitlab.gnome.org/p3732/os-installer"
+# armhf blocked by gnome-shell -> gjs -> mozjs102
+arch="noarch !armhf"
+license="GPL-3.0-or-later"
+depends="
+	os-installer
+	pmbootstrap>=3.6
+"
+# Dependencies for gnome desktop, copied from pmos-ui-gnome.
+# This is a workaround for:
+# https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/3638
+depends="
+	$depends
+	!gnome-settings-daemon-mobile
+	!gnome-shell-mobile
+	!gnome-shell-mobile-schemas
+	!mutter-mobile
+	!mutter-mobile-schemas
+	gdm
+	gnome
+	postmarketos-base-ui-gnome
+"
+source="
+	sysusers-os-installer.conf
+	gdm-custom.conf
+
+	config.yaml
+	distro.svg
+	pmos_setup.sh
+"
+# NOTE: this UI *only* works with systemd
+options="!check pmb:systemd"
+replaces="gdm"
+
+_source440="
+	etc/sudoers.d/os-installer
+"
+
+_source644="
+	etc/xdg/autostart/org.postmarketOS.os-installer.desktop
+	etc/gdm/custom.conf
+	usr/lib/sysusers.d/os-installer.conf
+	usr/lib/tmpfiles.d/os-installer.conf
+	usr/share/glib-2.0/schemas/00_postmarketos-ui-os-installer.gschema.override
+
+	etc/os-installer/config.yaml
+	etc/os-installer/distro.svg
+	etc/os-installer/desktops/cosmic.png
+	etc/os-installer/desktops/gnome.png
+	etc/os-installer/desktops/kde.png
+	etc/os-installer/desktops/xfce.png
+	etc/os-installer/desktops/console.png
+"
+
+_source755="
+	usr/bin/pmos_setup.sh
+"
+
+flatpath() {
+	local i
+	for i in $@; do
+		echo "rootfs-$i" | sed s./.-.g
+	done
+}
+source="$(flatpath $_source440 $_source644 $_source755)"
+
+package() {
+	local i
+	for i in $_source440; do
+		install -Dm440 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source644; do
+		install -Dm644 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source755; do
+		install -Dm755 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+
+	mkdir -p "$pkgdir"/etc/os-installer/scripts
+	ln -s /usr/bin/pmos_setup.sh \
+		"$pkgdir"/etc/os-installer/scripts/configure.sh
+	ln -s /usr/bin/pmos_setup.sh \
+		"$pkgdir"/etc/os-installer/scripts/install.sh
+	ln -s /usr/bin/pmos_setup.sh \
+		"$pkgdir"/etc/os-installer/scripts/prepare.sh
+}
+sha512sums="
+95b7b84bc753d5231713be800ceb1d59df0745387f110c9e1f060231fe4356dcf12c750aaaa3231144dd24a50eb7450537f39e7ed7d301f3404409eaa1362ae7  rootfs-etc-sudoers.d-os-installer
+e1068808d7bd7a3aab92951bbad0a3d2d7051d39410777dc879ad832c5db725ba9a80ddb2dc1cd968fb4ef451f68593ee6428b3c20a54924e0dbd1096385e7ad  rootfs-etc-xdg-autostart-org.postmarketOS.os-installer.desktop
+e51733f5c75649206ec99b96486fc33419541dd8ff6fe2ccd9eb8cba0920a004c6190362342ecd943c99f6d6e7c5e41e1992dbe4f3f42180dfab08fa06436911  rootfs-etc-gdm-custom.conf
+5d43fcfbbcda66497067eb665537b2e38e77f335ba58989e6a24af35f10e07cf1d10ba47cd7536de87bcf60fdb5c8582c7a84b7ffaa0c47c964b0b7ae6c95cae  rootfs-usr-lib-sysusers.d-os-installer.conf
+1d3268d5eed453a31bcdea1a9d6525a2a6f2172c7a54bdf0fbe6f01d6dbec4d4e793e5cabb03f97e80ae98a6a6712fc0391a2a1f0c19cf59f0bf698c06b10ac7  rootfs-usr-lib-tmpfiles.d-os-installer.conf
+59d50219457ad91f72efd2d0fd4edaad5af39bce50c4ae140074b1ad89c55b3ecb84f53db40afd83b73b9b1f11f8a7d1fb7685f247961fa6e1f32ef30c9d93da  rootfs-usr-share-glib-2.0-schemas-00_postmarketos-ui-os-installer.gschema.override
+5d386ee5ec924fbed262ade6b1ac36c767632d2545af6b7252250f8b41ef27a829b618e7cba0f715fef9601e498b8eac91dbe096d69b6c44c02f326c264a75d7  rootfs-etc-os-installer-config.yaml
+98984fd67b99400d2b08422c4d314da558d3c94ee67dbc895e7bbfd6fdf22d4b2c9d35f48f4b73b383a054f535d4089fb705c5532f034cb2ee54eab2184e8e86  rootfs-etc-os-installer-distro.svg
+de891dfc5a0ff9c5f6cb573e961116f7095169f59af4df258f60b0416b109f3a7c2105d3faf496eafdf4b1eee5e91d182df62a8bee98e162423b7f08dd5d684c  rootfs-etc-os-installer-desktops-cosmic.png
+df78c6460836c50f1b3a379cd46e6c50168673f5a4f97083eedbb81de7c8f7a363f3ec4b3840252cb824fcb501ead0870356cf89c60638a460df2c95e324d445  rootfs-etc-os-installer-desktops-gnome.png
+d06026fd8cf2229257fb26b8a7f14ca6e3b7e3ad61b99c5795910f1a8de2a319c21f43cd192534529a5f565b7cf8c8ea8968667133bfeabe1b42ed5fafa81c92  rootfs-etc-os-installer-desktops-kde.png
+fefe277cd20c1f0b2d09f3646dbf8c771fa769a779860b6399efcdd63af83664e2cd431224a389f2df68c277dfd3d1e473924c377ba9d1ff3674d36ec5b0ebb2  rootfs-etc-os-installer-desktops-xfce.png
+0dbf065c3410414021db4317103b87c1ca792d00418454bcc0d3784997a8bc8a1343fd974e3d8815bed952ea10eea7dfeda55e430a01d9b7bd765872e5ba04bd  rootfs-etc-os-installer-desktops-console.png
+11ec5185fe20301320ad02d710cd6e8d92d872eb1e5d886ee72a2ceb36a42a5c64ca2fe8a1ae736df0ec6079a9546b3d1a68bf1fd2587f0c80046bc5fa90be50  rootfs-usr-bin-pmos_setup.sh
+"

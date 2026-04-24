@@ -1,0 +1,65 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/FRT_defconfig
+maintainer="Piotr Halama <skrzynka@halamix2.pl>"
+pkgname=linux-nokia-frt
+pkgver=3.18.79
+pkgrel=6
+pkgdesc="Nokia 1 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="nokia-frt"
+url="https://www.nokia.com/phones/en_int/opensource/"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev python3"
+
+# Source
+_repository="android_kernel_nokia_1"
+_commit="588ea962d4c9c21d20a7109273587e49c7da9235"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	00_symlinks.patch
+	01_makefile_path.patch
+	02_drvgen_mk.patch
+	03_vdsomunge_upstream.patch
+	py3-compat.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="676be1813c0886c509591a4940b9fdbd91243aaf84a8efebd7229f681e84211d86cc3466079808eb2fba45c0ada4bc7d43a4b5ab599326702c1d4830fa16d630  linux-nokia-frt-588ea962d4c9c21d20a7109273587e49c7da9235.tar.gz
+1ca49800c28f210f5cb02ac65260ba6ff734ab917f2a232f772263173e294aa5a04f544dc507c188330cbc75a39a7fd2a1290140e4ff2fcaea4c4d4e5bfcfee3  config-nokia-frt.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+1d1a99de49b29069eb1711ad884e3f0db0956d8eeb81bdb332e6aa13fb7f5cdd48cd75791cebc08b1aa0644cdd643d7632791a272333547a6ffe68a75295e7a8  00_symlinks.patch
+ef8b9da80ca67424a02acfbf99924e3ea06574c83c6a737031f6ac41b718742ef0bd66b968b14118cac021067e29184e2199f238ace2a43dc2176d9cce796bc5  01_makefile_path.patch
+aaf7e208f307db3126202f3f3410d4f8a74b450ef719717a064c817258cb428a150a798494f57e43f9e1f747ad83527e565f8d81c3c746d1fb0b4e42e6e30d50  02_drvgen_mk.patch
+19a6c3445bfd8057e4fabe1709f3d2344f3a99fef49b44636c07a18ba8791fab1bcff77f93aadff887946ae6f83c9d86e1c28f9b88d03c6ba156704d430b4470  03_vdsomunge_upstream.patch
+0729fc816ea28693e7cbf4b71fc4117b124907a6a5327589e9ec2d222105c0bd0cba2320461c86b7322fc708973122bb66ca745e32cc70791225c5bbb872f999  py3-compat.patch"

@@ -1,0 +1,179 @@
+From fac558fd44fd91425797a2e337b6ef0e451a1c1d Mon Sep 17 00:00:00 2001
+From: realaravinth <realaravinth@batsense.net>
+Date: Wed, 1 Jul 2020 14:49:18 +0530
+Subject: [PATCH] sprd,sc-id replaced with qcom,msm-id
+
+---
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev00.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev01.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev02.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev03.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev04.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev05.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev06.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev07.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev08.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev09.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev10.dts | 2 +-
+ arch/arm/boot/dts/sprd-scx35_gtel3g_rev11.dts | 2 +-
+ 12 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev00.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev00.dts
+index 25ad2efa..b341f365 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev00.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev00.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 0 0x20000>;
++        qcom,msm-id = <8830 0 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev01.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev01.dts
+index 177ece29..b0ddae88 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev01.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev01.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 1 0x20000>;
++        qcom,msm-id = <8830 1 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev02.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev02.dts
+index cf050ab7..8ac7178e 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev02.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev02.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 2 0x20000>;
++        qcom,msm-id = <8830 2 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev03.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev03.dts
+index fc72c8f5..76926108 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev03.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev03.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 3 0x20000>;
++        qcom,msm-id = <8830 3 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev04.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev04.dts
+index 5c5e75a8..449ce412 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev04.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev04.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 4 0x20000>;
++        qcom,msm-id = <8830 4 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev05.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev05.dts
+index d481339d..75c09c12 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev05.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev05.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 5 0x20000>;
++        qcom,msm-id = <8830 5 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev06.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev06.dts
+index 1d9f7fbe..5c5b6bd3 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev06.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev06.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 6 0x20000>;
++        qcom,msm-id = <8830 6 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev07.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev07.dts
+index f14b2001..f72fd561 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev07.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev07.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 7 0x20000>;
++        qcom,msm-id = <8830 7 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev08.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev08.dts
+index c0909b14..dfa807bd 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev08.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev08.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 8 0x20000>;
++        qcom,msm-id = <8830 8 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev09.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev09.dts
+index 174c8d9f..63bd1224 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev09.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev09.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 9 0x20000>;
++        qcom,msm-id = <8830 9 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev10.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev10.dts
+index 296f0592..6991ba58 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev10.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev10.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 10 0x20000>;
++        qcom,msm-id = <8830 10 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev11.dts b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev11.dts
+index 979167cb..4974526e 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtel3g_rev11.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtel3g_rev11.dts
+@@ -27,7 +27,7 @@
+ 
+ / {
+ 	model = "Spreadtrum SP7730G board";
+-        sprd,sc-id = <8830 11 0x20000>;
++        qcom,msm-id = <8830 11 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+-- 
+2.27.0
+

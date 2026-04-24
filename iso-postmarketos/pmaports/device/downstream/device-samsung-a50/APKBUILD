@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-a50
+pkgdesc="Samsung Galaxy A50"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-samsung-a50
+	linux-samsung-a50
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	initfs-hook.sh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+7d80edc4008603e27753938a8d50842e1a6e5af806858790a25e43a65df972921fb4b774f67ef2fc8b295beb0448a6d65d9886068f9fdf4990b93a509a6ddb68  deviceinfo
+2a8f06f59ed3b250c4dcd69e0bedb64efb039c4ba2d09d7d5350804559587261bc5c45a29c2c9025f76e06262cc6d6cff2d398228a1fe1d8e8c152a2f4340e76  kernel-cmdline.conf
+e944629da491f6fff12c30d4c2bf4736ac7d139d4f924b7f91ac8bc7b89794e7971898e450794cb0c1987489491b9d3b056e32c2f92ad102be5117e8e3ac928a  initfs-hook.sh
+"

@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-google-glass
+pkgdesc="Google Glass"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armhf"
+options="!check !archcheck"
+depends="postmarketos-base linux-google-glass mkbootimg"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Google Glass Firmware"
+	depends="firmware-google-glass"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+84dfc3a0f2095522f1233d0409eaa50fec2e6339c2527511cc960823cf60126e69f15337d64c17bf8bad6e77d17eb14716af4c2c78ba668b2f95f73c329fd4ff  deviceinfo
+4d1fe7ec18083e10b1dd8fb99ed44b75adee3773fc3a21525ad4f2eb03ff339739f44fb7488759cc3ebfa45f959025c9867ba641cdcb762e4ed9eda1a82e9c27  kernel-cmdline.conf
+e204252a8c987269538039f510b42e094fa5ce141f9f5ded461cbb8074202fc343ccd300a0cc28595d4bb9162992104ad5ac916fd4028857e0f646250998910c  initfs-hook.sh
+"

@@ -1,0 +1,16 @@
+The smb1360 mainline driver does some rounding slightly differently.
+Change the downstream driver accordingly, so register dumps can be compared more easily.
+
+diff --git a/drivers/power/smb1360-charger-fg.c b/drivers/power/smb1360-charger-fg.c
+index 7931b6df9be..90da1ad93b3 100644
+--- a/drivers/power/smb1360-charger-fg.c
++++ b/drivers/power/smb1360-charger-fg.c
+@@ -3653,7 +3653,7 @@ disable_fg_reset:
+
+ 		if (chip->soc_min != -EINVAL) {
+ 			if (is_between(chip->soc_min, 0, 100)) {
+-				reg = DIV_ROUND_UP(chip->soc_min * MAX_8_BITS,
++				reg = DIV_ROUND_CLOSEST(chip->soc_min * MAX_8_BITS,
+ 									100);
+ 				pr_debug("soc_min=%d reg=%x\n",
+ 						chip->soc_min, reg);

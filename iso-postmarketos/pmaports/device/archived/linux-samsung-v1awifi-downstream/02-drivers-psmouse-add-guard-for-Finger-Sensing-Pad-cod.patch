@@ -1,0 +1,37 @@
+From 50088414b5eacfa0a2345f26448fd27dc28bc245 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 1 Jan 2024 09:04:29 +0100
+Subject: [PATCH] drivers: psmouse: add guard for Finger Sensing Pad code
+
+To fix errors like:
+armv7-alpine-linux-musleabihf-ld: drivers/built-in.o: in function `psmouse_extensions':
+psmouse-base.c:(.text+0x22f0c8): undefined reference to `fsp_detect'
+armv7-alpine-linux-musleabihf-ld: psmouse-base.c:(.text+0x22f398): undefined reference to `fsp_detect'
+---
+ drivers/input/mouse/psmouse-base.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/input/mouse/psmouse-base.c b/drivers/input/mouse/psmouse-base.c
+index 22fe2547e169..d4ec99d8cc84 100644
+--- a/drivers/input/mouse/psmouse-base.c
++++ b/drivers/input/mouse/psmouse-base.c
+@@ -818,6 +818,7 @@ static int psmouse_extensions(struct psmouse *psmouse,
+ 			return PSMOUSE_TOUCHKIT_PS2;
+ 	}
+ 
++#ifdef CONFIG_MOUSE_PS2_SENTELIC
+ /*
+  * Try Finger Sensing Pad. We do it here because its probe upsets
+  * Trackpoint devices (causing TP_READ_ID command to time out).
+@@ -833,7 +834,7 @@ static int psmouse_extensions(struct psmouse *psmouse,
+ 			max_proto = PSMOUSE_IMEX;
+ 		}
+ 	}
+-
++#endif
+ /*
+  * Reset to defaults in case the device got confused by extended
+  * protocol probes. Note that we follow up with full reset because
+-- 
+2.43.0
+

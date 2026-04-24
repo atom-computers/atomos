@@ -1,0 +1,47 @@
+maintainer="binarycraft007 <keep.it.sns@gmail.com>"
+pkgname=firmware-asus-s5507q
+pkgver=3
+pkgrel=0
+_commit="2f3f3b5cc679f88a6f672490778e19016e51a70b"
+pkgdesc="Firmware files for ASUS Vivobook S 15"
+url="https://github.com/binarycraft007/firmware-asus-s5507q"
+arch="aarch64"
+# TODO: Replace with a dependency on firmware-qcom-adreno-gen70500 (which is not .zst compressed though)
+depends="
+	linux-firmware-qcom
+	linux-firmware-qca
+	linux-firmware-ath12k
+"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz
+	dpu.files
+	common.files
+"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/firmware-asus-s5507q-$_commit"
+
+subpackages="
+	$pkgname-common:common
+	$pkgname-dpu:dpu
+"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+common() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		install -Dm644 "$builddir/$_i" "$subpkgdir/$_i"
+	done < "$srcdir/common.files"
+	install -Dm644 "$srcdir/common.files" "$subpkgdir/usr/share/mkinitfs/files/common.files"
+}
+
+dpu() {
+	install -Dm644 "$srcdir/dpu.files" "$subpkgdir/usr/share/mkinitfs/files/dpu.files"
+}
+
+sha512sums="
+45f66a759102987a47cb7c30a67a4350c2590958a62b542261324de4ea60ab160e96f16406f65241c91d1e172f6d486e1c8476f03e15ffc246e03a22b8c03ca4  firmware-asus-s5507q-2f3f3b5cc679f88a6f672490778e19016e51a70b.tar.gz
+1ab5d99b050db2a65d0ada43e333145bf59b38a9658116c80977d01f94b3dbb0c3e9c2f30824f96e43f949706857a777024c0f095b989eaef013c4d5e5238cfc  dpu.files
+1e2c5127e9dc40275419f518b5fe16304efd7028321a36c3e4fdf4ec1ce10f222ce841c1e7b249abd4349764053e1b5ed10e025778cc3d1f9bebad9ee02a731c  common.files
+"

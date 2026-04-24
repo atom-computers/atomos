@@ -1,0 +1,30 @@
+# Archived: Downstream port, only for testing. Use mainline port (qcom-msm89x7)!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-nokia-panther-downstream
+pkgdesc="Nokia 4.2 (Downstream)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-nokia-panther
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+9baec307ae208cf93b1fb2fec9736fde7ab8a5cc2ddc7ee7d1db59153783db8dde210e15f02dc5c8e998516e0dc9ae7f8d6bfabbf5d73a8e8e04865b9bfffdc7  deviceinfo
+b92e49138aed7efa5d4e79a47f1fcd665a159bf59a644a801c8c5af4c62afc6e276901d5bb0829064fa8b77f94493f79f62595d9068de02890c62a8d07516fea  kernel-cmdline.conf
+"

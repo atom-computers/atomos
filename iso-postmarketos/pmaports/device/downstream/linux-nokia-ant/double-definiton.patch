@@ -1,0 +1,22 @@
+diff --git a/drivers/tty/vt/selection.c b/drivers/tty/vt/selection.c
+index 8d7ab8809..c7bfd0010 100644
+--- a/drivers/tty/vt/selection.c
++++ b/drivers/tty/vt/selection.c
+@@ -347,7 +347,7 @@ int set_selection(const struct tiocl_selection __user *v, struct tty_struct *tty
+ 
+ 	return ret;
+ }
+-
++/*
+ int set_selection(const struct tiocl_selection __user *v,
+ 	struct tty_struct *tty)
+ {
+@@ -359,7 +359,7 @@ int set_selection(const struct tiocl_selection __user *v,
+ 
+ 	return ret;
+ }
+-
++*/
+ /* Insert the contents of the selection buffer into the
+  * queue of the tty associated with the current console.
+  * Invoked by ioctl().

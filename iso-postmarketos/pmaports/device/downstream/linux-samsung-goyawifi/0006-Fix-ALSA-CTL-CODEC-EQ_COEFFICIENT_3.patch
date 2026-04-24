@@ -1,0 +1,54 @@
+From 98b7abe4eed2a3919f3064049e13a5b2e21aff56 Mon Sep 17 00:00:00 2001
+From: Adrian Chelaru <che.adrian@yahoo.com>
+Date: Sun, 12 Feb 2023 11:01:28 +0000
+Subject: [PATCH] Fix ALSA CTL CODEC EQ_COEFFICIENT_3
+
+---
+ sound/soc/codecs/88pm805-codec.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
+
+diff --git a/sound/soc/codecs/88pm805-codec.c b/sound/soc/codecs/88pm805-codec.c
+index e53b7b86..03f16360 100644
+--- a/sound/soc/codecs/88pm805-codec.c
++++ b/sound/soc/codecs/88pm805-codec.c
+@@ -169,12 +169,13 @@ static int pm805_bulk_read_reg(struct snd_kcontrol *kcontrol,
+ 	int i, count = 0;
+ 	struct pm80x_chip *chip = (struct pm80x_chip *)codec->control_data;
+ 
+-	count = (ucontrol->value.integer.value[0] & 0xff);
++	//count = (ucontrol->value.integer.value[0] & 0xff);
++	count = PM805_MIXER_COEFFICIENT_MAX_NUM-1;
+ 
+-	if (count < 1 || count >= PM805_MIXER_COEFFICIENT_MAX_NUM) {
+-		pr_info("error count %d, must between 1~64\n", count);
+-		return -EINVAL;
+-	}
++	//if (count < 1 || count >= PM805_MIXER_COEFFICIENT_MAX_NUM) {
++	//	pr_info("error count %d, must between 1~64\n", count);
++	//	return -EINVAL;
++	//}
+ 
+ 	pr_debug("%s: 0x%x, count %d\n", __func__, reg, count);
+ 
+@@ -199,12 +200,13 @@ static int pm805_bulk_write_reg(struct snd_kcontrol *kcontrol,
+ 	int i, count = 0;
+ 	struct pm80x_chip *chip = (struct pm80x_chip *)codec->control_data;
+ 
+-	count = (ucontrol->value.integer.value[0] & 0xff);
++	//count = (ucontrol->value.integer.value[0] & 0xff);
++	count = PM805_MIXER_COEFFICIENT_MAX_NUM-1;
+ 
+-	if (count < 1 || count > PM805_MIXER_COEFFICIENT_MAX_NUM) {
+-		pr_info("error count %d, must between 1~32\n", count);
+-		return -EINVAL;
+-	}
++	//if (count < 1 || count > PM805_MIXER_COEFFICIENT_MAX_NUM) {
++	//	pr_info("error count %d, must between 1~32\n", count);
++	//	return -EINVAL;
++	//}
+ 
+ 	pr_debug("%s: 0x%x, count %d\n", __func__, reg, count);
+ 
+-- 
+2.38.3
+

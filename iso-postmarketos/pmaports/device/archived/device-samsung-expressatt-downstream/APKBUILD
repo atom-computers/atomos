@@ -1,0 +1,27 @@
+# Archived: Downstream port
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-expressatt-downstream
+pkgdesc="Samsung Galaxy Express SGH-I437"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-expressatt-downstream mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+c428b5d9b0123e6b36cf73fe3a5f549157600cc82453eeb95e623f75a2f3205c8cd3bc9d384a85cfa295867be45b8a3bde071008dd10acc3b418e172bb527a5f  deviceinfo
+d5877ecb7a15cb24e0e3108f353d3b5c1278361c57541c43421d447dda1f53d4d42ce90ff8a4ac73097b30de984e3eba5c043537b1aafa08a7f303b2818aa28b  kernel-cmdline.conf
+"

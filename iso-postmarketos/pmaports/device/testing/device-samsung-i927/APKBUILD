@@ -1,0 +1,88 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-i927
+pkgdesc="Samsung Captivate Glide"
+pkgver=5
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base
+	linux-samsung-i927
+	mkbootimg
+	alsa-utils
+	setxkbmap
+	pm-utils"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware $pkgname-x11"
+source="deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf
+	HiFi.conf
+	Voice.conf
+	wm8994aif1.conf
+	40-samsung-i927.conf
+	Xkbmap
+	i927
+	i927_rules
+	i927_rules.lst
+	i927-pm-conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm/wm8994aif1/HiFi.conf
+	install -D -m644 "$srcdir"/Voice.conf \
+		"$pkgdir"/usr/share/alsa/ucm/wm8994aif1/Voice.conf
+	install -D -m644 "$srcdir"/wm8994aif1.conf \
+		"$pkgdir"/usr/share/alsa/ucm/wm8994aif1/wm8994aif1.conf
+
+	install -D -m644 "$srcdir"/Xkbmap \
+		"$pkgdir"/etc/X11/Xkbmap
+	install -D -m644 "$srcdir"/i927_rules \
+		"$pkgdir"/usr/share/X11/xkb/rules/i927_rules
+	install -D -m644 "$srcdir"/i927_rules.lst \
+		"$pkgdir"/usr/share/X11/xkb/rules/i927_rules.lst
+	install -D -m644 "$srcdir"/i927 \
+		"$pkgdir"/usr/share/X11/xkb/symbols/i927
+
+	install -D -m755 "$srcdir"/i927-pm-conf \
+		"$pkgdir"/etc/pm/config.d/i927-pm-conf
+
+	install -D -m644 "$srcdir"/40-samsung-i927.conf \
+		"$pkgdir"/usr/share/X11/xorg.conf.d/40-samsung-i927.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="bcm4330 wifi firmware"
+	depends="firmware-samsung-i927"
+	mkdir "$subpkgdir"
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	depends="xf86-video-opentegra libvdpau-tegra"
+
+	amove usr/share/X11
+}
+
+sha512sums="
+68d788f6d976e6896294ffb70cb0a2eef8fe8e432cf162f3278beb5ece620d94ac548189f1e9cb20ed46e0f0b47efc96609afc08b6c1fdb7baee4efcd5ac11f2  deviceinfo
+a12779080ff7ba7fa69e1ebe9aa535e6ce2846bfd0a032e0bcbd65775f773adb2712508404a6b76f304f323cbb2794741b9c8ac48a8f66a98aba172bf785b82f  kernel-cmdline.conf
+d8ce60ea7acaabf627ddca2f0887a4cda46f313b7aaf7934bef2fef8a6e0798ccefab849e4571e4e3fcd06ae34c1a6efe3b58b401e2e443416f6200e6d4ea769  modules-load.conf
+97780fe04738a88afa2bc8bd96de5f053861d1ecb83185fc8af4534e77f365c0cbaaffdb2ee579aa0940db7ec3df74cbb90aa122d5fc97a2e3977432010f254f  HiFi.conf
+a790d9f06ab32a36ecfaf7f43e5b3c6d12e383f54ba0bad649edcf177f97d053d53de993a7df297bae91807f648c43ba69b2d1cf24969669155df89d6a7ad36c  Voice.conf
+6fa188b7756edc28f7cfa7dd6a6d2eacb828b55c4a989673321d82ef0802d8c1dd44d0aa40ba9bdb05843fd96c73325380c8bdcd41e35b269c4655196c888d99  wm8994aif1.conf
+81b90a4076e18f916937b48fb175172b0d41534d4a69db8d12043a40bd89a9f6d5f60f39a5a1d91479a061369b72bd29aa0fa9cc9706190cfeb21cd57eee5e37  40-samsung-i927.conf
+607d8631a4ced6b727f93f8ffbcf906c0c216c71bbd026cb2538d1b25f94c9f09c06531da5a0bbbd40b064c5b15b8fa693deec9fe683ad009ca80f7afbb12c6b  Xkbmap
+5f6e51d51e0392fa25626554673a751d9bdee19c503eadf2f3a4e30b6cf8ff8d99b0ddf436dc2e496a3701c1969aca165eebc368fa6bbfb9cb3554dcf627f75d  i927
+49aad2429c0fa7a0dcc99a57c6372d1223661ec0ecf5fcb1ede28992138dbc2a1b8e18ca265ad7e9bc2f389b8f2cd7ec57598c1dbb2d8de0ee4a277fb3d79957  i927_rules
+22b470480d100b9e59a6d2fa69b742c53800a77cac872ac699e7d8bbce7578f15d78b862a8bcafb8b9c38f6db6abd50cbec19b88694f8a7ca9caf7b2b75f43f4  i927_rules.lst
+56c068417135940db46de2bc8438cf858e58fbd84b8cac85a763304aaa61b4506cb8c15e236354c09182f4a797df72d3ec0178c1a6d85b007ab6d1c8926a4d89  i927-pm-conf
+"

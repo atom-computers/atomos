@@ -1,0 +1,5 @@
+SUBSYSTEM=="power_supply", ATTRS{type}=="Battery", ATTRS{status}=="Charging", \
+RUN+="/usr/lib/device-jolla-sbj/led-charging-sbj.sh"
+SUBSYSTEM=="power_supply", ATTRS{type}=="Battery", ATTRS{status}=="Discharging", \
+RUN+="/usr/lib/device-jolla-sbj/led-discharging-sbj.sh"
+

@@ -1,0 +1,83 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-lg-hammerhead
+pkgver=15
+pkgrel=1
+pkgdesc="Google Nexus 5"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	linux-postmarketos-qcom-msm8974
+	lk2nd-msm8974-lg-hammerhead
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8974
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-phosh
+	$pkgname-x11
+	$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	bt-module-deps.conf
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	phoc.ini
+	xorg.conf
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	depends="
+		libinput
+		xf86-input-libinput
+		xf86-video-fbdev
+		msm-fb-refresher"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-hammerhead.conf
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi, GPU, Modem and ADSP firmware"
+	depends="
+		firmware-qcom-adreno-a330
+		firmware-lg-hammerhead
+		firmware-lg-hammerhead-adsp
+		firmware-lg-hammerhead-modem
+		firmware-lg-hammerhead-bluetooth
+		linux-firmware-brcm
+		linux-firmware-cypress
+		msm-modem
+	"
+	mkdir "$subpkgdir"
+	# This config makes sense only if non-free firmware is installed
+	install -Dm644 "$srcdir"/bt-module-deps.conf \
+		"$subpkgdir"/usr/lib/modprobe.d/bt-module-deps.conf
+}
+
+sha512sums="
+6cef5f8ae1785ac16e6fe84bfc861ac50cdfb94db35d764f44a25c960e123cb82f6e56f45362a5340c62a3d5ac225f2689afd4f6964cb88305a0892ba44214f0  bt-module-deps.conf
+1bfc6a5588e43a890aa6aaa0e48f9bcfd4b96a5dff87d8ada0f6abea8351a3f7f0d7ac93f9a50a352dc7152c0b2445221b759a4e146a2e296bcc93e22350f91e  deviceinfo
+48518cc782d7ec0dd469c5301975546a794fea49bd642436b1cdf65335d9a9e092ed6ba75a9c7fb95e85326c49499226c7e43ec820752793b8178c8635640635  kernel-cmdline.conf
+fd639faebbee2c0c2c227710678376e0d039b7d96a62103f7ba7e6304d7060023f09064918e93a125465d20d125c0334225680521a7aeae5a43d77d7360c180c  modules-initfs
+ee1deae3c21de4dfcf9842abc7ba984229fd37bff058cb630a9bd44e787484ddfa3e5d4d85dbd30850d3ac34822aa91c82c3a5d7c107a990f202fb7da2f4db98  phoc.ini
+0a9da551fa9d48d8a663f6bc74e8a7d6e2d2a6e009bd163fa46cd302e75656ad7ae57402a0bd70614ec253e0f2445b4c6999df07104f4c657ed630305c7f40d4  xorg.conf
+"

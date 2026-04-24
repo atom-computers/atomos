@@ -1,0 +1,49 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Nick Chan <towinchenmi@gmail.com>
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=device-apple-idevice
+pkgdesc="Apple Generic Apple iDevice"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	m1n1-apple-idevice
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-4k:kernel_4k
+	$pkgname-kernel-16k:kernel_16k
+"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_4k() {
+	pkgdesc="Kernel with 4k page size"
+	depends="linux-postmarketos-apple-4k"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_16k() {
+	pkgdesc="Kernel with 16k page size"
+	depends="linux-postmarketos-apple-16k"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+2d2ab80ab8b84b9bf0ac8278c2276968307e7541b49962581d6f1af77889c29738afb2aec269be4d764d1a622ab88d8a0eba35908fee72d83b905be0915d87fe  deviceinfo
+f4df83d543efb5748743f56fbfeddc6734ad341fb623f796faa74b4f42cadfd9a7b1aea2bd3a6f7aa3f284bcb34c05b2ec2a1704ad6e88b043f92dc0de14a573  modules-initfs
+"

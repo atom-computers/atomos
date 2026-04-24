@@ -1,0 +1,19 @@
+# See https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/2248#note_605868837
+maintainer="Timbz <timon.baetz@protonmail.com>"
+pkgname=firmware-samsung-s5k5baf
+pkgver=1.0
+pkgrel=0
+pkgdesc="Firmware for Samsung S5K5BAF(X) UXGA camera driver"
+url="https://github.com/timbz/firmware-samsung-s5k5baf"
+arch="armv7"
+license="GPL2"
+options="!check !tracedeps pmb:cross-native"
+source="https://github.com/timbz/firmware-samsung-s5k5baf/releases/download/v$pkgver/s5k5baf-cfg.bin"
+
+package() {
+	install -Dm644 "$srcdir"/s5k5baf-cfg.bin "$pkgdir"/lib/firmware/postmarketos/s5k5baf-cfg.bin
+}
+
+sha512sums="
+912094e25f20e1cb78866a1f0cc3ba0459a788591550175ee077983cbfbed5eba4ddcb932771ff49894550439e096054b4d723dbeb95b7c0909ba3496f6e26b5  s5k5baf-cfg.bin
+"

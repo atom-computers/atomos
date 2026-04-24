@@ -1,0 +1,94 @@
+maintainer=""
+pkgname=firmware-xiaomi-vayu
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Xiaomi POCO X3 Pro"
+subpackages="
+	$pkgname-adsp
+	$pkgname-adreno
+	$pkgname-cdsp
+	$pkgname-touchscreen
+	$pkgname-wlan
+	$pkgname-ath10k
+	$pkgname-modem
+	"
+url="https://gitlab.com/adomerle/firmware-xiaomi-vayu"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="2dc9790c669041385d364d3fcee092545534f88d"
+source="
+	$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-gpu-firmware.files
+	30-touchscreen-firmware.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pkgdesc="Xiaomi POCO X3 Pro adsp firmware"
+
+	install -Dm644 "$builddir"/adsp* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/vayu"
+}
+
+adreno() {
+	pkgdesc="Xiaomi POCO X3 Pro adreno firmware"
+
+	install -Dm644 "$builddir"/qcom/a6* -t \
+		"$subpkgdir/lib/firmware/qcom/"
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" \
+		"$subpkgdir/usr/share/mkinitfs/files/30-gpu-firmware.files"
+}
+
+cdsp() {
+	pkgdesc="Xiaomi POCO X3 Pro cdsp firmware"
+
+	install -Dm644 "$builddir"/cdsp* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/vayu"
+}
+
+wlan() {
+	pkgdesc="Xiaomi POCO X3 Pro wlan firmware"
+
+	install -Dm644 "$builddir"/wlanmdsp.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/vayu"
+}
+
+modem() {
+	pkgdesc="Xiaomi POCO X3 Pro modem firmware"
+
+	install -Dm644 "$builddir"/modem* -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/vayu"
+}
+
+touchscreen() {
+	pkgdesc="Xiaomi POCO X3 Pro touchscreen firmware"
+
+	install -Dm644 "$builddir"/j20s_novatek_ts* -t \
+		"$subpkgdir/lib/firmware/"
+
+	install -Dm644 "$srcdir/30-touchscreen-firmware.files" \
+		"$subpkgdir/usr/share/mkinitfs/files/30-touchscreen-firmware.files"
+}
+
+ath10k() {
+	pkgdesc="Xiaomi POCO X3 Pro ath10k firmware"
+
+	install -Dm644 "$builddir"/board-2.bin -t \
+		"$subpkgdir/lib/firmware/postmarketos/ath10k/WCN3990/hw1.0/"
+
+	install -Dm644 "$builddir"/firmware-5.bin -t \
+		"$subpkgdir/lib/firmware/postmarketos/ath10k/WCN3990/hw1.0/"
+}
+
+sha512sums="
+19cdb00dec5e59585eb50787300ed897a2c3a1d6956e8729f248e449ec1af29d39b4bee5251d56f803cd3121560d1ff61e8332e9d080dd6aee2792ae075eda11  firmware-xiaomi-vayu-2dc9790c669041385d364d3fcee092545534f88d.tar.gz
+6d572c91fadf21031c7588172f3ba378c61073ab00908cb61411983063960f44a92039bd7dd3f3893f24ee30b6c6c7ab9da6ddfe2130a8ba5116ed32d8c9bbaf  30-gpu-firmware.files
+2c1bbc9e95c65adc2aecc985b728670e56b8d5e71d0476779e05275710f85c2ce246e744524048429f9c956bf7af52e568043c7404c68d4c69ca0ebeb4e49657  30-touchscreen-firmware.files
+"

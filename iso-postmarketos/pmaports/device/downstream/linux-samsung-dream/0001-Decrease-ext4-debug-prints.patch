@@ -1,0 +1,27 @@
+From da741e27ea3b8d3012f4c1fb6f544692fd2b77d1 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 23 Jun 2025 16:16:57 +0200
+Subject: [PATCH] Decrease ext4 debug prints
+
+---
+ fs/ext4/super.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index 414e8b117ec5..d66fd85188d9 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -4150,8 +4150,8 @@ cantfind_ext4:
+ 	/* for debugging, sangwoo2.lee */
+ 	/* If you wanna use the flag 'MS_SILENT', call */
+ 	/* 'print_bh' function within below 'if'. */
+-	printk(KERN_ERR "printing data of superblock-bh\n");
+-	print_bh(sb, bh, 0, EXT4_BLOCK_SIZE(sb));
++	//printk(KERN_ERR "printing data of superblock-bh\n");
++	//print_bh(sb, bh, 0, EXT4_BLOCK_SIZE(sb));
+ 	/* for debugging */
+ 
+ 	if (!silent)
+-- 
+2.50.0
+

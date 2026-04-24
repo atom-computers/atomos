@@ -1,0 +1,85 @@
+# The group tag is just to easily find this APKBUILD by some scripts for automation
+# group=kde-plasma
+maintainer="team/kde <bribbers@disroot.org>"
+pkgname=plasma-login-manager
+pkgver=6.6.4
+pkgrel=0
+pkgdesc="A display manager for KDE Plasma"
+# armhf blocked by qt6-qtdeclarative
+arch="all !armhf"
+url="https://kde.org/plasma-desktop"
+license="GPL-2.0-or-later"
+makedepends="
+	doxygen
+	extra-cmake-modules
+	graphviz
+	kauth-dev
+	kcmutils-dev
+	kconfig-dev
+	kdbusaddons-dev
+	kde-qdoc-common
+	ki18n-dev
+	kio-dev
+	kpackage-dev
+	kwindowsystem-dev
+	layer-shell-qt-dev
+	linux-pam-dev
+	libxau-dev
+	plasma-workspace-dev
+	qt6-qtbase-dev
+	qt6-qtdeclarative-dev
+	qt6-qttools-dev
+	samurai
+	systemd-dev
+	"
+subpackages="
+	$pkgname-lang
+	$pkgname-systemd
+	"
+
+case "$pkgver" in
+	*.*.9*) _rel=unstable;;
+	*) _rel=stable;;
+esac
+
+# strip fourth version component for source URL
+case "$pkgver" in
+	*.*.*.*) _pkgver="${pkgver%.*}" ;;
+	*) _pkgver="$pkgver" ;;
+esac
+
+_repo_url="https://invent.kde.org/plasma/plasma-login-manager.git"
+source="https://download.kde.org/$_rel/plasma/$_pkgver/plasma-login-manager-$pkgver.tar.xz
+	plasmalogin.pam
+	plasmalogin-autologin.pam
+	plasmalogin-greeter.pam
+	"
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DINSTALL_PAM_CONFIGURATION=OFF
+	cmake --build build
+}
+
+check() {
+	ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	install -Dm644 "$srcdir"/plasmalogin.pam "$pkgdir"/usr/lib/pam.d/plasmalogin
+	install -Dm644 "$srcdir"/plasmalogin-autologin.pam "$pkgdir"/usr/lib/pam.d/plasmalogin-autologin
+	install -Dm644 "$srcdir"/plasmalogin-greeter.pam "$pkgdir"/usr/lib/pam.d/plasmalogin-greeter
+}
+
+
+sha512sums="
+3050c089ef351c4993d87d136da7d2346da2469eb179cc342b240a99b7e805cc74c00bade4ec1982ef89330e6d8adf4c250a462d9c0fb7ffaecaa8eb28892a86  plasma-login-manager-6.6.4.tar.xz
+77fcd3ace910cc694266afb32ac75258e954dfcefa206dfc5f42204b4e3e14528d47a9e28e6cb0aa7f1670450a42023ce4ee85eac76fce2806bab54b2d1aa37c  plasmalogin.pam
+44d0fce5ed4dd19c0a66cd3b191f33658dcaadf619711c8ed8dccfa8697e8464836780404307271922a910e3df631b8cecfec77822a252e3eabf12c28e65dfa1  plasmalogin-autologin.pam
+e82cf4dbca78ea73cc26378ca94dca12d9bb48fe13c29ff1e8403f44f4c83ba5000b8cfff0d2c4161ef9e8218edda82d4226ea571b70ffe7042ed3f2580538cd  plasmalogin-greeter.pam
+"

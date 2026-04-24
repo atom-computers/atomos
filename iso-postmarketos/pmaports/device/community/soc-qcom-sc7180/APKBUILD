@@ -1,0 +1,76 @@
+# Co-Maintainer: Ingo Reitz <9l@9lo.re>
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+pkgname=soc-qcom-sc7180
+pkgdesc="Common package for Qualcomm Snapdragon 7cx devices"
+pkgver=2
+pkgrel=5
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps"
+install="
+	$pkgname-nonfree-firmware-openrc.post-install
+	$pkgname-nonfree-firmware-openrc.post-upgrade
+	$pkgname-nonfree-firmware-woa-openrc.post-install
+	$pkgname-nonfree-firmware-woa-openrc.post-upgrade
+	"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-nonfree-firmware-woa:nonfree_firmware_woa
+	$pkgname-nonfree-firmware-woa-openrc:nonfree_firmware_woa_openrc
+	$pkgname-vulkan
+"
+source="00-sc7180-nonstrict-iommu.sh"
+
+package() {
+	mkdir -p "$pkgdir"
+
+	install -Dm755 "$srcdir"/00-sc7180-nonstrict-iommu.sh \
+		-t "$pkgdir"/usr/share/mkinitfs/hooks
+}
+
+nonfree_firmware() {
+	pkgdesc="Modem, WiFi firmware"
+	depends="rmtfs"
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_openrc() {
+	depends="openrc rmtfs-openrc"
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_woa() {
+	pkgdesc="Modem, WiFi firmware"
+	depends="
+		$pkgname-nonfree-firmware
+		pd-mapper
+		tqftpserv
+	"
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_woa_openrc() {
+	depends="
+		openrc
+		pd-mapper-openrc
+		tqftpserv-openrc
+	"
+	install_if="$pkgname-nonfree-firmware-woa=$pkgver-r$pkgrel openrc"
+	mkdir "$subpkgdir"
+}
+
+vulkan() {
+	pkgdesc="Vulkan support for freedreno"
+	install_if="$pkgname=$pkgver-r$pkgrel vulkan-loader"
+	depends="mesa-vulkan-freedreno"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+8d76fc3ed580e5950bcb8561c08bf56c52b8693605dee04f174a49154e270b5ac6d4303bc00499864f30c352e9a0c06c449253e0b8ba974e3d85554f306c84fc  00-sc7180-nonstrict-iommu.sh
+"

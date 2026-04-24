@@ -1,0 +1,25 @@
+From 60d9b247b27bb2ba4d9d64914c4db2f2da3c80e6 Mon Sep 17 00:00:00 2001
+From: Snejp <bartosz.dudziak@snejp.pl>
+Date: Thu, 4 Jun 2020 12:48:30 +0200
+Subject: [PATCH 2/5] always reserve framebuffer memory
+
+---
+ drivers/video/msm/mdss/mdss_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index f0fbae2d..84d1864a 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -1211,7 +1211,7 @@ static int mdss_fb_alloc_fbmem_iommu(struct msm_fb_data_type *mfd, int dom)
+ 					boot_mode_lpm, boot_mode_recovery);
+ 
+ 	/* Incase of Normal Booting, Do not reserve FB memory */
+-	if ((!boot_mode_lpm) && (!boot_mode_recovery)){
++	if (0){
+ 		/* Normal Booting */
+ 		mfd->fbi->screen_base = NULL;
+ 		mfd->fbi->fix.smem_start = 0;
+-- 
+2.25.1
+

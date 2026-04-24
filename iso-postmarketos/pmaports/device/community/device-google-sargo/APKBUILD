@@ -1,0 +1,87 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Richard Acayan <mailingradian@gmail.com>"
+pkgname=device-google-sargo
+pkgdesc="Google Pixel 3a"
+pkgver=18
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sdm670
+	firmware-google-sargo
+	hexagonrpcd
+	linux-firmware-ath10k
+	linux-firmware-qca
+	linux-firmware-qcom
+	linux-postmarketos-qcom-sdm670
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-pd-mapper
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+install="$pkgname-openrc.post-install"
+source="
+	81-libssc-google-sargo.rules
+	deviceinfo
+	hexagonrpcd.confd
+	modules-initfs
+	no-hexagonrpcd-on-suspend.sh
+	plasmacamerarc
+	q6voiced.conf
+"
+subpackages="
+	$pkgname-openrc
+	$pkgname-plasma-camera:plasma_camera
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	replaces="$pkgname-nonfree-firmware"
+	devicepkg_package $startdir $pkgname
+
+	# Sensors depend on ADSP firmware and the sensors registry served over FastRPC.
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf
+	install -Dm644 "$srcdir"/81-libssc-google-sargo.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-google-sargo.rules
+
+	# The q6voiced configuration can only be used if the ADSP is brought up
+	# via non-free firmware.
+	install -Dm644 "$srcdir"/q6voiced.conf "$pkgdir"/etc/conf.d/q6voiced
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="hexagonrpcd-openrc openrc"
+
+	# The FastRPC service is only enabled when non-free firmware is installed.
+	install -Dm755 "$srcdir"/no-hexagonrpcd-on-suspend.sh \
+		-t "$subpkgdir"/usr/libexec/elogind/system-sleep
+}
+
+plasma_camera() {
+	install_if="$pkgname=$pkgver-r$pkgrel plasma-camera"
+
+	install -Dm644 "$srcdir"/plasmacamerarc "$subpkgdir"/etc/xdg/plasmacamerarc
+}
+
+sha512sums="
+e358f0565b95cd5d39dd5bc07645c6e0f94679c93b120b72bd2b6082b7f919e990a6a78e03edc0db045f8fc5e3363377c69fb8e42107298868ec319740c29210  81-libssc-google-sargo.rules
+6625f41b5348bd45e47f56dc3b4a8aa07430939ae76e082d645397db6680182a7174a1b897ad8b7019e6211220a8f3712eeac6eb2e9b55c4e1434e964729de97  deviceinfo
+b6208c254b6e44ac4f6d748a38cc6b05da0db2c90235ada2011b138b82ccc3372687df2f5ad97e885e9eea135216a3c52266a08a7f4eb323e62e799f6f82ec7b  hexagonrpcd.confd
+925d8b176a8f1b47a86a1026cc920ffae99ceb35c3e52c222654c15078907579d23c4d68ed65a98ab937f59aaba2bbdd74da8d273e8b9c1ac87a52f718d383d6  modules-initfs
+2972005a9cf6ca57061965075593dddfa8ee479bc6c21cd41851b1a14768cb1cddbd31a17975ae17adc36d40d294ccbc6bf83defbd69fc7b363f638d8564fbbc  no-hexagonrpcd-on-suspend.sh
+53bec3338d875ecedf2ae981cf9a0f9066e276f09570b3bd06217414461126a76942b70e01c3bb18831fbefeb188621dd5a341ab2604e8fb0c6de8a3025177e2  plasmacamerarc
+3a4a9322839d4b3ef9d79668a37840a9f444954759ae3c512e694051d2f9a2573db42ad6c4c1a5c75eeb861232a27ba1a8cef9b503decd54ead25a96e3dd6f98  q6voiced.conf
+"

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rc-update add tinydm default
+tinydm-set-session -s /usr/share/xsessions/i3.desktop
+rc-update add elogind default
+rc-update add networkmanager default

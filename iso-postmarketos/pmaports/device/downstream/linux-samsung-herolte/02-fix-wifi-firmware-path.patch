@@ -1,0 +1,22 @@
+--- a/drivers/net/wireless/bcmdhd4359/dhd.h	2019-01-28 13:51:47.000000000 +0100
++++ b/drivers/net/wireless/bcmdhd4359/dhd.h	2019-04-13 12:22:40.501393213 +0200
+@@ -2126,18 +2126,7 @@ extern uint dhd_pktgen_len;
+ extern char fw_path2[MOD_PARAM_PATHLEN];
+ #endif
+ 
+-#if defined(ANDROID_PLATFORM_VERSION)
+-#if (ANDROID_PLATFORM_VERSION < 7)
+-#define DHD_LEGACY_FILE_PATH
+-#define VENDOR_PATH "/system"
+-#elif (ANDROID_PLATFORM_VERSION == 7)
+-#define VENDOR_PATH "/system"
+-#elif (ANDROID_PLATFORM_VERSION >= 8)
+-#define VENDOR_PATH "/vendor"
+-#endif /* ANDROID_PLATFORM_VERSION < 7 */
+-#else
+-#define VENDOR_PATH ""
+-#endif /* ANDROID_PLATFORM_VERSION */
++#define VENDOR_PATH "/lib/firmware/postmarketos"
+ 
+ #ifdef DHD_LEGACY_FILE_PATH
+ #define PLATFORM_PATH	"/data/"

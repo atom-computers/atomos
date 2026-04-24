@@ -1,0 +1,63 @@
+# Automatically generated aport, do not edit!
+# Generator: pmbootstrap aportgen musl-riscv64
+
+# Stub for apkbuild-lint
+if [ -z "$(type -t arch_to_hostspec)" ]; then
+	arch_to_hostspec() { :; }
+fi
+
+maintainer=""
+pkgname=musl-riscv64
+pkgver=1.2.6
+pkgrel=2
+arch="x86_64"
+subpackages="musl-dev-riscv64:package_dev"
+
+_arch="riscv64"
+_mirror="http://dl-4.alpinelinux.org/alpine/"
+
+url="https://musl-libc.org"
+license="MIT"
+options="!check !strip"
+pkgdesc="the musl library (lib c) implementation for $_arch"
+
+_target="$(arch_to_hostspec $_arch)"
+
+source="
+	musl-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-$pkgver-r$pkgrel.apk
+	musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-dev-$pkgver-r$pkgrel.apk
+"
+
+package() {
+	mkdir -p "$pkgdir/usr/$_target"
+	cd "$pkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+}
+package_dev() {
+	mkdir -p "$subpkgdir/usr/$_target"
+	cd "$subpkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+
+	# symlink everything from /usr/$_target/usr/*
+	# to /usr/$_target/* so the cross-compiler gcc does not fail
+	# to build.
+	for _dir in include lib; do
+		mkdir -p "$subpkgdir/usr/$_target/$_dir"
+		cd "$subpkgdir/usr/$_target/usr/$_dir"
+		for i in *; do
+			cd "$subpkgdir/usr/$_target/$_dir"
+			ln -s /usr/$_target/usr/$_dir/$i $i
+		done
+	done
+}
+
+sha512sums="
+3113c288563199b52e9fbb93a34e16eb87bfe4b7e0872ba0349eec1fc532ea8583565f862b82130fcf416fc006ff661afad1bf549e25d688aa6b055287089c39  musl-1.2.6-r2-riscv64-edge.apk
+8bf4503998a50581af7965407bd25aa41c2716526e6db7683dfb9cce134d9cf401bdeeafd060fd6e5d83ac52852e745c6eafdd406dd59d8f5eea256445f21a3d  musl-dev-1.2.6-r2-riscv64-edge.apk
+"

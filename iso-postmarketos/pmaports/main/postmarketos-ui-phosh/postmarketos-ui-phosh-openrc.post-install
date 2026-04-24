@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rc-update add greetd default
+
+exit 0

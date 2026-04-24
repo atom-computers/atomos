@@ -1,0 +1,151 @@
+# Co-Maintainer: Victor Pavlov (vipaoL) <vipaolmail@gmail.com>
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=firmware-qcom-msm8953
+pkgver=3
+pkgrel=1
+pkgdesc="Firmware files for Qualcomm MSM8953 devices"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_asus_ze520kl_commit="f1439210719b2a1597f6390f34ae93cb1470ddf4"
+_billion_rimob_commit="a0b07d3cf66f0e2e13015d9d0f7dffdbda27683e"
+_fairphone_fp3_commit="ee529820bb874ab1b52873f0b144c3786f01ee4c"
+_huawei_milan_commit="f417e07a32310ee4002ca67a3d57f9ba0a960297"
+_lenovo_cd18781y_commit="337032e864fd6abe29375997fc3683398a4d27c4"
+_lenovo_kuntao_commit="009a366625c413aee2cc827ae94ed8ca75a3cebb"
+_motorola_ali_commit="153ba76124497fb7ce22d87a90149a15bcf67942"
+_motorola_ocean_commit="787dcae00d0866079c6f55dc3ddf6592279b0661"
+_motorola_potter_commit="cce83e64585c036facd4cef39f47bc23d18ba2e9"
+_xiaomi_daisy_commit="9ae200b57743088f83a6f2b02a6b7ce4596a77d6"
+_xiaomi_markw_commit="8cc7f7d9e56aa9fa0193403b694115d759eafaf2"
+_xiaomi_mido_commit="bc001cbb255a0ded2b58af07b93f712cd9322483"
+_xiaomi_onclite_commit="5ab4968ab12acb60a5e165008fdf25345e80c309"
+_xiaomi_rosy_commit="69c6d964bc0034bd93292286ac101c23fc804d72"
+_xiaomi_tissot_commit="bf686895224cae33c2130932b4a5914fea415287"
+_xiaomi_vince_commit="9acb58a25d66314700eeea15c69c4571154f19cc"
+_xiaomi_ysl_commit="ccfd274b825aec2d80e834b16499a6d9ba96c3f5"
+
+source="
+	firmware-asus-ze520kl-$_asus_ze520kl_commit.tar.gz::https://gitlab.com/Smankusors/firmware-asus-zenfone3/-/archive/$_asus_ze520kl_commit/firmware-asus-zenfone3-$_asus_ze520kl_commit.tar.gz
+	firmware-billion-rimob-$_billion_rimob_commit.tar.gz::https://gitlab.com/cristian_ci/firmware-billion-rimob/-/archive/$_billion_rimob_commit/firmware-billion-rimob-$_billion_rimob_commit.tar.gz
+	firmware-fairphone-fp3-$_fairphone_fp3_commit.tar.gz::https://github.com/FairBlobs/FP3-firmware/archive/$_fairphone_fp3_commit/FP3-firmware-$_fairphone_fp3_commit.tar.gz
+	firmware-huawei-milan-$_huawei_milan_commit.tar.gz::https://github.com/bzy-080408/postmarketos-vendor-huawei-milan/archive/$_huawei_milan_commit.tar.gz
+	firmware-lenovo-cd18781y-$_lenovo_cd18781y_commit.tar.gz::https://gitlab.com/kaechele/postmarketos-vendor-lenovo-cd-18781y/-/archive/$_lenovo_cd18781y_commit/firmware-lenovo-cd18781y-$_lenovo_cd18781y_commit.tar.gz
+	firmware-lenovo-kuntao-$_lenovo_kuntao_commit.tar.gz::https://gitlab.com/raihan2000/firmware-lenovo-kuntao/-/archive/$_lenovo_kuntao_commit/firmware-lenovo-kuntao-$_lenovo_kuntao_commit.tar.gz
+	firmware-motorola-ali-$_motorola_ali_commit.tar.gz::https://github.com/moto-g6-mainlining/firmware-blobs/archive/$_motorola_ali_commit.tar.gz
+	firmware-motorola-ocean-$_motorola_ocean_commit.tar.gz::https://gitlab.com/Ultra-azu/firmware-motorola-ocean/-/archive/$_motorola_ocean_commit/firmware-motorola-ocean-$_motorola_ocean_commit.tar.gz
+	firmware-motorola-potter-$_motorola_potter_commit.tar.gz::https://github.com/SirSireesh/firmware-motorola-potter/archive/$_motorola_potter_commit.tar.gz
+	firmware-xiaomi-daisy-$_xiaomi_daisy_commit.tar.gz::https://github.com/alikates/firmware-xiaomi-daisy/archive/$_xiaomi_daisy_commit.tar.gz
+	firmware-xiaomi-markw-$_xiaomi_markw_commit.tar.gz::https://gitlab.com/vipaoL/firmware-xiaomi-markw/-/archive/$_xiaomi_markw_commit/firmware-xiaomi-markw-$_xiaomi_markw_commit.tar.gz
+	firmware-xiaomi-mido-$_xiaomi_mido_commit.tar.gz::https://github.com/Kiciuk/proprietary_firmware_mido/archive/$_xiaomi_mido_commit.tar.gz
+	firmware-xiaomi-onclite-$_xiaomi_onclite_commit.tar.gz::https://gitlab.com/barni2000/firmware-xiaomi-onclite/-/archive/$_xiaomi_onclite_commit/firmware-xiaomi-onclite-$_xiaomi_onclite_commit.tar.gz
+	firmware-xiaomi-rosy-$_xiaomi_rosy_commit.tar.gz::https://gitlab.com/barni2000/firmware-xiaomi-rosy/-/archive/$_xiaomi_rosy_commit/firmware-xiaomi-rosy-$_xiaomi_rosy_commit.tar.gz
+	firmware-xiaomi-tissot-$_xiaomi_tissot_commit.tar.gz::https://gitlab.com/jiaxyga/firmware-xiaomi-tissot/-/archive/$_xiaomi_tissot_commit/firmware-xiaomi-tissot-$_xiaomi_tissot_commit.tar.gz
+	firmware-xiaomi-vince-$_xiaomi_vince_commit.tar.gz::https://github.com/M0Rf30/postmarketos-vendor-xiaomi-vince/archive/$_xiaomi_vince_commit.tar.gz
+	firmware-xiaomi-ysl-$_xiaomi_ysl_commit.tar.gz::https://gitlab.com/barni2000/firmware-xiaomi-ysl/-/archive/$_xiaomi_ysl_commit/firmware-xiaomi-ysl-$_xiaomi_ysl_commit.tar.gz
+"
+
+_basefwdir="/lib/firmware"
+_fwdir="$_basefwdir/qcom/msm8953"
+
+package() {
+	asus_ze520kl_dir="$srcdir/firmware-asus-zenfone3-$_asus_ze520kl_commit"
+	install -Dm644 "$asus_ze520kl_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/asus/ze520kl"
+	install -Dm644 "$asus_ze520kl_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/asus/ze520kl"
+	install -Dm644 "$asus_ze520kl_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/asus/ze552kl"
+	install -Dm644 "$asus_ze520kl_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/asus/ze552kl"
+
+	billion_rimob_dir="$srcdir/firmware-billion-rimob-$_billion_rimob_commit"
+	install -Dm644 "$billion_rimob_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/flipkart/rimob"
+	install -Dm644 "$billion_rimob_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/flipkart/rimob"
+
+	fairphone_fp3_dir="$srcdir/FP3-firmware-$_fairphone_fp3_commit"
+	install -Dm644 "$fairphone_fp3_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/fairphone/fp3"
+	install -Dm644 "$fairphone_fp3_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/fairphone/fp3"
+
+	huawei_milan_dir="$srcdir/postmarketos-vendor-huawei-milan-$_huawei_milan_commit"
+	install -Dm644 "$huawei_milan_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/huawei/milan"
+	install -Dm644 "$huawei_milan_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/huawei/milan"
+
+	lenovo_cd18781y_dir="$srcdir/postmarketos-vendor-lenovo-cd-18781y-$_lenovo_cd18781y_commit"
+	install -Dm644 "$lenovo_cd18781y_dir/bt/nvm_00150100.bin" -t "$pkgdir/$_basefwdir/qca"
+	install -Dm644 "$lenovo_cd18781y_dir/bt/rampatch_00150100.bin" -t "$pkgdir/$_basefwdir/qca"
+	install -Dm644 "$lenovo_cd18781y_dir/gpu/a506_zap.b02" -t "$pkgdir/$_fwdir/lenovo/cd-18781y"
+	install -Dm644 "$lenovo_cd18781y_dir/gpu/a506_zap.mdt" -t "$pkgdir/$_fwdir/lenovo/cd-18781y"
+	install -Dm644 "$lenovo_cd18781y_dir/sound/tas5728m_dsp_lenovo_cd-18781y.bin" -t "$pkgdir/$_basefwdir"
+	install -Dm644 "$lenovo_cd18781y_dir/wifi/board-2.bin" -t "$pkgdir/$_basefwdir/ath10k/QCA9379/hw1.0"
+	install -Dm644 "$lenovo_cd18781y_dir/wifi/firmware-sdio-6.bin" -t "$pkgdir/$_basefwdir/ath10k/QCA9379/hw1.0"
+
+	lenovo_kuntao_dir="$srcdir/firmware-lenovo-kuntao-$_lenovo_kuntao_commit"
+	install -Dm644 "$lenovo_kuntao_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/lenovo/kuntao"
+	install -Dm644 "$lenovo_kuntao_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/lenovo/kuntao"
+
+	motorola_ali_dir="$srcdir/firmware-blobs-$_motorola_ali_commit"
+	install -Dm644 "$motorola_ali_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/motorola/ali"
+	install -Dm644 "$motorola_ali_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/motorola/ali"
+	install -Dm644 "$motorola_ali_dir/wlan/prima/WCNSS_qcom_wlan_nv.bin" -t "$pkgdir/$_fwdir/motorola/ali"
+
+	motorola_potter_dir="$srcdir/firmware-motorola-potter-$_motorola_potter_commit/lib/firmware/postmarketos"
+	install -Dm644 "$motorola_potter_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/motorola/potter"
+	install -Dm644 "$motorola_potter_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/motorola/potter"
+	install -Dm644 "$motorola_potter_dir/wlan/prima/WCNSS_qcom_wlan_nv.bin" -t "$pkgdir/$_fwdir/motorola/potter"
+
+	motorola_ocean_dir="$srcdir/firmware-motorola-ocean-$_motorola_ocean_commit/lib/firmware/postmarketos"
+	install -Dm644 "$motorola_ocean_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/motorola/ocean"
+	install -Dm644 "$motorola_ocean_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/motorola/ocean"
+	install -Dm644 "$motorola_ocean_dir/wlan/prima/WCNSS_qcom_wlan_nv.bin" -t "$pkgdir/$_fwdir/motorola/ocean"
+
+	xiaomi_daisy_dir="$srcdir/firmware-xiaomi-daisy-$_xiaomi_daisy_commit/gpu"
+	install -Dm644 "$xiaomi_daisy_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/daisy"
+	install -Dm644 "$xiaomi_daisy_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/daisy"
+
+	xiaomi_markw_dir="$srcdir/firmware-xiaomi-markw-$_xiaomi_markw_commit/lib/firmware/postmarketos"
+	install -Dm644 "$xiaomi_markw_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/markw"
+	install -Dm644 "$xiaomi_markw_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/markw"
+
+	xiaomi_mido_dir="$srcdir/proprietary_firmware_mido-$_xiaomi_mido_commit/apnhlos"
+	install -Dm644 "$xiaomi_mido_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/mido"
+	install -Dm644 "$xiaomi_mido_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/mido"
+
+	xiaomi_onclite_dir="$srcdir/firmware-xiaomi-onclite-$_xiaomi_onclite_commit"
+	install -Dm644 "$xiaomi_onclite_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/onclite"
+	install -Dm644 "$xiaomi_onclite_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/onclite"
+
+	xiaomi_rosy_dir="$srcdir/firmware-xiaomi-rosy-$_xiaomi_rosy_commit"
+	install -Dm644 "$xiaomi_rosy_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/rosy"
+	install -Dm644 "$xiaomi_rosy_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/rosy"
+
+	xiaomi_tissot_dir="$srcdir/firmware-xiaomi-tissot-$_xiaomi_tissot_commit/lib/firmware/postmarketos"
+	install -Dm644 "$xiaomi_tissot_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/tissot"
+	install -Dm644 "$xiaomi_tissot_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/tissot"
+
+	xiaomi_vince_dir="$srcdir/postmarketos-vendor-xiaomi-vince-$_xiaomi_vince_commit/gpu"
+	install -Dm644 "$xiaomi_vince_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/vince"
+	install -Dm644 "$xiaomi_vince_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/vince"
+
+	xiaomi_ysl_dir="$srcdir/firmware-xiaomi-ysl-$_xiaomi_ysl_commit/lib/firmware/postmarketos"
+	install -Dm644 "$xiaomi_ysl_dir/a506_zap.b02" -t "$pkgdir/$_fwdir/xiaomi/ysl"
+	install -Dm644 "$xiaomi_ysl_dir/a506_zap.mdt" -t "$pkgdir/$_fwdir/xiaomi/ysl"
+}
+
+sha512sums="
+a9980ae2ab0868d7e8e2d054e72525c030fe75d66aec6eebd2e17619d5d24455de2a158ea7ed0eb0db2f7a2f4bc07701672de217f8c7274599cd92c00cb2d04e  firmware-asus-ze520kl-f1439210719b2a1597f6390f34ae93cb1470ddf4.tar.gz
+809f39ca3e07950087dae7f6973d6e432c63ef8bc05d57dc7ae35e7029a1979fff029fa553734dc81e8838cdbd7cae53fd574b5fd32ff06358f499c2425d6c2e  firmware-billion-rimob-a0b07d3cf66f0e2e13015d9d0f7dffdbda27683e.tar.gz
+efa827787814ff4a59a0a61ca66410e46ce0add29b1451b4962b2d8af1d52b7035a0550b188fd442358702252964e4b64b16f836c5dcb1f748102cd0550aff7b  firmware-fairphone-fp3-ee529820bb874ab1b52873f0b144c3786f01ee4c.tar.gz
+f04a54bd81e389001e95357ffe301a10285c54782f70bb8ac9aed30173a6c9594b3568649d287234769b413cc3f93dbc982b3c596d287947d4630eaf98954451  firmware-huawei-milan-f417e07a32310ee4002ca67a3d57f9ba0a960297.tar.gz
+ed6ac4faa37312924de5498c4319338f842e69bd79f9ebfbf9c5dc9ce5d9cf7ca4d81e5ade31bc8ffc31f5489f7d752605d04a438e813966e0096d0d09c31e63  firmware-lenovo-cd18781y-337032e864fd6abe29375997fc3683398a4d27c4.tar.gz
+ebf5a43df59ec99ae63483cff1d0cfd25fa754e30910d8f9130bf43cc5c44278b5a23652585c44902fca943b022b858e3c6d55822aea45930a999dcce16285ee  firmware-lenovo-kuntao-009a366625c413aee2cc827ae94ed8ca75a3cebb.tar.gz
+269ac182806e9128557ac614142bfd6a2feab2cc3d2555268064df7ad1880de0d5e85b781a34ca57693d9c32ffe7d31da7fd34f9fd6364bc2b7cc2fdb90edc80  firmware-motorola-ali-153ba76124497fb7ce22d87a90149a15bcf67942.tar.gz
+fd0888bb6a0beeca961d9aabd0e60be64dfd841c3c89c7cdb8e7c1284347c4f56b2bad6a73aebc81e86625a4b548b5d2417ca31de6803ea5b3b58c7c1d97be51  firmware-motorola-ocean-787dcae00d0866079c6f55dc3ddf6592279b0661.tar.gz
+5a35ff1b567b672585f761eddbc772163f52b312c1e94410eff4b1d333852857a2f87769a45f47f7bcff373bdd5b062c3d16110e0211d85f83a7b4c6c78f6d3c  firmware-motorola-potter-cce83e64585c036facd4cef39f47bc23d18ba2e9.tar.gz
+0778b0c4a7e836c9e0cef842dda2fd9d5eba4693cd875a605413267690d48d9b7ea86b1ece0471e55e5c49d1b3645bee1aa735ba164d0120bdfc94ffffa7e16b  firmware-xiaomi-daisy-9ae200b57743088f83a6f2b02a6b7ce4596a77d6.tar.gz
+f57ec60776f0cfd89ccc0f4a561aa261367b299796b4a9121814c560eab7a28b3049a3defcc129942098b88937fad8f6c3bbf2d1ac7d89d4175c8ec4014c1a8a  firmware-xiaomi-markw-8cc7f7d9e56aa9fa0193403b694115d759eafaf2.tar.gz
+52bd3fe637dbe3bee18e9707e788cfd971d725ec8fbfa2401543484e1c8b5d49ccc4ecd7048427d00c89868fe39678b4e736886eeadcd60b6d1d7d61bc306ca7  firmware-xiaomi-mido-bc001cbb255a0ded2b58af07b93f712cd9322483.tar.gz
+e95cf73b4a2e13c8ea3296670177372f5e3c07f40e73806546f7c28a12a3ba5a3b735994dcaeacb8da59f5e3561ab6b061cedd77757cf58686907d32b1a7162a  firmware-xiaomi-onclite-5ab4968ab12acb60a5e165008fdf25345e80c309.tar.gz
+e1f0cd1383ba95cef08236dc470e4be05852387152be7772488f423f5a2e9ec1f7b27203ebf1e3bcb98b3998387b510546ebdcb81b0137a180912c67b850cc07  firmware-xiaomi-rosy-69c6d964bc0034bd93292286ac101c23fc804d72.tar.gz
+e82c953fd1a1a665bcfcfc4eaab95fe8a017f1804e4bc66f6449cfeb21137f2ebcc0f8abab9ef9975c438d9836d68974b417bbe58c128b06cec605abecfad008  firmware-xiaomi-tissot-bf686895224cae33c2130932b4a5914fea415287.tar.gz
+edf6dceb50c34c2bed55365ba8322974df6ecac4aafe04af2a95ab2d9cf7f7f69e3182f77747d676a0c20f097a87a1a61f771bcec570f7b0d0021dbddd5cdfac  firmware-xiaomi-vince-9acb58a25d66314700eeea15c69c4571154f19cc.tar.gz
+cd2d84dac3660fe554cba6d6d2ac0c6c7468cfd37bc443400ee1c2bc4a2ed3cb3e7120a413d7bed3c0bad2b5acb234599dd5a0f2e42f6696779c07c3e5c3c575  firmware-xiaomi-ysl-ccfd274b825aec2d80e834b16499a6d9ba96c3f5.tar.gz
+"

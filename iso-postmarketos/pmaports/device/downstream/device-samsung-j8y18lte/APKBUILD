@@ -1,0 +1,47 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-j8y18lte
+pkgdesc="Samsung Galaxy J8 (2018)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-j8y18lte
+	mdss-fb-init-hack
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh directfbrc fb.modes 30-gpu-firmware.files"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/fb.modes -t "$pkgdir"/etc
+	install -Dm644 "$srcdir"/directfbrc -t "$pkgdir"/etc
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi, Bluetooth, ADSP, Venus and GPU Firmware"
+	depends="firmware-samsung-j8y18lte wcnss-wlan linux-firmware-qcom"
+	mkdir "$subpkgdir"
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" -t \
+		"$subpkgdir/usr/share/mkinitfs/files"
+}
+
+sha512sums="
+d610f81f47c2b22ee5ca05aba9737c2ec973337f80365f6a3daaeae0363d000a4c914ae766e51c13b5ab1472a946297d10ba80863e33867fa57bfaca89b155e2  deviceinfo
+d4c0a0402d9fb71e102db9184205d1d5495072f0855642095baa796257680a620bde8c4444645e2c81974eff6a0313c2969ec20c8702ee1128d023b53be96f04  kernel-cmdline.conf
+c11610ccfbb2a46a4b721d64f8a2dbc4315768dbae52f1b675fce0ad0ab3b24d8685f944d914f6c37acc480e01b16ae8a2d280655f028f2ac577a68dee7aef7d  initfs-hook.sh
+3db3ec596e159be926ea2b5b2496c18e9bc7be24a64a232a56c89a0c9ee710aa2efb2b6fa9fc08efa34759e8242e6c629d08a4ce688ec8aa125830717c191515  directfbrc
+070eb0e3716d1a13517667d6cc6db720cc865f56f7619b1d4d864157567656128523cfa935236fff30a211a011b5c53b66d0cc28c256ba115a86aac82f4dffe9  fb.modes
+302c0bec754bb79ef561c1a8d4ff34ba52b904c853bce6a15a79ba7b5b7a3d02c1c75bbe86d59be7b608a6dc744dd3e3c638eaa4539c53d20fa55fa5ea397d74  30-gpu-firmware.files
+"

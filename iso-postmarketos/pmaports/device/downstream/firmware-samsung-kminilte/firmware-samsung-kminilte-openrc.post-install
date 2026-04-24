@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Enable autostart of deferred initcalls (needed to bring Wi-Fi online)
+rc-update -q add deferred-initcalls sysinit
+
+# Explicitly specify wlan device. Without this, p2p0 will be
+# selected automatically instead of wlan0, and Wi-Fi will not work.
+if ! grep -q "i wlan0" /etc/conf.d/wpa_supplicant ; then
+	sed -i 's/-Dnl80211,wext/-Dnl80211,wext -i wlan0/' /etc/conf.d/wpa_supplicant
+fi

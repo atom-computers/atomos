@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/cedric_defconfig
+
+pkgname=linux-motorola-cedric
+pkgver=3.18.49
+pkgrel=6
+pkgdesc="Motorola Moto G5 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-cedric"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool xz"
+
+# Source
+_repository="android_kernel_motorola_msm8937"
+_commit="2d29701ed2d080029f0bd3ceba07df66ae4e9c2d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Sohamlad7/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	03_fix_rndis_ipa_trace_header_not_found.patch
+	05_fix_u_f_header.patch
+	06_fix_usb_gadget_function.patch
+	fb-fixed.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm64/boot/dt.img" "arch/arm64/boot/"
+}
+
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB
+	install -Dm644 "$builddir/arch/arm64/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+706b37cf09d23abab80ba6e8dfbd8c806e4ecb4c3a31f0b0b5ba7ac29c7922716c46e89e4a99eb0febc2d7abe4b433e1b25a7e4f4c05ec43646c6c685e44b4c4  linux-motorola-cedric-2d29701ed2d080029f0bd3ceba07df66ae4e9c2d.tar.gz
+43bab17e464ce2636e2577b5647e300c502f68e032c987dda8bc509559c5465f811d4a85145f0bbfe1bbc4cf4fad18d63be9cac93d3e1aa4ae7881f411961efa  config-motorola-cedric.aarch64
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+9c549714f03c7a7666e8aa7508a48cfdccab7cf3e97fb59c4df8fa97f75492365926f82c4a677c50780d68d4905504dcccbdd6de6344bd8d4b88b2331933ed46  03_fix_rndis_ipa_trace_header_not_found.patch
+b408f157cc025d410b38f5aee9be977e670e1ac3f195f6c3a6681446fa0c3887067d62a4f729cfcd058fab42fca355b0265764dc2d21515f6e023ed025f55d41  05_fix_u_f_header.patch
+1f23466d1a864f2d2c67ae4250b0c166ecb7755779bbdad6732808a001cc2826cc1d013c2281d2ca1d5abd7d60d13783f0b9f11bb8359971f2b30b911e627220  06_fix_usb_gadget_function.patch
+99a3fda1246449b64d5be7cafeb287a04c234dcb3e7c8617d2aa31442974bf8788857b4935a6000fc157542f713ec253718133b92caab8932d808a760e3b667a  fb-fixed.patch
+"

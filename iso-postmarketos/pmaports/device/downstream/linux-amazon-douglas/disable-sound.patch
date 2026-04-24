@@ -1,0 +1,68 @@
+From 25b85f89a276fa67ef4c8fa1681020fc843adfd5 Mon Sep 17 00:00:00 2001
+From: Shuhao Wu <shuhao@shuhaowu.com>
+Date: Tue, 16 Jun 2020 23:58:01 -0400
+Subject: [PATCH] Disable sound in kernel
+
+Everytime the audio subsystem is accessed (such as via hwtest), the
+device hangs. This causes problems as one cannot enter even simple DEs
+like XFCE4 without freezes.
+---
+ drivers/regulator/Kconfig    | 1 +
+ drivers/usb/gadget/android.c | 6 ++++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
+index 5173112b..432cb6d1 100644
+--- a/drivers/regulator/Kconfig
++++ b/drivers/regulator/Kconfig
+@@ -586,6 +586,7 @@ config REGULATOR_SKY81452
+ config REGULATOR_SYM827
+ 	tristate "Silergy SYM827 regulator"
+ 	depends on I2C
++	select REGMAP_I2C
+ 	help
+ 	  Say y here to support for the Silergy SYM827.
+ 	  The SYM827 is a high efficiency synchronous step down
+diff --git a/drivers/usb/gadget/android.c b/drivers/usb/gadget/android.c
+index 0ebdb434..b60743ee 100644
+--- a/drivers/usb/gadget/android.c
++++ b/drivers/usb/gadget/android.c
+@@ -41,7 +41,9 @@
+ 
+ 
+ #include "f_fs.c"
++#ifdef CONFIG_SOUND
+ #include "f_audio_source.c"
++#endif
+ #ifdef CONFIG_SND_RAWMIDI
+ #include "f_midi.c"
+ #endif
+@@ -1675,6 +1677,7 @@ static struct android_usb_function accessory_function = {
+ 	.ctrlrequest	= accessory_function_ctrlrequest,
+ };
+ 
++#ifdef CONFIG_SOUND
+ static int audio_source_function_init(struct android_usb_function *f,
+ 			struct usb_composite_dev *cdev)
+ {
+@@ -1736,6 +1739,7 @@ static struct android_usb_function audio_source_function = {
+ 	.unbind_config	= audio_source_function_unbind_config,
+ 	.attributes	= audio_source_function_attributes,
+ };
++#endif
+ 
+ #ifdef CONFIG_MTK_C2K_SUPPORT
+ static int rawbulk_function_init(struct android_usb_function *f,
+@@ -1886,7 +1890,9 @@ static struct android_usb_function *supported_functions[] = {
+ 	&rndis_function,
+ 	&mass_storage_function,
+ 	&accessory_function,
++#ifdef CONFIG_SOUND
+ 	&audio_source_function,
++#endif
+ #ifdef CONFIG_SND_RAWMIDI
+ 	&midi_function,
+ #endif
+-- 
+2.25.1
+

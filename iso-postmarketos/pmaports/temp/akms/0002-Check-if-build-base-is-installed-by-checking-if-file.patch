@@ -1,0 +1,41 @@
+From d35f03892032852742567e3443c1d4974d0ee813 Mon Sep 17 00:00:00 2001
+From: Antoine Martin <dev@ayakael.net>
+Date: Thu, 5 Jun 2025 14:18:21 -0400
+Subject: [PATCH 2/2] Check if `build-base` is installed by checking if files
+ exist instead of apk
+
+When building AKMS module without sandbox, and via kernel hooks, using
+`apk` to check if `build-base` is installed won't work if it was added
+via the same install transaction. Thus, following the approach of
+`linux-*dev` package, we check if `build-base` is installed by looking
+for key files (i.e gcc, patch, make). If those key files don't exist,
+`build-base` is added to `makedepends` variable.
+
+diff --git a/akms b/akms
+index 95d66c8..e284ef1 100755
+--- a/akms
++++ b/akms
+@@ -124,7 +124,7 @@ MAKEFLAGS="-j$(nproc)"
+ 
+ readonly BUILD_USER=${build_user:-akms}
+ readonly BWRAP_OPTS=${bubblewrap_opts:-}
+-readonly MAKEDEPENDS=${makedepends:-build-base}
++readonly MAKEDEPENDS=${makedepends:-}
+ readonly MAKEFLAGS
+ readonly MODULES_DEST_PATH=${modules_dest_path:-/kernel/extra/akms}
+ readonly MODULES_SRC_DIR=${modules_srcdir:-/usr/src}
+@@ -526,6 +526,11 @@ install_makedepends() {
+ 		apk_opts="--root $build_root"
+ 	fi
+ 
++	# if any of these files are missing, it means `build-base` needs installing
++	if [ ! -f "/usr/bin/readelf" ] || [ ! -f "/usr/bin/file" ] || [ ! -f "/usr/bin/gcc" ] || [ ! -f "/usr/bin/g++" ] || [ ! -f "/usr/bin/make" ] || [ ! -f "/usr/bin/patch" ]; then
++		makedepends="$makedepends build-base"
++	fi
++
+ 	# If all $makedepends are installed, empty $makedepends.
+ 	[ "$makedepends" ] \
+ 		&& apk info $apk_opts -q --installed $makedepends \
+-- 
+2.49.0
+

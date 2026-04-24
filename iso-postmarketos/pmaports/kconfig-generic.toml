@@ -1,0 +1,133 @@
+# "pmbootstrap kconfig generate" will use the config options from this file
+# for kernel packages that have "pmb:generic-kernel" set in options, such as
+# linux-postmarketos-mainline, linux-postmarketos-stable and other generic
+# kernels that are not restricted to a specific subset of devices.
+#
+# The categorization in this file is purely for compatibility reasons and
+# for grouping things together, there is no filtering performed on them.
+#
+# This file is maintained by the maintainers of the generic kernel packages:
+# Aelin <aelin@postmarketos.org>
+# Achill Gilgenast <achill@achill.org>
+
+# clock controllers
+["category:clocks".">=0.0.0"."all"]
+COMMON_CLK = "y"
+["category:clocks".">=0.0.0"."aarch64"]
+SC_DISPCC_7180 = "m"
+SC_GPUCC_7180 = "m"
+SC_LPASS_CORECC_7180 = "m"
+SC_VIDEOCC_7180 = "m"
+SM_VIDEOCC_8350 = "m"
+
+# display controllers, bridges, panels, etc.
+["category:graphics".">=6.19_rc1"."aarch64 armv7"]
+DRM_PANEL_SAMSUNG_S6E8AA5X01_AMS561RA01 = "m"
+DRM_PANEL_SYNAPTICS_TDDI = "m"
+["category:graphics".">=0.0.0"."aarch64"]
+DRM_PANEL_SAMSUNG_SOFEF00 = "m"
+DRM_PANEL_VISIONOX_RM69299 = "m"
+["category:graphics".">=0.0.0"."aarch64 armv7"]
+EXYNOS_IOMMU = "y"
+NOUVEAU_PLATFORM_DRIVER = "y"
+["category:graphics".">=0.0.0"."all"]
+DRM_AMDGPU = "m"
+["category:graphics".">=0.0.0"."x86 x86_64"]
+DRM_I915 = "m"
+# depends on 4k page sizes
+["category:graphics".">=0.0.0"."aarch64 armv7 riscv64 x86 x86_64"]
+DRM_NOUVEAU = "m"
+DRM_NOUVEAU_BACKLIGHT = "y"
+DRM_NOUVEAU_CH7006 = "m"
+DRM_NOUVEAU_SIL164 = "m"
+DRM_XE = "m"
+
+# cameras
+["category:video".">=0.0.0"."all"]
+MEDIA_SUPPORT = "m"
+MEDIA_SUPPORT_FILTER = "n"
+VIDEO_DEV = "m"
+VIDEO_CAMERA_SENSOR = "y"
+VIDEO_OV5675 = "m"
+
+# ethernet controllers, etc.
+["category:ethernet".">=7.0_rc1"."loongarch64"]
+DWMAC_MOTORCOMM = "y"
+
+# input devices
+["category:input".">=0.0.0"."all"]
+REGULATOR = "y"
+INPUT_REGULATOR_HAPTIC = "m"
+INPUT_TOUCHSCREEN = "y"
+TOUCHSCREEN_MELFAS_MIP4 = "m"
+TOUCHSCREEN_ZINITIX = "m"
+RMI4_CORE = "m"
+RMI4_I2C = "m"
+IIO_ST_ACCEL_3AXIS = "m"
+IIO_ST_ACCEL_I2C_3AXIS = "m"
+IIO_ST_ACCEL_SPI_3AXIS = "m"
+STK3310 = "m"
+
+# localversion
+["category:localversion".">=0.0.0"."all"]
+LOCALVERSION_AUTO = "n"
+
+# power supplies, fuel gauges, etc.
+["category:power".">=0.0.0"."aarch64"]
+BATTERY_LENOVO_YOGA_C630 = "m"
+
+# usb drivers, type-c role switching, etc.
+["category:usb".">=0.0.0"."aarch64"]
+UCSI_LENOVO_YOGA_C630 = "m"
+
+# vhost acceleration
+["category:vhost".">=0.0.0"."all"]
+TARGET_CORE = "m" # required for SCSI and VSOCK
+VHOST_NET = "m"
+VHOST_SCSI = "m"
+VHOST_VSOCK = "m"
+
+# virtio devices
+["category:virtio".">=0.0.0"."all"]
+NET_9P = "m"
+NET_9P_VIRTIO = "m"
+VIRTIO_BLK = "y"
+SCSI_VIRTIO = "y"
+VIRTIO_NET = "y"
+VIRTIO_CONSOLE = "y"
+HW_RANDOM_VIRTIO = "m"
+I2C_VIRTIO = "m"
+DRM_VIRTIO_GPU = "m"
+SND_VIRTIO = "m"
+VIRTIO_PCI = "y"
+VIRTIO_BALLOON = "m"
+VIRTIO_INPUT = "y"
+VIRTIO_MMIO = "y"
+VIRTIO_MMIO_CMDLINE_DEVICES = "y"
+RPMSG_VIRTIO = "m"
+VIRTIO_FS = "m"
+CRYPTO_DEV_VIRTIO = "m"
+VSOCKETS = "m"
+
+# EFI framebuffer support is explicitly disabled in some close-to-mainline
+# kernels, so it cannot go in kconfigcheck
+["category:uefi".">=0.0.0"."aarch64 armv7 loongarch64 riscv64 x86 x86_64"]
+FB_EFI = "y"
+
+["category:virtio".">=0.0.0"."aarch64 x86 x86_64"]
+VIRTIO_IOMMU = "m"
+
+# useful ppc64le configs, taken from Alpine
+["category:misc".">=0.0.0"."ppc64le"]
+POWER8_CPU = "y"
+OPAL_PRD = "y"
+PPC_SUBPAGE_PROT = "y"
+
+# enable all loongarch64 CPU features
+["category:misc".">=0.0.0"."loongarch64"]
+CPU_HAS_LBT = "y"
+
+# storage devices
+["category:storage".">=0.0.0"."all"]
+NVME_CORE = "m"
+BLK_DEV_NVME = "m"

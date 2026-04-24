@@ -1,0 +1,8 @@
+typec
+extcon-usbc-tusb320
+bq25890_charger
+rt4801-regulator
+pwm-mtk-disp
+panel-td4322-innolux-fhd
+rmi_core
+rmi_i2c

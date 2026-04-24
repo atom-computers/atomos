@@ -1,0 +1,53 @@
+maintainer="Antony Kurniawan S. <postmarketos@smankusors.com>"
+pkgname=device-asus-zenfone3
+pkgdesc="Asus Zenfone 3"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-asus-zenfone3
+	firmware-qcom-adreno-a530
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8953
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-ze520kl:kernel_ze520kl
+	$pkgname-kernel-ze552kl:kernel_ze552kl
+"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_ze520kl() {
+	depends="linux-postmarketos-qcom-msm8953"
+	pkgdesc="Asus Zenfone 3 (ZE520KL)"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_ze552kl() {
+	depends="linux-postmarketos-qcom-msm8953"
+	pkgdesc="Asus Zenfone 3 (ZE552KL)"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+2e6e5d61fe513550b4c4bb70b7009a23269d6a457e05079d6f4f508bc5944c3c6d0c6160e65795f3a756ff7759cb56fbfdfe5d77f0dabd32ad4914d587c80f93  deviceinfo
+a4c56173941e88434073d9980a687a82956fbcaaaf15068fd2b4fd9351011a934c82f67e62ce87440876d673784938cfdaedc70ae03e1943c95baef6205567b1  modules-initfs
+"

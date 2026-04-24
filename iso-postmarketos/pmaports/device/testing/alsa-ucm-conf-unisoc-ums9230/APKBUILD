@@ -1,0 +1,23 @@
+maintainer="Affe Null <affenull2345@gmail.com>"
+pkgname=alsa-ucm-conf-unisoc-ums9230
+pkgver=1.2.9_git20251211
+pkgrel=0
+pkgdesc="ALSA UCM configuration for UMS9230 devices"
+url="https://codeberg.org/ums9230-mainline/alsa-ucm-conf"
+arch="aarch64"
+license="BSD-3-Clause"
+provides="alsa-ucm-conf"
+provider_priority=1
+_tag="ums9230-20251211"
+source="alsa-ucm-conf-$_tag.tar.gz::$url/archive/$_tag.tar.gz"
+options="!check"
+
+package() {
+	# install audio config files
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2
+	cp -r "$srcdir"/alsa-ucm-conf/ucm2 "$pkgdir"/usr/share/alsa/
+}
+
+sha512sums="
+43558ab8bfbe4e5cb41d47d0d5570293d73486429e85ed5a271d5c4ac46170186b2699d23cdeac5dfbe82835930a526d459fa8e362678e130ef25c7e4c63fa6b  alsa-ucm-conf-ums9230-20251211.tar.gz
+"

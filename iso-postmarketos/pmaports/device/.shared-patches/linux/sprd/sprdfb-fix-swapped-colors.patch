@@ -1,0 +1,15 @@
+By default, color channels on Spreadtrum devices are swapped. This patch makes kernel use BGR565, which has normal color channels.
+
+diff --git a/drivers/video/sprdfb/sprdfb_main.c b/drivers/video/sprdfb/sprdfb_main.c
+index 3e6c70d..80fceb9 100644
+--- a/drivers/video/sprdfb/sprdfb_main.c
++++ b/drivers/video/sprdfb/sprdfb_main.c
+@@ -51,7 +51,7 @@ enum{
+ 	SPRD_IN_DATA_TYPE_LIMIT
+ };
+ 
+-#define SPRDFB_IN_DATA_TYPE SPRD_IN_DATA_TYPE_ABGR888
++#define SPRDFB_IN_DATA_TYPE SPRD_IN_DATA_TYPE_BGR565
+ 
+ #ifdef CONFIG_FB_TRIPLE_FRAMEBUFFER
+ #define FRAMEBUFFER_NR		(3)

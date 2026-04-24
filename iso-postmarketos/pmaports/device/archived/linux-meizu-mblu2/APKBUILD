@@ -1,0 +1,67 @@
+# Archived: Kernel sources have disappeared, does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/mblu2_defconfig
+
+pkgname=linux-meizu-mblu2
+pkgver=3.18.119
+pkgrel=1
+pkgdesc="Meizu M2 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="meizu-mblu2"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	gcc6
+	linux-headers
+	openssl-dev
+	perl
+	python3
+	xz
+"
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+
+# Source
+_repository="android_kernel_meizu_mblu2"
+_commit="5321bc16e8d82b6060e3ebf25ad9484f544d9300"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/M2Repos/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_dct.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+3770c0d91ef562e9e7ae1ec5eefe66a9bd9c99f8f9ad9ec35eb0c8f43d2d4ae72bbdc328635b7d1a4c57e6483df49f949c829f270cb70b3f8c46957e858f327b  linux-meizu-mblu2-5321bc16e8d82b6060e3ebf25ad9484f544d9300.tar.gz
+03bd7c51190c591c28373570dec3089494ac6f82b73220cd17570d138d819133ce82454e442818d182f937fbdce2f59e3fa038a7827b441b72acc0e4003465ae  config-meizu-mblu2.aarch64
+d58762503658ce1fd73d7eada2b2cbc39c3e70b11a5494fb5722982e6af887324b8fe68f693b015fa4d8ac010df8b1532a328b62b53e74428ce8c5046e5e74a7  00_dct.patch
+"

@@ -1,0 +1,61 @@
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=postmarketos-bootsplash
+pkgver=0.3.1
+pkgrel=1
+pkgdesc="pmOS integration components for pbsplash"
+url="https://postmarketos.org"
+arch="all"
+license="CC-BY-SA-3.0"
+depends="devicepkg-utils pbsplash"
+options="!check" # no testsuite
+subpackages="$pkgname-openrc $pkgname-systemd"
+source="
+	kill-pbsplash
+	kill-pbsplash.service
+	shutdown-splash.service
+	kill-pbsplash-override.conf
+	99-shutdown-pbsplash.stop
+	OpenSans-Regular.svg
+	pmos-logo.svg
+	pmos-logo-text.svg
+	pmos-logo-text-epaper.svg
+	postmarketos-bootsplash.files
+"
+install="postmarketos-bootsplash-openrc.post-install"
+
+package() {
+	install -Dm755 "$srcdir/kill-pbsplash" -t "$pkgdir"/etc/init.d/
+	install -Dm755 "$srcdir/99-shutdown-pbsplash.stop" -t "$pkgdir"/etc/local.d/
+	install -Dm644 "$srcdir"/OpenSans-Regular.svg -t "$pkgdir"/usr/share/pbsplash/
+	install -Dm644 "$srcdir"/pmos-logo.svg -t "$pkgdir"/usr/share/pbsplash/
+	install -Dm644 "$srcdir"/pmos-logo-text.svg -t "$pkgdir"/usr/share/pbsplash/
+	install -Dm644 "$srcdir"/pmos-logo-text-epaper.svg -t "$pkgdir"/usr/share/pbsplash/
+	install -Dm644 "$srcdir"/postmarketos-bootsplash.files \
+		"$pkgdir"/usr/share/mkinitfs/files/30-postmarketos-bootsplash.files
+
+	for _service in display-manager emergency getty@ rescue shutdown-splash; do
+		install -Dm644 "$srcdir/kill-pbsplash-override.conf" -t \
+			"$pkgdir"/usr/lib/systemd/system/"$_service".service.d/
+	done
+
+	install -Dm644 "$srcdir/shutdown-splash.service" \
+		-t "$pkgdir"/usr/lib/systemd/system/
+	for target in halt reboot shutdown; do
+		mkdir -p "$pkgdir"/usr/lib/systemd/system/"$target".target.wants
+		ln -s ../shutdown-splash.service \
+			"$pkgdir"/usr/lib/systemd/system/"$target".target.wants/
+	done
+}
+
+sha512sums="
+aa3489ae15a36f3dd247d6850c72c8431365058e248948bac6c89bb0b77de7eca3b99112eec5fde2e7ca55b8a03a74fa224055696e798f3ae5a0aefc92456334  kill-pbsplash
+8be71d7901bae213408bdc60e1c8429502fd0082fc60ec5080ac3968e652986e9869223d5297363f0f5bbdd5dae848c9ddd56c412fc4017478d00b72af423cf6  kill-pbsplash.service
+476c7a8106429c35e772eaf98e257f7a77070050431875113c7c0c75a358250757a381086c7302f1eded0d4cde88d2e63f9fa5d69b6fce46e2d908afd8d9323a  shutdown-splash.service
+14f725acf0737306e56bb5aba0296af48925e9706c975b5b79c2562ddc88b1858c6a71a814dcf83fb080fb87ee20f337c9d2ee4feb4dc31abc71aed056771262  kill-pbsplash-override.conf
+ad54176548c67bb1cb1208588847d0269c388b61fc3a96ec775b747c3d90d3402a016e50146858c70552f3f4159cfba2d88598edd930e1127cf79b2eb9bdcfff  99-shutdown-pbsplash.stop
+2387c64d84f0ba3ee76925f55c87ce025140aa3cd462107a851c34ffd89bd52f606e0d1f9f371d4f642d96545d5cc1bc0fcfb23ca7629a9149055f068da6bffd  OpenSans-Regular.svg
+98984fd67b99400d2b08422c4d314da558d3c94ee67dbc895e7bbfd6fdf22d4b2c9d35f48f4b73b383a054f535d4089fb705c5532f034cb2ee54eab2184e8e86  pmos-logo.svg
+1940480fb98ffd1cef17c0ed440d44aa200119d022ce59973a18fa39ee040b19e748312ae61edae4ff8d2bacf42b4d7c9144274b99cd8563e4a106447825b8f2  pmos-logo-text.svg
+d673bacfcf16cdaa602e82663ffc17e131040e76e4ebd4078f8340c4ebb5be983ac8a4c9acf25f7c8b725a36adb7e775cbeef1b3cc809f58d876e70994b8f6c2  pmos-logo-text-epaper.svg
+bdef8c991bc8caff2788433fdc399a36541833f373b2db236d55419ccce34993a6b897ec7c27f27b16facadf2699aa189c6c867f233bb38d778ffb6e67efc090  postmarketos-bootsplash.files
+"

@@ -1,0 +1,247 @@
+# Forked from Alpine to build with systemd support.
+# integrates with logind for sleepmonitor and sessionmonitor.
+maintainer="Jane Rachinger <jane400+pmaports@postmarketos.org>"
+pkgname=networkmanager
+_pkgver=1.52.2
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="Network Management daemon"
+url="https://wiki.gnome.org/Projects/NetworkManager"
+# armhf: pmb#2618
+arch="all !armhf"
+license="GPL-2.0-or-later"
+depends_dev="$pkgname=$pkgver-r$pkgrel libnm=$pkgver-r$pkgrel"
+makedepends="
+	bash
+	curl-dev
+	dbus-glib-dev
+	eudev-dev
+	gettext-dev
+	gnutls-dev
+	gobject-introspection-dev
+	jansson-dev
+	libgudev-dev
+	libndp-dev
+	libnl3-dev
+	libnvme-dev
+	libpsl-dev
+	libxslt
+	linux-headers
+	meson
+	mobile-broadband-provider-info
+	modemmanager-dev
+	newt-dev
+	nss-dev
+	openresolv
+	perl
+	polkit-dev
+	ppp-dev
+	py3-gobject3
+	python3
+	readline-dev
+	systemd-dev
+	util-linux-dev
+	vala
+	wireless-regdb
+	"
+checkdepends="
+	bash
+	dbus
+	iproute2-minimal
+	iproute2-tc
+	py3-dbus
+	"
+install="
+	$pkgname.pre-install
+	$pkgname.pre-upgrade
+	$pkgname.post-install
+	$pkgname.post-upgrade
+	"
+subpackages="
+	$pkgname-dbg
+	libnm
+	$pkgname-dev
+	$pkgname-lang
+	$pkgname-systemd
+	$pkgname-adsl
+	$pkgname-bluetooth
+	$pkgname-ovs
+	$pkgname-ppp
+	$pkgname-wwan
+	$pkgname-wifi
+	$pkgname-cli
+	$pkgname-tui
+	$pkgname-initrd-generator:initrd_generator
+	$pkgname-bash-completion
+	$pkgname-dnsmasq
+	"
+source="$pkgname-$_pkgver.tar.gz::https://github.com/NetworkManager/NetworkManager/archive/refs/tags/$_pkgver.tar.gz
+	$pkgname.conf
+	$pkgname.rules
+	0001-hack-wifi-Disable-WPA-PSK-SHA256-for-brcmfmac-in-AP-.patch
+	"
+builddir="$srcdir/NetworkManager-$_pkgver"
+
+# on the builders:
+# mount("/sys") failed with Operation not permitted (1)
+# !pmb:crossdirect: otherwise we see lto1: fatal error: compiler does not support ZSTD LTO compression
+options="!check !pmb:crossdirect"
+
+_plugindir="usr/lib/NetworkManager/$_pkgver"
+
+build() {
+	# pma#3866: disable lto for armv7 as it fails otherwise
+	local _lto=true
+	if [ "$CARCH" = "armv7" ]; then
+		_lto=false
+	fi
+
+	msg 'Building with systemd'
+	abuild-meson \
+		-Db_lto=$_lto \
+		-Dconfig_dhcp_default=internal \
+		-Dconfig_plugins_default=ifupdown \
+		-Dcrypto=nss \
+		-Ddbus_conf_dir=/usr/share/dbus-1/system.d \
+		-Ddhcpcd=true \
+		-Ddnsmasq=/usr/sbin/dnsmasq \
+		-Ddocs=false \
+		-Difupdown=true \
+		-Diptables=/sbin/iptables \
+		-Diwd=true \
+		-Dlibaudit=no \
+		-Dmodify_system=true \
+		-Dnft=/usr/sbin/nft \
+		-Dofono=true \
+		-Dpolkit=true \
+		-Dpppd=/usr/sbin/pppd \
+		-Dpppd_plugin_dir=/usr/lib/pppd/2.5.1 \
+		-Dqt=false \
+		-Dselinux=false \
+		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
+		-Dudev_dir=/usr/lib/udev \
+		-Dvapi=true \
+		-Dsession_tracking=systemd \
+		-Dsuspend_resume=systemd \
+		-Dsystemd_journal=true \
+		-Dtests="$(want_check && echo yes || echo no)" \
+		. output
+	meson compile -C output
+}
+
+check() {
+	XDG_RUNTIME_DIR="$(mktemp -d -p "$builddir")" \
+	dbus-run-session -- \
+	meson test -t 4 --no-rebuild --print-errorlogs -C output
+}
+
+package() {
+	depends="
+		libnm=$pkgver-r$pkgrel
+		dbus
+	"
+	replaces="$pkgname-common"
+
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	install -m644 -D "$srcdir/$pkgname.conf" "$pkgdir"/etc/NetworkManager/NetworkManager.conf
+
+	# allow plugdev users to modify connections
+	install -m644 -D "$srcdir/$pkgname.rules" \
+		"$pkgdir/usr/share/polkit-1/rules.d/01-org.freedesktop.NetworkManager.settings.modify.system.rules"
+
+}
+
+dev() {
+	default_dev
+
+	amove usr/share/dbus-1/interfaces/*.xml
+}
+
+libnm() {
+	pkgdesc="GObject-based client library for NetworkManager"
+	depends=""
+	replaces="$pkgname<1.34.0-r3 $pkgname-elogind<1.34.0-r3"
+
+	amove usr/lib/libnm.so*
+}
+
+adsl() {
+	_default_plugin
+	pkgdesc="ADSL device plugin for NetworkManager"
+	install_if="$pkgname=$pkgver-r$pkgrel ppp-pppoe"
+}
+
+bluetooth() {
+	_default_plugin
+	pkgdesc="BlueTooth device plugin for NetworkManager"
+	install_if="$pkgname=$pkgver-r$pkgrel bluez"
+}
+
+ovs() {
+	_default_plugin
+	pkgdesc="Open vSwitch device plugin for NetworkManager"
+	install_if="$pkgname=$pkgver-r$pkgrel openvswitch"
+}
+
+ppp() {
+	pkgdesc="PPP plugin for NetworkManager"
+	install_if="$pkgname=$pkgver-r$pkgrel ppp"
+
+	amove $_plugindir/libnm-ppp-plugin.so
+	amove usr/lib/pppd/*/nm-pppd-plugin.so
+}
+
+wifi() {
+	_default_plugin
+	pkgdesc="WiFi device plugin for NetworkManager"
+	install_if="$pkgname=$pkgver-r$pkgrel wireless-regdb"
+	install="$subpkgname.post-install"
+}
+
+wwan() {
+	_default_plugin
+	pkgdesc="Mobile broadband device plugin for NetworkManager"
+	install_if="$pkgname=$pkgver-r$pkgrel mobile-broadband-provider-info"
+}
+
+cli() {
+	pkgdesc="$pkgdesc (command line interface)"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/bin/nmcli
+}
+
+tui() {
+	pkgdesc="$pkgdesc (textbased user interface)"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/bin/nmtui*
+}
+
+initrd_generator() {
+	pkgdesc="Early boot NetworkManager configuration generator"
+	depends=""  # Q: should it depend on $pkgname?
+	replaces="$pkgname<1.34.0-r3"
+
+	amove usr/libexec/nm-initrd-generator
+}
+
+dnsmasq() {
+	pkgdesc="Support for NetworkManager dnsmasq features"
+	install_if="$pkgname=$pkgver-r$pkgrel dnsmasq"
+	depends="dnsmasq-dnssec-dbus"
+
+	mkdir -p "$subpkgdir"
+}
+
+_default_plugin() {
+	amove $_plugindir/libnm*-${subpkgname#"$pkgname"-}.so
+}
+
+sha512sums="
+5683a4a4aaf2410dde2c93c38bbea45cdf1f82a4fe49c3582e9a4b2d62718b38fa4934ca92ad95611d52bdf2034f105ca11841fea375f392954e402a4381eb77  networkmanager-1.52.2.tar.gz
+0f79016bf717dea43830962f524deae8d1cedc274376e40bd912ebe63208c5b1c3b7a5aa14379da19020c587dbd5588df2f0066ca1540070a226983a43e4159b  networkmanager.conf
+9820ed2ead0af689644842de57657bb10330a1eaff0e85b21ae9913f55e399e47d8b41b0a12956f30de80272b4424c6e55f33acbc88e156879003a260bf576f6  networkmanager.rules
+d1d23a2409f325814b2e361b886217efc0140af152723dfc5d049b1b6880ccc104d5c117d52fed6d0d87f46a1d477376592ba58531d383d9590cdf6af0b2b5f9  0001-hack-wifi-Disable-WPA-PSK-SHA256-for-brcmfmac-in-AP-.patch
+"

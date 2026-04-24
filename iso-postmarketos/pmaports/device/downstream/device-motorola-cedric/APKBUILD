@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-motorola-cedric
+pkgdesc="Motorola Moto G5"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-motorola-cedric mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-motorola-cedric"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+e43129272862c76b0635be94aba691a0eea843a71c68ce84abf258a9ce24e2ba639c7472fac8ac7d5116c58aa1e208de3eeeeaf6c442efb9c04695cdc3d0ae7c  deviceinfo
+2eb716ed09240bbb0e4e270b0628945caa3c94f9473baeed2e814d943fbda0073a48e06e5b973701ba9286598823f024c12300b874ca0c4e4f939c5118ace516  kernel-cmdline.conf
+b1eed94a800e7adca79fa716cfa4cc0da550b807a8b58d150900713073e289848002a6346dd2b89e939f0660e24bc982b95c5eafbd778373714f4d78e97e856c  initfs-hook.sh
+"

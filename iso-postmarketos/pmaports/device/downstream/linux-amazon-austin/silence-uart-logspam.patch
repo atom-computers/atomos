@@ -1,0 +1,26 @@
+diff --git a/drivers/misc/mediatek/uart/mt8127/platform_uart.c b/drivers/misc/mediatek/uart/mt8127/platform_uart.c
+index 35f126d8..ba601f67 100644
+--- a/drivers/misc/mediatek/uart/mt8127/platform_uart.c
++++ b/drivers/misc/mediatek/uart/mt8127/platform_uart.c
+@@ -1749,7 +1749,7 @@ void mtk_uart_enable_sleep(struct mtk_uart *uart)
+ {
+     u32 base = uart->base;
+     reg_sync_writel(0x1, UART_SLEEP_EN);
+-    printk("SLEEP_EN = 0x%x\n",UART_READ32(UART_SLEEP_EN));
++//    printk("SLEEP_EN = 0x%x\n",UART_READ32(UART_SLEEP_EN));
+ }
+ /*---------------------------------------------------------------------------*/
+ void mtk_uart_init_debug_spinlock(void)
+diff --git a/drivers/misc/mediatek/uart/uart.c b/drivers/misc/mediatek/uart/uart.c
+index 8bcec9e1..b49df4d2 100644
+--- a/drivers/misc/mediatek/uart/uart.c
++++ b/drivers/misc/mediatek/uart/uart.c
+@@ -1837,7 +1837,7 @@ static void mtk_uart_set_termios(struct uart_port *port,
+         printk(KERN_NOTICE "MTK Software Flow Control\n");
+         mode = UART_FC_SW;
+     } else if (termios->c_iflag & (IXON | IXOFF | IXANY)) {
+-        printk(KERN_NOTICE "Linux default SW Flow Control\n");
++//        printk(KERN_NOTICE "Linux default SW Flow Control\n");
+         mode = UART_FC_NONE;    
+     } else {
+         printk(KERN_NOTICE "No Flow Control\n");

@@ -1,0 +1,15 @@
+[Transfer]
+Features=dev-tools
+ProtectVersion=%A
+
+[Source]
+Type=url-file
+Path=https://duranium.postmarketos.org/images/%M_%W_%w/
+MatchPattern=%M_%W_%w_@v.dev-tools-confext-%a.raw.zst
+
+[Target]
+Type=regular-file
+Path=/var/lib/confexts
+MatchPattern=%M_%W_%w_@v.dev-tools-confext-%a.raw
+Mode=0444
+InstancesMax=2

@@ -1,0 +1,109 @@
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=postmarketos-base-ui-gnome
+pkgver=11
+pkgrel=0
+pkgdesc="Meta package for shared configuration for GNOME-based UIs"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	dnsmasq
+	gcr-ssh-agent
+	glycin-loaders-all
+	glycin-thumbnailer
+	gnome-backgrounds
+	gnome-bluetooth
+	gnome-keyring
+	gst-thumbnailers
+	iio-sensor-proxy
+	modemmanager
+	postmarketos-artwork-wallpapers
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	power-profiles-provider
+	xdg-desktop-portal-gtk
+	xdg-user-dirs
+	xdg-user-dirs-gtk
+	xwayland
+	"
+source="
+	00_postmarketos-base-ui-gnome.gschema.override
+	10_postmarketos-green-accent.gschema.override
+	50-duranium.conf
+	"
+options="!check"
+subpackages="
+	$pkgname-duranium
+	$pkgname-openrc
+	"
+
+_pmb_recommends="
+	decibels
+	firefox-esr
+	flatpak
+	fprintd
+	g4music
+	gnome-calculator
+	gnome-calendar
+	gnome-clocks
+	gnome-console
+	gnome-contacts
+	gnome-maps
+	gnome-software
+	gnome-software-plugin-apk
+	gnome-text-editor
+	gnome-user-share
+	gnome-weather
+	gst-libav
+	gst-plugins-bad
+	gst-plugins-good
+	gst-plugins-rs-dav1d
+	gvfs-full
+	loupe
+	nautilus
+	papers
+	rygel
+	showtime
+	snapshot
+	tuned-ppd
+"
+
+package() {
+	install -Dm644 -t "$pkgdir"/usr/share/glib-2.0/schemas \
+		"$srcdir"/*.override
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		apk-polkit-rs-openrc
+		elogind
+		elogind-openrc
+		iio-sensor-proxy-openrc
+		modemmanager-openrc
+		networkmanager-openrc
+		openrc
+		polkit-elogind
+	"
+
+	mkdir "$subpkgdir"
+}
+
+duranium() {
+	pkgdesc="$pkgdesc (Duranium)"
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-duranium"
+	depends="gnome-software-plugin-sysupdate"
+
+	install -Dm644 "$srcdir"/50-duranium.conf \
+		-t "$subpkgdir"/usr/lib/kernel-cmdline.d
+}
+
+sha512sums="
+39b5bb5e669756e2a308ab61b7901e76a9eff9e37c82d50bd9ff77800e72c19b580256f617a2ad0949c1746ab4e163e5ce009c134ab77f8a32f758b1b963862e  00_postmarketos-base-ui-gnome.gschema.override
+c255b0914043f09ef5cc56d50c26e9c8885af128abc3ed5494606bd304eefdeb761ed3bc2d5f86f7c3bfb16f7fc21ca1a6d954c8d21e73e7a5e7612a84a78b7c  10_postmarketos-green-accent.gschema.override
+d48775a344d221309fc4f6ab96ec9cd5e871290f940deb967369b8c65dcef570cc44f7c4e7980153390f9da2518fdcc4c0e0687e9e32a984f712bdb62ab65e3d  50-duranium.conf
+"

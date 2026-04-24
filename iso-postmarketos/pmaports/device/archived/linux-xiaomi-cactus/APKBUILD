@@ -1,0 +1,48 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cactus_defconfig
+maintainer="Fedorov Bohdan <misterjdr@yandex.ru>"
+pkgname=linux-xiaomi-cactus
+pkgver=4.9.117
+pkgrel=3
+pkgdesc="Xiaomi Redmi 6A kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="xiaomi-cactus"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl python3"
+
+# Source
+_repository="Xiaomi_Kernel_OpenSource"
+_commit="b417db1e025f22dff9dfc65819ecf2db4d9d85f8"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/MiCode/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-Port-build-scripts-to-Python3.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="7328c6fd8a8aad72a2b88b24319dd0887685d2c1f684f922b258df79aba9eaa151196ed0cb34f2364f7c04ccf1504b3749755ed6cadfd8568e92ae3f8d7f58e5  linux-xiaomi-cactus-b417db1e025f22dff9dfc65819ecf2db4d9d85f8.tar.gz
+83f6468307206648147409c2eda030746d73e2fa2d60d6970911293d57eedf8970f2d1b181c815db52b475c95b0d26f0d86f585ed8802d07ad57536bff18e8ad  config-xiaomi-cactus.armv7
+3f295c4ed0eb6d2bcdb88e986a640b20f5fb4c299ae792b01b70b5319d6b3e0d59475a2f3686ed167249aa091a7156760b90f73e9d8dc5505cbaef4cc19d3ffb  0001-Port-build-scripts-to-Python3.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch"

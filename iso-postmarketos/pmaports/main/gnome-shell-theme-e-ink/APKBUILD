@@ -1,0 +1,27 @@
+maintainer="Petr Hodina <phodina@protonmail.com>"
+pkgname=gnome-shell-theme-e-ink
+pkgver=43.0.1
+pkgrel=0
+pkgdesc="GNOME Shell theme for E-Ink displays"
+url="https://github.com/fujimo-t/gnome-shell-theme-e-ink"
+arch="aarch64"
+license="GPL-2.0-or-later"
+makedepends_build="sassc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/fujimo-t/gnome-shell-theme-e-ink/archive/refs/tags/v$pkgver.tar.gz"
+
+options="!check pmb:cross-native2"
+
+_theme_dir="/usr/share/gnome-shell/theme"
+
+build() {
+	sassc gnome-shell-high-contrast.scss > gnome-eink.css
+}
+
+package() {
+	mkdir -p "$pkgdir/$_theme_dir"
+	install -Dm644 gnome-eink.css -t "$pkgdir/$_theme_dir"
+}
+
+sha512sums="
+9c6a70227de620e52c79c88293c4d286c8bf8bb0ddad2bd5507d034c9c1f4f800475d1f70926de9cbdb0fdd1dfcb152bd8f99a9a0a6d930454a127f1d4b7c021  gnome-shell-theme-e-ink-43.0.1.tar.gz
+"

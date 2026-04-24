@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/mustang_defconfig
+
+pkgname=linux-amazon-mustang
+pkgver=4.9.77
+pkgrel=5
+pkgdesc="Amazon Fire 7 (2019) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-mustang"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_amazon_mustang"
+_commit="42d97d6450e8ba87315543081a765b0f0a1da358"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mt8163/$_repository/archive/$_commit.tar.gz
+	$_config
+	pinctrl-mtk-common.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+	fix-assembly-flags.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+af94e53334bf7ad4541d8813eb8ef6902a352d9ee0951193a3031189d2c232b1cc1fe00a263958b617cea2af7761a56c4144db702d47cde0aed4e8c268d23f0c  linux-amazon-mustang-42d97d6450e8ba87315543081a765b0f0a1da358.tar.gz
+86f562b329a62595fbbe52b6061ff346f04e9e669aae29acbe141897cb508a089312ad5654ab6b5faebc5b84df455c5e49acdf2d823c9824d0f3ea82d9aa5af9  config-amazon-mustang.armv7
+f1ce4270766e992bc2c03821cf2e62c60d987adb7f448d5ae7430f6eba4d0d6718f337c9f0d7e4db4097f5f49d5b49e653fcb6a1ee50fa8d07b625bb04a87484  pinctrl-mtk-common.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+2ad68b59236714e5cdb7152174ace8c3b67ee3a891a98d44eb7936a966a8244c013d5a72653e498955807646a6e2b98274f6efd092d71926717b1333b041b98d  fix-assembly-flags.patch
+"

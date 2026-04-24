@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/j3xnlte_defconfig
+
+pkgname=linux-samsung-j3xnlte
+pkgver=3.10.100
+pkgrel=7
+pkgdesc="Samsung Galaxy J3 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-j3xnlte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="mkbootimg perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool-sprd"
+
+# Source
+_repository="android_kernel_samsung_sharkls"
+_commit="e3381e42b00e1ff977815b365cea53f18afff7a8"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/djeman/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix_recordmcount.patch
+	fix_touchscreen.patch
+	sprdfb-check-for-buffering.patch
+	sprdfb-fix-swapped-colors.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-sprd -p scripts/dtc/ -o "arch/arm/boot/dt.img" "arch/arm/boot/dts/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+733f04dee55effcbbd8c28b9b2b84b05ca9e95d538bd10177edc40f36ee640cd260f080c50497d28828a441c9c96046debdf1085453a4d8871ac8a3ef300380f  linux-samsung-j3xnlte-e3381e42b00e1ff977815b365cea53f18afff7a8.tar.gz
+10bcfe0614f3c454b696d90a4f7ea806b104cbaa090e5c6f84db5aa745842561031d448179e1294c6c013a4483121381c06fbb1a8970a0d6401bdb0132b8f615  config-samsung-j3xnlte.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+6aa11a75f422ac5c20cddfce23bff81940e61e65bc86fe1070c60714a6ccf631b2da70bff20e2b88e723706f0f233eb03540a8d9389adffd495592e8ab6bd82a  fix_recordmcount.patch
+54eb205043b9e1b12f4f88d8163611e6769a702490045f5704483c92b17c9297250fde7d257b6d0e82d0cdbaed88d52d85137aeafcd4c4b138cecfffc921857e  fix_touchscreen.patch
+e33ed12de874c1c8bc9231aea3b0389b18ee0ff804e39c0f47d9cbf657ea19015370d6114846c2d142fbdb88f472f0e65811c53b9b335feb8ae2f30dffdf4846  sprdfb-check-for-buffering.patch
+6836001b24508d413a059f19b0c6f6f547037f68886c22159ad51be91d1a089e3d1d9ed79c3c62724648df7f810cd81d96a83f4a34368b373524b649e5539656  sprdfb-fix-swapped-colors.patch
+"

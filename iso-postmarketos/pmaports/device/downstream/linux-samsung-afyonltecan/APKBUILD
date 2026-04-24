@@ -1,0 +1,75 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+
+pkgname=linux-samsung-afyonltecan
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Samsung Galaxy Core LTE kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-afyonltecan"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool xz gcc6"
+
+# Compiler: this kernel was only tested with gcc6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="Lineage16_msm8226_afyonltecan"
+_commit="56fb9c64ecdce85fe418920c3c9f55666d010a55"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/greggit1986/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	0001-fix-video-argb-setting.patch
+	fix_fb.patch
+	replace-Sun-Solaris-style-flag-on-section.patch
+	replace-Sun-Solaris-style-flag-on-section-xz-supplementation.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+9e531d934cadeb6e985e4cc5ffff6bcbaa81455d7c2186357fce624ca96aed53eaaf3993255aa4672e0070657ef93f182cd53337e9bc9b30a99dde57c6c921ef  linux-samsung-afyonltecan-56fb9c64ecdce85fe418920c3c9f55666d010a55.tar.gz
+7f878e70aed1d2b98f46b640f3aadaa56ca02e4162f60e01d4ded4be3f77c7ca8dd66032579b2b33d7d77add2937030e7d65bd312fbb7824671bc6c5d13fa385  config-samsung-afyonltecan.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+27f890cf82027649ba742b606a87ce6a82f9685b075bb7b50bffec77221e70434ee78d118d39048350537c5ecdad208658967e492eeeb997e7f6884fa78ac696  0007-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+a48336bbfead6ad0c84d2fce0c40a3f5530aebdff356a6835cceaf59a50a6f860d2f8027703a92927955fbb18857ba78788e010d017bf67730f069b36e96fe87  0001-fix-video-argb-setting.patch
+a1267c3a999aafd4d9ef9c5f75cdf05605a3dc53466681d232721f1613b06f1d54c9a80f964d3114c42800faef53457c7c80867381adea0010deda4cdbd4c2ce  fix_fb.patch
+96b1121ed89df5f0c61e04d695efef90eee2cc22e99d42e308d5784adad526871ce0d62fa70e1ea0bf4865a6200e29d2ea19b021352bfb82f34996a8b97086b0  replace-Sun-Solaris-style-flag-on-section.patch
+a6b6c781dd23f9a45a1605456d8c9af3ec6b5c389acd2b5d4c32280dcb59118996d794165bea2005dbdd9415297e5060bcac7579f908f7d65406a862b743fed5  replace-Sun-Solaris-style-flag-on-section-xz-supplementation.patch
+"

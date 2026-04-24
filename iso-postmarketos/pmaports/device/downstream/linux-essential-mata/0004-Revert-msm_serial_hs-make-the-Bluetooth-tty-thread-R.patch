@@ -1,0 +1,35 @@
+From d0d3339500f7b50461492f934b08b953b6a1ba54 Mon Sep 17 00:00:00 2001
+From: TAKIZAWA Fumiya <takizawa.fumiya34@gmail.com>
+Date: Sun, 10 May 2020 00:00:32 +0900
+Subject: [PATCH 4/6] Revert "msm_serial_hs: make the Bluetooth tty thread RT"
+
+This reverts commit f5c9ea68f5c91907e406228710582ef3c23dbe39.
+
+This is a workaround for a crash when CONFIG_VT=y
+---
+ drivers/tty/serial/msm_serial_hs.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/drivers/tty/serial/msm_serial_hs.c b/drivers/tty/serial/msm_serial_hs.c
+index c699a662d0a9..1ea54d00e23e 100644
+--- a/drivers/tty/serial/msm_serial_hs.c
++++ b/drivers/tty/serial/msm_serial_hs.c
+@@ -62,7 +62,6 @@
+ #include <linux/ipc_logging.h>
+ #include <asm/irq.h>
+ #include <linux/kthread.h>
+-#include <uapi/linux/sched.h>
+ 
+ #include <linux/msm-sps.h>
+ #include <linux/platform_data/msm_serial_hs.h>
+@@ -3386,7 +3385,6 @@ static void  msm_serial_hs_rt_init(struct uart_port *uport)
+ 	msm_uport->pm_state = MSM_HS_PM_SUSPENDED;
+ 	mutex_unlock(&msm_uport->mtx);
+ 	pm_runtime_enable(uport->dev);
+-	tty_port_set_policy(&uport->state->port, SCHED_FIFO, 1);
+ }
+ 
+ static int msm_hs_runtime_suspend(struct device *dev)
+-- 
+2.26.2
+

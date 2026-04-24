@@ -1,0 +1,9 @@
+kernel=vmlinuz-rpi
+initramfs initramfs
+
+[all]
+dtparam=i2c_arm=on
+dtoverlay=beepy-kbd,irq_pin=4
+[all]
+dtparam=spi=on
+dtoverlay=sharp-drm

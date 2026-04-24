@@ -1,0 +1,8 @@
+/usr/libexec/pmos-tests-initramfs
+# We want all modules to be here so that we can validate
+# that all the device drivers load properly
+/lib/modules
+/sbin/udevd
+/bin/udevadm
+/etc/udev/rules.d
+/usr/lib/udev/rules.d

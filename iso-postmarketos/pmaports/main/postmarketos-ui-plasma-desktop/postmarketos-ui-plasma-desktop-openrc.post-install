@@ -1,0 +1,12 @@
+#!/bin/sh
+
+SDDM_CONF=/etc/sddm.conf
+
+if [ -f ${SDDM_CONF} ]; then
+	if ! grep -q "InputMethod" $SDDM_CONF; then
+		echo "InputMethod=qtvirtualkeyboard" >> $SDDM_CONF
+	fi
+fi
+
+rc-update add modemmanager default
+rc-update add sddm default

@@ -1,0 +1,4 @@
+# Force use of the polling driver for accelerometers if supported.
+# On Lenovo Duet 3 at least, buffered mode does not work. See #3702
+
+SUBSYSTEM=="iio", TEST=="in_accel_x_raw", TEST=="in_accel_y_raw", TEST=="in_accel_z_raw", ENV{IIO_SENSOR_PROXY_TYPE}="iio-poll-accel"

@@ -1,0 +1,87 @@
+diff --git a/drivers/misc/mediatek/usb20/mt8127/usb20.c b/drivers/misc/mediatek/usb20/mt8127/usb20.c
+index 79ecf1df..71008702 100644
+--- a/drivers/misc/mediatek/usb20/mt8127/usb20.c
++++ b/drivers/misc/mediatek/usb20/mt8127/usb20.c
+@@ -40,6 +40,8 @@
+ #include <linux/metricslog.h>
+ #endif
+ 
++#define DBG(fmt, args...) do {} while (0)
++
+ extern struct musb *mtk_musb;
+ static DEFINE_SEMAPHORE(power_clock_lock);
+ //static bool platform_init_first = true;   //Mark by ALPS01262215
+@@ -283,7 +285,7 @@ void mt_usb_connect(void)
+ 
+ void mt_usb_disconnect(void)
+ {
+-	printk("[MUSB] USB is ready for disconnect\n");
++//	printk("[MUSB] USB is ready for disconnect\n");
+ 
+ 	if (!mtk_musb || !mtk_musb->is_ready || mtk_musb->is_host || !mtk_musb->power)
+ 		return;
+diff --git a/drivers/misc/mediatek/usb20/mt8127/usb20_host.c b/drivers/misc/mediatek/usb20/mt8127/usb20_host.c
+index 668b410a..a2e90005 100644
+--- a/drivers/misc/mediatek/usb20/mt8127/usb20_host.c
++++ b/drivers/misc/mediatek/usb20/mt8127/usb20_host.c
+@@ -38,6 +38,8 @@
+ #include <linux/metricslog.h>
+ #endif
+ 
++#define DBG(fmt, args...) do {} while (0)
++
+ extern struct musb *mtk_musb;
+ 
+ static struct musb_fifo_cfg fifo_cfg_host[] = {
+diff --git a/drivers/misc/mediatek/usb20/mt8127/usb20_otg_if.c b/drivers/misc/mediatek/usb20/mt8127/usb20_otg_if.c
+index e8d4c269..8d154d93 100644
+--- a/drivers/misc/mediatek/usb20/mt8127/usb20_otg_if.c
++++ b/drivers/misc/mediatek/usb20/mt8127/usb20_otg_if.c
+@@ -50,6 +50,8 @@
+ 
+ #include <linux/musb/musb_core.h>
+ 
++#define DBG(fmt, args...) do {} while (0)
++
+ #define DRIVER_AUTHOR "Mediatek"
+ #define DRIVER_DESC "driver for OTG USB-IF test"
+ #define MUSB_OTG_CSR0 0x102
+diff --git a/drivers/misc/mediatek/usb20/musb_core.c b/drivers/misc/mediatek/usb20/musb_core.c
+index 13b65ffe..a9a95dbd 100644
+--- a/drivers/misc/mediatek/usb20/musb_core.c
++++ b/drivers/misc/mediatek/usb20/musb_core.c
+@@ -111,6 +111,8 @@
+ #include <linux/musb/mtk_musb.h>
+ #endif
+ 
++#define DBG(fmt, args...) do {} while (0)
++
+ int musb_host_dynamic_fifo = 1;
+ int musb_host_dynamic_fifo_usage_msk;
+ module_param(musb_host_dynamic_fifo, int, 0644);
+diff --git a/drivers/misc/mediatek/usb20/musb_gadget.c b/drivers/misc/mediatek/usb20/musb_gadget.c
+index c4d0c594..62ccf3fe 100644
+--- a/drivers/misc/mediatek/usb20/musb_gadget.c
++++ b/drivers/misc/mediatek/usb20/musb_gadget.c
+@@ -50,6 +50,8 @@
+ 
+ #include <linux/musb/musb_core.h>
+ 
++#define DBG(fmt, args...) do {} while (0)
++
+ #define FIFO_START_ADDR 512
+ 
+ //#define RX_DMA_MODE1 1
+diff --git a/drivers/misc/mediatek/usb20/musb_host.c b/drivers/misc/mediatek/usb20/musb_host.c
+index 7c97b9a0..d121bb95 100644
+--- a/drivers/misc/mediatek/usb20/musb_host.c
++++ b/drivers/misc/mediatek/usb20/musb_host.c
+@@ -48,6 +48,8 @@
+ #include <linux/musb/musb_core.h>
+ #include <linux/musb/musb_host.h>
+ 
++#define DBG(fmt, args...) do {} while (0)
++
+ 
+ /* MUSB HOST status 22-mar-2006
+  *

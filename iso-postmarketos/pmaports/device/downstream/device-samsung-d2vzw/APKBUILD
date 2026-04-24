@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-d2vzw
+pkgdesc="Samsung Galaxy S III (Verizon)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-d2vzw mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+4ce8cff3dcd021e75e8cf674b7b2094ec2ecb429feb19de68a9be05a1a09b75dfafd85d8c3c6e6f32b3106d3d89ec54e474f2a10a48cbdc7148889ca79dc557a  deviceinfo
+e568a546dbb61dbc9b233388f072d793267b961b8e459604d981943047336e7d41d4f325a45830cab0d982394cdf66f019a45f3e91c93b1543bf43d13a0dcc41  kernel-cmdline.conf
+"

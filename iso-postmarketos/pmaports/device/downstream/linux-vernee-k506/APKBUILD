@@ -1,0 +1,60 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/k06td_a_defconfig
+
+pkgname=linux-vernee-k506
+pkgver=3.18.99
+pkgrel=5
+pkgdesc="Vernee Thor kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="vernee-k506"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl python3 gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_vernee_thor_k506"
+_commit="6162531eeb91a5291c00eceff7cb707561143471"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/MediatekAndroidDevelopers/$_repository/archive/$_commit.tar.gz
+	$_config
+	python3dct.patch
+	firmware_paths.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+5d51b5ceb3968c37e0653f40dcbc334388f401a086d6232600a05c47ec40deb712fc23cbfca6a59e2e3e5a108c46429e4fe1550608f1fbd687f14c8d17376b6d  linux-vernee-k506-6162531eeb91a5291c00eceff7cb707561143471.tar.gz
+26766dc0f2969ef4d9d47638216dd3a5fb583ef6f51f4c1c574af101c2e848173af893fbd786b5bae4f85a35373b48cb53e1276e476fcf5df0f753b69a68af01  config-vernee-k506.aarch64
+a2990a27436d3ffe40f1fd1e388486727042cc5fa5be23b19dad623a18731c94c07ac4a89be1e59e6214593d2b03d38702b60a7475807e8cda0811c4e5d50a9b  python3dct.patch
+8aada5397de0d8f91475afb132e49e9dc500c6f153e98382b31c2d3cb38a9b6b177f47b3610df24260ab81b9e9588cf3e76b58c4213e2db2974345b53bf5e079  firmware_paths.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

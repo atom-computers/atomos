@@ -1,0 +1,39 @@
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+pkgname=firmware-xiaomi-whyred
+pkgver=1
+pkgrel=2
+pkgdesc="Firmware files for Xiaomi Redmi Note 5 Pro"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+makedepends="qca-swiss-army-knife"
+source="
+	$pkgname-$pkgver-r$pkgver.tar.bz2::https://fw.minlexx.ru/firmware-xiaomi-whyred.tar.bz2
+	https://raw.githubusercontent.com/TheMuppets/proprietary_vendor_xiaomi_whyred/refs/heads/lineage-20/proprietary/vendor/firmware/a512_zap.elf
+"
+
+builddir="$srcdir"
+_fwdir="/lib/firmware"
+
+build() {
+	# Create board-2.bin
+	ath10k-bdencoder -c board-2-short.json -o board-2.bin
+
+	# Create firmware-5.bin
+	ath10k-fwencoder --create \
+		--features=wowlan,no-nwifi-decap-4addr-padding,allows-mesh-bcast,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel  \
+		--set-wmi-op-version=tlv --set-htt-op-version=tlv \
+		--set-fw-api=5
+}
+
+package() {
+	install -Dm644 firmware-5.bin -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 board-2.bin    -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 a512_zap.elf      "$pkgdir/$_fwdir/postmarketos/a512_zap.mbn"
+}
+
+sha512sums="
+fcc36606441643d8cbfb348887867dfa91e2946ba1428aa2f392326a5838bd92c91d844cdd63ce9413731724055ba32ce4e8d75a902a1ae19519d053b62ce66d  firmware-xiaomi-whyred-1-r1.tar.bz2
+ab852686fcba7eac9974bb83693630d312617512f731f84e17c8422bb83e08ac81e2c1f66333352aa512d6d67b464a88a551325639e45cf2b58fcf1b74436ede  a512_zap.elf
+"

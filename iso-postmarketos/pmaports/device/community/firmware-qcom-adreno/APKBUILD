@@ -1,0 +1,72 @@
+maintainer="Marijn Suijten <marijn.suijten@somainline.org>"
+pkgname=firmware-qcom-adreno
+pkgver=20260110
+pkgrel=0
+pkgdesc="Qualcomm Adreno GPU firmware from linux-firmware"
+url="https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/"
+arch="aarch64 armv7"
+license="custom"
+subpackages="
+	$pkgname-doc
+	$pkgname-a630-sqe:a630_sqe
+	$pkgname-a610
+	$pkgname-a630
+	$pkgname-a640
+"
+source="https://gitlab.com/kernel-firmware/linux-firmware/-/archive/$pkgver/linux-firmware-$pkgver.tar.gz"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+builddir="$srcdir/linux-firmware-$pkgver"
+
+# This package is a replacement for linux-firmware-qcom (packaging all GPU firmware
+# in separate subpackages), so it's packaged in /qcom, not /postmarketos.
+replaces="linux-firmware-qcom"
+_fwdir="/lib/firmware/qcom"
+
+_gpus="a300 a330 a420 a530 a650 a660 gen70500"
+for gpu in $_gpus; do
+	subpackages="$subpackages $pkgname-$gpu:_gpu"
+done
+
+package() {
+	install -Dm644 LICENSE.qcom "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+	install -Dm644 qcom/NOTICE.txt "$pkgdir"/usr/share/licenses/$pkgname/NOTICE
+}
+
+_gpu() {
+	local gpu=${subpkgname##$pkgname-}
+	pkgdesc="$pkgdesc ($gpu)"
+
+	install -Dm644 "$builddir"/qcom/$gpu* -t "$subpkgdir/$_fwdir"/
+
+	# Drop _zap shader firmware because that is typically signed
+	# and therefore device-specific.
+	rm -f "$subpkgdir/$_fwdir/$gpu"_zap*
+}
+
+a630_sqe() {
+	pkgdesc="$pkgdesc (a630 SQE)"
+	install -Dm644 "$builddir"/qcom/a630_sqe.fw -t "$subpkgdir/$_fwdir"/
+}
+
+a610() {
+	depends="$pkgname-a630-sqe"
+	pkgdesc="$pkgdesc (a610)"
+	# a610 has no GMU and only depends on SQE; hence an empty folder
+	install -Dm644 -d "$subpkgdir/$_fwdir"/
+}
+
+a630() {
+	depends="$pkgname-a630-sqe"
+	pkgdesc="$pkgdesc (a630 GMU)"
+	install -Dm644 "$builddir"/qcom/a630_gmu.bin -t "$subpkgdir/$_fwdir"/
+}
+
+a640() {
+	depends="$pkgname-a630-sqe"
+	pkgdesc="$pkgdesc (a640 GMU)"
+	install -Dm644 "$builddir"/qcom/a640_gmu.bin -t "$subpkgdir/$_fwdir"/
+}
+
+sha512sums="
+b0c39fd52a84f695ff94cda6d93465b5a192ed3a663275a94b4df30e4126643ca2c9d59a3252df6efdb71a2506d607efd70b0871ec188576f34e1f661731db02  linux-firmware-20260110.tar.gz
+"

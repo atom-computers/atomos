@@ -1,0 +1,15 @@
+diff --git a/lib/lz4/lz4_decompress.c b/lib/lz4/lz4_decompress.c
+index 7e57955aa..d654b945a 100644
+--- a/lib/lz4/lz4_decompress.c
++++ b/lib/lz4/lz4_decompress.c
+@@ -558,6 +558,10 @@ _copy_match:
+ 
+ 		length += MINMATCH;
+ 
++#if LZ4_FAST_DEC_LOOP
++safe_match_copy:
++#endif
++
+ 		/* match starting within external dictionary */
+ 		if ((dict == usingExtDict) && (match < lowPrefix)) {
+ 			if (unlikely(op + length > oend - LASTLITERALS)) {

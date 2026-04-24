@@ -1,0 +1,80 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/sp7731ceb_dt_defconfig
+
+pkgname=linux-finepower-f1
+pkgver=3.10.65
+pkgrel=7
+pkgdesc="FinePower F1 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="finepower-f1"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool-sprd"
+
+# Source
+_commit="b30390f1645dcf1ebd08148d7d4086a544c56435"
+_repository="kernel_7730"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.zip::https://github.com/jedld/$_repository/archive/$_commit.zip
+	$_config
+	sprd-scx20_sp7731ceb.dts::https://raw.githubusercontent.com/HenriDellal/generic-kernels-code/master/arch/arm/boot/dts/finepower-f1.dts
+	https://raw.githubusercontent.com/HenriDellal/generic-kernels-code/master/drivers/video/sprdfb/lcd/lcd_st7796s_mipi.c
+	kernel-use-the-gnu89-standard-explicitly.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	01-remove-path-to-missing-driver.patch
+	02-fix-includes-dump-lowpower-regs.patch
+	03-set-BGR565-color-mode.patch
+	04-add-st7796s-mipi-panel-support.patch
+	05-fix-X11.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+	cp "$srcdir"/sprd-scx20_sp7731ceb.dts "$builddir"/arch/arm/boot/dts/
+	cp "$srcdir"/lcd_st7796s_mipi.c "$builddir"/drivers/video/sprdfb/lcd/
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-sprd -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/dts/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+
+sha512sums="
+bcbb8f6e99bd53b173715765c86845f991c2f769e9c13c72503e4f9062dc7bc97a073a4ad730e804d43efd2bcbcd7b91a0890d6194b5986e453d40a79f08249b  linux-finepower-f1-b30390f1645dcf1ebd08148d7d4086a544c56435.zip
+19785c0f028b736c1b163859be9cbd928e0d0a968ef39448c101286bacdfc410c0befde8fefdc058eba69eb01849e0e99b9db46e95d141f605ecf9a75e6a4403  config-finepower-f1.armv7
+c626828d9eac7b52a4509055d8d3b14b4dd74100e254cc212349bc4046e5583d91042f9332fb903e8d9dc6bade03cc898f26e3ac43732f423d8b6473182b357c  sprd-scx20_sp7731ceb.dts
+31f289fc3b63ace4dcd56ce289e63c55b1f622084b5d2fecc96f8f44eccccf51463ae6c7b9cdded3781d652a9be1b9f45ca4c64dfaa6160aa2f96b56d4af91ce  lcd_st7796s_mipi.c
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+5e271f6e8ef2b1a31acafaf3b38b64cccd5d6732e93e92a2fcaa885f4ac24529bd1598e9982b553797e85d64deed6390e41768e0d952ef659add0766b44a6687  01-remove-path-to-missing-driver.patch
+3a3d94c4912e8b9d64c1c4af5a568dbc8061c623bb39bcb605f30de0fa9e2f2b3c805cd0e0c9401c21ecdb49a61852e458f7b3fc599491f743e52d5d80e530e7  02-fix-includes-dump-lowpower-regs.patch
+6836001b24508d413a059f19b0c6f6f547037f68886c22159ad51be91d1a089e3d1d9ed79c3c62724648df7f810cd81d96a83f4a34368b373524b649e5539656  03-set-BGR565-color-mode.patch
+d54f7bf0cfd991ce303b5ac31cecb5a8b658f7e1794dcc2901a773601a521dade50ee186160b75e78040a18060a6d4c01d92eb56b121de50016739638adb980d  04-add-st7796s-mipi-panel-support.patch
+e33ed12de874c1c8bc9231aea3b0389b18ee0ff804e39c0f47d9cbf657ea19015370d6114846c2d142fbdb88f472f0e65811c53b9b335feb8ae2f30dffdf4846  05-fix-X11.patch
+"

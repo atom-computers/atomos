@@ -1,0 +1,86 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/goyawifi_pmos_etnaviv_defconfig
+
+pkgname=linux-samsung-goyawifi
+pkgver=3.4.5
+pkgrel=3
+pkgdesc="Samsung Galaxy Tab 3 Lite kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-goyawifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc4"
+
+
+# Compiler: this kernel was only tested with GCC4. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="linux_kernel_pxa988"
+_commit="fb2f8b6cd86864c0fcac790e97a372b1772003c7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/T110-pmOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix_memset-related_crashes.patch
+	fix_the_memset_fix.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix_makefile.patch
+	0001-cache-the-value-of-file_inode-in-struct-file.patch
+	0002-Backport-shm-add-sealing-API.patch
+	0003-Backport-shm-add-memfd-create-syscall.patch
+	0004-Backport-asm-generic-add-memfd_create-system-call-to.patch
+	0005-Backport-ARM-wire-up-memfd_create-syscall.patch
+	0006-Fix-ALSA-CTL-CODEC-EQ_COEFFICIENT_3.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+
+sha512sums="
+acaa8d554c7c51c5365e98e3c19eedd2b2a24b877ca8ed9d84e547339e9b055165f53d62be47be04e1be5967f14c859254633fd9bd5b9052f428e5e55e8793bf  linux-samsung-goyawifi-fb2f8b6cd86864c0fcac790e97a372b1772003c7.tar.gz
+bf859bbbfe566959b758cd147750bca3b2c57e222265bbf67d414bfc9d46e1dd775decaff629e8fcec31ae90c526499371fe6d8a5a5dd5aff3f77309852b24c5  config-samsung-goyawifi.armv7
+efd1641c0892fddb9c5feea3e49e534fed311b01f0576688b5af766e0160850822d0eb8e296b08c5f82b586d5d0336a98e8e86707ba9af7fcf36fc89f0b288eb  fix_memset-related_crashes.patch
+5c080c27716d124616e4e684fc63bffb2665f00de06e894dfd78f58588feec2fec858fe8234b054061e3db14d28cb90fbac53f4b54c4fac5946d843cf038386c  fix_the_memset_fix.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+fb16404be045f4d9c7bf29512321ec2a4cb17111a8c870adff91889f0e6b314265cddb5dd9caa8088425902d2032e9dac4b6ba8c648b32df0efd78edf24550c1  fix_makefile.patch
+8a0963c2f24e7c784e53781a5a16e540c9aa6fc3db0c9f8d83d28b0a30604472054ca3058051e34fcd900c167af0a68943f4ebffc327f5594361d8eb345c37c4  0001-cache-the-value-of-file_inode-in-struct-file.patch
+0fede4dd36632e03d3d2d0d7b73038520319b585f1fffbdf005fa2b5b37485ae0ecee0f6ef53906bfe81f7303774b8c7bcd1f85fb1b7a030f596d63eac8df833  0002-Backport-shm-add-sealing-API.patch
+560b46dab45b14fa0a9fbdb9ddb2bb597a9914b25bb5591d2e24eb483bcc506ee413ac873eb7543a3112e53b535f5e3b1745409c6dc1a62b2651dda766eb1782  0003-Backport-shm-add-memfd-create-syscall.patch
+e07d7e0104cd37fa45cfb54bda8f6ebaa0ce8a54fa12e57133f0cb1ccc96c5133a25ba936678228b4ffb21a7c65a546e35004935afbf6e8f008265a687cfb0d3  0004-Backport-asm-generic-add-memfd_create-system-call-to.patch
+22822ab84f3179c749eae3d44ea123c72d24399d8af52f603fceb5ca3f323da33eb0b7656a7db4c6b04963d7b118abbc4ae5def07f1db6066bcc5a7403a11dd4  0005-Backport-ARM-wire-up-memfd_create-syscall.patch
+bfaa80417d452db734daf6a3c10dca1c6acf2e6a8102fa59bd8a5af09513521f4b7ec5bd5e00ffb3f76ed864faeb8ba20bd31c10315f69558fee792a21cde0f6  0006-Fix-ALSA-CTL-CODEC-EQ_COEFFICIENT_3.patch
+"

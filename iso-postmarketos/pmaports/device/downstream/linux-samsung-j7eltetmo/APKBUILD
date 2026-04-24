@@ -1,0 +1,93 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/j7eltetmo_00_defconfig
+
+pkgname=linux-samsung-j7eltetmo
+pkgver=3.10.61
+pkgrel=2
+pkgdesc="Samsung Galaxy J7 (T-Mobile) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j7eltetmo"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	linux-headers
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_samsung_j7eltetmo"
+_commit="67155b79fcc54fad91e765e29a6c3c3d1a42c644"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/nbe1233/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	01-Fix-Makefile.patch
+	02-fix-vmm-blob-include.patch
+	03-Removed-knox.patch
+	04-create-a-file-platform.h-which-is-a-symlink.patch
+	05-security-Fix-tima-compile.patch
+	06-drivers-muic-fix-the-compile.patch
+	07-drivers-media-fix-compiling.patch
+	08-fs-Fix-the-compile-w-o-ROOT-Restriction-enabled.patch
+	09-build-dtb.patch
+	10-samsung-usb-ethaddr.patch
+	11-fix-argb.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *j7elte_usa_tmo*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+
+}
+
+sha512sums="
+2ed06731921feab677c225e8d30b277a1262ed3e9cdcc0d331895ad5a1d740bae3a30548b882b9c8f694311b78ce512c39e63507dedfe36a07deb06ba8215df1  linux-samsung-j7eltetmo-67155b79fcc54fad91e765e29a6c3c3d1a42c644.tar.gz
+a2e3afe49b93e11ceda9b8c75c8b56e41d08811cc83a0fa5858f26a448a0eac898dee2a122f3b464905d99010da16b9037612c67dd5fc33a2a4b1bcbe1869219  config-samsung-j7eltetmo.aarch64
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+0536bb86affaff4964fca71f8b0da2ab09a696bd5a7868309030f8843c0c6b551afbee52a8c9b9e516fc5fe36e426a0c9a43bdbe07f3c62b648e9dd95d4a90dc  01-Fix-Makefile.patch
+23bf8ef0ad38b38ffa9ddfdee76a32c43b021169c6db6f5b733fd6434169f7c7bb27cdb1232be89475f34f9053211d943e13f5fba565c928256b92b18d636130  02-fix-vmm-blob-include.patch
+b452b7ca8a93d2f7c8bc4c729295b1d303686b5a0953ee058d0be2fa62cfcdecfc3773d3830b605dc41bb7d54940dfd154a2687cb04328d101ad87f148c0d4c5  03-Removed-knox.patch
+b2b8020948dfa4dc24eec4402aa7c2845ba56e844b2cfb591b4326b372a7748063c9e67d54bf70d841141c7a9203c25766538522d1a6a08e3ca3b8054eface43  04-create-a-file-platform.h-which-is-a-symlink.patch
+43975cd6bf7a1094da5b7c154872664fb38cca122137d2ecd2ec168a13e76bfbbaed374706d1c6991a3151932d9487e75c13be8fcb731e86897220b8528a98b1  05-security-Fix-tima-compile.patch
+f6dcf35fdfc0de4f3c30caf3512ad442644c218f2e0a0c3ce0487f83872ed0d49e79cefbd1423690c7134973797113a148620f24a6253dcdf27c06dd753a2b20  06-drivers-muic-fix-the-compile.patch
+962a7c738f58972724836c43e3241037a5e2db646a8a2258e2757757e81d09638504c9ce82d8b70f37c54b7f1f36e40d9c03e6e736ba46be5d7d9bc5c92d693b  07-drivers-media-fix-compiling.patch
+d58c5f8772435c70713013f63e36913dafb532a16ab68c440f0b2042073ba18d97b67ccaeb00d94b00afc41f132f8b4fdd669f65a6a1068395508751fe0e39ae  08-fs-Fix-the-compile-w-o-ROOT-Restriction-enabled.patch
+972b02316164822e46c00b69f4745fb993ef401039518a7ae3e3f0d2e713ba9ac9814a18d7f5527acb36768df18e78672e783f213eba2d7c8db47d7a6cd102df  09-build-dtb.patch
+bfd0332076724bea2d10e96c81fae41eefb60bfc19f7a21ec849cf2a6b48e4cada694ed6b389ed600e182755d6fdb96f12dcbe81c8e691a2b4602f432fae165a  10-samsung-usb-ethaddr.patch
+aff2f127c44de0fc3e523834766a5851b48ade0e5cd95f594b36fc17adf3fb0549c70e4cba34a4bbea272fca80d61e0f4615a7195662f38794a1cd96213c7ca2  11-fix-argb.patch
+"

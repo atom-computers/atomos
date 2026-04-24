@@ -1,0 +1,26 @@
+From 394d82bf51c8856f80071c1ba45fb97d9e0270f9 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Sat, 26 Jul 2025 21:28:25 +0200
+Subject: [PATCH] DONOTMERGE: board: samsung: trats: enable ldo17
+
+Or else reading from sdcards cannot work on i9100.
+---
+ board/samsung/trats/trats.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/samsung/trats/trats.c b/board/samsung/trats/trats.c
+index 3d4981b7b990..33bf8be8a0e9 100644
+--- a/board/samsung/trats/trats.c
++++ b/board/samsung/trats/trats.c
+@@ -185,7 +185,7 @@ static int pmic_init_max8997(void)
+ 	ret |= pmic_reg_write(dev, MAX8997_REG_LDO16CTRL, val);
+ 
+ 	/* LDO17 VTF: 2.8V */
+-	val = max8997_reg_ldo(2800000) | DIS_LDO;	/* OFF */
++	val = max8997_reg_ldo(2800000) | EN_LDO;
+ 	ret |= pmic_reg_write(dev, MAX8997_REG_LDO17CTRL, val);
+ 
+ 	/* LDO18 TOUCH_LED 3.3V */
+-- 
+2.50.1
+

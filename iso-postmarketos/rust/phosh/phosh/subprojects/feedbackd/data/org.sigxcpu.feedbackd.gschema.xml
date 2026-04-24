@@ -1,0 +1,73 @@
+<schemalist>
+  <schema id="org.sigxcpu.feedbackd"
+          path="/org/sigxcpu/feedbackd/">
+    <key name="profile" type="s">
+      <choices>
+        <choice value='full'/>
+        <choice value='quiet'/>
+        <choice value='silent'/>
+      </choices>
+      <default>'full'</default>
+    <summary>Feedack profile to use</summary>
+    <description>
+      The feedback profile determines the audio and haptical feedback
+      level given on events to the user.
+    </description>
+    </key>
+
+    <key name="theme" type="s">
+      <default>'default'</default>
+      <summary>The feedback theme to use</summary>
+      <description>
+        The feedback theme determines which feedbacks are triggered when
+        feedbackd receives an event.
+      </description>
+    </key>
+
+    <key name="prefer-flash" type="b">
+      <default>false</default>
+      <summary>Prefer camera flash LED over notification LED</summary>
+      <description>
+        Prefer the (camera) flash LED over other notification LEDs.
+      </description>
+    </key>
+
+    <key name="allow-important" type="as">
+      <default>['mobi.phosh.Stevia',
+                'org.sigxcpu.FbdAlertSlider',
+                'org.gnome.clocks',
+                'sm.puri.OSK0']</default>
+      <summary>List of apps that can override the feedback level</summary>
+      <description>
+        Apps listed here can override the configured global feedback level by
+        setting the 'important' hint on the submitted event.
+      </description>
+    </key>
+
+    <key name="max-haptic-strength" type="d">
+      <range min="0.0" max="1.0"/>
+      <default>1.0</default>
+      <summary>Maximum haptic strength</summary>
+      <description>
+        The maximum haptic strength to use when providing feedback.
+      </description>
+    </key>
+
+  </schema>
+
+  <schema id="org.sigxcpu.feedbackd.application">
+    <key name="profile" type="s">
+      <choices>
+        <choice value='full'/>
+        <choice value='quiet'/>
+        <choice value='silent'/>
+      </choices>
+      <default>'full'</default>
+      <summary>Feedack profile to use</summary>
+      <description>
+	The feedback profile determines the audio and haptical feedback
+	level given on events to the user.
+      </description>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-grandpplte
+pkgdesc="Samsung Galaxy Grand Prime Plus"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	dtc
+	linux-postmarketos-mediatek-mt6735
+	mkbootimg
+	mt6735-bootshim
+	postmarketos-base
+	u-boot-grandpplte
+	u-boot-tools
+"
+makedepends="
+	devicepkg-dev
+	mt6735-bootshim
+	u-boot-grandpplte
+	u-boot-tools
+"
+source="
+	boot.cmd
+	boot-image.its
+	deviceinfo
+	kernel-cmdline.conf
+	phoc.ini
+	samsung,grandpplte.json
+"
+subpackages="$pkgname-phosh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	cat "/boot/bootshim" "/usr/share/u-boot/grandpplte/u-boot.bin" \
+		> "$startdir/u-boot-shimmed.bin"
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	mkdir -p "$pkgdir/usr/share/u-boot/grandpplte/"
+	install -Dm644 "$startdir/u-boot-shimmed.bin" \
+		"$pkgdir/usr/share/u-boot/grandpplte/"
+	install -Dm644 "$srcdir/boot.cmd" \
+		"$pkgdir/usr/share/u-boot/grandpplte/"
+	install -D -m644 "$srcdir/boot-image.its" \
+		"$pkgdir/usr/share/u-boot/grandpplte/"
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel phosh"
+
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+	install -Dm644 "$srcdir/samsung,grandpplte.json" \
+		"$subpkgdir/usr/share/feedbackd/themes/samsung,grandpplte.json"
+}
+
+sha512sums="
+a2d7deb7b1e969ba2c1847041d5df76f7374975bbabcda3db6287191157e9f54c91b5c706aac46439907e297ca199428f0ff97fb56de81d0c57826799eedf119  boot.cmd
+8226a99856b5613c5f4a9bb4314c1bfad676126df1260381baf40b92b201aa460522998b87b1b50b7ce31cd688d023d3bf4bae0977d7d586268c63e719e6770a  boot-image.its
+ade670038bc896ef1fe7b572ea8ee7fce44e2339d0792cf6348516d3dafcd7ff9a34223f3b51016d682e5065e0efff36a40318c91b59b454ccb08914c60b6f4e  deviceinfo
+be2af51cbd6532a7c19eec48e1ebd78c6bb17394a7c4b59d0b9bb83d001e7b50cd535cc6a70a37ee80639f6fc6307430c4ac19a88c8475674c93dd65693b392b  kernel-cmdline.conf
+57ff51fdf94882e303c9cd301891a4c9de0e4604d73b17ae855d84410802b9a91b47045c136f62a002134549b179d55ad8da096d4ffbe79430dceea9b18ccebd  phoc.ini
+9845b869b9499c8477d83dc1da5eb05d3f9cecb6a773638a148c149cb09016427dd87e5fe9c23e37bd184442a7a4fefb05b1c930142b0e682794f6c805f85819  samsung,grandpplte.json
+"

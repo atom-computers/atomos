@@ -1,0 +1,11 @@
+--- a/drivers/input/touchscreen/ist30xxc/ist30xxc.c	2025-08-19 12:06:38.023569475 +0200
++++ b/drivers/input/touchscreen/ist30xxc/ist30xxc.c	2025-08-19 12:09:47.818559862 +0200
+@@ -1474,7 +1474,7 @@
+ 	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR,
+ 			0, data->pdata->max_w, 0, 0);
+ #if IST30XX_JIG_MODE
+-	input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, 0, 0, 0);
++	// input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, 0, 0, 0);
+ #endif
+ 
+ #if IST30XX_USE_KEY

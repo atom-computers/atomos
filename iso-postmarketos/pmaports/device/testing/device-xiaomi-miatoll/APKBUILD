@@ -1,0 +1,79 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nikroks <nikroks@mainlining.org>"
+pkgname=device-xiaomi-miatoll
+pkgdesc="Xiaomi Redmi Note 9 Pro / Redmi Note 9S"
+pkgver=9
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	make-dynpart-mappings
+	mkbootimg
+	linux-postmarketos-qcom-sm7125
+	postmarketos-base
+	swclock-offset
+	soc-qcom-sm7125
+	soc-qcom-sm7125-ucm
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+	81-libssc-xiaomi-miatoll.rules
+"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-nonfree-firmware-udev:nonfree_firmware_udev
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-xiaomi-miatoll.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-xiaomi-miatoll.rules
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU, venus, modem and sensor firmware"
+	depends="
+		firmware-xiaomi-miatoll
+		soc-qcom-sm7125-nonfree-firmware
+		hexagonrpcd>=0.3.2-r3
+	"
+
+	amove usr/share/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_udev() {
+	default_udev
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel udev"
+}
+
+sha512sums="
+78ba6fa05487289eaca8046992a6b4d26b29d64131e0628d01e43fb8cd9fbba5c07468e752984729cb500f24845439d28afea38db1f3360afbf1c8faae6257af  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+9a70ba5c036f2d3dc90c5c34a1d5bf0ef0805a19e5b49cd2821897bf3e6fe8af0cd2148aebb263807359ac616958da1c4032d85079d91d975f4bf220df1028ea  hexagonrpcd.confd
+9c1e77fd27ca8efb288099ed48f5f4cad71ae29a9c76a96d6aef471d3870a7aee3548cd0ed892407d5ce391814cf88145d22e1eba148e7008634c06700eecfbc  modules-initfs
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-xiaomi-miatoll.rules
+"

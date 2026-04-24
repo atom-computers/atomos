@@ -1,0 +1,14 @@
+#!/bin/sh
+
+UNIT_LIST_PATH=/var/lib/systemd-apk/installed.units
+
+pre_commit() {
+	mkdir -p "$(dirname "$UNIT_LIST_PATH")"
+	treescan /usr/lib/systemd/system > "$UNIT_LIST_PATH"
+	treescan /usr/lib/systemd/user >> "$UNIT_LIST_PATH"
+}
+
+case "$1" in
+pre-commit)
+	pre_commit;;
+esac

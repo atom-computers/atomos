@@ -1,0 +1,43 @@
+diff --git a/arch/arm/dts/rk3399-pinebook-pro-u-boot.dtsi b/arch/arm/dts/rk3399-pinebook-pro-u-boot.dtsi
+index 1a2e24d3ef..296321d697 100644
+--- a/arch/arm/dts/rk3399-pinebook-pro-u-boot.dtsi
++++ b/arch/arm/dts/rk3399-pinebook-pro-u-boot.dtsi
+@@ -24,6 +24,10 @@
+ 	u-boot,dm-pre-reloc;
+ };
+ 
++&rng {
++	status = "okay";
++};
++
+ &sdhci {
+ 	max-frequency = <25000000>;
+ 	u-boot,dm-pre-reloc;
+diff --git a/arch/arm/dts/rk3399-rockpro64-u-boot.dtsi b/arch/arm/dts/rk3399-rockpro64-u-boot.dtsi
+index bac09df4a3..cb8991aa25 100644
+--- a/arch/arm/dts/rk3399-rockpro64-u-boot.dtsi
++++ b/arch/arm/dts/rk3399-rockpro64-u-boot.dtsi
+@@ -19,6 +19,10 @@
+ 	};
+ };
+ 
++&rng {
++	status = "okay";
++};
++
+ &spi1 {
+ 	spi_flash: flash@0 {
+ 		u-boot,dm-pre-reloc;
+diff --git a/configs/pinebook-pro-rk3399_defconfig b/configs/pinebook-pro-rk3399_defconfig
+index 0c129b9aeb..21eecf477c 100644
+--- a/configs/pinebook-pro-rk3399_defconfig
++++ b/configs/pinebook-pro-rk3399_defconfig
+@@ -54,6 +54,8 @@ CONFIG_DM_PMIC_FAN53555=y
+ CONFIG_PMIC_RK8XX=y
+ CONFIG_REGULATOR_PWM=y
+ CONFIG_REGULATOR_RK8XX=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_ROCKCHIP=y
+ CONFIG_PWM_ROCKCHIP=y
+ CONFIG_RAM_RK3399_LPDDR4=y
+ CONFIG_DM_RESET=y

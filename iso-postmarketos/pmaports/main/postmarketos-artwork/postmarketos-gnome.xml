@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>postmarketOS Wallpapers</name>
+    <filename>/usr/share/wallpapers/postmarketos/contents/images/2000x2000.png</filename>
+    <filename-dark>/usr/share/wallpapers/postmarketos/contents/images_dark/2000x2000.png</filename-dark>
+    <options>zoom</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#73A82F</pcolor>
+    <scolor>#000000</scolor>
+  </wallpaper>
+</wallpapers>

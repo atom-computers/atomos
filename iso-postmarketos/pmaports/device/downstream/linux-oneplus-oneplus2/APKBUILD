@@ -1,0 +1,58 @@
+# Kernel config based on: arch/arm64/configs/oneplus2_defconfig
+
+pkgname=linux-oneplus-oneplus2
+pkgver=3.10.108
+pkgrel=7
+pkgdesc="OnePlus 2 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="oneplus-oneplus2"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_oneplus_msm8994"
+_commit="0178fae80ec43cefa75f590e18a9039f5b379425"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_mt_width_major_params.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+81ef633e95b16a6413cacc7eb287e5194396bc34c198d29b498a4c6f8750836ec1f247b6ba7b2371bc642c48ef2492dc0c18ee358d0bc3291d2a0c1d0ded684e  linux-oneplus-oneplus2-0178fae80ec43cefa75f590e18a9039f5b379425.tar.gz
+c493d4f85bafdee7951065759aa92ba97e5a931502e21beaa06c071dc33be8df15a4888bed6d14679cc8f2c66cb4b0a78fbd9d3ab45d8a305a2fe89315ec13bd  config-oneplus-oneplus2.aarch64
+d4eff67f99708e091499ce033a0709ba6765d83ed74c7411bd7d8ec72ce822db4e7c3bc8e7f51ccc8610486546ea9d9485a7cb93a761c8307b94283b337da726  00_mt_width_major_params.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

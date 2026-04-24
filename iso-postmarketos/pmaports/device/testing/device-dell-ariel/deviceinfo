@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="dell Dell Wyse 3020"
+deviceinfo_manufacturer="dell"
+deviceinfo_codename="dell-ariel"
+deviceinfo_year="2015"
+deviceinfo_dtb="mmp3-dell-ariel"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+
+# Bootloader related
+deviceinfo_generate_extlinux_config="true"
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_initfs_compression="gzip"
+deviceinfo_append_dtb="true"
+
+# legacy BL on this device cannot use gpt:
+deviceinfo_partition_type="msdos"
+deviceinfo_boot_filesystem="fat32"
+

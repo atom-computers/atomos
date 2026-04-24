@@ -1,0 +1,62 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-coreprimevelte)!
+# This kernel is used only for bringing up new features, thus archived
+# Reference: <https://postmarketos.org/vendorkernel>
+pkgname=linux-samsung-coreprimevelte-downstream
+pkgver=3.14.27
+pkgrel=0
+pkgdesc="Samsung Galaxy Core Prime VE LTE kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-coreprimevelte-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl pxa-mkbootimg dtc"
+
+# Source
+_repository="g361f-kernel"
+_commit="7aff5fb2991701d55e167471b4d3229e57fc6a09"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/CoderCharmander/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-hardcoded-cross-compile.patch
+	gcc8-fix-put-user.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	place-cpu_setup-in-text.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	KERNEL_IMAGE_NAME="Image.gz" downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	pxa1908-dtbTool -p "$_outdir"/scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/dts/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+b2dc84c3ff8616c051857968a754f6981ecc52cd7a790b24951dcddfe8a2c43ea05556e68a6bcdd58545663cadab51430196d77f9b68212bedcc48ab41bcaa78  linux-samsung-coreprimevelte-downstream-7aff5fb2991701d55e167471b4d3229e57fc6a09.tar.gz
+edfb25f0ccbad8ae6ad4d869fc7f605b69644fdda620be7ce9f8cea55f35670865b697ad99e0654f538867a8cfb4033d80e5d5d127a9b1c0f152ea91aca8d7bc  config-samsung-coreprimevelte-downstream.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+56c9b451ab2fa4a6a177fbd5e04f45859f23d4b3056b5745752c493c374d8c871650cbe792ef6d5146ad2d88c23c14018c93ff71c3ed5bb11f6d7fa2064f1985  kernel-hardcoded-cross-compile.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+ef361f4729efeb6442bdd028798a3ba8f34901cbcbedc318ae0788e23e7c897897587cee82f334d2ec5d7954a73d409bd25f1742d53ba704dd2b672a5de80f26  place-cpu_setup-in-text.patch
+"

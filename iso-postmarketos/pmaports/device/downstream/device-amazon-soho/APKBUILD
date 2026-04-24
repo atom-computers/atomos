@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-amazon-soho
+pkgdesc="Amazon Kindle Fire HD (3rd Generation)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-amazon-soho mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	initfs-hook.sh
+	amazon-omap-boot-hack.sh
+	modules-load.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm755 "$srcdir/amazon-omap-boot-hack.sh" "$pkgdir/usr/share/mkinitfs/amazon-omap-boot-hack.sh"
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-amazon-soho"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+5c0ea70623396acabad6feeff8fd1f2d372955a8174adc15572a66d8a7d3159411103cd0eb052bae34567a435f8789fe57c58a1f4cb62230e83cb87cee1361bb  deviceinfo
+7aabc28db4edb773408215acaf6f4555c217eb5b0f153705b7ce816c54f4fb890923aa804c873020be9a28108a3ded4d00b6898eac05aa6e15cb9c1fe89f94a4  kernel-cmdline.conf
+1aca985770246b9ca140996a498815b5c9ca3458a6cb84db85825344f01deda8b1de7c88e2e0c610df636ad2179faac7fd90d9992add51186a6449f2d43a3f71  initfs-hook.sh
+b031a2bd8e0e206196df9bfa5299c7172ce5d185c77a148422269e2c8a556769b5f6e29dcfe3f4e50968f8a860a8f927a6fcab2021d48e8912c3d5e76b50d61b  amazon-omap-boot-hack.sh
+61e8becbf6fa7c1c6c42e481083f5981ae7af33a48cbc53e817d8ac2c6a8e4f67a54b32ae3b8f5f25f7b412165a849dc93a629110dc47b0d16927bf2a12eb7e1  modules-load.conf
+"

@@ -1,0 +1,93 @@
+author	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>	2015-05-15 02:00:09 +0300
+committer	John Stultz <john.stultz@linaro.org>	2017-05-12 12:39:38 -0700
+commit	c0648aa6e6063285cec2a15fecd360a3b4394af4 (patch)
+tree	0f23e82630929c7307560803faa4bf9b489ddd52
+parent	4d4d7186492648fe2517178b983fcd5a55e3d575 (diff)
+download	flo-c0648aa6e6063285cec2a15fecd360a3b4394af4.tar.gz
+iommu: of: Handle IOMMU lookup failure with deferred probing or error
+Failures to look up an IOMMU when parsing the DT iommus property need to
+be handled separately from the .of_xlate() failures to support deferred
+probing.
+
+The lack of a registered IOMMU can be caused by the lack of a driver for
+the IOMMU, the IOMMU device probe not having been performed yet, having
+been deferred, or having failed.
+
+The first case occurs when the device tree describes the bus master and
+IOMMU topology correctly but no device driver exists for the IOMMU yet
+or the device driver has not been compiled in. Return NULL, the caller
+will configure the device without an IOMMU.
+
+The second and third cases are handled by deferring the probe of the bus
+master device which will eventually get reprobed after the IOMMU.
+
+The last case is currently handled by deferring the probe of the bus
+master device as well. A mechanism to either configure the bus master
+device without an IOMMU or to fail the bus master device probe depending
+on whether the IOMMU is optional or mandatory would be a good
+enhancement.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Diffstat
+-rw-r--r--	drivers/iommu/of_iommu.c	18	
+		
+-rw-r--r--	drivers/of/device.c	2	
+		
+2 files changed, 16 insertions, 4 deletions
+diff --git a/drivers/iommu/of_iommu.c b/drivers/iommu/of_iommu.c
+index 2683e9f..b171b2c 100644
+--- a/drivers/iommu/of_iommu.c
++++ b/drivers/iommu/of_iommu.c
+@@ -159,10 +159,20 @@ const struct iommu_ops *of_iommu_configure(struct device *dev,
+ 		np = iommu_spec.np;
+ 		ops = iommu_ops_from_fwnode(&np->fwnode);
+ 
+-		if (!ops || !ops->of_xlate ||
++		if (!ops) {
++			const struct of_device_id *oid;
++
++			oid = of_match_node(&__iommu_of_table, np);
++			ops = oid ? ERR_PTR(-EPROBE_DEFER) : NULL;
++			goto err_put_node;
++		}
++
++		if (!ops->of_xlate ||
+ 		    iommu_fwspec_init(dev, &np->fwnode, ops) ||
+-		    ops->of_xlate(dev, &iommu_spec))
++		    ops->of_xlate(dev, &iommu_spec)) {
++			ops = NULL;
+ 			goto err_put_node;
++		}
+ 
+ 		of_node_put(np);
+ 		idx++;
+@@ -172,7 +182,7 @@ const struct iommu_ops *of_iommu_configure(struct device *dev,
+ 
+ err_put_node:
+ 	of_node_put(np);
+-	return NULL;
++	return ops;
+ }
+ 
+ static int __init of_iommu_init(void)
+@@ -183,7 +193,7 @@ static int __init of_iommu_init(void)
+ 	for_each_matching_node_and_match(np, matches, &match) {
+ 		const of_iommu_init_fn init_fn = match->data;
+ 
+-		if (init_fn(np))
++		if (init_fn && init_fn(np))
+ 			pr_err("Failed to initialise IOMMU %s\n",
+ 				of_node_full_name(np));
+ 	}
+diff --git a/drivers/of/device.c b/drivers/of/device.c
+index d73bfa19..22365aa 100644
+--- a/drivers/of/device.c
++++ b/drivers/of/device.c
+@@ -165,6 +165,8 @@ int of_dma_configure_ops(struct device *dev, struct device_node *np)
+ 		coherent ? " " : " not ");
+ 
+ 	iommu = of_iommu_configure(dev, np);
++	if (IS_ERR(iommu))
++		return PTR_ERR(iommu);
+ 	dev_dbg(dev, "device is%sbehind an iommu\n",
+ 		iommu ? " " : " not ");

@@ -1,0 +1,62 @@
+# Kernel config based on: arch/arm64/configs/lineage_ido_defconfig
+
+maintainer="Kidd Lee <LeeXiaolan@gmail.com>"
+pkgname=linux-xiaomi-ido
+pkgver=3.10.108
+pkgrel=1
+pkgdesc="Xiaomi Redmi 3 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-ido"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool python3 gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_xiaomi_msm8916"
+_commit="038e5f6bb2463e68c3f9c27e540acbe22e340284"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	01_fix_gcc6_errors.patch
+	gcc-wrapper-port-to-py3.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" "$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+d80a4bf69c26aedd6efcc93f2e9100964b1c8082d0905a81dc6a5c9b0b764db30ccba76873f20fc0c8b15980b9b23ff9c61ebf834fd5eb6291d8990f31c95d35  linux-xiaomi-ido-038e5f6bb2463e68c3f9c27e540acbe22e340284.tar.gz
+74d821623b903243477eea422966b5cafea14eaf3f152bae48eb70eafcecb6ba775e31815557614f00f5212b1361d5518ba049c49e0cedd065aeab7ecda17f6e  config-xiaomi-ido.aarch64
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+972e98523d6ef06342e69a09e979bdd86904cf7f9a843b519b37791e531b680182564a2ab537c94629c3589f4e775b2c39de04c64e210a0f8b6f10745c3596f1  01_fix_gcc6_errors.patch
+13e289c889a48946cd3d976932f06f749bed5c6596776f4b683aada4e3e2f50b66286d6f550b8f2e260b58867b759591bbf8b54cc07ad9d3bb761ff477f036a1  gcc-wrapper-port-to-py3.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch"

@@ -1,0 +1,12 @@
+diff --git a/Kbuild b/Kbuild
+index 4a528a190..f4b12b8e2 100644
+--- a/Kbuild
++++ b/Kbuild
+@@ -977,7 +977,6 @@ CDEFINES :=	-DANI_LITTLE_BYTE_ENDIAN \
+ 		-DWLAN_PERF \
+ 		-DPTT_SOCK_SVC_ENABLE \
+ 		-Wall\
+-		-Werror\
+ 		-D__linux__ \
+ 		-DHAL_SELF_STA_PER_BSS=1 \
+ 		-DWLAN_FEATURE_VOWIFI_11R \

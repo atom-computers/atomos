@@ -1,0 +1,46 @@
+maintainer=""
+pkgname=dtbtool-exynos
+pkgver=1.1.0
+pkgrel=1
+pkgdesc="Tool for compiling a dtb.img for Exynos SOC"
+url="https://forum.xda-developers.com/android/development/exynos-compiling-dtb-img-linux-t3700690"
+arch="all"
+license="MIT"
+depends="libfdt"
+makedepends="dtc-dev"
+options="!check" # There is no testsuite
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/dsankouski/dtbtool-exynos/archive/$pkgver.tar.gz
+	0001-Makefile-do-not-add-libfdt.so-to-OBJ_FILES.patch
+	0002-Makefile-do-not-strip-the-produced-binary.patch
+	0003-dtbtool-exynos-convert-all-space-indentation-to-tabs.patch
+	0004-scan_dtb_path-be-less-verbose-when-scanning-director.patch
+	0005-scan_dtb_path-free-struct-from-scandir.patch
+	0006-dtbtool-exynos-zero-allocated-dtb_files-memory.patch
+	0007-dtbtool-exynos-allocate-memory-for-dtbs-as-needed.patch
+	0008-dtbtool-exynos-remove-fail-goto.patch
+	0009-dtbtool-exynos-free-allocated-dtb_files-before-exit.patch
+	0010-load_dtbh_block-free-allocated-memory.patch
+"
+
+build() {
+	make
+}
+
+package() {
+	install -D -m755 "$builddir"/dtbTool-exynos \
+		"$pkgdir"/usr/bin/dtbTool-exynos
+}
+sha512sums="
+a870ea1552d58757d4d44d93f3b84a211331eb39871d5c964d314b50e17c7b456a50368c539c58a02557aa4be775e0158c7be237115328d507719d491f65645f  dtbtool-exynos-1.1.0.tar.gz
+980c419f14aada81c2a07067d4d3c0c0b53a866103623eecc8e893a708b31efd4d9a6bdbd689d922dacd1ece57807197c6892b3462d6f527a3a41133efed7720  0001-Makefile-do-not-add-libfdt.so-to-OBJ_FILES.patch
+8f7ad2227950ca28aabd366f4d1305beaa0adb7712b3ee7ddc38a45ccbe7f1075a5a4390bce9617ddf479aac44206127c60811855d0a6aa7dc505fe65ddabc4a  0002-Makefile-do-not-strip-the-produced-binary.patch
+fc92871ca1eede3939ad681d14c97ff30f94356c7a68a25d87f956b8ac04aaf1b3661027674cab76fa0420584d470c7ee9a19b0d6f6d571d2dcb2eb383827a34  0003-dtbtool-exynos-convert-all-space-indentation-to-tabs.patch
+774009d0f612c9056a2b9508f2fad7c8aa4bd9bbfbec52b077699f119ba895717c4dbf4d679d9af1f7ae623374a145c936cdadd68f4e465c06e11f0fc7e49f57  0004-scan_dtb_path-be-less-verbose-when-scanning-director.patch
+928819d1d3f367e5ac2d71011a3215e136da7e0969f1d9afd9e106dd1d0cac49efb3acbfe34cf713e839eabbca47454e32771ad5aaed6770d6a54c91f5f2482c  0005-scan_dtb_path-free-struct-from-scandir.patch
+9552c4a3c363fb69b97c2418b23e9aeb9d82cb4587548a75cbc16e87694b91cbec3e9a5a43e4c74108ef7ecd8a6735f0b03967a6195486a9a1291b5cca6226bf  0006-dtbtool-exynos-zero-allocated-dtb_files-memory.patch
+5a4d89ac6688b977b96a8bcf4a4b405319d436e1f09277bd12139033d1c7f3b75f097ade7274ec34e4726eb1aa849a72adb41456f9c90a74019851a9e4fc83f9  0007-dtbtool-exynos-allocate-memory-for-dtbs-as-needed.patch
+43d073ebe3adaa7103049e63f337d9d701cfb7cc90780ab3bd97c06aa89b280ac448d4008a769c8534b823426763eeca26569a37d6aa972298e146d8c72119af  0008-dtbtool-exynos-remove-fail-goto.patch
+9c4a06382c40285bccacabae095d4a12e384f05ee3e601d04c8f58d1da5e88d89ab0d27e7965a6f5bf945d3a1ba21c3c66966da6cd26b9e4f20763e29ac3c491  0009-dtbtool-exynos-free-allocated-dtb_files-before-exit.patch
+c38af9be572d9bd3baf20711ec1876214d6fafe60074d420394c64faeaadd2aa7159104baf0acd6cdf18782693a6964b787f18a451649b3f18ed05b485268d2e  0010-load_dtbh_block-free-allocated-memory.patch
+"

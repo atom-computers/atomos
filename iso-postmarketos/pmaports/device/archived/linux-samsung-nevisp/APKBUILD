@@ -1,0 +1,76 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_nevisp_defconfig
+maintainer="Théo Friberg <fsmnarmosta@posteo.net>"
+pkgname=linux-samsung-nevisp
+pkgver=3.0.101
+pkgrel=6
+pkgdesc="Samsung Galaxy Fame GT-S6810P kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-nevisp"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc4 xz"
+
+# Compiler: GCC 4 (doesn't compile with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_rhea"
+_commit="8224116dca7de79d181c0761468f569e6ac3505e"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/bcm216xx/$_repository/archive/$_commit.tar.gz
+	$_config
+	android_paranoid_network.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.0-fix-piggy.lzma.S.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="1c62313451ff2a04ab9259a4b2c954388a360f45f20af90d05e9cfe73d31f49fc4847f24c1742c89a45f1646e1d27999fc6f5bd224baba7046b07ab324e7baae  linux-samsung-nevisp-8224116dca7de79d181c0761468f569e6ac3505e.tar.gz
+9031522a4bfa93a85216f597d4ef3872ce059ab34e6194985877c207b438c2af259a747e4c3142112b4687e7c22d592112a9c9ea97a1bc77cec75ca78c5231b5  config-samsung-nevisp.armv7
+d8cdc1137e6a4ad78a3a31acc40f0c98f4db272eaf5b90ee850abb83b80916c4ff3c18a0a181e94eebead44213f6314e3363d0c4b91d95ee1adafbcad6dc57ab  android_paranoid_network.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+3c098328e45db14cbeff6a515bb373129e0d0983884178f413c5a4206704b356ddecdf58557a04b828b391dbfef3cea0e98b47834aa97b86496aa2fce0013b92  linux3.0-fix-piggy.lzma.S.patch"

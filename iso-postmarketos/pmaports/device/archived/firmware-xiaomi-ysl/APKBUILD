@@ -1,0 +1,26 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-ysl
+pkgver=3
+pkgrel=2
+pkgdesc="Firmware files for Xiaomi Redmi S2/Y2"
+url="https://gitlab.com/barni2000/$pkgname"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="ccfd274b825aec2d80e834b16499a6d9ba96c3f5"
+
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit/lib/firmware/postmarketos"
+
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/ysl"
+
+package() {
+	# GPU Firmware files
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+cd2d84dac3660fe554cba6d6d2ac0c6c7468cfd37bc443400ee1c2bc4a2ed3cb3e7120a413d7bed3c0bad2b5acb234599dd5a0f2e42f6696779c07c3e5c3c575  firmware-xiaomi-ysl-ccfd274b825aec2d80e834b16499a6d9ba96c3f5.tar.gz
+"

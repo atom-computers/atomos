@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-w767
+pkgdesc="Samsung Galaxy Book S"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-sc8180x>=6.6.0
+	postmarketos-base
+	soc-qcom-sc8180x
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi firmware"
+	depends="firmware-samsung-w767 linux-firmware-ath10k soc-qcom-sc8180x-nonfree-firmware"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+0f9a706acaa61c880ac1d3ac1c9ce870d5b87b14542784a8e04ceb0d8476d045bf16ec6b921668cea3bf6783592c7a57dba36f90c5a58c44b9988039b4325cee  deviceinfo
+8fddc59e59615a85038d0cdc6a75c58b63b7b78791ece6e911b519f5cbef301366c12b3f11512b254b1f2f4563d29c1a2dbd0cd576c0b5925620f31cd29df498  kernel-cmdline.conf
+23ade4e4526fa1445240219d227f34a445a3298b63c15fca751eea7c5ba0306ce3a76e4ddee341f9aa6f0e02a7f9d3d0ebb4dda0aec8ae0585dd8f6de7483c85  modules-initfs
+"

@@ -1,0 +1,75 @@
+# Kernel config based on: arch/arm/configs/sun6ismp_fiber_defconfig
+
+pkgname=linux-infocus-flatfish
+pkgver=3.3.0
+pkgrel=7
+pkgdesc="InFocus New Tab F1 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="infocus-flatfish"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel_flatfish"
+_commit="b7e13780ed3ba80a5539a74d8704281cd6d3f5e6"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mozilla-b2g/$_repository/archive/$_commit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	02_fix_paranoid_network_disabled.patch
+	03_fix_pm_build.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	# The standby code needs to be built separately
+	# Without -j1, this fails the build sometimes!
+	make -j1 ARCH="$_carch" CC="${CC:-gcc}" \
+		KDIR=$builddir \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		-C $builddir/arch/arm/mach-sun6i/pm/standby
+
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# External modules install
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="
+9dad1d0226803566727cc34c44ec9240768a3e4e89f9a02dad0f9bf2f9ee6aecd17892c12d7b9f30e4bc522d67d06d4089d79f800de594c052760ad110d694d9  linux-infocus-flatfish-b7e13780ed3ba80a5539a74d8704281cd6d3f5e6.tar.gz
+6c73c77d06ead91c486427c1e03e0e89aa36708bbf466d6ded034f99e6a88fd4c8df1b936edbe382f530cc5676c76196a4e623f84699360a20341431ccdc6f6c  config-infocus-flatfish.armhf
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+df62e03666313bb03d9a455eac875f170a55d378b6e56b847c1c6ff1ce5cfafcfdf1d7605754ca3c684840ea00357f9ec4c6621f6ff77377132a484b9258f6f7  02_fix_paranoid_network_disabled.patch
+06463b3f376650f7a8bf15cad9d6b619656ed80603c4988c6454e650a4ab99062dd47c19099a3cd5d6e0f6f291476eada2e79fe2231082bc2fd4edad84f809fd  03_fix_pm_build.patch
+"

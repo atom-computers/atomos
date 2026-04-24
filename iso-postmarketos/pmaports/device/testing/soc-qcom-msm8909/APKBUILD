@@ -1,0 +1,41 @@
+maintainer=""
+pkgname=soc-qcom-msm8909
+pkgdesc="Common package for Qualcomm MSM8909 devices"
+pkgver=1
+pkgrel=3
+url="https://postmarketos.org"
+license="GPL-3.0-or-later"
+arch="armv7 aarch64"
+options="!check !archcheck"
+depends="soc-qcom-msm8916"
+install="$pkgname-modem-openrc.post-install"
+subpackages="
+	$pkgname-modem
+	$pkgname-modem-openrc:modem_openrc
+"
+
+source="
+	msm8909-modem-wwan-port.initd
+	"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+modem() {
+	pkgdesc="Modem support for Qualcomm MSM8909 devices"
+	install_if="soc-qcom-msm8909 soc-qcom-msm8916-rproc"
+	depends="qmi-utils"
+	mkdir -p "$subpkgdir"
+}
+
+modem_openrc() {
+	install_if="$pkgname-modem=$pkgver-r$pkgrel openrc"
+
+	install -D -m755 "$srcdir"/msm8909-modem-wwan-port.initd \
+		"$subpkgdir"/etc/init.d/msm8909-modem-wwan-port
+}
+
+sha512sums="
+4a11a35f766af798ca6052dd236094b9aed46cc8761a38437c42d58ab6de6247943c1186d50f70c405df0b73d3d72b6e378a054429505e98c5204391165a4a3a  msm8909-modem-wwan-port.initd
+"

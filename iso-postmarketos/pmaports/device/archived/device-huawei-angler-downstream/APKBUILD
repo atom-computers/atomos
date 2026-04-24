@@ -1,0 +1,47 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-huawei-angler-downstream
+pkgver=4
+pkgrel=0
+pkgdesc="Huawei Nexus 6P (Downstream)"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	firmware-aosp-broadcom-wlan
+	linux-huawei-angler-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	90-android-touch-dev.rules
+	bcmdhd.cal
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+# Note: bcmdhd.cal is from https://github.com/LineageOS/android_device_huawei_angler/blob/752aaf664ab079f4ce9cbdeae6978f615d39b783/bcmdhd.cal
+# TODO: this calibration file isn't valid for all variants of this device
+# See https://github.com/LineageOS/android_device_huawei_angler/blob/cm-14.1/init.angler.rc#L450
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/etc/udev/rules.d/90-android-touch-dev.rules
+	install -D -m644 "$srcdir"/bcmdhd.cal \
+		"$pkgdir"/etc/wifi/bcmdhd.cal
+}
+
+sha512sums="
+262f9f3e28cbb28d236cf6edce4919766baabb18e5b0cf35d672d306efeaf12fd66ffba57e6d9bef0eee90203dc98f95aab17145e4c12383055afb58b922ae58  90-android-touch-dev.rules
+61fe1f91d7b0b570b77fcca76503373cbac2515ca3dcc2f2543b910dfaeb1e935a11975f824f6a72001df4e63329356a6aff2d016e9b4f5d8f7b739fee065c4e  bcmdhd.cal
+55a4bcd67d5bc57ed0d6b53a3c1b5903f19f908ba12d777d2d49520527458576e5fd6af98f3597ebfb2ca1b2064f3139da2985cc1a18f33d596bd75cd4f5b8db  deviceinfo
+8b09f1c662be6c43069de23dcafdacd57a9a9a6f21dc51f79454647b5844695f3389c0efed0b0e216437fd1af48134ef16e0d8eba02e5dd80af6794b75dc1e16  kernel-cmdline.conf
+"

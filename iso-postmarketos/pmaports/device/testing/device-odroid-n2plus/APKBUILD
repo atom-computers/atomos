@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="hexaheximal <hexaheximal@proton.me>"
+pkgname=device-odroid-n2plus
+pkgdesc="ODROID N2+"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base u-boot-amlogic-odroid-n2plus soc-amlogic-aarch64 linux-postmarketos-amlogic"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="ODROID N2+ firmware"
+	depends="linux-firmware-meson"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+73c58559ed8aacb5d821dd708b63c668b43e84dd2e40fc9d8a24918e51f803b8b06085277cc7dd780b5882f21fddcac9e1040e38647c624b492dc975415812b9  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+b9f3e1902c17909de928c99868265a257ba5873f6ea6aa1097ad10721f59d68342d50ee51992472ecd23722f7664a13dd15f4e26071a40595c7c3e5161e533d7  modules-initfs
+"

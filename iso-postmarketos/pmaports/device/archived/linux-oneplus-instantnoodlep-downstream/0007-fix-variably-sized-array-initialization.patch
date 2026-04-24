@@ -1,0 +1,45 @@
+From 0498b33266c9e45fe1e73b5942ea92f9aed631c2 Mon Sep 17 00:00:00 2001
+From: Pangwalla <pangwalla@protonmail.com>
+Date: Wed, 1 Mar 2023 23:11:56 -0500
+Subject: [PATCH] fix variably sized array initialization
+
+---
+ drivers/soc/oplus/system/theia/powerkey_monitor.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/soc/oplus/system/theia/powerkey_monitor.c b/drivers/soc/oplus/system/theia/powerkey_monitor.c
+index 2a1633279d11..90f37c575616 100644
+--- a/drivers/soc/oplus/system/theia/powerkey_monitor.c
++++ b/drivers/soc/oplus/system/theia/powerkey_monitor.c
+@@ -4,6 +4,7 @@
+  */
+ #include "powerkey_monitor.h"
+ #include "theia_kevent_kernel.h"
++#include <linux/string.h>
+ 
+ #define POWER_MONITOR_DEBUG_PRINTK(a, arg...)\
+     do{\
+@@ -225,7 +226,9 @@ static void print_all_buffer(void)
+ static ssize_t theia_powerkey_report_proc_read(struct file *file, char __user *buf,
+         size_t count,loff_t *off)
+ {
+-    char stages[stage_total_size] = {0};
++    char stages[stage_total_size];
++    memset(stages, 0, sizeof(stages));
++
+     int stages_len;
+ 
+     POWER_MONITOR_DEBUG_PRINTK("enter theia_powerkey_report_proc_read %d  %d",count,*off);
+@@ -265,7 +268,8 @@ static ssize_t theia_powerkey_report_proc_write(struct file *file, const char __
+         size_t count,loff_t *off)
+ {
+ 
+-    char buffer[stage_brief_size] = {0};
++    char buffer[stage_brief_size];
++    memset(buffer, 0, sizeof(buffer));
+ 
+     if(g_black_data.status == BLACK_STATUS_INIT || g_black_data.status == BLACK_STATUS_INIT_FAIL){
+         POWER_MONITOR_DEBUG_PRINTK("%s init not finish: status = %d\n", __func__, g_black_data.status);
+-- 
+2.39.2
+

@@ -1,0 +1,60 @@
+# Archived: Downstream kernel, only for testing. Use linux-postmarketos-exynos4.
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineage_lt01wifi_defconfig
+
+pkgname=linux-samsung-lt01wifi-downstream
+pkgver=3.0.31
+pkgrel=1
+pkgdesc="Samsung Galaxy Tab 3 8.0 kernel fork (downstream, archived)"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-lt01wifi-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz"
+
+# Source
+_repository="android_kernel_samsung_smdk4x12"
+_commit="6ad0b18a63deacaebbc3d12751c3230cedbf7335"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/gr8nole/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	make ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# External modules install
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="
+43c9a5cfe9a6f66d7fbdec04ea6a04c06864d2f6140f458fba7bcde7a871d0128d5f1bf45724923c6e7fc592863a1a0a01a067dd6255b5f7ee0dbef46958140c  linux-samsung-lt01wifi-downstream-6ad0b18a63deacaebbc3d12751c3230cedbf7335.tar.gz
+cdd1902822b25c023ad9efd333387e59b18a73727bcb3963d67b979b9da0cd6c87032cbdb5f0e87f9ac0030444afdc7ffb4aaccada2683201694e8da52cffbbc  config-samsung-lt01wifi-downstream.armv7
+df6e20ac3c29cee1aa652a78cd5270bc785e824bcd5a9cd25e0681be506bf6a7547683fca1fc4170b175fa649602bddc98c34beb094ea59e8273aeb8f9703807  0001-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+b14c0033045dd1ec5dd03612d8fb6361c4a0fa3eb54f7e262628d18756456c2e569a437d1b35099a8302577d1e471bbf9222b4b1b30f6578af7e4342a0009815  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+"

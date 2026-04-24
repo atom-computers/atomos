@@ -1,0 +1,78 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/sp7731gea-dt_defconfig
+
+pkgname=linux-zte-p731a20
+pkgver=3.10.17
+pkgrel=6
+pkgdesc="ZTE_P731A20 kernel"
+arch="armv7"
+_carch="arm"
+_flavor="zte-p731a20"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool"
+
+# Source
+_repository="android_kernel_zte_P731A20"
+_commit="0004a6b85c34e31dacbb49525e608ad75e167082"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ave4/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	00_return_address.patch
+	fix_cross_compile.patch
+	qcom,msm-id_fix.patch
+	sprdfb-fix-swapped-colors.patch
+	sprdfb-check-for-buffering.patch"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CFLAGS_MODULE=-fno-pic
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	# kernel.release
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	install -Dm644 "$builddir/arch/$_carch/boot/zImage" \
+		"$pkgdir/boot/vmlinuz"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+
+echo "--[ Installing modules ]--"
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 modules_install
+}
+
+sha512sums="
+38600cd20cd22e1ac7636597f5b1fbf6ef60e918f4d197ee8ac8073eb6740cec33147fd5a381a587fe74861bddd7a6d45617e80e38f0e072f731198211c5bcf8  linux-zte-p731a20-0004a6b85c34e31dacbb49525e608ad75e167082.tar.gz
+74cad47e6429600111405c6f886cc822e4aeeccf204baf2c2cf043bc9e8474025ef62bcfd0b4586a58460a87a274af34e98c734b326029385cb353c894e50017  config-zte-p731a20.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+c40eaa11547f5bc2b1ff965506bdfe3015ff16e4b5ad9ccb3b8134ceafd1d32407c4ef2b213e02e036ce1e9bdcbfe768dff7d4b054bec77705a176c1f783b6f5  00_return_address.patch
+2bedb0af8a23f5febc5f23a41c91174bffa5cb3b9af699fd61c86089a5bead77a08aca23daa62a3b7e93845e9cf86a1f5cc2a5fb4c4a56af09cf5befa2287d31  fix_cross_compile.patch
+0b3ae537793ebd6d24dfca9ec81674fc14b2aece4592bf2700795382f059501285a3e673c02a7114e8239040d41e096b10b819173f14ef837346ed60b0f55574  qcom,msm-id_fix.patch
+6836001b24508d413a059f19b0c6f6f547037f68886c22159ad51be91d1a089e3d1d9ed79c3c62724648df7f810cd81d96a83f4a34368b373524b649e5539656  sprdfb-fix-swapped-colors.patch
+e33ed12de874c1c8bc9231aea3b0389b18ee0ff804e39c0f47d9cbf657ea19015370d6114846c2d142fbdb88f472f0e65811c53b9b335feb8ae2f30dffdf4846  sprdfb-check-for-buffering.patch
+"

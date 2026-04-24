@@ -1,0 +1,17 @@
+Fixes "ld: read-only segment has dynamic relocations" error caused by "main/binutils: add -z text by default":
+https://gitlab.alpinelinux.org/alpine/aports/-/commit/a737d101cad8c0acf782d9a0ec38cf8d3432b6ff
+https://gitlab.alpinelinux.org/alpine/aports/-/commit/098309ba27bbb71f3723aa2e6e180776e0396b86
+
+diff --git a/Makefile b/Makefile
+index 4ee2a6394ec3..3fbced2573d1 100644
+--- a/Makefile
++++ b/Makefile
+@@ -969,6 +969,8 @@ ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
+ LDFLAGS_vmlinux	+= $(call ld-option, -X,)
+ endif
+ 
++LDFLAGS_vmlinux += -z notext
++
+ ifneq ($(SEC_BUILD_CONF_USE_FINGERPRINT_TZ), false)
+   ifeq ($(CONFIG_SENSORS_FINGERPRINT), y)
+     ifneq ($(CONFIG_SEC_FACTORY), y)

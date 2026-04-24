@@ -1,0 +1,46 @@
+# Archived: Downstream port, replaced by mainline port.
+pkgname=firmware-samsung-n2awifi-downstream
+pkgdesc="Firmware for Samsung Galaxy Tab Pro 10.1"
+pkgver=2
+pkgrel=0
+url="https://github.com/exynos5420/android_vendor_samsung_n2a-common"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_n2awifi_commit="81dc97e9d3798e1975c9dfa518f9dc573d9e101b"
+_n2awifi_url="https://github.com/exynos5420/android_vendor_samsung_n2a-common/raw/$_n2awifi_commit"
+
+_n2awifi_wifi_files="
+	bcmdhd_apsta.bin
+	bcmdhd_ibss.bin
+	bcmdhd_mfg.bin
+	bcmdhd_sta.bin
+	cred.conf
+	nvram_mfg.txt
+	nvram_net.txt
+"
+
+for _i in $_n2awifi_wifi_files; do
+	source="$source $pkgname-$_n2awifi_commit-$_i::$_n2awifi_url/proprietary/etc/wifi/$_i";
+done
+
+package() {
+	# Wifi
+	local file
+	for file in $_n2awifi_wifi_files; do
+		 install -Dm644 "$srcdir/$pkgname-$_n2awifi_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+
+sha512sums="
+a96731cb93938dbf9c3e9deed3725140f4b814f2eb719701076b5b4ef097f20e044a447afe84b4c14ed2fb263f92d08a856a92b9816440fa309c9407af0d2761  firmware-samsung-n2awifi-downstream-81dc97e9d3798e1975c9dfa518f9dc573d9e101b-bcmdhd_apsta.bin
+1885041ec2ec2c593537fffa13a678bf79df1ecaa50be06dda53acc0196e565e30917a01301898153bbcd81cbaf26770f39bb00e0e4e0d9a6a792585dce328a3  firmware-samsung-n2awifi-downstream-81dc97e9d3798e1975c9dfa518f9dc573d9e101b-bcmdhd_ibss.bin
+107cfdbef9b35f2bb31cd526dd6b8eedcb4fa0c6702766f7a352a761444ec87e6db31c1e1e761c1a2333dac83d4ee38e24070d19d7f5ccc2c87497b61b3f7b0a  firmware-samsung-n2awifi-downstream-81dc97e9d3798e1975c9dfa518f9dc573d9e101b-bcmdhd_mfg.bin
+a93b3b6bd1bf88b4edd2321693d0d426c7cf607703f3faf82ffc16a822e66e98e623eedbad0e4ef7399224a27283c0e541c02985aaac45d53449382cee3071f2  firmware-samsung-n2awifi-downstream-81dc97e9d3798e1975c9dfa518f9dc573d9e101b-bcmdhd_sta.bin
+16ee43800bf7c05f550a14036ef1d648999568996854c72c1ef3965a8fd18eabfda284266fa2e2a0fee8c5fec01fd9a7e22b11b6723797742b5a6260e0b44096  firmware-samsung-n2awifi-downstream-81dc97e9d3798e1975c9dfa518f9dc573d9e101b-cred.conf
+d8815923fee3246f34b9f6aefdcd56120237d842bcafc43a51c871d35d1bddc63154233fb6d7f4afd53583e42a5c4bbbc502e053df4a061a07aa52f9fc078b86  firmware-samsung-n2awifi-downstream-81dc97e9d3798e1975c9dfa518f9dc573d9e101b-nvram_mfg.txt
+b8e92981cda6f73a877137de3081a4989b4a0a2f824c55c1b2e281489e70ad5cc5ae6e3394555e42ea083bc8ebf95656326bdba523073cbd527bfc329c1e452a  firmware-samsung-n2awifi-downstream-81dc97e9d3798e1975c9dfa518f9dc573d9e101b-nvram_net.txt
+"

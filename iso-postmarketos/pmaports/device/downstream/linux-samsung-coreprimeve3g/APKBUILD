@@ -1,0 +1,89 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/coreprimeve3g-dt_defconfig
+
+pkgname=linux-samsung-coreprimeve3g
+pkgver=3.10.65
+pkgrel=0
+pkgdesc="Samsung Galaxy Core Prime kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-coreprimeve3g"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	dtbtool
+	linux-headers
+	installkernel
+"
+
+# Source
+_repository="SM-G361H"
+_commit="3b6a98f7454efe458b498adffb8dbd9899fcf222"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ukloclo/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	fix-check-lxdialog.patch
+	fix-recordmcount.patch
+	fix-proc.patch
+	fix-head.S.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix-fd.patch
+	fix-sprd-vscreeninfo.patch
+	fix-touchscreen.patch
+	sprdfb-fix-swapped-colors.patch
+	fix-dtb_qcom,msm-id.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+d8af656101460f2d3bf328e6a377fadb80888ce01dc78d7ac8f5bfc493a04d96c53403ff52842ed521f8de3f77d57178b9ca73856a38863a0df63e74163b2757  linux-samsung-coreprimeve3g-3b6a98f7454efe458b498adffb8dbd9899fcf222.tar.gz
+be7c1ab9f4aa402a2b9663146451119530a7dd0d6eaa09ab595b0f2e098df5606372fe195246ee49849a13df269005c43061bb01c54f0f11bedf72a743191450  config-samsung-coreprimeve3g.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+db9ad417bd1e0bf62e0299d0a6fa018b07524260ebd36fa2d42b515445ff1551692acf41d22904700feef04923b15d3b6021768ffb72842e81354cadda980041  fix-check-lxdialog.patch
+6d393b9f0655f92c3fd0e4be096b38df026ffe586e9692005aed178636588ff7e05c820cdbb13fdbb2af3f4d58b353674b20674e630e5b7ba88c059360e82705  fix-recordmcount.patch
+25f76d6f684d258e683daeed24fe02b0a709891cb5322a2b6986778efc3f9817bd8d105fd914e9cdc97ffef7e540352b2f4e204081a379f51e21557c5ba9774e  fix-proc.patch
+8647becffe544b499b21a70d459aaadc707bf168615a4f99ceb2449da581340c97335ea78b6d83b78b658c8554edbe6ccf0674c84769b4cdeaa89c9c2f0a9a7c  fix-head.S.patch
+42d55245e95ab0de12e04c8d7b2bc7631afa12063f9fb036d9cdbea5d31acba3bbd7606c3bd574afa5f052db8cfc8794e3d71d55c7dcae787d8e6b5e2194c041  linux3.4-fix-piggy.gzip.S.patch
+16d325efa7ed3111be809325134aef97f5346f9524fc225147e5cb105e0b1cca1b78a15a6034a8f4512d9c40e1cc177923ae755b7b858237a8436de9b7884ee2  fix-fd.patch
+d2836bb75e2c7e9e2af007827cec7e947125aa4448a86e3777db9949c0bf7ea680c648dea771b8b898b27d541cb1d6f78e8f550c61ead4af035b5e387700fd2c  fix-sprd-vscreeninfo.patch
+9d0081f3a260de9ef32a9dea500bddf6ca16b620ca77ac8dcecb0aa6b61814da25f1ef473e5e16236e9100640d1114692f341e1fc8d92b8589af4572aae8d44a  fix-touchscreen.patch
+b33ffe2d42ce3654986fbea1d30905345ed355e42bbf22710c825c4a30a4bd3d537c4a45377a002e022dfa806c847d2b62ea30e90eedd48e9ac76cf95c570859  sprdfb-fix-swapped-colors.patch
+39d833387875574c3787f45786290565f1871882c53fb7586f41bd2df7a98a2e5b97c8d5c27be47020e54fdf0037b6f520790b585bf6374ae47f9bfd177c80b5  fix-dtb_qcom,msm-id.patch
+"

@@ -1,0 +1,17 @@
+# Archived: git repo doesn't exist
+pkgname=firmware-xiaomi-fire
+pkgver=1
+pkgrel=0
+pkgdesc="Proprietary firmware for Xiaomi Redmi 12"
+url="https://github.com/mt6768-mainline/firmware-xiaomi-fire"
+arch="aarch64"
+license="proprietary"
+options="!check !tracedeps pmb:cross-native"
+# taken out of source to satisfy checksums
+# $pkgname-$pkgver.tar.gz::$url/archive/refs/tags/1.tar.gz
+source=""
+builddir="$srcdir/firmware-xiaomi-fire-1/lib/firmware"
+
+package() {
+	mkdir -p "$pkgdir"
+}

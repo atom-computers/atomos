@@ -1,0 +1,37 @@
+maintainer=""
+pkgname=firmware-samsung-gtelwifi
+pkgdesc="Firmware for Samsung Galaxy Tab E 9.6"
+pkgver=0
+pkgrel=1
+url="https://github.com/gtelwifi/android_vendor_samsung_gtelwifi"
+subpackages="$pkgname-wifi"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit_blob="c055948ee6aa329ebea6dc1337eca9e362e502ef"
+_commit_config="63c27055bd8e6688f2595077a8196336cfabb315"
+
+source="
+$pkgname-blob-$_commit_blob.tar.gz::https://github.com/gtelwifi/android_vendor_samsung_gtelwifi/archive/$_commit_blob.tar.gz
+$pkgname-config-$_commit_config.tar.gz::https://github.com/gtelwifi/android_device_samsung_gtelwifi/archive/$_commit_config.tar.gz
+"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wifi() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-aosp-broadcom-wlan"
+
+	cd "$srcdir"
+
+	install -Dm644 "android_vendor_samsung_gtelwifi-$_commit_blob/proprietary/etc/wifi/bcmdhd_mfg.bin" -t "$subpkgdir"/lib/firmware/postmarketos/bcm4343
+	install -Dm644 "android_device_samsung_gtelwifi-$_commit_config/configs/wifi/nvram_mfg.txt" "$subpkgdir"/lib/firmware/postmarketos/bcm4343/nvram_4343.txt
+}
+
+
+sha512sums="fd87407a42642853c5ac608512a60f7dc91d991d28da675d4b6f4e38e0f9494749c00dc63394b09d0df6922f3407c6ba4310cb0a28fef4425190246fe5618c2e  firmware-samsung-gtelwifi-blob-c055948ee6aa329ebea6dc1337eca9e362e502ef.tar.gz
+3d8917e7b6a5d4f2610dc623f4c52917024b055a70908ab86994a4171eddca4580fdca3e13769ae5b77a23c69345062a3e92ca9a9cc3122b49ddf8f9e619238d  firmware-samsung-gtelwifi-config-63c27055bd8e6688f2595077a8196336cfabb315.tar.gz"

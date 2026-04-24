@@ -1,0 +1,19 @@
+commit d5a43cdd4e2ce4ee432011501da0fdfa0096ef7e
+Author: Shana <devfusediboot@protonmail.com>
+Date:   Sat May 23 19:07:12 2020 -0700
+
+    drivers: pinctrl: mediatek: fix compile error on GCC 6
+
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
+index 7250f25e..83e98b34 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
++++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
+@@ -356,7 +356,7 @@ struct mtk_pinctrl_devdata {
+ 	const struct mtk_pin_info		*pin_drve8_grps;
+ 	unsigned int			n_pin_drve8;
+ #endif
+-	const const struct mtk_pin_drv_grp	*pin_drv_grp;
++	const struct mtk_pin_drv_grp	*pin_drv_grp;
+ 	unsigned int			n_pin_drv_grps;
+ 	int (*spec_pull_set)(struct regmap *reg, unsigned int pin,
+ 		unsigned char align, bool isup, unsigned int arg);

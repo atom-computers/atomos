@@ -1,0 +1,17 @@
+diff --git a/drivers/connectivity/hisi/platform/pm/plat_firmware.c b/drivers/connectivity/hisi/platform/pm/plat_firmware.c
+index 9eb6ad8f3b78..8987eb0e4973 100755
+--- a/drivers/connectivity/hisi/platform/pm/plat_firmware.c
++++ b/drivers/connectivity/hisi/platform/pm/plat_firmware.c
+@@ -60,9 +60,9 @@
+ /*****************************************************************************
+   2 ∫Í∂®“Â
+ *****************************************************************************/
+-#define BFGX_AND_WIFI_CFG_PATH        "/vendor/firmware/bfgx_and_wifi_cfg"
+-#define WIFI_CFG_PATH                 "/vendor/firmware/wifi_cfg"
+-#define BFGX_CFG_PATH                 "/vendor/firmware/bfgx_cfg"
++#define BFGX_AND_WIFI_CFG_PATH        "/lib/firmware/postmarketos/bfgx_and_wifi_cfg"
++#define WIFI_CFG_PATH                 "/lib/firmware/postmarketos/wifi_cfg"
++#define BFGX_CFG_PATH                 "/lib/firmware/postmarketos/bfgx_cfg"
+ #define RAM_CHECK_CFG_PATH            "/vendor/firmware/ram_reg_test_cfg"
+ 
+ #define BFGX_AND_WIFI_CFG_BUILDIN_PATH        "/bfgx_and_wifi_cfg"

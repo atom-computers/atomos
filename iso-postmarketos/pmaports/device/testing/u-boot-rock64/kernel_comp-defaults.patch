@@ -1,0 +1,23 @@
+commit 6a02ed22f5da13a77cafa0da541248eee317c39d
+Author: tim <tvall43@gmail.com>
+Date:   Sat Jul 10 09:37:23 2021 -0500
+
+    rockchip: rk3328: Add default env to support compressed kernel Image
+    
+    defaults copied from rk3399 to boot compressed kernel Image
+
+diff --git a/include/configs/rk3328_common.h b/include/configs/rk3328_common.h
+index 0538da751f..07be75e8d8 100644
+--- a/include/configs/rk3328_common.h
++++ b/include/configs/rk3328_common.h
+@@ -36,7 +36,9 @@
+ 	"pxefile_addr_r=0x00600000\0" \
+ 	"fdt_addr_r=0x01f00000\0" \
+ 	"kernel_addr_r=0x02080000\0" \
+-	"ramdisk_addr_r=0x06000000\0"
++	"ramdisk_addr_r=0x06000000\0" \
++	"kernel_comp_addr_r=0x08000000\0" \
++	"kernel_comp_size=0x2000000\0"
+ 
+ #include <config_distro_bootcmd.h>
+ #define CONFIG_EXTRA_ENV_SETTINGS \

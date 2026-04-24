@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rc-update add fbkeyboard default
+rc-update add networkmanager default

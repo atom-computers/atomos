@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Enable hkdm
+rc-update -q add hkdm default

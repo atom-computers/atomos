@@ -1,0 +1,25 @@
+From 0f79de020117b8e396983421ef47f690eccd3812 Mon Sep 17 00:00:00 2001
+From: Yuval Adam <_@yuv.al>
+Date: Tue, 15 Aug 2017 12:05:19 +0300
+Subject: [PATCH 1/2] Fix 60hz clock
+
+---
+ drivers/video/msm/mdss/mdss_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index d4a236a0..76d97074 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -1219,7 +1219,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
+ 	var->left_margin = panel_info->lcdc.h_back_porch;
+ 	var->right_margin = panel_info->lcdc.h_front_porch;
+ 	var->hsync_len = panel_info->lcdc.h_pulse_width;
+-	var->pixclock = panel_info->clk_rate / 1000;
++	var->pixclock = 1000000 / 60;
+ 
+ 	/* id field for fb app  */
+ 
+-- 
+2.14.1
+

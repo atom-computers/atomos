@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-asus-x00p
+pkgdesc="Asus Max M1"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-asus-x00p
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	initfs-hook.sh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+cf7aba8d69dbcda809e9e369952283b2acca135e5d8d650f877e3366b9aa8e3c96f9e747b57de7bc2df6908ec0aa1b7b453c53744b2217f416a4d682818cc5e7  deviceinfo
+cd60a70d2784939099ed289bf99aeb0134070b1772eeceef19ddd12547e4dceb7da75c2c4ab4cc4167896c545882b225432ca6fd2564334e0e84513917593f8e  kernel-cmdline.conf
+23d8031d87e3e01a76886d0ad091c51f3146cd2ded947f32e47bcf84413882c3be0fcbdd559a7fc3d3372c42510c276d37741e836ca9aa4549142e43a625cc79  initfs-hook.sh
+"

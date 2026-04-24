@@ -1,0 +1,12 @@
+diff -ruN android_kernel_samsung_gtexswifiORG/kernel/printk.c android_kernel_samsung_gtexswifi/kernel/printk.c
+--- android_kernel_samsung_gtexswifiORG/kernel/printk.c	2023-12-22 18:14:16.474685996 -0500
++++ android_kernel_samsung_gtexswifi/kernel/printk.c	2023-12-22 18:15:10.758550683 -0500
+@@ -1928,7 +1928,7 @@
+ 		*(str++) = 0;
+ 	}
+ #endif
+-
++	str = "tty0";
+ 	/*
+ 	 * Decode str into name, index, options.
+ 	 */

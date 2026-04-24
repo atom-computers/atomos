@@ -1,0 +1,214 @@
+From d8405610c1830f71ffd0ca09a3c18509fc4a8892 Mon Sep 17 00:00:00 2001
+From: Robert Mader <robert.mader@collabora.com>
+Date: Fri, 19 Dec 2025 20:31:16 +0100
+Subject: [PATCH 3/3] RFC: egl: Implement DMABuf import for input buffers
+
+In many cases we can import the GPU-ISP input buffer, a dmabuf from v4l2,
+directly into EGL instead of mapping and uploading - i.e. copying - it.
+This reduces memory bandwith usage and can even slightly improve
+latency.
+This main reason this doesn't work in many cases is the stride
+alignment, as GPUs often have stricter requirements (often 128 or even
+256 bytes) than hardware ISPs.
+
+Thus try to import buffer directly and - if that fails - fall back to
+the previous upload path. To do so, adjust some function parameters and
+turn down error messages. Failing imports should come at low cost as
+drivers know the limitations and can bail out early, without causing
+additional IO or context switches.
+
+In the future we might be able to request buffers with a matching stride
+from v4l2 drivers in many cases, making direct import the norm instead
+of a hit-or-miss. An optional kernel API for that exists, but doesn't
+seem to be implemented by any driver tested so far.
+
+Signed-off-by: Robert Mader <robert.mader@collabora.com>
+---
+ include/libcamera/internal/egl.h           |  4 +--
+ src/libcamera/egl.cpp                      | 37 +++++++++++++++++-----
+ src/libcamera/software_isp/debayer_egl.cpp | 21 ++++++------
+ src/libcamera/software_isp/debayer_egl.h   |  2 +-
+ 4 files changed, 44 insertions(+), 20 deletions(-)
+
+diff --git a/include/libcamera/internal/egl.h b/include/libcamera/internal/egl.h
+index 8a2d96d7a..32e9cecdd 100644
+--- a/include/libcamera/internal/egl.h
++++ b/include/libcamera/internal/egl.h
+@@ -102,7 +102,7 @@ public:
+ 
+ 	int initEGLContext();
+ 
+-	int createInputDMABufTexture2D(eGLImage &eglImage, int fd);
++	int createInputDMABufTexture2D(eGLImage &eglImage, int fd, GLint format, uint32_t width, uint32_t height);
+ 	int createOutputDMABufTexture2D(eGLImage &eglImage, int fd);
+ 	void destroyDMABufTexture(eGLImage &eglImage);
+ 	void createTexture2D(eGLImage &eglImage, GLint format, uint32_t width, uint32_t height, void *data);
+@@ -135,7 +135,7 @@ private:
+ 			  unsigned int shaderDataLen,
+ 			  Span<const std::string> shaderEnv);
+ 
+-	int createDMABufTexture2D(eGLImage &eglImage, int fd, bool output);
++	int createDMABufTexture2D(eGLImage &eglImage, int fd, uint32_t drm_format, uint32_t width, uint32_t height, bool output);
+ 
+ 	PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
+ 	PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
+diff --git a/src/libcamera/egl.cpp b/src/libcamera/egl.cpp
+index 5b9bbf410..3a90cf54b 100644
+--- a/src/libcamera/egl.cpp
++++ b/src/libcamera/egl.cpp
+@@ -19,6 +19,7 @@
+ 
+ #include <libcamera/base/thread.h>
+ 
++#include <GLES3/gl32.h>
+ #include <libdrm/drm_fourcc.h>
+ 
+ namespace libcamera {
+@@ -102,6 +103,9 @@ void eGL::syncOutput()
+  * \brief Create a DMA-BUF backed 2D texture
+  * \param[in,out] eglImage EGL image to associate with the DMA-BUF
+  * \param[in] fd DMA-BUF file descriptor
++ * \param[in] drm_format the DRM fourcc
++ * \param[in] width the buffer width
++ * \param[in] height the buffer height
+  * \param[in] output If true, create framebuffer for render target
+  *
+  * Internal implementation for creating DMA-BUF textures. Creates an EGL
+@@ -110,7 +114,7 @@ void eGL::syncOutput()
+  *
+  * \return 0 on success, or -ENODEV on failure
+  */
+-int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
++int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, uint32_t drm_format, uint32_t width, uint32_t height, bool output)
+ {
+ 	int ret = 0;
+ 
+@@ -118,9 +122,9 @@ int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
+ 
+ 	// clang-format off
+ 	EGLint image_attrs[] = {
+-		EGL_WIDTH, (EGLint)eglImage.width_,
+-		EGL_HEIGHT, (EGLint)eglImage.height_,
+-		EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
++		EGL_WIDTH, (EGLint)width,
++		EGL_HEIGHT, (EGLint)height,
++		EGL_LINUX_DRM_FOURCC_EXT, (EGLint)drm_format,
+ 		EGL_DMA_BUF_PLANE0_FD_EXT, fd,
+ 		EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+ 		EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint)eglImage.stride_,
+@@ -135,7 +139,7 @@ int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
+ 					    NULL, image_attrs);
+ 
+ 	if (eglImage.image_ == EGL_NO_IMAGE_KHR) {
+-		LOG(eGL, Error) << "eglCreateImageKHR fail";
++		LOG(eGL, Debug) << "eglCreateImageKHR fail";
+ 		ret = -ENODEV;
+ 		goto done;
+ 	}
+@@ -176,6 +180,9 @@ done:
+  * \brief Create an input DMA-BUF backed texture
+  * \param[in,out] eglImage EGL image to associate with the DMA-BUF
+  * \param[in] fd DMA-BUF file descriptor
++ * \param[in] format the GL format
++ * \param[in] width the buffer width
++ * \param[in] height the buffer height
+  *
+  * Creates an EGL image from a DMA-BUF file descriptor and binds it to
+  * a 2D texture for use as an input texture in shaders. The texture is
+@@ -183,11 +190,25 @@ done:
+  *
+  * \return 0 on success, or -ENODEV on failure
+  */
+-int eGL::createInputDMABufTexture2D(eGLImage &eglImage, int fd)
++int eGL::createInputDMABufTexture2D(eGLImage &eglImage, int fd, GLint format, uint32_t width, uint32_t height)
+ {
++	EGLint drm_format;
++
+ 	ASSERT(tid_ == Thread::currentId());
+ 
+-	return createDMABufTexture2D(eglImage, fd, false);
++	switch (format) {
++	case GL_LUMINANCE:
++		drm_format = DRM_FORMAT_R8;
++		break;
++	case GL_RG:
++		drm_format = DRM_FORMAT_RG88;
++		break;
++	default:
++		LOG(eGL, Error) << "unhandled GL format";
++		return -ENODEV;
++	}
++
++	return createDMABufTexture2D(eglImage, fd, drm_format, width, height, false);
+ }
+ 
+ /**
+@@ -206,7 +227,7 @@ int eGL::createOutputDMABufTexture2D(eGLImage &eglImage, int fd)
+ {
+ 	ASSERT(tid_ == Thread::currentId());
+ 
+-	return createDMABufTexture2D(eglImage, fd, true);
++	return createDMABufTexture2D(eglImage, fd, DRM_FORMAT_ARGB8888, eglImage.width_, eglImage.height_, true);
+ }
+ 
+ /**
+diff --git a/src/libcamera/software_isp/debayer_egl.cpp b/src/libcamera/software_isp/debayer_egl.cpp
+index 4d0caa6ef..5e7812a13 100644
+--- a/src/libcamera/software_isp/debayer_egl.cpp
++++ b/src/libcamera/software_isp/debayer_egl.cpp
+@@ -506,13 +506,22 @@ void DebayerEGL::setShaderVariableValues(DebayerParams &params)
+ 	return;
+ }
+ 
+-int DebayerEGL::debayerGPU(MappedFrameBuffer &in, int out_fd, DebayerParams &params)
++int DebayerEGL::debayerGPU(FrameBuffer *input, int out_fd, DebayerParams &params)
+ {
+ 	/* eGL context switch */
+ 	egl_.makeCurrent();
+ 
+ 	/* Create a standard texture input */
+-	egl_.createTexture2D(*eglImageBayerIn_, glFormat_, inputConfig_.stride / bytesPerPixel_, height_, in.planes()[0].data());
++	if (egl_.createInputDMABufTexture2D(*eglImageBayerIn_, input->planes()[0].fd.get(), glFormat_, inputConfig_.stride / bytesPerPixel_, height_) != 0) {
++		MappedFrameBuffer in(input, MappedFrameBuffer::MapFlag::Read);
++		if (!in.isValid()) {
++			LOG(Debayer, Error) << "mmap-ing buffer(s) failed";
++			return -ENODEV;
++		}
++
++		LOG(Debayer, Debug) << "Importing input buffer with DMABuf import failed, falling back to upload";
++		egl_.createTexture2D(*eglImageBayerIn_, glFormat_, inputConfig_.stride / bytesPerPixel_, height_, in.planes()[0].data());
++	}
+ 
+ 	/* Generate the output render framebuffer as render to texture */
+ 	egl_.createOutputDMABufTexture2D(*eglImageBayerOut_, out_fd);
+@@ -547,13 +556,7 @@ void DebayerEGL::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
+ 	metadata.sequence = input->metadata().sequence;
+ 	metadata.timestamp = input->metadata().timestamp;
+ 
+-	MappedFrameBuffer in(input, MappedFrameBuffer::MapFlag::Read);
+-	if (!in.isValid()) {
+-		LOG(Debayer, Error) << "mmap-ing buffer(s) failed";
+-		goto error;
+-	}
+-
+-	if (debayerGPU(in, output->planes()[0].fd.get(), params)) {
++	if (debayerGPU(input, output->planes()[0].fd.get(), params)) {
+ 		LOG(Debayer, Error) << "debayerGPU failed";
+ 		goto error;
+ 	}
+diff --git a/src/libcamera/software_isp/debayer_egl.h b/src/libcamera/software_isp/debayer_egl.h
+index cfbaf8e9d..19aa7d0ea 100644
+--- a/src/libcamera/software_isp/debayer_egl.h
++++ b/src/libcamera/software_isp/debayer_egl.h
+@@ -74,7 +74,7 @@ private:
+ 	int getShaderVariableLocations();
+ 	void setShaderVariableValues(DebayerParams &params);
+ 	void configureTexture(GLuint &texture);
+-	int debayerGPU(MappedFrameBuffer &in, int out_fd, DebayerParams &params);
++	int debayerGPU(FrameBuffer *input, int out_fd, DebayerParams &params);
+ 
+ 	/* Shader program identifiers */
+ 	GLuint vertexShaderId_ = 0;
+-- 
+2.52.0
+

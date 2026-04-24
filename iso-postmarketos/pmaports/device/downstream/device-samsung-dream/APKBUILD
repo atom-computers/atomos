@@ -1,0 +1,53 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-dream
+pkgdesc="Samsung Galaxy S8/S8+"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	postmarketos-base-downstream
+	mkbootimg
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="deviceinfo initfs-hook.sh"
+subpackages="
+	$pkgname-kernel-dreamlte:kernel_dreamlte
+	$pkgname-kernel-dream2lte:kernel_dream2lte
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_dreamlte() {
+	pkgdesc="Kernel for the Samsung Galaxy S8"
+	depends="$pkgname linux-samsung-dreamlte"
+	mkdir "$subpkgdir"
+}
+
+kernel_dream2lte() {
+	pkgdesc="Kernel for the Samsung Galaxy S8+"
+	depends="$pkgname linux-samsung-dream2lte"
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for the Samsung Galaxy S8/S8+"
+	depends="firmware-samsung-dream"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+8cc22fb309f21811e12641806e3d13b752e32bc1c8c9b5f8a57f1820666eb348a08e8869b7b78c8b0b00f2299559de4d2ace509f580bbf5e6b979ce26aff0f47  deviceinfo
+788f8cd2a7b03ce02a73459ab6607e8e09f68964143bc90d7922ca143065522ff9756274370e28098ce03f4331e0fe80b06b5e469f055e6650249dcd826e595f  initfs-hook.sh
+"

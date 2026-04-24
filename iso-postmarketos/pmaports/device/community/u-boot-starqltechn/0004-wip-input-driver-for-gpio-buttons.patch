@@ -1,0 +1,212 @@
+From 70477a286fbb36ba8b019ccff30615f837b89dbf Mon Sep 17 00:00:00 2001
+From: Dzmitry Sankouski <dsankouski@gmail.com>
+Date: Thu, 1 Dec 2022 20:13:04 +0300
+Subject: [PATCH 4/6] wip: input driver for gpio buttons
+
+Bootmenu requires an input device with arrows and enter key.
+A common smartphone luckily has power, volume up/down buttons,
+which may be used for bootmenu.
+
+This driver implements linux,code on a gpio pins.
+---
+ drivers/input/Makefile     |   1 +
+ drivers/input/button_kbd.c | 175 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 176 insertions(+)
+ create mode 100644 drivers/input/button_kbd.c
+
+diff --git a/drivers/input/Makefile b/drivers/input/Makefile
+index ded76bddb2..b113c836e7 100644
+--- a/drivers/input/Makefile
++++ b/drivers/input/Makefile
+@@ -6,6 +6,7 @@
+ obj-$(CONFIG_$(SPL_TPL_)CROS_EC_KEYB) += cros_ec_keyb.o
+ obj-$(CONFIG_$(SPL_TPL_)OF_CONTROL) += key_matrix.o
+ obj-$(CONFIG_$(SPL_TPL_)DM_KEYBOARD) += input.o keyboard-uclass.o
++obj-$(CONFIG_DM_KEYBOARD) += button_kbd.o
+ 
+ ifndef CONFIG_SPL_BUILD
+ 
+diff --git a/drivers/input/button_kbd.c b/drivers/input/button_kbd.c
+new file mode 100644
+index 0000000000..2a9490dc1c
+--- /dev/null
++++ b/drivers/input/button_kbd.c
+@@ -0,0 +1,175 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * (C) Copyright 2022 Dzmitry Sankouski <dsankouski@gmail.com>
++ */
++
++#include <common.h>
++#include <dm.h>
++#include <fdtdec.h>
++#include <input.h>
++#include <keyboard.h>
++#include <log.h>
++#include <asm/io.h>
++#include <asm/gpio.h>
++#include <linux/delay.h>
++#include <linux/input.h>
++
++struct gpio_desc keydown_desc;
++struct gpio_desc keypwr_desc;
++int pwr_current = 0;
++int voldown_current = 0;
++char pwr_keycode = 0;
++char voldown_keycode = 0;
++
++struct button_kbd_priv {
++	struct input_config *input;
++};
++
++int read_voldown(void) {
++	 if (voldown_current != dm_gpio_get_value(&keydown_desc)) {
++		 voldown_current = !voldown_current;
++		 pwr_keycode = KEY_DOWN;
++		 return 1;
++	 }
++	return 0;
++}
++
++int read_pwr(void) {
++	int pwrval = dm_gpio_get_value(&keypwr_desc);
++	if (pwr_current != pwrval) {
++		pwr_keycode = KEY_ENTER;
++		pwr_current = !pwr_current;
++		return 1;
++	}
++	return 0;
++}
++
++int button_tstc(struct udevice *dev) {
++	int res = 0;
++
++	res |= read_pwr();
++	res |= read_voldown();
++	return res;
++}
++
++int button_read_keys(struct input_config *input) {
++	int res = 0;
++	int code[1];
++	if (read_pwr()) {
++		if (pwr_current == 0) {
++			code[0] = -1;
++			input_send_keycodes(input, code, 1);
++		} else {
++			code[0] = KEY_ENTER;
++			input_send_keycodes(input, code, 1);
++		}
++		res = 1;
++	}
++	if (read_voldown()) {
++		if (voldown_current == 0) {
++			code[0] = -1;
++			input_send_keycodes(input, code, 1);
++		} else {
++			code[0] = KEY_DOWN;
++			input_send_keycodes(input, code, 1);
++		}
++		res = 1;
++	}
++	return res;
++}
++
++
++int button_getc(struct udevice *dev) {
++	int code = 0;
++	if (pwr_keycode || read_pwr()) {
++		code = pwr_keycode;
++		pwr_keycode = 0;
++		return code;
++	}
++	if (voldown_keycode || read_voldown()) {
++		code = voldown_keycode;
++		voldown_keycode = 0;
++		return code;
++	}
++	return -EAGAIN;
++}
++
++static int button_kbd_start(struct udevice *dev) {
++	struct udevice *pon;
++	int node, ret;
++
++	ret = uclass_get_device_by_name(UCLASS_GPIO, "pm8998_pon@800", &pon);
++	if (ret < 0) {
++		printf("Failed to find PMIC pon node. Check device tree\n");
++		return 0;
++	}
++
++	node = fdt_subnode_offset(gd->fdt_blob, dev_of_offset(pon),
++				  "key_vol_down");
++	if (node < 0) {
++		printf("Failed to find key_vol_down node. Check device tree\n");
++		return 0;
++	}
++	if (gpio_request_by_name_nodev(offset_to_ofnode(node), "gpios", 0,
++					   &keydown_desc, 0)) {
++		printf("Failed to request key_vol_down button.\n");
++		return 0;
++	}
++
++	node = fdt_subnode_offset(gd->fdt_blob, dev_of_offset(pon),
++				  "key_power");
++	if (node < 0) {
++		printf("Failed to find key_power node. Check device tree\n");
++		return 0;
++	}
++	if (gpio_request_by_name_nodev(offset_to_ofnode(node), "gpios", 0,
++					   &keypwr_desc, 0)) {
++		printf("Failed to request key_power button.\n");
++		return 0;
++	}
++	return 0;
++}
++
++static int button_kbd_probe(struct udevice *dev) {
++	struct button_kbd_priv *priv = dev_get_priv(dev);
++	struct keyboard_priv *uc_priv = dev_get_uclass_priv(dev);
++	struct stdio_dev *sdev = &uc_priv->sdev;
++	struct input_config *input = &uc_priv->input;
++	int ret = 0;
++
++	input_init(input, false);
++	input_add_tables(input, false);
++
++	/* Register the device. init_tegra_keyboard() will be called soon */
++	priv->input = input;
++	input->dev = dev;
++	input->read_keys = button_read_keys;
++	strcpy(sdev->name, "button-kbc");
++	ret = input_stdio_register(sdev);
++	if (ret) {
++		debug("%s: input_stdio_register() failed\n", __func__);
++		return ret;
++	}
++
++	return 0;
++}
++
++static const struct keyboard_ops button_kbd_ops = {
++	.start	= button_kbd_start,
++	.getc  = button_getc,
++	.tstc  = button_tstc
++};
++
++static const struct udevice_id button_kbd_ids[] = {
++	{ .compatible = "button-kbd" },
++	{ }
++};
++
++U_BOOT_DRIVER(button_kbd) = {
++	.name	= "button_kbd",
++	.id	= UCLASS_KEYBOARD,
++	.of_match = button_kbd_ids,
++	.probe = button_kbd_probe,
++	.ops	= &button_kbd_ops ,
++	.priv_auto	= sizeof(struct button_kbd_priv),
++};
+-- 
+2.30.2
+

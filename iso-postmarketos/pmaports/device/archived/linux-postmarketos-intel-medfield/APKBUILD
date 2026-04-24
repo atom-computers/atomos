@@ -1,0 +1,64 @@
+# Archived: depended on by only device-motorola-smi
+_flavor="postmarketos-intel-medfield"
+pkgname=linux-$_flavor
+pkgver=6.2.7
+pkgrel=2
+_commit="bd6b63fadb5fb4b1637afede0ff24e1fd2456384"
+pkgdesc="Mainline Kernel fork for Intel Medfield based devices"
+url="https://www.kernel.org/"
+arch="x86"
+_carch="x86"
+_config="config-$_flavor.$arch"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+"
+
+makedepends="
+	bash
+	bison
+	findutils
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+"
+
+source="
+	https://gitlab.com/julianwi/linux-intel-medfield/-/archive/$_commit/linux-$_commit.tar.gz
+	$_config
+	compile-fix.patch
+"
+builddir="$srcdir/linux-intel-medfield-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make install modules_install dtbs_install \
+		ARCH="$_carch" INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+a9071335b9af05a30de32e0d02041cefb2f2c4a8d2ed09d21e39800002540444e699a7197b40dd0d7a1fe0f943aff4d7c1a9b9a07c75d1e59219862d27104d1e  linux-bd6b63fadb5fb4b1637afede0ff24e1fd2456384.tar.gz
+7aed867700a6309d847c9b8599b9c71d3e07f8258f52900700b79c915daec916b34144b88a125cf2e0a06538d8b87ea7f1b26a1325433c1daf9a6f4c1d0c97ba  config-postmarketos-intel-medfield.x86
+c2fd41f038368ad77255bca3517e18cef333e5a5a6656af8f66924926888b085044efa2d6d0884c56b8ba972489e11e853359424fddc393ea5925d9f28dd003c  compile-fix.patch
+"

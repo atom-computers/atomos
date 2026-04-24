@@ -1,0 +1,26 @@
+From 33fb8b6bbce155a78a7499fc6ff30af133aa6ed6 Mon Sep 17 00:00:00 2001
+From: Achill Gilgenast <achill@achill.org>
+Date: Mon, 16 Mar 2026 14:51:16 +0100
+Subject: [PATCH] data: Add --session gnome-login to gnome-greeter.desktop
+
+Otherwise it logs into user-mode of user gdm-greeter.
+---
+ data/gnome-greeter.desktop.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/data/gnome-greeter.desktop.in b/data/gnome-greeter.desktop.in
+index fded368fe..0f810662b 100644
+--- a/data/gnome-greeter.desktop.in
++++ b/data/gnome-greeter.desktop.in
+@@ -1,7 +1,7 @@
+ [Desktop Entry]
+ Name=GNOME Greeter
+ Comment=The default GNOME Greeter session
+-Exec=gnome-session
++Exec=gnome-session --session gnome-login
+ TryExec=gnome-session
+ Type=Application
+ DesktopNames=GNOME-Greeter:GNOME
+-- 
+GitLab
+

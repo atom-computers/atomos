@@ -1,0 +1,31 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-mmh4x
+pkgdesc="LG K40 (AT&T)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-lg-mmh4x
+	msm-fb-refresher
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+49b54d44bddd6ca1bddc9bc6efe6b312592346cf844870d6d4e7302c7895a454db9fe95e3bee1f1a97d5e8daea23572134f2fdd8bae3b69a4f868e3a41966d37  deviceinfo
+37154047bfd93bab8e6ac342813477eb6af4526ada76b220ca6ea49d938c9f69b95519077f6cd58a12fb774a1dc2db99a3f52ae5a920ebcc762c70af54bb0335  kernel-cmdline.conf
+"

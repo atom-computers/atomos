@@ -1,0 +1,41 @@
+diff --git a/arch/arm/boot/dts/idol347/msm8916-mtp-smb1360.dts b/arch/arm/boot/dts/idol347/msm8916-mtp-smb1360.dts
+index 44923c774b3..97a22a33aa2 100644
+--- a/arch/arm/boot/dts/idol347/msm8916-mtp-smb1360.dts
++++ b/arch/arm/boot/dts/idol347/msm8916-mtp-smb1360.dts
+@@ -28,17 +28,16 @@
+ 			compatible = "qcom,smb1360-chg-fg";
+ 			reg = <0x14>;
+ 			interrupt-parent = <&msm_gpio>;
+-			interrupts = <9 2>;
++			interrupts = <9 8>;
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&smb_int_default>;
+ 			regulator-name = "smb1360_otg_vreg";
+-			qcom,stat-pulsed-irq;
+ 			qcom,chg-inhibit-disabled;
+ 			qcom,float-voltage-mv = <4350>;
+ 			qcom,fg-cc-to-cv-mv = <4328>;
+ 			qcom,thermistor-c1-coeff = <0x86C8>;
+ 			qcom,iterm-ma = <75>;
+-			qcom,charging-timeout = <0>;
++			qcom,charging-timeout = <192>;
+ 
+ 			/* battery-profile selection properties */
+ 			qcom,batt-profile-select;
+@@ -59,7 +58,7 @@
+ 			qcom,fg-soc-max = <85>;
+ 			qcom,fg-soc-min = <15>;
+ 			qcom,fg-delta-soc = <1>;
+-			qcom,fg-auto-recharge-soc = <99>;
++			qcom,fg-auto-recharge-soc = <95>;
+ 			qcom,thermal-mitigation = <1500 850 650 550>;
+ 
+ 			qcom,otp-rslow-cfg;//JRD BSP eric.gong "[Qualcomm]smb1360: Modify the rslow via OTP backup"
+@@ -68,7 +67,6 @@
+ 			qcom,fg-reset-at-pon;
+ 			qcom,otg-batt-curr-limit = <1500>;
+ 
+-			qcom,config-hard-thresholds;
+ 			qcom,hot-bat-decidegc = <550>;
+ 			qcom,cold-bat-decidegc = <0>;
+ 			qcom,soft-jeita-supported;

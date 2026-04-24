@@ -1,0 +1,46 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8916)
+pkgname=firmware-bq-piccolo
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware for BQ Aquaris M5"
+url="https://gitlab.com/a_a/"
+subpackages="$pkgname-venus $pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="pil-squasher"
+_repository="firmware-bq-piccolo"
+_commit="c7a376fd46f103642ec81a10e1f079bce0df2075"
+source="$pkgname-$_commit.tar.gz::$url/$_repository/-/archive/$_commit.tar.gz"
+builddir="$srcdir/$_repository-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	# venus.mbn exists already but seems a bit different
+	pil-squasher venus2.mbn venus.mdt
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+venus() {
+	pkgdesc="BQ Aquaris M5 video firmware"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to link venus.mbn to venus.mdt
+	# Older kernels look for venus.mdt, newer ones directly for venus.mbn
+	install -Dm644 "$builddir"/venus2.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mbn
+	ln -s venus.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mdt
+}
+
+wcnss_nv() {
+	pkgdesc="BQ Aquaris M5 WiFi/BT firmware configuration"
+	install -Dm644 "$builddir"/wlan/prima/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+451a15cc01efa955c035ade5cdd7ce066eb9816bcc1facd7d0e6649aa746509f235a798e33d92a47c649a3cd05ed886fdcf6d817470789e5af4a7e41f8330c0f  firmware-bq-piccolo-c7a376fd46f103642ec81a10e1f079bce0df2075.tar.gz
+"

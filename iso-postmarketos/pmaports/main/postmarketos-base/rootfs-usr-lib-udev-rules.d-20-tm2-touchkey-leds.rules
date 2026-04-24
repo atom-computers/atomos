@@ -1,0 +1,7 @@
+# disable tm2-touchkey leds by default
+# To change the default, copy the file to /etc/udev/rules.d, increase the file name number and change brightness to 1.
+ACTION=="add", SUBSYSTEM=="leds", KERNEL=="tm2-touchkey", ATTR{brightness}="0"
+
+# allow users in group "input" to control the tm2-touchkey leds
+ACTION=="add", SUBSYSTEM=="leds", KERNEL=="tm2-touchkey", RUN+="/bin/chgrp -R input /sys%p", RUN+="/bin/chmod -R g=u /sys%p"
+ACTION=="change", SUBSYSTEM=="leds", KERNEL=="tm2-touchkey", ENV{TRIGGER}!="none", RUN+="/bin/chgrp -R input /sys%p", RUN+="/bin/chmod -R g=u /sys%p"

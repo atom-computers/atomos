@@ -1,0 +1,58 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_royss_defconfig
+
+pkgname=linux-samsung-royss
+pkgver=3.4.105
+pkgrel=4
+pkgdesc="Samsung Galaxy Young kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-royss"
+url="https://github.com/Nothing-Dev/android_kernel_samsung_royss"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz"
+
+# Source
+_repository="android_kernel_samsung_royss"
+_commit="3169160cd6b23e0325fb5117cc347fc6acb2bc48"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Nothing-Dev/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Install kernel modules
+	echo "--[ Installing modules ]--"
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 modules_install
+}
+
+sha512sums="5dd49d41297247788d5b33815ec74f02ecc2566a9045102df63579dbc360f7c4c08fc4a28251efa02959137e7ed0f92a91b694145d40ee52bb0bf99557a7320a  linux-samsung-royss-3169160cd6b23e0325fb5117cc347fc6acb2bc48.tar.gz
+0650b000a1a62096bf72f543efc51854543166e8731e0ca4f21e50a3f030f667acafc71265dec601d22e89196b1f6fbb32076f5689f49ba6b8b8846b68588407  config-samsung-royss.armv7
+c40eaa11547f5bc2b1ff965506bdfe3015ff16e4b5ad9ccb3b8134ceafd1d32407c4ef2b213e02e036ce1e9bdcbfe768dff7d4b054bec77705a176c1f783b6f5  00_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch"

@@ -1,0 +1,27 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=deviceinfo-converter
+pkgver=0.2.1
+pkgrel=1
+pkgdesc="Generator for Lomiri deviceinfo files based on postmarketOS deviceinfo"
+url="https://codeberg.org/JustSoup321/deviceinfo-converter"
+arch="all"
+license="GPL-3.0-or-later"
+source="$pkgname-$pkgver.tar.gz::https://codeberg.org/JustSoup321/deviceinfo-converter/archive/$pkgver.tar.gz
+	$pkgname.sh"
+makedepends="cargo"
+builddir="$srcdir/$pkgname"
+options="!check" # no tests
+
+build() {
+	cargo build --release --locked
+}
+
+package() {
+	install -Dm 755 "$builddir"/target/release/$pkgname -t "$pkgdir/usr/bin"
+	install -Dm 644 $srcdir/$pkgname.sh "$pkgdir"/etc/profile.d/$pkgname.sh
+}
+
+sha512sums="
+59409d8187d75da4d09a462692e59cbb8403fbeccae1cc9d4fe2937adf97403ab01a0d16fd2d692ef1afa2771dbc4e13bc199bdb9de9f35be92029344fd0bb84  deviceinfo-converter-0.2.1.tar.gz
+409550ba534e8c3741f5974d1630302de968fb4c72422c926e024af20ed76af7fb3a07670c48802b29f1cc09cad6e23b1ada474becdc4a789ff06c42f87a6730  deviceinfo-converter.sh
+"

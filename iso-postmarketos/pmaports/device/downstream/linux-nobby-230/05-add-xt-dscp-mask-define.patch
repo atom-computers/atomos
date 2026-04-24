@@ -1,0 +1,13 @@
+diff --git a/xt_dscp.h b/xt_dscp.h
+index 648e0b3..210a23a 100644
+--- a/include/uapi/linux/netfilter/xt_dscp.h
++++ b/include/uapi/linux/netfilter/xt_dscp.h
+@@ -13,6 +13,8 @@
+ #include <linux/netfilter/xt_dscp.h>
+ #include <linux/types.h>
+ 
++#define XT_DSCP_MASK 0xfc
++
+ /* target info */
+ struct xt_DSCP_info {
+ 	__u8 dscp;

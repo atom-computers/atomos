@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/x86/configs/lineage_santos10_defconfig
+
+pkgname=linux-samsung-santos10wifi
+pkgver=3.4.34
+pkgrel=2
+pkgdesc="Samsung Galaxy Tab 3 10.1 Wi-Fi kernel fork"
+arch="x86"
+_carch="x86"
+_flavor="samsung-santos10wifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz linux-headers elfutils-dev"
+
+# Source
+_repository="android_kernel_samsung_santos10"
+_commit="edec7f67e953eff11415ac47b6a5080e6e8b2ffe"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/dpdudek/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="bf9360bad6361cde778adb83b4f991f55d8bf5ea066b71da82b3fa37af70dc7a7e29430a92e5537c395ca37f967d181502415c75ee59a6b986e1020bed53f8ee  linux-samsung-santos10wifi-edec7f67e953eff11415ac47b6a5080e6e8b2ffe.tar.gz
+88498749b86e08b6a53f38119c815a936b5e63c07dd972abec446dfd8ff73f9537de445a9f77d88236fdd60598a8d7ac1f0b463c5df9af9b31a67e87c44093f3  config-samsung-santos10wifi.x86
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch"

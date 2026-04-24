@@ -1,0 +1,39 @@
+maintainer="Hendra Manudinata <hendra@manoedinata.com>"
+pkgname=firmware-samsung-a51
+pkgver=1
+pkgrel=0
+pkgdesc="Proprietary firmware for Samsung Galaxy A51 (a51)"
+url="https://dumps.tadiphone.dev/dumps/samsung/a51"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+_commit="4c72faa15ca0875510fde40a4b0686d4c161d0b4"
+_repo="$url/-/raw/$_commit"
+
+_files_wifi="
+mx
+mx140.bin
+mx140_wlan.hcf
+mx140_wlan_sw.hcf
+"
+
+for _file in $_files_wifi; do
+	source="$source $pkgname-$_commit-$_file::$_repo/vendor/etc/wifi/$_file"
+done
+
+package() {
+	a51_dir="$pkgdir/lib/firmware/postmarketos/samsung-a51"
+	local file
+	for file in $_files_wifi; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+			"$a51_dir/mx140/$file"
+	done
+}
+
+sha512sums="
+cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e  firmware-samsung-a51-4c72faa15ca0875510fde40a4b0686d4c161d0b4-mx
+2a94883cab2b623eee67a0cf6f38d6a35264d01b03b69efc2292bf18dfa6d1280370e486c2021fb6ba3ddfd5e79dce8fd0febe754e8b1d39d30b412ec4fd4a3f  firmware-samsung-a51-4c72faa15ca0875510fde40a4b0686d4c161d0b4-mx140.bin
+31d2097a5b3acf88f63cb3d99cb10ac6329ee7d2ef32ca8312777dbcf452d709eb82f22737024a5cd7f3849a3498b73e377d1f0683d0b49e4d01da9c9b59bb0b  firmware-samsung-a51-4c72faa15ca0875510fde40a4b0686d4c161d0b4-mx140_wlan.hcf
+58a2ea8e2834f4115c704503b18851c18389f11f8b1f657804689b8c09b20b7b8c1f4c4cc677eaa21a4013cdd667715a358df4b4d0bb7ce2b13010845e4deb05  firmware-samsung-a51-4c72faa15ca0875510fde40a4b0686d4c161d0b4-mx140_wlan_sw.hcf
+"

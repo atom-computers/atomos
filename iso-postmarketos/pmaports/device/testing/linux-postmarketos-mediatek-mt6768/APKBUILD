@@ -1,0 +1,70 @@
+# Mainline Linux kernel fork with patches for MediaTek MT6768 devices
+# Kernel config based on: arch/arm64/configs/mt6768_defconfig
+maintainer="Abdullah AL Shohag <HackerShohag@outlook.com>"
+_flavor="postmarketos-mediatek-mt6768"
+pkgname=linux-$_flavor
+pkgver=6.16.0
+pkgrel=3
+_commit="781287a2e573dc9bb85a1bc90b86a94f58671853"
+pkgdesc="Mainline Kernel fork for MT6768-based devices"
+arch="aarch64"
+_carch="arm64"
+_config="config-$_flavor.$arch"
+url="https://github.com/mt6768-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+"
+makedepends="
+	android-tools
+	bash
+	bison
+	findutils
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+"
+
+# Source
+source="
+	$url/archive/$_commit/linux-$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-$_flavor"\
+		V=1
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+
+	dtbodir="$builddir/$_outdir/arch/arm64/boot/dts/mediatek"
+	mkdtboimg create "$pkgdir/boot/dtbo.img" \
+		"$dtbodir/mt6769t-xiaomi-lancelot-minimal-dtbo.dtb"
+}
+
+sha512sums="
+4dbce2873a545d35199a6b328915f3bb548ff4df41ebf1d5530cbfeb68faa802b028605a707f6aef806f3bfdb1d965f87b6c82b2fb25530fbd88e8fb36554ac6  linux-781287a2e573dc9bb85a1bc90b86a94f58671853.tar.gz
+4d30e11ef402a4b19f84fd07b2e60c9c5a3abe20b9ca10f5802877f58c814a141d8690e6790caf68351b9c8b60f6e1c0fff49a5b611228b5089dac3171230b58  config-postmarketos-mediatek-mt6768.aarch64
+"

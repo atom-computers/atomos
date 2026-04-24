@@ -1,0 +1,88 @@
+#!/bin/sh
+# shellcheck disable=SC3043
+
+set -e
+
+# shellcheck disable=SC1091
+. /usr/share/misc/source_deviceinfo
+
+get_mem_size_mb() {
+        LC_ALL=C free -m | awk '/^Mem:/{print $2}'
+}
+
+get_size() {
+        # Size defaults to:
+        # - 150% of RAM for devices with less than 32GB of RAM
+        # - 50% of RAM for devices with greater than 32GB of RAM
+        # This is loosely based on some data here:
+        # https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/4250
+
+        local mem_size_mb size_pct
+        mem_size_mb="$(get_mem_size_mb)"
+
+        if [ "$mem_size_mb" -le 32768 ]; then
+                size_pct=150
+        else
+                size_pct=50
+        fi
+
+        # Allow overriding the size as a percentage of RAM using a deviceinfo var, or
+        # disabling it completely
+        if [ -n "$deviceinfo_zram_swap_pct" ]; then
+                # 0% --> disable zram swap
+                if [ "$deviceinfo_zram_swap_pct" = "0" ]; then
+                        echo 0
+                        return
+                fi
+
+                size_pct="$deviceinfo_zram_swap_pct"
+        fi
+
+        echo $((mem_size_mb * size_pct / 100))
+}
+
+get_algo() {
+        # Default to zstd compression, and allow overriding via deviceinfo
+        # TODO: Architecture-specific defaults?
+        # TODO: Ensure deviceinfo uses valid and usable algorithm for running
+        # kernel
+        echo "${deviceinfo_zram_swap_algo:-zstd}"
+}
+
+set_min_free_kbytes() {
+        local mem_size_mb current
+        # Set vm.min_free_kbytes to 100000 KB if the kernel's current value
+        # is lower. This ensures the kernel starts reclaiming memory early
+        # enough to make use of zram swap before the kernel OOM killer fires.
+        # This is only applied on devices with >= 1GB of RAM.
+        mem_size_mb="$(get_mem_size_mb)"
+        [ "$mem_size_mb" -lt 1024 ] && return
+
+        current="$(cat /proc/sys/vm/min_free_kbytes)"
+        [ "$current" -ge 100000 ] && return
+
+        sysctl -w vm.min_free_kbytes=100000 >/dev/null
+}
+
+size=$(get_size)
+algo=$(get_algo)
+
+[ "$size" -eq 0 ] && exit 0
+
+if swapon --show=NAME --noheadings | grep -q '^/dev/zram'; then
+	echo "ZRAM swap already active, skipping setup"
+	exit 0
+fi
+
+modprobe -q zram num_devices=1
+dev="$(zramctl -f -a "$algo" -s "${size}"M)"
+mkswap "$dev" >/dev/null
+swapon "$dev" >/dev/null
+
+# ZRAM-optimized sysctl settings
+sysctl -w \
+    vm.page-cluster=0 \
+    vm.swappiness=180 >/dev/null
+set_min_free_kbytes
+
+echo "ZRAM swap device $dev activated using $algo and size $size MB"

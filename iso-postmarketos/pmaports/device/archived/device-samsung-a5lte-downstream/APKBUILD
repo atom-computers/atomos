@@ -1,0 +1,26 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-a5lte)!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-a5lte-downstream
+pkgdesc="Samsung Galaxy A5 (SM-A500F)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-a5lte-downstream mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+0c6844f8470d62b8008351fcee2bdffafe7a0c9105ad78c61e6d2250a5cba407c48d0f6fa5f08216121d4787cb0d17eb0af2b76d65d5df475b59fbb6a2606cda  deviceinfo
+41a8756e78fdaffaa4da760710e74b89b5563e69a90eb0c9d835c73fa1a1c08f428c94911caa9553c3aeab8f6d708ca1486974e4261ae66f74017109e43cc69a  kernel-cmdline.conf
+"

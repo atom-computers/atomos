@@ -1,0 +1,50 @@
+maintainer=""
+pkgname=soc-qcom-sc8180x
+pkgdesc="Common package for Qualcomm 8cx devices"
+pkgver=1
+pkgrel=4
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-vulkan
+"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+nonfree_firmware() {
+	pkgdesc="Modem, WiFi and GPU Firmware"
+	depends="
+		qrtr
+		pd-mapper
+		tqftpserv
+		rmtfs
+	"
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		openrc
+		pd-mapper-openrc
+		rmtfs-openrc
+		tqftpserv-openrc
+	"
+
+	mkdir "$subpkgdir"
+}
+
+vulkan() {
+	pkgdesc="Vulkan support for freedreno"
+	install_if="$pkgname vulkan-loader"
+	depends="mesa-vulkan-freedreno"
+	mkdir "$subpkgdir"
+}
+

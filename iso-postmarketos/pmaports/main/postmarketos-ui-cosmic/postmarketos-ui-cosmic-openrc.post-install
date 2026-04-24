@@ -1,0 +1,11 @@
+#!/bin/sh
+
+rc-update add bluetooth default
+rc-update add cosmic-greeter default
+rc-update add elogind default
+rc-update add networkmanager default
+rc-update add seatd default
+# user can remove tuned-ppd, requiring true
+rc-update add tuned-ppd default || true
+
+exit 0

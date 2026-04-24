@@ -1,0 +1,100 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Jan Paszkowski <janmpaszkowski@proton.me>"
+_flavor="sony-pdx215"
+pkgname=linux-$_flavor
+pkgver=7.0_rc1
+pkgrel=0
+pkgdesc="Mainline kernel fork for Sony Xperia 1 III"
+arch="aarch64"
+_carch="arm64"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!strip
+	!check
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+"
+makedepends="
+	bison
+	clang
+	clang-libclang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	sed
+	zstd
+"
+
+_commit="6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f"
+_config="config-$_flavor.$arch"
+
+# Source
+source="
+	$pkgname-$_commit.tar.gz::https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/snapshot/linux-$_commit.tar.gz
+	$_config
+	0001-panel-driver-patch.patch
+	0002-Sagami-DTS-patch-with-panel.patch
+	0003-drm-msm-dsi-change-sync-mode-to-sync-on-DSI0-rather-.patch
+	0004-dual-DSI-dual-DSC-panel.patch
+	0005-CONFIRMATION-TE-is-used.patch
+"
+
+
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+	#cp -r "$builddir"/arch/arm64/boot/dts/qcom \
+	#	"$pkgdir"/boot/qcom
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+64b2672445e8cf8bdc927b236eac7ef34f6f11a8615a35636205f3026c64540ffe85afa2b74c4368b83518b56c42f5776fe4f0d57cfdb4df600fd856099c873e  linux-sony-pdx215-6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f.tar.gz
+6446e5025c31fd99608617c950ef0d153c4a7b1317a3e0a12aeea72918e12b1e4e2cd4d120631ba7156162f23f342099f93c1f89c8f58f49030424c149d26dc7  config-sony-pdx215.aarch64
+b48f4867907347680a67dff38597a8952d7e59eb83a9a3197975d752ddc6fbb9dc99d9ecd8d839d8ba08541cb10600282fde41af3fcd257637934303234c9786  0001-panel-driver-patch.patch
+2adb1efb6ebf4236c4886d89f130499e5585950671f6f5851e7a663d6b5fd052e3b2440802b733202ec06937b13b7a896efc5d99d201a5d9aceae6f2536f69f4  0002-Sagami-DTS-patch-with-panel.patch
+301198eecdba3667dbc5e70f3c0bbed8769b7d652325798a79ca86f9ec60a324d41eced135495939c8eddfa5bb7ccae4e89ed5d56ad24b20064b70d79755e564  0003-drm-msm-dsi-change-sync-mode-to-sync-on-DSI0-rather-.patch
+79e6bf34f303a98ba338490ae32bf5670fa9f6151542c93ded5fa287f50026efa11bcb77d72adefe414151423bf7377dda4f605d74ca101118052f763ea9e707  0004-dual-DSI-dual-DSC-panel.patch
+4bf952c8345d7edd59ace2a71aa66f71e7c43004c1bd62c1243d1ba7a32efa85270bc869a15133cefa4137168374144f5d42a985db70ce638f519c7fef71b945  0005-CONFIRMATION-TE-is-used.patch
+"

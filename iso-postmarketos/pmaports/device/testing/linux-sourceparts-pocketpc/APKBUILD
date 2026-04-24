@@ -1,0 +1,81 @@
+maintainer=""
+_flavor=sourceparts-pocketpc
+_config="config-$_flavor.$CARCH"
+pkgname=linux-$_flavor
+pkgver=5.14.6_git20210920
+pkgrel=5
+_tag="81a7953afc5cd1001b727701dc99625ec656160a"
+_wifi_ref="1b6ddd544b4a829ed2b7feb32575359b6443cd3d"
+pkgdesc="Kernel fork for the Pocket P.C."
+arch="aarch64"
+url="https://megous.com/git/linux/"
+license="GPL-2.0-only"
+makedepends="
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	gmp-dev
+	installkernel
+	mpc1-dev
+	mpfr-dev
+	openssl-dev
+	perl
+	rsync
+	xz
+	"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-waydroid
+	pmb:kconfigcheck-iwd
+	pmb:kconfigcheck-nftables
+	pmb:kconfigcheck-zram
+	"
+source="$pkgname-$_tag.tar.gz::https://github.com/PopcornComputer/PocketPC-Linux/archive/$_tag.tar.gz
+	https://github.com/lwfinger/rtl8723ds/archive/$_wifi_ref.tar.gz
+	0001-rtl8723ds.patch
+	config-$_flavor.aarch64
+	"
+builddir="$srcdir/PocketPC-Linux-$_tag"
+
+case "$CARCH" in
+	aarch64*) _carch="arm64" ;;
+	arm*) _carch="arm" ;;
+esac
+
+
+prepare() {
+	default_prepare
+
+	mv "$srcdir"/rtl8723ds-$_wifi_ref "$builddir"/drivers/staging/rtl8723ds
+
+	REPLACE_GCCH=0 \
+		. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	# V=1: workaround for pma#1990
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" \
+		CFLAGS_MODULE=-fno-pic \
+		DTC_FLAGS="-@" \
+		V=1
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	make -j1 modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+}
+
+sha512sums="
+49e091de60b820c48e19bb9d3602cb0e5c3470b99112ad63da3f112b503569e6bab21738f2be014705212974a3a824c9f91acd98fa33632e7bc8bf2057f51d75  linux-sourceparts-pocketpc-81a7953afc5cd1001b727701dc99625ec656160a.tar.gz
+68001a7fdc022b4ff82e3f1762a00369c2be18a4c9f5ea2074e3e9248678c48525f4bcec47ef0c4678d6a0b6aef031eb52cac9a9811f3291a73e00cb33fb5c85  1b6ddd544b4a829ed2b7feb32575359b6443cd3d.tar.gz
+75af8bd55fc006b8f208fec57bce612112ff066fa71f1cfe6d4a0904e201e54d574dbf13ae8913ec570f790ac360f4b87ac26e7dac19f641a7f4c403a5df938b  0001-rtl8723ds.patch
+57450b81583cc8be676719001d68518fecbdaafab2ac6bf282bbd14d1043495539d3f66c0b592090aed9dc1d89c01fc0769523f9ba37101facb075962ef8fa9d  config-sourceparts-pocketpc.aarch64
+"

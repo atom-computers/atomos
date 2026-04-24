@@ -1,0 +1,4 @@
+#!/sbin/openrc-run
+
+command="/usr/bin/hciattach"
+command_args="/dev/ttySAC1 bcm43xx 3000000"

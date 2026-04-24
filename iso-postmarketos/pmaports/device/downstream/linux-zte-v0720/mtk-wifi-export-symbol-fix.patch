@@ -1,0 +1,21 @@
+From: Martin Kunze <martin@martinkunze.com>
+Date: Tue, 22 Jul 2025 21:29:05 +0200
+
+--- a/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/wmt_chrdev_wifi.c
++++ b/drivers/misc/mediatek/connectivity/common/conn_soc/linux/pub/wmt_chrdev_wifi.c
+@@ -651,13 +651,13 @@
+ INT32 mtk_wcn_wmt_wifi_init(VOID)
+ {
+ 	return WIFI_init();
+ }
+-EXPORT_SYMBOL(mtk_wcn_wmt_wifi_soc_init);
++EXPORT_SYMBOL(mtk_wcn_wmt_wifi_init);
+ 
+ VOID mtk_wcn_wmt_wifi_exit(VOID)
+ {
+ 	return WIFI_exit();
+ }
+-EXPORT_SYMBOL(mtk_wcn_wmt_wifi_soc_exit);
++EXPORT_SYMBOL(mtk_wcn_wmt_wifi_exit);
+ 
+ #else

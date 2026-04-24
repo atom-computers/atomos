@@ -1,0 +1,25 @@
+From fda935f1472cf056e47b15f04a3fae13fac36d25 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <ewentualxpl@gmail.com>
+Date: Mon, 2 Jul 2018 20:51:18 +0200
+Subject: [PATCH] try to make kgsl work
+
+---
+ drivers/video/msm/mdss/mdss_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/msm/mdss/mdss_fb.c b/drivers/video/msm/mdss/mdss_fb.c
+index f6bb3357f54..31cf5b1e6cc 100644
+--- a/drivers/video/msm/mdss/mdss_fb.c
++++ b/drivers/video/msm/mdss/mdss_fb.c
+@@ -1208,7 +1208,7 @@ int mdss_register_panel(struct mdss_panel_data *pdata)
+ 		return -EINVAL;
+ 
+ 	mfd->on_fnc = mdss_mdp_ctl_on;
+-	mfd->off_fnc = mdss_mdp_ctl_off;
++	mfd->off_fnc = NULL;
+ 
+ 	rc = mdss_mdp_overlay_init(mfd);
+ 	if (rc)
+-- 
+2.17.1
+

@@ -1,0 +1,11 @@
+[Unit]
+Description=Feedbackd Alert Slider Handler
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=@libexecdir@/fbd-alert-slider
+Restart=on-abnormal
+RestartSec=10s
+
+[Install]
+WantedBy=graphical-session.target

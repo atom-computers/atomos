@@ -1,0 +1,48 @@
+commit bb5489176fda28aff304b59e0405f7d7d4906224
+Author: Jiri Kosina <jkosina@suse.cz>
+Date:   Mon Apr 22 15:40:15 2013 +0200
+
+    Revert "sysfs: fix race between readdir and lseek"
+    
+    This reverts commit 991f76f837bf22c5bb07261cfd86525a0a96650c in Linus'
+    tree which is f366c8f271888f48e15cc7c0ab70f184c220c8a4 in
+    linux-stable.git
+    
+    It depends on ef3d0fd27e90f ("vfs: do (nearly) lockless generic_file_llseek")
+    which is available only in 3.2+.
+    
+    When applied on 3.0 codebase, it causes A-A deadlock, whenever anyone does
+    seek() on sysfs, as both generic_file_llseek() and sysfs_dir_llseek() obtain
+    i_mutex.
+    
+    Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+    Cc: Jiri Slaby <jslaby@suse.cz>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
+index 7cbc5856feea..3ab78b873376 100644
+--- a/fs/sysfs/dir.c
++++ b/fs/sysfs/dir.c
+@@ -959,21 +959,9 @@ static int sysfs_readdir(struct file * filp, void * dirent, filldir_t filldir)
+ 	return 0;
+ }
+ 
+-static loff_t sysfs_dir_llseek(struct file *file, loff_t offset, int whence)
+-{
+-	struct inode *inode = file->f_path.dentry->d_inode;
+-	loff_t ret;
+-
+-	mutex_lock(&inode->i_mutex);
+-	ret = generic_file_llseek(file, offset, whence);
+-	mutex_unlock(&inode->i_mutex);
+-
+-	return ret;
+-}
+-
+ const struct file_operations sysfs_dir_operations = {
+ 	.read		= generic_read_dir,
+ 	.readdir	= sysfs_readdir,
+ 	.release	= sysfs_dir_release,
+-	.llseek		= sysfs_dir_llseek,
++	.llseek		= generic_file_llseek,
+ };

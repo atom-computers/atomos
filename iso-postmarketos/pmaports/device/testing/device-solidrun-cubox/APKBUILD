@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Robert Eckelmann <longnoserob@postmarketos.org>"
+pkgname=device-solidrun-cubox
+pkgdesc="SolidRun CuBox"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-marvell
+	postmarketos-base
+	u-boot-tools
+"
+makedepends="
+	devicepkg-dev
+	u-boot-tools
+"
+source="
+	deviceinfo
+	boot.cmd
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	mkimage -A arm -O linux -T script -C none -n "uBoot commands" -d "$srcdir"/boot.cmd "$srcdir"/boot.scr
+	install -Dm755 "$srcdir"/boot.cmd "$pkgdir"/boot/boot.cmd
+	install -Dm755 "$srcdir"/boot.scr "$pkgdir"/boot/boot.scr
+}
+
+sha512sums="
+c969e8773889be87d40691f82f2b0716c5c572ba88601b754e70b483bdc943e44174b8b2e91e40c9ea94cc53b674a14cf7cd64bfca89c0318750cb3d38560d88  deviceinfo
+c651eb52066d6a8aa48388b391de0c9a4d85369adce3d2228bd3dfaa4d3ab797dbeca6965d5e3b898a378cb9d52215f946e497c44fc37b5fc668ec79d5f24ffc  boot.cmd
+"

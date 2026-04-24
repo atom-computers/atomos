@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Xiaomi Redmi 7"
+deviceinfo_manufacturer="Xiaomi"
+deviceinfo_codename="xiaomi-onclite"
+deviceinfo_year="2019"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1520"
+deviceinfo_swap_size_recommended="512"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_generate_extlinux_config="true"
+deviceinfo_flash_offset_base="0x80000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_flash_sparse="true"
+
+# Kernel options
+deviceinfo_dtb="qcom/sdm632-xiaomi-onclite"
+deviceinfo_append_dtb="true"
+
+# lk2nd does not support GPT for subpartitions/SD cards yet
+deviceinfo_partition_type="msdos"

@@ -1,0 +1,64 @@
+# Kernel config based on: arch/arm/configs/cyanogenmod_tuna_defconfig
+
+pkgname=linux-samsung-maguro
+pkgver=3.0.31
+pkgrel=17
+pkgdesc="Samsung Galaxy Nexus kernel from LineageOS"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-maguro"
+url="https://github.com/LineageOS/android_kernel_samsung_tuna"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_tuna"
+_commit="e14e5fe679a63eef92346cde874175d8b62b6a4a"
+_config="config-$_flavor.armv7"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	timeconst.pl-Eliminate-Perl-warning.patch
+	android_paranoid_network.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-Alpine"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/arm/boot/zImage" \
+		"$pkgdir/boot/vmlinuz"
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+f117b3202c3db1a575598fd87ee27080db5c447c986ced677b63e6b00613ebfab58d634bf63b8bcf0c229eb0bec4dc81b13d7cfda3c2aee62e9ed8e26eeb860c  linux-samsung-maguro-e14e5fe679a63eef92346cde874175d8b62b6a4a.tar.gz
+d3f76f52bbd0b1da13be7abb4da1ddf3b2066af64f4148b3de298631c970a7966410743e762b31225f088326a41e2113edaf01a1c8b87f0bc82b220a948c5fb0  config-samsung-maguro.armv7
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+d8cdc1137e6a4ad78a3a31acc40f0c98f4db272eaf5b90ee850abb83b80916c4ff3c18a0a181e94eebead44213f6314e3363d0c4b91d95ee1adafbcad6dc57ab  android_paranoid_network.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

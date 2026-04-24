@@ -1,0 +1,2843 @@
+bash "/home/ubuntu/atomos/iso-postmarketos/scripts/build-qemu.sh" "config/arm64-virt.env"
+WARN: atomos-home-bg manifest missing; skipping home-bg build/install.
+  missing: /home/ubuntu/atomos/iso-postmarketos/rust/atomos-home-bg/app-gtk/Cargo.toml
+=== build-qemu: creating disk image (8G) ===
+0+0 records in
+0+0 records out
+0 bytes copied, 0.000122 s, 0.0 kB/s
+=== build-qemu: bootstrap Alpine rootfs ===
+Effective APK package set:
+  alpine-base linux-virt linux-firmware-none openssh openrc dbus networkmanager pipewire pipewire-pulse wireplumber dconf bash shadow util-linux e2fsprogs dosfstools gmobile phoc phoc-schemas phosh-schemas greetd greetd-openrc greetd-phrog greetd-phrog-schemas gnome-session gnome-settings-daemon gnome-control-center gnome-shell-schemas xwayland adwaita-icon-theme mesa-dri-gallium elogind elogind-openrc polkit-elogind seatd seatd-openrc eudev eudev-openrc openssh-server squeekboard simdutf build-base binutils gdb cargo rust pkgconf glib-dev gdk-pixbuf-dev pango-dev cairo-dev gtk4.0-dev libadwaita-dev gtk4-layer-shell-dev ripgrep python3 py3-pip ca-certificates git libffi-dev openssl-dev bluez bluez-deprecated bluez-btmon figlet android-tools-adb py3-cairo py3-dbus py3-gobject3 py3-pyserial dbus-dev bluez-dev cmake py3-numpy linux-headers curl graphene-dev gsettings-desktop-schemas gcompat phosh-mobile-settings feedbackd
+(  1/732) Installing musl (1.2.6-r2)
+(  2/732) Installing libxau (1.0.12-r0)
+(  3/732) Installing libmd (1.1.0-r0)
+(  4/732) Installing libbsd (0.12.2-r0)
+(  5/732) Installing libxdmcp (1.1.5-r1)
+(  6/732) Installing libxcb (1.17.0-r1)
+(  7/732) Installing libx11 (1.8.13-r0)
+(  8/732) Installing libxext (1.3.7-r0)
+(  9/732) Installing libxrender (0.9.12-r0)
+( 10/732) Installing busybox (1.37.0-r31)
+  Executing busybox-1.37.0-r31.post-install
+( 11/732) Installing busybox-binsh (1.37.0-r31)
+( 12/732) Installing libexpat (2.7.5-r0)
+( 13/732) Installing brotli-libs (1.2.0-r1)
+( 14/732) Installing libbz2 (1.0.8-r6)
+( 15/732) Installing zlib (1.3.2-r0)
+( 16/732) Installing libpng (1.6.58-r0)
+( 17/732) Installing freetype (2.14.2-r0)
+( 18/732) Installing fontconfig (2.17.1-r1)
+( 19/732) Installing pixman (0.46.4-r0)
+( 20/732) Installing cairo (1.18.4-r1)
+( 21/732) Installing libgcc (15.2.0-r3)
+( 22/732) Installing libffi (3.5.2-r1)
+( 23/732) Installing libintl (1.0-r0)
+( 24/732) Installing libeconf (0.8.3-r0)
+( 25/732) Installing libblkid (2.41.4-r0)
+( 26/732) Installing libmount (2.41.4-r0)
+( 27/732) Installing pcre2 (10.47-r0)
+( 28/732) Installing glib (2.88.0-r1)
+( 29/732) Installing libdav1d (1.5.3-r0)
+( 30/732) Installing pkgconf (2.5.1-r0)
+( 31/732) Installing libstdc++ (15.2.0-r3)
+( 32/732) Installing xz-libs (5.8.2-r0)
+( 33/732) Installing libxml2 (2.13.9-r1)
+( 34/732) Installing shared-mime-info (2.4-r7)
+( 35/732) Installing libcap2 (2.78-r0)
+( 36/732) Installing bubblewrap (0.11.2-r0)
+( 37/732) Installing lcms2 (2.17-r0)
+( 38/732) Installing libseccomp (2.6.0-r2)
+( 39/732) Installing libglycin (2.1.0-r0)
+  Executing libglycin-2.1.0-r0.post-install
+  * glycin loaders got split into their individual subpackages.
+  * By default, only glycin-image-rs & glycin-svg are installed.
+  * Additional loader subpackages are glycin-heif, glycin-jxl & glycin-raw.
+  * 
+  * To install all available loaders, install glycin-loaders-all.
+  * 
+  * Also the glycin-thumbnailer got subpackaged and isn't installed by default.
+( 40/732) Installing glycin-image-rs (2.1.0-r0)
+( 41/732) Installing gdk-pixbuf (2.44.6-r0)
+( 42/732) Installing libxft (2.3.9-r0)
+( 43/732) Installing fribidi (1.0.16-r3)
+( 44/732) Installing graphite2 (1.3.14-r6)
+( 45/732) Installing harfbuzz (13.2.1-r0)
+( 46/732) Installing pango (1.57.1-r0)
+( 47/732) Installing librsvg (2.62.1-r0)
+( 48/732) Installing glycin-svg (2.1.0-r0)
+( 49/732) Installing adwaita-icon-theme (50.0-r0)
+( 50/732) Installing alpine-baselayout-data (3.7.2-r1)
+( 51/732) Installing alpine-baselayout (3.7.2-r1)
+  Executing alpine-baselayout-3.7.2-r1.pre-install
+  Executing alpine-baselayout-3.7.2-r1.post-install
+( 52/732) Installing bridge (1.5-r5)
+( 53/732) Installing ifupdown-ng (0.12.1-r7)
+( 54/732) Installing openrc-user (0.63-r1)
+( 55/732) Installing openrc (0.63-r1)
+  Executing openrc-0.63-r1.post-install
+( 56/732) Installing mdev-conf (4.9-r0)
+( 57/732) Installing busybox-mdev-openrc (1.37.0-r31)
+( 58/732) Installing alpine-conf (3.21.0-r0)
+( 59/732) Installing alpine-keys (2.6-r0)
+( 60/732) Installing alpine-release (3.24.0_alpha20260127-r0)
+( 61/732) Installing libcrypto3 (3.5.6-r0)
+( 62/732) Installing libssl3 (3.5.6-r0)
+( 63/732) Installing ssl_client (1.37.0-r31)
+( 64/732) Installing libapk (3.0.6-r0)
+( 65/732) Installing ca-certificates-bundle (20260413-r0)
+( 66/732) Installing apk-tools (3.0.6-r0)
+( 67/732) Installing busybox-openrc (1.37.0-r31)
+( 68/732) Installing busybox-suid (1.37.0-r31)
+( 69/732) Installing scanelf (1.3.9-r1)
+( 70/732) Installing musl-utils (1.2.6-r2)
+( 71/732) Installing alpine-base (3.24.0_alpha20260127-r0)
+( 72/732) Installing gdbm (1.26-r0)
+( 73/732) Installing mpdecimal (4.0.1-r0)
+( 74/732) Installing ncurses-terminfo-base (6.6_p20260404-r0)
+( 75/732) Installing libncursesw (6.6_p20260404-r0)
+( 76/732) Installing libpanelw (6.6_p20260404-r0)
+( 77/732) Installing readline (8.3.3-r1)
+( 78/732) Installing sqlite-libs (3.53.0-r0)
+( 79/732) Installing python3 (3.14.3-r0)
+( 80/732) Installing python3-pycache-pyc0 (3.14.3-r0)
+( 81/732) Installing pyc (3.14.3-r0)
+( 82/732) Installing python3-pyc (3.14.3-r0)
+( 83/732) Installing abseil-cpp-leak-check (20250814.1-r0)
+( 84/732) Installing abseil-cpp-log-internal-nullguard (20250814.1-r0)
+( 85/732) Installing abseil-cpp-raw-logging-internal (20250814.1-r0)
+( 86/732) Installing abseil-cpp-strings-internal (20250814.1-r0)
+( 87/732) Installing abseil-cpp-strings (20250814.1-r0)
+( 88/732) Installing abseil-cpp-log-internal-check-op (20250814.1-r0)
+( 89/732) Installing abseil-cpp-spinlock-wait (20250814.1-r0)
+( 90/732) Installing abseil-cpp-base (20250814.1-r0)
+( 91/732) Installing abseil-cpp-debugging-internal (20250814.1-r0)
+( 92/732) Installing abseil-cpp-malloc-internal (20250814.1-r0)
+( 93/732) Installing abseil-cpp-stacktrace (20250814.1-r0)
+( 94/732) Installing abseil-cpp-symbolize (20250814.1-r0)
+( 95/732) Installing abseil-cpp-examine-stack (20250814.1-r0)
+( 96/732) Installing abseil-cpp-city (20250814.1-r0)
+( 97/732) Installing abseil-cpp-hash (20250814.1-r0)
+( 98/732) Installing abseil-cpp-log-globals (20250814.1-r0)
+( 99/732) Installing abseil-cpp-log-internal-globals (20250814.1-r0)
+(100/732) Installing abseil-cpp-int128 (20250814.1-r0)
+(101/732) Installing abseil-cpp-str-format-internal (20250814.1-r0)
+(102/732) Installing abseil-cpp-time-zone (20250814.1-r0)
+(103/732) Installing abseil-cpp-time (20250814.1-r0)
+(104/732) Installing abseil-cpp-log-internal-format (20250814.1-r0)
+(105/732) Installing abseil-cpp-log-sink (20250814.1-r0)
+(106/732) Installing abseil-cpp-kernel-timeout-internal (20250814.1-r0)
+(107/732) Installing abseil-cpp-tracing-internal (20250814.1-r0)
+(108/732) Installing abseil-cpp-synchronization (20250814.1-r0)
+(109/732) Installing abseil-cpp-log-internal-log-sink-set (20250814.1-r0)
+(110/732) Installing abseil-cpp-log-internal-proto (20250814.1-r0)
+(111/732) Installing abseil-cpp-log-internal-structured-proto (20250814.1-r0)
+(112/732) Installing abseil-cpp-strerror (20250814.1-r0)
+(113/732) Installing abseil-cpp-log-internal-message (20250814.1-r0)
+(114/732) Installing lz4-libs (1.10.0-r1)
+(115/732) Installing abseil-cpp-crc-internal (20250814.1-r0)
+(116/732) Installing abseil-cpp-crc32c (20250814.1-r0)
+(117/732) Installing abseil-cpp-crc-cord-state (20250814.1-r0)
+(118/732) Installing abseil-cpp-cord-internal (20250814.1-r0)
+(119/732) Installing abseil-cpp-exponential-biased (20250814.1-r0)
+(120/732) Installing abseil-cpp-cordz-functions (20250814.1-r0)
+(121/732) Installing abseil-cpp-cordz-handle (20250814.1-r0)
+(122/732) Installing abseil-cpp-cordz-info (20250814.1-r0)
+(123/732) Installing abseil-cpp-cord (20250814.1-r0)
+(124/732) Installing abseil-cpp-die-if-null (20250814.1-r0)
+(125/732) Installing abseil-cpp-log-internal-conditions (20250814.1-r0)
+(126/732) Installing abseil-cpp-hashtablez-sampler (20250814.1-r0)
+(127/732) Installing abseil-cpp-raw-hash-set (20250814.1-r0)
+(128/732) Installing abseil-cpp-status (20250814.1-r0)
+(129/732) Installing abseil-cpp-statusor (20250814.1-r0)
+(130/732) Installing abseil-cpp-throw-delegate (20250814.1-r0)
+(131/732) Installing abseil-cpp-log-initialize (20250814.1-r0)
+(132/732) Installing libprotoc (31.1-r1)
+(133/732) Installing protoc (31.1-r1)
+(134/732) Installing libprotobuf-lite (31.1-r1)
+(135/732) Installing protobuf (31.1-r1)
+(136/732) Installing libprotobuf (31.1-r1)
+(137/732) Installing zstd-libs (1.5.7-r2)
+(138/732) Installing android-tools-adb (35.0.2-r21)
+(139/732) Installing bash (5.3.9-r1)
+  Executing bash-5.3.9-r1.post-install
+(140/732) Installing jansson (2.15.0-r0)
+(141/732) Installing binutils (2.45.1-r1)
+(142/732) Installing dbus-libs (1.16.2-r2)
+(143/732) Installing dbus (1.16.2-r2)
+  Executing dbus-1.16.2-r2.pre-install
+  Executing dbus-1.16.2-r2.post-install
+(144/732) Installing dbus-openrc (1.16.2-r2)
+(145/732) Installing dbus-daemon-launch-helper (1.16.2-r2)
+(146/732) Installing json-c (0.18-r1)
+(147/732) Installing eudev-libs (3.2.14-r6)
+(148/732) Installing bluez (5.86-r1)
+(149/732) Installing bluez-openrc (5.86-r1)
+(150/732) Installing lua5.4-libs (5.4.8-r0)
+(151/732) Installing alsa-lib (1.2.15.3-r0)
+(152/732) Installing avahi-libs (0.8-r26)
+(153/732) Installing libpisp (1.4.0-r0)
+(154/732) Installing libcamera-ipa (0.7.0-r3)
+(155/732) Installing llvm22-libs (22.1.3-r0)
+(156/732) Installing spirv-tools (1.4.341.0-r0)
+(157/732) Installing hwdata-pci (0.406-r0)
+(158/732) Installing libpciaccess (0.18.1-r1)
+(159/732) Installing libdrm (2.4.131-r0)
+(160/732) Installing libelf (0.195-r0)
+(161/732) Installing libxshmfence (1.3.3-r0)
+(162/732) Installing mesa (26.0.5-r0)
+(163/732) Installing mesa-gles (26.0.5-r0)
+(164/732) Installing mesa-gbm (26.0.5-r0)
+(165/732) Installing wayland-libs-client (1.25.0-r0)
+(166/732) Installing mesa-egl (26.0.5-r0)
+(167/732) Installing gmp (6.3.0-r4)
+(168/732) Installing nettle (3.10.2-r0)
+(169/732) Installing libunistring (1.4.2-r0)
+(170/732) Installing libidn2 (2.3.8-r0)
+(171/732) Installing libtasn1 (4.21.0-r0)
+(172/732) Installing p11-kit (0.25.5-r2)
+(173/732) Installing gnutls (3.8.12-r0)
+(174/732) Installing libunwind (1.8.3-r0)
+(175/732) Installing yaml (0.2.5-r2)
+(176/732) Installing libjpeg-turbo (3.1.3-r0)
+(177/732) Installing libyuv (0.0.1928-r0)
+(178/732) Installing libcamera (0.7.0-r3)
+(179/732) Installing opus (1.6.1-r0)
+(180/732) Installing speexdsp (1.2.1-r2)
+(181/732) Installing libuv (1.52.1-r0)
+(182/732) Installing roc-toolkit-libs (0.4.0-r1)
+(183/732) Installing webrtc-audio-processing-2 (2.1-r1)
+(184/732) Installing pipewire-libs (1.6.4-r0)
+(185/732) Installing wireplumber-libs (0.5.14-r0)
+(186/732) Installing wireplumber (0.5.14-r0)
+(187/732) Installing wireplumber-openrc (0.5.14-r0)
+(188/732) Installing libasyncns (0.8-r5)
+(189/732) Installing libltdl (2.6.0-r1)
+(190/732) Installing orc (0.4.41-r0)
+(191/732) Installing libogg (1.3.6-r0)
+(192/732) Installing libflac (1.4.3-r2)
+(193/732) Installing lame-libs (3.100-r5)
+(194/732) Installing mpg123-libs (1.33.4-r0)
+(195/732) Installing libvorbis (1.3.7-r2)
+(196/732) Installing libsndfile (1.2.2-r2)
+(197/732) Installing libgomp (15.2.0-r3)
+(198/732) Installing soxr (0.1.3-r7)
+(199/732) Installing tdb-libs (1.4.15-r1)
+(200/732) Installing libpulse (17.0-r7)
+(201/732) Installing pulseaudio-utils (17.0-r7)
+(202/732) Installing pipewire (1.6.4-r0)
+  Executing pipewire-1.6.4-r0.post-install
+  * 
+  * The /usr/libexec/pipewire-launcher script will be removed in the future to replace it with OpenRC user-services.
+  * 
+(203/732) Installing pipewire-openrc (1.6.4-r0)
+(204/732) Installing pipewire-pulse (1.6.4-r0)
+(205/732) Installing pipewire-pulse-openrc (1.6.4-r0)
+(206/732) Installing bluez-btmon (5.86-r1)
+(207/732) Installing bluez-deprecated (5.86-r1)
+(208/732) Installing bluez-deprecated-openrc (5.86-r1)
+(209/732) Installing bluez-libs (5.86-r1)
+(210/732) Installing bluez-dev (5.86-r1)
+(211/732) Installing libmagic (5.47-r1)
+(212/732) Installing file (5.47-r1)
+(213/732) Installing libatomic (15.2.0-r3)
+(214/732) Installing isl26 (0.26-r2)
+(215/732) Installing mpfr4 (4.2.2-r0)
+(216/732) Installing mpc1 (1.3.1-r1)
+(217/732) Installing gcc (15.2.0-r3)
+(218/732) Installing libstdc++-dev (15.2.0-r3)
+(219/732) Installing musl-dev (1.2.6-r2)
+(220/732) Installing g++ (15.2.0-r3)
+(221/732) Installing make (4.4.1-r4)
+(222/732) Installing fortify-headers (3.0.1-r2)
+(223/732) Installing patch (2.8-r0)
+(224/732) Installing build-base (0.5-r4)
+(225/732) Installing ca-certificates (20260413-r0)
+(226/732) Installing cairo-tools (1.18.4-r1)
+(227/732) Installing cairo-gobject (1.18.4-r1)
+(228/732) Installing expat (2.7.5-r0)
+(229/732) Installing expat-dev (2.7.5-r0)
+(230/732) Installing bzip2-dev (1.0.8-r6)
+(231/732) Installing brotli (1.2.0-r1)
+(232/732) Installing brotli-dev (1.2.0-r1)
+(233/732) Installing zlib-dev (1.3.2-r0)
+(234/732) Installing libpng-dev (1.6.58-r0)
+(235/732) Installing freetype-dev (2.14.2-r0)
+(236/732) Installing fontconfig-dev (2.17.1-r1)
+(237/732) Installing libxml2-utils (2.13.9-r1)
+(238/732) Installing docbook-xml (4.5-r10)
+  Executing docbook-xml-4.5-r10.post-install
+(239/732) Installing libxslt (1.1.43-r3)
+(240/732) Installing docbook-xsl-ns (1.79.2-r13)
+  Executing docbook-xsl-ns-1.79.2-r13.post-install
+(241/732) Installing docbook-xsl-nons (1.79.2-r13)
+  Executing docbook-xsl-nons-1.79.2-r13.post-install
+(242/732) Installing docbook-xsl (1.79.2-r13)
+(243/732) Installing xz (5.8.2-r0)
+(244/732) Installing gettext-asprintf (1.0-r0)
+(245/732) Installing gettext-libs (1.0-r0)
+(246/732) Installing gettext-envsubst (1.0-r0)
+(247/732) Installing gettext (1.0-r0)
+(248/732) Installing gettext-dev (1.0-r0)
+(249/732) Installing py3-parsing (3.3.2-r1)
+(250/732) Installing py3-parsing-pyc (3.3.2-r1)
+(251/732) Installing py3-packaging (26.1-r0)
+(252/732) Installing py3-packaging-pyc (26.1-r0)
+(253/732) Installing linux-headers (7.0.0-r0)
+(254/732) Installing libffi-dev (3.5.2-r1)
+(255/732) Installing bsd-compat-headers (0.7.2-r6)
+(256/732) Installing libformw (6.6_p20260404-r0)
+(257/732) Installing libmenuw (6.6_p20260404-r0)
+(258/732) Installing libncurses++ (6.6_p20260404-r0)
+(259/732) Installing ncurses-dev (6.6_p20260404-r0)
+(260/732) Installing libedit (20251016.3.1-r1)
+(261/732) Installing libedit-dev (20251016.3.1-r1)
+(262/732) Installing libpcre2-16 (10.47-r0)
+(263/732) Installing libpcre2-32 (10.47-r0)
+(264/732) Installing pcre2-dev (10.47-r0)
+(265/732) Installing libuuid (2.41.4-r0)
+(266/732) Installing libfdisk (2.41.4-r0)
+(267/732) Installing liblastlog2 (2.41.4-r0)
+(268/732) Installing libsmartcols (2.41.4-r0)
+(269/732) Installing sqlite (3.53.0-r0)
+(270/732) Installing sqlite-dev (3.53.0-r0)
+(271/732) Installing util-linux-dev (2.41.4-r0)
+(272/732) Installing glib-dev (2.88.0-r1)
+(273/732) Installing pixman-dev (0.46.4-r0)
+(274/732) Installing xorgproto (2025.1-r0)
+(275/732) Installing libxau-dev (1.0.12-r0)
+(276/732) Installing xcb-proto (1.17.0-r1)
+(277/732) Installing xcb-proto-pyc (1.17.0-r1)
+(278/732) Installing libxdmcp-dev (1.1.5-r1)
+(279/732) Installing libxcb-dev (1.17.0-r1)
+(280/732) Installing xtrans (1.6.0-r0)
+(281/732) Installing libx11-dev (1.8.13-r0)
+(282/732) Installing libxext-dev (1.3.7-r0)
+(283/732) Installing libxrender-dev (0.9.12-r0)
+(284/732) Installing cairo-dev (1.18.4-r1)
+(285/732) Installing scudo-malloc (22.1.3-r0)
+(286/732) Installing rust (1.95.0-r0)
+(287/732) Installing c-ares (1.34.6-r0)
+(288/732) Installing nghttp2-libs (1.69.0-r0)
+(289/732) Installing libpsl (0.21.5-r3)
+(290/732) Installing libcurl (8.19.0-r0)
+(291/732) Installing cargo (1.95.0-r0)
+(292/732) Installing acl-libs (2.3.2-r1)
+(293/732) Installing libarchive (3.8.7-r0)
+(294/732) Installing rhash-libs (1.4.6-r0)
+(295/732) Installing cmake (4.2.3-r0)
+(296/732) Installing curl (8.19.0-r0)
+(297/732) Installing dbus-dev (1.16.2-r2)
+(298/732) Installing dconf (0.49.0-r1)
+(299/732) Installing dosfstools (4.2-r2)
+(300/732) Installing libcom_err (1.47.4-r0)
+(301/732) Installing e2fsprogs-libs (1.47.4-r0)
+(302/732) Installing e2fsprogs (1.47.4-r0)
+(303/732) Installing skalibs-libs (2.14.5.1-r0)
+(304/732) Installing utmps-libs (0.1.3.2-r1)
+(305/732) Installing linux-pam (1.7.1-r2)
+(306/732) Installing shadow (4.18.0-r1)
+(307/732) Installing elogind-common (255.22-r2)
+(308/732) Installing busctl (255.22-r2)
+(309/732) Installing elogind (255.22-r2)
+(310/732) Installing elogind-openrc (255.22-r2)
+(311/732) Installing udev-init-scripts (35-r1)
+(312/732) Installing udev-init-scripts-openrc (35-r1)
+(313/732) Installing kmod-libs (34.2-r1)
+(314/732) Installing eudev (3.2.14-r6)
+(315/732) Installing eudev-openrc (3.2.14-r6)
+(316/732) Installing pipewire-udev (1.6.4-r0)
+(317/732) Installing feedbackd-device-themes (0.8.8-r1)
+(318/732) Installing json-glib (1.10.8-r0)
+(319/732) Installing gmobile (0.7.0-r0)
+(320/732) Installing gmobile-udev (0.7.0-r0)
+(321/732) Installing sound-theme-freedesktop (0.8-r2)
+(322/732) Installing libcanberra (0.30-r12)
+(323/732) Installing libcanberra-pulse (0.30-r12)
+(324/732) Installing gsound (1.0.3-r3)
+(325/732) Installing libgudev (238-r1)
+(326/732) Installing feedbackd (0.8.9-r1)
+  Executing feedbackd-0.8.9-r1.pre-install
+  * If you are switching between UIs on existing installations,
+  * make sure that you add your user to the feedbackd group.
+  * If the user isn't part of that group, the LED indicator won't be
+  * functional.
+(327/732) Installing feedbackd-udev (0.8.9-r1)
+(328/732) Installing figlet (2.2.5-r3)
+(329/732) Installing musl-obstack (1.2.3-r2)
+(330/732) Installing libucontext (1.5-r0)
+(331/732) Installing gcompat (1.1.0-r4)
+(332/732) Installing musl-dbg (1.2.6-r2)
+(333/732) Installing musl-fts (1.2.7-r7)
+(334/732) Installing libdw (0.195-r0)
+(335/732) Installing libdebuginfod (0.195-r0)
+(336/732) Installing gdb (16.3-r4)
+(337/732) Installing gcc-gdb (15.2.0-r3)
+(338/732) Installing lcms2-plugins (2.17-r0)
+(339/732) Installing libturbojpeg (3.1.3-r0)
+(340/732) Installing libjpeg-turbo-dev (3.1.3-r0)
+(341/732) Installing libsharpyuv (1.6.0-r0)
+(342/732) Installing libwebp (1.6.0-r0)
+(343/732) Installing tiff (4.7.1-r0)
+(344/732) Installing libtiffxx (4.7.1-r0)
+(345/732) Installing libwebpdecoder (1.6.0-r0)
+(346/732) Installing libwebpdemux (1.6.0-r0)
+(347/732) Installing libwebpmux (1.6.0-r0)
+(348/732) Installing libwebp-dev (1.6.0-r0)
+(349/732) Installing zstd (1.5.7-r2)
+(350/732) Installing zstd-dev (1.5.7-r2)
+(351/732) Installing tiff-dev (4.7.1-r0)
+(352/732) Installing lcms2-dev (2.17-r0)
+(353/732) Installing libseccomp-dev (2.6.0-r2)
+(354/732) Installing libglycin-dev (2.1.0-r0)
+(355/732) Installing gdk-pixbuf-dev (2.44.6-r0)
+(356/732) Installing git (2.54.0-r0)
+(357/732) Installing git-init-template (2.54.0-r0)
+(358/732) Installing libelogind (255.22-r2)
+(359/732) Installing polkit-elogind-libs (127-r2)
+(360/732) Installing accountsservice (23.13.9-r3)
+(361/732) Installing libcolord (1.4.8-r4)
+(362/732) Installing libusb (1.0.29-r0)
+(363/732) Installing libgusb (0.4.9-r1)
+(364/732) Installing colord (1.4.8-r4)
+  Executing colord-1.4.8-r4.pre-install
+(365/732) Installing colord-udev (1.4.8-r4)
+(366/732) Installing cups-libs (2.4.16-r0)
+(367/732) Installing cups-pk-helper (0.2.7-r3)
+(368/732) Installing libgpg-error (1.57-r0)
+(369/732) Installing libgcrypt (1.12.2-r0)
+(370/732) Installing gobject-introspection (1.86.0-r1)
+(371/732) Installing libxcomposite (0.4.7-r0)
+(372/732) Installing libxfixes (6.0.2-r0)
+(373/732) Installing libxcursor (1.2.3-r0)
+(374/732) Installing libxdamage (1.1.7-r0)
+(375/732) Installing libxi (1.8.2-r0)
+(376/732) Installing libxinerama (1.1.6-r0)
+(377/732) Installing libxrandr (1.5.5-r0)
+(378/732) Installing libatk-1.0 (2.60.1-r0)
+(379/732) Installing at-spi2-core-libs (2.60.1-r0)
+(380/732) Installing libxtst (1.2.5-r0)
+(381/732) Installing at-spi2-core (2.60.1-r0)
+(382/732) Installing libatk-bridge-2.0 (2.60.1-r0)
+(383/732) Installing libepoxy (1.5.10-r1)
+(384/732) Installing wayland-libs-cursor (1.25.0-r0)
+(385/732) Installing wayland-libs-egl (1.25.0-r0)
+(386/732) Installing xkeyboard-config (2.46-r0)
+(387/732) Installing libxkbcommon (1.13.1-r0)
+(388/732) Installing gtk+3.0 (3.24.52-r0)
+(389/732) Installing gcr-base (3.41.2-r2)
+(390/732) Installing gcr (3.41.2-r2)
+(391/732) Installing libcap-ng (0.8.5-r2)
+(392/732) Installing gnome-keyring (50.0-r0)
+(393/732) Installing gnome-keyring-openrc (50.0-r0)
+(394/732) Installing gnome-keyring-pam (50.0-r0)
+(395/732) Installing tzdata (2026a-r0)
+(396/732) Installing openrc-settingsd (1.5.0-r2)
+  Executing openrc-settingsd-1.5.0-r2.post-install
+  * openrc-settingsd should be running for the services to be available.
+  * Please run: "rc-update add openrc-settingsd default && rc-service openrc-settingsd start"
+(397/732) Installing openrc-settingsd-openrc (1.5.0-r2)
+(398/732) Installing libxkbfile (1.2.0-r0)
+(399/732) Installing setxkbmap (1.3.4-r0)
+(400/732) Installing libaccountsservice (23.13.9-r3)
+(401/732) Installing adwaita-fonts-sans (50.0-r0)
+(402/732) Installing adwaita-fonts-mono (50.0-r0)
+(403/732) Installing adwaita-fonts (50.0-r0)
+(404/732) Installing libfyaml (0.9.5-r1)
+(405/732) Installing libxmlb (0.3.26-r0)
+(406/732) Installing appstream (1.1.1-r1)
+  Executing appstream-1.1.1-r1.post-install
+  * ✔ Metadata cache was updated successfully.
+(407/732) Installing graphene (1.10.8-r5)
+(408/732) Installing hicolor-icon-theme (0.18-r0)
+(409/732) Installing gtk-update-icon-cache (3.24.52-r0)
+(410/732) Installing iso-codes (4.20.1-r0)
+(411/732) Installing libxxf86vm (1.1.7-r0)
+(412/732) Installing mesa-gl (26.0.5-r0)
+(413/732) Installing libxv (1.0.13-r0)
+(414/732) Installing cdparanoia-libs (10.2-r14)
+(415/732) Installing gstreamer (1.28.1-r0)
+(416/732) Installing gst-plugin-pipewire (1.6.4-r0)
+(417/732) Installing libcanberra-gstreamer (0.30-r12)
+(418/732) Installing gstreamer-ptp-helper (1.28.1-r0)
+(419/732) Installing libtheora (1.2.0-r0)
+(420/732) Installing gst-plugins-base (1.28.1-r1)
+(421/732) Installing openexr-libiex (3.4.4-r0)
+(422/732) Installing imath (3.2.2-r1)
+(423/732) Installing openexr-libilmthread (3.4.4-r0)
+(424/732) Installing libdeflate (1.25-r0)
+(425/732) Installing openexr (3.4.4-r0)
+(426/732) Installing openexr-libopenexrcore (3.4.4-r0)
+(427/732) Installing openexr-libopenexr (3.4.4-r0)
+(428/732) Installing soundtouch (2.4.0-r0)
+(429/732) Installing libSvtAv1Enc (4.1.0-r0)
+(430/732) Installing aom-libs (3.13.3-r0)
+(431/732) Installing libunibreak (6.1-r0)
+(432/732) Installing libass (0.17.4-r1)
+(433/732) Installing libraw1394 (2.1.2-r5)
+(434/732) Installing libdc1394 (2.2.7-r0)
+(435/732) Installing libde265 (1.0.16-r0)
+(436/732) Installing tslib (1.24-r0)
+(437/732) Installing directfb (1.7.7-r8)
+(438/732) Installing libdvdcss (1.4.3-r0)
+(439/732) Installing libdvdread (6.1.3-r2)
+(440/732) Installing libdvdnav (6.1.1-r1)
+(441/732) Installing faac (1.31.1-r0)
+(442/732) Installing faad2-libs (2.11.2-r0)
+(443/732) Installing fdk-aac (2.0.2-r4)
+(444/732) Installing flite (2.2-r6)
+(445/732) Installing libfreeaptx (0.2.2-r0)
+(446/732) Installing gsm (1.0.23-r0)
+(447/732) Installing libldac (2.0.2.3-r1)
+(448/732) Installing libmodplug (0.8.9.0-r3)
+(449/732) Installing neon (0.36.0-r0)
+(450/732) Installing openal-soft-libs (1.25.1-r0)
+(451/732) Installing openh264 (2.6.0-r0)
+(452/732) Installing openjpeg (2.5.4-r1)
+(453/732) Installing librtmp (2.4_git20190330-r5)
+(454/732) Installing sbc (2.1-r0)
+(455/732) Installing spandsp (0.0.6-r5)
+(456/732) Installing libsrt (1.5.3-r1)
+(457/732) Installing libsrtp (2.7.0-r0)
+(458/732) Installing libva (2.23.0-r0)
+(459/732) Installing vo-aacenc (0.1.3-r3)
+(460/732) Installing vo-amrwbenc (0.1.3-r3)
+(461/732) Installing vulkan-loader (1.4.347-r0)
+(462/732) Installing numactl (2.0.19-r0)
+(463/732) Installing x265-libs (4.1-r0)
+(464/732) Installing libxkbcommon-x11 (1.13.1-r0)
+(465/732) Installing libzbar (0.23.93-r2)
+(466/732) Installing gst-plugins-bad (1.28.1-r0)
+(467/732) Installing harfbuzz-subset (13.2.1-r0)
+(468/732) Installing gtk4.0 (4.22.2-r0)
+(469/732) Installing libadwaita (1.9.0-r0)
+(470/732) Installing colord-gtk (0.3.1-r0)
+(471/732) Installing gcr4-base (4.4.0.1-r1)
+(472/732) Installing libgnome-desktop-4 (44.5-r0)
+(473/732) Installing libgnome-bg-4 (44.5-r0)
+(474/732) Installing libnotify (0.8.8-r0)
+(475/732) Installing upower (1.91.0-r2)
+(476/732) Installing upower-udev (1.91.0-r2)
+(477/732) Installing gnome-bluetooth-libs (47.2-r0)
+(478/732) Installing keyutils-libs (1.6.3-r4)
+(479/732) Installing krb5-conf (1.0-r2)
+(480/732) Installing libverto (0.3.2-r2)
+(481/732) Installing krb5-libs (1.22.2-r1)
+(482/732) Installing gsettings-desktop-schemas (50.1-r0)
+(483/732) Installing duktape-libs (2.7.0-r3)
+(484/732) Installing libproxy (0.5.12-r0)
+(485/732) Installing glib-networking (2.80.1-r2)
+(486/732) Installing libsoup3 (3.6.6-r0)
+(487/732) Installing rest1 (0.9.1-r1)
+(488/732) Installing libsecret (0.21.7-r0)
+(489/732) Installing gnome-online-accounts (3.58.1-r0)
+(490/732) Installing libgtop (2.41.3-r1)
+(491/732) Installing py3-gobject3 (3.56.2-r1)
+(492/732) Installing py3-gobject3-pyc (3.56.2-r1)
+(493/732) Installing py3-gobject3-atspi (2.60.1-r0)
+(494/732) Installing py3-gobject3-atspi-pyc (2.60.1-r0)
+(495/732) Installing libdbusmenu-glib (16.04.0-r6)
+(496/732) Installing libdbusmenu-gtk3 (16.04.0-r6)
+(497/732) Installing ibus (1.5.33-r2)
+  Executing ibus-1.5.33-r2.post-install
+(498/732) Installing ibus-gtk3 (1.5.33-r2)
+(499/732) Installing ibus-pyc (1.5.33-r2)
+(500/732) Installing ibus-gtk4 (1.5.33-r2)
+(501/732) Installing libassuan (3.0.2-r0)
+(502/732) Installing pinentry (1.3.2-r0)
+  Executing pinentry-1.3.2-r0.post-install
+(503/732) Installing gnupg-gpgconf (2.4.9-r0)
+(504/732) Installing libksba (1.6.7-r0)
+(505/732) Installing libsasl (2.1.28-r9)
+(506/732) Installing libldap (2.6.10-r0)
+(507/732) Installing npth (1.8-r0)
+(508/732) Installing gnupg-dirmngr (2.4.9-r0)
+(509/732) Installing gnupg-keyboxd (2.4.9-r0)
+(510/732) Installing gpg (2.4.9-r0)
+(511/732) Installing gpg-agent (2.4.9-r0)
+(512/732) Installing gpgsm (2.4.9-r0)
+(513/732) Installing gpgme (2.0.1-r1)
+(514/732) Installing fuse3-libs (3.18.2-r0)
+(515/732) Installing ostree (2025.7-r1)
+(516/732) Installing flatpak-libs (1.16.6-r2)
+(517/732) Installing malcontent-libs (0.14.0-r0)
+(518/732) Installing libmm-glib (1.25.95_git20260422-r0)
+(519/732) Installing nspr (4.38.2-r0)
+(520/732) Installing nss (3.123.1-r0)
+(521/732) Installing libnm (1.52.2-r0)
+(522/732) Installing mobile-broadband-provider-info (20251101-r1)
+(523/732) Installing libnma-common (1.10.6-r4)
+(524/732) Installing libnma-gtk4 (1.10.6-r4)
+(525/732) Installing libpulse-mainloop-glib (17.0-r7)
+(526/732) Installing cracklib-words (2.10.3-r1)
+(527/732) Installing cracklib (2.10.3-r1)
+(528/732) Installing libpwquality (1.4.5-r6)
+(529/732) Installing icu-data-en (78.1-r0)
+  Executing icu-data-en-78.1-r0.post-install
+  * If you need ICU with non-English locales and legacy charset support, install
+  * package icu-data-full.
+(530/732) Installing icu-libs (78.1-r0)
+(531/732) Installing talloc (2.4.3-r1)
+(532/732) Installing tevent (0.17.1-r1)
+(533/732) Installing samba-util-libs (4.23.5-r1)
+(534/732) Installing lmdb (0.9.33-r0)
+(535/732) Installing ldb (4.23.5-r1)
+(536/732) Installing libwbclient (4.23.5-r1)
+(537/732) Installing libauth-samba (4.23.5-r1)
+(538/732) Installing samba-client-libs (4.23.5-r1)
+(539/732) Installing popt (1.19-r4)
+(540/732) Installing samba-libs (4.23.5-r1)
+(541/732) Installing libsmbclient (4.23.5-r1)
+(542/732) Installing udisks2-libs (2.11.0-r1)
+(543/732) Installing libevdev (1.13.6-r0)
+(544/732) Installing libwacom (2.17.0-r0)
+  Executing libwacom-2.17.0-r0.post-install
+(545/732) Installing libwacom-udev (2.17.0-r0)
+(546/732) Installing gnome-control-center (50.1-r0)
+  Executing gnome-control-center-50.1-r0.pre-install
+  * 
+  * Note that the privacy settings in GNOME settings isn't respected by geoclue
+  * for applications that are not sandboxed (running in flatpak), so it will
+  * provide location information to any application that asks it, and will not
+  * show any applications BUT ones run via flatpak
+  * 
+  * This is working as intended by geoclue upstream[1] and applications that
+  * are not sandboxed have other methods of acquiring information provided
+  * by geoclue
+  * 
+  * GNOME settings also tracks what they want to do with their privacy panel
+  * in regards to the problem above here[2]
+  * 
+  * [1] https://gitlab.freedesktop.org/geoclue/geoclue/issues/111
+  * [2] https://gitlab.gnome.org/GNOME/gnome-control-center/-/issues/805
+  * 
+(547/732) Installing alsa-plugins-pulse (1.2.12-r2)
+(548/732) Installing libice (1.1.2-r0)
+(549/732) Installing libsm (1.2.6-r0)
+(550/732) Installing libgnome-desktop-3 (44.5-r0)
+(551/732) Installing gnome-session (48.0-r3)
+(552/732) Installing avahi-glib (0.8-r26)
+(553/732) Installing geoclue (2.8.0-r0)
+  Executing geoclue-2.8.0-r0.pre-install
+(554/732) Installing geocode-glib (3.26.4-r5)
+(555/732) Installing gweather-locations (2026.2-r0)
+(556/732) Installing libgweather4 (4.6.0-r0)
+(557/732) Installing gnome-settings-daemon (50.1-r0)
+(558/732) Installing gnome-settings-daemon-udev (50.1-r0)
+(559/732) Installing gnome-shell-schemas (50.1-r0)
+(560/732) Installing graphene-dev (1.10.8-r5)
+(561/732) Installing greetd (0.10.3-r11)
+  Executing greetd-0.10.3-r11.pre-install
+(562/732) Installing greetd-openrc (0.10.3-r11)
+(563/732) Installing phosh-schemas (0.54.0-r0)
+(564/732) Installing dbus-x11 (1.16.2-r2)
+(565/732) Installing desktop-file-utils (0.28-r0)
+(566/732) Installing phoc-schemas (0.54.0-r0)
+(567/732) Installing mutter-schemas (50.1-r0)
+(568/732) Installing libdisplay-info (0.3.0-r0)
+(569/732) Installing mtdev (1.1.7-r0)
+(570/732) Installing libinput-libs (1.31.1-r0)
+(571/732) Installing libinput-udev (1.31.1-r0)
+(572/732) Installing libseat (0.9.3-r0)
+(573/732) Installing wayland-libs-server (1.25.0-r0)
+(574/732) Installing xcb-util-wm (0.4.2-r0)
+(575/732) Installing xcb-util-renderutil (0.3.10-r0)
+(576/732) Installing phoc (0.54.0-r0)
+(577/732) Installing squeekboard (1.43.1-r2)
+(578/732) Installing xorg-server-common (21.1.22-r0)
+(579/732) Installing xkbcomp (1.5.0-r0)
+(580/732) Installing libfontenc (1.1.9-r0)
+(581/732) Installing libxfont2 (2.0.7-r0)
+(582/732) Installing libtirpc-conf (1.3.5-r1)
+(583/732) Installing libtirpc-nokrb (1.3.5-r1)
+(584/732) Installing libxcvt (0.1.3-r0)
+(585/732) Installing xwayland (24.1.10-r0)
+(586/732) Installing callaudiod-libs (0.1.99-r0)
+(587/732) Installing libcanberra-gtk3 (0.30-r12)
+(588/732) Installing libical (3.0.20-r1)
+(589/732) Installing libphonenumber (9.0.29-r0)
+(590/732) Installing xdg-dbus-proxy (0.1.7-r0)
+(591/732) Installing libavif (1.4.1-r0)
+(592/732) Installing enchant2-libs (2.8.15-r0)
+(593/732) Installing harfbuzz-icu (13.2.1-r0)
+(594/732) Installing hyphen (2.8.8-r3)
+(595/732) Installing libhwy (1.3.0-r0)
+(596/732) Installing libjxl (0.11.1-r5)
+(597/732) Installing hidapi (0.15.0-r0)
+(598/732) Installing libmanette (0.2.12-r0)
+(599/732) Installing libwoff2common (1.0.2-r4)
+(600/732) Installing libwoff2enc (1.0.2-r4)
+(601/732) Installing webkit2gtk-6.0 (2.48.1-r3)
+(602/732) Installing evolution-data-server (3.60.1-r2)
+(603/732) Installing djvulibre-libs (3.5.29-r1)
+(604/732) Installing gspell (1.14.3-r0)
+(605/732) Installing poppler (25.12.0-r0)
+(606/732) Installing poppler-glib (25.12.0-r0)
+(607/732) Installing evince-libs (48.1-r2)
+(608/732) Installing libhandy1 (1.8.3-r0)
+(609/732) Installing qrcodegen (1.8.0-r0)
+(610/732) Installing phosh (0.54.0-r0)
+(611/732) Installing greetd-phrog-schemas (0.50.0-r2)
+(612/732) Installing libphosh (0.54.0-r0)
+(613/732) Installing greetd-phrog (0.50.0-r2)
+(614/732) Installing gtk4-layer-shell (1.3.0-r0)
+(615/732) Installing libxfixes-dev (6.0.2-r0)
+(616/732) Installing libxi-dev (1.8.2-r0)
+(617/732) Installing libxtst-dev (1.2.5-r0)
+(618/732) Installing at-spi2-core-dev (2.60.1-r0)
+(619/732) Installing libpciaccess-dev (0.18.1-r1)
+(620/732) Installing libdrm-dev (2.4.131-r0)
+(621/732) Installing libxdamage-dev (1.1.7-r0)
+(622/732) Installing libxshmfence-dev (1.3.3-r0)
+(623/732) Installing clang22-headers (22.1.3-r0)
+(624/732) Installing libclc (22.1.3-r0)
+(625/732) Installing spirv-llvm-translator-libs (22.1.0-r0)
+(626/732) Installing clang22-libs (22.1.3-r0)
+(627/732) Installing mesa-rusticl (26.0.5-r0)
+(628/732) Installing libxxf86vm-dev (1.1.7-r0)
+(629/732) Installing mesa-dev (26.0.5-r0)
+(630/732) Installing libepoxy-dev (1.5.10-r1)
+(631/732) Installing libxinerama-dev (1.1.6-r0)
+(632/732) Installing xz-dev (5.8.2-r0)
+(633/732) Installing libxml2-dev (2.13.9-r1)
+(634/732) Installing libxkbcommon-dev (1.13.1-r0)
+(635/732) Installing vulkan-headers (1.4.347-r0)
+(636/732) Installing wayland-dev (1.25.0-r0)
+(637/732) Installing wayland-protocols (1.48-r0)
+(638/732) Installing pango-tools (1.57.1-r0)
+(639/732) Installing fribidi-dev (1.0.16-r3)
+(640/732) Installing harfbuzz-cairo (13.2.1-r0)
+(641/732) Installing harfbuzz-gobject (13.2.1-r0)
+(642/732) Installing graphite2-dev (1.3.14-r6)
+(643/732) Installing icu (78.1-r0)
+(644/732) Installing icu-dev (78.1-r0)
+(645/732) Installing harfbuzz-dev (13.2.1-r0)
+(646/732) Installing libxft-dev (2.3.9-r0)
+(647/732) Installing pango-dev (1.57.1-r0)
+(648/732) Installing vulkan-loader-dev (1.4.347-r0)
+(649/732) Installing gtk4.0-dev (4.22.2-r0)
+(650/732) Installing gtk4-layer-shell-dev (1.3.0-r0)
+(651/732) Installing appstream-compose (1.1.1-r1)
+(652/732) Installing libb2 (0.98.1-r3)
+(653/732) Installing double-conversion (3.4.0-r0)
+(654/732) Installing qt6-qtbase (6.11.0-r0)
+(655/732) Installing appstream-qt (1.1.1-r1)
+(656/732) Installing appstream-dev (1.1.1-r1)
+(657/732) Installing libadwaita-dev (1.9.0-r0)
+(658/732) Installing linux-firmware-none (20260410-r0)
+(659/732) Installing kmod (34.2-r1)
+(660/732) Installing lddtree (1.27-r0)
+(661/732) Installing device-mapper-libs (2.03.35-r1)
+(662/732) Installing cryptsetup-libs (2.8.6-r0)
+(663/732) Installing mkinitfs (3.13.0-r0)
+  Executing mkinitfs-3.13.0-r0.post-install
+(664/732) Installing ostree-mkinitfs (2025.7-r1)
+(665/732) Installing linux-virt (6.18.24-r0)
+(666/732) Installing mesa-dri-gallium (26.0.5-r0)
+(667/732) Installing libndp (1.9-r1)
+(668/732) Installing networkmanager (1.52.2-r0)
+  Executing networkmanager-1.52.2-r0.pre-install
+  Executing networkmanager-1.52.2-r0.post-install
+  * 
+  * To modify system network connections without the root password, add your user
+  * account to the 'plugdev' group.
+  * 
+  * If you use wifi, bluetooth, ppp, wwan (mobile broadband), adsl or ovs (Open
+  * vSwitch), install the corresponding plugin: apk add networkmanager-<name>.
+  * 
+  * If you use NetworkManager features which require dnsmasq, you need to install
+  * dnsmasq support: apk add networkmanager-dnsmasq
+  * 
+(669/732) Installing networkmanager-wwan (1.52.2-r0)
+(670/732) Installing networkmanager-bluetooth (1.52.2-r0)
+(671/732) Installing networkmanager-openrc (1.52.2-r0)
+(672/732) Installing openssh-keygen (10.3_p1-r0)
+(673/732) Installing openssh-client-common (10.3_p1-r0)
+(674/732) Installing openssh-client-default (10.3_p1-r0)
+(675/732) Installing openssh-sftp-server (10.3_p1-r0)
+(676/732) Installing openssh-server-common (10.3_p1-r0)
+(677/732) Installing openssh-server-common-openrc (10.3_p1-r0)
+(678/732) Installing openssh-server (10.3_p1-r0)
+(679/732) Installing openssh (10.3_p1-r0)
+(680/732) Installing openssl-dev (3.5.6-r0)
+(681/732) Installing cellbroadcastd-libs (0.0.3-r2)
+(682/732) Installing phosh-mobile-settings-libs (0.54.0-r3)
+(683/732) Installing libportal (0.9.1-r9)
+(684/732) Installing libportal-gtk4 (0.9.1-r9)
+(685/732) Installing lm-sensors-libs (3.6.0-r5)
+(686/732) Installing phosh-mobile-settings (0.54.0-r3)
+(687/732) Installing polkit-common (127-r2)
+  Executing polkit-common-127-r2.pre-install
+(688/732) Installing polkit-openrc (127-r2)
+(689/732) Installing polkit-elogind (127-r2)
+(690/732) Installing py3-cairo (1.28.0-r1)
+(691/732) Installing py3-cairo-pyc (1.28.0-r1)
+(692/732) Installing py3-dbus (1.4.0-r1)
+(693/732) Installing py3-dbus-pyc (1.4.0-r1)
+(694/732) Installing libgfortran (15.2.0-r3)
+(695/732) Installing openblas (0.3.30-r2)
+(696/732) Installing py3-numpy (2.4.4-r0)
+(697/732) Installing py3-numpy-tests (2.4.4-r0)
+(698/732) Installing py3-numpy-pyc (2.4.4-r0)
+(699/732) Installing py3-pip (26.0.1-r1)
+(700/732) Installing py3-pip-pyc (26.0.1-r1)
+(701/732) Installing py3-pyserial (3.5-r9)
+(702/732) Installing py3-pyserial-pyc (3.5-r9)
+(703/732) Installing ripgrep (15.1.0-r0)
+(704/732) Installing seatd (0.9.3-r0)
+  Executing seatd-0.9.3-r0.pre-install
+  Executing seatd-0.9.3-r0.post-install
+  * If you need seatd-launch SUID binary, install it: apk add cmd:seatd-launch.
+(705/732) Installing seatd-openrc (0.9.3-r0)
+(706/732) Installing simdutf (8.2.0-r0)
+(707/732) Installing util-linux (2.41.4-r0)
+(708/732) Installing dmesg (2.41.4-r0)
+(709/732) Installing setarch (2.41.4-r0)
+(710/732) Installing util-linux-misc (2.41.4-r0)
+(711/732) Installing runuser (2.41.4-r0)
+(712/732) Installing mount (2.41.4-r0)
+(713/732) Installing losetup (2.41.4-r0)
+(714/732) Installing hexdump (2.41.4-r0)
+(715/732) Installing uuidgen (2.41.4-r0)
+(716/732) Installing blkid (2.41.4-r0)
+(717/732) Installing sfdisk (2.41.4-r0)
+(718/732) Installing mcookie (2.41.4-r0)
+(719/732) Installing agetty (2.41.4-r0)
+(720/732) Installing agetty-openrc (0.63-r1)
+(721/732) Installing wipefs (2.41.4-r0)
+(722/732) Installing cfdisk (2.41.4-r0)
+(723/732) Installing umount (2.41.4-r0)
+(724/732) Installing util-linux-openrc (2.41.4-r0)
+(725/732) Installing flock (2.41.4-r0)
+(726/732) Installing lsblk (2.41.4-r0)
+(727/732) Installing setpriv (2.41.4-r0)
+(728/732) Installing lscpu (2.41.4-r0)
+(729/732) Installing logger (2.41.4-r0)
+(730/732) Installing partx (2.41.4-r0)
+(731/732) Installing fstrim (2.41.4-r0)
+(732/732) Installing findmnt (2.41.4-r0)
+Executing busybox-1.37.0-r31.trigger
+Executing fontconfig-2.17.1-r1.trigger
+Executing glib-2.88.0-r1.trigger
+Executing shared-mime-info-2.4-r7.trigger
+Executing dbus-1.16.2-r2.trigger
+Executing ca-certificates-20260413-r0.trigger
+Executing eudev-3.2.14-r6.trigger
+Executing gtk+3.0-3.24.52-r0.trigger
+Executing gtk-update-icon-cache-3.24.52-r0.trigger
+Executing cracklib-2.10.3-r1.trigger
+Executing desktop-file-utils-0.28-r0.trigger
+Executing phosh-0.54.0-r0.trigger
+Executing kmod-34.2-r1.trigger
+Executing mkinitfs-3.13.0-r0.trigger
+* creating /boot/initramfs-virt for 6.18.24-0-virt
+OK: 1820.9 MiB in 732 packages
+OK: 1820.9 MiB in 732 packages
+Checking gmobile version and symbols...
+gmobile: Functions useful in mobile related, glib based projects
+gmobile: https://gitlab.gnome.org/World/Phosh/gmobile
+gmobile: 72 KiB
+OK: gmobile has gm_display_panel_get_corner_radii symbol
+=== build-qemu: base rootfs configuration ===
+=== build-qemu: regenerate initramfs with virtio modules ===
+Regenerating initramfs for kernel 6.18.24-0-virt...
+creating /target/boot/initramfs-virt for 6.18.24-0-virt
+Verified: /etc/modules included in initramfs
+virtio_blk
+virtio_net
+virtio_gpu
+virtio_input
+evdev
+ext4
+drm
+=== build-qemu: build/install custom phosh + rust components ===
+(  1/556) Upgrading musl (1.2.5-r21 -> 1.2.6-r2)
+(  2/556) Upgrading zlib (1.3.1-r2 -> 1.3.2-r0)
+(  3/556) Installing libgcc (15.2.0-r3)
+(  4/556) Installing jansson (2.15.0-r0)
+(  5/556) Installing libstdc++ (15.2.0-r3)
+(  6/556) Installing zstd-libs (1.5.7-r2)
+(  7/556) Installing binutils (2.45.1-r1)
+(  8/556) Installing libmagic (5.47-r1)
+(  9/556) Installing file (5.47-r1)
+( 10/556) Installing libgomp (15.2.0-r3)
+( 11/556) Installing libatomic (15.2.0-r3)
+( 12/556) Installing gmp (6.3.0-r4)
+( 13/556) Installing isl26 (0.26-r2)
+( 14/556) Installing mpfr4 (4.2.2-r0)
+( 15/556) Installing mpc1 (1.3.1-r1)
+( 16/556) Installing gcc (15.2.0-r3)
+( 17/556) Installing libstdc++-dev (15.2.0-r3)
+( 18/556) Installing musl-dev (1.2.6-r2)
+( 19/556) Installing g++ (15.2.0-r3)
+( 20/556) Installing make (4.4.1-r4)
+( 21/556) Installing fortify-headers (3.0.1-r2)
+( 22/556) Installing patch (2.8-r0)
+( 23/556) Installing build-base (0.5-r4)
+( 24/556) Installing cairo-tools (1.18.4-r1)
+( 25/556) Installing libxau (1.0.12-r0)
+( 26/556) Installing libmd (1.1.0-r0)
+( 27/556) Installing libbsd (0.12.2-r0)
+( 28/556) Installing libxdmcp (1.1.5-r1)
+( 29/556) Installing libxcb (1.17.0-r1)
+( 30/556) Installing libx11 (1.8.13-r0)
+( 31/556) Installing libxext (1.3.7-r0)
+( 32/556) Installing libxrender (0.9.12-r0)
+( 33/556) Installing libexpat (2.7.5-r0)
+( 34/556) Installing brotli-libs (1.2.0-r1)
+( 35/556) Installing libbz2 (1.0.8-r6)
+( 36/556) Installing libpng (1.6.58-r0)
+( 37/556) Installing freetype (2.14.2-r0)
+( 38/556) Installing fontconfig (2.17.1-r1)
+( 39/556) Installing pixman (0.46.4-r0)
+( 40/556) Installing cairo (1.18.4-r1)
+( 41/556) Installing libffi (3.5.2-r1)
+( 42/556) Installing libintl (1.0-r0)
+( 43/556) Installing libeconf (0.8.3-r0)
+( 44/556) Installing libblkid (2.41.4-r0)
+( 45/556) Installing libmount (2.41.4-r0)
+( 46/556) Installing pcre2 (10.47-r0)
+( 47/556) Installing glib (2.88.0-r1)
+( 48/556) Installing cairo-gobject (1.18.4-r1)
+( 49/556) Installing expat (2.7.5-r0)
+( 50/556) Installing pkgconf (2.5.1-r0)
+( 51/556) Installing expat-dev (2.7.5-r0)
+( 52/556) Installing bzip2-dev (1.0.8-r6)
+( 53/556) Installing brotli (1.2.0-r1)
+( 54/556) Installing brotli-dev (1.2.0-r1)
+( 55/556) Installing zlib-dev (1.3.2-r0)
+( 56/556) Installing libpng-dev (1.6.58-r0)
+( 57/556) Installing freetype-dev (2.14.2-r0)
+( 58/556) Installing fontconfig-dev (2.17.1-r1)
+( 59/556) Installing xz-libs (5.8.2-r0)
+( 60/556) Installing libxml2 (2.13.9-r1)
+( 61/556) Installing libxml2-utils (2.13.9-r1)
+( 62/556) Installing docbook-xml (4.5-r10)
+  Executing docbook-xml-4.5-r10.post-install
+( 63/556) Installing libxslt (1.1.43-r3)
+( 64/556) Installing docbook-xsl-ns (1.79.2-r13)
+  Executing docbook-xsl-ns-1.79.2-r13.post-install
+( 65/556) Installing docbook-xsl-nons (1.79.2-r13)
+  Executing docbook-xsl-nons-1.79.2-r13.post-install
+( 66/556) Installing docbook-xsl (1.79.2-r13)
+( 67/556) Installing xz (5.8.2-r0)
+( 68/556) Installing gettext-asprintf (1.0-r0)
+( 69/556) Installing ncurses-terminfo-base (6.6_p20260404-r0)
+( 70/556) Installing libncursesw (6.6_p20260404-r0)
+( 71/556) Installing libunistring (1.4.2-r0)
+( 72/556) Installing gettext-libs (1.0-r0)
+( 73/556) Installing gettext-envsubst (1.0-r0)
+( 74/556) Installing gettext (1.0-r0)
+( 75/556) Installing gettext-dev (1.0-r0)
+( 76/556) Installing gdbm (1.26-r0)
+( 77/556) Installing mpdecimal (4.0.1-r0)
+( 78/556) Installing libpanelw (6.6_p20260404-r0)
+( 79/556) Installing readline (8.3.3-r1)
+( 80/556) Installing sqlite-libs (3.53.0-r0)
+( 81/556) Installing python3 (3.14.3-r0)
+( 82/556) Installing python3-pycache-pyc0 (3.14.3-r0)
+( 83/556) Installing pyc (3.14.3-r0)
+( 84/556) Installing python3-pyc (3.14.3-r0)
+( 85/556) Installing py3-parsing (3.3.2-r1)
+( 86/556) Installing py3-parsing-pyc (3.3.2-r1)
+( 87/556) Installing py3-packaging (26.1-r0)
+( 88/556) Installing py3-packaging-pyc (26.1-r0)
+( 89/556) Installing linux-headers (7.0.0-r0)
+( 90/556) Installing libffi-dev (3.5.2-r1)
+( 91/556) Installing bsd-compat-headers (0.7.2-r6)
+( 92/556) Installing libformw (6.6_p20260404-r0)
+( 93/556) Installing libmenuw (6.6_p20260404-r0)
+( 94/556) Installing libncurses++ (6.6_p20260404-r0)
+( 95/556) Installing ncurses-dev (6.6_p20260404-r0)
+( 96/556) Installing libedit (20251016.3.1-r1)
+( 97/556) Installing libedit-dev (20251016.3.1-r1)
+( 98/556) Installing libpcre2-16 (10.47-r0)
+( 99/556) Installing libpcre2-32 (10.47-r0)
+(100/556) Installing pcre2-dev (10.47-r0)
+(101/556) Installing libuuid (2.41.4-r0)
+(102/556) Installing libfdisk (2.41.4-r0)
+(103/556) Installing liblastlog2 (2.41.4-r0)
+(104/556) Installing libsmartcols (2.41.4-r0)
+(105/556) Installing sqlite (3.53.0-r0)
+(106/556) Installing sqlite-dev (3.53.0-r0)
+(107/556) Installing util-linux-dev (2.41.4-r0)
+(108/556) Installing glib-dev (2.88.0-r1)
+(109/556) Installing pixman-dev (0.46.4-r0)
+(110/556) Installing xorgproto (2025.1-r0)
+(111/556) Installing libxau-dev (1.0.12-r0)
+(112/556) Installing xcb-proto (1.17.0-r1)
+(113/556) Installing xcb-proto-pyc (1.17.0-r1)
+(114/556) Installing libxdmcp-dev (1.1.5-r1)
+(115/556) Installing libxcb-dev (1.17.0-r1)
+(116/556) Installing xtrans (1.6.0-r0)
+(117/556) Installing libx11-dev (1.8.13-r0)
+(118/556) Installing libxext-dev (1.3.7-r0)
+(119/556) Installing libxrender-dev (0.9.12-r0)
+(120/556) Installing cairo-dev (1.18.4-r1)
+(121/556) Installing callaudiod-libs (0.1.99-r0)
+(122/556) Installing callaudiod-dev (0.1.99-r0)
+(123/556) Installing llvm22-libs (22.1.3-r0)
+(124/556) Installing scudo-malloc (22.1.3-r0)
+(125/556) Installing rust (1.95.0-r0)
+(126/556) Installing c-ares (1.34.6-r0)
+(127/556) Installing libidn2 (2.3.8-r0)
+(128/556) Installing nghttp2-libs (1.69.0-r0)
+(129/556) Installing libpsl (0.21.5-r3)
+(130/556) Installing libcurl (8.19.0-r0)
+(131/556) Installing cargo (1.95.0-r0)
+(132/556) Installing dbus-libs (1.16.2-r2)
+(133/556) Installing dbus-dev (1.16.2-r2)
+(134/556) Installing libcap2 (2.78-r0)
+(135/556) Installing libelogind (255.22-r2)
+(136/556) Installing elogind-dev (255.22-r2)
+(137/556) Installing diffutils (3.12-r0)
+(138/556) Installing libltdl (2.6.0-r1)
+(139/556) Installing libtool (2.6.0-r1)
+(140/556) Installing py3-setuptools (82.0.1-r1)
+(141/556) Installing py3-setuptools-pyc (82.0.1-r1)
+(142/556) Installing gobject-introspection (1.86.0-r1)
+(143/556) Installing gobject-introspection-dev (1.86.0-r1)
+(144/556) Installing shared-mime-info (2.4-r7)
+(145/556) Installing bubblewrap (0.11.2-r0)
+(146/556) Installing lcms2 (2.17-r0)
+(147/556) Installing libseccomp (2.6.0-r2)
+(148/556) Installing libglycin (2.1.0-r0)
+  Executing libglycin-2.1.0-r0.post-install
+  * glycin loaders got split into their individual subpackages.
+  * By default, only glycin-image-rs & glycin-svg are installed.
+  * Additional loader subpackages are glycin-heif, glycin-jxl & glycin-raw.
+  * 
+  * To install all available loaders, install glycin-loaders-all.
+  * 
+  * Also the glycin-thumbnailer got subpackaged and isn't installed by default.
+(149/556) Installing glycin-image-rs (2.1.0-r0)
+(150/556) Installing libdav1d (1.5.3-r0)
+(151/556) Installing libxft (2.3.9-r0)
+(152/556) Installing fribidi (1.0.16-r3)
+(153/556) Installing graphite2 (1.3.14-r6)
+(154/556) Installing harfbuzz (13.2.1-r0)
+(155/556) Installing pango (1.57.1-r0)
+(156/556) Installing librsvg (2.62.1-r0)
+(157/556) Installing glycin-svg (2.1.0-r0)
+(158/556) Installing gdk-pixbuf (2.44.6-r0)
+(159/556) Installing lcms2-plugins (2.17-r0)
+(160/556) Installing libjpeg-turbo (3.1.3-r0)
+(161/556) Installing libturbojpeg (3.1.3-r0)
+(162/556) Installing libjpeg-turbo-dev (3.1.3-r0)
+(163/556) Installing libsharpyuv (1.6.0-r0)
+(164/556) Installing libwebp (1.6.0-r0)
+(165/556) Installing tiff (4.7.1-r0)
+(166/556) Installing libtiffxx (4.7.1-r0)
+(167/556) Installing libwebpdecoder (1.6.0-r0)
+(168/556) Installing libwebpdemux (1.6.0-r0)
+(169/556) Installing libwebpmux (1.6.0-r0)
+(170/556) Installing libwebp-dev (1.6.0-r0)
+(171/556) Installing zstd (1.5.7-r2)
+(172/556) Installing zstd-dev (1.5.7-r2)
+(173/556) Installing tiff-dev (4.7.1-r0)
+(174/556) Installing lcms2-dev (2.17-r0)
+(175/556) Installing libseccomp-dev (2.6.0-r2)
+(176/556) Installing libglycin-dev (2.1.0-r0)
+(177/556) Installing gdk-pixbuf-dev (2.44.6-r0)
+(178/556) Installing libepoxy (1.5.10-r1)
+(179/556) Installing hwdata-pci (0.406-r0)
+(180/556) Installing libpciaccess (0.18.1-r1)
+(181/556) Installing libdrm (2.4.131-r0)
+(182/556) Installing libpciaccess-dev (0.18.1-r1)
+(183/556) Installing libdrm-dev (2.4.131-r0)
+(184/556) Installing libxdamage (1.1.7-r0)
+(185/556) Installing libxfixes (6.0.2-r0)
+(186/556) Installing libxfixes-dev (6.0.2-r0)
+(187/556) Installing libxdamage-dev (1.1.7-r0)
+(188/556) Installing libxshmfence (1.3.3-r0)
+(189/556) Installing libxshmfence-dev (1.3.3-r0)
+(190/556) Installing spirv-tools (1.4.341.0-r0)
+(191/556) Installing libelf (0.195-r0)
+(192/556) Installing mesa (26.0.5-r0)
+(193/556) Installing mesa-gles (26.0.5-r0)
+(194/556) Installing mesa-gbm (26.0.5-r0)
+(195/556) Installing wayland-libs-client (1.25.0-r0)
+(196/556) Installing mesa-egl (26.0.5-r0)
+(197/556) Installing libxxf86vm (1.1.7-r0)
+(198/556) Installing mesa-gl (26.0.5-r0)
+(199/556) Installing clang22-headers (22.1.3-r0)
+(200/556) Installing libclc (22.1.3-r0)
+(201/556) Installing spirv-llvm-translator-libs (22.1.0-r0)
+(202/556) Installing clang22-libs (22.1.3-r0)
+(203/556) Installing mesa-rusticl (26.0.5-r0)
+(204/556) Installing libxxf86vm-dev (1.1.7-r0)
+(205/556) Installing mesa-dev (26.0.5-r0)
+(206/556) Installing libepoxy-dev (1.5.10-r1)
+(207/556) Installing libxi (1.8.2-r0)
+(208/556) Installing libxi-dev (1.8.2-r0)
+(209/556) Installing libxinerama (1.1.6-r0)
+(210/556) Installing libxinerama-dev (1.1.6-r0)
+(211/556) Installing xkeyboard-config (2.46-r0)
+(212/556) Installing libxkbcommon (1.13.1-r0)
+(213/556) Installing libxkbcommon-x11 (1.13.1-r0)
+(214/556) Installing xz-dev (5.8.2-r0)
+(215/556) Installing libxml2-dev (2.13.9-r1)
+(216/556) Installing libxkbcommon-dev (1.13.1-r0)
+(217/556) Installing wayland-libs-cursor (1.25.0-r0)
+(218/556) Installing wayland-protocols (1.48-r0)
+(219/556) Installing libxcomposite (0.4.7-r0)
+(220/556) Installing libxcursor (1.2.3-r0)
+(221/556) Installing libxrandr (1.5.5-r0)
+(222/556) Installing libatk-1.0 (2.60.1-r0)
+(223/556) Installing at-spi2-core-libs (2.60.1-r0)
+(224/556) Installing libxtst (1.2.5-r0)
+(225/556) Installing at-spi2-core (2.60.1-r0)
+(226/556) Installing libatk-bridge-2.0 (2.60.1-r0)
+(227/556) Installing avahi-libs (0.8-r26)
+(228/556) Installing nettle (3.10.2-r0)
+(229/556) Installing libtasn1 (4.21.0-r0)
+(230/556) Installing p11-kit (0.25.5-r2)
+(231/556) Installing gnutls (3.8.12-r0)
+(232/556) Installing cups-libs (2.4.16-r0)
+(233/556) Installing wayland-libs-egl (1.25.0-r0)
+(234/556) Installing gtk+3.0 (3.24.52-r0)
+(235/556) Installing libxtst-dev (1.2.5-r0)
+(236/556) Installing at-spi2-core-dev (2.60.1-r0)
+(237/556) Installing fribidi-dev (1.0.16-r3)
+(238/556) Installing pango-tools (1.57.1-r0)
+(239/556) Installing harfbuzz-cairo (13.2.1-r0)
+(240/556) Installing harfbuzz-gobject (13.2.1-r0)
+(241/556) Installing icu-data-en (78.1-r0)
+  Executing icu-data-en-78.1-r0.post-install
+  * If you need ICU with non-English locales and legacy charset support, install
+  * package icu-data-full.
+(242/556) Installing icu-libs (78.1-r0)
+(243/556) Installing harfbuzz-icu (13.2.1-r0)
+(244/556) Installing harfbuzz-subset (13.2.1-r0)
+(245/556) Installing graphite2-dev (1.3.14-r6)
+(246/556) Installing icu (78.1-r0)
+(247/556) Installing icu-dev (78.1-r0)
+(248/556) Installing harfbuzz-dev (13.2.1-r0)
+(249/556) Installing libxft-dev (2.3.9-r0)
+(250/556) Installing pango-dev (1.57.1-r0)
+(251/556) Installing wayland-libs-server (1.25.0-r0)
+(252/556) Installing wayland-dev (1.25.0-r0)
+(253/556) Installing libxcomposite-dev (0.4.7-r0)
+(254/556) Installing libxcursor-dev (1.2.3-r0)
+(255/556) Installing libxrandr-dev (1.5.5-r0)
+(256/556) Installing gtk+3.0-dev (3.24.52-r0)
+(257/556) Installing libice (1.1.2-r0)
+(258/556) Installing libsm (1.2.6-r0)
+(259/556) Installing libxt (1.3.1-r0)
+(260/556) Installing jbig2dec (0.20-r0)
+(261/556) Installing openjpeg (2.5.4-r1)
+(262/556) Installing ghostscript (10.07.0-r0)
+(263/556) Installing libspectre (0.2.12-r2)
+(264/556) Installing libspectre-dev (0.2.12-r2)
+(265/556) Installing nspr (4.38.2-r0)
+(266/556) Installing nss (3.123.1-r0)
+(267/556) Installing poppler (25.12.0-r0)
+(268/556) Installing poppler-glib (25.12.0-r0)
+(269/556) Installing openjpeg-tools (2.5.4-r1)
+(270/556) Installing openjpeg-dev (2.5.4-r1)
+(271/556) Installing nspr-dev (4.38.2-r0)
+(272/556) Installing nss-dev (3.123.1-r0)
+(273/556) Installing poppler-dev (25.12.0-r0)
+(274/556) Installing acl-libs (2.3.2-r1)
+(275/556) Installing lz4-libs (1.10.0-r1)
+(276/556) Installing libarchive (3.8.7-r0)
+(277/556) Installing djvulibre-libs (3.5.29-r1)
+(278/556) Installing iso-codes (4.20.1-r0)
+(279/556) Installing enchant2-libs (2.8.15-r0)
+(280/556) Installing gspell (1.14.3-r0)
+(281/556) Installing gstreamer (1.28.1-r0)
+(282/556) Installing gstreamer-ptp-helper (1.28.1-r0)
+(283/556) Installing libxv (1.0.13-r0)
+(284/556) Installing alsa-lib (1.2.15.3-r0)
+(285/556) Installing cdparanoia-libs (10.2-r14)
+(286/556) Installing graphene (1.10.8-r5)
+(287/556) Installing libogg (1.3.6-r0)
+(288/556) Installing opus (1.6.1-r0)
+(289/556) Installing orc (0.4.41-r0)
+(290/556) Installing libtheora (1.2.0-r0)
+(291/556) Installing libvorbis (1.3.7-r2)
+(292/556) Installing gst-plugins-base (1.28.1-r1)
+(293/556) Installing evince-libs (48.1-r2)
+(294/556) Installing evince-dev (48.1-r2)
+(295/556) Installing libgpg-error (1.57-r0)
+(296/556) Installing libgcrypt (1.12.2-r0)
+(297/556) Installing gcr-base (3.41.2-r2)
+(298/556) Installing p11-kit-dev (0.25.5-r2)
+(299/556) Installing gcr-dev (3.41.2-r2)
+(300/556) Installing sound-theme-freedesktop (0.8-r2)
+(301/556) Installing eudev-libs (3.2.14-r6)
+(302/556) Installing libcanberra (0.30-r12)
+(303/556) Installing libcanberra-gstreamer (0.30-r12)
+(304/556) Installing libcanberra-alsa (0.30-r12)
+(305/556) Installing libcanberra-gtk3 (0.30-r12)
+(306/556) Installing gcr (3.41.2-r2)
+(307/556) Installing libcap-ng (0.8.5-r2)
+(308/556) Installing gnome-keyring (50.0-r0)
+(309/556) Installing skalibs-libs (2.14.5.1-r0)
+(310/556) Installing utmps-libs (0.1.3.2-r1)
+(311/556) Installing linux-pam (1.7.1-r2)
+(312/556) Installing gnome-keyring-pam (50.0-r0)
+(313/556) Installing adwaita-fonts-sans (50.0-r0)
+(314/556) Installing adwaita-fonts-mono (50.0-r0)
+(315/556) Installing adwaita-fonts (50.0-r0)
+(316/556) Installing libfyaml (0.9.5-r1)
+(317/556) Installing libxmlb (0.3.26-r0)
+(318/556) Installing appstream (1.1.1-r1)
+  Executing appstream-1.1.1-r1.post-install
+  * ✔ Metadata cache was updated successfully.
+(319/556) Installing hicolor-icon-theme (0.18-r0)
+(320/556) Installing gtk-update-icon-cache (3.24.52-r0)
+(321/556) Installing tzdata (2026a-r0)
+(322/556) Installing openexr-libiex (3.4.4-r0)
+(323/556) Installing imath (3.2.2-r1)
+(324/556) Installing openexr-libilmthread (3.4.4-r0)
+(325/556) Installing libdeflate (1.25-r0)
+(326/556) Installing openexr (3.4.4-r0)
+(327/556) Installing openexr-libopenexrcore (3.4.4-r0)
+(328/556) Installing openexr-libopenexr (3.4.4-r0)
+(329/556) Installing soundtouch (2.4.0-r0)
+(330/556) Installing libSvtAv1Enc (4.1.0-r0)
+(331/556) Installing aom-libs (3.13.3-r0)
+(332/556) Installing libunibreak (6.1-r0)
+(333/556) Installing libass (0.17.4-r1)
+(334/556) Installing libraw1394 (2.1.2-r5)
+(335/556) Installing libusb (1.0.29-r0)
+(336/556) Installing libdc1394 (2.2.7-r0)
+(337/556) Installing libde265 (1.0.16-r0)
+(338/556) Installing tslib (1.24-r0)
+(339/556) Installing directfb (1.7.7-r8)
+(340/556) Installing libdvdcss (1.4.3-r0)
+(341/556) Installing libdvdread (6.1.3-r2)
+(342/556) Installing libdvdnav (6.1.1-r1)
+(343/556) Installing faac (1.31.1-r0)
+(344/556) Installing faad2-libs (2.11.2-r0)
+(345/556) Installing fdk-aac (2.0.2-r4)
+(346/556) Installing flite (2.2-r6)
+(347/556) Installing libfreeaptx (0.2.2-r0)
+(348/556) Installing gsm (1.0.23-r0)
+(349/556) Installing libgudev (238-r1)
+(350/556) Installing libldac (2.0.2.3-r1)
+(351/556) Installing libmodplug (0.8.9.0-r3)
+(352/556) Installing ca-certificates (20260413-r0)
+(353/556) Installing neon (0.36.0-r0)
+(354/556) Installing openal-soft-libs (1.25.1-r0)
+(355/556) Installing openh264 (2.6.0-r0)
+(356/556) Installing librtmp (2.4_git20190330-r5)
+(357/556) Installing sbc (2.1-r0)
+(358/556) Installing libflac (1.4.3-r2)
+(359/556) Installing lame-libs (3.100-r5)
+(360/556) Installing mpg123-libs (1.33.4-r0)
+(361/556) Installing libsndfile (1.2.2-r2)
+(362/556) Installing spandsp (0.0.6-r5)
+(363/556) Installing libsrt (1.5.3-r1)
+(364/556) Installing libsrtp (2.7.0-r0)
+(365/556) Installing libva (2.23.0-r0)
+(366/556) Installing vo-aacenc (0.1.3-r3)
+(367/556) Installing vo-amrwbenc (0.1.3-r3)
+(368/556) Installing vulkan-loader (1.4.347-r0)
+(369/556) Installing numactl (2.0.19-r0)
+(370/556) Installing x265-libs (4.1-r0)
+(371/556) Installing libzbar (0.23.93-r2)
+(372/556) Installing gst-plugins-bad (1.28.1-r0)
+(373/556) Installing gtk4.0 (4.22.2-r0)
+(374/556) Installing libadwaita (1.9.0-r0)
+(375/556) Installing gcr4-base (4.4.0.1-r1)
+(376/556) Installing json-glib (1.10.8-r0)
+(377/556) Installing keyutils-libs (1.6.3-r4)
+(378/556) Installing krb5-conf (1.0-r2)
+(379/556) Installing libcom_err (1.47.4-r0)
+(380/556) Installing libverto (0.3.2-r2)
+(381/556) Installing krb5-libs (1.22.2-r1)
+(382/556) Installing gsettings-desktop-schemas (50.1-r0)
+(383/556) Installing duktape (2.7.0-r1)
+(384/556) Installing libproxy (0.5.12-r0)
+(385/556) Installing glib-networking (2.80.1-r2)
+(386/556) Installing libsoup3 (3.6.6-r0)
+(387/556) Installing rest1 (0.9.1-r1)
+(388/556) Installing libsecret (0.21.7-r0)
+(389/556) Installing gnome-online-accounts (3.58.1-r0)
+(390/556) Installing gweather-locations (2026.2-r0)
+(391/556) Installing geocode-glib (3.26.4-r5)
+(392/556) Installing libgweather4 (4.6.0-r0)
+(393/556) Installing libical (3.0.20-r1)
+(394/556) Installing libsasl (2.1.28-r9)
+(395/556) Installing libldap (2.6.10-r0)
+(396/556) Installing abseil-cpp-city (20250814.1-r0)
+(397/556) Installing abseil-cpp-hash (20250814.1-r0)
+(398/556) Installing abseil-cpp-leak-check (20250814.1-r0)
+(399/556) Installing abseil-cpp-log-internal-nullguard (20250814.1-r0)
+(400/556) Installing abseil-cpp-raw-logging-internal (20250814.1-r0)
+(401/556) Installing abseil-cpp-strings-internal (20250814.1-r0)
+(402/556) Installing abseil-cpp-strings (20250814.1-r0)
+(403/556) Installing abseil-cpp-log-internal-check-op (20250814.1-r0)
+(404/556) Installing abseil-cpp-spinlock-wait (20250814.1-r0)
+(405/556) Installing abseil-cpp-base (20250814.1-r0)
+(406/556) Installing abseil-cpp-debugging-internal (20250814.1-r0)
+(407/556) Installing abseil-cpp-malloc-internal (20250814.1-r0)
+(408/556) Installing abseil-cpp-stacktrace (20250814.1-r0)
+(409/556) Installing abseil-cpp-symbolize (20250814.1-r0)
+(410/556) Installing abseil-cpp-examine-stack (20250814.1-r0)
+(411/556) Installing abseil-cpp-log-globals (20250814.1-r0)
+(412/556) Installing abseil-cpp-log-internal-globals (20250814.1-r0)
+(413/556) Installing abseil-cpp-int128 (20250814.1-r0)
+(414/556) Installing abseil-cpp-str-format-internal (20250814.1-r0)
+(415/556) Installing abseil-cpp-time-zone (20250814.1-r0)
+(416/556) Installing abseil-cpp-time (20250814.1-r0)
+(417/556) Installing abseil-cpp-log-internal-format (20250814.1-r0)
+(418/556) Installing abseil-cpp-log-sink (20250814.1-r0)
+(419/556) Installing abseil-cpp-kernel-timeout-internal (20250814.1-r0)
+(420/556) Installing abseil-cpp-tracing-internal (20250814.1-r0)
+(421/556) Installing abseil-cpp-synchronization (20250814.1-r0)
+(422/556) Installing abseil-cpp-log-internal-log-sink-set (20250814.1-r0)
+(423/556) Installing abseil-cpp-log-internal-proto (20250814.1-r0)
+(424/556) Installing abseil-cpp-log-internal-structured-proto (20250814.1-r0)
+(425/556) Installing abseil-cpp-strerror (20250814.1-r0)
+(426/556) Installing abseil-cpp-log-internal-message (20250814.1-r0)
+(427/556) Installing abseil-cpp-hashtablez-sampler (20250814.1-r0)
+(428/556) Installing abseil-cpp-raw-hash-set (20250814.1-r0)
+(429/556) Installing abseil-cpp-crc-internal (20250814.1-r0)
+(430/556) Installing abseil-cpp-crc32c (20250814.1-r0)
+(431/556) Installing abseil-cpp-crc-cord-state (20250814.1-r0)
+(432/556) Installing abseil-cpp-cord-internal (20250814.1-r0)
+(433/556) Installing abseil-cpp-exponential-biased (20250814.1-r0)
+(434/556) Installing abseil-cpp-cordz-functions (20250814.1-r0)
+(435/556) Installing abseil-cpp-cordz-handle (20250814.1-r0)
+(436/556) Installing abseil-cpp-cordz-info (20250814.1-r0)
+(437/556) Installing abseil-cpp-cord (20250814.1-r0)
+(438/556) Installing abseil-cpp-die-if-null (20250814.1-r0)
+(439/556) Installing abseil-cpp-log-internal-conditions (20250814.1-r0)
+(440/556) Installing abseil-cpp-status (20250814.1-r0)
+(441/556) Installing abseil-cpp-statusor (20250814.1-r0)
+(442/556) Installing abseil-cpp-throw-delegate (20250814.1-r0)
+(443/556) Installing abseil-cpp-log-initialize (20250814.1-r0)
+(444/556) Installing libprotoc (31.1-r1)
+(445/556) Installing protoc (31.1-r1)
+(446/556) Installing libprotobuf-lite (31.1-r1)
+(447/556) Installing protobuf (31.1-r1)
+(448/556) Installing libprotobuf (31.1-r1)
+(449/556) Installing libphonenumber (9.0.29-r0)
+(450/556) Installing dbus (1.16.2-r2)
+  Executing dbus-1.16.2-r2.pre-install
+  Executing dbus-1.16.2-r2.post-install
+(451/556) Installing dbus-daemon-launch-helper (1.16.2-r2)
+(452/556) Installing xdg-dbus-proxy (0.1.7-r0)
+(453/556) Installing libyuv (0.0.1928-r0)
+(454/556) Installing libavif (1.4.1-r0)
+(455/556) Installing hyphen (2.8.8-r3)
+(456/556) Installing libhwy (1.3.0-r0)
+(457/556) Installing libjxl (0.11.1-r5)
+(458/556) Installing libevdev (1.13.6-r0)
+(459/556) Installing hidapi (0.15.0-r0)
+(460/556) Installing libmanette (0.2.12-r0)
+(461/556) Installing libwoff2common (1.0.2-r4)
+(462/556) Installing libwoff2enc (1.0.2-r4)
+(463/556) Installing webkit2gtk-6.0 (2.48.1-r3)
+(464/556) Installing evolution-data-server (3.60.1-r2)
+(465/556) Installing vulkan-headers (1.4.347-r0)
+(466/556) Installing graphene-dev (1.10.8-r5)
+(467/556) Installing vulkan-loader-dev (1.4.347-r0)
+(468/556) Installing gtk4.0-dev (4.22.2-r0)
+(469/556) Installing json-glib-dev (1.10.8-r0)
+(470/556) Installing libical-dev (3.0.20-r1)
+(471/556) Installing libgpg-error-dev (1.57-r0)
+(472/556) Installing libgcrypt-dev (1.12.2-r0)
+(473/556) Installing libsecret-dev (0.21.7-r0)
+(474/556) Installing nghttp2-dev (1.69.0-r0)
+(475/556) Installing libpsl-utils (0.21.5-r3)
+(476/556) Installing libidn2-dev (2.3.8-r0)
+(477/556) Installing libpsl-dev (0.21.5-r3)
+(478/556) Installing libsoup3-dev (3.6.6-r0)
+(479/556) Installing evolution-data-server-dev (3.60.1-r2)
+(480/556) Installing feedbackd-device-themes (0.8.8-r1)
+(481/556) Installing gmobile (0.7.0-r0)
+(482/556) Installing gsound (1.0.3-r3)
+(483/556) Installing feedbackd (0.8.9-r1)
+  Executing feedbackd-0.8.9-r1.pre-install
+  * If you are switching between UIs on existing installations,
+  * make sure that you add your user to the feedbackd group.
+  * If the user isn't part of that group, the LED indicator won't be
+  * functional.
+(484/556) Installing feedbackd-dev (0.8.9-r1)
+(485/556) Installing git (2.54.0-r0)
+(486/556) Installing git-init-template (2.54.0-r0)
+(487/556) Installing libnotify (0.8.8-r0)
+(488/556) Installing polkit-noelogind-libs (127-r2)
+(489/556) Installing upower (1.91.0-r2)
+(490/556) Installing gnome-bluetooth-libs (47.2-r0)
+(491/556) Installing appstream-compose (1.1.1-r1)
+(492/556) Installing libb2 (0.98.1-r3)
+(493/556) Installing double-conversion (3.4.0-r0)
+(494/556) Installing qt6-qtbase (6.11.0-r0)
+(495/556) Installing appstream-qt (1.1.1-r1)
+(496/556) Installing appstream-dev (1.1.1-r1)
+(497/556) Installing libadwaita-dev (1.9.0-r0)
+(498/556) Installing gnome-bluetooth-dev (47.2-r0)
+(499/556) Installing gsettings-desktop-schemas-dev (50.1-r0)
+(500/556) Installing libgnome-desktop-4 (44.5-r0)
+(501/556) Installing libgnome-bg-4 (44.5-r0)
+(502/556) Installing libgnome-desktop-3 (44.5-r0)
+(503/556) Installing libgnome-rr-4 (44.5-r0)
+(504/556) Installing iso-codes-dev (4.20.1-r0)
+(505/556) Installing eudev-dev (3.2.14-r6)
+(506/556) Installing xkeyboard-config-dev (2.46-r0)
+(507/556) Installing gnome-desktop-dev (44.5-r0)
+(508/556) Installing gstreamer-dev (1.28.1-r0)
+(509/556) Installing libgudev-dev (238-r1)
+(510/556) Installing libhandy1 (1.8.3-r0)
+(511/556) Installing libhandy1-dev (1.8.3-r0)
+(512/556) Installing linux-pam-dev (1.7.1-r2)
+(513/556) Installing samurai (1.2-r8)
+(514/556) Installing meson (1.11.1-r0)
+(515/556) Installing meson-pyc (1.11.1-r0)
+(516/556) Installing libmm-glib (1.25.95_git20260422-r0)
+(517/556) Installing modemmanager-dev (1.25.95_git20260422-r0)
+(518/556) Installing libnm (1.52.2-r0)
+(519/556) Installing libndp (1.9-r1)
+(520/556) Installing networkmanager (1.52.2-r0)
+  Executing networkmanager-1.52.2-r0.pre-install
+  Executing networkmanager-1.52.2-r0.post-install
+  * 
+  * To modify system network connections without the root password, add your user
+  * account to the 'plugdev' group.
+  * 
+  * If you use wifi, bluetooth, ppp, wwan (mobile broadband), adsl or ovs (Open
+  * vSwitch), install the corresponding plugin: apk add networkmanager-<name>.
+  * 
+  * If you use NetworkManager features which require dnsmasq, you need to install
+  * dnsmasq support: apk add networkmanager-dnsmasq
+  * 
+(521/556) Installing networkmanager-dev (1.52.2-r0)
+(522/556) Installing ninja-build (1.13.2-r1)
+  Executing ninja-build-1.13.2-r1.post-install
+  * this only installs ninja to /usr/lib/ninja-build/bin/ninja
+  * add that to your path to use it, or invoke it directly.
+  * for most uses, you want samurai instead:
+  *  $ apk add samurai
+  * which has a "ninja" executable compatible with ninja.
+(523/556) Installing polkit-common (127-r2)
+  Executing polkit-common-127-r2.pre-install
+(524/556) Installing polkit-dev (127-r2)
+(525/556) Installing libasyncns (0.8-r5)
+(526/556) Installing soxr (0.1.3-r7)
+(527/556) Installing speexdsp (1.2.1-r2)
+(528/556) Installing tdb-libs (1.4.15-r1)
+(529/556) Installing libpulse (17.0-r7)
+(530/556) Installing libpulse-mainloop-glib (17.0-r7)
+(531/556) Installing pulseaudio-dev (17.0-r7)
+(532/556) Installing qrcodegen (1.8.0-r0)
+(533/556) Installing qrcodegen-dev (1.8.0-r0)
+(534/556) Installing upower-dev (1.91.0-r2)
+(535/556) Installing libxpm (3.5.19-r0)
+(536/556) Installing libgd (2.3.3-r10)
+(537/556) Installing gd (2.3.3-r10)
+(538/556) Installing perl (5.42.2-r0)
+(539/556) Installing perl-error (0.17030-r0)
+(540/556) Installing perl-git (2.54.0-r0)
+(541/556) Installing git-perl (2.54.0-r0)
+(542/556) Installing aom (3.13.3-r0)
+(543/556) Installing aom-dev (3.13.3-r0)
+(544/556) Installing dav1d-dev (1.5.3-r0)
+(545/556) Installing libavif-dev (1.4.1-r0)
+(546/556) Installing libxpm-dev (3.5.19-r0)
+(547/556) Installing gd-dev (2.3.3-r10)
+(548/556) Installing libgmpxx (6.3.0-r4)
+(549/556) Installing gmp-dev (6.3.0-r4)
+(550/556) Installing libice-dev (1.1.2-r0)
+(551/556) Installing libsm-dev (1.2.6-r0)
+(552/556) Installing python3-dev (3.14.3-r0)
+(553/556) Installing graphviz-libs (12.2.1-r3)
+(554/556) Installing graphviz-dev (12.2.1-r3)
+(555/556) Installing vala (0.56.19-r0)
+(556/556) Installing webkit2gtk-6.0-dev (2.48.1-r3)
+Executing busybox-1.37.0-r31.trigger
+Executing fontconfig-2.17.1-r1.trigger
+Executing glib-2.88.0-r1.trigger
+Executing shared-mime-info-2.4-r7.trigger
+Executing gtk+3.0-3.24.52-r0.trigger
+Executing gtk-update-icon-cache-3.24.52-r0.trigger
+Executing ca-certificates-20260413-r0.trigger
+Executing dbus-1.16.2-r2.trigger
+OK: 1785.4 MiB in 570 packages
+The Meson build system
+Version: 1.11.1
+Source dir: /work/iso-postmarketos/rust/phosh/phosh
+Build dir: /tmp/phosh-build
+Build type: native build
+Project name: phosh
+Project version: 0.54.0
+C compiler for the host machine: cc (gcc 15.2.0 "cc (Alpine 15.2.0) 15.2.0")
+C linker for the host machine: cc ld.bfd 2.45.1
+Host machine cpu family: aarch64
+Host machine cpu: aarch64
+Compiler for C supports arguments -Wcast-align: YES 
+Compiler for C supports arguments -Wdate-time: YES 
+Compiler for C supports arguments -Wdeclaration-after-statement: YES 
+Compiler for C supports arguments -Werror=format-security -Werror=format=2: YES 
+Compiler for C supports arguments -Wendif-labels: YES 
+Compiler for C supports arguments -Werror=incompatible-pointer-types: YES 
+Compiler for C supports arguments -Werror=missing-declarations: YES 
+Compiler for C supports arguments -Werror=overflow: YES 
+Compiler for C supports arguments -Werror=return-type: YES 
+Compiler for C supports arguments -Werror=shift-count-overflow: YES 
+Compiler for C supports arguments -Werror=shift-overflow=2: YES 
+Compiler for C supports arguments -Werror=implicit-fallthrough=3: YES 
+Compiler for C supports arguments -Wfloat-equal: YES 
+Compiler for C supports arguments -Wformat-nonliteral: YES 
+Compiler for C supports arguments -Wformat-security: YES 
+Compiler for C supports arguments -Winit-self: YES 
+Compiler for C supports arguments -Wmaybe-uninitialized: YES 
+Compiler for C supports arguments -Wmissing-field-initializers: YES 
+Compiler for C supports arguments -Wmissing-include-dirs: YES 
+Compiler for C supports arguments -Wmissing-noreturn: YES 
+Compiler for C supports arguments -Wnested-externs: YES 
+Compiler for C supports arguments -Wno-missing-field-initializers: YES 
+Compiler for C supports arguments -Wno-sign-compare: YES 
+Compiler for C supports arguments -Wno-strict-aliasing: YES 
+Compiler for C supports arguments -Wno-unused-parameter: YES 
+Compiler for C supports arguments -Wold-style-definition: YES 
+Compiler for C supports arguments -Wpointer-arith: YES 
+Compiler for C supports arguments -Wredundant-decls: YES 
+Compiler for C supports arguments -Wshadow: YES 
+Compiler for C supports arguments -Wstrict-prototypes: YES 
+Compiler for C supports arguments -Wswitch-default: YES 
+Compiler for C supports arguments -Wswitch-enum: YES 
+Compiler for C supports arguments -Wtype-limits: YES 
+Compiler for C supports arguments -Wundef: YES 
+Compiler for C supports arguments -Wunused-function: YES 
+Compiler for C supports arguments -fstack-protector-strong: YES 
+Found pkg-config: YES (/usr/bin/pkg-config) 2.5.1
+Run-time dependency appstream found: YES 1.1.1
+Run-time dependency libecal-2.0 found: YES 3.60.1
+Run-time dependency libedataserver-1.2 found: YES 3.60.1
+Run-time dependency fribidi found: YES 1.0.16
+Run-time dependency gcr-3 found: YES 3.41.2
+Run-time dependency glib-2.0 found: YES 2.88.0
+Run-time dependency gio-2.0 found: YES 2.88.0
+Run-time dependency gio-unix-2.0 found: YES 2.88.0
+Run-time dependency gnome-bluetooth-3.0 found: YES 47.2
+Did not find CMake 'cmake'
+Found CMake: NO
+Run-time dependency gmobile found: NO  (tried pkg-config and cmake)
+Looking for a fallback subproject for the dependency gmobile
+
+Executing subproject gmobile 
+
+gmobile| Project name: gmobile
+gmobile| Project version: 0.1.0
+gmobile| C compiler for the host machine: cc (gcc 15.2.0 "cc (Alpine 15.2.0) 15.2.0")
+gmobile| C linker for the host machine: cc ld.bfd 2.45.1
+gmobile| Run-time dependency epoll-shim found: NO  (tried pkg-config and cmake)
+gmobile| Dependency glib-2.0 for host machine found: YES 2.88.0 (cached)
+gmobile| Dependency gio-2.0 for host machine found: YES 2.88.0 (cached)
+gmobile| Run-time dependency json-glib-1.0 found: YES 1.10.8
+gmobile| Compiler for C supports arguments -Wcast-align: YES (cached)
+gmobile| Compiler for C supports arguments -Wdate-time: YES (cached)
+gmobile| Compiler for C supports arguments -Wdeclaration-after-statement: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=format-security -Werror=format=2: YES (cached)
+gmobile| Compiler for C supports arguments -Wendif-labels: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=incompatible-pointer-types: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=missing-declarations: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=overflow: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=return-type: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=shift-count-overflow: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=shift-overflow=2: YES (cached)
+gmobile| Compiler for C supports arguments -Werror=implicit-fallthrough=3: YES (cached)
+gmobile| Compiler for C supports arguments -Wfloat-equal: YES (cached)
+gmobile| Compiler for C supports arguments -Wformat-nonliteral: YES (cached)
+gmobile| Compiler for C supports arguments -Wformat-security: YES (cached)
+gmobile| Compiler for C supports arguments -Winit-self: YES (cached)
+gmobile| Compiler for C supports arguments -Wmaybe-uninitialized: YES (cached)
+gmobile| Compiler for C supports arguments -Wmissing-field-initializers: YES (cached)
+gmobile| Compiler for C supports arguments -Wmissing-include-dirs: YES (cached)
+gmobile| Compiler for C supports arguments -Wmissing-noreturn: YES (cached)
+gmobile| Compiler for C supports arguments -Wnested-externs: YES (cached)
+gmobile| Compiler for C supports arguments -Wno-missing-field-initializers: YES (cached)
+gmobile| Compiler for C supports arguments -Wno-sign-compare: YES (cached)
+gmobile| Compiler for C supports arguments -Wno-strict-aliasing: YES (cached)
+gmobile| Compiler for C supports arguments -Wno-unused-parameter: YES (cached)
+gmobile| Compiler for C supports arguments -Wold-style-definition: YES (cached)
+gmobile| Compiler for C supports arguments -Wpointer-arith: YES (cached)
+gmobile| Compiler for C supports arguments -Wredundant-decls: YES (cached)
+gmobile| Compiler for C supports arguments -Wshadow: YES (cached)
+gmobile| Compiler for C supports arguments -Wstrict-prototypes: YES (cached)
+gmobile| Compiler for C supports arguments -Wswitch-default: YES (cached)
+gmobile| Compiler for C supports arguments -Wswitch-enum: YES (cached)
+gmobile| Compiler for C supports arguments -Wtype-limits: YES (cached)
+gmobile| Compiler for C supports arguments -Wundef: YES (cached)
+gmobile| Compiler for C supports arguments -Wunused-function: YES (cached)
+gmobile| Compiler for C supports arguments -fstack-protector-strong: YES (cached)
+gmobile| Configuring gm-config.h using configuration
+gmobile| Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+gmobile| Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+gmobile| Library m found: YES
+gmobile| Library rt found: YES
+gmobile| Found pkg-config: YES (/usr/bin/pkg-config) 2.5.1
+gmobile| Build targets in project: 4
+gmobile| NOTICE: Future-deprecated features used:
+gmobile| * 1.1.0: {'"boolean option" keyword argument "value" of type str'}
+gmobile| Subproject gmobile finished.
+
+Dependency gmobile for host machine from subproject subprojects/gmobile found: YES 0.1.0
+Run-time dependency gmodule-no-export-2.0 found: YES 2.88.0
+Run-time dependency gnome-desktop-3.0 found: YES 44.5
+Run-time dependency gobject-2.0 found: YES 2.88.0
+Run-time dependency gsettings-desktop-schemas found: YES 50.1
+Run-time dependency gtk+-3.0 found: YES 3.24.52
+Run-time dependency gtk+-wayland-3.0 found: YES 3.24.52
+Run-time dependency gudev-1.0 found: YES 238
+
+Executing subproject libcall-ui 
+
+libcall-ui| Project name: libcall-ui
+libcall-ui| Project version: 0.1.5
+libcall-ui| C compiler for the host machine: cc (gcc 15.2.0 "cc (Alpine 15.2.0) 15.2.0")
+libcall-ui| C linker for the host machine: cc ld.bfd 2.45.1
+libcall-ui| Compiler for C supports arguments -Wcast-align: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wdate-time: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wdeclaration-after-statement: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=format-security -Werror=format=2: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wendif-labels: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=incompatible-pointer-types: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=missing-declarations: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=overflow: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=return-type: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=shift-count-overflow: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=shift-overflow=2: YES (cached)
+libcall-ui| Compiler for C supports arguments -Werror=implicit-fallthrough=3: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wfloat-equal: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wformat-nonliteral: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wformat-security: YES (cached)
+libcall-ui| Compiler for C supports arguments -Winit-self: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wmaybe-uninitialized: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wmissing-field-initializers: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wmissing-include-dirs: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wmissing-noreturn: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wnested-externs: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wno-strict-aliasing: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wno-unused-parameter: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wold-style-definition: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wpointer-arith: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wredundant-decls: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wshadow: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wsign-compare: YES
+libcall-ui| Compiler for C supports arguments -Wstrict-prototypes: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wswitch-default: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wswitch-enum: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wtype-limits: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wundef: YES (cached)
+libcall-ui| Compiler for C supports arguments -Wunused-function: YES (cached)
+libcall-ui| Compiler for C supports arguments -fstack-protector-strong: YES (cached)
+libcall-ui| Dependency gio-2.0 for host machine found: YES 2.88.0 (cached)
+libcall-ui| Dependency gtk+-3.0 for host machine found: YES 3.24.52 (cached)
+libcall-ui| Run-time dependency libhandy-1 found: YES 1.8.3
+libcall-ui| Run-time dependency libcallaudio-0.1 found: YES 0.1.99
+libcall-ui| Configuring cui-config.h using configuration
+libcall-ui| Program msgfmt found: YES (/usr/bin/msgfmt)
+libcall-ui| Program msginit found: YES (/usr/bin/msginit)
+libcall-ui| Program msgmerge found: YES (/usr/bin/msgmerge)
+libcall-ui| Program xgettext found: YES (/usr/bin/xgettext)
+libcall-ui| Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+libcall-ui| Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+libcall-ui| Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+libcall-ui| Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+libcall-ui| Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+libcall-ui| Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+libcall-ui| Library m found: YES
+libcall-ui| Library rt found: YES
+libcall-ui| Message:
+libcall-ui| -----------
+libcall-ui| libcall-ui 0.1.5
+
+libcall-ui| Tests: false
+libcall-ui| Documentation: false
+libcall-ui| Install i18n: false
+libcall-ui| -----------
+libcall-ui| Build targets in project: 42
+libcall-ui| Subproject libcall-ui finished.
+
+Run-time dependency libfeedback-0.0 found: YES 0.8.9
+
+Executing subproject gvc 
+
+gvc| Project name: gvc
+gvc| Project version: undefined
+gvc| C compiler for the host machine: cc (gcc 15.2.0 "cc (Alpine 15.2.0) 15.2.0")
+gvc| C linker for the host machine: cc ld.bfd 2.45.1
+gvc| Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+gvc| Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+gvc| Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+gvc| Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+gvc| Dependency gio-2.0 for host machine found: YES 2.88.0 (cached)
+gvc| Dependency gobject-2.0 for host machine found: YES 2.88.0 (cached)
+gvc| Run-time dependency libpulse found: YES 17.0
+gvc| Run-time dependency libpulse-mainloop-glib found: YES 17.0
+gvc| Configuring config.h using configuration
+gvc| Build targets in project: 45
+gvc| Subproject gvc finished.
+
+Dependency libhandy-1 for host machine found: YES 1.8.3 (cached)
+Run-time dependency libnm found: YES 1.52.2
+Run-time dependency polkit-agent-1 found: YES 127
+Run-time dependency libsoup-3.0 found: YES 3.6.6
+Run-time dependency libsystemd found: YES 255
+Run-time dependency mm-glib found: YES 1.25.95
+Run-time dependency libsecret-1 found: YES 0.21.7
+Run-time dependency upower-glib found: YES 1.91.0
+Run-time dependency wayland-client found: YES 1.25.0
+Run-time dependency wayland-protocols found: YES 1.48
+Checking if "Have rfkill_event_ext" compiles: YES 
+Checking for function "memfd_create" : YES 
+Configuring phosh-config.h using configuration
+Program desktop-file-validate found: NO
+Configuring mobi.phosh.Shell.desktop.in using configuration
+Configuring phosh.session.desktop.in using configuration
+Configuring phosh-session using configuration
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+Program glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Configuring session.conf using configuration
+Configuring mobi.phosh.Shell.service using configuration
+Program wayland-scanner found: YES (/usr/bin/wayland-scanner)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Run-time dependency gdk-pixbuf-2.0 found: YES 2.44.6
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-genmarshal found: YES (/usr/bin/glib-genmarshal)
+Library pam found: YES
+Library m found: YES
+Library rt found: YES
+Configuring phosh-plugin.h using configuration
+Configuring phosh-plugin-prefs-config.h using configuration
+Run-time dependency libadwaita-1 found: YES 1.9.0
+Run-time dependency gtk4 found: YES 4.22.2
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring calendar.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring emergency-info.desktop.in using configuration
+Dependency gtk4 for host machine found: YES 4.22.2 (cached)
+Dependency libadwaita-1 for host machine found: YES 1.9.0 (cached)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring launcher-box.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Program glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring media-players.desktop.in using configuration
+Run-time dependency evince-document-3.0 found: YES 48.1
+Run-time dependency evince-view-3.0 found: YES 48.1
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring ticket-box.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Program glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/gdbus-codegen found: YES (/usr/bin/gdbus-codegen)
+Configuring upcoming-events.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Program glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring caffeine-quick-setting.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Program glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Dependency gsettings-desktop-schemas for host machine found: YES 50.1 (cached)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring dark-mode-quick-setting.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring location-quick-setting.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring mobile-data-quick-setting.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring night-light-quick-setting.desktop.in using configuration
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+Dependency glib-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-mkenums found: YES (/usr/bin/glib-mkenums)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring pomodoro-quick-setting.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Program glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring scaling-quick-setting.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring simple-custom-quick-setting.desktop.in using configuration
+Run-time dependency qrcodegen found: YES
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring wifi-hotspot-quick-setting.desktop.in using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-resources found: YES (/usr/bin/glib-compile-resources)
+Configuring simple-custom-status-icon.desktop.in using configuration
+Configuring run using configuration
+Configuring run_tool using configuration
+Program check-exported-symbols found: YES (/work/iso-postmarketos/rust/phosh/phosh/tools/check-exported-symbols)
+Program check-deprecated-ui-props found: YES (/work/iso-postmarketos/rust/phosh/phosh/tools/check-deprecated-ui-props)
+Configuring mobi.phosh.Shell.CalendarServer.service using configuration
+Dependency gio-2.0 for build machine found: YES 2.88.0 (cached)
+Program /usr/bin/glib-compile-schemas found: YES (/usr/bin/glib-compile-schemas)
+Program gtk4-update-icon-cache found: YES (/usr/bin/gtk4-update-icon-cache)
+Build targets in project: 301
+
+gmobile 0.1.0
+
+  Build
+    Examples     : NO
+    Tests        : NO
+    Introspection: NO
+    Docmentation : NO
+
+phosh 0.54.0
+
+  Build
+    Tests                : NO
+    Phoc tests           : NO
+    Documentation        : NO
+    Introspection        : NO
+    Manual pages         : NO
+    Tools                : NO
+    Lockscreen Plugins   : YES
+    Quick Setting Plugins: YES
+    Animation slowdown   : 1
+    Bindings Library     : NO
+    ABI Compliance Check : NO
+    Searchd              : NO
+
+  Runtime
+    Compositor:          : /usr/bin/phoc
+
+  Subprojects
+    gmobile              : YES 1 warnings
+    gvc                  : YES
+    libcall-ui           : YES
+
+  User defined options
+    prefix               : /usr
+    tests                : false
+
+Found ninja-1.9 at /usr/bin/ninja
+ninja: entering directory '/tmp/phosh-build'
+[1/681] Compiling C object calendar-server/phosh-calendar-server.p/calendar-sources.c.o
+[2/681] Compiling C object calendar-server/phosh-calendar-server.p/calendar-server.c.o
+[3/681] Compiling C object tools/plugin-prefs.p/.._src_plugin-loader.c.o
+[4/681] Compiling C object tools/plugin-prefs.p/plugin-prefs-standalone.c.o
+[5/681] Merging translations for plugins/simple-custom-status-icon/simple-custom-status-icon.plugin
+[6/681] Generating plugins/simple-custom-status-icon/phosh-plugin-simple-custom-status-icon-resources_h with a custom command
+[7/681] Generating plugins/simple-custom-status-icon/phosh-plugin-simple-custom-status-icon-resources_c with a custom command
+[8/681] Merging translations for plugins/wifi-hotspot-quick-setting/wifi-hotspot-quick-setting.plugin
+[9/681] Generating plugins/wifi-hotspot-quick-setting/phosh-plugin-wifi-hotspot-quick-setting-resources_h with a custom command
+[10/681] Generating plugins/wifi-hotspot-quick-setting/phosh-plugin-wifi-hotspot-quick-setting-resources_c with a custom command
+[11/681] Merging translations for plugins/simple-custom-quick-setting/simple-custom-quick-setting.plugin
+[12/681] Generating plugins/simple-custom-quick-setting/phosh-plugin-simple-custom-quick-setting-resources_h with a custom command
+[13/681] Generating plugins/simple-custom-quick-setting/phosh-plugin-simple-custom-quick-setting-resources_c with a custom command
+[14/681] Merging translations for plugins/scaling-quick-setting/scaling-quick-setting.plugin
+[15/681] Generating plugins/scaling-quick-setting/phosh-plugin-scaling-quick-setting-resources_h with a custom command
+[16/681] Generating plugins/scaling-quick-setting/phosh-plugin-scaling-quick-setting-resources_c with a custom command
+[17/681] Generating plugins/pomodoro-quick-setting/prefs/phosh-plugin-prefs-pomodoro-quick-setting-resources_h with a custom command
+[18/681] Generating plugins/pomodoro-quick-setting/prefs/phosh-plugin-prefs-pomodoro-quick-setting-resources_c with a custom command
+[19/681] Compiling gschemas plugins/pomodoro-quick-setting/gsettings-compile-plugins_pomodoro-quick-setting
+[20/681] Compiling C object plugins/pomodoro-quick-setting/prefs/libphosh-plugin-prefs-pomodoro-quick-setting.so.p/pomodoro-quick-setting-prefs.c.o
+[21/681] Compiling C object plugins/pomodoro-quick-setting/prefs/libphosh-plugin-prefs-pomodoro-quick-setting.so.p/meson-generated_.._phosh-plugin-prefs-pomodoro-quick-setting-resources.c.o
+[22/681] Compiling C object plugins/pomodoro-quick-setting/prefs/libphosh-plugin-prefs-pomodoro-quick-setting.so.p/phosh-plugin-prefs-pomodoro-quick-setting.c.o
+[23/681] Merging translations for plugins/pomodoro-quick-setting/pomodoro-quick-setting.plugin
+[24/681] Generating GObject enum file plugins/pomodoro-quick-setting/pomodoro-enums.c (wrapped by meson because command contains newlines, to capture output)
+[25/681] Generating GObject enum file plugins/pomodoro-quick-setting/pomodoro-enums.h (wrapped by meson because command contains newlines, to capture output)
+[26/681] Generating plugins/pomodoro-quick-setting/phosh-plugin-pomodoro-quick-setting-resources_h with a custom command
+[27/681] Generating plugins/pomodoro-quick-setting/phosh-plugin-pomodoro-quick-setting-resources_c with a custom command
+[28/681] Merging translations for plugins/night-light-quick-setting/night-light-quick-setting.plugin
+[29/681] Generating plugins/night-light-quick-setting/phosh-plugin-night-light-quick-setting-resources_h with a custom command
+[30/681] Generating plugins/night-light-quick-setting/phosh-plugin-night-light-quick-setting-resources_c with a custom command
+[31/681] Merging translations for plugins/mobile-data-quick-setting/mobile-data-quick-setting.plugin
+[32/681] Generating plugins/mobile-data-quick-setting/phosh-plugin-mobile-data-quick-setting-resources_h with a custom command
+[33/681] Generating plugins/mobile-data-quick-setting/phosh-plugin-mobile-data-quick-setting-resources_c with a custom command
+[34/681] Merging translations for plugins/location-quick-setting/location-quick-setting.plugin
+[35/681] Generating plugins/location-quick-setting/phosh-plugin-location-quick-setting-resources_h with a custom command
+[36/681] Generating plugins/location-quick-setting/phosh-plugin-location-quick-setting-resources_c with a custom command
+[37/681] Merging translations for plugins/dark-mode-quick-setting/dark-mode-quick-setting.plugin
+[38/681] Generating plugins/dark-mode-quick-setting/phosh-plugin-dark-mode-quick-setting-resources_h with a custom command
+[39/681] Generating plugins/dark-mode-quick-setting/phosh-plugin-dark-mode-quick-setting-resources_c with a custom command
+[40/681] Generating plugins/caffeine-quick-setting/prefs/phosh-plugin-prefs-caffeine-quick-setting-resources_h with a custom command
+[41/681] Generating plugins/caffeine-quick-setting/prefs/phosh-plugin-prefs-caffeine-quick-setting-resources_c with a custom command
+[42/681] Compiling gschemas plugins/caffeine-quick-setting/gsettings-compile-plugins_caffeine-quick-setting
+[43/681] Merging translations for plugins/caffeine-quick-setting/caffeine-quick-setting.plugin
+[44/681] Generating plugins/caffeine-quick-setting/phosh-plugin-caffeine-quick-setting-resources_h with a custom command
+[45/681] Generating plugins/caffeine-quick-setting/phosh-plugin-caffeine-quick-setting-resources_c with a custom command
+[46/681] Generating plugins/upcoming-events/prefs/phosh-plugin-prefs-upcoming-events-resources_h with a custom command
+[47/681] Compiling C object plugins/upcoming-events/prefs/libphosh-plugin-prefs-upcoming-events.so.p/upcoming-events-prefs.c.o
+[48/681] Compiling C object plugins/upcoming-events/prefs/libphosh-plugin-prefs-upcoming-events.so.p/phosh-plugin-prefs-upcoming-events.c.o
+[49/681] Generating plugins/upcoming-events/prefs/phosh-plugin-prefs-upcoming-events-resources_c with a custom command
+[50/681] Compiling C object plugins/upcoming-events/prefs/libphosh-plugin-prefs-upcoming-events.so.p/meson-generated_.._phosh-plugin-prefs-upcoming-events-resources.c.o
+[51/681] Linking target calendar-server/phosh-calendar-server
+[52/681] Compiling gschemas plugins/upcoming-events/gsettings-compile-plugins_upcoming-events
+[53/681] Merging translations for plugins/upcoming-events/upcoming-events.plugin
+[54/681] Generating gdbus header plugins/upcoming-events/phosh-plugin-upcoming-events-phosh-calendar-dbus.h
+[55/681] Generating gdbus source plugins/upcoming-events/phosh-plugin-upcoming-events-phosh-calendar-dbus.c
+[56/681] Generating plugins/upcoming-events/phosh-plugin-upcoming-events-resources_h with a custom command
+[57/681] Generating plugins/upcoming-events/phosh-plugin-upcoming-events-resources_c with a custom command
+[58/681] Generating plugins/ticket-box/prefs/phosh-plugin-prefs-ticket-box-resources_h with a custom command
+[59/681] Compiling C object plugins/ticket-box/prefs/libphosh-plugin-prefs-ticket-box.so.p/ticket-box-prefs.c.o
+[60/681] Compiling C object plugins/ticket-box/prefs/libphosh-plugin-prefs-ticket-box.so.p/phosh-plugin-prefs-ticket-box.c.o
+[61/681] Generating plugins/ticket-box/prefs/phosh-plugin-prefs-ticket-box-resources_c with a custom command
+[62/681] Compiling C object plugins/ticket-box/prefs/libphosh-plugin-prefs-ticket-box.so.p/meson-generated_.._phosh-plugin-prefs-ticket-box-resources.c.o
+[63/681] Linking target plugins/pomodoro-quick-setting/prefs/libphosh-plugin-prefs-pomodoro-quick-setting.so
+[64/681] Compiling gschemas plugins/ticket-box/gsettings-compile-plugins_ticket-box
+[65/681] Merging translations for plugins/ticket-box/ticket-box.plugin
+[66/681] Generating plugins/ticket-box/phosh-plugin-ticket-box-resources_h with a custom command
+[67/681] Generating plugins/ticket-box/phosh-plugin-ticket-box-resources_c with a custom command
+[68/681] Merging translations for plugins/media-players/media-players.plugin
+[69/681] Generating plugins/media-players/phosh-plugin-media-players-resources_h with a custom command
+[70/681] Generating plugins/media-players/phosh-plugin-media-players-resources_c with a custom command
+[71/681] Compiling gschemas plugins/launcher-box/gsettings-compile-plugins_launcher-box
+[72/681] Merging translations for plugins/launcher-box/launcher-box.plugin
+[73/681] Generating plugins/launcher-box/phosh-plugin-launcher-box-resources_h with a custom command
+[74/681] Generating plugins/launcher-box/phosh-plugin-launcher-box-resources_c with a custom command
+[75/681] Generating plugins/emergency-info/prefs/phosh-plugin-prefs-emergency-info-resources_h with a custom command
+[76/681] Generating plugins/emergency-info/prefs/phosh-plugin-prefs-emergency-info-resources_c with a custom command
+[77/681] Compiling C object plugins/emergency-info/prefs/libphosh-plugin-prefs-emergency-info.so.p/phosh-plugin-prefs-emergency-info.c.o
+[78/681] Compiling C object plugins/emergency-info/prefs/libphosh-plugin-prefs-emergency-info.so.p/meson-generated_.._phosh-plugin-prefs-emergency-info-resources.c.o
+[79/681] Linking target tools/plugin-prefs
+[80/681] Compiling C object plugins/emergency-info/prefs/libphosh-plugin-prefs-emergency-info.so.p/emergency-info-prefs.c.o
+[81/681] Compiling C object plugins/emergency-info/prefs/libphosh-plugin-prefs-emergency-info.so.p/emergency-info-prefs-row.c.o
+[82/681] Merging translations for plugins/emergency-info/emergency-info.plugin
+[83/681] Linking target plugins/upcoming-events/prefs/libphosh-plugin-prefs-upcoming-events.so
+[84/681] Generating plugins/emergency-info/phosh-plugin-emergency-info-resources_h with a custom command
+[85/681] Generating plugins/emergency-info/phosh-plugin-emergency-info-resources_c with a custom command
+[86/681] Merging translations for plugins/calendar/calendar.plugin
+[87/681] Generating plugins/calendar/phosh-plugin-calendar-resources_h with a custom command
+[88/681] Generating plugins/calendar/phosh-plugin-calendar-resources_c with a custom command
+[89/681] Generating src/build-dynamic-list with a custom command (wrapped by meson to capture output)
+[90/681] Generating src/build-symbols-file with a custom command (wrapped by meson to capture output)
+[91/681] Generating protocol/wlr-screencopy-unstable-v1 source with a custom command
+[92/681] Generating protocol/wlr-output-power-management-unstable-v1 source with a custom command
+[93/681] Generating protocol/wlr-output-management-unstable-v1 source with a custom command
+[94/681] Generating protocol/wlr-layer-shell-unstable-v1 source with a custom command
+[95/681] Generating protocol/wlr-gamma-control-unstable-v1 source with a custom command
+[96/681] Generating protocol/wlr-foreign-toplevel-management-unstable-v1 source with a custom command
+[97/681] Generating protocol/virtual-keyboard-unstable-v1 source with a custom command
+[98/681] Generating protocol/phosh-private source with a custom command
+[99/681] Generating protocol/phoc-layer-shell-effects-unstable-v1 source with a custom command
+[100/681] Generating protocol/phoc-device-state-unstable-v1 source with a custom command
+[101/681] Generating protocol/input-method-unstable-v2 source with a custom command
+[102/681] Generating protocol/xdg-output-unstable-v1 source with a custom command
+[103/681] Generating protocol/ext-idle-notify-v1 source with a custom command
+[104/681] Generating protocol/xdg-shell source with a custom command
+[105/681] Generating glib marshaller header src/phosh-marshalers_h
+[106/681] Generating GObject enum file src/phosh-enums.h (wrapped by meson because command contains newlines, to capture output)
+[107/681] Generating protocol/xdg-shell client header with a custom command
+[108/681] Generating protocol/xdg-output-unstable-v1 client header with a custom command
+[109/681] Generating protocol/wlr-screencopy-unstable-v1 client header with a custom command
+[110/681] Generating protocol/wlr-output-power-management-unstable-v1 client header with a custom command
+[111/681] Generating protocol/wlr-output-management-unstable-v1 client header with a custom command
+[112/681] Generating protocol/wlr-layer-shell-unstable-v1 client header with a custom command
+[113/681] Generating protocol/wlr-gamma-control-unstable-v1 client header with a custom command
+[114/681] Generating protocol/wlr-foreign-toplevel-management-unstable-v1 client header with a custom command
+[115/681] Generating protocol/virtual-keyboard-unstable-v1 client header with a custom command
+[116/681] Generating protocol/phosh-private client header with a custom command
+[117/681] Generating protocol/phoc-layer-shell-effects-unstable-v1 client header with a custom command
+[118/681] Generating glib marshaller source src/phosh-marshalers_c
+[119/681] Generating protocol/phoc-device-state-unstable-v1 client header with a custom command
+[120/681] Generating protocol/input-method-unstable-v2 client header with a custom command
+[121/681] Generating protocol/ext-idle-notify-v1 client header with a custom command
+[122/681] Generating GObject enum file src/phosh-enums.c (wrapped by meson because command contains newlines, to capture output)
+[123/681] Generating src/phosh-resources_h with a custom command
+[124/681] Generating src/phosh-resources_c with a custom command
+[125/681] Generating gdbus header src/dbus/phosh-idle-dbus.h
+[126/681] Generating gdbus source src/dbus/phosh-idle-dbus.c
+[127/681] Generating gdbus header src/dbus/phosh-searchd.h
+[128/681] Generating gdbus source src/dbus/phosh-searchd.c
+[129/681] Generating gdbus header src/dbus/phosh-gtk-mountoperation-dbus.h
+[130/681] Generating gdbus source src/dbus/phosh-gtk-mountoperation-dbus.c
+[131/681] Generating gdbus header src/dbus/phosh-end-session-dialog-dbus.h
+[132/681] Generating gdbus source src/dbus/phosh-end-session-dialog-dbus.c
+[133/681] Linking target plugins/ticket-box/prefs/libphosh-plugin-prefs-ticket-box.so
+[134/681] Generating gdbus header src/dbus/phosh-screenshot-dbus.h
+[135/681] Generating gdbus source src/dbus/phosh-screenshot-dbus.c
+[136/681] Generating gdbus header src/dbus/phosh-brightness-dbus.h
+[137/681] Generating gdbus source src/dbus/phosh-brightness-dbus.c
+[138/681] Generating gdbus header src/dbus/phosh-screen-saver-dbus.h
+[139/681] Generating gdbus source src/dbus/phosh-screen-saver-dbus.c
+[140/681] Generating gdbus header src/dbus/phosh-display-dbus.h
+[141/681] Generating gdbus source src/dbus/phosh-display-dbus.c
+[142/681] Generating gdbus header src/dbus/phosh-gnome-shell-dbus.h
+[143/681] Generating gdbus source src/dbus/phosh-gnome-shell-dbus.c
+[144/681] Generating gdbus header src/dbus/notify-dbus.h
+[145/681] Generating gdbus source src/dbus/notify-dbus.c
+[146/681] Generating gdbus header src/dbus/geoclue-agent-dbus.h
+[147/681] Generating gdbus source src/dbus/geoclue-agent-dbus.c
+[148/681] Generating gdbus header src/dbus/phosh-dbus-debug-control.h
+[149/681] Generating gdbus source src/dbus/phosh-dbus-debug-control.c
+[150/681] Generating gdbus header src/dbus/phosh-osk0-dbus.h
+[151/681] Generating gdbus source src/dbus/phosh-osk0-dbus.c
+[152/681] Generating gdbus header src/dbus/phosh-wwan-ofono-dbus.h
+[153/681] Generating gdbus source src/dbus/phosh-wwan-ofono-dbus.c
+[154/681] Generating gdbus header src/dbus/mpris-dbus.h
+[155/681] Generating gdbus source src/dbus/mpris-dbus.c
+[156/681] Generating gdbus header src/dbus/gnome-shell-search-provider.h
+[157/681] Generating gdbus source src/dbus/gnome-shell-search-provider.c
+[158/681] Generating gdbus header src/dbus/gnome-session-presence-dbus.h
+[159/681] Generating gdbus source src/dbus/gnome-session-presence-dbus.c
+[160/681] Generating gdbus header src/dbus/gnome-session-client-private-dbus.h
+[161/681] Generating gdbus source src/dbus/gnome-session-client-private-dbus.c
+[162/681] Generating gdbus header src/dbus/gnome-session-dbus.h
+[163/681] Generating gdbus source src/dbus/gnome-session-dbus.c
+[164/681] Generating gdbus header src/dbus/gsd-rfkill-dbus.h
+[165/681] Generating gdbus source src/dbus/gsd-rfkill-dbus.c
+[166/681] Generating gdbus header src/dbus/gsd-color-dbus.h
+[167/681] Generating gdbus source src/dbus/gsd-color-dbus.c
+[168/681] Generating gdbus header src/dbus/calls-emergency-dbus.h
+[169/681] Generating gdbus source src/dbus/calls-emergency-dbus.c
+[170/681] Generating gdbus header src/dbus/calls-dbus.h
+[171/681] Generating gdbus source src/dbus/calls-dbus.c
+[172/681] Generating gdbus header src/dbus/login1-session-dbus.h
+[173/681] Generating gdbus source src/dbus/login1-session-dbus.c
+[174/681] Generating gdbus header src/dbus/login1-manager-dbus.h
+[175/681] Generating gdbus source src/dbus/login1-manager-dbus.c
+[176/681] Generating gdbus header src/dbus/portal-dbus.h
+[177/681] Generating gdbus source src/dbus/portal-dbus.c
+[178/681] Generating gdbus header src/dbus/hostname1-dbus.h
+[179/681] Generating gdbus source src/dbus/hostname1-dbus.c
+[180/681] Generating gdbus header src/dbus/geoclue-manager-dbus.h
+[181/681] Generating gdbus source src/dbus/geoclue-manager-dbus.c
+[182/681] Generating gdbus header src/dbus/accounts-dbus.h
+[183/681] Generating gdbus source src/dbus/accounts-dbus.c
+[184/681] Generating gdbus header src/dbus/accounts-user-dbus.h
+[185/681] Generating gdbus source src/dbus/accounts-user-dbus.c
+[186/681] Generating gdbus header src/dbus/iio-sensor-proxy-dbus.h
+[187/681] Generating gdbus source src/dbus/iio-sensor-proxy-dbus.c
+[188/681] Building translation po/zh_TW/LC_MESSAGES/phosh-zh_TW.mo
+[189/681] Building translation po/zh_Hans_CN/LC_MESSAGES/phosh-zh_Hans_CN.mo
+[190/681] Building translation po/zh_CN/LC_MESSAGES/phosh-zh_CN.mo
+[191/681] Building translation po/uz/LC_MESSAGES/phosh-uz.mo
+[192/681] Building translation po/uk/LC_MESSAGES/phosh-uk.mo
+[193/681] Building translation po/tr/LC_MESSAGES/phosh-tr.mo
+[194/681] Building translation po/sv/LC_MESSAGES/phosh-sv.mo
+[195/681] Building translation po/sr/LC_MESSAGES/phosh-sr.mo
+[196/681] Building translation po/sl/LC_MESSAGES/phosh-sl.mo
+[197/681] Building translation po/sk/LC_MESSAGES/phosh-sk.mo
+[198/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_accounts-user-dbus.c.o
+[199/681] Compiling C object plugins/simple-custom-status-icon/libphosh-plugin-simple-custom-status-icon.so.p/simple-custom-status-icon.c.o
+[200/681] Compiling C object plugins/simple-custom-status-icon/libphosh-plugin-simple-custom-status-icon.so.p/phosh-plugin-simple-custom-status-icon.c.o
+[201/681] Compiling C object plugins/simple-custom-status-icon/libphosh-plugin-simple-custom-status-icon.so.p/meson-generated_.._phosh-plugin-simple-custom-status-icon-resources.c.o
+[202/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_iio-sensor-proxy-dbus.c.o
+[203/681] Compiling C object plugins/wifi-hotspot-quick-setting/libphosh-plugin-wifi-hotspot-quick-setting.so.p/wifi-hotspot-status-page.c.o
+[204/681] Compiling C object plugins/wifi-hotspot-quick-setting/libphosh-plugin-wifi-hotspot-quick-setting.so.p/wifi-hotspot-quick-setting.c.o
+[205/681] Linking target plugins/emergency-info/prefs/libphosh-plugin-prefs-emergency-info.so
+[206/681] Compiling C object plugins/wifi-hotspot-quick-setting/libphosh-plugin-wifi-hotspot-quick-setting.so.p/phosh-plugin-wifi-hotspot-quick-setting.c.o
+[207/681] Compiling C object plugins/wifi-hotspot-quick-setting/libphosh-plugin-wifi-hotspot-quick-setting.so.p/meson-generated_.._phosh-plugin-wifi-hotspot-quick-setting-resources.c.o
+[208/681] Compiling C object plugins/simple-custom-quick-setting/libphosh-plugin-simple-custom-quick-setting.so.p/simple-custom-quick-setting.c.o
+[209/681] Compiling C object plugins/simple-custom-quick-setting/libphosh-plugin-simple-custom-quick-setting.so.p/phosh-plugin-simple-custom-quick-setting.c.o
+[210/681] Compiling C object plugins/simple-custom-quick-setting/libphosh-plugin-simple-custom-quick-setting.so.p/meson-generated_.._phosh-plugin-simple-custom-quick-setting-resources.c.o
+[211/681] Compiling C object plugins/scaling-quick-setting/libphosh-plugin-scaling-quick-setting.so.p/scaling-quick-setting.c.o
+[212/681] Linking target plugins/simple-custom-status-icon/libphosh-plugin-simple-custom-status-icon.so
+[213/681] Compiling C object plugins/scaling-quick-setting/libphosh-plugin-scaling-quick-setting.so.p/scale-row.c.o
+[214/681] Compiling C object plugins/scaling-quick-setting/libphosh-plugin-scaling-quick-setting.so.p/phosh-plugin-scaling-quick-setting.c.o
+[215/681] Compiling C object plugins/scaling-quick-setting/libphosh-plugin-scaling-quick-setting.so.p/meson-generated_.._phosh-plugin-scaling-quick-setting-resources.c.o
+[216/681] Compiling C object plugins/night-light-quick-setting/libphosh-plugin-night-light-quick-setting.so.p/phosh-plugin-night-light-quick-setting.c.o
+[217/681] Linking target plugins/wifi-hotspot-quick-setting/libphosh-plugin-wifi-hotspot-quick-setting.so
+[218/681] Compiling C object plugins/night-light-quick-setting/libphosh-plugin-night-light-quick-setting.so.p/night-light-quick-setting.c.o
+[219/681] Compiling C object plugins/night-light-quick-setting/libphosh-plugin-night-light-quick-setting.so.p/meson-generated_.._phosh-plugin-night-light-quick-setting-resources.c.o
+[220/681] Linking target plugins/simple-custom-quick-setting/libphosh-plugin-simple-custom-quick-setting.so
+[221/681] Compiling C object plugins/mobile-data-quick-setting/libphosh-plugin-mobile-data-quick-setting.so.p/phosh-plugin-mobile-data-quick-setting.c.o
+[222/681] Compiling C object plugins/mobile-data-quick-setting/libphosh-plugin-mobile-data-quick-setting.so.p/mobile-data-quick-setting.c.o
+[223/681] Compiling C object plugins/mobile-data-quick-setting/libphosh-plugin-mobile-data-quick-setting.so.p/meson-generated_.._phosh-plugin-mobile-data-quick-setting-resources.c.o
+[224/681] Compiling C object plugins/location-quick-setting/libphosh-plugin-location-quick-setting.so.p/phosh-plugin-location-quick-setting.c.o
+[225/681] Compiling C object plugins/location-quick-setting/libphosh-plugin-location-quick-setting.so.p/location-quick-setting.c.o
+[226/681] Linking target plugins/scaling-quick-setting/libphosh-plugin-scaling-quick-setting.so
+[227/681] Compiling C object plugins/location-quick-setting/libphosh-plugin-location-quick-setting.so.p/accuracy-row.c.o
+[228/681] Compiling C object plugins/location-quick-setting/libphosh-plugin-location-quick-setting.so.p/meson-generated_.._phosh-plugin-location-quick-setting-resources.c.o
+[229/681] Compiling C object plugins/dark-mode-quick-setting/libphosh-plugin-dark-mode-quick-setting.so.p/phosh-plugin-dark-mode-quick-setting.c.o
+[230/681] Linking target plugins/night-light-quick-setting/libphosh-plugin-night-light-quick-setting.so
+[231/681] Compiling C object plugins/dark-mode-quick-setting/libphosh-plugin-dark-mode-quick-setting.so.p/dark-mode-quick-setting.c.o
+[232/681] Compiling C object plugins/dark-mode-quick-setting/libphosh-plugin-dark-mode-quick-setting.so.p/meson-generated_.._phosh-plugin-dark-mode-quick-setting-resources.c.o
+[233/681] Compiling C object plugins/upcoming-events/libphosh-plugin-upcoming-events.so.p/upcoming-events.c.o
+[234/681] Linking target plugins/mobile-data-quick-setting/libphosh-plugin-mobile-data-quick-setting.so
+[235/681] Compiling C object plugins/upcoming-events/libphosh-plugin-upcoming-events.so.p/upcoming-event.c.o
+[236/681] Compiling C object plugins/upcoming-events/libphosh-plugin-upcoming-events.so.p/phosh-plugin-upcoming-events.c.o
+[237/681] Compiling C object plugins/upcoming-events/libphosh-plugin-upcoming-events.so.p/event-list.c.o
+[238/681] Compiling C object plugins/upcoming-events/libphosh-plugin-upcoming-events.so.p/calendar-event.c.o
+[239/681] Linking target plugins/location-quick-setting/libphosh-plugin-location-quick-setting.so
+[240/681] Compiling C object plugins/upcoming-events/libphosh-plugin-upcoming-events.so.p/meson-generated_.._phosh-plugin-upcoming-events-phosh-calendar-dbus.c.o
+[241/681] Compiling C object plugins/upcoming-events/libphosh-plugin-upcoming-events.so.p/meson-generated_.._phosh-plugin-upcoming-events-resources.c.o
+[242/681] Linking target plugins/dark-mode-quick-setting/libphosh-plugin-dark-mode-quick-setting.so
+[243/681] Compiling C object plugins/ticket-box/libphosh-plugin-ticket-box.so.p/ticket.c.o
+[244/681] Compiling C object plugins/ticket-box/libphosh-plugin-ticket-box.so.p/ticket-row.c.o
+[245/681] Compiling C object plugins/ticket-box/libphosh-plugin-ticket-box.so.p/ticket-box.c.o
+[246/681] Compiling C object plugins/ticket-box/libphosh-plugin-ticket-box.so.p/phosh-plugin-ticket-box.c.o
+[247/681] Compiling C object plugins/ticket-box/libphosh-plugin-ticket-box.so.p/meson-generated_.._phosh-plugin-ticket-box-resources.c.o
+[248/681] Compiling C object plugins/media-players/libphosh-plugin-media-players.so.p/phosh-plugin-media-players.c.o
+[249/681] Compiling C object plugins/media-players/libphosh-plugin-media-players.so.p/media-players.c.o
+[250/681] Compiling C object plugins/media-players/libphosh-plugin-media-players.so.p/meson-generated_.._phosh-plugin-media-players-resources.c.o
+[251/681] Compiling C object plugins/launcher-box/libphosh-plugin-launcher-box.so.p/phosh-plugin-launcher-box.c.o
+[252/681] Compiling C object plugins/launcher-box/libphosh-plugin-launcher-box.so.p/launcher-row.c.o
+[253/681] Compiling C object plugins/launcher-box/libphosh-plugin-launcher-box.so.p/launcher-item.c.o
+[254/681] Compiling C object plugins/launcher-box/libphosh-plugin-launcher-box.so.p/launcher-box.c.o
+[255/681] Compiling C object plugins/launcher-box/libphosh-plugin-launcher-box.so.p/meson-generated_.._phosh-plugin-launcher-box-resources.c.o
+[256/681] Linking target plugins/ticket-box/libphosh-plugin-ticket-box.so
+[257/681] Compiling C object plugins/emergency-info/libphosh-plugin-emergency-info.so.p/phosh-plugin-emergency-info.c.o
+[258/681] Compiling C object plugins/emergency-info/libphosh-plugin-emergency-info.so.p/emergency-info.c.o
+[259/681] Compiling C object plugins/emergency-info/libphosh-plugin-emergency-info.so.p/emergency-info-row.c.o
+[260/681] Linking target plugins/media-players/libphosh-plugin-media-players.so
+[261/681] Compiling C object plugins/emergency-info/libphosh-plugin-emergency-info.so.p/meson-generated_.._phosh-plugin-emergency-info-resources.c.o
+[262/681] Compiling C object plugins/calendar/libphosh-plugin-calendar.so.p/phosh-plugin-calendar.c.o
+[263/681] Compiling C object plugins/calendar/libphosh-plugin-calendar.so.p/calendar.c.o
+[264/681] Compiling C object plugins/calendar/libphosh-plugin-calendar.so.p/meson-generated_.._phosh-plugin-calendar-resources.c.o
+[265/681] Compiling C object src/search/libphoshsearch.a.p/search-source.c.o
+[266/681] Linking target plugins/launcher-box/libphosh-plugin-launcher-box.so
+[267/681] Compiling C object src/search/libphoshsearch.a.p/search-result-meta.c.o
+[268/681] Compiling C object src/search/libphoshsearch.a.p/search-client.c.o
+[269/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-idle-dbus.c.o
+[270/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-searchd.c.o
+[271/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-gtk-mountoperation-dbus.c.o
+[272/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-end-session-dialog-dbus.c.o
+[273/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-screenshot-dbus.c.o
+[274/681] Linking target plugins/emergency-info/libphosh-plugin-emergency-info.so
+[275/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-brightness-dbus.c.o
+[276/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-screen-saver-dbus.c.o
+[277/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-display-dbus.c.o
+[278/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-gnome-shell-dbus.c.o
+[279/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_notify-dbus.c.o
+[280/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_geoclue-agent-dbus.c.o
+[281/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-dbus-debug-control.c.o
+[282/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-osk0-dbus.c.o
+[283/681] Linking target plugins/calendar/libphosh-plugin-calendar.so
+[284/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_phosh-wwan-ofono-dbus.c.o
+[285/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_mpris-dbus.c.o
+[286/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_gnome-shell-search-provider.c.o
+[287/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_gnome-session-presence-dbus.c.o
+[288/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_gnome-session-client-private-dbus.c.o
+[289/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_gnome-session-dbus.c.o
+[290/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_gsd-rfkill-dbus.c.o
+[291/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_gsd-color-dbus.c.o
+[292/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_calls-emergency-dbus.c.o
+[293/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_calls-dbus.c.o
+[294/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_login1-session-dbus.c.o
+[295/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_login1-manager-dbus.c.o
+[296/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_portal-dbus.c.o
+[297/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_hostname1-dbus.c.o
+[298/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_geoclue-manager-dbus.c.o
+[299/681] Compiling C object src/search/libphoshsearch.a.p/meson-generated_.._.._dbus_accounts-dbus.c.o
+[300/681] Building translation po/sat/LC_MESSAGES/phosh-sat.mo
+[301/681] Building translation po/ru/LC_MESSAGES/phosh-ru.mo
+[302/681] Building translation po/ro/LC_MESSAGES/phosh-ro.mo
+[303/681] Building translation po/pt_BR/LC_MESSAGES/phosh-pt_BR.mo
+[304/681] Building translation po/pt/LC_MESSAGES/phosh-pt.mo
+[305/681] Building translation po/pl/LC_MESSAGES/phosh-pl.mo
+[306/681] Building translation po/oc/LC_MESSAGES/phosh-oc.mo
+[307/681] Building translation po/nl/LC_MESSAGES/phosh-nl.mo
+[308/681] Building translation po/nb/LC_MESSAGES/phosh-nb.mo
+[309/681] Building translation po/lv/LC_MESSAGES/phosh-lv.mo
+[310/681] Building translation po/la/LC_MESSAGES/phosh-la.mo
+[311/681] Building translation po/kw/LC_MESSAGES/phosh-kw.mo
+[312/681] Building translation po/ko/LC_MESSAGES/phosh-ko.mo
+[313/681] Building translation po/kk/LC_MESSAGES/phosh-kk.mo
+[314/681] Building translation po/ka/LC_MESSAGES/phosh-ka.mo
+[315/681] Building translation po/ja/LC_MESSAGES/phosh-ja.mo
+[316/681] Building translation po/it/LC_MESSAGES/phosh-it.mo
+[317/681] Building translation po/id/LC_MESSAGES/phosh-id.mo
+[318/681] Building translation po/hu/LC_MESSAGES/phosh-hu.mo
+[319/681] Building translation po/ht/LC_MESSAGES/phosh-ht.mo
+[320/681] Building translation po/hr/LC_MESSAGES/phosh-hr.mo
+[321/681] Building translation po/hi/LC_MESSAGES/phosh-hi.mo
+[322/681] Building translation po/he/LC_MESSAGES/phosh-he.mo
+[323/681] Building translation po/gl/LC_MESSAGES/phosh-gl.mo
+[324/681] Building translation po/fy/LC_MESSAGES/phosh-fy.mo
+[325/681] Building translation po/fur/LC_MESSAGES/phosh-fur.mo
+[326/681] Building translation po/fr/LC_MESSAGES/phosh-fr.mo
+[327/681] Building translation po/fi/LC_MESSAGES/phosh-fi.mo
+[328/681] Building translation po/fa/LC_MESSAGES/phosh-fa.mo
+[329/681] Building translation po/eu/LC_MESSAGES/phosh-eu.mo
+[330/681] Building translation po/es/LC_MESSAGES/phosh-es.mo
+[331/681] Building translation po/eo/LC_MESSAGES/phosh-eo.mo
+[332/681] Building translation po/en_GB/LC_MESSAGES/phosh-en_GB.mo
+[333/681] Building translation po/el/LC_MESSAGES/phosh-el.mo
+[334/681] Building translation po/de/LC_MESSAGES/phosh-de.mo
+[335/681] Building translation po/da/LC_MESSAGES/phosh-da.mo
+[336/681] Building translation po/cs/LC_MESSAGES/phosh-cs.mo
+[337/681] Building translation po/ca/LC_MESSAGES/phosh-ca.mo
+[338/681] Building translation po/bg/LC_MESSAGES/phosh-bg.mo
+[339/681] Building translation po/be/LC_MESSAGES/phosh-be.mo
+[340/681] Building translation po/ar/LC_MESSAGES/phosh-ar.mo
+[341/681] Building translation po/am/LC_MESSAGES/phosh-am.mo
+[342/681] Generating data/copy-gschema-to-builddir with a custom command
+[343/681] Generating GObject enum file data/mobi.phosh.shell.enums.xml (wrapped by meson to capture output)
+[344/681] Generating data/glib-compile-schemas with a custom command
+[345/681] Merging translations for data/phosh.session
+[346/681] Merging translations for data/mobi.phosh.Shell.desktop
+[347/681] Generating GObject enum file subprojects/gvc/gvc-enum-types.h (wrapped by meson because command contains newlines, to capture output)
+[348/681] Generating GObject enum file subprojects/gvc/gvc-enum-types.c (wrapped by meson because command contains newlines, to capture output)
+[349/681] Generating GObject enum file subprojects/libcall-ui/src/cui-enums.c (wrapped by meson because command contains newlines, to capture output)
+[350/681] Generating GObject enum file subprojects/libcall-ui/src/cui-enums.h (wrapped by meson because command contains newlines, to capture output)
+[351/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-ui-device.c.o
+[352/681] Compiling C object tests/stubs/libtest-stubs.a.p/toplevel.c.o
+[353/681] Compiling C object subprojects/gvc/libgvc.a.p/meson-generated_.._gvc-enum-types.c.o
+[354/681] Compiling C object tests/stubs/libtest-stubs.a.p/meson-generated_.._.._.._subprojects_libcall-ui_src_cui-enums.c.o
+[355/681] Compiling C object plugins/pomodoro-quick-setting/libphosh-plugin-pomodoro-quick-setting.so.p/meson-generated_.._.._.._subprojects_libcall-ui_src_cui-enums.c.o
+[356/681] Compiling C object plugins/caffeine-quick-setting/prefs/libphosh-plugin-prefs-caffeine-quick-setting.so.p/meson-generated_.._.._.._.._subprojects_libcall-ui_src_cui-enums.c.o
+[357/681] Compiling C object plugins/caffeine-quick-setting/libphosh-plugin-caffeine-quick-setting.so.p/meson-generated_.._.._.._subprojects_libcall-ui_src_cui-enums.c.o
+[358/681] Linking static target src/search/libphoshsearch.a
+[359/681] Compiling C object src/phosh.p/meson-generated_.._.._subprojects_libcall-ui_src_cui-enums.c.o
+[360/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._.._subprojects_libcall-ui_src_cui-enums.c.o
+[361/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._subprojects_libcall-ui_src_cui-enums.c.o
+[362/681] Compiling C object tests/stubs/libtest-stubs.a.p/toplevel-manager.c.o
+[363/681] Compiling C object tests/stubs/libtest-stubs.a.p/thumbnail.c.o
+[364/681] Compiling C object tests/stubs/libtest-stubs.a.p/phosh.c.o
+[365/681] Compiling C object tests/stubs/libtest-stubs.a.p/lockscreen-manager.c.o
+[366/681] Compiling C object tests/stubs/libtest-stubs.a.p/evil-icon.c.o
+[367/681] Compiling C object tests/stubs/libtest-stubs.a.p/background-manager.c.o
+[368/681] Compiling C object tests/stubs/libtest-stubs.a.p/app-tracker.c.o
+[369/681] Compiling C object plugins/pomodoro-quick-setting/libphosh-plugin-pomodoro-quick-setting.so.p/pomodoro-quick-setting.c.o
+[370/681] Compiling C object plugins/pomodoro-quick-setting/libphosh-plugin-pomodoro-quick-setting.so.p/phosh-plugin-pomodoro-quick-setting.c.o
+[371/681] Compiling C object plugins/pomodoro-quick-setting/libphosh-plugin-pomodoro-quick-setting.so.p/meson-generated_.._pomodoro-enums.c.o
+[372/681] Compiling C object plugins/pomodoro-quick-setting/libphosh-plugin-pomodoro-quick-setting.so.p/meson-generated_.._phosh-plugin-pomodoro-quick-setting-resources.c.o
+[373/681] Compiling C object plugins/caffeine-quick-setting/prefs/libphosh-plugin-prefs-caffeine-quick-setting.so.p/phosh-plugin-prefs-caffeine-quick-setting.c.o
+[374/681] Compiling C object plugins/caffeine-quick-setting/prefs/libphosh-plugin-prefs-caffeine-quick-setting.so.p/caffeine-quick-setting-prefs.c.o
+[375/681] Compiling C object plugins/caffeine-quick-setting/prefs/libphosh-plugin-prefs-caffeine-quick-setting.so.p/meson-generated_.._phosh-plugin-prefs-caffeine-quick-setting-resources.c.o
+[376/681] Compiling C object plugins/caffeine-quick-setting/libphosh-plugin-caffeine-quick-setting.so.p/phosh-plugin-caffeine-quick-setting.c.o
+[377/681] Linking static target tests/stubs/libtest-stubs.a
+[378/681] Compiling C object plugins/caffeine-quick-setting/libphosh-plugin-caffeine-quick-setting.so.p/interval-row.c.o
+[379/681] Compiling C object plugins/caffeine-quick-setting/libphosh-plugin-caffeine-quick-setting.so.p/caffeine-quick-setting.c.o
+[380/681] Compiling C object plugins/caffeine-quick-setting/libphosh-plugin-caffeine-quick-setting.so.p/meson-generated_.._phosh-plugin-caffeine-quick-setting-resources.c.o
+[381/681] Compiling C object src/phosh.p/main.c.o
+[382/681] Compiling C object src/phosh.p/meson-generated_.._phosh-resources.c.o
+[383/681] Compiling C object src/libphosh-0.45.so.0.p/wwan_wwan-manager.c.o
+[384/681] Compiling C object src/libphosh-0.45.so.0.p/wwan_phosh-wwan-ofono.c.o
+[385/681] Compiling C object src/libphosh-0.45.so.0.p/wwan_phosh-wwan-mm.c.o
+[386/681] Compiling C object src/libphosh-0.45.so.0.p/wwan_phosh-wwan-iface.c.o
+[387/681] Compiling C object src/libphosh-0.45.so.0.p/settings_channel-bar.c.o
+[388/681] Compiling C object src/libphosh-0.45.so.0.p/settings_audio-settings.c.o
+[389/681] Compiling C object src/libphosh-0.45.so.0.p/settings_audio-device-row.c.o
+[390/681] Compiling C object src/libphosh-0.45.so.0.p/settings.c.o
+[391/681] Compiling C object src/libphosh-0.45.so.0.p/wwan-info.c.o
+[392/681] Compiling C object src/libphosh-0.45.so.0.p/torch-manager.c.o
+[393/681] Compiling C object src/libphosh-0.45.so.0.p/torch-info.c.o
+[394/681] Compiling C object src/libphosh-0.45.so.0.p/toplevel.c.o
+[395/681] Compiling C object src/libphosh-0.45.so.0.p/toplevel-thumbnail.c.o
+[396/681] Compiling C object src/libphosh-0.45.so.0.p/toplevel-manager.c.o
+[397/681] Compiling C object src/libphosh-0.45.so.0.p/top-panel.c.o
+[398/681] Compiling C object src/libphosh-0.45.so.0.p/top-panel-bg.c.o
+[399/681] Compiling C object src/libphosh-0.45.so.0.p/thumbnail.c.o
+[400/681] Compiling C object src/libphosh-0.45.so.0.p/system-prompter.c.o
+[401/681] Compiling C object src/libphosh-0.45.so.0.p/system-prompt.c.o
+[402/681] Compiling C object src/libphosh-0.45.so.0.p/shell.c.o
+[403/681] Compiling C object src/libphosh-0.45.so.0.p/session-presence.c.o
+[404/681] Compiling C object src/libphosh-0.45.so.0.p/session-manager.c.o
+[405/681] Compiling C object src/libphosh-0.45.so.0.p/sensor-proxy-manager.c.o
+[406/681] Compiling C object src/libphosh-0.45.so.0.p/screenshot-manager.c.o
+[407/681] Compiling C object src/libphosh-0.45.so.0.p/screen-saver-manager.c.o
+[408/681] Compiling C object src/libphosh-0.45.so.0.p/run-command-manager.c.o
+[409/681] Compiling C object src/libphosh-0.45.so.0.p/run-command-dialog.c.o
+[410/681] Compiling C object src/libphosh-0.45.so.0.p/rotation-manager.c.o
+[411/681] Compiling C object src/libphosh-0.45.so.0.p/rotateinfo.c.o
+[412/681] Compiling C object src/libphosh-0.45.so.0.p/proximity.c.o
+[413/681] Compiling C object src/libphosh-0.45.so.0.p/portal-request.c.o
+[414/681] Compiling C object src/libphosh-0.45.so.0.p/portal-access-manager.c.o
+[415/681] Compiling C object src/libphosh-0.45.so.0.p/polkit-auth-prompt.c.o
+[416/681] Compiling C object src/libphosh-0.45.so.0.p/polkit-auth-agent.c.o
+[417/681] Compiling C object src/libphosh-0.45.so.0.p/osk-manager.c.o
+[418/681] Compiling C object src/libphosh-0.45.so.0.p/network-auth-prompt.c.o
+[419/681] Compiling C object src/libphosh-0.45.so.0.p/network-auth-manager.c.o
+[420/681] Compiling C object src/libphosh-0.45.so.0.p/monitor-manager.c.o
+[421/681] Compiling C object src/libphosh-0.45.so.0.p/lockscreen.c.o
+[422/681] Compiling C object src/libphosh-0.45.so.0.p/lockscreen-manager.c.o
+[423/681] Compiling C object src/libphosh-0.45.so.0.p/lockscreen-bg.c.o
+[424/681] Compiling C object src/libphosh-0.45.so.0.p/location-manager.c.o
+[425/681] Compiling C object src/libphosh-0.45.so.0.p/location-info.c.o
+[426/681] Compiling C object src/libphosh-0.45.so.0.p/layout-manager.c.o
+[427/681] Compiling C object src/libphosh-0.45.so.0.p/keyboard-events.c.o
+[428/681] Compiling C object src/libphosh-0.45.so.0.p/idle-manager.c.o
+[429/681] Compiling C object src/libphosh-0.45.so.0.p/home.c.o
+[430/681] Compiling C object src/libphosh-0.45.so.0.p/feedbackinfo.c.o
+[431/681] Compiling C object src/libphosh-0.45.so.0.p/fake-clock.c.o
+[432/681] Compiling C object src/libphosh-0.45.so.0.p/fader.c.o
+[433/681] Compiling C object src/libphosh-0.45.so.0.p/emergency-calls-manager.c.o
+[434/681] Compiling C object src/libphosh-0.45.so.0.p/contrib_shell-network-agent.c.o
+[435/681] Compiling C object src/libphosh-0.45.so.0.p/bt-status-page.c.o
+[436/681] Compiling C object src/libphosh-0.45.so.0.p/bt-manager.c.o
+[437/681] Compiling C object src/libphosh-0.45.so.0.p/bt-info.c.o
+[438/681] Compiling C object src/libphosh-0.45.so.0.p/bt-device-row.c.o
+[439/681] Compiling C object src/libphosh-0.45.so.0.p/battery-info.c.o
+[440/681] Compiling C object src/libphosh-0.45.so.0.p/background-manager.c.o
+[441/681] Compiling C object src/libphosh-0.45.so.0.p/auth.c.o
+[442/681] Compiling C object src/libphosh-0.45.so.0.p/arrow.c.o
+[443/681] Compiling C object src/libphosh-0.45.so.0.p/app-tracker.c.o
+[444/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._phosh-resources.c.o
+[445/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-idle-dbus.c.o
+[446/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-searchd.c.o
+[447/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-gtk-mountoperation-dbus.c.o
+[448/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-end-session-dialog-dbus.c.o
+[449/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-screenshot-dbus.c.o
+[450/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-brightness-dbus.c.o
+[451/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-screen-saver-dbus.c.o
+[452/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-display-dbus.c.o
+[453/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-gnome-shell-dbus.c.o
+[454/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_notify-dbus.c.o
+[455/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_geoclue-agent-dbus.c.o
+[456/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-dbus-debug-control.c.o
+[457/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-osk0-dbus.c.o
+[458/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_phosh-wwan-ofono-dbus.c.o
+[459/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_mpris-dbus.c.o
+[460/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_gnome-shell-search-provider.c.o
+[461/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_gnome-session-presence-dbus.c.o
+[462/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_gnome-session-client-private-dbus.c.o
+[463/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_gnome-session-dbus.c.o
+[464/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_gsd-rfkill-dbus.c.o
+[465/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_gsd-color-dbus.c.o
+[466/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_calls-emergency-dbus.c.o
+[467/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_calls-dbus.c.o
+[468/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_login1-session-dbus.c.o
+[469/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_login1-manager-dbus.c.o
+[470/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_portal-dbus.c.o
+[471/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_hostname1-dbus.c.o
+[472/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_geoclue-manager-dbus.c.o
+[473/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_accounts-dbus.c.o
+[474/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_accounts-user-dbus.c.o
+[475/681] Compiling C object src/libphosh-0.45.so.0.p/meson-generated_.._dbus_iio-sensor-proxy-dbus.c.o
+[476/681] Compiling C object src/libphosh-tool.a.p/gtk-list-models_gtksortlistmodel.c.o
+[477/681] Compiling C object src/libphosh-tool.a.p/gtk-list-models_gtkrbtree.c.o
+[478/681] Compiling C object src/libphosh-tool.a.p/gtk-list-models_gtkfilterlistmodel.c.o
+[479/681] Compiling C object src/libphosh-tool.a.p/notifications_timestamp-label.c.o
+[480/681] Compiling C object src/libphosh-tool.a.p/notifications_notify-manager.c.o
+[481/681] Compiling C object src/libphosh-tool.a.p/notifications_notify-feedback.c.o
+[482/681] Compiling C object src/libphosh-tool.a.p/notifications_notification.c.o
+[483/681] Compiling C object src/libphosh-tool.a.p/notifications_notification-source.c.o
+[484/681] Linking static target src/libphosh-0.45.a
+[485/681] Compiling C object src/libphosh-tool.a.p/notifications_notification-list.c.o
+[486/681] Compiling C object src/libphosh-tool.a.p/notifications_notification-frame.c.o
+[487/681] Compiling C object src/libphosh-tool.a.p/notifications_notification-content.c.o
+[488/681] Compiling C object src/libphosh-tool.a.p/notifications_notification-banner.c.o
+[489/681] Compiling C object src/libphosh-tool.a.p/notifications_mount-notification.c.o
+[490/681] Compiling C object src/libphosh-tool.a.p/notifications_dbus-notification.c.o
+[491/681] Compiling C object src/libphosh-tool.a.p/monitor_monitor.c.o
+[492/681] Compiling C object src/libphosh-tool.a.p/monitor_head.c.o
+[493/681] Compiling C object src/libphosh-tool.a.p/monitor_gamma-table.c.o
+[494/681] Compiling C object src/libphosh-tool.a.p/wl-buffer.c.o
+[495/681] Compiling C object src/libphosh-tool.a.p/wifi-status-page.c.o
+[496/681] Compiling C object src/libphosh-tool.a.p/wifi-network.c.o
+[497/681] Compiling C object src/libphosh-tool.a.p/wifi-network-row.c.o
+[498/681] Compiling C object src/libphosh-tool.a.p/wifi-manager.c.o
+[499/681] Compiling C object src/libphosh-tool.a.p/wifi-info.c.o
+[500/681] Compiling C object src/libphosh-tool.a.p/widget-box.c.o
+[501/681] Compiling C object src/libphosh-tool.a.p/wall-clock.c.o
+[502/681] Compiling C object src/libphosh-tool.a.p/vpn-manager.c.o
+[503/681] Compiling C object src/libphosh-tool.a.p/vpn-info.c.o
+[504/681] Compiling C object src/libphosh-tool.a.p/util.c.o
+[505/681] Compiling C object src/libphosh-tool.a.p/udev-manager.c.o
+[506/681] Compiling C object src/libphosh-tool.a.p/system-modal.c.o
+[507/681] Compiling C object src/libphosh-tool.a.p/system-modal-dialog.c.o
+[508/681] Compiling C object src/libphosh-tool.a.p/swipe-away-bin.c.o
+[509/681] Compiling C object src/libphosh-tool.a.p/suspend-manager.c.o
+[510/681] Compiling C object src/libphosh-tool.a.p/style-manager.c.o
+[511/681] Compiling C object src/libphosh-tool.a.p/status-page.c.o
+[512/681] Compiling C object src/libphosh-tool.a.p/status-page-placeholder.c.o
+[513/681] Compiling C object src/libphosh-tool.a.p/status-icons-box.c.o
+[514/681] Compiling C object src/libphosh-tool.a.p/status-icon.c.o
+[515/681] Compiling C object src/libphosh-tool.a.p/splash.c.o
+[516/681] Compiling C object src/libphosh-tool.a.p/splash-manager.c.o
+[517/681] Compiling C object src/libphosh-tool.a.p/revealer.c.o
+[518/681] Compiling C object src/libphosh-tool.a.p/quick-settings.c.o
+[519/681] Compiling C object src/libphosh-tool.a.p/quick-settings-box.c.o
+[520/681] Compiling C object src/libphosh-tool.a.p/quick-setting.c.o
+[521/681] Compiling C object src/libphosh-tool.a.p/power-menu.c.o
+[522/681] Compiling C object src/libphosh-tool.a.p/power-menu-manager.c.o
+[523/681] Compiling C object src/libphosh-tool.a.p/plugin-loader.c.o
+[524/681] Compiling C object src/libphosh-tool.a.p/phosh-wayland.c.o
+[525/681] Compiling C object src/libphosh-tool.a.p/password-entry.c.o
+[526/681] Compiling C object src/libphosh-tool.a.p/overview.c.o
+[527/681] Compiling C object src/libphosh-tool.a.p/osd-window.c.o
+[528/681] Compiling C object src/libphosh-tool.a.p/mpris-manager.c.o
+[529/681] Compiling C object src/libphosh-tool.a.p/mount-operation.c.o
+[530/681] Compiling C object src/libphosh-tool.a.p/mount-manager.c.o
+[531/681] Compiling C object src/libphosh-tool.a.p/mode-manager.c.o
+[532/681] Compiling C object src/libphosh-tool.a.p/metainfo-cache.c.o
+[533/681] Compiling C object src/libphosh-tool.a.p/media-player.c.o
+[534/681] Compiling C object src/libphosh-tool.a.p/manager.c.o
+[535/681] Compiling C object src/libphosh-tool.a.p/lockshield.c.o
+[536/681] Compiling C object src/libphosh-tool.a.p/layersurface.c.o
+[537/681] Compiling C object src/libphosh-tool.a.p/launcher-entry-manager.c.o
+[538/681] Compiling C object src/libphosh-tool.a.p/keypad.c.o
+[539/681] Compiling C object src/libphosh-tool.a.p/hks-manager.c.o
+[540/681] Compiling C object src/libphosh-tool.a.p/hks-info.c.o
+[541/681] Compiling C object src/libphosh-tool.a.p/gtk-mount-prompt.c.o
+[542/681] Compiling C object src/libphosh-tool.a.p/gtk-mount-manager.c.o
+[543/681] Compiling C object src/libphosh-tool.a.p/gnome-shell-manager.c.o
+[544/681] Compiling C object src/libphosh-tool.a.p/folder-info.c.o
+[545/681] Compiling C object src/libphosh-tool.a.p/feedback-status-page.c.o
+[546/681] Compiling C object src/libphosh-tool.a.p/feedback-manager.c.o
+[547/681] Compiling C object src/libphosh-tool.a.p/favorite-list-model.c.o
+[548/681] Compiling C object src/libphosh-tool.a.p/fading-label.c.o
+[549/681] Compiling C object src/libphosh-tool.a.p/end-session-dialog.c.o
+[550/681] Compiling C object src/libphosh-tool.a.p/emergency-menu.c.o
+[551/681] Compiling C object src/libphosh-tool.a.p/emergency-contact.c.o
+[552/681] Compiling C object src/libphosh-tool.a.p/emergency-contact-row.c.o
+[553/681] Compiling C object src/libphosh-tool.a.p/drag-surface.c.o
+[554/681] Compiling C object src/libphosh-tool.a.p/docked-manager.c.o
+[555/681] Compiling C object src/libphosh-tool.a.p/docked-info.c.o
+[556/681] Compiling C object src/libphosh-tool.a.p/default-media-player.c.o
+[557/681] Compiling C object src/libphosh-tool.a.p/debug-control.c.o
+[558/681] Compiling C object src/libphosh-tool.a.p/connectivity-manager.c.o
+[559/681] Compiling C object src/libphosh-tool.a.p/connectivity-info.c.o
+[560/681] Compiling C object src/libphosh-tool.a.p/clamp.c.o
+[561/681] Compiling C object src/libphosh-tool.a.p/cell-broadcast-prompt.c.o
+[562/681] Compiling C object src/libphosh-tool.a.p/cell-broadcast-manager.c.o
+[563/681] Compiling C object src/libphosh-tool.a.p/calls-manager.c.o
+[564/681] Compiling C object src/libphosh-tool.a.p/call.c.o
+[565/681] Compiling C object src/libphosh-tool.a.p/call-notification.c.o
+[566/681] Compiling C object src/libphosh-tool.a.p/brightness-settings.c.o
+[567/681] Compiling C object src/libphosh-tool.a.p/brightness-manager.c.o
+[568/681] Compiling C object src/libphosh-tool.a.p/bidi.c.o
+[569/681] Compiling C object src/libphosh-tool.a.p/battery-manager.c.o
+[570/681] Compiling C object src/libphosh-tool.a.p/backlight.c.o
+[571/681] Compiling C object src/libphosh-tool.a.p/backlight-sysfs.c.o
+[572/681] Compiling C object src/libphosh-tool.a.p/background.c.o
+[573/681] Compiling C object src/libphosh-tool.a.p/background-image.c.o
+[574/681] Compiling C object src/libphosh-tool.a.p/background-cache.c.o
+[575/681] Compiling C object src/libphosh-tool.a.p/auto-brightness.c.o
+[576/681] Compiling C object src/libphosh-tool.a.p/auto-brightness-bucket.c.o
+[577/681] Compiling C object src/libphosh-tool.a.p/auth-prompt-option.c.o
+[578/681] Compiling C object src/libphosh-tool.a.p/audio_audio-devices.c.o
+[579/681] Compiling C object src/libphosh-tool.a.p/audio_audio-device.c.o
+[580/681] Compiling C object src/libphosh-tool.a.p/audio-manager.c.o
+[581/681] Compiling C object src/libphosh-tool.a.p/app-list-model.c.o
+[582/681] Compiling C object src/libphosh-tool.a.p/app-grid.c.o
+[583/681] Compiling C object src/libphosh-tool.a.p/app-grid-folder-button.c.o
+[584/681] Compiling C object src/libphosh-tool.a.p/app-grid-button.c.o
+[585/681] Compiling C object src/libphosh-tool.a.p/app-grid-base-button.c.o
+[586/681] Compiling C object src/libphosh-tool.a.p/app-auth-prompt.c.o
+[587/681] Compiling C object src/libphosh-tool.a.p/animation.c.o
+[588/681] Compiling C object src/libphosh-tool.a.p/ambient.c.o
+[589/681] Compiling C object src/libphosh-tool.a.p/activity.c.o
+[590/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_wlr-screencopy-unstable-v1-protocol.c.o
+[591/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_wlr-output-power-management-unstable-v1-protocol.c.o
+[592/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_wlr-output-management-unstable-v1-protocol.c.o
+[593/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_wlr-layer-shell-unstable-v1-protocol.c.o
+[594/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_wlr-gamma-control-unstable-v1-protocol.c.o
+[595/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_wlr-foreign-toplevel-management-unstable-v1-protocol.c.o
+[596/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_virtual-keyboard-unstable-v1-protocol.c.o
+[597/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_phosh-private-protocol.c.o
+[598/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_phoc-layer-shell-effects-unstable-v1-protocol.c.o
+[599/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_phoc-device-state-unstable-v1-protocol.c.o
+[600/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_input-method-unstable-v2-protocol.c.o
+[601/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_xdg-output-unstable-v1-protocol.c.o
+[602/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_ext-idle-notify-v1-protocol.c.o
+[603/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._.._protocol_xdg-shell-protocol.c.o
+[604/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-idle-dbus.c.o
+[605/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-searchd.c.o
+[606/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-gtk-mountoperation-dbus.c.o
+[607/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-end-session-dialog-dbus.c.o
+[608/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-screenshot-dbus.c.o
+[609/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-brightness-dbus.c.o
+[610/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-screen-saver-dbus.c.o
+[611/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-display-dbus.c.o
+[612/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-gnome-shell-dbus.c.o
+[613/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_notify-dbus.c.o
+[614/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_geoclue-agent-dbus.c.o
+[615/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-dbus-debug-control.c.o
+[616/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-osk0-dbus.c.o
+[617/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_phosh-wwan-ofono-dbus.c.o
+[618/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_mpris-dbus.c.o
+[619/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_gnome-shell-search-provider.c.o
+[620/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_gnome-session-presence-dbus.c.o
+[621/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_gnome-session-client-private-dbus.c.o
+[622/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_gnome-session-dbus.c.o
+[623/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_gsd-rfkill-dbus.c.o
+[624/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_gsd-color-dbus.c.o
+[625/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_calls-emergency-dbus.c.o
+[626/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_calls-dbus.c.o
+[627/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_login1-session-dbus.c.o
+[628/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_login1-manager-dbus.c.o
+[629/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_portal-dbus.c.o
+[630/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_hostname1-dbus.c.o
+[631/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_geoclue-manager-dbus.c.o
+[632/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_accounts-dbus.c.o
+[633/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_accounts-user-dbus.c.o
+[634/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._dbus_iio-sensor-proxy-dbus.c.o
+[635/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._phosh-resources.c.o
+[636/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._phosh-marshalers.c.o
+[637/681] Compiling C object src/libphosh-tool.a.p/meson-generated_.._phosh-enums.c.o
+[638/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-stream.c.o
+[639/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-source-output.c.o
+[640/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-source.c.o
+[641/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-sink-input.c.o
+[642/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-sink.c.o
+[643/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-event-role.c.o
+[644/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-control.c.o
+[645/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-mixer-card.c.o
+[646/681] Compiling C object subprojects/gvc/libgvc.a.p/gvc-channel-map.c.o
+[647/681] Generating subprojects/libcall-ui/src/cui-resources_h with a custom command
+[648/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/cui-keypad-button.c.o
+[649/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/cui-encryption-indicator.c.o
+[650/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/cui-keypad.c.o
+[651/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/cui-dialpad.c.o
+[652/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/cui-main.c.o
+[653/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/cui-call-display.c.o
+[654/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/cui-call.c.o
+[655/681] Linking static target subprojects/gvc/libgvc.a
+[656/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/meson-generated_.._cui-enums.c.o
+[657/681] Generating subprojects/libcall-ui/src/cui-resources_c with a custom command
+[658/681] Compiling C object subprojects/libcall-ui/src/libcall-ui.a.p/meson-generated_.._cui-resources.c.o
+[659/681] Generating subprojects/gmobile/data/gm-resources_h with a custom command
+[660/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-util.c.o
+[661/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-timeout.c.o
+[662/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-svg-path.c.o
+[663/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-rect.c.o
+[664/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-main.c.o
+[665/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-error.c.o
+[666/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-display-panel.c.o
+[667/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-device-tree.c.o
+[668/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-device-info.c.o
+[669/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/gm-cutout.c.o
+[670/681] Linking static target subprojects/libcall-ui/src/libcall-ui.a
+[671/681] Linking target plugins/pomodoro-quick-setting/libphosh-plugin-pomodoro-quick-setting.so
+[672/681] Linking target plugins/caffeine-quick-setting/prefs/libphosh-plugin-prefs-caffeine-quick-setting.so
+[673/681] Linking target plugins/caffeine-quick-setting/libphosh-plugin-caffeine-quick-setting.so
+[674/681] Generating subprojects/gmobile/data/gm-resources_c with a custom command
+[675/681] Compiling C object subprojects/gmobile/src/libgmobile.so.0.p/meson-generated_.._.._data_gm-resources.c.o
+[676/681] Linking static target subprojects/gmobile/src/libgmobile.a
+[677/681] Linking target subprojects/gmobile/src/libgmobile.so.0
+[678/681] Linking target plugins/upcoming-events/libphosh-plugin-upcoming-events.so
+[679/681] Linking static target src/libphosh-tool.a
+[680/681] Linking target src/phosh
+[681/681] Linking target src/libphosh-0.45.so.0
+ninja: entering directory '/tmp/phosh-build'
+[1/1] Installing files
+Installing subprojects/gmobile/src/libgmobile.so.0 to /target/usr/lib
+Installing subprojects/gmobile/src/libgmobile.a to /target/usr/lib
+Installing data/mobi.phosh.Shell.desktop to /target/usr/share/applications
+Installing data/phosh.session to /target/usr/share/gnome-session/sessions
+Installing data/mobi.phosh.shell.enums.xml to /target/usr/share/glib-2.0/schemas
+Installing po/am/LC_MESSAGES/phosh.mo to /target/usr/share/locale/am/LC_MESSAGES
+Installing po/ar/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ar/LC_MESSAGES
+Installing po/be/LC_MESSAGES/phosh.mo to /target/usr/share/locale/be/LC_MESSAGES
+Installing po/bg/LC_MESSAGES/phosh.mo to /target/usr/share/locale/bg/LC_MESSAGES
+Installing po/ca/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ca/LC_MESSAGES
+Installing po/cs/LC_MESSAGES/phosh.mo to /target/usr/share/locale/cs/LC_MESSAGES
+Installing po/da/LC_MESSAGES/phosh.mo to /target/usr/share/locale/da/LC_MESSAGES
+Installing po/de/LC_MESSAGES/phosh.mo to /target/usr/share/locale/de/LC_MESSAGES
+Installing po/el/LC_MESSAGES/phosh.mo to /target/usr/share/locale/el/LC_MESSAGES
+Installing po/en_GB/LC_MESSAGES/phosh.mo to /target/usr/share/locale/en_GB/LC_MESSAGES
+Installing po/eo/LC_MESSAGES/phosh.mo to /target/usr/share/locale/eo/LC_MESSAGES
+Installing po/es/LC_MESSAGES/phosh.mo to /target/usr/share/locale/es/LC_MESSAGES
+Installing po/eu/LC_MESSAGES/phosh.mo to /target/usr/share/locale/eu/LC_MESSAGES
+Installing po/fa/LC_MESSAGES/phosh.mo to /target/usr/share/locale/fa/LC_MESSAGES
+Installing po/fi/LC_MESSAGES/phosh.mo to /target/usr/share/locale/fi/LC_MESSAGES
+Installing po/fr/LC_MESSAGES/phosh.mo to /target/usr/share/locale/fr/LC_MESSAGES
+Installing po/fur/LC_MESSAGES/phosh.mo to /target/usr/share/locale/fur/LC_MESSAGES
+Installing po/fy/LC_MESSAGES/phosh.mo to /target/usr/share/locale/fy/LC_MESSAGES
+Installing po/gl/LC_MESSAGES/phosh.mo to /target/usr/share/locale/gl/LC_MESSAGES
+Installing po/he/LC_MESSAGES/phosh.mo to /target/usr/share/locale/he/LC_MESSAGES
+Installing po/hi/LC_MESSAGES/phosh.mo to /target/usr/share/locale/hi/LC_MESSAGES
+Installing po/hr/LC_MESSAGES/phosh.mo to /target/usr/share/locale/hr/LC_MESSAGES
+Installing po/ht/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ht/LC_MESSAGES
+Installing po/hu/LC_MESSAGES/phosh.mo to /target/usr/share/locale/hu/LC_MESSAGES
+Installing po/id/LC_MESSAGES/phosh.mo to /target/usr/share/locale/id/LC_MESSAGES
+Installing po/it/LC_MESSAGES/phosh.mo to /target/usr/share/locale/it/LC_MESSAGES
+Installing po/ja/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ja/LC_MESSAGES
+Installing po/ka/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ka/LC_MESSAGES
+Installing po/kk/LC_MESSAGES/phosh.mo to /target/usr/share/locale/kk/LC_MESSAGES
+Installing po/ko/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ko/LC_MESSAGES
+Installing po/kw/LC_MESSAGES/phosh.mo to /target/usr/share/locale/kw/LC_MESSAGES
+Installing po/la/LC_MESSAGES/phosh.mo to /target/usr/share/locale/la/LC_MESSAGES
+Installing po/lv/LC_MESSAGES/phosh.mo to /target/usr/share/locale/lv/LC_MESSAGES
+Installing po/nb/LC_MESSAGES/phosh.mo to /target/usr/share/locale/nb/LC_MESSAGES
+Installing po/nl/LC_MESSAGES/phosh.mo to /target/usr/share/locale/nl/LC_MESSAGES
+Installing po/oc/LC_MESSAGES/phosh.mo to /target/usr/share/locale/oc/LC_MESSAGES
+Installing po/pl/LC_MESSAGES/phosh.mo to /target/usr/share/locale/pl/LC_MESSAGES
+Installing po/pt/LC_MESSAGES/phosh.mo to /target/usr/share/locale/pt/LC_MESSAGES
+Installing po/pt_BR/LC_MESSAGES/phosh.mo to /target/usr/share/locale/pt_BR/LC_MESSAGES
+Installing po/ro/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ro/LC_MESSAGES
+Installing po/ru/LC_MESSAGES/phosh.mo to /target/usr/share/locale/ru/LC_MESSAGES
+Installing po/sat/LC_MESSAGES/phosh.mo to /target/usr/share/locale/sat/LC_MESSAGES
+Installing po/sk/LC_MESSAGES/phosh.mo to /target/usr/share/locale/sk/LC_MESSAGES
+Installing po/sl/LC_MESSAGES/phosh.mo to /target/usr/share/locale/sl/LC_MESSAGES
+Installing po/sr/LC_MESSAGES/phosh.mo to /target/usr/share/locale/sr/LC_MESSAGES
+Installing po/sv/LC_MESSAGES/phosh.mo to /target/usr/share/locale/sv/LC_MESSAGES
+Installing po/tr/LC_MESSAGES/phosh.mo to /target/usr/share/locale/tr/LC_MESSAGES
+Installing po/uk/LC_MESSAGES/phosh.mo to /target/usr/share/locale/uk/LC_MESSAGES
+Installing po/uz/LC_MESSAGES/phosh.mo to /target/usr/share/locale/uz/LC_MESSAGES
+Installing po/zh_CN/LC_MESSAGES/phosh.mo to /target/usr/share/locale/zh_CN/LC_MESSAGES
+Installing po/zh_Hans_CN/LC_MESSAGES/phosh.mo to /target/usr/share/locale/zh_Hans_CN/LC_MESSAGES
+Installing po/zh_TW/LC_MESSAGES/phosh.mo to /target/usr/share/locale/zh_TW/LC_MESSAGES
+Installing src/phosh to /target/usr/libexec
+Installing plugins/calendar/libphosh-plugin-calendar.so to /target/usr/lib/phosh/plugins
+Installing plugins/calendar/calendar.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/emergency-info/libphosh-plugin-emergency-info.so to /target/usr/lib/phosh/plugins
+Installing plugins/emergency-info/emergency-info.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/emergency-info/prefs/libphosh-plugin-prefs-emergency-info.so to /target/usr/lib/phosh/plugins/prefs
+Installing plugins/launcher-box/libphosh-plugin-launcher-box.so to /target/usr/lib/phosh/plugins
+Installing plugins/launcher-box/launcher-box.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/media-players/libphosh-plugin-media-players.so to /target/usr/lib/phosh/plugins
+Installing plugins/media-players/media-players.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/ticket-box/libphosh-plugin-ticket-box.so to /target/usr/lib/phosh/plugins
+Installing plugins/ticket-box/ticket-box.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/ticket-box/prefs/libphosh-plugin-prefs-ticket-box.so to /target/usr/lib/phosh/plugins/prefs
+Installing plugins/upcoming-events/libphosh-plugin-upcoming-events.so to /target/usr/lib/phosh/plugins
+Installing plugins/upcoming-events/upcoming-events.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/upcoming-events/prefs/libphosh-plugin-prefs-upcoming-events.so to /target/usr/lib/phosh/plugins/prefs
+Installing plugins/caffeine-quick-setting/libphosh-plugin-caffeine-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/caffeine-quick-setting/caffeine-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/caffeine-quick-setting/prefs/libphosh-plugin-prefs-caffeine-quick-setting.so to /target/usr/lib/phosh/plugins/prefs
+Installing plugins/dark-mode-quick-setting/libphosh-plugin-dark-mode-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/dark-mode-quick-setting/dark-mode-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/location-quick-setting/libphosh-plugin-location-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/location-quick-setting/location-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/mobile-data-quick-setting/libphosh-plugin-mobile-data-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/mobile-data-quick-setting/mobile-data-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/night-light-quick-setting/libphosh-plugin-night-light-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/night-light-quick-setting/night-light-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/pomodoro-quick-setting/libphosh-plugin-pomodoro-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/pomodoro-quick-setting/pomodoro-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/pomodoro-quick-setting/prefs/libphosh-plugin-prefs-pomodoro-quick-setting.so to /target/usr/lib/phosh/plugins/prefs
+Installing plugins/scaling-quick-setting/libphosh-plugin-scaling-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/scaling-quick-setting/scaling-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/simple-custom-quick-setting/libphosh-plugin-simple-custom-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/simple-custom-quick-setting/simple-custom-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/wifi-hotspot-quick-setting/libphosh-plugin-wifi-hotspot-quick-setting.so to /target/usr/lib/phosh/plugins
+Installing plugins/wifi-hotspot-quick-setting/wifi-hotspot-quick-setting.plugin to /target/usr/lib/phosh/plugins
+Installing plugins/simple-custom-status-icon/libphosh-plugin-simple-custom-status-icon.so to /target/usr/lib/phosh/plugins
+Installing plugins/simple-custom-status-icon/simple-custom-status-icon.plugin to /target/usr/lib/phosh/plugins
+Installing calendar-server/phosh-calendar-server to /target/usr/libexec
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gmobile.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-cutout.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-device-info.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-device-tree.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-display-panel.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-error.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-main.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-rect.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-svg-path.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-timeout.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile/src/gm-util.h to /target/usr/include/gmobile
+Installing /tmp/phosh-build/subprojects/gmobile/gm-config.h to /target/usr/include/gmobile
+Installing /work/iso-postmarketos/rust/phosh/phosh/src/phosh-settings-enums.h to /target/usr/include/phosh
+Installing /tmp/phosh-build/plugins/phosh-plugin.h to /target/usr/include/phosh
+Installing /tmp/phosh-build/meson-private/gmobile.pc to /target/usr/lib/pkgconfig
+Installing /tmp/phosh-build/data/phosh-session to /target/usr/bin
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/mobi.phosh.shell.gschema.xml to /target/usr/share/glib-2.0/schemas
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/00_mobi.Phosh.gschema.override to /target/usr/share/glib-2.0/schemas
+Installing /tmp/phosh-build/data/systemd/session.conf to /target/usr/lib/systemd/user/gnome-session@phosh.target.d
+Installing /tmp/phosh-build/data/systemd/mobi.phosh.Shell.service to /target/usr/lib/systemd/user
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/systemd/mobi.phosh.Shell.target to /target/usr/lib/systemd/user
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/systemd/mobi.phosh.OSK.target to /target/usr/lib/systemd/user
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/icons/mobi.phosh.Shell-symbolic.svg to /target/usr/share/icons/hicolor/symbolic/apps
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/phoc.ini to /target/usr/share/phosh
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/wayland-sessions/phosh.desktop to /target/usr/share/wayland-sessions
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/phosh-shell.portal to /target/usr/share/xdg-desktop-portal/portals
+Installing /work/iso-postmarketos/rust/phosh/phosh/data/phosh-portals.conf to /target/usr/share/xdg-desktop-portal
+Installing /tmp/phosh-build/meson-private/phosh-settings.pc to /target/usr/lib/pkgconfig
+Installing /tmp/phosh-build/meson-private/phosh-plugins.pc to /target/usr/lib/pkgconfig
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/launcher-box/sm.puri.phosh.plugins.launcher-box.gschema.xml to /target/usr/share/glib-2.0/schemas
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/ticket-box/sm.puri.phosh.plugins.ticket-box.gschema.xml to /target/usr/share/glib-2.0/schemas
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/upcoming-events/sm.puri.phosh.plugins.upcoming-events.gschema.xml to /target/usr/share/glib-2.0/schemas
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/caffeine-quick-setting/icons/cafe-hot-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/caffeine-quick-setting/mobi.phosh.plugins.caffeine-quick-setting.gschema.xml to /target/usr/share/glib-2.0/schemas
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/dark-mode-quick-setting/icons/dark-mode-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/location-quick-setting/icons/location-quick-setting-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/mobile-data-quick-setting/icons/mobile-data-quick-setting-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/night-light-quick-setting/icons/night-light-quick-setting-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/pomodoro-quick-setting/icons/pomodoro-active-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/pomodoro-quick-setting/mobi.phosh.plugins.pomodoro.gschema.xml to /target/usr/share/glib-2.0/schemas
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/scaling-quick-setting/icons/screen-scaling-small-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /work/iso-postmarketos/rust/phosh/phosh/plugins/wifi-hotspot-quick-setting/icons/wifi-hotspot-quick-setting-symbolic.svg to /target/usr/share/phosh/plugins/icons
+Installing /tmp/phosh-build/calendar-server/mobi.phosh.Shell.CalendarServer.service to /target/usr/share/dbus-1/services
+Installing symlink pointing to libgmobile.so.0 to /target/usr/lib/libgmobile.so
+Skipping custom install script because DESTDIR is set '/usr/bin/glib-compile-schemas /usr/share/glib-2.0/schemas'
+Skipping custom install script because DESTDIR is set '/usr/bin/gtk4-update-icon-cache -q -t -f /usr/share/icons/hicolor'
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded autocfg v1.5.0
+  Downloaded anyhow v1.0.102
+  Downloaded bitflags v2.11.0
+  Downloaded cairo-sys-rs v0.20.10
+  Downloaded cairo-rs v0.20.12
+  Downloaded glib-macros v0.20.12
+  Downloaded toml_parser v1.1.0+spec-1.1.0
+  Downloaded futures-core v0.3.32
+  Downloaded equivalent v1.0.2
+  Downloaded rustc_version v0.4.1
+  Downloaded gl v0.14.0
+  Downloaded version-compare v0.2.1
+  Downloaded gdk-pixbuf-sys v0.20.10
+  Downloaded heck v0.5.0
+  Downloaded proc-macro-crate v3.5.0
+  Downloaded futures-executor v0.3.32
+  Downloaded gtk4-layer-shell-sys v0.3.0
+  Downloaded serde_spanned v1.1.0
+  Downloaded graphene-sys v0.20.10
+  Downloaded gobject-sys v0.20.10
+  Downloaded gl_generator v0.14.0
+  Downloaded gdk4 v0.9.6
+  Downloaded toml_datetime v0.7.5+spec-1.1.0
+  Downloaded toml_writer v1.1.0+spec-1.1.0
+  Downloaded xml-rs v0.8.28
+  Downloaded toml_edit v0.25.8+spec-1.1.0
+  Downloaded gdk4-sys v0.9.6
+  Downloaded memchr v2.8.0
+  Downloaded gio-sys v0.20.10
+  Downloaded gtk4-sys v0.9.6
+  Downloaded libadwaita v0.7.2
+  Downloaded winnow v0.7.15
+  Downloaded winnow v1.0.0
+  Downloaded hashbrown v0.16.1
+  Downloaded gio v0.20.12
+  Downloaded futures-util v0.3.32
+  Downloaded glib v0.20.12
+  Downloaded indexmap v2.13.0
+  Downloaded syn v2.0.117
+  Downloaded proc-macro2 v1.0.106
+  Downloaded glib-sys v0.20.10
+  Downloaded unicode-ident v1.0.24
+  Downloaded toml v0.9.12+spec-1.1.0
+  Downloaded serde_core v1.0.228
+  Downloaded pango v0.20.12
+  Downloaded log v0.4.29
+  Downloaded gsk4-sys v0.9.6
+  Downloaded system-deps v7.0.7
+  Downloaded gtk4 v0.9.7
+  Downloaded gsk4 v0.9.6
+  Downloaded graphene-rs v0.20.10
+  Downloaded futures-channel v0.3.32
+  Downloaded khronos_api v3.1.0
+  Downloaded cfg-expr v0.20.7
+  Downloaded target-lexicon v0.13.3
+  Downloaded slab v0.4.12
+  Downloaded semver v1.0.27
+  Downloaded quote v1.0.45
+  Downloaded pkg-config v0.3.32
+  Downloaded pin-project-lite v0.2.17
+  Downloaded pango-sys v0.20.10
+  Downloaded libadwaita-sys v0.7.2
+  Downloaded gtk4-macros v0.9.5
+  Downloaded gdk-pixbuf v0.20.10
+  Downloaded memoffset v0.9.1
+  Downloaded gtk4-layer-shell v0.5.0
+  Downloaded futures-macro v0.3.32
+  Downloaded futures-io v0.3.32
+  Downloaded field-offset v0.3.6
+  Downloaded libc v0.2.183
+  Downloaded toml_datetime v1.1.0+spec-1.1.0
+  Downloaded smallvec v1.15.1
+  Downloaded futures-task v0.3.32
+    Finished `release` profile [optimized] target(s) in 7.44s
+Skipping atomos-home-bg build/install (manifest missing or disabled).
+=== build-qemu: apply direct-rootfs customizations ===
+Installed atomos-agents service (direct rootfs mode).
+Ensuring target rootfs has dbus + dbus-dev (pkg-config + libdbus-1)...
+Neither docker nor podman is available.
+Installing overview chat UI binary from: /work/iso-postmarketos/rust/atomos-overview-chat-ui/target/aarch64-unknown-linux-musl/release/atomos-overview-chat-ui
+WARN: 'file' not installed; cannot verify binary is musl-safe for pmOS.
+Skipping home-bg install helper (BUILD_HOME_BG=0).
+=== build-qemu: final verification ===
+=== build-qemu: pack rootfs into image (containerized) ===
+Partition nodes not found; using kpartx fallback...
+add map loop3p1 (252:0): 0 1048576 linear 7:3 2048
+add map loop3p2 (252:1): 0 15724544 linear 7:3 1050624
+mkfs.fat 4.2 (2021-01-31)
+mke2fs 1.47.4 (6-Mar-2025)
+Creating filesystem with 1965568 4k blocks and 491520 inodes
+Filesystem UUID: 8127a00c-f046-4da3-86f8-0db604e52314
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables:  0/60     done                            
+Writing inode tables:  0/60     done                            
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information:  0/60     done
+
+Note: skipped export ownership adjustment (expected on some rootless runtimes).
+Build complete:
+  /home/ubuntu/atomos/iso-postmarketos/build/host-export-arm64-virt/arm64-virt.img

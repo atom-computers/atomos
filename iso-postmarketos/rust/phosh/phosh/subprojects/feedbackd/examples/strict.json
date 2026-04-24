@@ -1,0 +1,15 @@
+{
+  "name": "strict",
+  "parent-name": "$device",
+  "profiles" : [
+    {
+      "name" : "silent",
+      "feedbacks" : [
+	{
+	  "event-name" : "notification-missed-generic",
+	  "type"       : "dummy"
+	}
+      ]
+    }
+  ]
+}

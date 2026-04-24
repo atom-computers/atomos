@@ -1,0 +1,29 @@
+From c8665661430f8c2e036d5e9f0e53f3df6d4d6fd9 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@z3ntu.xyz>
+Date: Wed, 6 Nov 2019 22:44:03 +0100
+Subject: [PATCH] Makefile: fix build with new binutils
+
+Recent binutils complain when the linker script is passed multiple
+times, which is the case here:
+
+error: linker script file '/<cut>/scripts/module-common.lds' appears multiple times
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index bf5d6523a10..bee6c13a237 100644
+--- a/Makefile
++++ b/Makefile
+@@ -365,7 +365,7 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
+ 		  -Wbitwise -Wno-return-void $(CF)
+ CFLAGS_MODULE   = $(ARM_FLAGS) -DMODULE
+ AFLAGS_MODULE   = $(ARM_FLAGS) -DMODULE --strip-debug
+-LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
++LDFLAGS_MODULE  =
+ CFLAGS_KERNEL  = $(ARM_FLAGS) -ftree-vectorize 
+ AFLAGS_KERNEL  =
+ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
+-- 
+2.24.0
+

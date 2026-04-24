@@ -1,0 +1,20 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Acer Aspire 1"
+deviceinfo_manufacturer="Acer"
+deviceinfo_codename="acer-aspire1"
+deviceinfo_year="2021"
+deviceinfo_dtb="qcom/sc7180-acer-aspire1"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="laptop"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+deviceinfo_screen_width="1920"
+deviceinfo_screen_height="1080"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"

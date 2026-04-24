@@ -1,0 +1,79 @@
+# Kernel config based on:
+# arch/arm/configs/{msm8226_defconfig,proj_SEAGULL_3G_defconfig,proj_SEAGULL_3G_defconfig}
+# (combined in that order)
+
+pkgname=linux-sony-seagull
+pkgver=3.4.0
+pkgrel=7
+pkgdesc="Sony Xperia T3 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="sony-seagull"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_sony_seagull"
+_commit="e39e9203b59a21cac634a86641b0413b0100ed48"
+_srcurl="https://github.com/pmsourcedump/$_repository/archive/$_commit.tar.gz"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$pkgver.tar.gz::$_srcurl
+	$_config
+	01_fix_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_fix_various_include_directives.patch
+	05_psmouse_base.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	timeconst.pl-Eliminate-Perl-warning.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit/"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+d060cd2ac73d5fd645ee3d9aff1b5912e2e237606d78be4180de0da850143458c8dc1bc425ed6201f9d6bff941364a722ea84e3c2a5b8404bc2e79cecf7c88e8  linux-sony-seagull-3.4.0.tar.gz
+1f43d4ad6a20588ea03fbe2ede73820917786079c7a7d499b1b6e00f9e59f23539d0f5ad2df271a38181e306bfa8929d04d67971314ac50f6646f47fbbd6c9d2  config-sony-seagull.armhf
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  01_fix_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+f3a3b9a2e4f390b7b6bb5e986172db4258c6ce3babf76df7eb19aa7197ef9d16cf5e3bda5996b2d6d5be86a25ee984f1ea601a838c1b61724cbb6659da127e03  03_fix_various_include_directives.patch
+f7e31cfe422696922aec52002e56c58103183966edee3bb8e1995d33f8d37b07c32280a8ecc213874e358a6ff367418556a4542fba7e3c17e4b8e82e05c3a543  05_psmouse_base.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

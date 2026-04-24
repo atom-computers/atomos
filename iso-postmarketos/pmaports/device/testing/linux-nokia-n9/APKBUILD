@@ -1,0 +1,122 @@
+_flavor=nokia-n9
+_config="config-$_flavor.armhf"
+
+maintainer=""
+pkgname=linux-$_flavor
+pkgver=4.17_rc4
+_pkgver=${pkgver/_/-}
+_kernver=${pkgver%_rc*}
+_mainver=${_kernver%.*}
+_patchlevel=${_kernver/$_mainver./}
+_basever=$_mainver.$((_patchlevel-1))
+case $pkgver in
+	*.*.*)  _kernver=${pkgver%.*};;
+	*.*) _kernver=$pkgver;;
+esac
+pkgrel=2
+arch="armhf"
+pkgdesc="Nokia N9 kernel"
+url="https://kernel.org"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers openssl-dev flex bison"
+options="!strip !check !tracedeps pmb:cross-native"
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v$_mainver.x/linux-$_basever.tar.xz
+	linux-v$_basever-v$_pkgver.patch::https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/rawdiff/?id=v$_pkgver&id2=v$_basever
+	0001-SREv2.patch
+	0002-drm-add-rename-MIPI_DCS_SET_PARTIAL_XXX.patch
+	0003-drm-omap-panel-dsi-cm-use-defines-from-mipi_display..patch
+	0004-ARM-dts-n9-add-display-support.patch
+	0005-Revert-drm-omap-work-around-for-omap3-display-enable.patch
+	0006-HACK-drm-omap-panel-dsi-cm-force-0xff-for-brigthness.patch
+	0007-ARM-dts-N9-N950-Add-touchscreen-support.patch
+	0008-misc-apds990x-Add-device-tree-support.patch
+	0009-misc-apds990x-convert-to-iio.patch
+	0010-ARM-dts-N9-Add-support-for-apds990x-ALS-PS.patch
+	0011-HACK-export-dma-access-functions-needed-by-PVR-drive.patch
+	linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+	$_config
+	RM-696_Pyrenees_SMD_V1_6.raw
+"
+license="GPL2"
+
+_abi_release=$pkgver
+_carch="arm"
+
+ksrcdir="$srcdir/linux-$_basever"
+
+prepare() {
+	local _patch_failed=
+	cd "$ksrcdir"
+
+	source_patches="linux-v$_basever-v$_pkgver.patch
+	$source"
+	# first apply patches in specified order
+	for i in $source_patches; do
+		case $i in
+		*.patch)
+			msg "Applying $i..."
+			if ! patch -s -p1 -N -i "$srcdir"/$i; then
+				echo $i >>failed
+				_patch_failed=1
+			fi
+			;;
+		esac
+	done
+
+	if ! [ -z "$_patch_failed" ]; then
+		error "The following patches failed:"
+		cat failed
+		return 1
+	fi
+
+	# Atmel maXTouch configuration
+	cp "$srcdir/RM-696_Pyrenees_SMD_V1_6.raw" "$ksrcdir/firmware/maxtouch.cfg"
+
+	mkdir -p "$srcdir"/build
+	cp "$srcdir"/$_config "$srcdir"/build/.config
+	make -C "$ksrcdir" O="$srcdir"/build ARCH="$_carch" \
+		olddefconfig
+}
+
+build() {
+	cd "$srcdir"/build
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-Alpine"
+	cd $ksrcdir
+}
+
+package() {
+	cd "$srcdir/build/arch/arm/boot"
+
+	cat zImage dts/omap3-n9.dtb > zImage-dtb
+
+	install -Dm644 "$srcdir/build/arch/arm/boot/zImage-dtb" \
+		"$pkgdir/boot/vmlinuz"
+
+	install -D "$srcdir/build/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	cd "$srcdir"/build
+
+	make -j1 modules_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1
+}
+
+sha512sums="ab47849314b177d0eec9dbf261f33972b0d89fb92fb0650130ffa7abc2f36c0fab2d06317dc1683c51a472a9a631573a9b1e7258d6281a2ee189897827f14662  linux-4.16.tar.xz
+3b58e0d85fefc92ebc293e659b24c185c2c3315025984593b75e069512fd4f671457f4a96e8abccdea5e1b4348d2efe3b4cebedf5f09fc3ab885f12f29983336  linux-v4.16-v4.17-rc4.patch
+0939e39c44eabc74fb970294599a720dcd3dc56e2836e4c20ffe9af5f132080c4ce72daca4996723f47cae924d67980f542bc010fcdbc757617ea30eff2c4529  0001-SREv2.patch
+67b05fba89abb9c39e06a5a636534ac7b732e09d5cebff09fb214383fd03c3bcb1c3cf9736de3c533474b5d34e7f0ecc284ab9cf4a37f7a94914a005847acdc9  0002-drm-add-rename-MIPI_DCS_SET_PARTIAL_XXX.patch
+2901f07d72371cc004dd7520c35279aa1c4d196575663641cc152e841b623337592d0651fcf95550df77325c5a47a7f722b4b86a3b72d7686e5ae8fa7b0240d4  0003-drm-omap-panel-dsi-cm-use-defines-from-mipi_display..patch
+555991324491b138fce123bef5f5996392472336128bb2db4c10a4b6aa77c5b3133245fa01bfb122046f99a491a54ea91fc3a0b743d02bd71bddbe14fde87d25  0004-ARM-dts-n9-add-display-support.patch
+62411b4298663f18611bf1407c088df8e359f197cd5ebcbd8cdb1a6a5138ffeb1e31b161ab5cd152b93ab486b0b92e1f27875006b07d0cc3392324a11b41ab79  0005-Revert-drm-omap-work-around-for-omap3-display-enable.patch
+69af520fee8164f94071857ed2bd7968e2b8ab437a4b045cd3dff9fa2ad1d532aff9a28a816c3bc54e38bf3b30be64f9aab993106c6710249febb8d5d1b6364d  0006-HACK-drm-omap-panel-dsi-cm-force-0xff-for-brigthness.patch
+282da831cc2eedaf532526dbec165c8ced30bd29e5c32b6616b3ec9e568ce5e8748db12801d508049ed1b821600df415ed677e57daae8b863e69876a6fc3e19d  0007-ARM-dts-N9-N950-Add-touchscreen-support.patch
+ac1173aa911326b467d3d453dba80641c1d32302989acebc2a3bdb14236c56dca6ace4f6e848a2d1901944d57ab901c6830bc5a3efe33edc39db5177595fbeb8  0008-misc-apds990x-Add-device-tree-support.patch
+c2130e7b5aa389d1377a027acced3af6caf57bd797d4326cd5f3088af5fbcd5ade5764f27c1d12306ab5905a05583eab8e3ddaac6fafc868aa13b8c004039485  0009-misc-apds990x-convert-to-iio.patch
+a260f4e218416ec51740ddc01b74f177123211604428a0204fd1098230503d64e6a7ba14073747de24195e9a2dbeabac7e971232bf4fde193d1ac6b15377d6d7  0010-ARM-dts-N9-Add-support-for-apds990x-ALS-PS.patch
+8ad7e3b360139fcd5d79b4cbcf5bfca2f394807394aed022177d5b5fc843b7e0785c93f2ee1ff66e9bcac54ca191fbef30d62a5d6b7eec1ae2f7f9dd70a65fa3  0011-HACK-export-dma-access-functions-needed-by-PVR-drive.patch
+27827877040007fc1c4c719f7e2e19e5c272d44972415cfc53feba0313d87e4074f8204bdb13cbc5fe21ea61bf595314b68f10c081e7b7bac3c888b60f008acf  linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+d3277bc075542fb621adabfc6c59d308bb05aefd159e447e4bf0f10bd0d6b84454d02882c3c53f01f132f6182986770209a998c14c3f59bd4e64bb64a5ecc7c4  config-nokia-n9.armhf
+a9b2eba95ead1226108bf664f49bcad70be99df7284ba807abdbd86a8dc68ebda6fc5d88c15846009f7748f1ae4d6735477d316bb9f298e7728071dad506b35f  RM-696_Pyrenees_SMD_V1_6.raw"

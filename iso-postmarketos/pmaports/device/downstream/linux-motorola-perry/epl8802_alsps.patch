@@ -1,0 +1,19 @@
+*** android_kernel_motorola_msm8937-729b33fc2d3125da153badce07a88e22a16a37a9/drivers/input/misc/epl8802_alsps.c	2020-05-11 19:38:28.627639792 -0400
+--- android_kernel_motorola_msm8937-729b33fc2d3125da153badce07a88e22a16a37a9/drivers/input/misc/epl8802_alsps.c	2020-05-11 19:38:43.062853597 -0400
+***************
+*** 32,38 ****
+  #include <linux/miscdevice.h>
+  #include <linux/slab.h>
+  #include <linux/uaccess.h>
+- #include <asm/mach-types.h>
+  #include <asm/setup.h>
+  #include <linux/wakelock.h>
+  #include <linux/jiffies.h>
+--- 32,38 ----
+  #include <linux/miscdevice.h>
+  #include <linux/slab.h>
+  #include <linux/uaccess.h>
++ //#include <asm/mach-types.h>
+  #include <asm/setup.h>
+  #include <linux/wakelock.h>
+  #include <linux/jiffies.h>

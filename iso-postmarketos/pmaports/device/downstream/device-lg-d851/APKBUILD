@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-d851
+pkgdesc="LG G3 (T-Mobile)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-lg-d851 mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+e43e6b95c68937071a22575473d862565857e96fcf4e263b4de8c29bf10db63d50077246268ccf2366a989684883742fe78a418976a232010407620737cefbef  deviceinfo
+f3feefbdef2e9487c79f1d1170eb9db3dabbefb70686a0bf2cf96d15bdd30b3b6b01b6d0e6abc8be89bee2004f5862165ee2f08814639116a295395d05fbc531  kernel-cmdline.conf
+"

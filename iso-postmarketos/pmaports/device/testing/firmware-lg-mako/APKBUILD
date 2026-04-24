@@ -1,0 +1,78 @@
+maintainer=""
+pkgname=firmware-lg-mako
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for lg-mako"
+url="https://developers.google.com/android/drivers#makolmy48t"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+# AOSP sources
+_version_broadcom="decb9f51"
+_version_qcom="8c489b7e"
+_version_lge="ff9ca8d1"
+_url_aosp="https://dl.google.com/dl/android/aosp"
+source="
+	$_url_aosp/broadcom-mako-lmy48t-$_version_broadcom.tgz
+	$_url_aosp/qcom-mako-lmy48t-$_version_qcom.tgz
+	$_url_aosp/lge-mako-lmy48t-$_version_lge.tgz
+"
+
+# Other sources
+_files="WCNSS_qcom_cfg.ini WCNSS_cfg.dat WCNSS_qcom_wlan_nv.bin"
+_commit_other="5b211791f83b63a22c0d6055d256de71b484345b"
+_url_other="https://github.com/LineageOS/android_device_lge_mako/raw/$_commit_other/wifi"
+for _i in $_files; do
+	source="$source $pkgname-$_commit_other-$_i::$_url_other/$_i";
+done
+
+package() {
+	cd "$srcdir"
+	tail -n +276 $srcdir/extract-broadcom-mako.sh | tar zx
+	tail -n +315 $srcdir/extract-qcom-mako.sh | tar zx
+	tail -n +276 $srcdir/extract-lge-mako.sh | tar zx
+
+	# bcm2079x
+	_files="bcm2079x_firmware.ncd  bcm2079x_pre_firmware.ncd"
+	for _i in $_files; do
+		install -Dm644 "vendor/broadcom/mako/proprietary/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/$_i";
+	done
+
+	# keymaster
+	_files="keymaster.b00 keymaster.b01 keymaster.b02 keymaster.b03
+		keymaster.mdt"
+	for _i in $_files; do
+		install -Dm644 "vendor/lge/mako/proprietary/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/keymaster/$_i";
+	done
+
+	# prima
+	install -Dm644 "$pkgname-$_commit_other-WCNSS_qcom_wlan_nv.bin" \
+		"$pkgdir/lib/firmware/postmarketos/wlan/prima/WCNSS_qcom_wlan_nv.bin"
+	for _i in WCNSS_qcom_cfg.ini WCNSS_cfg.dat; do
+		install -Dm644 "$pkgname-$_commit_other-$_i" \
+			"$pkgdir/lib/firmware/postmarketos/wlan/prima/$_i";
+	done
+
+	# qualcomm
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05 wcnss.mdt
+		a300_pfp.fw a300_pm4.fw dsps.b00 dsps.b01 dsps.b02 dsps.b03
+		dsps.b04 dsps.b05 dsps.mdt q6.b00 q6.b01 q6.b03 q6.b04
+		q6.b05 q6.b06 q6.mdt tzapps.b00 tzapps.b01 tzapps.b02 tzapps.b03
+		tzapps.mdt vidc_1080p.fw vidc.b00 vidc.b01 vidc.b02 vidc.b03
+		vidc.mdt"
+	for _i in $_files; do
+		install -Dm644 "vendor/qcom/mako/proprietary/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/$_i";
+	done
+}
+sha512sums="
+2892bcdbe4943aef25043f2407ce0574c92ea0516ac9188b65e583cdc097310694136c5dc79a3555dc584fe5269110f264959fe9018fc49520301485c23e0586  broadcom-mako-lmy48t-decb9f51.tgz
+5e8091634dfd6d71b4e9c987e6c5fbfe2b8c91456dc42535d13850e8b6b08116667d577ad78008383d44a70df41e1d78a7782705f624e92517a466d22ae71754  qcom-mako-lmy48t-8c489b7e.tgz
+fc2b0fb314d5e4cebfe5a6549c96d0b2027979d55c598e8230c074cb3c3c6f3fdc35b0b3b51c8c6750adbcec53d13583c66ea9cb147d1d1c266b2297f926c948  lge-mako-lmy48t-ff9ca8d1.tgz
+3a03e3ab4e305d1f9a2b50b540db056aa8bfece5c4e173278e93b083e3b3f2aa310b547154e543dd1ca725849c1f80bf90d2a8cd8f087db4597e743729867ba6  firmware-lg-mako-5b211791f83b63a22c0d6055d256de71b484345b-WCNSS_qcom_cfg.ini
+d9ec98e8fa795383678dc8ffd388d8a5fe2a475559c5996f551f02766bc3397e74c100548dcb06e2a65515c76cf28eac6f156aa805cf81ea3c580c859f4bd0f1  firmware-lg-mako-5b211791f83b63a22c0d6055d256de71b484345b-WCNSS_cfg.dat
+e61b83575b192480f7db7f8d30ca02f87d244a7013a8be8fe4325461c9508b60da167be4e49cf031e784cc05b7a5661b36c87faa813e3f84d0b3ce7dc20d18a6  firmware-lg-mako-5b211791f83b63a22c0d6055d256de71b484345b-WCNSS_qcom_wlan_nv.bin
+"

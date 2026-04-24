@@ -1,0 +1,67 @@
+maintainer="Achill Gilgenast <achill@achill.org>"
+pkgname=postmarketos-repo-nightly
+pkgver=1
+pkgrel=0
+pkgdesc="Meta-package to install nightly repositories"
+url="https://nightly.postmarketos.org/"
+arch="noarch !riscv64 !armhf" # not in nightly-builder
+license="Unlicense"
+# NOTE: pmbootstrap doesn't allow for-loops, so it is a bit repetitve
+depends="
+	$pkgname-desktop
+	$pkgname-gnome
+	$pkgname-kde
+	$pkgname-phosh
+	"
+install="
+	$pkgname-desktop.post-install
+	$pkgname-gnome.post-install
+	$pkgname-kde.post-install
+	$pkgname-phosh.post-install
+	"
+subpackages="
+	$pkgname-desktop:_nightly
+	$pkgname-gnome:_nightly
+	$pkgname-kde:_nightly
+	$pkgname-keys::all
+	$pkgname-phosh:_nightly
+	"
+source="https://nightly.postmarketos.org/desktop-nightly/aarch64-ci@nightly.postmarketos.org.rsa.pub
+	https://nightly.postmarketos.org/desktop-nightly/armv7-ci@nightly.postmarketos.org.rsa.pub
+	https://nightly.postmarketos.org/desktop-nightly/loongarch64-ci@nightly.postmarketos.org.rsa.pub
+	https://nightly.postmarketos.org/desktop-nightly/ppc64le-ci@nightly.postmarketos.org.rsa.pub
+	https://nightly.postmarketos.org/desktop-nightly/s390x-ci@nightly.postmarketos.org.rsa.pub
+	https://nightly.postmarketos.org/desktop-nightly/x86-ci@nightly.postmarketos.org.rsa.pub
+	https://nightly.postmarketos.org/desktop-nightly/x86_64-ci@nightly.postmarketos.org.rsa.pub
+	"
+options="!check !archcheck" # no tests, all is correct for -keys
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+keys() {
+	pkgdesc="$pkgdesc (keys)"
+	depends=
+
+	install -Dm644 "$srcdir"/$CARCH-ci@nightly.postmarketos.org.rsa.pub -t "$subpkgdir"/usr/lib/apk/keys/
+}
+
+_nightly() {
+	local _repo="${subpkgname##*-}"
+	pkgdesc="$pkgdesc ($_repo nightly repository)"
+	depends="$pkgname-keys"
+
+	mkdir -p "$subpkgdir"/usr/lib/apk/repositories.d
+	echo "https://nightly.postmarketos.org/$_repo-nightly/" >> "$subpkgdir"/usr/lib/apk/repositories.d/90-$subpkgname.list
+}
+
+sha512sums="
+920f3162c39a6459cd3658881d758a34df968c644c1748b327b4c2733d9469137cc6af757c118e3311ece599e31f22c17eed8e73ee3cb495c3d1fd0dce42fda8  aarch64-ci@nightly.postmarketos.org.rsa.pub
+ea1642953057edc529253aca7106f6468c5e22c9962f7df9ed72e126649d499313672970051c342f70a0ee6dbb5b71bd71945dd97aec62039671398791a23836  armv7-ci@nightly.postmarketos.org.rsa.pub
+a1b115f86d44d75372c37bafa9e33f79fd7aac00d4b4de11bc2276a9e1a098ddc362f1c3d6b99148297a7f05814c03fc212f1a5f28f870c0e447323d858df74e  loongarch64-ci@nightly.postmarketos.org.rsa.pub
+e99e7455855bd430ed2f5cb043469ef7ec6c7c12702b7511d593a20da835622687171c06f77365c58fe15d4785a3752746e12b37d64603b69d031dd19faff59c  ppc64le-ci@nightly.postmarketos.org.rsa.pub
+a0d49de215edb1868f7f75fcb4f3bd398ca18bcd5d9a33b2e85846b995181a352c1734e6230c6c91b3315af22be76588c1ebc85f47bffe510546d5543233b6d2  s390x-ci@nightly.postmarketos.org.rsa.pub
+964bb7931e2505a78d75a8008da94cff48825eaf07010479f420ba8901c2434dfea37f5026730bf4a3db49e07466a2ca67753bb5c56d8a7e57c89263fe30fa38  x86-ci@nightly.postmarketos.org.rsa.pub
+964bb7931e2505a78d75a8008da94cff48825eaf07010479f420ba8901c2434dfea37f5026730bf4a3db49e07466a2ca67753bb5c56d8a7e57c89263fe30fa38  x86_64-ci@nightly.postmarketos.org.rsa.pub
+"

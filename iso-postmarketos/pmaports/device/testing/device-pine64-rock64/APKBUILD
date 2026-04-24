@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Timothy Valldeperas <tvall43@gmail.com>"
+pkgname=device-pine64-rock64
+pkgver=5
+pkgrel=0
+pkgdesc="PINE64 ROCK64"
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base>=25-r1 linux-postmarketos-rockchip u-boot-rock64"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+c3ceb9ef2dea8a25d082969dfcc56c4fffe4985234424617c6e9e2822e3642d877f38481e525222476bf23616b95c105c170ca51c80cb3df7c93656fec878dce  deviceinfo
+e9ededbc7bd4b9466f2e35f82e03b9baf8874752a0cc1138a790db6db61fa1e5530f86106cc8d210bea84c104b3ccc422166e81bd8ee3efc3d08a4165adb818d  kernel-cmdline.conf
+"

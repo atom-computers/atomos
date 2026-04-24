@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/z2_row_defconfig
+
+pkgname=linux-zuk-z2-row
+pkgver=4.4.183
+pkgrel=1
+pkgdesc="Lenovo ZUK Z2 Pro kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="zuk-z2-row"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_zuk_msm8996"
+_commit="921bfcef4a132f6406e286bd45486d87abb94e68"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-nf_conntrack_sip_c.patch
+	fix-includes.patch
+	fix-macro-declare_usb_function.patch
+	fix-macro-trace_include_path.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS"
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Modules
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="f2c719bbafd39e02117c53ef539093e8542dfa4e3534e06bddf780a8a908b8fa0ce6c37b4d051b7d4c0f213c37b8d5bd8c216c95ef99b9ec13c2a4a58786f6a2  linux-zuk-z2-row-921bfcef4a132f6406e286bd45486d87abb94e68.tar.gz
+5f32ee9e72f96163b1d62369222c4b5ea4a485170d170b581952f9eae3e7309622e9bdc958b83fad574fe66c0ae41dcf6078ba0c5a3c0fa1c325aeb27e6105fc  config-zuk-z2-row.aarch64
+43fe667aebde511d55749d738d176f109ef8b0095f9f04015664a11b3f199f545a4f391d520b0dcd4275329a151a3ce19e49c0b8991ed30a934622bdc4e58c75  fix-nf_conntrack_sip_c.patch
+5e2e2944dbc726b95db72fed8780607fafbf49cfdf871f78b27eedae30c74510cc3fcd6566a21e2ac2b92508e9e52008c118ed877e679b939b24f66311b6c40d  fix-includes.patch
+8b3934e3c4115e81ac40a3c8022f3134cd89133f7569557ca857b4fd514078c4898b2ba3427986936d029874903711d04d7757d5a87bcb89137073128e51e8f5  fix-macro-declare_usb_function.patch
+c71ed4068fb815b1549cbf9fc2f5dcfc65f969f36700f916b227acb2c6c2f2062b66ef5a176f8876632a9240009a409e5a02c420d77fd3d9c05bb9833012caf0  fix-macro-trace_include_path.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch"

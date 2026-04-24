@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+
+description="Initialize hi1101 wlan driver"
+
+depend()
+{
+	need udev
+	before wlan
+}
+
+start()
+{
+	ebegin "Enabling wlan driver"
+	echo 1 > /sys/devices/hi110x_ps/bfg_lowpower_enable
+	echo 12 > /sys/devices/hi110x_power/powerpin_state
+	echo 1 > /proc/wifi_enable/wifi_start
+	echo 1 > /proc/oam_enable/oam_start
+}

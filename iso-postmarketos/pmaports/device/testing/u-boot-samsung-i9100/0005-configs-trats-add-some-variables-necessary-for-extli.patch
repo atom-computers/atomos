@@ -1,0 +1,48 @@
+From b13641ae44d93c7dc2dd658ab3a81a1beba1fe35 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Sun, 27 Jul 2025 10:33:30 +0200
+Subject: [PATCH] configs: trats: add some variables necessary for extlinux
+ boot
+
+With these changes we can successfully boot linux through
+extlinux. All of the added variables are likely not needed, but I am
+too lazy to check each one.
+---
+ include/configs/trats.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/include/configs/trats.h b/include/configs/trats.h
+index 2067327918a2..c2ff8a71c3be 100644
+--- a/include/configs/trats.h
++++ b/include/configs/trats.h
+@@ -10,6 +10,10 @@
+ #define __CONFIG_TRATS_H
+ 
+ #include <configs/exynos4-common.h>
++#define BOOT_TARGET_DEVICES(func) \
++	func(MMC, mmc, 1) \
++	func(MMC, mmc, 0)
++#include <config_distro_bootcmd.h>
+ 
+ #ifndef CONFIG_SYS_L2CACHE_OFF
+ #define CFG_SYS_PL310_BASE	0x10502000
+@@ -55,6 +59,16 @@
+ 	"/Image.itb ext4 0 2\0"
+ 
+ #define CFG_EXTRA_ENV_SETTINGS \
++	"kernel_addr_r=0x42000000\0" \
++	"kerneladdr=0x42000000\0" \
++	"fdt_addr_r=0x44000000\0" \
++	"fdtaddr=0x44000000\0" \
++	"scriptaddr=0x43000000\0" \
++	"pxefile_addr_r=0x45000000\0" \
++	"initrd_high=0x46000000\0" \
++	"ramdisk_addr_r=0x46000000\0" \
++	"initrdaddr=0x46000000\0" \
++	BOOTENV \
+ 	"bootk=" \
+ 		"run loaduimage;" \
+ 		"if run loaddtb; then " \
+-- 
+2.50.1
+

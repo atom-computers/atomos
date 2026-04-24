@@ -1,0 +1,113 @@
+maintainer=""
+pkgname=firmware-oneplus-oneplus3
+pkgver=4
+pkgrel=1
+pkgdesc="Firmware for OnePlus 3"
+url="https://gitlab.com/DrGitX/firmware-oneplus3"
+arch="aarch64"
+license="proprietary"
+makedepends="mtools pil-squasher qca-swiss-army-knife"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+replaces="linux-firmware-ath10k"
+_gpufw="https://github.com/TheMuppets/proprietary_vendor_oneplus/raw/lineage-17.1/oneplus3/proprietary/vendor/firmware"
+_files="adsp.b00
+	adsp.b01
+	adsp.b02
+	adsp.b03
+	adsp.b04
+	adsp.b05
+	adsp.b06
+	adsp.b08
+	adsp.b09
+	adsp.mdt
+	bdwlan30.bin
+	modem.b00
+	modem.b01
+	modem.b02
+	modem.b03
+	modem.b04
+	modem.b05
+	modem.b06
+	modem.b07
+	modem.b08
+	modem.b09
+	modem.b10
+	modem.b11
+	modem.b12
+	modem.b13
+	modem.b15
+	modem.b16
+	modem.b17
+	modem.b18
+	modem.b19
+	modem.b20
+	modem.mdt
+	mba.mbn
+	slpi.b00
+	slpi.b01
+	slpi.b02
+	slpi.b03
+	slpi.b04
+	slpi.b05
+	slpi.b06
+	slpi.b07
+	slpi.b08
+	slpi.b09
+	slpi.b10
+	slpi.b11
+	slpi.b12
+	slpi.b13
+	slpi.b14
+	slpi.mdt
+	venus.b00
+	venus.b01
+	venus.b02
+	venus.b03
+	venus.b04
+	venus.mdt
+"
+source="$url/-/raw/master/oneplus3/NON-HLOS.bin
+	$_gpufw/a530_zap.elf
+	20-adreno-gpu-firmware.files
+"
+
+_ath10k_boardname="bus=pci,vendor=168c,device=003e,subsystem-vendor=0000,subsystem-device=0000"
+_mdtnames="adsp modem slpi venus"
+_mbns="a530_zap.mbn adsp.mbn mba.mbn modem.mbn slpi.mbn venus.mbn"
+
+unpack() {
+	# Extract blobs
+	for _i in $_files; do
+		mcopy -v -b -p -n -i $srcdir/NON-HLOS.bin ::image/$_i $_i
+	done
+}
+
+package() {
+	# Squash firmware segments into mbns
+	for _i in $_mdtnames; do
+		pil-squasher "$_i.mbn" "$_i.mdt"
+	done
+
+	# Move zap shader to the same directory as the other mbns
+	mv "$srcdir/a530_zap.elf" "a530_zap.mbn"
+
+	# Install mbns
+	for _i in $_mbns; do
+		install -Dm644 $_i "$pkgdir/lib/firmware/qcom/msm8996/oneplus3/$_i"
+	done
+
+	# Install 20-adreno-gpu-firmware.files
+	install -Dm644 "$srcdir/20-adreno-gpu-firmware.files" \
+		"$pkgdir/usr/share/mkinitfs/files/20-adreno-gpu-firmware.files"
+
+	# Create and install ath10k board file
+	echo "[{\"names\":[\"$_ath10k_boardname\"],\"data\":\"bdwlan30.bin\"}]" > board-2.json
+	ath10k-bdencoder -c board-2.json
+	install -Dm644 board-2.bin -t "$pkgdir/lib/firmware/ath10k/QCA6174/hw3.0"
+}
+
+sha512sums="
+c0f3f908e237202003d9b2fe4071e2800bdcdae180e8311fbc0671478fcd63aba5a3fe5ab5d297010c12c232501f05f31141fc39a44c5b86ac2b56016f553a7f  NON-HLOS.bin
+374ed1606a8c12bd8fb8adb3e0d91603aa53ff9aed175921c9e6b579104407b01274e5f3cf158007b83ecb5aa2c7343c526e360aebc8bca557cd4b9c4c711f98  a530_zap.elf
+3d2959be4a4e3dcae8c88f8a8034e9d58596d47771591ad88535ab1b666766e3bd0da7c778d7db3d01eb628cb6f6b927d22358f4ef03fe64c2071a50287b0d36  20-adreno-gpu-firmware.files
+"

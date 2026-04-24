@@ -1,0 +1,77 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-crownlte
+pkgdesc="Samsung Galaxy Note 9"
+pkgver=4
+pkgrel=2
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-crownlte
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	initfs-hook.sh
+	stylus.conf
+	hciattach
+	10-hciattach.rules
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-nonfree-firmware-udev:nonfree_firmware_udev
+	$pkgname-x11
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# hciattach service for Bluetooth
+	install -Dm755 "$srcdir"/hciattach \
+		-t "$pkgdir"/etc/init.d
+	install -Dm644 "$srcdir"/10-hciattach.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d
+}
+
+nonfree_firmware() {
+	pkgdesc="$pkgdesc (WiFi, BT, MFC firmware)"
+	depends="firmware-samsung-crownlte bluez-deprecated"
+
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_openrc() {
+	default_openrc
+	install_if="$pkgdir-nonfree-firmware openrc"
+}
+
+nonfree_firmware_udev() {
+	default_udev
+	install_if="$pkgname-nonfree-firmware udev"
+}
+
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	depends="xf86-input-evdev"
+	install -Dm644 "$srcdir"/stylus.conf \
+		-t "$subpkgdir"/usr/share/X11/xorg.conf.d
+}
+
+sha512sums="
+af3c78002c7164d2b9fb90a69672092408a6a30c01e16ccab2cfc1e60f0e621bbec1dfa8218a04d3d47de7eb5f35b132149ce0e69e91171f9989e15cc5085ad8  deviceinfo
+ec698b3de66b051987c5442e41309398966dfc2ad5c717940e442f67fd48f5faa6e8a0b84de1aad499e3f36747cb82b7055e2c0eda9bc3a3aa49d14d8b7fa823  initfs-hook.sh
+29c2f8fbd67f6aa95a34fc465798be71dc360087b4e4fddbcdc9b43a628de384f48c1b9e6a7b3d41c93954baee3b88f08972f0a827d663b0279b06a4b2908bd2  stylus.conf
+70c4d3b7af9e58729b5caca87c6c0032675c4adfd3852b0e3fc1f866675d503c4f08d3edaf1b1949bf15344840222c1a7ba00384c290fa5e1b7742e1198855a8  hciattach
+58f72bb12532ce23782389bf9e9eb8eb8afe004dd46d11d48b21b6da6a84660846f79d528d9968a1c1be57716577035fd0da59b3fcda4f197599e92f243dbb45  10-hciattach.rules
+"

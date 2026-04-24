@@ -1,0 +1,19 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="HP EliteBook Ultra G1q"
+deviceinfo_manufacturer="HP"
+deviceinfo_codename="hp-elitebook-ultra-g1q"
+deviceinfo_year="2024"
+deviceinfo_dtb="qcom/x1e80100-hp-elitebook-ultra-g1q"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="laptop"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"

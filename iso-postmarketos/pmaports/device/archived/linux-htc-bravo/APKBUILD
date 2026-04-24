@@ -1,0 +1,57 @@
+# Archived: Kernel does not build anymore
+# Kernel config based on: arch/arm/configs/bravo_defconfig
+
+pkgname=linux-htc-bravo
+pkgver=3.0.16
+pkgrel=15
+pkgdesc="HTC Desire kernel from spezi77"
+arch="armhf"
+_carch="arm"
+_flavor="htc-bravo"
+url="https://github.com/spezi77/android_kernel_htc_qsd8k_3.0"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_htc_qsd8k_3.0"
+_commit="4bc19919f805777947c243e6c2ed41ece530488b"
+_config="config-$_flavor.armhf"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/spezi77/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-Makefile-fix-build-with-new-binutils.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-Alpine"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/arm/boot/zImage" \
+		"$pkgdir/boot/vmlinuz"
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="94929945d6fcb4428f320325ced207a9888cd758357766ef914c4ca2d5cea4b9cced77275463dac316591ba942e6e1514fec8c1f8e11c8324155116785ffb277  linux-htc-bravo-4bc19919f805777947c243e6c2ed41ece530488b.tar.gz
+2c797aa12254a4bddaed7b46b57b1875ffb73c2ac1307de187738cf779551bdb83271037599876fc7e1bc1ae3764323de92ee33b714de598196629fb5f75f3a0  config-htc-bravo.armhf
+d287d21a02c8ec299619db7cd4e5f8669dc3107cd13c4d918a656a6d410d7cfa0d2fdfa3a4bd7b52982698e93ad63052cbc3be20c451ef224331bf325af9f813  0001-Makefile-fix-build-with-new-binutils.patch"

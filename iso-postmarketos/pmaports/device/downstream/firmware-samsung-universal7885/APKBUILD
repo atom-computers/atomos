@@ -1,0 +1,34 @@
+pkgname=firmware-samsung-universal7885
+pkgver=1
+pkgrel=0
+pkgdesc="WiFi firmware for the Samsung devices on Exynos7885 SOC (jackpotlte)"
+url="https://github.com/VDavid003/samsung_jackpotlte_dump"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+_commit="b3aaaa27f95f084cb1fdf4e566baca54c61c3754"
+_repo="https://github.com/VDavid003/samsung_jackpotlte_dump/raw/$_commit/system"
+
+_files_wifi="
+mx
+mx140.bin
+mx140_wlan.hcf
+"
+
+for _file in $_files_wifi; do
+	source="$source $pkgname-$_commit-$_file::$_repo/vendor/etc/wifi/$_file"
+done
+
+package() {
+	local file
+	for file in $_files_wifi; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/mx140/$file"
+	done
+
+}
+
+sha512sums="cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e  firmware-samsung-universal7885-b3aaaa27f95f084cb1fdf4e566baca54c61c3754-mx
+b9ca23ef734eb43a7f0a533446525530ee63d76c03bff22b938ab2f18163653f1879e6eebf98239fbf4c2df06eb7fafc87040299a61009849f8c2e0a01bd57c7  firmware-samsung-universal7885-b3aaaa27f95f084cb1fdf4e566baca54c61c3754-mx140.bin
+67527efc8761cc227bf0ebd1726c83fa8c7fbf912c51130eab8f4ed2bf90208b1f392c6fbc0ca1cb4ee60c62405d9e6ff73820b59f5c48a03b27947288999ac5  firmware-samsung-universal7885-b3aaaa27f95f084cb1fdf4e566baca54c61c3754-mx140_wlan.hcf"

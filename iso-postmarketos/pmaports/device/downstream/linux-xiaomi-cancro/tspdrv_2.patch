@@ -1,0 +1,13 @@
+diff --git a/drivers/tspdrv/tspdrv.c b/drivers/tspdrv/tspdrv.c
+index 1a6ca32..69bdc46 100644
+--- a/drivers/tspdrv/tspdrv.c
++++ b/drivers/tspdrv/tspdrv.c
+@@ -51,7 +51,7 @@ static int g_nTimerPeriodMs = 5; /* 5ms timer by default. This variable could be
+ static atomic_t g_bRuntimeRecord;
+ #endif
+ 
+-#include <ImmVibeSPI.c>
++#include "ImmVibeSPI.c"
+ #if (defined(VIBE_DEBUG) && defined(VIBE_RECORD)) || defined(VIBE_RUNTIME_RECORD)
+ #include <tspdrvRecorder.c>
+ #endif

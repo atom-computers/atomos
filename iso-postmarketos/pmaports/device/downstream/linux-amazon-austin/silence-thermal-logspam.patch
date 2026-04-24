@@ -1,0 +1,27 @@
+diff --git a/drivers/thermal/virtual_sensor_thermal.c b/drivers/thermal/virtual_sensor_thermal.c
+index d3f7265a..1fb47593 100644
+--- a/drivers/thermal/virtual_sensor_thermal.c
++++ b/drivers/thermal/virtual_sensor_thermal.c
+@@ -186,14 +186,14 @@ static int virtual_sensor_thermal_get_temp(struct thermal_zone_device *thermal,
+                         log_to_metrics(ANDROID_LOG_INFO, "ThermalEvent", buf);
+                 }
+ 	#endif
+-		if (0 == sec_counter)
+-			pr_warning("%s %s t=%ld a=%d o=%d w=%d\n",
+-			       __func__,
+-			       tdev->name,
+-			       temp,
+-			       alpha,
+-			       offset,
+-			       weight);
++//		if (0 == sec_counter)
++//			pr_warning("%s %s t=%ld a=%d o=%d w=%d\n",
++//			       __func__,
++//			       tdev->name,
++//			       temp,
++//			       alpha,
++//			       offset,
++//			       weight);
+ 
+ 		if (!tdev->off_temp)
+ 			tdev->off_temp = temp - offset;

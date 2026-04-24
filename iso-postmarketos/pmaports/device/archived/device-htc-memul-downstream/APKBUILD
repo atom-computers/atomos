@@ -1,0 +1,36 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-htc-memul-downstream
+pkgdesc="HTC One Mini 2 (Downstream)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-htc-memul-downstream
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	initfs-hook.sh
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+32174076a7217183625741cc4a53ac0bbe1dbf9fd35528b1b2787aff237aae10c6ac0846756b80c21ceac1bbc0d664f4a6cbd33483e959f7fc2973f8b319c2ca  deviceinfo
+5699b02db81ffbe7f464186f33c6d08571e65fda1d290f5029147f530ced737ed1720c9a5e806d7e211781cf46f66684352acf493900b3bb0643db30fbe111bb  kernel-cmdline.conf
+765abaad5fda0dfda5e62e1e48414d3eea822198f39d0792171a04d73f86f6273a6e562afab430cbfcdd084412568a0ad03d012e9c40c5564f5cd1b9c0f181eb  initfs-hook.sh
+"

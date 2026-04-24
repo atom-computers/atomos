@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Lux Aliaga <they@mint.lgbt>"
+pkgname=linux-postmarketos-qcom-sm6125
+pkgver=6.1
+pkgrel=3
+pkgdesc="Mainline Kernel fork for SM6125 devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-qcom-sm6125"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="linux"
+_commit="77de535b8dbd8f483b5802c8937cb714bab5b485"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/sm6125-mainline/$_repository/-/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	# V=1: workaround for pma#1990, remove after upgrading to >= 6.2
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" V=1
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+e41aa6fa99cdb76f1748547e1b140721e30ced86d3e2aa2f94cc56be8a8f89fd0578f041061c0b6992cf49e73ee4b78cc6529943d37087c27894094730ca1e93  linux-postmarketos-qcom-sm6125-77de535b8dbd8f483b5802c8937cb714bab5b485.tar.gz
+91fe935c15e08fbf2ab588dcefcf46eae7f515dc4c6032ef6dfcfe49a2a2611df62907ab0797175be2c56eeeb8307d80afc5d281a8bc8207b9e7ebc57ea33bea  config-postmarketos-qcom-sm6125.aarch64
+"

@@ -1,0 +1,8 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="unisoc-nvitem-daemon"
+description="Unisoc NV item daemon"
+
+command="/usr/sbin/unisoc-nvitem-daemon"
+command_args="/dev/wwan0sprdnv0"

@@ -1,0 +1,126 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Bart Ribbers <bribbers@disroot.org>"
+pkgname=postmarketos-ui-plasma-mobile
+pkgver=6
+pkgrel=9
+pkgdesc="(Wayland) Mobile variant of KDE Plasma"
+url="https://wiki.postmarketos.org/wiki/Plasma_Mobile"
+# armhf blocked by pmaports#75
+# x86 blocked by aports#11807
+arch="noarch !armhf !x86"
+license="GPL-3.0-or-later"
+depends="
+	callaudiod
+	feedbackd
+	plasma-mobile
+	postmarketos-base-ui-plasma
+	postmarketos-usb-moded
+	udisks2
+	"
+_pmb_recommends="
+	dolphin
+	kclock
+	krecorder
+	kweather
+	plasma-camera
+	plasma-dialer
+	plasma-mobile-sounds
+	plasma-phonebook
+	qmlkonsole
+	spacebar
+	ttyescape
+	"
+source="
+	kscreenlockerrc
+	org.kde.plasma.mobile.homescreen.folio.js
+	system-generators-plasma-mobile-user-override
+	"
+subpackages="$pkgname-extras $pkgname-openrc $pkgname-systemd"
+# armv7 and riscv64 do not have qtwebengine in alpine
+if [ "$CARCH" != "armv7" ] && [ "$CARCH" != "riscv64" ]; then
+	subpackages="$subpackages $pkgname-extras-web:extras_web $pkgname-web:angelfish"
+else
+	subpackages="$subpackages $pkgname-web:firefox"
+fi
+install="
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	$pkgname-systemd.post-install
+	$pkgname-systemd.post-upgrade
+	"
+replaces="plasma-mobile plasma-mobile-meta"
+options="!check pmb:drm pmb:systemd"
+
+package() {
+	install -Dm644 \
+		"$srcdir"/kscreenlockerrc \
+		-t "$pkgdir"/etc/xdg
+
+	install -Dm644 "$srcdir"/org.kde.plasma.mobile.homescreen.folio.js \
+		"$pkgdir"/usr/share/plasma/look-and-feel/org.kde.breeze.mobile/contents/plasmoidsetupscripts/org.kde.plasma.mobile.homescreen.folio.js
+	install -Dm755 "$srcdir"/system-generators-plasma-mobile-user-override \
+		-t "$pkgdir"/usr/lib/systemd/system-generators
+}
+
+extras() {
+	pkgdesc="Meta package for additional Plasma mobile apps"
+	_pmb_recommends="
+		alligator
+		audiotube
+		elisa
+		itinerary
+		kalgebra
+		kalk
+		kasts
+		kdeconnect
+		keysmith
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+extras_web() {
+	pkgdesc="Meta package for additional Plasma mobile apps relying on qtwebengine"
+	install_if="$pkgname-extras=$pkgver-r$pkgrel"
+	_pmb_recommends="
+		arianna
+		koko
+		neochat
+		okular-mobile
+		tokodon
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+angelfish() {
+	install_if="$pkgname=$pkgver-r$pkgrel"
+	_pmb_recommends="angelfish"
+
+	mkdir -p "$subpkgdir"
+}
+
+firefox() {
+	install_if="$pkgname=$pkgver-r$pkgrel"
+	_pmb_recommends="firefox-esr mobile-config-firefox"
+
+	mkdir -p "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="
+		modemmanager-openrc
+		openrc
+		tinydm
+		tinydm-openrc
+	"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+b3aa8ee26c01de103c0c0af23532bf232f7071fdd02c53bd787d78e5974faa5662fc5776ce9be417392214ae73334b0eb0d073fe24f616a0ce99081f30b9158c  kscreenlockerrc
+9396bb437c8a6e4b13eff1d16d1dee5804beafd126f4be55ab6deec7bcc42e2473c824b9a37717e347f99c33037d4de7accfb67943cb282fde38eb89ed6f2b89  org.kde.plasma.mobile.homescreen.folio.js
+e726c2850024cd9f8c009b8748b3b58a78cfc7eaa1633ab03e7ba3df1a65cfa99d3dd54dfc99b6df2be6821da80a719e827e965d85052be22e3c5b4620feb37d  system-generators-plasma-mobile-user-override
+"

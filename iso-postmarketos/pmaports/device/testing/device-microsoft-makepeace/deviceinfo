@@ -1,0 +1,22 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Microsoft Lumia 640 XL"
+deviceinfo_manufacturer="Microsoft"
+deviceinfo_codename="microsoft-makepeace"
+deviceinfo_year="2015"
+deviceinfo_dtb="qcom-msm8226-microsoft-makepeace"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_dtb_second="false"
+deviceinfo_append_dtb="true"

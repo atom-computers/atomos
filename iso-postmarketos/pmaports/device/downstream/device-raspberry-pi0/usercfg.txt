@@ -1,0 +1,17 @@
+# workaround Alpine's update-raspberrypi-bootloader setting wrong initramfs
+initramfs initramfs
+
+# enable VC4 GPU driver
+dtoverlay=vc4-kms-v3d
+
+# uncomment line to enable serial on ttyS0
+# NOTE: This fixes the core_freq to 250Mh
+#enable_uart=1
+
+# load dwc2 USB driver
+dtoverlay=dwc2
+
+# Uncomment some or all of these to enable the optional hardware interfaces
+#dtparam=i2c_arm=on
+#dtparam=i2s=on
+#dtparam=spi=on

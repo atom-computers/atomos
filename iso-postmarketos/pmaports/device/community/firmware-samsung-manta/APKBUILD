@@ -1,0 +1,45 @@
+# Co-Maintainer: Lukas Timmermann <lukas@timmermann.space>
+maintainer="Alexandre Marquet <tb@a-marquet.fr>"
+pkgname=firmware-samsung-manta
+pkgver=3
+pkgrel=1
+pkgdesc="Firmware for Samsung Manta (Nexus 10)"
+url="https://developers.google.com/android/drivers#mantalmy49j"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commitfw="5d170b264b593b75734a2c4f10f06fbe42bb5067"
+_commitdev="f654b082d30391218c985cd2e2c9089e1b444e11"
+source="
+	brcmfmac43241b0-sdio.samsung,nexus10-manta.txt::https://raw.githubusercontent.com/LineageOS/android_device_samsung_manta/$_commitdev/bcmdhd.cal
+	BCM.samsung,nexus10-manta.hcd::https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commitfw/manta/proprietary/vendor/firmware/bcm43241.hcd
+	maxtouch.fw::https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commitfw/manta/proprietary/vendor/firmware/maxtouch.fw
+	es305_fw.bin::https://github.com/TheMuppets/proprietary_vendor_samsung/raw/$_commitfw/manta/proprietary/vendor/firmware/es305_fw.bin
+"
+
+package() {
+	cd "$srcdir"
+
+	# Wifi
+	install -Dm644 "brcmfmac43241b0-sdio.samsung,nexus10-manta.txt" \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Bluetooth
+	install -Dm644 "BCM.samsung,nexus10-manta.hcd" \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Touchscreen
+	install -Dm644 "maxtouch.fw" \
+		-t "$pkgdir/lib/firmware/postmarketos/"
+
+	# Audience eS305
+	install -Dm644 "es305_fw.bin" \
+		-t "$pkgdir/lib/firmware/postmarketos/"
+}
+
+sha512sums="
+e5317fdd080ff7ea30bf326c48f230a68484e4339739553f537f9b1c0c379b48fd86b857112cf6f293f061b18d0ea82b92026ca79204c28fd2e0d71c2cd42140  brcmfmac43241b0-sdio.samsung,nexus10-manta.txt
+23cf1fb5cab6666d74eff1879c67b2c53308e1285900d40c95cc75507164cb3e1b525abec6fde2ef763df1813d291bac8a05c830e91ad1357380292a55e7d2fc  BCM.samsung,nexus10-manta.hcd
+a7ada29e2d76c48941ae05abb6f972a628f9729ccabbea5d8adfa2fb7f107e652ef290a1770e54387b3ee798382cb4f6519344461c991b5193fdbc465b9c7644  maxtouch.fw
+b16ccf4c733564fc0e7e436915ca3185ebd6bbcd33106328813b1bd8a40ff1e34c818c71c86356596f75e1b739585ab562fa279cfd0d051c0216c64759bc5dc7  es305_fw.bin
+"

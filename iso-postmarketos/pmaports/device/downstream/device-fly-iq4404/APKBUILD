@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-fly-iq4404
+pkgdesc="Fly Spark"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-fly-iq4404 mkbootimg msm-fb-refresher mtk-mkimage"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+2c4238529f3dd32ca4674cc59455fde4b54d894e4628950130c88a75f1dadf29a2b1cc451e18868422d0c5e0b2502c411ee63b638f2880e1e4212322a5a32db3  deviceinfo
+"

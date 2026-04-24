@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-asus-t00f
+pkgdesc="Asus Zenfone 5"
+pkgver=4
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="x86"
+options="!check !archcheck"
+depends="postmarketos-base linux-asus-t00f mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-x11"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	xorg.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	depends="
+		libinput
+		xf86-input-libinput
+		xf86-video-fbdev"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-t00f.conf
+}
+
+sha512sums="
+8c9a415fbe565f3099a9fc318095515abb9f6553892c855962e0c438aeae4811ffbc18e51d6d404ec6f3520f1c52d26eff6532a5c461df14819d907f04bc4b54  deviceinfo
+25de92839a8baa67644a1f82cf28639239d187210bdeaffd5b39ac72bbd8d2e0f45ce5568d62e56e4949499fda5b7980aa2f2b32c90af8581e3cd6da34765089  kernel-cmdline.conf
+2511fa519813061531757996fbbbb9eecae1a136d2e13149fd7afe04d19982c7eaa5ced8df57860bb816186f206915fcbd4a9e34fdf92b2c6efe3320a223c328  xorg.conf
+"

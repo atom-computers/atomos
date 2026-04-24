@@ -1,0 +1,47 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-arrow-db820c
+pkgdesc="Arrow DragonBoard 820c"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8996
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8996
+"
+makedepends="devicepkg-dev"
+source="
+	30-gpu-firmware.files
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/Video firmware"
+	depends="linux-firmware-qcom"
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" -t \
+		"$subpkgdir/usr/share/mkinitfs/files"
+}
+
+sha512sums="
+c0fc060795d8855810a0d6be46adcb02278854804b8d88fda72d8e172b5e9d44ba7ea5d0fece4fdb95e9566938228f6da8e562143242f700545236e71408fc34  30-gpu-firmware.files
+0a91154d1a594e5b659b8f59844b3a8f471d3a828b20efec26dd872a8ca4973748a76807869f0adcf002a926dde6cfc1fda5db2825f0ae767eebe08c543d4238  deviceinfo
+8bc79847b4e25f0baed1aa44dff48d80e256d1f44e4376c09513b8b05dd1c5fd98d2ae6b37311229e8a6d5c9bd537b70cddb9624472ca0b9c3d627def92646dc  kernel-cmdline.conf
+c648fc8a68acb108a3d43c73f653d9db3744fa7b1c493e9db2453020ce3e55586f190b71c0d6825215c7a42ffef5156b3160932bbdbfe17bfd19d957ffb59a13  modules-initfs
+"

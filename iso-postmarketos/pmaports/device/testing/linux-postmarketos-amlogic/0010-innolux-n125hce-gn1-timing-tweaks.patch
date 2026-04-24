@@ -1,0 +1,57 @@
+From 6a51b0b4e1bae07da42ab82c41628c5ca1997c6f Mon Sep 17 00:00:00 2001
+From: "Lukas F. Hartmann" <lukas@mntre.com>
+Date: Sun, 9 Jul 2023 23:02:48 +0200
+Subject: [PATCH 12/21] innolux-n125hce-gn1-timing-tweaks
+
+---
+ drivers/gpu/drm/panel/panel-edp.c | 32 +++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+--- a/drivers/gpu/drm/panel/panel-edp.c
++++ b/drivers/gpu/drm/panel/panel-edp.c
+@@ -1318,6 +1318,35 @@ static const struct panel_desc innolux_n
+ 	},
+ };
+ 
++static const struct drm_display_mode innolux_n125hce_gn1_a311d_mode = {
++	//.clock = 162000, 70Hz
++	// wrong colors are only if this mismatches dtb assigned clock
++	.clock = 156000, // 68Hz
++	//.clock = 153600, // 65Hz (921.6mhz)
++	//.clock = 138780, // 59Hz (832.68mhz)
++	//.clock = 138780, // 59Hz (832.68mhz)
++	.hdisplay = 1920,
++	.hsync_start = 1920 + 40,
++	.hsync_end = 1920 + 40 + 40,
++	.htotal = 1920 + 40 + 40 + 80,
++	.vdisplay = 1080,
++	// a311d mipi dsi driver currently calculates these wrongly,
++	// so we have to work around that here
++	.vsync_start = 1080 + 1,
++	.vsync_end = 1080 + 1 + 4,
++	.vtotal = 1080 + 1 + 4 + 27,
++};
++
++static const struct panel_desc innolux_n125hce_gn1_a311d = {
++	.modes = &innolux_n125hce_gn1_a311d_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 276,
++		.height = 155,
++	},
++};
++
+ static const struct drm_display_mode innolux_p120zdg_bf1_mode = {
+ 	.clock = 206016,
+ 	.hdisplay = 2160,
+@@ -1736,6 +1765,9 @@ static const struct of_device_id platfor
+ 		.compatible = "innolux,n125hce-gn1",
+ 		.data = &innolux_n125hce_gn1,
+ 	}, {
++		.compatible = "innolux,n125hce-gn1-a311d",
++		.data = &innolux_n125hce_gn1_a311d,
++	}, {
+ 		.compatible = "innolux,p120zdg-bf1",
+ 		.data = &innolux_p120zdg_bf1,
+ 	}, {

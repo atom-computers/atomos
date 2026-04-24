@@ -1,0 +1,101 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-a6lte-downstream
+pkgdesc="Samsung Galaxy A6 2018 (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-utils
+	bluez-deprecated
+	bootmac
+	firmware-samsung-a6lte
+	linux-samsung-a6lte-downstream
+	mkbootimg
+	msm-fb-refresher
+	pipewire-pulse
+	postmarketos-base
+	samsungipcd
+	util-linux
+"
+replaces="
+	bootmac
+	lightdm
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	etc-conf.d-samsungipcd
+	etc-init.d-hciattach-ttySAC0
+	etc-init.d-udev-settle
+	etc-init.d-wlan0-up
+	etc-lightdm-lightdm.conf
+	etc-NetworkManager-conf.d-swlan0-unmanaged.conf
+	etc-NetworkManager-conf.d-wlan0-preserve-mac.conf
+	usr-libexec-samsungipcd-init.sh
+	usr-libexec-samsungipcd-voicecall.sh
+	usr-share-alsa-ucm2-conf.d-Universal7870-I-HiFi.conf
+	usr-share-alsa-ucm2-conf.d-Universal7870-I-Universal7870-I.conf
+	usr-share-alsa-ucm2-conf.d-Universal7870-I-VoiceCall.conf
+	usr-share-wireplumber-wireplumber.conf.d-headroom.conf
+"
+subpackages="
+	$pkgname-openrc
+"
+
+# pulseaudio does not seem to work on this device. Will use pipewire-pulse instead.
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 etc-conf.d-samsungipcd "$pkgdir"/etc/conf.d/samsungipcd
+	install -Dm644 etc-lightdm-lightdm.conf "$pkgdir"/etc/lightdm/lightdm.conf
+	install -Dm755 usr-libexec-samsungipcd-init.sh "$pkgdir"/usr/libexec/samsungipcd/init.sh
+	install -Dm755 usr-libexec-samsungipcd-voicecall.sh "$pkgdir"/usr/libexec/samsungipcd/voicecall.sh
+	install -Dm644 usr-share-alsa-ucm2-conf.d-Universal7870-I-HiFi.conf "$pkgdir"/usr/share/alsa/ucm2/conf.d/Universal7870-I/HiFi.conf
+	install -Dm644 usr-share-alsa-ucm2-conf.d-Universal7870-I-Universal7870-I.conf "$pkgdir"/usr/share/alsa/ucm2/conf.d/Universal7870-I/Universal7870-I.conf
+	install -Dm644 usr-share-alsa-ucm2-conf.d-Universal7870-I-VoiceCall.conf "$pkgdir"/usr/share/alsa/ucm2/conf.d/Universal7870-I/VoiceCall.conf
+	install -Dm644 usr-share-wireplumber-wireplumber.conf.d-headroom.conf "$pkgdir"/usr/share/wireplumber/wireplumber.conf.d/headroom.conf
+
+	install -Dm644 etc-NetworkManager-conf.d-swlan0-unmanaged.conf "$pkgdir"/etc/NetworkManager/conf.d/swlan0-unmanaged.conf
+	install -Dm644 etc-NetworkManager-conf.d-wlan0-preserve-mac.conf "$pkgdir"/etc/NetworkManager/conf.d/wlan0-preserve-mac.conf
+	# we run bootmac ourselves and don't want it to trigger from the udev rule
+	# so remove the rule
+	install -Dm755 /dev/null "$pkgdir"/usr/lib/udev/rules.d/90-bootmac.rules
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	replaces="udev-init-scripts-openrc"
+	install="$subpkgname.post-install"
+
+	install -Dm755 etc-init.d-wlan0-up "$subpkgdir"/etc/init.d/wlan0-up
+	install -Dm755 etc-init.d-udev-settle "$subpkgdir"/etc/init.d/udev-settle
+	install -Dm755 etc-init.d-hciattach-ttySAC0 "$subpkgdir"/etc/init.d/hciattach-ttySAC0
+}
+
+sha512sums="
+4d0e7338f0faebc63acfb1316dcdc9c1851fe6ec810dcb13ff76c2cf9ddb29b78d538d132d0afd4765370e9c266aadbdf5c5f87ee867e84c6c4bc83ea74ba726  deviceinfo
+6263b6dab9ea670bd1af22feff8fb7ce9d143ed5ab99223bcef9da76bb0947c89e62dbf7004e1a307e2b71df48de84ea95cad258d88a44cedb37e347c56db8d2  kernel-cmdline.conf
+3e5bb764529010d2b6b1f2759a7799f665d140aebcee2dd63433e68cd4282e09b5d3b34fb7c21e737595b406501e7f02ece4592651c60e4c2b9419de4aedb438  etc-conf.d-samsungipcd
+f9716fc70bf3508d2f9e83d908f1c13103403f01ebb784acec6cdf3e959e92b63c75e49b0120abe1ada5a50d768dcf30b8472630da1172fc826485e97024d85e  etc-init.d-hciattach-ttySAC0
+203b832a7080d5f1351c5e024e444f9fe509f6e0fd4b376a60c7d73359b7e356863a4f15caf9b2e4e733dc44d2971722083e7c69ca94a012eb004b4b8ded9d09  etc-init.d-udev-settle
+7caddfe4659c969a33adcc27a760bc78d4f70ca4b7a4a5ec28a6411c12f3e6dd6d427b59f75976a737a5fe0f09806f8b6d65798f6358bd1e1954ad2a28fbfdc8  etc-init.d-wlan0-up
+861270c6bc0b2a3e6cd389c21c8c895e62de8cf8bec6fcf23c178f8cbaae855d62b0ee98692671ab4f518d84cb43dd0b2fe46f5a609f65af6a6c06e0fdbb6d0c  etc-lightdm-lightdm.conf
+ef24527b13e48a9153643f3713167d3d08486e7de8b4c94d7c446ff380396115890573d8cd4aa5448766d9e779e189833a83e7921081679bd348c3f8a59410af  etc-NetworkManager-conf.d-swlan0-unmanaged.conf
+5c3a692f22a29fca792c114c6d94ff1bf0d6921f068f207a2894a8f99c73dcc319e7c803ed7adfe64eb3e60088f37e2a2730118b2ed57aa01b35415664085567  etc-NetworkManager-conf.d-wlan0-preserve-mac.conf
+2949601ac8edd5d526579e83d73a05d4b17e3de2b6936066ac624bb4cd668e5d7ba3f38f1112a0f39a678b8a73d38e73e81556cb6aa69519bad65155accdb984  usr-libexec-samsungipcd-init.sh
+010046035478f56ff3eca1cd40dd5f625a0bf1d05acd6a88cb4906c9ea028ac3cb213bb809371e6f45ba8e6a897e9f00ed1449bd18903cea8b1ac3a1ed3a5072  usr-libexec-samsungipcd-voicecall.sh
+2169590d10d6123575d43e8ff7dc0d2ba824f8266d9fa75a5b59a4cc5753e47e327368b777082930d6b7a7aed6f57fa6ac2c5a2e816e1e12cd1032a8bb1822b5  usr-share-alsa-ucm2-conf.d-Universal7870-I-HiFi.conf
+478983dffd484deb2037ab530bd181c784205e3f297484b0a8938a55d232eb2f35775c475ff913c7547726612036a7935c104950ba983ee263be300cda4b277a  usr-share-alsa-ucm2-conf.d-Universal7870-I-Universal7870-I.conf
+38fb210d19be6e14a6936b2d4383e3e853d5382b0ea59cd3f8e185aaa48189f92a6b05c039d2fb7bc036445b8ad91ea5234e55f1cccb805e95a3fb1410e14e13  usr-share-alsa-ucm2-conf.d-Universal7870-I-VoiceCall.conf
+be561f0573c73bdcf37fbd8e4659e92577a0818aafb75d73e7cbf1dd8980f29313170703074ee0cc9cc5b5a07cd7ac8ced07dfdc77b0b31a0cd34d66ae0473a4  usr-share-wireplumber-wireplumber.conf.d-headroom.conf
+"

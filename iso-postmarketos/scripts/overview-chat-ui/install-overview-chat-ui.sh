@@ -9,6 +9,7 @@ fi
 PROFILE_ENV="$1"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PROFILE_ENV_SOURCE="$PROFILE_ENV"
+DIRECT_ROOTFS_DIR="${ROOTFS_DIR:-}"
 
 if [ ! -f "$PROFILE_ENV_SOURCE" ] && [ -f "$ROOT_DIR/$PROFILE_ENV" ]; then
     PROFILE_ENV_SOURCE="$ROOT_DIR/$PROFILE_ENV"
@@ -256,18 +257,27 @@ sed_inplace "s/__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__/${OVERVIEW_RUNTIME_DEFAULT}/
 sed_inplace "s/__OVERVIEW_CHAT_UI_LAYER_SHELL_DEFAULT__/${OVERVIEW_LAYER_SHELL_DEFAULT}/g" "$tmpdir/atomos-overview-chat-ui-launcher"
 
 INSTALL_DIRS='install -d /usr/local/bin /usr/libexec'
-bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_DIRS"
-
 INSTALL_BIN_CMD='cat > /usr/local/bin/atomos-overview-chat-ui && chmod 755 /usr/local/bin/atomos-overview-chat-ui && ln -sf /usr/local/bin/atomos-overview-chat-ui /usr/bin/atomos-overview-chat-ui'
-bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_BIN_CMD" < "$BIN_PATH"
-
 INSTALL_LAUNCHER_CMD='cat > /usr/libexec/atomos-overview-chat-ui && chmod 755 /usr/libexec/atomos-overview-chat-ui'
-bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_LAUNCHER_CMD" < "$tmpdir/atomos-overview-chat-ui-launcher"
-
 INSTALL_SUBMIT_CMD='cat > /usr/libexec/atomos-overview-chat-submit && chmod 755 /usr/libexec/atomos-overview-chat-submit'
-bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_SUBMIT_CMD" < "$tmpdir/atomos-overview-chat-submit"
-
 VERIFY_CMD='test -x /usr/local/bin/atomos-overview-chat-ui && test -x /usr/bin/atomos-overview-chat-ui && test -x /usr/libexec/atomos-overview-chat-ui && test -x /usr/libexec/atomos-overview-chat-submit'
-bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$VERIFY_CMD"
+
+if [ -n "$DIRECT_ROOTFS_DIR" ]; then
+    install -d "$DIRECT_ROOTFS_DIR/usr/local/bin" "$DIRECT_ROOTFS_DIR/usr/libexec"
+    install -m 0755 "$BIN_PATH" "$DIRECT_ROOTFS_DIR/usr/local/bin/atomos-overview-chat-ui"
+    ln -sf /usr/local/bin/atomos-overview-chat-ui "$DIRECT_ROOTFS_DIR/usr/bin/atomos-overview-chat-ui"
+    install -m 0755 "$tmpdir/atomos-overview-chat-ui-launcher" "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-overview-chat-ui"
+    install -m 0755 "$tmpdir/atomos-overview-chat-submit" "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-overview-chat-submit"
+    test -x "$DIRECT_ROOTFS_DIR/usr/local/bin/atomos-overview-chat-ui"
+    test -x "$DIRECT_ROOTFS_DIR/usr/bin/atomos-overview-chat-ui"
+    test -x "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-overview-chat-ui"
+    test -x "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-overview-chat-submit"
+else
+    bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_DIRS"
+    bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_BIN_CMD" < "$BIN_PATH"
+    bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_LAUNCHER_CMD" < "$tmpdir/atomos-overview-chat-ui-launcher"
+    bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_SUBMIT_CMD" < "$tmpdir/atomos-overview-chat-submit"
+    bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$VERIFY_CMD"
+fi
 
 echo "Installed overview chat UI binary and launch helpers."

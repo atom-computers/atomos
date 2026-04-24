@@ -1,0 +1,20 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Xunlong Orange Pi 5 Plus"
+deviceinfo_manufacturer="Xunlong"
+deviceinfo_codename="xunlong-orangepi5-plus"
+deviceinfo_year="2023"
+deviceinfo_dtb="rockchip/rk3588-orangepi-5-plus"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_getty="ttyS2;1500000"
+
+# Bootloader related
+deviceinfo_boot_filesystem="fat32"

@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-kccat6
+pkgdesc="Samsung Galaxy S5 Plus"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-kccat6
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+781601d3b30f98ae0281ebaa3301d22f57af98c491deee0c2f0c2ce737c6760d04761f7b9baa1622230fe0337e63912af70ce28fa92b7adb5023a3332c040c61  deviceinfo
+592ec2829ce1cb2e7f8feebbab7cb73085c0222b6bfee1a998de39b88fc5784874755d88263c8a32b94a81b0462f295374c1726f631f96613506d8b0a6526719  kernel-cmdline.conf
+"

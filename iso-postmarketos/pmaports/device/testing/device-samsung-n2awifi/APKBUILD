@@ -1,0 +1,45 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=device-samsung-n2awifi
+pkgdesc="Samsung Galaxy Tab Pro 10.1 WiFi"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-n2awifi
+	linux-firmware-brcm
+	linux-firmware-s5p-mfc
+	linux-postmarketos-exynos5
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-disable-gsd-color:disable_gsd_color"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+disable_gsd_color() {
+	# Prevent high CPU usage of gsd-color (see issue #3853)
+	install_if="$pkgname=$pkgver-r$pkgrel gnome-settings-daemon"
+
+	mkdir -p "$subpkgdir"/usr/share/systemd/user/
+	ln -s /dev/null "$subpkgdir"/usr/share/systemd/user/org.gnome.SettingsDaemon.Color.service
+}
+
+sha512sums="
+1f8c0ff12fdc347eb17dc5a0e4f1f7e4908370357dda78da966a23f0178d57c990673b47c610da4b9ff37a62478d08c2dd5ee3bea416fa44724feea81688019d  deviceinfo
+4b3cb9dca85c04f1bfc5676029a6ae225409f173c6f0fc025786c1a72326dabad4b5ad75d0dd9a41cdebe8c15db5ca9761e15f3b9f99f8bf70b19769bb116fe6  modules-initfs
+"

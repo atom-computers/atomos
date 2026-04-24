@@ -1,0 +1,4750 @@
+replace binary DrvGen with python 3 version.
+scripts have been upgraded from python 2 to 3 using futurize.
+
+diff --git a/scripts/drvgen/drvgen.mk b/scripts/drvgen/drvgen.mk
+index cdc47873434..261174fa51e 100644
+--- a/scripts/drvgen/drvgen.mk
++++ b/scripts/drvgen/drvgen.mk
+@@ -20,7 +20,7 @@ DRVGEN_FILE_LIST := $(addprefix $(DRVGEN_OUT)/,$(ALL_DRVGEN_FILE))
+ else
+ DRVGEN_FILE_LIST :=
+ endif
+-DRVGEN_TOOL := $(srctree)/tools/dct/DrvGen
++DRVGEN_TOOL := $(srctree)/tools/dct/DrvGen.py
+ DRVGEN_PREBUILT_PATH := $(srctree)/$(DRVGEN_PATH)
+ DRVGEN_PREBUILT_CHECK := $(filter-out $(wildcard $(addprefix $(DRVGEN_PREBUILT_PATH)/,$(ALL_DRVGEN_FILE))),$(addprefix $(DRVGEN_PREBUILT_PATH)/,$(ALL_DRVGEN_FILE)))
+ 
+@@ -29,7 +29,7 @@ drvgen: $(DRVGEN_FILE_LIST)
+ ifneq ($(DRVGEN_PREBUILT_CHECK),)
+ $(DRVGEN_OUT)/cust.dtsi: $(DRVGEN_TOOL) $(DWS_FILE)
+ 	@mkdir -p $(dir $@)
+-	$(DRVGEN_TOOL) $(DWS_FILE) $(dir $@) $(dir $@) cust_dtsi
++	$(python) $(DRVGEN_TOOL) $(DWS_FILE) $(dir $@) $(dir $@) cust_dtsi
+ 
+ else
+ $(DRVGEN_FILE_LIST): $(DRVGEN_OUT)/% : $(DRVGEN_PREBUILT_PATH)/%
+diff --git a/tools/dct/DrvGen.py b/tools/dct/DrvGen.py
+new file mode 100755
+index 00000000000..500ea40172c
+--- /dev/null
++++ b/tools/dct/DrvGen.py
+@@ -0,0 +1,147 @@
++#! /usr/bin/python3
++
++from __future__ import print_function
++import os, sys
++import getopt
++import traceback
++import subprocess
++import xml.dom.minidom
++
++sys.path.append('.')
++sys.path.append('..')
++
++from obj.ChipObj import ChipObj
++from obj.ChipObj import Everest
++from obj.ChipObj import Olympus
++from obj.ChipObj import KiboPlus
++from obj.ChipObj import Rushmore
++
++from utility.util import LogLevel
++from utility.util import log
++
++def usage():
++    print('''
++usage: DrvGen [dws_path] [file_path] [log_path] [paras]...
++
++options and arguments:
++
++dws_path    :    dws file path
++file_path   :    where you want to put generated files
++log_path    :    where to store the log files
++paras        :    parameter for generate wanted file
++''')
++
++def is_oldDws(path, gen_spec):
++    if not os.path.exists(path):
++        log(LogLevel.error, 'Can not find %s' %(path))
++        sys.exit(-1)
++
++    try:
++        root = xml.dom.minidom.parse(dws_path)
++    except Exception as e:
++        log(LogLevel.warn, '%s is not xml format, try to use old DCT!' %(dws_path))
++        if len(gen_spec) == 0:
++            log(LogLevel.warn, 'Please use old DCT UI to gen all files!')
++            return True
++        old_dct = os.path.join(sys.path[0], 'old_dct', 'DrvGen')
++        cmd = old_dct + ' ' + dws_path + ' ' + gen_path + ' ' + log_path + ' ' + gen_spec[0]
++        if 0 == subprocess.call(cmd, shell=True):
++            return True
++        else:
++            log(LogLevel.error, '%s format error!' %(dws_path))
++            sys.exit(-1)
++
++    return False
++
++if __name__ == '__main__':
++    opts, args = getopt.getopt(sys.argv[1:], '')
++
++    if len(args) == 0:
++        msg = 'Too less arguments!'
++        usage()
++        log(LogLevel.error, msg)
++        sys.exit(-1)
++
++    dws_path = ''
++    gen_path = ''
++    log_path = ''
++    gen_spec = []
++
++    # get DWS file path from parameters
++    dws_path = os.path.abspath(args[0])
++
++    # get parameters from input
++    if len(args) == 1:
++        gen_path = os.path.dirname(dws_path)
++        log_path = os.path.dirname(dws_path)
++
++    elif len(args) == 2:
++        gen_path = os.path.abspath(args[1])
++        log_path = os.path.dirname(dws_path)
++
++    elif len(args) == 3:
++        gen_path = os.path.abspath(args[1])
++        log_path = os.path.abspath(args[2])
++
++    elif len(args) >= 4:
++        gen_path = os.path.abspath(args[1])
++        log_path = os.path.abspath(args[2])
++        for i in range(3,len(args)):
++            gen_spec.append(args[i])
++
++    log(LogLevel.info, 'DWS file path is %s' %(dws_path))
++    log(LogLevel.info, 'Gen files path is %s' %(gen_path))
++    log(LogLevel.info, 'Log files path is %s' %(log_path))
++
++    for item in gen_spec:
++        log(LogLevel.info, 'Parameter is %s' %(item))
++
++
++
++    # check DWS file path
++    if not os.path.exists(dws_path):
++        log(LogLevel.error, 'Can not find "%s", file not exist!' %(dws_path))
++        sys.exit(-1)
++
++    if not os.path.exists(gen_path):
++        log(LogLevel.error, 'Can not find "%s", gen path not exist!' %(gen_path))
++        sys.exit(-1)
++
++    if not os.path.exists(log_path):
++        log(LogLevel.error, 'Can not find "%s", log path not exist!' %(log_path))
++        sys.exit(-1)
++
++    if is_oldDws(dws_path, gen_spec):
++        sys.exit(0)
++
++    chipId = ChipObj.get_chipId(dws_path)
++    chipObj = None
++    if cmp(chipId, 'MT6797') == 0:
++        chipObj = Everest(dws_path, gen_path)
++    elif cmp(chipId, 'MT6757') == 0:
++        chipObj = Olympus(dws_path, gen_path)
++    elif cmp(chipId, 'KIBOPLUS') == 0:
++        chipObj = KiboPlus(dws_path, gen_path)
++    elif cmp(chipId, 'MT6570') == 0:
++        chipObj = Rushmore(dws_path, gen_path)
++    else:
++        chipObj = ChipObj(dws_path, gen_path)
++
++    if not chipObj.parse():
++        log(LogLevel.error, 'Parse %s fail!' %(dws_path))
++        sys.exit(-1)
++
++    if not chipObj.generate(gen_spec):
++        log(LogLevel.error, 'Generate files fail!')
++        sys.exit(-1)
++
++    sys.exit(0)
++
++
++
++
++
++
++
++
++
+diff --git a/tools/dct/config/PMIC_MT6335PMUMP.cmp b/tools/dct/config/PMIC_MT6335PMUMP.cmp
+new file mode 100644
+index 00000000000..1acb3a47ee1
+--- /dev/null
++++ b/tools/dct/config/PMIC_MT6335PMUMP.cmp
+@@ -0,0 +1,50 @@
++[PMIC_TABLE]
++CHIP = MT6335
++NUM_LDO = 11
++FUNCTION = pmic_set_register_value
++LDO_APPNAME_DEFAULT = MT65XX_POWER_NONE
++INCLUDE_HEADER = linux/types.h:mach/mt_typedefs.h:mach/upmu_common.h:mach/upmu_hw.h:mach/mt_pm_ldo.h
++
++[LDO_NAME1]
++LDO_NAME = VCAMA1
++PARAMETER_NAME = MT6335_PMIC_RG_VCAMA1_SW_EN
++
++[LDO_NAME2]
++LDO_NAME = VCAMA2
++PARAMETER_NAME = MT6335_PMIC_RG_VCAMA2_SW_EN
++
++[LDO_NAME3]
++LDO_NAME = VSIM1
++PARAMETER_NAME = MT6335_PMIC_RG_VSIM1_SW_EN
++
++[LDO_NAME4]
++LDO_NAME = VSIM2
++PARAMETER_NAME = MT6335_PMIC_RG_VSIM2_SW_EN
++
++[LDO_NAME5]
++LDO_NAME = VCAMAF
++PARAMETER_NAME = MT6335_PMIC_RG_VCAMAF_SW_EN
++
++[LDO_NAME6]
++LDO_NAME = VTOUCH
++PARAMETER_NAME = MT6335_PMIC_RG_VTOUCH_SW_EN
++
++[LDO_NAME7]
++LDO_NAME = VGP3
++PARAMETER_NAME = MT6335_PMIC_RG_VGP3_SW_EN
++
++[LDO_NAME8]
++LDO_NAME = VIBR
++PARAMETER_NAME = MT6335_PMIC_RG_VIBR_SW_EN
++
++[LDO_NAME9]
++LDO_NAME = VCAMD1
++PARAMETER_NAME = MT6335_PMIC_RG_VCAMD1_SW_EN
++
++[LDO_NAME10]
++LDO_NAME = VCAMD2
++PARAMETER_NAME = MT6335_PMIC_RG_VCAMD2_SW_EN
++
++[LDO_NAME11]
++LDO_NAME = VCAMIO
++PARAMETER_NAME = MT6335_PMIC_RG_VCAMIO_SW_EN
+diff --git a/tools/dct/config/PMIC_MT6350PMUMP.cmp b/tools/dct/config/PMIC_MT6350PMUMP.cmp
+new file mode 100644
+index 00000000000..00692159051
+--- /dev/null
++++ b/tools/dct/config/PMIC_MT6350PMUMP.cmp
+@@ -0,0 +1,79 @@
++[PMIC_TABLE]
++CHIP = MT6350
++NUM_LDO = 18
++FUNCTION = pmic_set_register_value
++LDO_APPNAME_DEFAULT = MT65XX_POWER_NONE
++INCLUDE_HEADER = linux/types.h:mach/mt_typedefs.h:mach/upmu_common.h:mach/upmu_hw.h:mach/mt_pm_ldo.h
++
++
++[LDO_NAME1]
++LDO_NAME=VMC
++PARAMETER_NAME = PMIC_RG_VMC_EN
++
++[LDO_NAME2]
++LDO_NAME=VMCH
++PARAMETER_NAME = PMIC_RG_VMCH_EN
++
++[LDO_NAME3]
++LDO_NAME=VEMC_3V3
++PARAMETER_NAME = PMIC_RG_VEMC_3V3_EN
++
++[LDO_NAME4]
++LDO_NAME=VGP1
++PARAMETER_NAME = PMIC_RG_VGP1_EN
++
++[LDO_NAME5]
++LDO_NAME=VGP2
++PARAMETER_NAME = PMIC_RG_VGP2_EN
++
++[LDO_NAME6]
++LDO_NAME=VGP3
++PARAMETER_NAME = PMIC_RG_VGP3_EN
++
++[LDO_NAME7]
++LDO_NAME=VCN_1V8
++PARAMETER_NAME = PMIC_RG_VCN_1V8_EN
++
++[LDO_NAME8]
++LDO_NAME=VSIM1
++PARAMETER_NAME = PMIC_RG_VSIM1_EN
++
++[LDO_NAME9]
++LDO_NAME=VSIM2
++PARAMETER_NAME = PMIC_RG_VSIM2_EN
++
++[LDO_NAME10]
++LDO_NAME=VCAMAF
++PARAMETER_NAME = PMIC_RG_VCAM_AF_EN
++
++[LDO_NAME11]
++LDO_NAME=VIBR
++PARAMETER_NAME = PMIC_RG_VIBR_EN
++
++[LDO_NAME12]
++LDO_NAME=VM
++PARAMETER_NAME = PMIC_RG_VM_EN
++
++[LDO_NAME13]
++LDO_NAME=VRF18
++PARAMETER_NAME = PMIC_RG_VRF18_EN
++
++[LDO_NAME14]
++LDO_NAME=VCAMD
++PARAMETER_NAME = PMIC_RG_VCAMD_EN
++
++[LDO_NAME15]
++LDO_NAME=VCAMIO
++PARAMETER_NAME = PMIC_RG_VCAM_IO_EN
++
++[LDO_NAME16]
++LDO_NAME=VCAMA
++PARAMETER_NAME = PMIC_RG_VCAMA_EN
++
++[LDO_NAME17]
++LDO_NAME=VCN33_WIFI
++PARAMETER_NAME = PMIC_RG_VCN33_EN_WIFI
++
++[LDO_NAME18]
++LDO_NAME=VCN28
++PARAMETER_NAME = PMIC_RG_VCN28_EN
+diff --git a/tools/dct/config/PMIC_MT6351PMUMP.cmp b/tools/dct/config/PMIC_MT6351PMUMP.cmp
+new file mode 100644
+index 00000000000..5177a0be983
+--- /dev/null
++++ b/tools/dct/config/PMIC_MT6351PMUMP.cmp
+@@ -0,0 +1,38 @@
++[PMIC_TABLE]
++CHIP = MT6351
++NUM_LDO = 8
++FUNCTION = pmic_set_register_value
++LDO_APPNAME_DEFAULT = MT65XX_POWER_NONE
++INCLUDE_HEADER = linux/types.h:mach/mt_typedefs.h:mach/upmu_common.h:mach/upmu_hw.h:mach/mt_pm_ldo.h
++
++[LDO_NAME1]
++LDO_NAME = VCAMA
++PARAMETER_NAME = MT6351_PMIC_RG_VCAMA_EN
++
++[LDO_NAME2]
++LDO_NAME = VSIM1
++PARAMETER_NAME = MT6351_PMIC_RG_VSIM1_EN
++
++[LDO_NAME3]
++LDO_NAME = VSIM2
++PARAMETER_NAME = MT6351_PMIC_RG_VSIM2_EN
++
++[LDO_NAME4]
++LDO_NAME = VLDO28
++PARAMETER_NAME = MT6351_PMIC_RG_VLDO28_EN_0
++
++[LDO_NAME5]
++LDO_NAME = VGP3
++PARAMETER_NAME = MT6351_PMIC_RG_VGP3_EN
++
++[LDO_NAME6]
++LDO_NAME = VIBR
++PARAMETER_NAME = MT6351_PMIC_RG_VIBR_EN
++
++[LDO_NAME7]
++LDO_NAME = VCAMD
++PARAMETER_NAME = MT6351_PMIC_RG_VCAMD_EN
++
++[LDO_NAME8]
++LDO_NAME = VCAMIO
++PARAMETER_NAME = MT6351_PMIC_RG_VCAMIO_EN
+diff --git a/tools/dct/config/PMIC_NCPMUMP.cmp b/tools/dct/config/PMIC_NCPMUMP.cmp
+new file mode 100644
+index 00000000000..4e48b25cfab
+--- /dev/null
++++ b/tools/dct/config/PMIC_NCPMUMP.cmp
+@@ -0,0 +1,10 @@
++[PMIC_TABLE]
++CHIP =
++NUM_LDO =
++FUNCTION = pmic_set_register_value
++LDO_APPNAME_DEFAULT = MT65XX_POWER_NONE
++INCLUDE_HEADER = linux/types.h:mach/mt_typedefs.h:mach/upmu_common.h:mach/upmu_hw.h:mach/mt_pm_ldo.h
++
++[LDO_NAME1]
++LDO_NAME =
++PARAMETER_NAME =
+diff --git a/tools/dct/config/YuSu.cmp b/tools/dct/config/YuSu.cmp
+new file mode 100644
+index 00000000000..35fd5227b0a
+--- /dev/null
++++ b/tools/dct/config/YuSu.cmp
+@@ -0,0 +1,989 @@
++[ADC_variables]
++TEMPERATURE
++TEMPERATURE1
++REF_CURRENT
++BATTERY_VOLTAGE
++CHARGER_VOLTAGE
++LCM_VOLTAGE
++HF_MIC
++UTMS
++BOARD_ID
++BOARD_ID_2
++BOARD_ID_3
++ADC_FDD_RF_PARAMS_DYNAMIC_CUSTOM_CH
++
++[EINT_variables]
++MT7118_WIMAX
++MT5921_WIFI
++BT
++KPD_PWRKEY
++KPD_SLIDE
++TOUCH
++TOUCH_PANEL
++MT6326_PMIC
++HEADSET
++MHALL
++HALL_1
++HALL_2
++HALL_3
++FM_RDS
++HALL_4
++ALS
++OFN
++WIFI
++COMBO_BGF
++COMBO_ALL
++GSE_1
++GSE_2
++MSE
++MHL
++GYRO
++ACCDET
++SWTP
++OTG_IDDIG
++CMMB
++NFC
++IRQ_NFC
++HEADSET_HOOK
++MT6329_PMIC
++EINT_HDMI_HPD
++DT_EXT_MD_EXP
++DT_EXT_MD_WDT
++DT_EXT_MD_WK_UP
++DT_EXT_MD_WK_UP_USB
++DT_EXT_MD_EXP
++EVDO_DT_EXT_MDM_RDY
++EVDO_DT_EXT_MDM_WAKE_AP
++EVDO_DT_EXT_MDM_RST_IND
++EVDO_DT_EXT_MDM_PWR_ON
++EVDO_DT_EXT_UART_MDM_WAKE_AP
++EVDO_DT_EXT_MDM_ACK
++EVDO_DT_EXT_MDM_FLOW_CTRL
++MT6280_USB_WAKEUP
++MT6280_WD
++SIM1_HOT_PLUG
++SIM2_HOT_PLUG
++SIM3_HOT_PLUG
++MSDC1_INS
++MSDC2_INS
++MT6322_PMIC
++MT6323_PMIC
++MT6333_PMIC
++MT6397_PMIC
++CHR_STAT
++LTE_SDIO
++LTE_WDT
++EXT_BUCK_OC
++EDP_INTN
++DSI_TE
++DSI_TE_1
++VBUS_DETECT_PIN_EINT
++FPC1145
++GOODIX_FP
++SENSORHUB
++MRDUMP_EXT_RST
++EXT_DBG_KEY
++EINT_SIL7033_INT
++EINT_FUSB300_DET_IN
++SMART_PA
++RT9465_SLAVE_CHR
++MT6336_CHR
++MT6311_PMIC
++MT6313_PMIC
++MT6351_PMIC
++MT6353_PMIC
++MT6335_PMIC
++MT6337_PMIC
++MT6350_PMIC
++RT1711H_PD
++
++[GPIO_variables]
++GPIO_AST_RST_PIN
++GPIO_AST_CS_PIN
++GPIO_AST_CLK32K_PIN
++GPIO_AST_WAKEUP_PIN
++GPIO_AST_INTR_PIN
++GPIO_AST_WAKEUP_INTR_PIN
++GPIO_AST_AFC_SWITCH_PIN
++GPIO_HEADSET_INSERT_PIN
++GPIO_HEADSET_REMOTE_BUTTON_PIN
++GPIO_EXTERNAL_AMPLIFIER_PIN
++GPIO_BT_POWREN_PIN
++GPIO_BT_RESET_PIN
++GPIO_BT_EINT_PIN
++GPIO_BT_CLK_PIN
++GPIO_BYPASS_BOOST_PIN
++GPIO_CMMB_EINT_PIN
++GPIO_CMMB_LDO_EN_PIN
++GPIO_CMMB_RST_PIN
++GPIO_I2C_APPM_SCA_PIN
++GPIO_I2C_APPM_SDA_PIN
++GPIO_I2C0_SCA_PIN
++GPIO_I2C0_SDA_PIN
++GPIO_I2C1_SCA_PIN
++GPIO_I2C1_SDA_PIN
++GPIO_I2C2_SCA_PIN
++GPIO_I2C2_SDA_PIN
++GPIO_I2C3_SCA_PIN
++GPIO_I2C3_SDA_PIN
++GPIO_I2C4_SCA_PIN
++GPIO_I2C4_SDA_PIN
++GPIO_I2C5_SDA_PIN
++GPIO_I2C5_SCA_PIN
++GPIO_I2C6_SDA_PIN
++GPIO_I2C6_SCA_PIN
++GPIO_I2C7_SDA_PIN
++GPIO_I2C7_SCA_PIN
++GPIO_NFC_FIRM_PIN
++GPIO_NFC_EINT_PIN
++GPIO_NFC_VENB_PIN
++GPIO_NFC_OSC_EN_PIN
++GPIO_IRQ_NFC_PIN
++GPIO_NFC_RST_PIN
++GPIO_SPI_CS_PIN
++GPIO_SPI_SCK_PIN
++GPIO_SPI_MISO_PIN
++GPIO_SPI_MOSI_PIN
++GPIO_SPI2_CS_PIN
++GPIO_SPI2_SCK_PIN
++GPIO_SPI2_MISO_PIN
++GPIO_SPI2_MOSI_PIN
++GPIO_PWM_1_PIN
++GPIO_PWM_2_PIN
++GPIO_PWM_3_PIN
++GPIO_PWM_4_PIN
++GPIO_PWM_5_PIN
++GPIO_PWM_6_PIN
++GPIO_PWM_7_PIN
++GPIO_PWR_AVAIL_WLC
++GPIO_PWR_BUTTON_PIN
++GPIO_PMIC_EINT_PIN
++GPIO_RFIC0_BSI_CK
++GPIO_RFIC0_BSI_CS
++GPIO_RFIC0_BSI_D0
++GPIO_RFIC0_BSI_D1
++GPIO_RFIC0_BSI_D2
++GPIO_SDHC_EINT_PIN
++GPIO_SDHC_MC2CM_PIN
++GPIO_SDHC_MC2DA2_PIN
++GPIO_SDHC_MC2DA3_PIN
++GPIO_SDHC_MC2WP_PIN
++GPIO_SDHC_MC2PWRON_PIN
++GPIO_SDHC_MC2INS_PIN
++GPIO_TDM_REQ
++GPIO_DISP_LSCK_PIN
++GPIO_DISP_LSA0_PIN
++GPIO_DISP_LSDA_PIN
++GPIO_DISP_LSCE_PIN
++GPIO_DISP_ID0_PIN
++GPIO_DISP_ID1_PIN
++GPIO_GPS_PWREN_PIN
++GPIO_GPS_SYNC_PIN
++GPIO_GPS_EINT_PIN
++GPIO_GPS_CLK_PIN
++GPIO_GPS_RST_PIN
++GPIO_GPS_LNA_PIN
++GPIO_UART_URXD0_PIN
++GPIO_UART_UTXD0_PIN
++GPIO_UART_UCTS0_PIN
++GPIO_UART_URTS0_PIN
++GPIO_UART_URXD1_PIN
++GPIO_UART_UTXD1_PIN
++GPIO_UART_UCTS1_PIN
++GPIO_UART_URTS1_PIN
++GPIO_UART_URXD2_PIN
++GPIO_UART_UTXD2_PIN
++GPIO_UART_UCTS2_PIN
++GPIO_UART_URTS2_PIN
++GPIO_UART_URXD3_PIN
++GPIO_UART_UTXD3_PIN
++GPIO_UART_UCTS3_PIN
++GPIO_UART_URTS3_PIN
++GPIO_UART_URXD4_PIN
++GPIO_UART_UTXD4_PIN
++GPIO_UART_UCTS4_PIN
++GPIO_UART_URTS4_PIN
++GPIO_KPD_KCOL0_PIN
++GPIO_KPD_KCOL1_PIN
++GPIO_KPD_KCOL2_PIN
++GPIO_KPD_KCOL3_PIN
++GPIO_KPD_KCOL4_PIN
++GPIO_KPD_KCOL5_PIN
++GPIO_KPD_KCOL6_PIN
++GPIO_KPD_KCOL7_PIN
++GPIO_KPD_KROW0_PIN
++GPIO_KPD_KROW1_PIN
++GPIO_KPD_KROW2_PIN
++GPIO_KPD_KROW3_PIN
++GPIO_KPD_KROW4_PIN
++GPIO_KPD_KROW5_PIN
++GPIO_KPD_KROW6_PIN
++GPIO_KPD_KROW7_PIN
++GPIO_CTP_EINT_PIN
++GPIO_CTP_EN_PIN
++GPIO_CTP_RST_PIN
++GPIO_WIFI_RST_PIN
++GPIO_WIFI_CLK_PIN
++GPIO_WIFI_EINT_PIN
++GPIO_WIFI_PMU_EN_PIN
++GPIO_WIFI_LDO_EN_PIN
++GPIO_BQ_INT_PIN
++GPIO_WIMAX_INT_PIN
++GPIO_WIMAX_RST_PIN
++GPIO_CAMERA_CMRST_PIN
++GPIO_CAMERA_CMPDN_PIN
++GPIO_CAMERA_CMRST1_PIN
++GPIO_CAMERA_CMPDN1_PIN
++GPIO_CAMERA_FLASH_EN_PIN
++GPIO_CAMERA_FLASH_MODE_PIN
++GPIO_CAMERA_LDO_EN_PIN
++GPIO_CAMERA_AF_EN_PIN
++GPIO_CAMERA_RCN_PIN
++GPIO_CAMERA_RCP_PIN
++GPIO_CAMERA_RDN0_PIN
++GPIO_CAMERA_RDP0_PIN
++GPIO_CAMERA_RDN1_PIN
++GPIO_CAMERA_RDP1_PIN
++GPIO_CAMERA_RDN2_PIN
++GPIO_CAMERA_RDP2_PIN
++GPIO_CAMERA_RDN3_PIN
++GPIO_CAMERA_RDP3_PIN
++GPIO_CAMERA_RCN_A_PIN
++GPIO_CAMERA_RCP_A_PIN
++GPIO_CAMERA_RDN0_A_PIN
++GPIO_CAMERA_RDP0_A_PIN
++GPIO_CAMERA_RDN1_A_PIN
++GPIO_CAMERA_RDP1_A_PIN
++GPIO_CAMERA_RDN2_A_PIN
++GPIO_CAMERA_RDP2_A_PIN
++GPIO_CAMERA_RDN3_A_PIN
++GPIO_CAMERA_RDP3_A_PIN
++GPIO_CAMERA_RCN_B_PIN
++GPIO_CAMERA_RCP_B_PIN
++GPIO_CAMERA_RDN0_B_PIN
++GPIO_CAMERA_RDP0_B_PIN
++GPIO_CAMERA_RDN1_B_PIN
++GPIO_CAMERA_RDP1_B_PIN
++GPIO_PMIC_EINT_PIN
++GPIO_PCM_DAICLK_PIN
++GPIO_PCM_DAIPCMOUT_PIN
++GPIO_PCM_DAIPCMIN_PIN
++GPIO_PCM_DAISYNC_PIN
++GPIO_JBD_INPUT_UP_PIN
++GPIO_JBD_INPUT_LEFT_PIN
++GPIO_JBD_INPUT_RIGHT_PIN
++GPIO_JBD_INPUT_DOWN_PIN
++GPIO_JTAG_TMS_PIN
++GPIO_JTAG_TCK_PIN
++GPIO_JTAG_TDI_PIN
++GPIO_JTAG_TDO_PIN
++GPIO_JTAG_TRSTN_PIN
++GPIO_QWERTYSLIDE_EINT_PIN
++GPIO_CAPTOUCH_EINT_PIN
++GPIO_HALL_1_PIN
++GPIO_HALL_2_PIN
++GPIO_HALL_3_PIN
++GPIO_HALL_4_PIN
++GPIO_OFN_EINT_PIN
++GPIO_OFN_DWN_PIN
++GPIO_OFN_RST_PIN
++GPIO_MHALL_EINT_PIN
++GPIO_FM_RDS_PIN
++GPIO_FM_CLK_PIN
++GPIO_ALS_EINT_PIN
++GPIO_MATV_PWR_ENABLE
++GPIO_MATV_N_RST
++GPIO_I2S_DATA
++GPIO_SPEAKER_EN_PIN
++GPIO_RECEIVER_EN_PIN
++GPIO_SPEAKER_EARPIECE_SWITCH_PIN
++GPIO_SWCHARGER_EN_PIN
++GPIO_COMBO_PMU_EN_PIN
++GPIO_COMBO_PMUV28_EN_PIN
++GPIO_COMBO_RST_PIN
++GPIO_COMBO_RTCCLK_PIN
++GPIO_COMBO_BGF_EINT_PIN
++GPIO_COMBO_ALL_EINT_PIN
++GPIO_COMBO_6620_LDO_EN_PIN
++GPIO_COMBO_I2S_CK_PIN
++GPIO_COMBO_I2S_DAT_PIN
++GPIO_COMBO_I2S_WS_PIN
++GPIO_COMBO_UTXD_PIN
++GPIO_COMBO_URXD_PIN
++GPIO_I2S0_CK_PIN
++GPIO_I2S0_DAT_PIN
++GPIO_I2S0_MCLK_PIN
++GPIO_I2S0_WS_PIN
++GPIO_I2S1_CK_PIN
++GPIO_I2S1_DAT_PIN
++GPIO_I2S1_MCLK_PIN
++GPIO_I2S1_WS_PIN
++GPIO_GSE_1_EINT_PIN
++GPIO_GSE_2_EINT_PIN
++GPIO_MSE_EINT_PIN
++GPIO_GYRO_EINT_PIN
++GPIO_ACCDET_EINT_PIN
++GPIO_OTG_IDDIG_EINT_PIN
++GPIO_OTG_DRVVBUS_PIN
++GPIO_VBUS_DETECT_PIN
++GPIO_USB_DEFAULT_DEVICE_MODE
++GPIO_HEADSET_SW_EN_PIN
++GPIO_HEADSET_JPOLE_PIN
++GPIO_HEADSET_REMOTE_BUTTON_PIN
++GPIO_DISP_LRSTB_PIN
++GPIO_HDMI_I2S_OUT_CK_PIN
++GPIO_HDMI_I2S_OUT_WS_PIN
++GPIO_HDMI_I2S_OUT_DAT_PIN
++GPIO_HDMI_I2C_SCL
++GPIO_HDMI_I2C_SDA
++GPIO_HDMI_POWER_CONTROL
++GPIO_HDMI_9024_RESET
++GPIO_HDMI_EINT_PIN
++GPIO_HDMI_LCD_SW_EN
++GPIO_HDMI_PWR_1_2V_EN
++GPIO_HIFI_VCCA_EN_PIN
++GPIO_HIFI_AVCC_EN_PIN
++GPIO_HIFI_DVCC_EN_PIN
++GPIO_HW_VER_CHECK_PIN
++GPIO_MATV_I2S_CK_PIN
++GPIO_MATV_I2S_WS_PIN
++GPIO_MATV_I2S_DAT_PIN
++GPIO_2G_TX_FILTER_MODE_PIN
++GPIO_2G_RX_ACTIVE_PIN
++GPIO_4G_RX_ACTIVE_PIN
++GPIO_4G_TX_FILTER_MODE_PIN
++GPIO_52_RST
++GPIO_52_TO_2G
++GPIO_52_3G_USB_RESUME
++GPIO_52_KCOL0
++GPIO_52_REC_SW
++GPIO_52_WD
++GPIO_52_USB_SW2
++GPIO_52_TO_3G
++GPIO_52_PWR_KEY
++GPIO_52_USB_SW1
++GPIO_EXT_BUCK_EN_A_PIN
++GPIO_EXT_BUCK_EN_B_PIN
++GPIO_EXT_BUCK_IC_EN_PIN
++GPIO_EXT_BUCK_OC_EINT_PIN
++GPIO_EXT_MD_RST
++GPIO_EXT_MD_PWR_KEY
++GPIO_EXT_MD_DL_KEY
++GPIO_EXT_MD_WD
++GPIO_EXT_MD_EXP
++GPIO_EXT_MD_WK_AP
++GPIO_EXT_MD_META
++GPIO_EXT_AP_WK_MD
++GPIO_EXT_USB_SW1
++GPIO_EXT_USB_SW2
++GPIO_EXT_USB_RESUME
++GPIO_EXT_SSW_S1
++GPIO_EXT_SSW_S2
++GPIO_EXT_SSW_EN
++GPIO_EXT_MD_DUMP
++GPIO_EXT_SPKAMP_EN_PIN
++GPIO_6280_USB_SW1
++GPIO_6280_USB_SW2
++GPIO_6280_KCOL0
++GPIO_6280_USB_WAKEUP_EINT
++GPIO_6280_WD
++GPIO_6280_RST
++GPIO_VIA_MDM_RST
++GPIO_VIA_MDM_RST_IND
++GPIO_VIA_MDM_PWR_EN
++GPIO_VIA_MDM_PWR_ON
++GPIO_VIA_CP_BOOT_SEL
++GPIO_VIA_AP_WAKE_MDM
++GPIO_VIA_MDM_RDY
++GPIO_VIA_MDM_WAKE_AP
++GPIO_VIA_AP_RDY
++GPIO_VIA_SDIO_ACK
++GPIO_VIA_FLOW_CTRL
++GPIO_VIA_ETS_SEL
++GPIO_MSDC0_DAT0
++GPIO_MSDC0_DAT1
++GPIO_MSDC0_DAT2
++GPIO_MSDC0_DAT3
++GPIO_MSDC0_DAT4
++GPIO_MSDC0_DAT5
++GPIO_MSDC0_DAT6
++GPIO_MSDC0_DAT7
++GPIO_MSDC0_CMD
++GPIO_MSDC0_CLK
++GPIO_MSDC0_RSTB
++GPIO_MSDC0_DSL
++GPIO_MSDC1_DAT0
++GPIO_MSDC1_DAT1
++GPIO_MSDC1_DAT2
++GPIO_MSDC1_DAT3
++GPIO_MSDC1_CMD
++GPIO_MSDC1_CLK
++GPIO_MSDC1_INSI
++GPIO_MSDC1_SDWPI
++GPIO_MSDC2_DAT0
++GPIO_MSDC2_DAT1
++GPIO_MSDC2_DAT2
++GPIO_MSDC2_DAT3
++GPIO_MSDC2_CMD
++GPIO_MSDC2_CLK
++GPIO_MSDC2_INSI
++GPIO_MSDC2_SDWPI
++GPIO_MSDC3_DAT0
++GPIO_MSDC3_DAT1
++GPIO_MSDC3_DAT2
++GPIO_MSDC3_DAT3
++GPIO_MSDC3_CMD
++GPIO_MSDC3_CLK
++GPIO_MSDC4_DAT0
++GPIO_MSDC4_DAT1
++GPIO_MSDC4_DAT2
++GPIO_MSDC4_DAT3
++GPIO_MSDC4_DAT4
++GPIO_MSDC4_DAT5
++GPIO_MSDC4_DAT6
++GPIO_MSDC4_DAT7
++GPIO_MSDC4_CMD
++GPIO_MSDC4_CLK
++GPIO_MSDC4_RSTB
++GPIO_SIM1_HOT_PLUG
++GPIO_SIM2_HOT_PLUG
++GPIO_FSA8049_PIN
++GPIO_ANT_SW_PIN
++GPIO_EINT_CHG_STAT_PIN
++GPIO_MHL_EINT_PIN
++GPIO_MHL_I2S_OUT_CK_PIN
++GPIO_MHL_I2S_OUT_WS_PIN
++GPIO_MHL_I2S_OUT_DAT_PIN
++GPIO_MHL_I2C_SCL
++GPIO_MHL_I2C_SDA
++GPIO_MHL_RST_B_PIN
++GPIO_MHL_POWER_CTRL_PIN
++GPIO_EXT_DISP_DPI0_PIN
++GPIO_TD_HIF_DCX_PIN
++GPIO_TD_HIF_WR_PIN
++GPIO_TD_HIF_RD_PIN
++GPIO_CAMERA_2_CMPDN_PIN
++GPIO_CAMERA_2_CMRST_PIN
++GPIO_CAMERA_2_CMMCLK_PIN
++GPIO_CAMERA_2_CMRST_PIN
++GPIO_CAMERA_2_CMPDN_PIN
++GPIO_CHR_PSEL_PIN
++GPIO_CHR_CE_PIN
++GPIO_CHR_SPM_PIN
++GPIO_CAMERA_FLASH_EXT1_PIN
++GPIO_CAMERA_FLASH_EXT2_PIN
++GPIO_GPS_EN_MT3332
++GPIO_GPS_FRAM_SYNC_MT3332
++GPIO_GPS_TXIND_MT3332
++GPIO_GPS_LNA_MT3332
++GPIO_EXTMD_PCM_CLK_PIN
++GPIO_EXTMD_PCM_PCMOUT_PIN
++GPIO_EXTMD_PCM_PCMIN_PIN
++GPIO_EXTMD_PCM_SYNC_PIN
++GPIO_MRG_I2S_PCM_CLK_PIN
++GPIO_MRG_I2S_PCM_SYNC_PIN
++GPIO_MRG_I2S_PCM_RX_PIN
++GPIO_MRG_I2S_PCM_TX_PIN
++GPIO_DAIBT_PCM_CLK_PIN
++GPIO_DAIBT_PCM_WS_PIN
++GPIO_DAIBT_PCM_DI_PIN
++GPIO_DAIBT_PCM_DO_PIN
++GPIO_DAC_I2S_CLK_PIN
++GPIO_DAC_I2S_WS_PIN
++GPIO_DAC_I2S_DAT_OUT_PIN
++GPIO_DAC_I2S_MCLK_PIN
++GPIO_ADC_I2S_CLK_PIN
++GPIO_ADC_I2S_WS_PIN
++GPIO_ADC_I2S_DAT_IN_PIN
++GPIO_ADC_I2S_MCLK_PIN
++GPIO_I2S_CLK_PIN
++GPIO_I2S_WS_PIN
++GPIO_I2S_DAT_OUT_PIN
++GPIO_I2S_DAT_IN_PIN
++GPIO_AUD_CLK_MOSI_PIN
++GPIO_AUD_DAT_MOSI_PIN
++GPIO_AUD_DAT_MISO_PIN
++GPIO_AUD_EXTHP_EN_PIN
++GPIO_AUD_EXTHP_GAIN_PIN
++GPIO_AUD_EXTDAC_PWREN_PIN
++GPIO_AUD_EXTDAC_RST_PIN
++GPIO_AUD_EXTPLL_S0_PIN
++GPIO_AUD_EXTPLL_S1_PIN
++GPIO_AUD_EXTHPBUF_SDB_PIN
++GPIO_AUD_EXTHPBUF_HI_Z_PIN
++GPIO_AUD_EXTHPBUF_GAIN_PIN
++GPIO_SIM_SWITCH_CLK_PIN
++GPIO_SIM_SWITCH_DAT_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_1ST_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_2ND_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_3RD_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_4TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_5TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_6TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_7TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_8TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_9TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_ATH_PIN
++GPIO_SIM1_SCLK
++GPIO_SIM1_SRST
++GPIO_SIM1_SIO
++GPIO_SIM2_SCLK
++GPIO_SIM2_SRST
++GPIO_SIM2_SIO
++GPIO_SWITCH1_1V8_PIN
++GPIO_USB_MHL_SW_SEL1
++GPIO_USB_MHL_SW_SEL2
++GPIO_LCM_LED_EN
++GPIO_LCM_MIPI2LVDS_EN
++GPIO_LCM_MIPI2LVDS_PWR_EN
++GPIO_LCM_LVDS_PWR_EN
++GPIO_LCM_LVDS_EN
++GPIO_LCM_PWR
++GPIO_LCM_PWR_EN
++GPIO_LCM_PWR2_EN
++GPIO_LCM_RST
++GPIO_LCM_STB
++GPIO_LCM_BL_EN
++GPIO_LCM_LVL_SHIFT_EN
++GPIO_LCM_BRIDGE_EN
++GPIO_SSW_EN_PIN
++GPIO_SSW_CH_SWAP_PIN
++GPIO_LCD_BIAS_ENP_PIN
++GPIO_LCD_BIAS_ENN_PIN
++GPIO_LCD_DRV_EN_PIN
++GPIO_LCDBL_EN_PIN
++GPIO_LCD_ENN
++GPIO_LCD_ENP
++GPIO_CMCSK
++GPIO_CMDAT0
++GPIO_CMDAT1
++GPIO_CMDAT2
++GPIO_CMDAT3
++GPIO_CMDAT4
++GPIO_CMDAT5
++GPIO_CMDAT6
++GPIO_CMDAT7
++GPIO_CMDAT8
++GPIO_CMDAT9
++GPIO_CMHSYNC
++GPIO_CMMCLK
++GPIO_CMPCLK
++GPIO_CMVSYNC
++GPIO_COMPASS_RST_PIN
++GPIO_EXT_BUCK_EN_PIN
++GPIO_EXT_BUCK_VSEL_PIN
++GPIO_LTE_SDIO_EINT_PIN
++GPIO_LTE_WDT_EINT_PIN
++GPIO_LTE_POWER_PIN
++GPIO_LTE_RESET_PIN
++GPIO_LTE_WK_MD_PIN
++GPIO_SWITCH1_1V8_PIN
++GPIO_CAMERA_MAIN_DVDD_ENADBLE_PIN
++GPIO_HIFI_LDO1V8_EN_PIN
++GPIO_SMARTPA_RST_PIN
++GPIO_EARPHONE_DETECT_PIN
++GPIO_LCD_ENP_PIN
++GPIO_HIFI_LDO3V3_EN_PIN
++GPIO_CAMERA_MCLK_EN_PIN
++GPIO_LCD_ENN_PIN
++GPIO_NXPSPA_I2S_DATAOUT_PIN
++GPIO_NXPSPA_I2S_DATAIN_PIN
++GPIO_NXPSPA_I2S_LRCK_PIN
++GPIO_NXPSPA_I2S_BCK_PIN
++GPIO_STROBE_LED_TPS61311_STRB0
++GPIO_STROBE_LED_TPS61311_STRB1
++GPIO_STROBE_LED_TPS61311_TXMASK
++GPIO_STROBE_LED_TPS61311_NRESET
++GPIO_EDP_EINT_PIN
++GPIO_EDP_ENPSR_PIN
++GPIO_EDP_SYSRSTN_PIN
++GPIO_EDP_STANDBY_PIN
++GPIO_EXT_BUCK_OC_EINT_PIN
++GPIO_VOW_CLK_MISO_PIN
++GPIO_G2_TXEN_PIN
++GPIO_G2_TXD3_PIN
++GPIO_G2_TXD2_PIN
++GPIO_G2_TXD1_PIN
++GPIO_G2_TXD0_PIN
++GPIO_G2_TXC_PIN
++GPIO_G2_RXC_PIN
++GPIO_G2_RXD0_PIN
++GPIO_G2_RXD1_PIN
++GPIO_G2_RXD2_PIN
++GPIO_G2_RXD3_PIN
++GPIO_ESW_INT_PIN
++GPIO_G2_RXDV_PIN
++GPIO_MDC_PIN
++GPIO_MDIO_PIN
++GPIO_ESW_RST_PIN
++GPIO_IRRX_PIN
++GPIO_HDMI_RX_SDA_PIN
++GPIO_HDMI_RX_SCL_PIN
++GPIO_MAIN_CAM_ID_PIN
++GPIO_SUB_CAM_ID_PIN
++GPIO_LCD_MAKER_ID
++GPIO_AUDIO_SEL
++GPIO_DSV_EN
++GPIO_TOUCH_MAKER_ID
++GPIO_BAT_ID
++GPIO_BATT_ID_PULLUP
++GPIO_SENSOR0_I2C_SDA
++GPIO_SENSOR0_I2C_SCL
++GPIO_COMMON_I2C_SCL
++GPIO_COMMON_I2C_SDA
++GPIO_LCD_BL_EN
++GPIO_DSV_AVEE_EN
++GPIO_DSV_AVDD_EN
++GPIO_NFC_MODE
++GPIO_HP_AMP_EN
++GPIO_SPK_AMP_EN
++GPIO_SMARTPA_I2S_WS_PIN
++GPIO_SMARTPA_I2S_DOUT_PIN
++GPIO_SMARTPA_I2S_DIN_PIN
++GPIO_SMARTPA_I2S_BCK_PIN
++GPIO_SMARTPA_RST_PIN
++GPIO_SMARTPA_EINT_PIN
++GPIO_SMARTPA_LDO_EN_PIN
++GPIO_EXT_SPKAMP2_EN_PIN
++GPIO_RCV_SPK_SWITCH_PIN
++GPIO_FLASH_LED_EN
++GPIO_TORCH_EN
++GPIO_LTE_VSRAM_EXT_POWER_EN_PIN
++GPIO_CAMERA_KEY1_PIN
++GPIO_CAMERA_KEY2_PIN
++GPIO_CODEC_SPI_CLK_PIN
++GPIO_CODEC_SPI_MISO_PIN
++GPIO_CODEC_SPI_MOSI_PIN
++GPIO_CODEC_SPI_CS_PIN
++GPIO_DTV_SPI_SCK_PIN
++GPIO_DTV_SPI_MISO_PIN
++GPIO_DTV_SPI_MOSI_PIN
++GPIO_DTV_SPI_CS_PIN
++GPIO_LCM_RST2_PIN
++GPIO_IRTX_OUT_PIN
++GPIO_PWRAP_SPI0_MI_PIN
++GPIO_PWRAP_SPI0_MO_PIN
++GPIO_PWRAP_SPI0_CK_PIN
++GPIO_PWRAP_SPI0_CSN_PIN
++GPIO_CMCSD0_PIN
++GPIO_CMCSD1_PIN
++GPIO_CMCSD2_PIN
++GPIO_CMCSD3_PIN
++GPIO_SENSORHUB_HOST_RESET
++GPIO_SENSORHUB_HOST_BOOT_ROM
++GPIO_SENSORHUB_WAKE_UP
++GPIO_SENSORHUB_EINT_PIN
++GPIO_HAPTIC_DRV_EN_PIN
++GPIO_HAPTIC_PWM_EN_PIN
++GPIO_LCD_IO_0_PIN
++GPIO_LCD_IO_1_PIN
++GPIO_LCD_IO_2_PIN
++GPIO_LCD_IO_3_PIN
++GPIO_LCD_IO_4_PIN
++GPIO_LCD_IO_5_PIN
++GPIO_LCD_IO_6_PIN
++GPIO_LCD_IO_7_PIN
++GPIO_LCD_IO_8_PIN
++GPIO_LCD_IO_9_PIN
++GPIO_LCD_IO_10_PIN
++GPIO_LCD_IO_11_PIN
++GPIO_LCD_IO_12_PIN
++GPIO_LCD_IO_13_PIN
++GPIO_LCD_IO_14_PIN
++GPIO_LCD_IO_15_PIN
++GPIO_LCD_IO_16_PIN
++GPIO_LCD_IO_17_PIN
++GPIO_LCD_IO_18_PIN
++GPIO_LCD_IO_19_PIN
++GPIO_LCD_IO_20_PIN
++GPIO_LCD_IO_21_PIN
++GPIO_LCD_IO_22_PIN
++GPIO_LCD_IO_23_PIN
++GPIO_PWM_BL_PIN
++GPIO_LCD_TE_PIN
++GPIO_LCD_PA_PIN
++GPIO_LCD_WRB_PIN
++GPIO_LCD_RDB_PIN
++GPIO_LCD_CEB_PIN
++GPIO_DPI_CK_PIN
++GPIO_DPI_DE_PIN
++GPIO_DPI_VSYNC_PIN
++GPIO_DPI_HSYNC_PIN
++GPIO_DSI_TE_PIN
++GPIO_DSI_CKP_PIN
++GPIO_DSI_CKN_PIN
++GPIO_DSI_D0P_PIN
++GPIO_DSI_D0N_PIN
++GPIO_DSI_D1P_PIN
++GPIO_DSI_D1N_PIN
++GPIO_DSI_D2P_PIN
++GPIO_DSI_D2N_PIN
++GPIO_DISP_LSDI_PIN
++GPIO_HEART_RATE_RESET_PIN
++GPIO_MT8193_BUS_SWITCH_PIN
++GPIO_HDMI_IN_SWITCH_PORT_PIN
++GPIO_CAMERA_VCAMA_ENABLE_PIN
++GPIO_USB_REDRI_SW_C1_PIN
++GPIO_USB_REDRI_SW_C2_PIN
++GPIO_USB_TYPEC_EINT_PIN
++GPIO_USB_TYPEC_SW_EN_PIN
++GPIO_USB_TYPEC_SW_SEL_PIN
++GPIO_CAMERA_MIPI_SWITCH_EN_PIN
++GPIO_CAMERA_MIPI_SWITCH_SEL_PIN
++GPIO_U3_REDRIVER_C2_PIN
++GPIO_U3_REDRIVER_C1_PIN
++GPIO_FUSB340_USBTYPEC_SEL_PIN
++GPIO_FUSB340_USBTYPEC_NOE_PIN
++GPIO_SIL7033_RST_PIN
++GPIO_HP_DEPOP_SWITCH_PIN
++GPIO_CMMCLK1_PIN
++GPIO_EINT_CHG_STAT_PIN
++GPIO_FINGERPRINT_RST_PIN
++GPIO_ANT_SEL0_PIN
++GPIO_ANT_SEL1_PIN
++GPIO_ANT_SEL2_PIN
++GPIO_ANT_SEL3_PIN
++GPIO_ANT_SEL4_PIN
++GPIO_ANT_SEL5_PIN
++GPIO_ANT_SEL6_PIN
++GPIO_ANT_SEL7_PIN
++GPIO_FP_EINT_PIN
++GPIO_SRCLKENA_PIN
++GPIO_FUSB300_EINT_DET_IN_PIN
++GPIO_SIL7033_EINT_INT_PIN
++GPIO_VIB_EN_PIN
++GPIO_VIB_PWM_PIN
++GPIO_VMBUCK_I2C_SDA
++GPIO_VMBUCK_I2C_SCL
++GPIO_Smart_PA_EINT_PIN
++GPIO_Smart_PA_RESET_N_PIN
++GPIO_SMARTPA_LRCK_PIN
++GPIO_EINT_SMARTPA_PIN
++GPIO_VCAM_EN_PIN
++GPIO_CAMERA_VCAMD_EN_PIN
++GPIO_EINT_WPC_PIN
++GPIO_BPI_ANT3_PIN
++GPIO_BPI_ANT2_PIN
++GPIO_BPI_ANT1_PIN
++GPIO_BPI_ANT0_PIN
++GPIO_MT6306_I2C_SCL_PIN
++GPIO_MT6306_I2C_SDA_PIN
++GPIO_NFC_SRCLKENAI_PIN
++GPIO_IR_LDO_EN_PIN
++GPIO_RFIC0_BSI_EN_PIN
++GPIO_CAMERA_CMMCLK0_PIN
++GPIO_DEPOP_SWITCH_PIN
++GPIO_FLASH_STROBE_PIN
++GPIO_SIM_SD_INT
++GPIO_U3_PD_PWR_EN_PIN
++GPIO_RT9465_PWR_EN_PIN
++GPIO_RT9465_EINT_PIN
++GPIO_MT6336_EINT_PIN
++GPIO_EINT_RAMDUMP_PIN
++GPIO_SIM3_HOT_PLUG
++
++[GPIO_MODE_EINT_WHITE_LIST]
++DSI_TE
++
++[GPIO_MODE]
++GPIO = _M_GPIO
++CLK = _M_CLK
++EINT = _M_EINT
++MD_EINT = _M_MDEINT
++IRQ = _M_IRQ
++KROW = _M_KROW
++KCOL = _M_KCOL
++PWM = _M_PWM
++
++[GPIO_FREQ]
++GPIO_BT_CLK_PIN = CLK_SRC_F32K
++GPIO_GPS_CLK_PIN = CLK_SRC_F32K
++GPIO_WIFI_CLK_PIN = CLK_SRC_F32K
++GPIO_FM_CLK_PIN = CLK_SRC_F32K
++GPIO_COMBO_RTCCLK_PIN = CLK_SRC_F32K
++
++[GPIO_VARIABLES_MAPPING]
++GPIO_FDD_BAND_SUPPORT_DETECT_1ST_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_2ND_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_3RD_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_4TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_5TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_6TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_7TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_8TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_9TH_PIN
++GPIO_FDD_BAND_SUPPORT_DETECT_ATH_PIN
++GPIO_SIM_SWITCH_DAT_PIN
++GPIO_SIM_SWITCH_CLK_PIN
++GPIO_SIM1_HOT_PLUG
++GPIO_SIM2_HOT_PLUG
++GPIO_CMDAT1
++GPIO_SIM1_SCLK
++GPIO_SIM1_SRST
++GPIO_SIM1_SIO
++GPIO_SIM2_SCLK
++GPIO_SIM2_SRST
++GPIO_SIM2_SIO
++GPIO_AST_CS_PIN
++GPIO_AST_CS_PIN_NCE
++GPIO_AST_RST_PIN
++GPIO_AST_CLK32K_PIN
++GPIO_AST_CLK32K_PIN_CLK
++GPIO_AST_WAKEUP_PIN
++GPIO_AST_WAKEUP_INTR_PIN
++GPIO_AST_INTR_PIN
++GPIO_AST_AFC_SWITCH_PIN
++GPIO_RF_CONTROL1
++GPIO_SIM3_HOT_PLUG
++
++[SLAVE_DEVICE]
++CAMERA_MAIN
++CAMERA_MAIN_AF
++CAMERA_MAIN_TWO
++CAMERA_MAIN_HW
++CAMERA_SUB
++CAMERA_SUB_AF
++CAMERA_MAIN_TWO_AF
++VPROC_BUCK
++VGPU_BUCK
++EXT_BOOST
++EXT_BUCK
++EXT_BUCK2
++EXT_BUCK3
++EXT_BUCK_LP4
++EXT_BUCK_LP4X
++EXT_BUCK_SRAM
++EXT_VBAT_BOOST
++CHARGEPUMP
++SW_CHARGER
++SLAVE_CHARGER
++SWITHING_CHARGER
++SWITCHING_CHARGER_TI
++SWITCHING_CHARGER_RT
++CAP_TOUCH
++MSENSOR
++MHL
++GSENSOR
++PRESSURE
++ALSPS
++GYRO
++TEMPER
++STROBE_MAIN
++STROBE_MAIN_2
++STROBE_SUB
++STROBE_SUB_2
++NFC
++EXT_SPEAKER_AMP
++EXT_DISP
++I2C_LCD_BIAS
++BUCK_BOOST
++SPEAKER_AMP
++USB_TYPE_C
++BAROMETER
++HUMIDITY
++
++[Key_definition]
++HOME = 102
++BACK = 158
++CALL = 231
++ENDCALL = 107
++VOLUMEDOWN = 114
++VOLUMEUP = 115
++MUTE = 113
++MENU = 139
++UP = 103
++DOWN = 108
++LEFT = 105
++RIGHT = 106
++OK = 352
++FOCUS = 211
++CAMERA = 212
++POWER = 116
++AT = 228
++POUND = 523
++STAR = 227
++DEL = 111
++TAB = 15
++ENTER = 28
++LEFTSHIFT = 42
++COMMA = 51
++DOT = 52
++SLASH = 53
++LEFTALT = 56
++RIGHTALT = 100
++SPACE = 57
++SEARCH = 217
++SYM = 127
++0 = 11
++1 = 2
++2 = 3
++3 = 4
++4 = 5
++5 = 6
++6 = 7
++7 = 8
++8 = 9
++9 = 10
++A = 30
++B = 48
++C = 46
++D = 32
++E = 18
++F = 33
++G = 34
++H = 35
++I = 23
++J = 36
++K = 37
++L = 38
++M = 50
++N = 49
++O = 24
++P = 25
++Q = 16
++R = 19
++S = 31
++T = 20
++U = 22
++V = 47
++W = 17
++X = 45
++Y = 21
++Z = 44
++
++[Power_Key_definition]
++POWER
++ENDCALL
++
++[APPLICATION]
++CAP_TOUCH_VDD
++CAP_TOUCH_VIO
++MAIN_CAMERA_POWER_A
++MAIN_CAMERA_POWER_D
++MAIN_CAMERA_POWER_IO
++MAIN_CAMERA_POWER_AF
++MAIN_CAMERA_2_POWER_A
++MAIN_CAMERA_2_POWER_AF
++MAIN_CAMERA_2_POWER_D
++MAIN_CAMERA_2_POWER_IO
++MHL_POWER_LDO1
++MHL_POWER_LDO2
++SUB_CAMERA_POWER_A
++SUB_CAMERA_POWER_IO
++SUB_CAMERA_POWER_D
++SUB_CAMERA_POWER_AF
++ACCELEROMETER_SENSOR_VDD
++ACCELEROMETER_SENSOR_VIO
++AMBIENT_LIGHT_SENSOR_VDD
++AMBIENT_LIGHT_SENSOR_VIO
++PROXIMITY_SENSOR_VDD
++PROXIMITY_SENSOR_VIO
++MAGNETOMETER_SENSOR_VDD
++MAGNETOMETER_SENSOR_VIO
++GYROSCOPE_VDD
++GYROSCOPE_VIO
++BAROMETER_VDD
++BAROMETER_VIO
++MEMORY_CARD_VDD
++
++
+diff --git a/tools/dct/data/ClkData.py b/tools/dct/data/ClkData.py
+new file mode 100755
+index 00000000000..e33ede82200
+--- /dev/null
++++ b/tools/dct/data/ClkData.py
+@@ -0,0 +1,35 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++class ClkData:
++    _varList = ['DISABLE', 'SW_CONTROL', 'HW_CONTROL']
++    _count = 0
++
++    def __init__(self):
++        self.__varName = ''
++        self.__current = ''
++        self.__curList = []
++
++    def set_defVarName(self, idx):
++        self.__varName = self._varList[idx]
++
++    def set_varName(self, name):
++        self.__varName = name
++
++    def set_defCurrent(self, idx):
++        self.__current = self.__curList[idx]
++
++    def set_current(self, current):
++        self.__current = current
++
++    def get_varName(self):
++        return self.__varName
++
++    def get_current(self):
++        return self.__current
++
++    def set_curList(self, cur_list):
++        self.__curList = cur_list
++
++    def get_curList(self):
++        return self.__curList
+diff --git a/tools/dct/data/EintData.py b/tools/dct/data/EintData.py
+new file mode 100755
+index 00000000000..8459876e16b
+--- /dev/null
++++ b/tools/dct/data/EintData.py
+@@ -0,0 +1,91 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++
++class EintData:
++    _count = 0
++    _debounce_enable_list = ['CUST_EINT_DEBOUNCE_DISABLE', 'CUST_EINT_DEBOUNCE_ENABLE']
++    _map_table = {}
++    _mode_map = {}
++    _int_eint = {}
++    _builtin_map = {}
++    _builtin_eint_count = 0
++    def __init__(self):
++        self.__varName = ''
++        self.__debounce_time = ''
++        self.__polarity = ''
++        self.__sensitive_level = ''
++        self.__debounce_enable = ''
++
++    def set_varName(self, varName):
++        self.__varName = varName
++
++    def get_varName(self):
++        return self.__varName
++
++    def set_debounceTime(self, time):
++        self.__debounce_time = time
++
++    def get_debounceTime(self):
++        return self.__debounce_time
++
++    def set_polarity(self, polarity):
++        self.__polarity = polarity
++
++    def get_polarity(self):
++        return self.__polarity
++
++    def set_sensitiveLevel(self, level):
++        self.__sensitive_level = level
++
++    def get_sensitiveLevel(self):
++        return self.__sensitive_level
++
++    def set_debounceEnable(self, enable):
++        self.__debounce_enable = enable
++
++    def get_debounceEnable(self):
++        return self.__debounce_enable
++
++    @staticmethod
++    def set_mapTable(map):
++        EintData._map_table = map
++
++    @staticmethod
++    def get_mapTable():
++        return EintData._map_table
++
++    @staticmethod
++    def get_modeName(gpio_num, mode_idx):
++        key = 'gpio%s' %(gpio_num)
++
++        if key in EintData._mode_map.keys():
++            list =  EintData._mode_map[key]
++            if mode_idx < len(list) and mode_idx >= 0:
++                return list[mode_idx]
++
++        return None
++
++    @staticmethod
++    def set_modeMap(map):
++        for (key, value) in map.items():
++            list = []
++            for item in value:
++                list.append(item[6:len(item)-1])
++            map[key] = list
++
++        EintData._mode_map = map
++
++    @staticmethod
++    def get_modeMap():
++        return EintData._mode_map
++
++    @staticmethod
++    def get_gpioNum(num):
++        if len(EintData._map_table):
++            for (key,value) in EintData._map_table.items():
++                if num == value:
++                    return key
++
++        return -1
++
+diff --git a/tools/dct/data/GpioData.py b/tools/dct/data/GpioData.py
+new file mode 100755
+index 00000000000..94ac4e6f182
+--- /dev/null
++++ b/tools/dct/data/GpioData.py
+@@ -0,0 +1,119 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++class GpioData:
++    _count = 0
++    _modNum = 8
++    _specMap = {}
++    _freqMap = {}
++    _mapList = []
++    _modeMap = {}
++    _smtMap = {}
++
++    def __init__(self):
++        self.__defMode = 0
++        self.__eintMode = False
++        self.__modeVec = ['0', '0', '0', '0', '0', '0', '0', '0']
++        self.__inPullEn = True
++        self.__inPullSelHigh = False
++        self.__defDirInt = 0
++        self.__defDir = 'IN'
++        self.__inEn = True
++        self.__outEn = False
++        self.__outHigh = False
++        self.__varNames = []
++        self.__smtNum = -1
++        self.__smtEn = False
++        self.__iesEn = True
++
++
++    def get_defMode(self):
++        return self.__defMode
++
++    def set_defMode(self, mode):
++        self.__defMode = mode
++
++    def get_eintMode(self):
++        return self.__eintMode
++
++    def set_eintMode(self, flag):
++        self.__eintMode = flag
++
++    def get_modeVec(self):
++        return self.__modeVec
++
++    def set_modeVec(self, vec):
++        self.__modeVec = vec
++
++    def get_inPullEn(self):
++        return self.__inPullEn
++
++    def set_inpullEn(self, flag):
++        self.__inPullEn = flag
++
++    def get_inPullSelHigh(self):
++        return self.__inPullSelHigh
++
++    def set_inpullSelHigh(self, flag):
++        self.__inPullSelHigh = flag
++
++    def get_defDir(self):
++        return self.__defDir
++
++    def set_defDir(self, dir):
++        self.__defDir = dir
++
++    def get_inEn(self):
++        return self.__inEn
++
++    def set_inEn(self, flag):
++        self.__inEn = flag
++
++    def get_outEn(self):
++        return self.__outEn
++
++    def set_outEn(self, flag):
++        self.__outEn = flag
++
++    def get_outHigh(self):
++        return self.__outHigh
++
++    def set_outHigh(self, outHigh):
++        self.__outHigh = outHigh
++
++    def get_varNames(self):
++        return self.__varNames
++
++    def set_varNames(self, names):
++        self.__varNames = names
++
++    def set_smtEn(self, flag):
++        self.__smtEn = flag
++
++    def get_smtEn(self):
++        return self.__smtEn
++
++    def get_iesEn(self):
++        return self.__iesEn
++
++    def set_iesEn(self, flag):
++        self.__iesEn = flag
++
++    def set_smtNum(self, num):
++        self.__smtNum = num
++
++    def get_smtNum(self):
++        return self.__smtNum
++
++    def ge_defDirInt(self):
++        if self.__defDir == 'IN':
++            return 0
++        else:
++            return 1
++
++    @staticmethod
++    def get_modeName(key, idx):
++        if key in GpioData._modeMap.keys():
++            value = GpioData._modeMap[key]
++            return value[idx]
++
+diff --git a/tools/dct/data/I2cData.py b/tools/dct/data/I2cData.py
+new file mode 100755
+index 00000000000..322eea63a32
+--- /dev/null
++++ b/tools/dct/data/I2cData.py
+@@ -0,0 +1,51 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++class BusData:
++    def __init__(self):
++        self.__speed = ''
++        self.__enable = False
++
++    def set_speed(self, speed):
++        self.__speed = speed
++
++    def set_enable(self, flag):
++        self.__enable = flag
++
++    def get_speed(self):
++        return self.__speed
++
++    def get_enable(self):
++        return self.__enable
++
++class I2cData:
++    _i2c_count = 0
++    _channel_count = 0
++    _busData = {}
++
++    def __init__(self):
++        self.__varname = ''
++        self.__channel = ''
++        self.__address = ''
++
++    def set_varName(self, name):
++        self.__varname = name
++
++    def set_channel(self, channel):
++        self.__channel = channel
++
++    def set_address(self, addr):
++        self.__address = addr
++
++    def get_varName(self):
++        return self.__varname
++
++    def get_channel(self):
++        return self.__channel
++
++    def get_address(self):
++        return self.__address
++
++
++
++
+diff --git a/tools/dct/data/KpdData.py b/tools/dct/data/KpdData.py
+new file mode 100755
+index 00000000000..4d18f7dee1f
+--- /dev/null
++++ b/tools/dct/data/KpdData.py
+@@ -0,0 +1,148 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++class KpdData:
++    _row = -1
++    _col = -1
++    _row_ext = -1
++    _col_ext = -1
++    _gpioNum = -1
++    _util = ''
++    _homeKey = ''
++    _keyType = ''
++    _pressTime = -1
++    _dinHigh = False
++    _matrix = []
++    _matrix_ext = []
++    _useEint = False
++    _downloadKeys = []
++    _keyValueMap = {}
++    _usedKeys = []
++    _modeKeys = {'META':None, 'RECOVERY':None, 'FACTORY':None}
++
++    def __init__(self):
++        self.__varNames = []
++
++    @staticmethod
++    def set_row(row):
++        KpdData._row = row
++
++    @staticmethod
++    def get_row():
++        return KpdData._row
++
++    @staticmethod
++    def set_col(col):
++        KpdData._col = col
++
++    @staticmethod
++    def get_col():
++        return KpdData._col
++
++    @staticmethod
++    def set_row_ext(row):
++        KpdData._row_ext = row
++
++    @staticmethod
++    def get_row_ext():
++        return KpdData._row_ext
++
++    @staticmethod
++    def set_col_ext(col):
++        KpdData._col_ext = col
++
++    @staticmethod
++    def get_col_ext():
++        return KpdData._col_ext
++
++    @staticmethod
++    def set_matrix(matrix):
++        KpdData._matrix = matrix
++
++    @staticmethod
++    def set_matrix_ext(matrix):
++        KpdData._matrix_ext = matrix
++
++    @staticmethod
++    def get_matrix_ext():
++        return KpdData._matrix_ext
++
++    @staticmethod
++    def get_matrix():
++        return KpdData._matrix
++
++    @staticmethod
++    def set_downloadKeys(keys):
++        KpdData._downloadKeys = keys
++
++    @staticmethod
++    def get_downloadKeys():
++        return KpdData._downloadKeys
++
++    @staticmethod
++    def get_modeKeys():
++        return KpdData._modeKeys
++
++    @staticmethod
++    def set_gpioNum(num):
++        KpdData._gpioNum = num
++
++    @staticmethod
++    def get_gpioNum():
++        return KpdData._gpioNum
++
++    @staticmethod
++    def set_utility(util):
++        KpdData._util = util
++
++    @staticmethod
++    def get_utility():
++        return KpdData._util
++
++    @staticmethod
++    def set_homeKey(home):
++        KpdData._homeKey = home
++
++    @staticmethod
++    def get_homeKey():
++        return KpdData._homeKey
++
++    @staticmethod
++    def set_useEint(flag):
++        KpdData._useEint = flag
++
++    @staticmethod
++    def getUseEint():
++        return KpdData._useEint
++
++    @staticmethod
++    def set_gpioDinHigh(flag):
++        KpdData._dinHigh = flag
++
++    @staticmethod
++    def get_gpioDinHigh():
++        return KpdData._dinHigh
++
++    @staticmethod
++    def set_pressTime(time):
++        KpdData._pressTime = time
++
++    @staticmethod
++    def get_pressTime():
++        return KpdData._pressTime
++
++    @staticmethod
++    def set_keyType(keyType):
++        KpdData._keyType = keyType
++
++    @staticmethod
++    def get_keyType():
++        return KpdData._keyType
++
++    @staticmethod
++    def get_keyVal(key):
++        if key in KpdData._keyValueMap.keys():
++            return KpdData._keyValueMap[key]
++
++        return 0
++
+diff --git a/tools/dct/data/Md1EintData.py b/tools/dct/data/Md1EintData.py
+new file mode 100755
+index 00000000000..654009bae33
+--- /dev/null
++++ b/tools/dct/data/Md1EintData.py
+@@ -0,0 +1,50 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from data.EintData import EintData
++
++class Md1EintData(EintData):
++    def __init__(self):
++        EintData.__init__(self)
++        self.__dedicatedEn = False
++        self.__srcPin = ''
++        self.__socetType = ''
++
++    def set_dedicatedEn(self, value):
++        if value == 'Disable':
++            self.__dedicatedEn = False
++        else:
++            self.__dedicatedEn = True
++
++    def get_dedicatedEn(self):
++        return self.__dedicatedEn
++
++    def set_srcPin(self, pin):
++        self.__srcPin = pin
++
++    def get_srcPin(self):
++        return self.__srcPin
++
++    def set_socketType(self, type):
++        self.__socetType = type
++
++    def get_socketType(self):
++        return self.__socetType
++
++    def set_sensitiveLevel(self, level):
++        EintData.set_sensitiveLevel(self, level)
++
++    def get_sensitiveLevel(self):
++        return EintData.get_sensitiveLevel(self)
++
++    def set_debounceEnable(self, enable):
++        EintData.set_debounceEnable(self, enable)
++
++    def get_debounceEnable(self):
++        return EintData.get_debounceEnable(self)
++
++    def set_polarity(self, polarity):
++        EintData.set_polarity(self, polarity)
++
++    def get_polarity(self):
++        return EintData.get_polarity(self)
+\ No newline at end of file
+diff --git a/tools/dct/data/PmicData.py b/tools/dct/data/PmicData.py
+new file mode 100755
+index 00000000000..c1978aa3801
+--- /dev/null
++++ b/tools/dct/data/PmicData.py
+@@ -0,0 +1,27 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++class PmicData:
++    _var_list = []
++    def __init__(self):
++        self.__ldoName = ''
++        self.__defEn = -1
++        self.__nameList = []
++
++    def set_ldoName(self, name):
++        self.__ldoName = name
++
++    def get_ldoName(self):
++        return self.__ldoName
++
++    def set_defEnable(self, number):
++        self.__defEn = number
++
++    def get_defEnable(self):
++        return self.__defEn
++
++    def set_nameList(self, name_list):
++        self.__nameList = name_list
++
++    def get_nameList(self):
++        return self.__nameList
+\ No newline at end of file
+diff --git a/tools/dct/data/PowerData.py b/tools/dct/data/PowerData.py
+new file mode 100755
+index 00000000000..5c64b49e3ae
+--- /dev/null
++++ b/tools/dct/data/PowerData.py
+@@ -0,0 +1,16 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++class PowerData:
++    def __init__(self):
++        self.__varName = ''
++
++    def set_varName(self, name):
++        self.__varName = name
++
++    def get_varName(self):
++        return self.__varName
++
++
++
++
+diff --git a/tools/dct/data/__init__.py b/tools/dct/data/__init__.py
+new file mode 100755
+index 00000000000..e69de29bb2d
+diff --git a/tools/dct/obj/AdcObj.py b/tools/dct/obj/AdcObj.py
+new file mode 100755
+index 00000000000..c94592c01fc
+--- /dev/null
++++ b/tools/dct/obj/AdcObj.py
+@@ -0,0 +1,84 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++import os
++import re
++import string
++import xml.dom.minidom
++
++from obj.ModuleObj import ModuleObj
++from utility.util import log
++from utility.util import LogLevel
++from utility.util import sorted_key
++
++
++class AdcObj(ModuleObj):
++    def __init__(self):
++        ModuleObj.__init__(self, 'cust_adc.h', 'cust_adc.dtsi')
++
++    def get_cfgInfo(self):
++        pass
++
++    def parse(self, node):
++        self.get_cfgInfo()
++        self.read(node)
++
++    def read(self, node):
++        nodes = node.childNodes
++        try:
++            for node in nodes:
++                if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                    if node.nodeName == 'count':
++                        count = node.childNodes[0].nodeValue
++                        continue
++                    subNode = node.getElementsByTagName('varName')
++                    if len(subNode):
++                        ModuleObj.set_data(self, node.nodeName, subNode[0].childNodes[0].nodeValue)
++        except:
++            msg = 'read adc content fail!'
++            log(LogLevel.error, msg)
++            return False
++
++        return True
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++
++    def fill_hFile(self):
++        gen_str = ''
++        sorted_list = sorted(ModuleObj.get_data(self).keys())
++
++        for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''#define AUXADC_%s_CHANNEL\t\t\t%s\n''' %(value.upper(), key[len(key) - 1])
++
++        return gen_str
++
++    def fill_dtsiFile(self):
++        gen_str = '''&auxadc {\n'''
++        gen_str += '''\tadc_channel@ {\n'''
++        gen_str += '''\t\tcompatible = "mediatek,adc_channel";\n'''
++
++        # sort by the key, or the sequence is dissorted
++        #sorted_list = sorted(ModuleObj.get_data(self).keys())
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++
++            if value == "TEMPERATURE":
++                gen_str += '''\t\tmediatek,%s0 = <%d>;\n''' %(value.lower(), string.atoi(key[len(key) -1]))
++            else:
++                gen_str += '''\t\tmediatek,%s = <%d>;\n''' %(value.lower(), string.atoi(key[len(key) -1]))
++
++        gen_str += '''\t\tstatus = \"okay\";\n'''
++        gen_str += '''\t};\n'''
++        gen_str += '''};\n'''
++
++        return gen_str
++
++
++
++
++
++
++
++
+diff --git a/tools/dct/obj/ChipObj.py b/tools/dct/obj/ChipObj.py
+new file mode 100755
+index 00000000000..37e7db31757
+--- /dev/null
++++ b/tools/dct/obj/ChipObj.py
+@@ -0,0 +1,249 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import os, sys
++import xml.dom.minidom
++
++from .GpioObj import GpioObj
++from .EintObj import EintObj
++from .AdcObj import AdcObj
++from .ClkObj import ClkObj
++from .ClkObj import ClkObj_Everest
++from .ClkObj import ClkObj_Olympus
++from .ClkObj import ClkObj_Rushmore
++from .I2cObj import I2cObj
++from .PmicObj import PmicObj
++from .Md1EintObj import Md1EintObj
++from .PowerObj import PowerObj
++from .KpdObj import KpdObj
++from .ModuleObj import ModuleObj
++
++from utility.util import log
++from utility.util import LogLevel
++
++para_map = {'adc':['adc_h', 'adc_dtsi'],\
++            'clk':['clk_buf_h', 'clk_buf_dtsi'],\
++            'eint':['eint_h', 'eint_dtsi'],\
++            'gpio':['gpio_usage_h', 'gpio_boot_h', 'gpio_dtsi', 'scp_gpio_usage_h', 'pinfunc_h', \
++                    'pinctrl_h', 'gpio_usage_mapping_dtsi', 'gpio_usage_mapping_dtsi'],\
++            'i2c':['i2c_h', 'i2c_dtsi'],\
++            'md1_eint':['md1_eint_h', 'md1_eint_dtsi'],\
++            'kpd':['kpd_h', 'kpd_dtsi'],\
++            'pmic':['pmic_drv_h', 'pmic_drv_c', 'pmic_dtsi'],\
++            'power':['power_h']}
++
++class ChipObj:
++    def __init__(self, path, dest):
++        self.__path = path
++        ModuleObj.set_genPath(dest)
++        self.__objs = {}
++
++        self.init_objs()
++
++    def init_objs(self):
++        self.__objs['adc'] = AdcObj()
++        self.__objs['clk'] = ClkObj()
++        self.__objs["gpio"] = GpioObj()
++        # eint obj need gpio data
++        self.__objs["eint"] = EintObj(self.__objs['gpio'])
++        self.__objs["i2c"] = I2cObj()
++        self.__objs["md1_eint"] = Md1EintObj()
++
++        self.__objs["pmic"] = PmicObj()
++        self.__objs["power"] = PowerObj()
++        self.__objs["kpd"] = KpdObj()
++
++    def replace_obj(self, tag, obj):
++        if not tag in self.__objs.keys():
++            return False
++
++        self.__objs[tag] = obj
++
++    def append_obj(self, tag, obj):
++        if tag in self.__objs.keys():
++            return False
++
++        self.__objs[tag] = obj
++
++    @staticmethod
++    def get_chipId(path):
++        if not os.path.exists(path):
++            msg = '%s is not a available path!' %(path)
++            log(LogLevel.error, msg)
++            return False
++        data = xml.dom.minidom.parse(path)
++        root = data.documentElement
++        # get 'general' node
++        node = root.getElementsByTagName('general')
++        return node[0].getAttribute('chip')
++
++    def parse(self):
++        if not os.path.exists(self.__path):
++            msg = '%s is not a available path!' %(self.__path)
++            log(LogLevel.error, msg)
++            return False
++
++        data = xml.dom.minidom.parse(self.__path)
++
++        root = data.documentElement
++        # get 'general' node
++        node = root.getElementsByTagName('general')
++        # get chip name and project name
++        ModuleObj.set_chipId(node[0].getAttribute('chip'))
++
++        msg = 'Chip ID : %s' %(node[0].getAttribute('chip'))
++        log(LogLevel.info, msg)
++        msg = 'Project Info: %s' %(node[0].getElementsByTagName('proj')[0].childNodes[0].nodeValue)
++        log(LogLevel.info, msg)
++
++        # initialize the objects mapping table
++        self.init_objs()
++        # get module nodes from DWS file
++        nodes = node[0].getElementsByTagName('module')
++
++        for node in nodes:
++            tag = node.getAttribute('name')
++            obj = self.create_obj(tag)
++            if obj == None:
++                msg = 'can not find %s node in DWS!' %(tag)
++                log(LogLevel.error, msg)
++                return False
++            obj.parse(node)
++
++        return True
++
++    def generate(self, paras):
++        if len(paras) == 0:
++            for obj in self.__objs.values():
++                obj.gen_files()
++
++            self.gen_custDtsi()
++        else:
++            self.gen_spec(paras)
++
++        return True
++
++    def create_obj(self, tag):
++        obj = None
++        if tag in self.__objs.keys():
++            obj = self.__objs[tag]
++
++        return obj
++
++
++    def gen_spec(self, paras):
++        if cmp(paras[0], 'cust_dtsi') == 0:
++            self.gen_custDtsi()
++            return True
++
++        for para in paras:
++            idx = 0
++            name = ''
++            if para.strip() != '':
++                for value in para_map.values():
++                    if para in value:
++                        name = para_map.keys()[idx]
++                        break
++                    idx += 1
++
++            if name != '':
++                log(LogLevel.info, 'Start to generate %s file...' %(para))
++                obj = self.__objs[name]
++                obj.gen_spec(para)
++                log(LogLevel.info, 'Generate %s file successfully!' %(para))
++            else:
++                log(LogLevel.error, '%s can not be recognized!' %(para))
++                sys.exit(-1)
++
++        return True
++
++    def gen_custDtsi(self):
++        log(LogLevel.info, 'Start to generate cust_dtsi file...')
++        fp = open(os.path.join(ModuleObj.get_genPath(), 'cust.dtsi'), 'w')
++        gen_str = ModuleObj.writeComment()
++
++        sorted_list = sorted(self.__objs.keys())
++        for tag in sorted_list:
++            if cmp(tag, 'gpio') == 0:
++                gpioObj = self.create_obj(tag)
++                gen_str += ModuleObj.writeHeader(gpioObj.get_dtsiFileName())
++                gen_str += gpioObj.fill_mapping_dtsiFile()
++            else:
++                obj = self.create_obj(tag)
++                gen_str += ModuleObj.writeHeader(obj.get_dtsiFileName())
++                gen_str += obj.fill_dtsiFile()
++
++            gen_str += '''\n\n'''
++
++        fp.write(gen_str)
++        fp.close()
++        log(LogLevel.info, 'Generate cust_dtsi file successfully!')
++
++
++class Everest(ChipObj):
++    def __init__(self, dws_path, gen_path):
++        ChipObj.__init__(self, dws_path, gen_path)
++        self.init_objs()
++
++    def init_objs(self):
++        ChipObj.init_objs(self)
++        ChipObj.replace_obj(self, 'clk', ClkObj_Everest())
++
++    def parse(self):
++        return ChipObj.parse(self)
++
++    def generate(self, paras):
++        return ChipObj.generate(self, paras)
++
++
++class Olympus(ChipObj):
++    def __init__(self, dws_path, gen_path):
++        ChipObj.__init__(self, dws_path, gen_path)
++
++    def init_objs(self):
++        ChipObj.init_objs(self)
++        ChipObj.replace_obj(self, 'clk', ClkObj_Olympus())
++
++    def parse(self):
++        return ChipObj.parse(self)
++
++
++    def generate(self, paras):
++        return ChipObj.generate(self, paras)
++
++
++class KiboPlus(ChipObj):
++    def __init__(self, dws_path, gen_path):
++        ChipObj.__init__(self, dws_path, gen_path)
++
++    def init_objs(self):
++        ChipObj.init_objs(self)
++        ChipObj.replace_obj(self, 'clk', ClkObj_Olympus())
++
++    def parse(self):
++        return ChipObj.parse(self)
++
++
++    def generate(self, paras):
++        return ChipObj.generate(self, paras)
++
++
++class Rushmore(ChipObj):
++    def __init__(self, dws_path, gen_path):
++        ChipObj.__init__(self, dws_path, gen_path)
++
++    def init_objs(self):
++        ChipObj.init_objs(self)
++        ChipObj.replace_obj(self, 'clk', ClkObj_Rushmore())
++
++    def parse(self):
++        return ChipObj.parse(self)
++
++
++    def generate(self, paras):
++        return ChipObj.generate(self, paras)
++
++
++
++
+diff --git a/tools/dct/obj/ClkObj.py b/tools/dct/obj/ClkObj.py
+new file mode 100755
+index 00000000000..1192c6210bb
+--- /dev/null
++++ b/tools/dct/obj/ClkObj.py
+@@ -0,0 +1,437 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import os
++import re
++import string
++import configparser
++
++import xml.dom.minidom
++
++from .ModuleObj import ModuleObj
++from data.ClkData import ClkData
++from utility.util import log
++from utility.util import LogLevel
++from utility.util import sorted_key
++
++DEFAULT_AUTOK = 'AutoK'
++class ClkObj(ModuleObj):
++    def __init__(self):
++        ModuleObj.__init__(self, 'cust_clk_buf.h', 'cust_clk_buf.dtsi')
++        #self.__prefix_cfg = 'driving_current_pmic_clk_buf'
++        self.__suffix = '_BUF'
++        self.__count = -1
++
++    def read(self, node):
++        nodes = node.childNodes
++        for node in nodes:
++            if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                if node.nodeName == 'count':
++                    continue
++
++                varNode = node.getElementsByTagName('varName')
++                curNode = node.getElementsByTagName('current')
++
++                key = re.findall(r'\D+', node.nodeName)[0].upper() + self.__suffix + '%s' %(re.findall(r'\d+', node.nodeName)[0])
++
++                data = ModuleObj.get_data(self)[key]
++
++                if len(varNode):
++                    data.set_varName(varNode[0].childNodes[0].nodeValue)
++
++                if len(curNode):
++                    data.set_current(curNode[0].childNodes[0].nodeValue)
++
++                ModuleObj.set_data(self, key, data)
++
++        return True
++
++    def get_cfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_figPath())
++
++        count = string.atoi(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
++        self.__count = count
++
++        ops = cp.options('CLK_BUF')
++        for op in ops:
++            if op == 'clk_buf_count':
++                self.__count = string.atoi(cp.get('CLK_BUF', op))
++                ClkData._count = string.atoi(cp.get('CLK_BUF', op))
++                continue
++
++            value = cp.get('CLK_BUF', op)
++            var_list = value.split(':')
++
++            data = ClkData()
++            data.set_curList(var_list[2:])
++            data.set_defVarName(string.atoi(var_list[0]))
++            data.set_defCurrent(string.atoi(var_list[1]))
++
++            key = op[16:].upper()
++            ModuleObj.set_data(self, key, data)
++
++    def parse(self, node):
++        self.get_cfgInfo()
++        self.read(node)
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++
++    def fill_hFile(self):
++        gen_str = '''typedef enum {\n'''
++        gen_str += '''\tCLOCK_BUFFER_DISABLE,\n'''
++        gen_str += '''\tCLOCK_BUFFER_SW_CONTROL,\n'''
++        gen_str += '''\tCLOCK_BUFFER_HW_CONTROL\n'''
++        gen_str += '''} MTK_CLK_BUF_STATUS;\n'''
++        gen_str += '''\n'''
++
++        gen_str += '''typedef enum {\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_AUTO_K = -1,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_0,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_1,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_2,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_3\n'''
++        gen_str += '''} MTK_CLK_BUF_DRIVING_CURR;\n'''
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''#define %s_STATUS_PMIC\t\tCLOCK_BUFFER_%s\n''' %(key[5:], value.get_varName().upper())
++
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            idx = value.get_curList().index(value.get_current())
++            if cmp(value.get_curList()[0], DEFAULT_AUTOK) == 0:
++                idx -= 1
++
++            if idx >= 0:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_%d\n''' %(key, idx)
++            else:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_AUTO_K\n''' %(key)
++
++        gen_str += '''\n'''
++
++        return gen_str
++
++    def fill_dtsiFile(self):
++        gen_str = '''&pmic_clock_buffer_ctrl {\n'''
++        gen_str += '''\tmediatek,clkbuf-quantity = <%d>;\n''' %(self.__count)
++        gen_str += '''\tmediatek,clkbuf-config = <'''
++
++        #sorted_list = sorted(ModuleObj.get_data(self).keys())
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            if key.find('PMIC') == -1:
++                continue
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''%d ''' %(ClkData._varList.index(value.get_varName()))
++
++        gen_str = gen_str.rstrip()
++        gen_str += '''>;\n'''
++
++        gen_str += '''\tmediatek,clkbuf-driving-current = <'''
++
++        #sorted_list = sorted(ModuleObj.get_data(self).keys())
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            if key.find('PMIC') == -1:
++                continue
++            value = ModuleObj.get_data(self)[key]
++            idx = value.get_curList().index(value.get_current())
++            if cmp(value.get_curList()[0], DEFAULT_AUTOK) == 0:
++                idx -= 1
++            if idx < 0:
++                gen_str += '''(%d) ''' %(-1)
++            else:
++                gen_str += '''%d ''' %(idx)
++
++        gen_str = gen_str.rstrip()
++        gen_str += '''>;\n'''
++
++        gen_str += '''\tstatus = \"okay\";\n'''
++        gen_str += '''};\n'''
++
++        return gen_str
++
++
++class ClkObj_Everest(ClkObj):
++    def __init__(self):
++        ClkObj.__init__(self)
++        self.__rf = 'RF'
++        self.__pmic = 'PMIC'
++
++    def parse(self, node):
++        ClkObj.parse(self, node)
++
++    def gen_files(self):
++        ClkObj.gen_files(self)
++
++    def fill_hFile(self):
++        gen_str = '''typedef enum {\n'''
++        gen_str += '''\tCLOCK_BUFFER_DISABLE,\n'''
++        gen_str += '''\tCLOCK_BUFFER_SW_CONTROL,\n'''
++        gen_str += '''\tCLOCK_BUFFER_HW_CONTROL\n'''
++        gen_str += '''} MTK_CLK_BUF_STATUS;\n'''
++        gen_str += '''\n'''
++
++        gen_str += '''typedef enum {\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_0_4MA,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_0_9MA,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_1_4MA,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_1_9MA\n'''
++        gen_str += '''} MTK_CLK_BUF_DRIVING_CURR;\n'''
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find(self.__pmic) != -1:
++                gen_str += '''#define %s_STATUS_PMIC\t\t\t\tCLOCK_BUFFER_%s\n''' %(key[5:], value.get_varName())
++
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find(self.__pmic) != -1:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_%sMA\n''' %(key, value.get_current().replace('.', '_'))
++
++        gen_str += '''\n'''
++
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find(self.__rf) != -1:
++                gen_str += '''#define %s_STATUS\t\tCLOCK_BUFFER_%s\n''' %(key[3:], value.get_varName())
++
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find(self.__rf) != -1:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_%sMA\n''' %(key, value.get_current().replace('.', '_'))
++
++        gen_str += '''\n'''
++
++
++
++        return gen_str
++
++    def fill_dtsiFile(self):
++        gen_str = ClkObj.fill_dtsiFile(self)
++
++        gen_str += '''\n'''
++
++        gen_str += '''&rf_clock_buffer_ctrl {\n'''
++        gen_str += '''\tmediatek,clkbuf-quantity = <%d>;\n''' %(ClkData._count)
++        gen_str += '''\tmediatek,clkbuf-config = <'''
++
++        #sorted_list = sorted(ModuleObj.get_data(self).keys())
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++
++            if key.find(self.__rf) != -1:
++                gen_str += '''%d ''' %(ClkData._varList.index(value.get_varName()))
++        gen_str.rstrip()
++        gen_str += '''>;\n'''
++
++        gen_str += '''\tmediatek,clkbuf-driving-current = <'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find(self.__rf) != -1:
++                idx = value.get_curList().index(value.get_current())
++                if cmp(value.get_curList()[0], DEFAULT_AUTOK) == 0:
++                    idx -= 1
++                gen_str += '''%d ''' %(idx)
++
++        gen_str.rstrip()
++        gen_str += '''>;\n'''
++
++        gen_str += '''\tstatus = \"okay\";\n'''
++        gen_str += '''};\n'''
++
++        return gen_str
++
++class ClkObj_Olympus(ClkObj_Everest):
++
++    def __init__(self):
++        ClkObj_Everest.__init__(self)
++
++    def get_cfgInfo(self):
++        ClkObj_Everest.get_cfgInfo(self)
++
++    def parse(self, node):
++        ClkObj_Everest.parse(self, node)
++
++    def gen_files(self):
++        ClkObj_Everest.gen_files(self)
++
++    def fill_hFile(self):
++        gen_str = '''typedef enum {\n'''
++        gen_str += '''\tCLOCK_BUFFER_DISABLE,\n'''
++        gen_str += '''\tCLOCK_BUFFER_SW_CONTROL,\n'''
++        gen_str += '''\tCLOCK_BUFFER_HW_CONTROL\n'''
++        gen_str += '''} MTK_CLK_BUF_STATUS;\n'''
++        gen_str += '''\n'''
++
++        gen_str += '''typedef enum {\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_AUTO_K = -1,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_0,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_1,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_2,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_3\n'''
++        gen_str += '''} MTK_CLK_BUF_DRIVING_CURR;\n'''
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find('PMIC') != -1:
++                gen_str += '''#define %s_STATUS_PMIC\t\tCLOCK_BUFFER_%s\n''' %(key[5:], value.get_varName())
++
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find('RF') != -1:
++                gen_str += '''#define %s_STATUS\t\t\t\tCLOCK_BUFFER_%s\n''' %(key[3:], value.get_varName())
++
++        gen_str += '''\n'''
++
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            if key.find('PMIC') != -1:
++                continue
++            value = ModuleObj.get_data(self)[key]
++            idx = value.get_curList().index(value.get_current())
++            if cmp(value.get_curList()[0], DEFAULT_AUTOK) == 0:
++                idx -= 1
++
++            if idx >= 0:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_%d\n''' %(key, idx)
++            else:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_AUTO_K\n''' %(key)
++
++        gen_str += '''\n'''
++
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            if key.find('RF') != -1:
++                continue
++            value = ModuleObj.get_data(self)[key]
++            idx = value.get_curList().index(value.get_current())
++            if cmp(value.get_curList()[0], DEFAULT_AUTOK) == 0:
++                idx -= 1
++
++            if idx >= 0:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_%d\n''' %(key, idx)
++            else:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_AUTO_K\n''' %(key)
++
++        gen_str += '''\n'''
++
++        return gen_str
++
++class ClkObj_Rushmore(ClkObj):
++
++    def __init__(self):
++        ClkObj.__init__(self)
++        self.__suffix = '_BUF'
++
++    def parse(self, node):
++        ClkObj.parse(self, node)
++
++    def get_cfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_figPath())
++
++        count = string.atoi(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
++        self.__count = count
++
++    def read(self, node):
++        nodes = node.childNodes
++        for node in nodes:
++            if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                if node.nodeName == 'count':
++                    continue
++
++                varNode = node.getElementsByTagName('varName')
++                curNode = node.getElementsByTagName('current')
++
++                key = re.findall(r'\D+', node.nodeName)[0].upper() + self.__suffix + '%s' %(re.findall(r'\d+', node.nodeName)[0])
++                data = ClkData()
++                if len(varNode):
++                    data.set_varName(varNode[0].childNodes[0].nodeValue)
++
++                #if len(curNode):
++                    #data.set_current(curNode[0].childNodes[0].nodeValue)
++
++                ModuleObj.set_data(self, key, data)
++
++        return True
++
++    def fill_hFile(self):
++        gen_str = '''typedef enum {\n'''
++        gen_str += '''\tCLOCK_BUFFER_DISABLE,\n'''
++        gen_str += '''\tCLOCK_BUFFER_SW_CONTROL,\n'''
++        gen_str += '''\tCLOCK_BUFFER_HW_CONTROL\n'''
++        gen_str += '''} MTK_CLK_BUF_STATUS;\n'''
++        gen_str += '''\n'''
++
++        gen_str += '''typedef enum {\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_AUTO_K = -1,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_0,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_1,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_2,\n'''
++        gen_str += '''\tCLK_BUF_DRIVING_CURR_3\n'''
++        gen_str += '''} MTK_CLK_BUF_DRIVING_CURR;\n'''
++        gen_str += '''\n'''
++
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if key.find('RF') != -1:
++                gen_str += '''#define %s_STATUS\t\t\t\tCLOCK_BUFFER_%s\n''' %(key[3:], value.get_varName())
++
++        gen_str += '''\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            if key.find('RF') != -1:
++                continue
++            value = ModuleObj.get_data(self)[key]
++            idx = value.get_curList().index(value.get_current())
++            if cmp(value.get_curList()[0], DEFAULT_AUTOK) == 0:
++                idx -= 1
++
++            if idx >= 0:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_%d\n''' %(key, idx)
++            else:
++                gen_str += '''#define %s_DRIVING_CURR\t\tCLK_BUF_DRIVING_CURR_AUTO_K\n''' %(key)
++
++        gen_str += '''\n'''
++
++        return gen_str
++
++    def fill_dtsiFile(self):
++        gen_str = '''&rf_clock_buffer_ctrl {\n'''
++        gen_str += '''\tmediatek,clkbuf-quantity = <%d>;\n''' %(self.__count)
++        gen_str += '''\tmediatek,clkbuf-config = <'''
++
++        #sorted_list = sorted(ModuleObj.get_data(self).keys())
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            if key.find('RF') == -1:
++                continue
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''%d ''' %(ClkData._varList.index(value.get_varName()))
++
++        gen_str = gen_str.rstrip()
++        gen_str += '''>;\n'''
++
++        gen_str += '''\tstatus = \"okay\";\n'''
++        gen_str += '''};\n'''
++
++        return gen_str
++
++
++
+diff --git a/tools/dct/obj/EintObj.py b/tools/dct/obj/EintObj.py
+new file mode 100755
+index 00000000000..c977b7a5c96
+--- /dev/null
++++ b/tools/dct/obj/EintObj.py
+@@ -0,0 +1,292 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++import re
++import os
++import string
++
++import configparser
++import xml.dom.minidom
++
++from data.EintData import EintData
++from data.GpioData import GpioData
++from utility.util import log
++from utility.util import LogLevel
++from utility.util import compare
++
++from obj.ModuleObj import ModuleObj
++from obj.GpioObj import GpioObj
++
++class EintObj(ModuleObj):
++    def __init__(self, gpio_obj):
++        ModuleObj.__init__(self, 'cust_eint.h', 'cust_eint.dtsi')
++        self.__gpio_obj = gpio_obj
++        self.__count = 0
++        self.__map_count = 0
++
++    def read(self, node):
++        nodes = node.childNodes
++
++        for node in nodes:
++            if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                if cmp(node.nodeName, 'count') == 0:
++                    self.__count = node.childNodes[0].nodeValue
++                    continue
++
++                varNode = node.getElementsByTagName('varName')
++                detNode = node.getElementsByTagName('debounce_time')
++                polNode = node.getElementsByTagName('polarity')
++                senNode = node.getElementsByTagName('sensitive_level')
++                deeNode = node.getElementsByTagName('debounce_en')
++
++                data = EintData()
++                if len(varNode):
++                    data.set_varName(varNode[0].childNodes[0].nodeValue)
++
++                if len(detNode):
++                    data.set_debounceTime(detNode[0].childNodes[0].nodeValue)
++
++                if len(polNode):
++                    data.set_polarity(polNode[0].childNodes[0].nodeValue)
++
++                if len(senNode):
++                    data.set_sensitiveLevel(senNode[0].childNodes[0].nodeValue)
++
++                if len(deeNode):
++                    data.set_debounceEnable(deeNode[0].childNodes[0].nodeValue)
++
++                ModuleObj.set_data(self, node.nodeName, data)
++
++        return True
++
++    def parse(self, node):
++        self.get_cfgInfo()
++        self.read(node)
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++
++    def gen_spec(self, para):
++        ModuleObj.gen_spec(self, para)
++
++    def get_cfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_figPath())
++
++        ops = cp.options('GPIO')
++        map = {}
++        mode_map = {}
++        for op in ops:
++            value = cp.get('GPIO', op)
++            list = re.split(r' +|\t+', value)
++
++            map[string.atoi(re.findall(r'\d+', op)[0])] = string.atoi(list[len(list)-2])
++            mode_map[op] = list[0:len(list)-2]
++
++        EintData.set_mapTable(map)
++        EintData.set_modeMap(mode_map)
++
++        if cp.has_option('EINT', 'EINT_MAP_COUNT'):
++            self.__map_count = string.atoi(cp.get('EINT', 'EINT_MAP_COUNT'))
++
++        if cp.has_option('EINT', 'INTERNAL_EINT'):
++            info = cp.get('EINT', 'INTERNAL_EINT')
++            str_list = info.split(':')
++            for item in str_list:
++                sub_list = item.split('/')
++                EintData._int_eint[sub_list[0]] = sub_list[1]
++
++        if cp.has_option('EINT', 'BUILTIN_EINT'):
++            info = cp.get('EINT', 'BUILTIN_EINT')
++            str_list = info.split(':')
++            for builtin_item in str_list:
++                builtin_list = builtin_item.split('/')
++                #EintData._builtin_map[builtin_list[0]] = builtin_list[1]
++
++                temp = 'BUILTIN_%s' %(builtin_list[0])
++                if cp.has_option('EINT', temp):
++                    info = cp.get('EINT', temp)
++                    str_list = info.split(':')
++                    temp_map = {}
++                    for item in str_list:
++                        sub_list = item.split('/')
++                        temp_map[sub_list[0]] = sub_list[1] + ':' + builtin_list[1]
++
++                    EintData._builtin_map[builtin_list[0]] = temp_map
++                    EintData._builtin_eint_count += len(temp_map)
++
++
++    #def compare(self, value):
++        #return string.atoi(value[4:])
++
++    def fill_hFile(self):
++        gen_str = ''
++        gen_str += '''#ifdef __cplusplus\n'''
++        gen_str += '''extern \"C\" {\n'''
++        gen_str += '''#endif\n'''
++
++        gen_str += '''#define CUST_EINTF_TRIGGER_RISING\t\t\t1\n'''
++        gen_str += '''#define CUST_EINTF_TRIGGER_FALLING\t\t\t2\n'''
++        gen_str += '''#define CUST_EINTF_TRIGGER_HIGH\t\t\t4\n'''
++        gen_str += '''#define CUST_EINTF_TRIGGER_LOW\t\t\t8\n'''
++
++        gen_str += '''#define CUST_EINT_DEBOUNCE_DISABLE\t\t\t0\n'''
++        gen_str += '''#define CUST_EINT_DEBOUNCE_ENABLE\t\t\t1\n'''
++
++        gen_str += '''\n\n'''
++
++        sorted_list = sorted(ModuleObj.get_data(self).keys(), key=compare)
++
++        for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''#define CUST_EINT_%s_NUM\t\t\t%s\n''' %(value.get_varName().upper(), key[4:])
++            gen_str += '''#define CUST_EINT_%s_DEBOUNCE_CN\t\t%s\n''' %(value.get_varName().upper(), value.get_debounceTime())
++
++            temp = ''
++            polarity = value.get_polarity()
++            sensitive = value.get_sensitiveLevel()
++
++            if cmp(polarity, 'High') == 0 and cmp(sensitive, 'Edge') == 0:
++                temp = 'CUST_EINTF_TRIGGER_RISING'
++            elif cmp(polarity, 'Low') == 0 and cmp(sensitive, 'Edge') == 0:
++                temp = 'CUST_EINTF_TRIGGER_FALLING'
++            elif cmp(polarity, 'High') == 0 and cmp(sensitive, 'Level') == 0:
++                temp = 'CUST_EINTF_TRIGGER_HIGH'
++            elif cmp(polarity, 'Low') == 0 and cmp(sensitive, 'Level') == 0:
++                temp = 'CUST_EINTF_TRIGGER_LOW'
++
++            gen_str += '''#define CUST_EINT_%s_TYPE\t\t\t%s\n''' %(value.get_varName().upper(), temp)
++
++            temp = ''
++            if cmp(value.get_debounceEnable(), 'Disable') == 0:
++                temp = 'CUST_EINT_DEBOUNCE_DISABLE'
++            elif cmp(value.get_debounceEnable(), 'Enable') == 0:
++                temp = 'CUST_EINT_DEBOUNCE_ENABLE'
++            gen_str += '''#define CUST_EINT_%s_DEBOUNCE_EN\t\t%s\n\n''' %(value.get_varName().upper(), temp)
++
++
++        gen_str += '''#ifdef __cplusplus\n'''
++        gen_str += '''}\n'''
++        gen_str += '''#endif\n'''
++
++        return gen_str
++
++    def fill_mappingTable(self):
++        gen_str = '''&eintc {\n'''
++        count = 0
++
++        if self.__map_count == 0:
++            for i in range(0, string.atoi(self.__count)):
++                if EintData.get_gpioNum(i) >= 0:
++                    count += 1
++            count += len(EintData._int_eint)
++        else:
++            count = self.__map_count
++
++        gen_str += '''\tmediatek,mapping_table_entry = <%d>;\n''' %(count)
++        gen_str += '''\t\t\t/* <gpio_pin, eint_pin> */\n'''
++        gen_str += '''\tmediatek,mapping_table = '''
++
++        sorted_list = sorted(EintData.get_mapTable().keys())
++        for key in sorted_list:
++            value = EintData.get_mapTable()[key]
++            if value != -1:
++                gen_str += '''<%d %d>,\n\t\t\t\t\t''' %(key, value)
++
++        for (key, value) in EintData._int_eint.items():
++            gen_str += '''<%s %s>,\n\t\t\t\t\t''' %(value, key)
++
++        gen_str = gen_str[0:len(gen_str)-7]
++        gen_str += ''';\n'''
++        gen_str += '''\tmediatek,builtin_entry = <%d>;\n''' %(EintData._builtin_eint_count)
++        if len(EintData._builtin_map) == 0:
++            gen_str += '''};\n\n'''
++            return gen_str
++
++        gen_str += '''\t\t\t\t\t/* gpio, built-in func mode, built-in eint */\n'''
++        gen_str += '''\tmediatek,builtin_mapping = '''
++        for (key, value) in EintData._builtin_map.items():
++            for (sub_key, sub_value) in value.items():
++                gen_str += '''<%s %s %s>, /* %s */\n\t\t\t\t\t''' %(sub_key, sub_value[0:1], key, sub_value)
++
++        gen_str = gen_str[0:gen_str.rfind(',')]
++        gen_str += ';'
++        gen_str += '''};\n\n'''
++
++        return gen_str
++
++    def get_gpioNum(self, eint_num):
++        for (key, value) in EintData.get_mapTable().items():
++            if cmp(eint_num, value) == 0:
++                return key
++
++        return -1
++
++    def refGpio(self, eint_num, flag):
++        gpio_vec= []
++
++        gpio_num = EintData.get_gpioNum(string.atoi(eint_num))
++        if gpio_num >= 0:
++            gpio_vec.append(gpio_num)
++            if flag:
++                item_data = self.__gpio_obj.get_gpioData(gpio_num)
++                mode_idx = item_data.get_defMode()
++                mode_name = EintData.get_modeName(gpio_num, mode_idx)
++                if re.match(r'GPIO[\d]+', mode_name) or re.match(r'EINT[\d]+', mode_name):
++                    return gpio_vec
++
++        for key in EintData._builtin_map.keys():
++            if string.atoi(eint_num) == string.atoi(key):
++                temp_map = EintData._builtin_map[key]
++                for key in temp_map.keys():
++                    gpio_vec.append(key)
++
++                if flag:
++                    for item in temp_map.keys():
++                        item_data = self.__gpio_obj.get_gpioData(string.atoi(item))
++
++                        if item_data.get_defMode() == string.atoi(temp_map[item].split(':')[0]):
++                            gpio_vec = []
++                            gpio_vec.append(item)
++                            return gpio_vec
++
++                break
++
++        return gpio_vec
++
++    def fill_dtsiFile(self):
++        gen_str = '''#include <dt-bindings/interrupt-controller/irq.h>\n'''
++        gen_str += '''#include <dt-bindings/interrupt-controller/arm-gic.h>\n'''
++        gen_str += '''\n'''
++
++        gen_str += self.fill_mappingTable()
++
++        sorted_list = sorted(ModuleObj.get_data(self).keys(), key=compare)
++
++        for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''&%s {\n''' %(value.get_varName().lower())
++            gen_str += '''\tinterrupt-parent = <&eintc>;\n'''
++
++            temp = ''
++            polarity = value.get_polarity()
++            sensitive = value.get_sensitiveLevel()
++
++            if cmp(polarity, 'High') == 0 and cmp(sensitive, 'Edge') == 0:
++                temp = 'IRQ_TYPE_EDGE_RISING'
++            elif cmp(polarity, 'Low') == 0 and cmp(sensitive, 'Edge') == 0:
++                temp = 'IRQ_TYPE_EDGE_FALLING'
++            elif cmp(polarity, 'High') == 0 and cmp(sensitive, 'Level') == 0:
++                temp = 'IRQ_TYPE_LEVEL_HIGH'
++            elif cmp(polarity, 'Low') == 0 and cmp(sensitive, 'Level') == 0:
++                temp = 'IRQ_TYPE_LEVEL_LOW'
++
++            gen_str += '''\tinterrupts = <%s %s>;\n''' %(self.refGpio(key[4:], True)[0], temp)
++            gen_str += '''\tdebounce = <%s %d>;\n''' %(self.refGpio(key[4:], True)[0], string.atoi(value.get_debounceTime()) * 1000)
++            gen_str += '''\tstatus = \"okay\";\n'''
++            gen_str += '''};\n'''
++            gen_str += '''\n'''
++
++        return gen_str
++
++
+diff --git a/tools/dct/obj/GpioObj.py b/tools/dct/obj/GpioObj.py
+new file mode 100755
+index 00000000000..fa37e00168c
+--- /dev/null
++++ b/tools/dct/obj/GpioObj.py
+@@ -0,0 +1,570 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import re
++import os
++import sys
++import string
++import configparser
++import xml.dom.minidom
++
++
++from data.GpioData import GpioData
++from data.EintData import EintData
++from .ModuleObj import ModuleObj
++from . import ChipObj
++from utility.util import compare
++from utility.util import sorted_key
++
++class GpioObj(ModuleObj):
++    def __init__(self):
++        ModuleObj.__init__(self,'cust_gpio_boot.h', 'cust_gpio.dtsi')
++        self.__fileName = 'cust_gpio_usage.h'
++        self.__filePinfunc = '%s-pinfunc.h' %(ModuleObj.get_chipId().lower())
++        self.__filePinCtrl = 'pinctrl-mtk-%s.h' %(ModuleObj.get_chipId().lower())
++        self.__fileScp = 'cust_scp_gpio_usage.h'
++        self.__fileMap = 'cust_gpio_usage_mapping.dtsi'
++
++    def get_cfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_cmpPath())
++
++        # get GPIO_FREQ section
++        keys= cp.options('GPIO_FREQ')
++        for key in keys:
++            value = cp.get('GPIO_FREQ', key)
++            GpioData._freqMap[key] = value
++
++        # get GPIO_MODE section
++        keys = cp.options('GPIO_MODE')
++        for key in keys:
++            value = cp.get('GPIO_MODE', key)
++            GpioData._specMap[key] = value
++
++        GpioData._mapList = cp.options('GPIO_VARIABLES_MAPPING')
++
++        cp.read(ModuleObj.get_figPath())
++        ops = cp.options('GPIO')
++        for op in ops:
++            value = cp.get('GPIO', op)
++            list = re.split(r' +|\t+', value)
++            tmp_list = list[0:len(list)-2]
++            temp = []
++            for item in tmp_list:
++                str = item[6:len(item)-1]
++                temp.append(str)
++            GpioData._modeMap[op] = temp
++
++            data = GpioData()
++            data.set_smtNum(string.atoi(list[len(list)-1]))
++            ModuleObj.set_data(self, op.lower(), data)
++
++    def read(self, node):
++        nodes = node.childNodes
++        for node in nodes:
++            if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                if cmp(node.nodeName, 'count') == 0:
++                    GpioData._count = string.atoi(node.childNodes[0].nodeValue)
++                    continue
++
++                eintNode = node.getElementsByTagName('eint_mode')
++                defmNode = node.getElementsByTagName('def_mode')
++                modsNode = node.getElementsByTagName('mode_arr')
++                inpeNode = node.getElementsByTagName('inpull_en')
++                inpsNode = node.getElementsByTagName('inpull_selhigh')
++                defdNode = node.getElementsByTagName('def_dir')
++                diriNode = node.getElementsByTagName('in')
++                diroNode = node.getElementsByTagName('out')
++                outhNode = node.getElementsByTagName('out_high')
++                var0Node = node.getElementsByTagName('varName0')
++                var1Node = node.getElementsByTagName('varName1')
++                var2Node = node.getElementsByTagName('varName2')
++                smtNode = node.getElementsByTagName('smt')
++                iesNode = node.getElementsByTagName('ies')
++
++                num = string.atoi(node.nodeName[4:])
++                if num >= len(ModuleObj.get_data(self)):
++                    break
++                data = ModuleObj.get_data(self)[node.nodeName]
++
++                if len(eintNode):
++                    flag = False
++                    if cmp(eintNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_eintMode(flag)
++
++                if len(defmNode):
++                    data.set_defMode(string.atoi(defmNode[0].childNodes[0].nodeValue))
++
++                if len(modsNode):
++                    str = modsNode[0].childNodes[0].nodeValue
++                    temp_list = []
++                    for i in range(0, len(str)):
++                        temp_list.append(str[i])
++                    data.set_modeVec(temp_list)
++
++                if len(inpeNode):
++                    flag = False
++                    if cmp(inpeNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_inpullEn(flag)
++
++                if len(inpsNode):
++                    flag = False
++                    if cmp(inpsNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_inpullSelHigh(flag)
++
++                if len(defdNode):
++                    data.set_defDir(defdNode[0].childNodes[0].nodeValue)
++
++                if len(diriNode):
++                    flag = False
++                    if cmp(diriNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_inEn(flag)
++
++                if len(diroNode):
++                    flag = False
++                    if cmp(diroNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_outEn(flag)
++
++                if len(outhNode):
++                    flag = False
++                    if cmp(outhNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_outHigh(flag)
++
++                temp_list= []
++
++                if len(var0Node) != 0 and len(var0Node[0].childNodes) != 0:
++                    temp_list.append(var0Node[0].childNodes[0].nodeValue)
++                if len(var1Node) != 0 and len(var1Node[0].childNodes) != 0:
++                    temp_list.append(var1Node[0].childNodes[0].nodeValue)
++                if len(var2Node) != 0 and len(var2Node[0].childNodes) != 0:
++                    temp_list.append(var2Node[0].childNodes[0].nodeValue)
++                data.set_varNames(temp_list)
++
++                if len(smtNode):
++                    flag = False
++                    if cmp(smtNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_smtEn(flag)
++
++                if len(iesNode):
++                    flag = False
++                    if cmp(iesNode[0].childNodes[0].nodeValue, 'true') == 0:
++                        flag = True
++                    data.set_iesEn(flag)
++
++                ModuleObj.set_data(self, node.nodeName, data)
++
++        return True
++
++    def get_gpioData(self, idx):
++        if idx >= GpioData._count or idx < 0:
++            return None
++
++        key = 'gpio%s' %(idx)
++        return ModuleObj.get_data(self)[key]
++
++    def parse(self, node):
++        self.get_cfgInfo()
++        self.read(node)
++
++    def isMuxMode(self, key, index, modIdx):
++        mode_name = GpioData.get_modeName(key, index)
++        modIdx.append(index)
++
++        if mode_name.find('//') != -1:
++            return True
++        return False
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++        self.gen_cFile()
++        self.gen_specFiles()
++
++    def gen_spec(self, para):
++        if para == 'gpio_usage_h':
++            self.gen_cFile()
++        elif para == 'gpio_boot_h':
++            self.gen_hFile()
++        elif para == 'gpio_dtsi':
++            self.gen_dtsiFile()
++        elif para == 'scp_gpio_usage_h':
++            self.gen_scpUsage()
++        elif para == 'pinctrl_h':
++            self.gen_pinCtrl()
++        elif para == 'pinfunc_h':
++            self.gen_pinFunc()
++        elif para == 'gpio_usage_mapping_dtsi':
++            self.gen_mapDtsi()
++
++
++    def gen_cFile(self):
++        gen_str = ''
++        fp = open(os.path.join(ModuleObj.get_genPath(), self.__fileName), 'w')
++        gen_str += ModuleObj.writeComment()
++        gen_str += ModuleObj.writeHeader(self.__fileName)
++        gen_str += self.fill_cFile()
++        gen_str += ModuleObj.writeTail(self.__fileName)
++        fp.write(gen_str)
++        fp.close()
++
++    def gen_specFiles(self):
++        self.gen_pinFunc()
++        self.gen_pinCtrl()
++        self.gen_scpUsage()
++        self.gen_mapDtsi()
++
++    def gen_pinFunc(self):
++        gen_str = ''
++        fp = open(os.path.join(ModuleObj.get_genPath(), self.__filePinfunc), 'w')
++        gen_str += ModuleObj.writeComment()
++        gen_str += ModuleObj.writeHeader(self.__filePinfunc)
++        gen_str += self.fill_pinfunc_hFile()
++        gen_str += ModuleObj.writeTail(self.__filePinfunc)
++        fp.write(gen_str)
++        fp.close()
++
++    def gen_pinCtrl(self):
++        gen_str = ''
++        fp = open(os.path.join(ModuleObj.get_genPath(), self.__filePinCtrl), 'w')
++        gen_str += ModuleObj.writeComment()
++        gen_str += ModuleObj.writeHeader(self.__filePinCtrl)
++        gen_str += self.fill_pinctrl_hFile()
++        gen_str += ModuleObj.writeTail(self.__filePinCtrl)
++        fp.write(gen_str)
++        fp.close()
++
++    def gen_scpUsage(self):
++        gen_str = ''
++        fp = open(os.path.join(ModuleObj.get_genPath(), self.__fileScp), 'w')
++        gen_str += ModuleObj.writeComment()
++        gen_str += ModuleObj.writeHeader(self.__fileScp)
++        gen_str += self.fill_cFile()
++        gen_str += ModuleObj.writeTail(self.__fileScp)
++        fp.write(gen_str)
++        fp.close()
++
++    def gen_mapDtsi(self):
++        gen_str = ''
++        fp = open(os.path.join(ModuleObj.get_genPath(), self.__fileMap), 'w')
++        gen_str += ModuleObj.writeComment()
++        gen_str += self.fill_mapping_dtsiFile()
++        fp.write(gen_str)
++        fp.close()
++
++    def fill_hFile(self):
++        gen_str = '''//Configuration for GPIO SMT(Schmidt Trigger) Group output start\n'''
++        temp_list = []
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++        #for value in ModuleObj.get_data(self).values():
++            value = ModuleObj.get_data(self)[key]
++            num = value.get_smtNum()
++            if num in temp_list or num < 0:
++                continue
++            else:
++                temp_list.append(num)
++                if value.get_smtEn():
++                    gen_str += '''#define GPIO_SMT_GROUP_%d\t\t1\n''' %(num)
++                else:
++                    gen_str += '''#define GPIO_SMT_GROUP_%d\t\t0\n''' %(num)
++
++        gen_str += '''\n\n'''
++
++        sorted_list = sorted(ModuleObj.get_data(self).keys(), key = compare)
++
++        for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            if self.is_i2cPadPin(value.get_modeName(key, value.get_defMode())):
++                value.set_inpullEn(False)
++                value.set_outHigh(False)
++                value.set_inpullSelHigh(False)
++
++            gen_str += '''//Configuration for %s\n''' %(key.upper())
++
++            mode_name = GpioData.get_modeName(key, value.get_defMode())
++            val = ''
++            if mode_name != '':
++                flag = False
++                #val = ''
++                if mode_name.find('//') != -1:
++                    flag = True
++
++                value.get_modeVec()[value.get_defMode()]
++                if flag:
++                    if value.get_modeVec()[value.get_defMode()] == '1':
++                        val = str(value.get_defMode())
++                    elif value.get_modeVec()[value.get_defMode()] == '2':
++                        val = str(value.get_defMode() + GpioData._modNum)
++                else:
++                    val = str(value.get_defMode())
++
++            if len(val) < 2:
++                val = '0' + val
++
++            pull_en = ''
++            if value.get_inPullEn():
++                pull_en = 'ENABLE'
++            else:
++                pull_en = 'DISABLE'
++
++            pull_sel = ''
++            if value.get_inPullSelHigh():
++                pull_sel = 'UP'
++            else:
++                pull_sel = 'DOWN'
++
++            out_high = ''
++            if value.get_outHigh():
++                out_high = 'ONE'
++            else:
++                out_high = 'ZERO'
++
++            smt_en = ''
++            if value.get_smtEn():
++                smt_en = 'ENABLE'
++            else:
++                smt_en= 'DISABLE'
++
++            ies_en = ''
++            if value.get_iesEn():
++                ies_en = 'ENABLE'
++            else:
++                ies_en = 'DISABLE'
++
++            gen_str += '''#define %s_MODE\t\t\tGPIO_MODE_%s\n''' %(key.upper(), val)
++            gen_str += '''#define %s_DIR\t\t\tGPIO_DIR_%s\n''' %(key.upper(), value.get_defDir())
++            gen_str += '''#define %s_PULLEN\t\tGPIO_PULL_%s\n''' %(key.upper(), pull_en)
++            gen_str += '''#define %s_PULL\t\t\tGPIO_PULL_%s\n''' %(key.upper(), pull_sel)
++            gen_str += '''#define %s_DATAOUT\t\tGPIO_OUT_%s\n''' %(key.upper(), out_high)
++            gen_str += '''#define %s_SMT\t\t\tGPIO_SMT_%s\n''' %(key.upper(), smt_en)
++            gen_str += '''#define %s_IES\t\t\tGPIO_IES_%s\n\n''' %(key.upper(), ies_en)
++
++        return gen_str
++
++
++    def is_i2cPadPin(self, name):
++        if re.match(r'^SCL\d+$', name) or re.match(r'^SDA\d+$', name):
++            return True
++
++        return False
++
++    def fill_cFile(self):
++        gen_str = ''
++        #sorted_list = sorted(ModuleObj.get_data(self).keys(), key = compare)
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++        #for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            for varName in value.get_varNames():
++                gen_str += '''#define %s\t\t\t(%s | 0x80000000)\n''' %(varName.upper(), key.upper())
++
++                if value.get_eintMode():
++                    gen_str += '''#define %s_M_EINT\t\tGPIO_MODE_00\n''' %(varName)
++
++                temp_list = []
++                for item in GpioData._specMap.keys():
++                    regExp = '[_A-Z0-9:]*%s[_A-Z0-9:]*' %(item.upper())
++                    pat = re.compile(regExp)
++                    for i in range(0, GpioData._modNum):
++                        list = value.get_modeVec()
++                        mode_name = GpioData.get_modeName(key, i)
++
++                        if list[i] == '1':
++                            if mode_name.find('//') != -1:
++                                mode_name = mode_name.split('//')[0]
++                        elif list[i] == '2':
++                            if mode_name.find('//') != -1:
++                                mode_name = mode_name.split('//')[1]
++
++                        if pat.match(mode_name):
++                            if cmp(item, 'eint') == 0 and ((value.get_eintMode() or mode_name.find('MD_EINT') != -1)):
++                                continue
++
++                            gen_str += '''#define %s%s\t\tGPIO_MODE_0%d\n''' %(varName.upper(), GpioData._specMap[item].upper(), i)
++                            temp_list.append(i)
++                            break
++
++                if not value.get_eintMode():
++                    list = value.get_modeVec()
++                    for i in range(0,GpioData._modNum):
++                        mode_name = GpioData.get_modeName(key, i)
++
++                        if list[i] == '0':
++                            continue
++                        elif list[i] == '1':
++                            if mode_name.find('//') != -1:
++                                mode_name = mode_name.split('//')[0]
++                        elif list[i] == '2':
++                            if mode_name.find('//') != -1:
++                                mode_name = mode_name.split('//')[1]
++
++
++                        if not i in temp_list:
++                            gen_str += '''#define %s_M_%s\t\tGPIO_MODE_0%d\n''' %(varName, re.sub(r'\d{0,3}$', '', mode_name), i)
++
++                regExp = r'CLKM\d'
++                pat = re.compile(regExp)
++                for i in range(0, GpioData._modNum):
++                    mode = GpioData.get_modeName(key, i)
++                    if pat.match(mode):
++                        gen_str += '''#define %s_CLK\t\tCLK_OUT%s\n''' %(varName, mode[4:])
++                        temp = ''
++                        if varName in GpioData._freqMap.keys():
++                            temp = GpioData._freqMap[varName]
++                        else:
++                            temp = 'GPIO_CLKSRC_NONE'
++                        gen_str += '''#define %s_FREQ\t\t%s\n''' %(varName, temp)
++
++                gen_str += '''\n'''
++
++        return gen_str
++
++
++    def fill_dtsiFile(self):
++        gen_str = '''&pio {\n\n'''
++        gen_str += '''\tgpio_pins_default: gpiodef{\n\t};\n\n'''
++
++        #sorted_list = sorted(ModuleObj.get_data(self).keys(), key = compare)
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++        #for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''\t%s: gpio@%s {\n''' %(key.lower(), key[4:])
++            gen_str += '''\t\tpins_cmd_dat {\n'''
++            mode = value.get_defMode()
++            mode_name = GpioData.get_modeName(key, mode)
++            mode_val = value.get_modeVec()[mode]
++            if mode_val == '1':
++                if mode_name.find('//') != -1:
++                    mode_name = mode_name.split('//')[0]
++            elif mode_val == '2':
++                if mode_name.find('//') != -1:
++                    mode_name = mode_name.split('//')[1]
++
++            gen_str += '''\t\t\tpins = <PINMUX_GPIO%s__FUNC_%s>;\n''' %(key[4:], mode_name)
++            gen_str += '''\t\t\tslew-rate = <%d>;\n''' %(value.ge_defDirInt())
++
++            temp = ''
++            if not value.get_inPullEn():
++                temp = 'bias-disable;'
++            gen_str += '''\t\t\t%s\n''' %(temp)
++            if value.get_inPullSelHigh():
++                temp = '11'
++            else:
++                temp = '00'
++            gen_str += '''\t\t\tbias-pull-down = <%s>;\n''' %(temp)
++            if value.get_outHigh():
++                temp = 'high'
++            else:
++                temp = 'low'
++            gen_str += '''\t\t\toutput-%s;\n''' %(temp)
++            gen_str += '''\t\t\tinput-schmitt-enable = <%d>;\n''' %(value.get_smtEn())
++            gen_str += '''\t\t};\n'''
++            gen_str += '''\t};\n'''
++
++        gen_str += '''};\n\n'''
++
++        gen_str += '''&gpio {\n'''
++        lineLen = 0
++        gen_str += '''\tpinctrl-names = "default",'''
++        lineLen += 30
++        for i in range(0, GpioData._count-1):
++            gen_str += '''"gpio%d",''' %(i)
++            if i < 10:
++                lineLen += 8
++            elif i < 100:
++                lineLen += 9
++            elif i >= 100:
++                lineLen += 10
++
++            if lineLen > 100:
++                gen_str += '''\n'''
++                lineLen = 0
++
++
++        gen_str += '''"gpio%d";\n''' %(GpioData._count-1)
++        gen_str += '''\tpinctrl-0 = <&gpio_pins_default>;\n'''
++
++        for i in range(1, GpioData._count):
++            gen_str += '''\tpinctrl-%d = <&gpio%d>;\n''' %(i, i-1)
++
++        gen_str += '''\n'''
++        gen_str += '''\tstatus = \"okay\";\n'''
++        gen_str += '''};\n'''
++
++        return gen_str
++
++    def fill_pinfunc_hFile(self):
++        gen_str = '''#include \"mt65xx.h\"\n\n'''
++        #sorted_list = sorted(ModuleObj.get_data(self).keys(), key = compare)
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++        #for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            for i in range(0, GpioData._modNum):
++                mode_name = GpioData.get_modeName(key, i)
++
++                if mode_name != '':
++                    lst = []
++                    if mode_name.find('//') != -1:
++                        lst = mode_name.split('//')
++                    else:
++                        lst.append(mode_name)
++
++                    for j in range(0, len(lst)):
++                        gen_str += '''#define PINMUX_GPIO%s__FUNC_%s (MTK_PIN_NO(%s) | %d)\n''' %(key[4:], lst[j], key[4:], (i + j*8))
++
++            gen_str += '''\n'''
++        gen_str += '''\n'''
++
++        return gen_str
++
++    def fill_pinctrl_hFile(self):
++        gen_str = '''#include <linux/pinctrl/pinctrl.h>\n'''
++        gen_str += '''#include <pinctrl-mtk-common.h>\n\n'''
++        gen_str += '''static const struct mtk_desc_pin mtk_pins_%s[] = {\n''' %(ModuleObj.get_chipId().lower())
++
++        #sorted_list = sorted(ModuleObj.get_data(self).keys(), key = compare)
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++        #for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''\tMTK_PIN(\n'''
++            gen_str += '''\t\tPINCTRL_PIN(%s, \"%s\"),\n''' %(key[4:], key.upper())
++            gen_str += '''\t\tNULL, \"%s\",\n''' %(ModuleObj.get_chipId().lower())
++            gen_str += '''\t\tMTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT)'''
++            for i in range(0, GpioData._modNum):
++                mode_name = GpioData.get_modeName(key, i)
++
++                if mode_name != '':
++                    lst = []
++                    if mode_name.find('//') != -1:
++                        lst = mode_name.split('//')
++                    else:
++                        lst.append(mode_name)
++                    for j in range(0, len(lst)):
++                        gen_str += ''',\n\t\tMTK_FUNCTION(%d, "%s")''' %(i + j * 8, lst[j])
++            gen_str += '''\n\t),\n'''
++
++        gen_str += '''};\n'''
++
++        return gen_str
++
++    def fill_mapping_dtsiFile(self):
++        gen_str = '''&gpio_usage_mapping {\n'''
++
++        #sorted_list = sorted(ModuleObj.get_data(self).keys(), key = compare)
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++        #for key in sorted_list:
++            value = ModuleObj.get_data(self)[key]
++            for varName in value.get_varNames():
++                if varName != '' and varName.lower() in GpioData._mapList:
++                    gen_str += '''\t%s = <%s>;\n''' %(varName, key[4:])
++
++        gen_str += '''};\n'''
++        return gen_str
++
++
+diff --git a/tools/dct/obj/I2cObj.py b/tools/dct/obj/I2cObj.py
+new file mode 100755
+index 00000000000..5e0f9aa9908
+--- /dev/null
++++ b/tools/dct/obj/I2cObj.py
+@@ -0,0 +1,130 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import re
++import string
++import xml.dom.minidom
++import configparser
++
++from .ModuleObj import ModuleObj
++#from utility import util
++from utility.util import sorted_key
++from data.I2cData import I2cData
++from data.I2cData import BusData
++from . import ChipObj
++
++class I2cObj(ModuleObj):
++    def __init__(self):
++        ModuleObj.__init__(self, 'cust_i2c.h', 'cust_i2c.dtsi')
++        self.__busList = []
++        self.__bBusEnable = True
++
++    def get_cfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_figPath())
++
++        I2cData._i2c_count = string.atoi(cp.get('I2C', 'I2C_COUNT'))
++        I2cData._channel_count = string.atoi(cp.get('I2C', 'CHANNEL_COUNT'))
++
++        if cp.has_option('Chip Type', 'I2C_BUS'):
++            flag = cp.get('Chip Type', 'I2C_BUS')
++            if flag == '0':
++                self.__bBusEnable = False
++
++    def read(self, node):
++        nodes = node.childNodes
++        for node in nodes:
++            if node.nodeType == xml.dom.minidom.Node.ELEMENT_NODE:
++                if cmp(node.nodeName, 'count') == 0:
++                    self.__count = node.childNodes[0].nodeValue
++                    continue
++                if node.nodeName.find('bus') != -1:
++                    speedNode = node.getElementsByTagName('speed_kbps')
++                    enableNode = node.getElementsByTagName('pullPushEn')
++
++                    data = BusData()
++                    if len(speedNode):
++                        data.set_speed(speedNode[0].childNodes[0].nodeValue)
++                    if len(enableNode):
++                        data.set_enable(enableNode[0].childNodes[0].nodeValue)
++
++                    self.__busList.append(data)
++                elif node.nodeName.find('device') != -1:
++                    nameNode = node.getElementsByTagName('varName')
++                    channelNode = node.getElementsByTagName('channel')
++                    addrNode = node.getElementsByTagName('address')
++
++                    data = I2cData()
++                    if len(nameNode):
++                        data.set_varName(nameNode[0].childNodes[0].nodeValue)
++                    if len(channelNode):
++                        data.set_channel(channelNode[0].childNodes[0].nodeValue)
++                    if len(addrNode):
++                        data.set_address(addrNode[0].childNodes[0].nodeValue)
++
++                    ModuleObj.set_data(self, node.nodeName, data)
++
++        return True
++
++    def parse(self, node):
++        self.get_cfgInfo()
++        self.read(node)
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++
++    def gen_spec(self, para):
++        ModuleObj.gen_spec(self, para)
++
++    def fill_hFile(self):
++        gen_str = ''
++        for i in range(0, I2cData._channel_count):
++            gen_str += '''#define I2C_CHANNEL_%d\t\t\t%d\n''' %(i, i)
++
++        gen_str += '''\n'''
++
++        #sorted_lst = sorted(ModuleObj.get_data(self).keys(), key=compare)
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            temp = ''
++            if value.get_address().strip() == '':
++                temp = 'TRUE'
++            else:
++                temp = 'FALSE'
++            gen_str += '''#define I2C_%s_AUTO_DETECT\t\t\t%s\n''' %(value.get_varName(), temp)
++            gen_str += '''#define I2C_%s_CHANNEL\t\t\t%s\n''' %(value.get_varName(), value.get_channel())
++            gen_str += '''#define I2C_%s_SLAVE_7_BIT_ADDR\t\t%s\n''' %(value.get_varName(), value.get_address().upper())
++            gen_str += '''\n'''
++
++        return gen_str
++
++    def fill_dtsiFile(self):
++        gen_str = ''
++        for i in range(0, I2cData._channel_count):
++            gen_str += '''&i2c%d {\n''' %(i)
++            gen_str += '''\t#address-cells = <1>;\n'''
++            gen_str += '''\t#size-cells = <0>;\n'''
++            if self.__bBusEnable:
++                gen_str += '''\tclock-frequency = <%d>;\n''' %(string.atoi(self.__busList[i].get_speed()) * 1000)
++                temp_str = ''
++
++                if cmp(self.__busList[i].get_enable(), 'false') == 0:
++                    temp_str = 'use-open-drain'
++                elif cmp(self.__busList[i].get_enable(), 'true') == 0:
++                    temp_str = 'use-push-pull'
++                gen_str += '''\tmediatek,%s;\n''' %(temp_str)
++
++            for key in sorted_key(ModuleObj.get_data(self).keys()):
++                value = ModuleObj.get_data(self)[key]
++                channel = 'I2C_CHANNEL_%d' %(i)
++                if cmp(value.get_channel(), channel) == 0 and cmp(value.get_varName(), 'NC') != 0 and value.get_address().strip() != '':
++                    gen_str += '''\t%s@%s {\n''' %(value.get_varName().lower(), value.get_address()[2:].lower())
++                    gen_str += '''\t\tcompatible = \"mediatek,%s\";\n''' %(value.get_varName().lower())
++                    gen_str += '''\t\treg = <%s>;\n''' %(value.get_address().lower())
++                    gen_str += '''\t\tstatus = \"okay\";\n'''
++                    gen_str += '''\t};\n\n'''
++
++            gen_str += '''};\n\n'''
++
++        return gen_str
+\ No newline at end of file
+diff --git a/tools/dct/obj/KpdObj.py b/tools/dct/obj/KpdObj.py
+new file mode 100755
+index 00000000000..06adf15bc96
+--- /dev/null
++++ b/tools/dct/obj/KpdObj.py
+@@ -0,0 +1,292 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import re
++import string
++import configparser
++import xml.dom.minidom
++
++from .ModuleObj import ModuleObj
++from utility.util import LogLevel
++from utility.util import log
++from data.KpdData import KpdData
++
++class KpdObj(ModuleObj):
++
++    def __init__(self):
++        ModuleObj.__init__(self, 'cust_kpd.h', 'cust_kpd.dtsi')
++
++
++    def get_cfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_cmpPath())
++
++        ops = cp.options('Key_definition')
++        for op in ops:
++            KpdData._keyValueMap[op.upper()] = string.atoi(cp.get('Key_definition', op))
++
++        KpdData._keyValueMap['NC'] = 0
++
++        cp.read(ModuleObj.get_figPath())
++        if cp.has_option('KEYPAD_EXTEND_TYPE', 'KEY_ROW'):
++            KpdData.set_row_ext(string.atoi(cp.get('KEYPAD_EXTEND_TYPE', 'KEY_ROW')))
++        if cp.has_option('KEYPAD_EXTEND_TYPE', 'KEY_COLUMN'):
++            KpdData.set_col_ext(string.atoi(cp.get('KEYPAD_EXTEND_TYPE', 'KEY_COLUMN')))
++
++        return True
++
++    def read(self, node):
++        nodes = node.childNodes
++        for node in nodes:
++            if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                if node.nodeName == 'row':
++                    row = string.atoi(node.childNodes[0].nodeValue)
++                    KpdData.set_row(row)
++
++                if node.nodeName == 'column':
++                    col = string.atoi(node.childNodes[0].nodeValue)
++                    KpdData.set_col(col)
++
++                if node.nodeName == 'keyMatrix':
++                    content = node.childNodes[0].nodeValue
++                    content = content.replace('\t', '')
++                    rows = content.split('''\n''')
++                    matrix = []
++                    for row in rows:
++                        for item in row.split(' '):
++                            matrix.append(item)
++                    KpdData.set_matrix(matrix)
++                    for item in matrix:
++                        if cmp(item, 'NC') != 0:
++                            KpdData._usedKeys.append(item)
++                    KpdData._usedKeys.append('POWER')
++
++                if node.nodeName == "keyMatrix_ext":
++                    content = node.childNodes[0].nodeValue
++                    content = content.replace('\t', '')
++                    rows = content.split('''\n''')
++                    matrix = []
++                    for row in rows:
++                        for item in row.split(' '):
++                            matrix.append(item)
++                    KpdData.set_matrix_ext(matrix)
++
++                if node.nodeName == 'downloadKey':
++                    keys = node.childNodes[0].nodeValue
++                    KpdData.set_downloadKeys(keys.split(' '))
++
++                if node.nodeName == 'modeKey':
++                    value = node.childNodes[0].nodeValue
++                    keys = value.split(' ')
++                    KpdData._modeKeys['META'] = keys[0]
++                    KpdData._modeKeys['RECOVERY'] = keys[1]
++                    KpdData._modeKeys['FACTORY'] = keys[2]
++
++                if node.nodeName == 'pwrKeyEint_gpioNum':
++                    num = string.atoi(node.childNodes[0].nodeValue)
++                    KpdData.set_gpioNum(num)
++
++                if node.nodeName == 'pwrKeyUtility':
++                    util = node.childNodes[0].nodeValue
++                    KpdData.set_utility(util)
++
++                if node.nodeName == 'home_key':
++                    if len(node.childNodes) != 0:
++                        home = node.childNodes[0].nodeValue
++                    else:
++                        home = ''
++                    KpdData.set_homeKey(home)
++
++                if node.nodeName == 'bPwrKeyUseEint':
++                    flag = False
++                    if node.childNodes[0].nodeValue == 'false':
++                        flag = False
++                    else:
++                        flag = True
++
++                    KpdData.set_useEint(flag)
++
++                if node.nodeName == 'bPwrKeyGpioDinHigh':
++                    flag = False
++                    if node.childNodes[0].nodeValue == 'false':
++                        KpdData.set_gpioDinHigh(flag)
++
++                if node.nodeName == 'pressPeriod':
++                    time = string.atoi(node.childNodes[0].nodeValue)
++                    KpdData.set_pressTime(time)
++
++                if node.nodeName == 'keyType':
++                    keyType = node.childNodes[0].nodeValue
++                    KpdData.set_keyType(keyType)
++
++        return True
++
++    def parse(self, node):
++        self.get_cfgInfo()
++        self.read(node)
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++
++    def gen_spec(self, para):
++        ModuleObj.gen_spec(self, para)
++
++
++    def fill_hFile(self):
++        gen_str = '''#include <linux/input.h>\n'''
++        gen_str += '''#include <cust_eint.h>\n'''
++        gen_str += '''\n'''
++        gen_str += '''#define KPD_YES\t\t1\n'''
++        gen_str += '''#define KPD_NO\t\t0\n'''
++        gen_str += '''\n'''
++        gen_str += '''/* available keys (Linux keycodes) */\n'''
++        gen_str += '''#define KEY_CALL\t\tKEY_SEND\n'''
++        gen_str += '''#define KEY_ENDCALL\tKEY_END\n'''
++        gen_str += '''#undef KEY_OK\n'''
++        gen_str += '''#define KEY_OK\t\tKEY_REPLY    /* DPAD_CENTER */\n'''
++        gen_str += '''#define KEY_FOCUS\tKEY_HP\n'''
++        gen_str += '''#define KEY_AT\t\tKEY_EMAIL\n'''
++        gen_str += '''#define KEY_POUND\t228\t//KEY_KBDILLUMTOGGLE\n'''
++        gen_str += '''#define KEY_STAR\t227\t//KEY_SWITCHVIDEOMODE\n'''
++        gen_str += '''#define KEY_DEL\t\tKEY_BACKSPACE\n'''
++        gen_str += '''#define KEY_SYM\t\tKEY_COMPOSE\n'''
++        gen_str += '''\n'''
++        gen_str += '''#define KPD_KEY_DEBOUNCE\t%d\n''' %(KpdData.get_pressTime())
++        gen_str += '''#define KPD_PWRKEY_MAP\tKEY_%s\n''' %(KpdData.get_utility())
++        # do not gen this macro if the home key is null
++        if KpdData.get_homeKey() != '':
++            gen_str += '''#define KPD_PMIC_RSTKEY_MAP\tKEY_%s\n''' %(KpdData.get_homeKey())
++        if cmp(KpdData.get_keyType(), 'EXTEND_TYPE') != 0:
++            gen_str += '''#define MTK_PMIC_PWR_KEY\t%d\n''' %(KpdData.get_col() - 1)
++            if KpdData.get_homeKey() != '':
++                gen_str += '''#define MTK_PMIC_RST_KEY\t\t%d\n''' %(2*KpdData.get_col() - 1)
++            gen_str += '''\n'''
++            gen_str += '''#define KPD_USE_EXTEND_TYPE\tKPD_NO\n'''
++        else:
++            gen_str += '''#define MTK_PMIC_PWR_KEY\t%d\n''' %(KpdData.get_col_ext() - 1)
++            if KpdData.get_keyType() != '':
++                gen_str += '''#define MTK_PMIC_RST_KEY\t\t%d\n''' %(2*KpdData.get_col_ext() - 1)
++            gen_str += '''\n'''
++            gen_str += '''#define KPD_USE_EXTEND_TYPE\tKPD_YES\n'''
++        gen_str += '''\n'''
++        gen_str += '''/* HW keycode [0 ~ 71] -> Linux keycode */\n'''
++        gen_str += '''#define KPD_INIT_KEYMAP()\t\\\n'''
++        gen_str += '''{\t\\\n'''
++
++
++        if KpdData.get_keyType() == 'NORMAL_TYPE':
++            for key in KpdData.get_matrix():
++                if cmp(key, 'NC') != 0:
++                    gen_str += '''\t[%d] = KEY_%s,\t\\\n''' %(KpdData.get_matrix().index(key), key)
++        else:
++            for key in KpdData.get_matrix_ext():
++                if cmp(key, 'NC') != 0:
++                    gen_str += '''\t[%d] = KEY_%s,\t\\\n''' %(KpdData.get_matrix_ext().index(key), key)
++
++        gen_str += '''}\n'''
++        gen_str += '''\n'''
++
++        gen_str += '''/***********************************************************/\n'''
++        gen_str += '''/****************Preload Customation************************/\n'''
++        gen_str += '''/***********************************************************/\n'''
++        gen_str += '''#define KPD_PWRKEY_EINT_GPIO\tGPIO%d\n''' %(KpdData.get_gpioNum())
++        gen_str += '''#define KPD_PWRKEY_GPIO_DIN\t%d\n''' %(int(KpdData.get_gpioDinHigh()))
++        gen_str += '''\n'''
++
++        for key in KpdData.get_downloadKeys():
++            if cmp(key, 'NC') != 0:
++                dlIdx = KpdData.get_downloadKeys().index(key)
++                mtxIdx = self.get_matrixIdx(key)
++                gen_str += '''#define KPD_DL_KEY%d\t%d\t/* KEY_%s */\n''' %(dlIdx+1, mtxIdx, key)
++        gen_str += '''\n'''
++
++        gen_str += '''/***********************************************************/\n'''
++        gen_str += '''/****************Uboot Customation**************************/\n'''
++        gen_str += '''/***********************************************************/\n'''
++
++        for (key, value) in KpdData.get_modeKeys().items():
++            if cmp(value, 'NC') != 0:
++                idx = self.get_matrixIdx(value)
++                #idx = KpdData.get_matrix().index(value)
++                gen_str += '''#define MT65XX_%s_KEY\t%d\t/* KEY_%s */\n''' %(key, idx, value)
++
++        gen_str += '''\n'''
++
++        return gen_str
++
++    def get_matrixIdx(self, value):
++        if KpdData.get_keyType() == 'NORMAL_TYPE':
++            if cmp(value, 'POWER') == 0:
++                return KpdData.get_col() - 1
++            elif cmp(value, KpdData.get_homeKey()) == 0:
++                return 2 * KpdData.get_col() - 1
++            else:
++                return KpdData.get_matrix().index(value)
++        elif KpdData.get_keyType() == 'EXTEND_TYPE':
++            if cmp(value, 'POWER') == 0:
++                return KpdData.get_col_ext() - 1
++            elif cmp(value, KpdData.get_homeKey()) == 0:
++                return 2 * KpdData.get_col_ext() - 1
++            else:
++                return KpdData.get_matrix_ext().index(value)
++
++    def fill_dtsiFile(self):
++        gen_str = '''&keypad {\n'''
++        gen_str += '''\tmediatek,kpd-key-debounce = <%d>;\n''' %(KpdData.get_pressTime())
++        gen_str += '''\tmediatek,kpd-sw-pwrkey = <%d>;\n''' %(KpdData._keyValueMap[KpdData.get_utility()])
++        if KpdData.get_keyType() == 'NORMAL_TYPE':
++            gen_str += '''\tmediatek,kpd-hw-pwrkey = <%d>;\n''' %(KpdData.get_col()-1)
++        else:
++            gen_str += '''\tmediatek,kpd-hw-pwrkey = <%d>;\n''' %(KpdData.get_col_ext()-1)
++
++        #gen_str += '''\tmediatek,kpd-sw-rstkey  = <%d>;\n''' %(KpdData._keyValueMap[KpdData.get_homeKey()])
++        if KpdData.get_homeKey() != '':
++            gen_str += '''\tmediatek,kpd-sw-rstkey  = <%d>;\n''' %(KpdData.get_keyVal(KpdData.get_homeKey()))
++        if KpdData.get_keyType() == 'NORMAL_TYPE':
++            if KpdData.get_homeKey() != '':
++                gen_str += '''\tmediatek,kpd-hw-rstkey = <%d>;\n''' %(2*KpdData.get_col() - 1)
++            gen_str += '''\tmediatek,kpd-use-extend-type = <0>;\n'''
++        else:
++            if KpdData.get_homeKey() != '':
++                gen_str += '''\tmediatek,kpd-hw-rstkey = <%d>;\n''' %(2*KpdData.get_col_ext() - 1)
++            gen_str += '''\tmediatek,kpd-use-extend-type = <1>;\n'''
++
++        #gen_str += '''\tmediatek,kpd-use-extend-type = <0>;\n'''
++        gen_str += '''\t/*HW Keycode [0~%d] -> Linux Keycode*/\n''' %(KpdData.get_row() * KpdData.get_col() - 1)
++        gen_str += '''\tmediatek,kpd-hw-map-num = <%d>;\n''' %(KpdData.get_row() * KpdData.get_col())
++        gen_str += '''\tmediatek,kpd-hw-init-map = <'''
++
++        if KpdData.get_keyType() == 'NORMAL_TYPE':
++            for key in KpdData.get_matrix():
++                idx = KpdData._keyValueMap[key]
++                gen_str += '''%d ''' %(idx)
++        else:
++            for key in KpdData.get_matrix_ext():
++                idx = KpdData._keyValueMap[key]
++                gen_str += '''%d ''' %(idx)
++
++        gen_str.rstrip()
++        gen_str += '''>;\n'''
++        gen_str += '''\tmediatek,kpd-pwrkey-eint-gpio = <%d>;\n''' %(KpdData.get_gpioNum())
++        gen_str += '''\tmediatek,kpd-pwkey-gpio-din  = <%d>;\n''' %(int(KpdData.get_gpioDinHigh()))
++        for key in KpdData.get_downloadKeys():
++            if cmp(key, 'NC') == 0:
++                continue
++            gen_str += '''\tmediatek,kpd-hw-dl-key%d = <%s>;\n''' %(KpdData.get_downloadKeys().index(key), self.get_matrixIdx(key))
++
++        for (key, value) in KpdData.get_modeKeys().items():
++            if cmp(value, 'NC') == 0:
++                continue
++            gen_str += '''\tmediatek,kpd-hw-%s-key = <%d>;\n''' %(key.lower(), self.get_matrixIdx(value))
++
++        gen_str += '''\tstatus = \"okay\";\n'''
++        gen_str += '''};\n'''
++
++        return gen_str
++
++
++
++
++
++
+diff --git a/tools/dct/obj/Md1EintObj.py b/tools/dct/obj/Md1EintObj.py
+new file mode 100755
+index 00000000000..e4660fc94b3
+--- /dev/null
++++ b/tools/dct/obj/Md1EintObj.py
+@@ -0,0 +1,174 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import configparser
++import string
++import xml.dom.minidom
++
++from utility import util
++from utility.util import sorted_key
++from .ModuleObj import ModuleObj
++from data.Md1EintData import Md1EintData
++from utility.util import LogLevel
++
++class Md1EintObj(ModuleObj):
++    def __init__(self):
++        ModuleObj.__init__(self, 'cust_eint_md1.h', 'cust_md1_eint.dtsi')
++        self.__srcPin = {}
++        self.__bSrcPinEnable = True
++
++    def get_cfgInfo(self):
++        # ConfigParser accept ":" and "=", so SRC_PIN will be treated specially
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_figPath())
++
++        if cp.has_option('Chip Type', 'MD1_EINT_SRC_PIN'):
++            flag = cp.get('Chip Type', 'MD1_EINT_SRC_PIN')
++            if flag == '0':
++                self.__bSrcPinEnable = False
++
++        if(self.__bSrcPinEnable):
++            for option in cp.options('SRC_PIN'):
++                value = cp.get('SRC_PIN', option)
++                value = value[1:]
++                temp = value.split('=')
++                self.__srcPin[temp[0]] = temp[1]
++        else:
++            self.__srcPin[''] = '-1'
++
++    def read(self, node):
++        nodes = node.childNodes
++        try:
++            for node in nodes:
++                if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                    if cmp(node.nodeName, 'count') == 0:
++                        self.__count = node.childNodes[0].nodeValue
++                        continue
++
++                    varNode = node.getElementsByTagName('varName')
++                    detNode = node.getElementsByTagName('debounce_time')
++                    polNode = node.getElementsByTagName('polarity')
++                    senNode = node.getElementsByTagName('sensitive_level')
++                    deeNode = node.getElementsByTagName('debounce_en')
++                    dedNode = node.getElementsByTagName('dedicated_en')
++                    srcNode = node.getElementsByTagName('srcPin')
++                    sktNode = node.getElementsByTagName('socketType')
++
++                    data = Md1EintData()
++                    if len(varNode):
++                        data.set_varName(varNode[0].childNodes[0].nodeValue)
++                    if len(detNode):
++                        data.set_debounceTime(detNode[0].childNodes[0].nodeValue)
++                    if len(polNode):
++                        data.set_polarity(polNode[0].childNodes[0].nodeValue)
++                    if len(senNode):
++                        data.set_sensitiveLevel(senNode[0].childNodes[0].nodeValue)
++                    if len(deeNode):
++                        data.set_debounceEnable(deeNode[0].childNodes[0].nodeValue)
++                    if len(dedNode):
++                        data.set_dedicatedEn(dedNode[0].childNodes[0].nodeValue)
++                    if len(srcNode) and len(srcNode[0].childNodes):
++                        data.set_srcPin(srcNode[0].childNodes[0].nodeValue)
++                    if len(sktNode) and len(sktNode[0].childNodes):
++                        data.set_socketType(sktNode[0].childNodes[0].nodeValue)
++
++                    ModuleObj.set_data(self, node.nodeName, data)
++        except:
++            msg = 'read md1_eint content fail!'
++            util.log(LogLevel.error, msg)
++            return False
++
++        return True
++
++    def parse(self, node):
++        self.get_cfgInfo()
++        self.read(node)
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++
++    def fill_hFile(self):
++        gen_str = ''
++        gen_str += '''#define CUST_EINT_MD_LEVEL_SENSITIVE\t\t0\n'''
++        gen_str += '''#define CUST_EINT_MD_EDGE_SENSITIVE\t\t1\n'''
++
++        gen_str += '''\n'''
++
++        if self.__bSrcPinEnable:
++            for (key, value) in self.__srcPin.items():
++                gen_str += '''#define %s\t\t%s\n''' %(key, value)
++            gen_str += '''\n'''
++
++        gen_str += '''#define CUST_EINT_POLARITY_LOW\t\t0\n'''
++        gen_str += '''#define CUST_EINT_POLARITY_HIGH\t\t1\n'''
++        gen_str += '''\n'''
++
++        gen_str += '''#define CUST_EINT_LEVEL_SENSITIVE\t\t0\n'''
++        gen_str += '''#define CUST_EINT_EDGE_SENSITIVE\t\t1\n'''
++        gen_str += '''\n'''
++
++        count = 0
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if cmp(value.get_varName(), 'NC') == 0:
++                continue
++            num = key[4:]
++            count += 1
++            gen_str += '''#define CUST_EINT_MD1_%s_NAME\t\t\t"%s"\n''' %(num, value.get_varName())
++            gen_str += '''#define CUST_EINT_MD1_%s_NUM\t\t\t%s\n''' %(num, num)
++            gen_str += '''#define CUST_EINT_MD1_%s_DEBOUNCE_CN\t\t%s\n''' %(num, value.get_debounceTime())
++            gen_str += '''#define CUST_EINT_MD1_%s_POLARITY\t\tCUST_EINT_POLARITY_%s\n''' %(num, value.get_polarity().upper())
++            gen_str += '''#define CUST_EINT_MD1_%s_SENSITIVE\t\tCUST_EINT_MD_%s_SENSITIVE\n''' %(num, value.get_sensitiveLevel().upper())
++            gen_str += '''#define CUST_EINT_MD1_%s_DEBOUNCE_EN\t\tCUST_EINT_DEBOUNCE_%s\n''' %(num, value.get_debounceEnable().upper())
++            gen_str += '''#define CUST_EINT_MD1_%s_DEDICATED_EN\t\t%s\n''' %(num, int(value.get_dedicatedEn()))
++            if self.__bSrcPinEnable:
++                gen_str += '''#define CUST_EINT_MD1_%s_SRCPIN\t\t\t%s\n''' %(num, value.get_srcPin())
++            gen_str += '''\n'''
++
++        gen_str += '''#define CUST_EINT_MD1_CNT\t\t\t%d\n''' %(count)
++
++        return gen_str
++
++
++    def fill_dtsiFile(self):
++        gen_str = ''
++        gen_str += '''&eintc {\n'''
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if cmp(value.get_varName(), 'NC') == 0:
++                continue
++            num = key[4:]
++            gen_str += '''\t%s@%s {\n''' %(value.get_varName(), num)
++            gen_str += '''\t\tcompatible = \"mediatek,%s-eint\";\n''' %(value.get_varName())
++
++            type = 1
++            polarity = value.get_polarity()
++            sensitive = value.get_sensitiveLevel()
++
++            if cmp(polarity, 'High') == 0 and cmp(sensitive, 'Edge') == 0:
++                type = 1
++            elif cmp(polarity, 'Low') == 0 and cmp(sensitive, 'Edge') == 0:
++                type = 2
++            elif cmp(polarity, 'High') == 0 and cmp(sensitive, 'Level') == 0:
++                type = 4
++            elif cmp(polarity, 'Low') == 0 and cmp(sensitive, 'Level') == 0:
++                type = 8
++
++            gen_str += '''\t\tinterrupts = <%s %d>;\n''' %(num, type)
++            gen_str += '''\t\tdebounce = <%s %d>;\n''' %(num, (string.atoi(value.get_debounceTime()))*1000)
++            gen_str += '''\t\tdedicated = <%s %d>;\n''' %(num, int(value.get_dedicatedEn()))
++            if self.__bSrcPinEnable:
++                gen_str += '''\t\tsrc_pin = <%s %s>;\n''' %(num, self.__srcPin[value.get_srcPin()])
++            else:
++                gen_str += '''\t\tsrc_pin = <%s %s>;\n''' %(num, -1)
++            gen_str += '''\t\tsockettype = <%s %s>;\n''' %(num, value.get_socketType())
++            gen_str += '''\t\tstatus = \"okay\";\n'''
++            gen_str += '''\t};\n'''
++
++            gen_str += '''\n'''
++
++        gen_str += '''};\n'''
++
++        return gen_str
++
+diff --git a/tools/dct/obj/ModuleObj.py b/tools/dct/obj/ModuleObj.py
+new file mode 100755
+index 00000000000..cc09f6cb8be
+--- /dev/null
++++ b/tools/dct/obj/ModuleObj.py
+@@ -0,0 +1,147 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++import os, sys
++import time
++import re
++import string
++
++from utility import version
++from utility.util import log
++from utility.util import LogLevel
++
++class ModuleObj:
++    _chip_id = ''
++    _gen_path = ''
++
++    def __init__(self, name1, name2):
++        self.__hName = name1
++        self.__dtsiName = name2
++        self.__data = {}
++
++    def get_hFileName(self):
++        return self.__hName
++
++    def get_dtsiFileName(self):
++        return self.__dtsiName
++
++    def get_cfgInfo(self, section):
++        pass
++
++    def set_data(self, key, value):
++        self.__data[key] = value
++
++    def get_data(self):
++        return self.__data
++
++    def gen_files(self):
++        self.gen_hFile()
++        self.gen_dtsiFile()
++
++
++    def gen_hFile(self):
++        fp = open(os.path.join(ModuleObj.get_genPath(), ModuleObj.get_hFileName(self)), 'w')
++        gen_str = ''
++        gen_str += ModuleObj.writeComment()
++        gen_str += ModuleObj.writeHeader(ModuleObj.get_hFileName(self))
++        gen_str += self.fill_hFile()
++        gen_str += ModuleObj.writeTail(ModuleObj.get_hFileName(self))
++        fp.write(gen_str)
++        fp.close()
++
++
++    def gen_dtsiFile(self):
++        fp = open(os.path.join(ModuleObj.get_genPath(), ModuleObj.get_dtsiFileName(self)), 'w')
++        gen_str = ''
++        gen_str = ModuleObj.writeComment()
++        gen_str += ModuleObj.writeHeader(ModuleObj.get_dtsiFileName(self))
++        gen_str += self.fill_dtsiFile()
++        fp.write(gen_str)
++        fp.close()
++
++    def gen_spec(self, para):
++        if re.match(r'.*_h$', para):
++            self.gen_hFile()
++        elif re.match(r'.*_dtsi', para):
++            self.gen_dtsiFile()
++        elif re.match(r'.*_c', para):
++            self.gen_cFile()
++
++    @staticmethod
++    def get_figPath():
++        figPath = os.path.join(sys.path[0], 'config', ModuleObj.get_chipId() + '.fig')
++        if not os.path.exists(figPath) or not os.path.isfile(figPath):
++            log(LogLevel.error, 'Can not find %s.fig file!' %(ModuleObj.get_chipId()))
++            sys.exit(-1)
++
++        return figPath
++
++    @staticmethod
++    def get_cmpPath():
++        cmpPath = os.path.join(sys.path[0], 'config', 'YuSu.cmp')
++
++        if not os.path.exists(cmpPath) or not os.path.isfile(cmpPath):
++            log(LogLevel.error, 'Can not find YuSu.cmp file!')
++            sys.exit(-1)
++
++        return cmpPath
++
++    @staticmethod
++    def get_chipId():
++        return ModuleObj._chip_id
++
++    @staticmethod
++    def set_chipId(id):
++        ModuleObj._chip_id = id
++
++    @staticmethod
++    def set_genPath(path):
++        ModuleObj._gen_path = path
++
++    @staticmethod
++    def get_genPath():
++        return ModuleObj._gen_path
++
++    @staticmethod
++    def writeComment():
++        stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
++        ver_info = version.VER_MAIN + '.' + version.VER_SUB + '.' + version.BUILD_SN
++
++        gen_str = '''/*\n * Generated by MTK SP DrvGen Version: '''
++        gen_str += ver_info
++        gen_str += ''' for '''
++        gen_str += ModuleObj.get_chipId()
++        gen_str += '''.\n'''
++        gen_str += ''' * '''
++        gen_str += stamp
++        gen_str += '''\n * Do Not Modify The File.\n'''
++        gen_str += ''' * Copyright Mediatek Inc. (c) 2016.\n*/\n\n'''
++
++        return gen_str
++
++    @staticmethod
++    def writeHeader(name):
++        str = ''
++        if re.match(r'.*\.h$', name):
++            name = string.replace(name, '.', '_')
++            name = string.replace(name, '-', '_')
++            str += '''#ifndef __%s\n''' %(name.upper())
++            str += '''#define __%s\n''' %(name.upper())
++            str += '''\n'''
++        elif re.match(r'.*\.dtsi$', name):
++            str += '''/*************************\n'''
++            str += ''' * %s File\n''' %(name.replace('cust_', '').replace('.', ' ').upper())
++            str += '''*************************/\n\n'''
++
++        return str
++
++    @staticmethod
++    def writeTail(name):
++        if re.match(r'.*\.h$', name):
++            gen_str = '''\n\n#endif /* %s */\n''' %('__' + string.replace(name, '.', '_').upper())
++            return gen_str
++
++
++
++
++
+diff --git a/tools/dct/obj/PmicObj.py b/tools/dct/obj/PmicObj.py
+new file mode 100755
+index 00000000000..4b5a96630c5
+--- /dev/null
++++ b/tools/dct/obj/PmicObj.py
+@@ -0,0 +1,207 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import sys, os
++import re
++import configparser
++import xml.dom.minidom
++
++from .ModuleObj import ModuleObj
++from data.PmicData import PmicData
++
++from utility.util import log
++from utility.util import LogLevel
++from utility.util import compare
++from utility.util import sorted_key
++
++
++class PmicObj(ModuleObj):
++    def __init__(self):
++        ModuleObj.__init__(self, 'pmic_drv.h', 'cust_pmic.dtsi')
++        self.__fileName = 'pmic_drv.c'
++        self.__chipName = ''
++        self.__defLdo = ''
++        self.__appCount = -1
++        self.__func = ''
++        self.__paraList = []
++        self.__headerList = []
++
++
++    def get_cfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_cmpPath())
++
++        PmicData._var_list = cp.options('APPLICATION')
++
++        if self.__chipName == '':
++            return
++        #parse the pmic config file
++        cmpPath = os.path.join(sys.path[0], 'config', self.__chipName + '.cmp')
++        if not os.path.exists(cmpPath) or not os.path.isfile(cmpPath):
++            log(LogLevel.error, 'Can not find %s pmic config file!' %(self.__chipName))
++            sys.exit(-1)
++        cp.read(cmpPath)
++        self.__defLdo = cp.get('PMIC_TABLE', 'LDO_APPNAME_DEFAULT')
++        self.__headerList = cp.get('PMIC_TABLE', 'INCLUDE_HEADER').split(':')
++        self.__func = cp.get('PMIC_TABLE', 'FUNCTION')
++
++        for i in range(1, cp.getint('PMIC_TABLE', 'NUM_LDO')+1):
++            key = 'LDO_NAME%d' %(i)
++            self.__paraList.append(cp.get(key, 'PARAMETER_NAME'))
++
++        #parse app count in fig file
++        cp.read(ModuleObj.get_chipId() + '.fig')
++
++        cp.read(ModuleObj.get_figPath())
++        self.__appCount = cp.getint('Chip Type', 'PMIC_APP_COUNT')
++
++    def read(self, node):
++        nodes = node.childNodes
++        for node in nodes:
++            if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                if cmp(node.nodeName, 'chip') == 0:
++                    if len(node.childNodes) == 0:
++                       break
++                    self.__chipName = node.childNodes[0].nodeValue
++                    continue
++                if cmp(node.nodeName, 'count') == 0:
++                    continue
++                ldoNode = node.getElementsByTagName('ldoVar')
++                defNode = node.getElementsByTagName('defEn')
++
++                data = PmicData()
++                if len(ldoNode):
++                    data.set_ldoName(ldoNode[0].childNodes[0].nodeValue)
++
++                if len(defNode):
++                    number = -1
++                    if cmp(defNode[0].childNodes[0].nodeValue, 'SKIP') == 0:
++                        number = 0
++                    elif cmp(defNode[0].childNodes[0].nodeValue, 'OFF') == 0:
++                        number = 1
++                    else:
++                        number = 2
++                    data.set_defEnable(number)
++
++                name_list = []
++                for i in range(0, 6):
++                    key = 'varName%d' %(i)
++                    nameNode = node.getElementsByTagName(key)
++                    if len(nameNode):
++                        name_list.append(nameNode[0].childNodes[0].nodeValue)
++
++                data.set_nameList(name_list)
++
++                ModuleObj.set_data(self, node.nodeName, data)
++
++        return True
++
++    def parse(self, node):
++        self.read(node)
++        self.get_cfgInfo()
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++        self.gen_cFile()
++
++    def gen_cFile(self):
++        fp = open(os.path.join(ModuleObj.get_genPath(), self.__fileName), 'w')
++        gen_str = ''
++        gen_str += ModuleObj.writeComment()
++        gen_str += self.fill_cFile()
++        fp.write(gen_str)
++        fp.close()
++
++
++    def fill_hFile(self):
++        gen_str = ''
++        used = []
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            for name in value.get_nameList():
++                if name.strip() != '':
++                    used.append(name)
++                    gen_str += '''#define PMIC_APP_%s\t\t\t%s_POWER_LDO_%s\n''' %(name, self.__chipName[5:11], value.get_ldoName())
++
++
++        gen_str += '''\n'''
++
++        gen_str += '''/**********Output default name********************/\n'''
++
++        for varName in PmicData._var_list:
++            if not varName.upper() in used:
++                gen_str += '''#define PMIC_APP_%s\t\t\t%s\n''' %(varName.upper(), self.__defLdo)
++
++        return gen_str
++
++
++    def fill_dtsiFile(self):
++        gen_str = ''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            gen_str += '''&mt_pmic_%s_ldo_reg {\n''' %(value.get_ldoName().lower())
++            gen_str += '''\tregulator-name = \"%s\";\n''' %((value.get_ldoName().replace('_', '')).lower())
++            gen_str += '''\tregulator-default-on = <%d>; /* 0:skip, 1: off, 2:on */\n''' %(value.get_defEnable())
++            gen_str += '''\tstatus = \"okay\";\n'''
++            gen_str += '''};\n'''
++
++        gen_str += '''\n'''
++        gen_str += '''&kd_camera_hw1 {\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            for varName in value.get_nameList():
++            #for i in range(0, self.__appCount):
++                bExisted = False
++                postFix = ''
++                #varName = value.get_nameList()[i]
++                if varName.find('CAMERA') != -1:
++                    postFix = varName[varName.rfind('_')+1:]
++                    bExisted = True
++
++                if varName.find('MAIN_CAMERA') != -1:
++                    gen_str += '''\tvcam%s-supply = <&mt_pmic_%s_ldo_reg>;\n''' %(postFix.lower(), value.get_ldoName().lower())
++
++                if varName.find('SUB_CAMERA') != -1:
++                    gen_str += '''\tvcam%s_main2-supply = <&mt_pmic_%s_ldo_reg>;\n''' %(postFix.lower(), value.get_ldoName().lower())
++                    gen_str += '''\tvcam%s_sub-supply = <&mt_pmic_%s_ldo_reg>;\n''' %(postFix.lower(), value.get_ldoName().lower())
++
++            #if bExisted == True:
++                #gen_str += '''\n'''
++
++        gen_str += '''\tstatus = \"okay\";\n'''
++        gen_str += '''};\n\n'''
++        gen_str += '''&touch {\n'''
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            for name in value.get_nameList():
++                if name.find('TOUCH') != -1:
++                    gen_str += '''\tvtouch-supply = <&mt_pmic_%s_ldo_reg>;\n''' %(value.get_ldoName().lower())
++
++        gen_str += '''\tstatus = \"okay\";\n'''
++        gen_str += '''};\n'''
++
++        return gen_str
++
++    def fill_cFile(self):
++        gen_str = ''
++        for header in self.__headerList:
++            gen_str += '''#include <%s>\n''' %(header)
++
++        gen_str += '''\n'''
++        gen_str += '''void pmu_drv_tool_customization_init(void)\n'''
++        gen_str += '''{\n'''
++        idx = 0
++
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if value.get_defEnable() != 0:
++                gen_str += '''\t%s(%s,%d);\n''' %(self.__func, self.__paraList[idx], value.get_defEnable()-1)
++            idx += 1
++        gen_str += '''}\n'''
++
++        return gen_str
++
+diff --git a/tools/dct/obj/PowerObj.py b/tools/dct/obj/PowerObj.py
+new file mode 100755
+index 00000000000..925075e9cc0
+--- /dev/null
++++ b/tools/dct/obj/PowerObj.py
+@@ -0,0 +1,76 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import absolute_import
++import sys,os
++import re
++import string
++import configparser
++import xml.dom.minidom
++
++from . import ChipObj
++from data.PowerData import PowerData
++from utility.util import log
++from utility.util import LogLevel
++from utility.util import sorted_key
++from .ModuleObj import ModuleObj
++
++class PowerObj(ModuleObj):
++    def __init__(self):
++        ModuleObj.__init__(self, 'cust_power.h', 'cust_power.dtsi')
++        self.__list = {}
++
++    def getCfgInfo(self):
++        cp = configparser.ConfigParser(allow_no_value=True)
++        cp.read(ModuleObj.get_figPath())
++
++        self.__list = cp.options('POWER')
++        self.__list = self.__list[1:]
++        self.__list = sorted(self.__list)
++
++    def read(self, node):
++        nodes = node.childNodes
++        for node in nodes:
++            if node.nodeType == xml.dom.Node.ELEMENT_NODE:
++                if node.nodeName == 'count':
++                    continue
++
++                varNode = node.getElementsByTagName('varName')
++
++                data = PowerData()
++                data.set_varName(varNode[0].childNodes[0].nodeValue)
++
++                ModuleObj.set_data(self, node.nodeName, data)
++
++        return True
++
++    def parse(self, node):
++        self.getCfgInfo()
++        self.read(node)
++
++    def gen_files(self):
++        ModuleObj.gen_files(self)
++
++    def gen_spec(self, para):
++        if re.match(r'.*_h$', para):
++            self.gen_hFile()
++
++    # power module has no DTSI file
++    def gen_dtsiFile(self):
++        pass
++
++    def fill_hFile(self):
++        gen_str = ''
++        for key in sorted_key(ModuleObj.get_data(self).keys()):
++            value = ModuleObj.get_data(self)[key]
++            if value.get_varName() == '':
++                continue
++            idx = string.atoi(key[5:])
++            name = self.__list[idx]
++            gen_str += '''#define GPIO_%s\t\tGPIO_%s\n''' %(name.upper(), value.get_varName())
++
++        return gen_str
++
++    def fill_dtsiFile(self):
++        return ''
++
+diff --git a/tools/dct/obj/__init__.py b/tools/dct/obj/__init__.py
+new file mode 100755
+index 00000000000..e69de29bb2d
+diff --git a/tools/dct/utility/__init__.py b/tools/dct/utility/__init__.py
+new file mode 100755
+index 00000000000..e69de29bb2d
+diff --git a/tools/dct/utility/util.py b/tools/dct/utility/util.py
+new file mode 100755
+index 00000000000..388336f2d1f
+--- /dev/null
++++ b/tools/dct/utility/util.py
+@@ -0,0 +1,37 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++from __future__ import print_function
++import re
++import string
++
++
++LEVEL_INFO = '[DCT_INFO]: '
++LEVEL_WARN = '[DCT_WARNING]: '
++LEVEL_ERROR = '[DCT_ERROR]: '
++
++class LogLevel:
++    info = 1
++    warn = 2
++    error = 3
++
++def log(level, msg):
++    if level == LogLevel.info:
++        print(LEVEL_INFO + msg)
++    elif level == LogLevel.warn:
++        print(LEVEL_WARN + msg)
++    elif level == LogLevel.error:
++        print(LEVEL_ERROR + msg)
++
++def compare(value):
++    lst = re.findall(r'\d+', value)
++    if len(lst) != 0:
++        return string.atoi(lst[0])
++
++    # if can not find numbers
++    return value
++
++def sorted_key(lst):
++    return sorted(lst, key=compare)
++
++
+diff --git a/tools/dct/utility/version.py b/tools/dct/utility/version.py
+new file mode 100755
+index 00000000000..976e5dd9654
+--- /dev/null
++++ b/tools/dct/utility/version.py
+@@ -0,0 +1,6 @@
++#! /usr/bin/python3
++# -*- coding: utf-8 -*-
++
++VER_MAIN = '3'
++VER_SUB = '4'
++BUILD_SN = '160808'

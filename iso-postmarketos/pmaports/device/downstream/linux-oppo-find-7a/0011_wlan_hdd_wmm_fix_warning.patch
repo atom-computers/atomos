@@ -1,0 +1,24 @@
+From 58e989760f0bd01822b3a16ac7ea4906b7f9374c Mon Sep 17 00:00:00 2001
+From: SiddheshK15 <kolisiddhesh@gmail.com>
+Date: Sat, 2 May 2015 23:31:26 +0530
+Subject: [PATCH] gcc5: drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c: fix
+ warning:logical not is only applied to the left hand side of comparison
+
+Signed-off-by: kirananto <kirananto@gmail.com>
+---
+ drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c b/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c
+index dea56c0eb22b..85ca61002b40 100644
+--- a/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c
++++ b/drivers/staging/prima/CORE/HDD/src/wlan_hdd_wmm.c
+@@ -876,7 +876,7 @@ static eHalStatus hdd_wmm_sme_callback (tHalHandle hHal,
+       VOS_TRACE( VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                  "%s: Setup failed, not a QoS AP",
+                  __func__);
+-      if (!HDD_WMM_HANDLE_IMPLICIT == pQosContext->handle)
++      if ((!HDD_WMM_HANDLE_IMPLICIT) == pQosContext->handle)
+       {
+          VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO,
+                    "%s: Explicit Qos, notifying userspace",

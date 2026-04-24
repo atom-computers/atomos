@@ -1,0 +1,35 @@
+# Based on: soc-mediatek-mt8183/APKBUILD
+maintainer="Ben Grisdale <bengris32@protonmail.ch>"
+pkgname=soc-mediatek-mt6757
+pkgdesc="Common package for Mediatek MT6757 devices"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck"
+subpackages="
+	$pkgname-x11
+"
+source="
+	xorg.conf.d/11-modesetting.conf
+	xorg.conf.d/13-panfrost-swapped-dri-nodes.conf
+"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+
+	install -Dm644 "$srcdir"/11-modesetting.conf \
+		-t "$subpkgdir"/usr/share/X11/xorg.conf.d
+	install -Dm644 "$srcdir"/13-panfrost-swapped-dri-nodes.conf \
+		-t "$subpkgdir"/usr/share/X11/xorg.conf.d
+}
+
+sha512sums="
+a0b1a1b2a08250d6069d283f574736ec9863c8fad882bc44ed3b61a026813d6ef39d0bd44b7fb57adb596e57f8366c905b468aef20d950fae732fef245e2e563  11-modesetting.conf
+67e94b4afa16450b74ea966eaf56b71ae7a7d2bf56e06e4e9c1b51fde588475c3500090a8e48238b144d3ee688497302f2a1275c4bb3488cf3d2ae1faf345139  13-panfrost-swapped-dri-nodes.conf
+"

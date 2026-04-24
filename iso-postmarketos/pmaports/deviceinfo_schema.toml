@@ -1,0 +1,565 @@
+[metadata]
+schema_version = "0.1"
+
+[metadata.categories]
+metadata = "Device metadata"
+flash = "Flash"
+android_multiboot = "Android multiboot"
+usb = "USB"
+cros = "cgpt/Depthcharge"
+of = "Open Firmware"
+splash = "Splash"
+weston = "Weston"
+
+# Device metadata
+
+[variable.metadata.format_version]
+description = "Used to distinguish between different versions of this file."
+datatype = "integer"
+mandatory = true
+
+[variable.metadata.name]
+description = "Device model, e.g. Nokia N900"
+mandatory = true
+
+[variable.metadata.manufacturer]
+description = "Device manufacturer, e.g. Nokia"
+mandatory = true
+
+[variable.metadata.codename]
+description = "Device codename, e.g. nokia-n900"
+mandatory = true
+
+[variable.metadata.uboot_boardname]
+description = "Files for each u-boot board are placed under (/usr/share/u-boot/$uboot_boardname in alpine) directory, if u-boot port for device exists. Maybe obtained from board_configs var after : delimiter. A defconfig file exists for each board in u-boot repository in `configs/${uboot_boardname}_defconfig` file"
+
+[variable.metadata.year]
+description = "Release year of the device, e.g. 2012"
+datatype = "integer"
+mandatory = true
+integer_interval = "[1978, 9999)"
+
+[variable.metadata.chassis]
+description = "The computer case of your device"
+datatype = "enumeration"
+enum_values = ["desktop", "laptop", "convertible", "server", "tablet", "handset", "watch", "embedded", "vm", "container"]
+
+[variable.metadata.dtb]
+description = "Name of the device tree blob file (only used on mainline kernels or devices with a header version of 2). See the option `append_dtb` on how this is used."
+allow_device_variant_suffix = true
+
+[variable.metadata.append_dtb]
+description = "Set to `true` if the dtb should be appended to the Linux kernel image, if set to `false` the dtb will be copied to the /boot partition instead"
+datatype = "boolean"
+default_value = false
+allow_device_variant_suffix = true
+
+[variable.metadata.external_storage]
+description = "Does the device have an SD card slot or other external storage medium?"
+datatype = "boolean"
+default_value = false
+
+[variable.metadata.flash_method]
+description = "Method used to flash the device"
+datatype = "enumeration"
+enum_values = ["0xffff", "fastboot", "fastboot-bootpart", "heimdall-bootimg", "heimdall-isorec", "mtkclient", "none", "rkdeveloptool", "sp-flash-tool", "uuu"]
+default_value = "none"
+
+[variable.metadata.arch]
+description = "Device architecture, must be supported by Alpine Linux"
+datatype = "enumeration"
+mandatory = true
+enum_values = ["armhf", "armv7", "aarch64", "loongarch64", "ppc64le", "riscv64", "s390x", "x86", "x86_64"]
+
+[variable.metadata.dev_internal_storage]
+description = "Path to the internal storage (eMMC) (currently only used by the on-device installer). Only set this if you will use it."
+
+[variable.metadata.dev_internal_storage_repartition]
+description = """
+Allow the internal storage to be repartitioned by postmarketOS in the on-device installer. This makes it possible to install from SD card to eMMC.
+
+**This is dangerous and should not be enabled for Android devices**! For Android devices, we never change the partition table, because the bootloader expects the boot.img to be at a specific partition and changing the partition scheme would likely result in the original OS not being usable anymore.
+"""
+datatype = "boolean"
+default_value = false
+
+[variable.metadata.dev_touchscreen]
+description = "Path to the touchscreen device (only necessary if not automatically detected)"
+
+[variable.metadata.dev_touchscreen_calibration]
+description = "Touchscreen calibration values (only necessary for devices with resistive touchscreen)"
+
+[variable.metadata.screen_width]
+description = "The width of the display. Needed if dev_touchscreen_calibration is set."
+datatype = "integer"
+integer_interval = "[1, 1000000]"
+
+[variable.metadata.screen_height]
+description = "The height of the display. Needed if dev_touchscreen_calibration is set."
+datatype = "integer"
+integer_interval = "[1, 1000000]"
+
+[variable.metadata.keymaps]
+description = "Lists keymap options that are available for this device, this will be shown as options in the pmbootstrap init command, this will be passed to Alpine's setup-keymap command"
+
+[variable.metadata.swap_size_recommended]
+behaviour_if_unset = "No swap file will be created for the device."
+description = "Set recommended swap file size for device."
+datatype  = "integer"
+integer_interval = "[1, 1000000]"
+
+[variable.metadata.zram_swap_algo]
+description = "The compression algorithm to be used for zram-based swap."
+datatype = "enumeration"
+enum_values = ["lzo-rle", "lzo", "lz4", "lz4hc", "zstd", "deflate", "842"]
+default_value = "zstd"
+
+[variable.metadata.zram_swap_pct]
+description = "The size of the ZRAM swap is based on a percentage of the device's RAM, this allows overriding the default percentage to use in the calculation. If set to 0, ZRAM swap is disabled for the device."
+datatype  = "integer"
+integer_interval = "[0, 100]"
+
+[variable.metadata.tmp_as_tmpfs_size]
+description = """
+The size at which /tmp will be mounted from memory as tmpfs. If set to 0, no mounting will happen.
+
+This value is passed directly to the tmpfs size= param, e.g., 50% and 2g. See `man tmpfs` for more information.
+"""
+
+[variable.metadata.disable_dhcpd]
+description = "Do not set the static ip to the network interface and do not run the DHCP daemon on it. This makes sense for devices with an ethernet port, like the Raspberry Pi"
+datatype = "boolean"
+default_value = false
+
+[variable.metadata.no_framebuffer]
+description = "Do not wait up to 10 seconds until a framebuffer device shows up and do not try to configure it"
+datatype = "boolean"
+default_value = false
+
+[variable.metadata.initfs_compression]
+description = "Format and compression level to use when compressing the initramfs. The format for this is: FORMAT:LEVEL, for example zstd:fast. Supported formats are zstd, lz4, lzma, gzip, none. Supported compression levels are: default, fast, best. This option does not impact the initramfs-extra archive, it is generated without any compression"
+default_value = "gzip:default"
+
+[variable.metadata.create_initfs_extra]
+description = "Instructs mkinitfs to generate an initramfs archive, and an initramfs-extra archive. The initramfs is a minimal archive designed for devices with small boot partitions."
+datatype = "boolean"
+default_value = false
+
+[variable.metadata.getty]
+description = "Configure a getty on boot. Creates an entry in /etc/inittab. Format is `<port>;<baudrate>` e.g. `ttyS0;115200`"
+
+[rename.metadata.gpu_accelerated]
+rationale = "More accurately describes its function; see pmaports#1481 for the reasoning."
+new_name = "drm"
+
+[variable.metadata.drm]
+description = "Defines if the device's kernel supports the Direct Rendering Manager (DRM). This property is used by `pmbootstrap init` to hide UIs which require DRM if the device lacks such support."
+datatype = "boolean"
+default_value = false
+
+[variable.metadata.super_partitions]
+description = "For Androids with dynamic partitions, set the super partition(s) here."
+
+# Flash
+
+[variable.flash.flash_offset_base]
+description = "Used for flashing"
+default_value = "0x10000000"
+
+[variable.flash.flash_offset_dtb]
+description = "Used for flashing on `header_version` 2"
+
+[variable.flash.flash_offset_kernel]
+description = "Kernel offset used for flashing"
+
+[variable.flash.flash_offset_ramdisk]
+description = "Ramdisk offset used for flashing"
+
+[variable.flash.flash_offset_second]
+description = "Used for flashing"
+
+[variable.flash.flash_offset_tags]
+description = "Used for flashing"
+
+[variable.flash.flash_pagesize]
+description = "Page size (usually 2048)"
+datatype = "integer"
+
+[variable.flash.flash_sparse]
+description = "Set this to true if your device expects a sparse system image flashed"
+datatype = "boolean"
+default_value = false
+
+[variable.flash.flash_sparse_samsung_format]
+description = "Generate a sparse image according to Samsung's own format. Currently the only allowed value is \"1\". See solutions for postmarketOS for more informations. In order to work `flash_sparse` must be set to true in conjunction with this option"
+datatype = "integer"
+integer_interval = "[1, 1]"
+
+[variable.flash.flash_kernel_on_update]
+description = """
+Android devices need the kernel and initramfs to be flashed to a dedicated partition. Set this variable to `true` to automatically do this with boot-deploy.
+
+**This is dangerous and should only be enabled after reading the script and verifying that it works for a given device!** Double-check that it will not flash to a wrong partition, otherwise you might render a device unbootable.
+"""
+datatype = "boolean"
+default_value = false
+
+[variable.flash.bootimg_amazon_omap_header_size]
+description = "Prepend a certificate exploit header to boot.img, required by the exploit chain used for most OMAP based Amazon Kindles. Value is typically 1024, 848 for amazon-soho."
+datatype = "integer"
+
+[variable.flash.bootimg_blobpack]
+description = "Create a flashable blob for the ASUS Transformers from boot.img using BlobTools."
+datatype = "enumeration"
+enum_values = ["true", "sign", "false"]
+default_value = "false"
+
+[variable.flash.bootimg_qcdt]
+description = "Append dtb file to boot.img"
+datatype = "boolean"
+default_value = false
+
+[variable.flash.bootimg_qcdt_type]
+description = "Define the format of `dt.img`"
+datatype = "enumeration"
+enum_values = ["exynos", "sprd", "qcom"]
+
+[variable.flash.bootimg_mtk_label_kernel]
+description = "Prepend a MediaTek boot header to the kernel before adding it to boot.img; needed on a select few MediaTek devices."
+
+[variable.flash.bootimg_mtk_label_ramdisk]
+description = "Prepend a MediaTek boot header to the initramfs before adding it to boot.img; needed on a select few MediaTek devices."
+
+[variable.flash.bootimg_override_payload]
+description = "File name in mkinitfs working dir to be used instead of linux kernel file in android boot image"
+
+[variable.flash.bootimg_override_initramfs]
+description = "File name in mkinitfs working dir to be used instead of initramfs file in android boot image."
+
+[variable.flash.bootimg_override_payload_compression]
+description = "Compression method, used to compress override_payload file. Stock bootloader usually expect gzip payload, and fail, if it's not."
+
+[variable.flash.bootimg_prepend_dhtb]
+description = "Some Samsung devices need 512-byte header prepend to the boot.img before it will even attempt to boot. If is `true` prepends \"DHTB\" and 508 NULL bytes to boot.img."
+datatype = "boolean"
+default_value = false
+
+[variable.flash.bootimg_override_payload_append_dtb]
+description = """
+File name in mkinitfs working dir to be appended to the payload.
+
+Stock bootloader usually expect dtb appended to the payload, and fail, if it's not.
+
+Usually you should create a dtb with memory and chosen nodes, and install it in a place, where mkinifs script will pick it up, for example board's u-boot directory.
+"""
+
+[variable.flash.bootimg_dtb_second]
+description = "Place the dtb in the \"second\" area of the Android boot image"
+datatype = "boolean"
+default_value = false
+
+[variable.flash.bootimg_append_seandroidenforce]
+description = "Append SEANDROIDENFORCE file to boot.img"
+datatype = "boolean"
+default_value = false
+
+[variable.flash.bootimg_pxa]
+description = "Set this to true if the device is based on the Marvell PXA1088/1908 chipset, which has header layout differences. Makes mkinitfs generate the boot image with a different mkbootimg. pxa-mkbootimg should be added as a dependency to your device package."
+datatype = "boolean"
+default_value = false
+
+[variable.flash.bootimg_custom_args]
+description = "Additional custom arguments to pass to mkbootimg. Caution: adding contents to this variable removes the `--header-version` and `--dtb` arguments, which need to be added manually in that case"
+
+[variable.flash.header_version]
+description = "Header version of boot image as defined by Android documentation."
+integer_interval = "[0, 4]"
+
+[variable.flash.generate_bootimg]
+description = "Set this to true for fastboot device, so the mkinitfs command will generate a boot.img file after creating the initfs. Add mkbootimg as dependency to your device's APKBUILD!"
+datatype = "boolean"
+default_value = false
+
+[variable.flash.generate_extlinux_config]
+description = "Set this to `true` for U-Boot device, so the mkinitfs command will generate a /boot/extlinux/extlinux.conf file after creating the initfs."
+datatype = "boolean"
+default_value = false
+allow_device_variant_suffix = true
+
+[variable.flash.generate_grub_config]
+description = "Set this to true for EFI device, so the mkinitfs command will generate a /boot/grub/grub.cfg file after creating the initfs."
+datatype = "boolean"
+default_value = false
+
+[variable.flash.generate_uboot_fit_images]
+description = "Set `true` to generate U-boot FIT images, one image per *.its file in board's u-boot directory"
+datatype = "boolean"
+default_value = false
+
+[variable.flash.generate_legacy_uboot_initfs]
+description = "For the Nokia N900, we use a legacy version of the U-Boot bootloader. When setting this variable to `true`, the initramfs will generate an U-Boot legacy compatible initramfs file. Modern versions of U-Boot can load regular initramfs files."
+datatype = "boolean"
+default_value = false
+
+[variable.flash.legacy_uboot_load_address]
+description = "Set a custom load address for the legacy U-Boot initfs, only makes sense in combination with `generate_legacy_uboot_initfs`."
+datatype = "integer"
+default_value = 80008000
+
+[variable.flash.legacy_uboot_image_name]
+description = "Set a custom uboot image name, required by some device bootloaders that expect a specific image name."
+default_value = "postmarketos"
+
+[variable.flash.flash_fastboot_partition_kernel]
+description = "Only relevant for fastboot flash methods, the partition where the kernel or boot.img will be stored."
+default_value = "boot"
+
+[rename.flash.flash_fastboot_partition_system]
+rationale = "Renamed to avoid confusion"
+new_name = "flash_fastboot_partition_rootfs"
+
+[variable.flash.flash_fastboot_partition_rootfs]
+description = "Only relevant for fastboot flash methods, the partition where the rootfs image will be stored (see also: partition-layout)."
+default_value = "userdata"
+
+[variable.flash.flash_fastboot_partition_vbmeta]
+description = "For AVB devices: set vbmeta partition to be flashed with a custom vbmeta.img which has verity flag disabled"
+
+[variable.flash.flash_fastboot_partition_dtbo]
+description = "For devices that require dtbo populated: set dtbo partition to be flashed with a custom dtbo.img that's generated by the linux package"
+
+[variable.flash.flash_fastboot_max_size]
+description = "Set this if the fastboot required by your device has an upper limit to the size of system images it will flash."
+datatype = "integer"
+
+[variable.flash.flash_heimdall_partition_kernel]
+description = "Only relevant for heimdall flash methods, the partition where the kernel or boot.img will be stored."
+default_value = "KERNEL"
+
+[variable.flash.flash_heimdall_partition_initfs]
+description = "Only relevant for the heimdall-isorec flash method, the partition where the initramfs will be stored. "
+default_value = "RECOVERY"
+
+[rename.flash.flash_heimdall_partition_system]
+rationale = "Renamed to avoid confusion"
+new_name = "flash_heimdall_partition_rootfs"
+
+[variable.flash.flash_heimdall_partition_rootfs]
+description = "Only relevant for heimdall flash methods, the partition where the system image will be stored."
+default_value = "SYSTEM"
+
+[variable.flash.flash_heimdall_partition_vbmeta]
+description = "For AVB devices: set vbmeta partition to be flashed with a custom vbmeta.img which has verity flag disabled"
+
+[variable.flash.flash_rk_partition_kernel]
+description = "Only relevant for rk flash method, the partition where the kernel will be stored."
+
+[variable.flash.flash_rk_partition_rootfs]
+description = "Only relevant for rk flash method, the partition where the rootfs image will be stored"
+
+[variable.flash.flash_mtkclient_partition_kernel]
+description = "Only relevant for MTKClient flash methods, the partition where the kernel or boot.img will be stored."
+default_value = "boot"
+
+[variable.flash.flash_mtkclient_partition_rootfs]
+description = "Only relevant for MTKClient flash methods, the partition where the system image will be stored."
+default_value = "system"
+
+[variable.flash.flash_mtkclient_partition_vbmeta]
+description = "For AVB devices: set vbmeta partition to be flashed with a custom vbmeta.img which has verity flag disabled."
+
+[variable.flash.flash_mtkclient_partition_dtbo]
+description = "For devices that require dtbo populated: set dtbo partition to be flashed with a custom dtbo.img that's generated by the linux package."
+
+[variable.flash.boot_filesystem]
+description = "Sets the filesystem used for the /boot partition containing initramfs-extra"
+allow_device_variant_suffix = true
+default_value = "ext2"
+
+[variable.flash.root_filesystem]
+description = "Sets the filesystem used for the / partition"
+default_value = "ext4"
+
+[variable.flash.rootfs_image_sector_size]
+description = "Some devices made after 2016 with UFS storage use 4096 byte sectors and therefore need this option to boot."
+datatype = "integer"
+default_value = 512
+
+[variable.flash.sd_embed_firmware]
+description = "A comma-separated list of binary:offset (where binary is under /usr/share)"
+
+[variable.flash.sd_embed_firmware_step_size]
+description = "The number of bytes for each increment of the offset specified in `sd_embed_firmware`"
+datatype = "integer"
+default_value = 1024
+
+[variable.flash.partition_blacklist]
+description = "A comma-separated list of partitions that should not be flashed, because they brick the device. There are only very few devices where it is necessary (e.g. ouya-ouya)."
+
+[variable.flash.boot_part_start]
+description = "Number of sectors from the start of the drive to place the boot partition. Some devices may need this increased, if their bootloader takes up more space (like the Librem 5)."
+datatype = "integer"
+default_value = 2048
+
+[variable.flash.partition_type]
+description = "Type of partition table to be generated. The default was changed from msdos to gpt with pmbootstrap 3.0.0"
+default_value = "gpt"
+
+[variable.flash.mkinitfs_postprocess]
+description = "Define a script to run after generating the initramfs, historically used to append headers/footers to boot.img. Prefer adding this functionality to boot-deploy instead."
+
+[variable.flash.generate_cmdline_txt]
+description = "If set to true, then boot-deploy puts the kernel cmdline in /boot/cmdline.txt. The option was added for the raspberry pi family of devices."
+datatype = "boolean"
+default_value = false
+
+# Android multiboot
+
+[variable.android_multiboot.bootimg_vendor_dependent]
+description = "List of source files for generating boot images, dependent on vendor boot image file presence on a device."
+
+[variable.android_multiboot.bootimg_vendor_android_boot_image]
+description = "Filename. Place your Android boot image in a /boot directory with that name. It also may be copied by pmbootstrap during installation."
+
+[variable.android_multiboot.bootimg_vendor_device_tree_identifiers]
+description = "Space separated list of patterns, used to identify dtb for Android."
+
+# USB
+
+[variable.usb.usb_idVendor]
+description = "Vendor ID"
+default_value = "0x18D1"  # Google Inc.
+
+[variable.usb.usb_idProduct]
+description = "Product ID"
+default_value = "0xD001"  # Nexus 4 (fastboot)
+
+[variable.usb.usb_serialnumber]
+description = "Device's serial number string"
+default_value = "postmarketOS"
+
+[rename.usb.usb_rndis_function]
+rationale = "The variable describes the configfs function name to use, no matter if it's rndis, ncm, ecm or any other function"
+new_name = "usb_network_function"
+
+[variable.usb.usb_network_function]
+description = "Name of the network function to use, located in `/sys/kernel/config/usb_gadget/g1/functions/`"
+default_value = "ncm.usb0"  # TODO: Has fallback to rndis.usb0, not sure how to model that.
+
+[variable.usb.usb_network_udc]
+description = "Name of the USB Device Controller (UDC) to use, typically found in `/sys/class/udc`"
+
+[variable.usb.usb_network_host_addr]
+description = "Sets the host-side Ethernet address of the ethernet-over-usb link"
+
+# cgpt/Depthcharge
+
+[variable.cros.cgpt_kpart]
+description = "Path to the file to be written to kernel partition"
+
+[variable.cros.cgpt_kpart_start]
+description = "Number of sectors from the start of the drive to place the kernel partition."
+datatype = "integer"
+
+[variable.cros.cgpt_kpart_size]
+description = "Size of kernel partition"
+datatype = "integer"
+
+[variable.cros.depthcharge_board]
+description = "Board codename used in depthcharge-tools"
+
+[variable.cros.depthcharge_compression]
+description = "Compression type used for vmlinuz by depthcharge-tools"
+datatype = "enumeration"
+enum_values = ["none", "lz4", "lzma"]
+
+[variable.cros.generate_depthcharge_image]
+description = "Set this to true if you want the `mkinitfs` command to generate a vmlinuz.kpart file after creating the initramfs. Also add depthcharge-tools as dependency to your device's APKBUILD!"
+datatype = "boolean"
+default_value = false
+
+# Open Firmware
+
+[variable.of.create_prep_boot]
+description = "Whether the image should contain an 8MB PowerPC PReP boot partition as used by Open Firmware or PowerVM devices. The rest of the space will be used by the root partition, no boot partition is created."
+datatype = "boolean"
+default_value = false
+
+# Obsolete
+
+## Weston
+
+[variable.weston.weston_pixman_type]
+description = "Weston-specific workaround for the \"red screen bug\""
+fate = "obsolete"
+epitaph = "Removed as it required patching Weston, kernels should instead be patched to report the right framebuffer mode."
+# TODO: Add support for generating a list of helpful links along with explanations
+
+## Device metadata
+
+[variable.metadata.nonfree]
+description = "Components of a device that only run with closed-source firmware"
+fate = "obsolete"
+epitaph = "No devices ever used it."
+
+[variable.metadata.dev_keyboard]
+description = "Path to hardware keyboard"
+fate = "obsolete"
+epitaph = "Originally intended to point osk-sdl to the hardware keyboard, but was never used and osk-sdl has now been replaced by unl0kr."
+
+[variable.metadata.keyboard]
+description = "Whether the device has a hardware keyboard"
+fate = "obsolete"
+epitaph = "Programs should automatically detect if the device currently has a keyboard or not (often it can be hotplugged anyway)."
+
+[variable.metadata.modules_initfs]
+description = "List of kernel modules to include in the initramfs."
+fate = "obsolete"
+epitaph = "Replaced by the modules-initfs file in device packages"
+
+[variable.metadata.mesa_driver]
+description = "Name of the Mesa driver used by a given device."
+fate = "obsolete"
+epitaph = "This was used by osk-sdl, which has been replaced by unl0kr."
+
+## Flash
+
+[variable.flash.flash_fastboot_vendor_id]
+description = "Passed to the fastboot -i option"
+fate = "obsolete"
+epitaph = "fastboot used to have a -i option, but this was removed. Since we only had one device using this and nobody to verify if the option is really needed with this device, we decided to remove it. If you are interested in bringing it back, please create a new issue."
+
+[variable.flash.bootimg_mtk_mkimage]
+description = "Same as `bootimg_mtk_label_kernel` and `bootimg_mtk_label_ramdisk` but with hard-coded LABEL values."
+fate = "obsolete"
+epitaph = "Replaced by `bootimg_mtk_label_kernel` and `bootimg_mtk_label_ramdisk` in boot-deploy!49 when it was discovered that not all devices follow the exact same format."
+
+[variable.flash.generate_gummiboot]
+description = "Generate necessary config for and install gummiboot"
+fate = "obsolete"
+epitaph = "Removed in boot-deploy 0.11 and effectively replaced by `generate_systemd_boot`"
+
+[variable.flash.kernel_cmdline]
+description = "Kernel command line (When modifying /etc/deviceinfo: Use `kernel_cmdline_append` instead. Unless you really want to override the whole kernel command-line, which is usually a bad idea.)"
+allow_device_variant_suffix = true
+fate = "obsolete"
+epitaph = "Replaced by kernel-cmdline.d pmaports!7708"
+
+[variable.flash.kernel_cmdline_append]
+description = "Additional kernel command line. Anything in this variable gets automatically added after `kernel_cmdline`. The purpose of this is to allow customising the `kernel_cmdline` by users without having to modify the package shipped by the device package."
+fate = "obsolete"
+epitaph = "Replaced by kernel-cmdline.d pmaports!7708"
+
+[variable.flash.generate_systemd_boot]
+description = "Generate the configuration for systemd-boot or gummiboot, and install it on the system."
+fate = "obsolete"
+epitaph = "No longer required to configure boot-deploy, see: boot-deploy!104"
+
+## Splash
+
+[variable.splash.framebuffer_landscape]
+description = "If set to true, the splash screen will be rotated to landscape mode"
+datatype = "boolean"
+default_value = false
+fate = "obsolete"
+epitaph = "Removed by the switch to pbsplash with no apparent replacement"

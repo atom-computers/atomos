@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rc-update -q add msm-fb-refresher boot

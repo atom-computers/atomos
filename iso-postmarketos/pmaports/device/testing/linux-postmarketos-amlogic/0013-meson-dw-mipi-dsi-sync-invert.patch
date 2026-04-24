@@ -1,0 +1,22 @@
+From 55cc68c56db6bb4b27bb7e52d63d37172dbfb51b Mon Sep 17 00:00:00 2001
+From: "Lukas F. Hartmann" <lukas@mntre.com>
+Date: Sun, 9 Jul 2023 23:02:51 +0200
+Subject: [PATCH 15/21] meson-dw-mipi-dsi-sync-invert
+
+---
+ drivers/gpu/drm/meson/meson_dw_mipi_dsi.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/meson/meson_dw_mipi_dsi.c
++++ b/drivers/gpu/drm/meson/meson_dw_mipi_dsi.c
+@@ -129,7 +129,9 @@ static int dw_mipi_dsi_phy_init(void *pr
+ 		       FIELD_PREP(MIPI_DSI_TOP_IN_COLOR_MODE, venc_data_width) |
+ 		       FIELD_PREP(MIPI_DSI_TOP_COMP2_SEL, 2) |
+ 		       FIELD_PREP(MIPI_DSI_TOP_COMP1_SEL, 1) |
+-		       FIELD_PREP(MIPI_DSI_TOP_COMP0_SEL, 0),
++		       FIELD_PREP(MIPI_DSI_TOP_COMP0_SEL, 0) |
++		           (mipi_dsi->mode->flags & DRM_MODE_FLAG_NHSYNC ? 0 : MIPI_DSI_TOP_HSYNC_INVERT) |
++		           (mipi_dsi->mode->flags & DRM_MODE_FLAG_NVSYNC ? 0 : MIPI_DSI_TOP_VSYNC_INVERT),
+ 			mipi_dsi->base + MIPI_DSI_TOP_CNTL);
+ 
+ 	return phy_configure(mipi_dsi->phy, &mipi_dsi->phy_opts);

@@ -1,0 +1,34 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Piotr Halama <skrzynka@halamix2.pl>"
+pkgname=device-nokia-frt
+pkgdesc="Nokia 1"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-nokia-frt mkbootimg"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	fb.modes
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	install -Dm644 "$srcdir"/fb.modes "$pkgdir"/etc/fb.modes
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+03dd572d2f3e4304f7d6a84f935dc084ba243e334e8146ee03b627578c2fa58309ad2ad22c58f545ec4a8585152d9d684a2cbfae610e61f55e80078251fda603  deviceinfo
+97fe45aeee953670c81c7308c76cfe99b88aa6612356cba9b8644f0999f3b8869750a69b8b55aa8c56e66dc2e0f64d8a1416caf6081c15e838538a02be611f93  kernel-cmdline.conf
+0a0237d639566cdd283182f17ea3f0fb8349c2fbc2c289eae418eac6837b9f2f4acf4a3c18c540d59c19dcbf30e12ac4e83c4f8303bbb4cd7e54b66c78ecfbcb  fb.modes
+"

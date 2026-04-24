@@ -1,0 +1,13 @@
+#!/bin/sh
+
+rc-update add bluetooth default
+rc-update add elogind default
+rc-update add hfd-service default
+rc-update add hkdm default
+rc-update add networkmanager default
+rc-update add repowerd default
+rc-update add sensorfw default
+rc-update add sleep-inhibitor default
+rc-update add tinydm default
+
+tinydm-set-session -s /usr/share/wayland-sessions/lomiri.desktop

@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+# Co-Maintainer: Clayton Craft <clayton@craftyguy.net>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=device-qemu-loongarch64
+pkgver=6
+pkgrel=0
+pkgdesc="Simulated device in QEMU (loongarch64)"
+url="https://postmarketos.org"
+arch="loongarch64"
+license="MIT"
+depends="
+	postmarketos-base
+	postmarketos-qemu-common
+	systemd-boot
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-mainline:kernel_mainline
+	"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_stable() {
+	pkgdesc="Stable kernel (recommended, best balance between stability and features)"
+	depends="linux-postmarketos-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Long-term maintainance kernel (most stability, not all security fixes & new features)"
+	depends="linux-postmarketos-lts linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Upstream development kernel (regular breakage, latest features)"
+	depends="linux-postmarketos-mainline linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+4c3f40c33af01a09f26add6af9d30e4f6b623e2e0378eacc35f59faa189bb1b10ebe62a7687ade6e9b813ce19e40a9863f0a97b3644e7ada0dade7c7527f8883  deviceinfo
+eb8f9fd9e4b58c7c2cd810ae6449e836d0fa095f6eaa2da661481df6eb40d452998613b3d032f0477f0ac32559689db48eb3da189495c16bd016b8eac3b67b16  kernel-cmdline.conf
+"

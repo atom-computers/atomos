@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Vishwas Rajashekar <dev@vrajashkr.com>"
+pkgname=device-samsung-lt03lte
+pkgdesc="Samsung Galaxy Note 10.1 2014 LTE"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a330
+	firmware-samsung-lt03lte
+	linux-postmarketos-qcom-msm8974
+	lk2nd-msm8974
+	mkbootimg
+	msm-firmware-loader
+	msm-modem
+	postmarketos-base
+	soc-qcom-msm8974
+"
+makedepends="devicepkg-dev"
+
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+70d8ea0a32b6990ccc6f014e4339d7f5b65c861835d53cd7b0c5e146912187b85b649a0d79d5e3977f955d618b023944bdf33df56527fae5a3964fd34dc7b274  deviceinfo
+83a9d867606937b8ee85bfc5698c29c8b8cb9e8720386884658a46cc0af7539791bf9ff66a343737c093fdaceb133231d5e19063765fe2f6bdc6b0f2ed83b9fa  modules-initfs
+"

@@ -1,0 +1,31 @@
+maintainer="methanal <baclofen@tuta.io>"
+pkgname=firmware-samsung-a2corelte
+pkgver=1
+pkgrel=1
+pkgdesc="Proprietary firmware blobs for Samsung Galaxy A2 Core"
+url="https://gitlab.com/exynos7870-mainline/firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+_device="a2corelte"
+_commit="b89cec942fe297ff8623dd87e92f1a2380ed68f8"
+
+source="$url/-/archive/$_commit/firmware-$_commit.tar.gz"
+
+package() {
+	# Bluetooth firmware (Broadcom BCM43430B0)
+	install -Dm644 "$srcdir/firmware-$_commit/$_device/bluetooth_bcm.hcd" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/"BCM43430B0.hcd"
+
+	# Wi-Fi SDIO firmware (Broadcom BCM43430B0)
+	install -Dm644 "$srcdir/firmware-$_commit/$_device/wlansdio_bcm.bin" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/"brcmfmac43430b0-sdio.bin"
+	install -Dm644 "$srcdir/firmware-$_commit/$_device/wlansdio_bcm.clm_blob" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/"brcmfmac43430b0-sdio.clm_blob"
+	install -Dm644 "$srcdir/firmware-$_commit/$_device/wlansdio_bcm.txt" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/"brcmfmac43430b0-sdio.txt"
+}
+sha512sums="
+ea9b18d5f1a7020fe59878191f30dcdeda17e9853066b94247443c55fc15801fc818a1bc0d909bebe007940c70e3d1bd4b7fb0b5725a1d424aedaabbccd44f36  firmware-b89cec942fe297ff8623dd87e92f1a2380ed68f8.tar.gz
+"

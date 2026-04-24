@@ -1,0 +1,16 @@
+#!/bin/sh
+brightness_file="$(find /sys/devices/platform/msm_ssbi.0/ -name brightness | grep -v rgb | head -n1)"
+test -z "$brightness_file" && {
+        echo "Can't find screen brightness file!"
+        exit 1
+}
+echo "Screen brightness : $brightness_file"
+test -w "$brightness_file" || {
+        echo "Can't find write screen brightness file!"
+        exit 1
+}
+while true ; do
+        test "$(cat "$brightness_file")" -ne 255 && \
+                echo 255 > "$brightness_file"
+        sleep 1
+done 

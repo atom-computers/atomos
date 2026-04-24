@@ -1,0 +1,50 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Aster Boese <asterboese@mailbox.org>
+maintainer="Casey Connolly <casey.connolly@linaro.org>"
+pkgname=device-qualcomm-sdm845
+pkgdesc="Generic device package for Qualcomm SDM845 devices"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	fwupd>=1.8.6
+	linux-firmware-qcom
+	linux-firmware-ath10k
+	linux-postmarketos-qcom-sdm845
+	mkbootimg
+	postmarketos-base
+	alsa-ucm-conf-sdm845
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-pd-mapper
+	soc-qcom-qbootctl
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	q6voiced.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 q6voiced.conf "$pkgdir"/etc/conf.d/q6voiced
+}
+
+sha512sums="
+9d2fd442e36426014d98e96afc55a0625db6f07bffe0d31822baad493e69ccc8a17eb687281ca8e5bd50edcd60df1c54583b67d05ead54a15efda32032bbb665  deviceinfo
+441cc0ae3fddf8026df58b0e0611024d321f2435d8be874a908f0670083676f2301596a2d789651dc3afb6b819905812eefa761503668d5f46fdd59e0de4e8ed  kernel-cmdline.conf
+5f3e1c286baea16a5b0a4a34cef7ad774d3aa5cc384e1deb4fba40d1f9372a708baf3b587e3edac69edcf04b5513f0111c1976b649b424cc721733ce4ddabc19  q6voiced.conf
+3bbacc8c260e2c0af509b9b123218f830610ac7aef82efc9b117fc62ccda4155e588be718dcb399102b5534a25900e53840083add166a7ac5b399ddc702de904  modules-initfs
+"

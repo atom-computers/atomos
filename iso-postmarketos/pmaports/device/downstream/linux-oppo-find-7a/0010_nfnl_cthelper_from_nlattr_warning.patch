@@ -1,0 +1,31 @@
+The related code can be simplified, and also can avoid related warnings
+
+Signed-off-by: Chen Gang <gang.chen.5i5j at gmail.com>
+Signed-off-by: Pablo Neira Ayuso <pablo at soleta.eu>
+Signed-off-by: Luis Henriques <luis.henriques at canonical.com>
+---
+ net/netfilter/nfnetlink_cthelper.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/net/netfilter/nfnetlink_cthelper.c b/net/netfilter/nfnetlink_cthelper.c
+index 7f035f0772ee..54330fb5efaf 100644
+--- a/net/netfilter/nfnetlink_cthelper.c
++++ b/net/netfilter/nfnetlink_cthelper.c
+@@ -89,7 +89,7 @@ nfnl_cthelper_parse_tuple(struct nf_conntrack_tuple *tuple,
+ static int
+ nfnl_cthelper_from_nlattr(struct nlattr *attr, struct nf_conn *ct)
+ {
+-	const struct nf_conn_help *help = nfct_help(ct);
++	struct nf_conn_help *help = nfct_help(ct);
+
+ 	if (attr == NULL)
+ 		return -EINVAL;
+@@ -97,7 +97,7 @@ nfnl_cthelper_from_nlattr(struct nlattr *attr, struct nf_conn *ct)
+ 	if (help->helper->data_len == 0)
+ 		return -EINVAL;
+
+-	memcpy(&help->data, nla_data(attr), help->helper->data_len);
++	memcpy(help->data, nla_data(attr), help->helper->data_len);
+ 	return 0;
+ }
+

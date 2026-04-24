@@ -1,0 +1,3 @@
+#!/bin/sh
+# We should start before the modem boots to be available immediately
+rc-update add unisoc-nvitem-daemon sysinit

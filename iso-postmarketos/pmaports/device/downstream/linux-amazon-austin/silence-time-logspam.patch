@@ -1,0 +1,20 @@
+diff --git a/include/linux/time_log.h b/include/linux/time_log.h
+index 1770e9bc..471f4889 100644
+--- a/include/linux/time_log.h
++++ b/include/linux/time_log.h
+@@ -2,7 +2,7 @@
+ #include <linux/types.h>
+ 
+ extern bool printk_disable_uart;
+-#if 1
++#if 0
+ #define TIME_LOG_START() \
+     { \
+     	 unsigned long long _start_time = 0; \
+@@ -28,4 +28,4 @@ extern bool printk_disable_uart;
+ #else
+ #define TIME_LOG_START()  do{} while(0)
+ #define TIME_LOG_END(X...) do{} while(0)
+-#endif
+\ No newline at end of file
++#endif

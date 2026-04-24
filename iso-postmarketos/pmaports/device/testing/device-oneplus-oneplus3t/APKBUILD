@@ -1,0 +1,92 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-oneplus-oneplus3t
+pkgdesc="OnePlus 3T"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-kernel-s6e3fa3:kernel_s6e3fa3
+	$pkgname-kernel-s6e3fa5:kernel_s6e3fa5
+	$pkgname-phosh
+"
+depends="
+	postmarketos-base
+	mkbootimg
+	soc-qcom-msm8996
+	reboot-mode
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs.s6e3fa5
+	modules-initfs.s6e3fa3
+	phoc.ini
+	10-local-powersave.rules
+	gpu-nobin.sh
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/10-local-powersave.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d
+	install -D -m644 "$srcdir"/gpu-nobin.sh \
+		-t "$pkgdir"/etc/profile.d
+}
+
+nonfree_firmware() {
+	pkgdesc="OnePlus 3T nonfree firmware (GPU, modem, sound, camera, sensors, WiFi, bluetooth)"
+	depends="
+		firmware-oneplus-oneplus3t
+		linux-firmware-ath10k
+		linux-firmware-qca
+		soc-qcom-msm8996-nonfree-firmware
+		"
+
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="openrc"
+
+	mkdir "$subpkgdir"
+}
+
+kernel_s6e3fa3() {
+	pkgdesc="Samsung S6E3FA3 Panel. To find out which panel your device uses run cat /proc/cmdline in TWRP terminal"
+	depends="linux-postmarketos-qcom-msm8996"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_s6e3fa5() {
+	pkgdesc="Samsung S6E3FA5 Panel. To find out which panel your device uses run cat /proc/cmdline in TWRP terminal"
+	depends="linux-postmarketos-qcom-msm8996"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel phosh"
+	install -D -m644 "$srcdir"/phoc.ini \
+		-t "$subpkgdir"/etc/phosh
+}
+
+sha512sums="
+2bbe310a50e051e9268eecc8a2e84ae6bc0b58bf772b56b1b233558fb48b3f7e261f2fda8fc81e40a49d226b00c4b6093b0205ed0f2f5553c1e49ad85290ff58  deviceinfo
+6262c1adcd6097cfd7c3c13267cb272e9157b9cd6fa5ec9f0c4821e25e9aa1e444d15df6ab4b567cc20cf0dd430854f88bbbf138c858a4b37b3e0d7ff84f50c9  modules-initfs.s6e3fa5
+cc0bbb074d5ca73910673b571546715d6cdf0195526ee7b873f1795c0181ca62b650ab9899d70b3e0589a6373a5c873c2056dd67f68980f348b45fad6b399dfa  modules-initfs.s6e3fa3
+38409d4ce48db4624539dbfd695d3c6e1596a29fd7c3004a41368b28cba646495d05360420ad728f82c63d6ddeeca71d09944df06ebaca120aedd9cc2b436eb3  phoc.ini
+c87ec170b7fcdbe37c27d389fe2aa8f9c25b76beeb02ea7f5958fe3daaeb6e55cfc4fc970c80571da9aea0316677dc12cbb23f4d3b14ff5215def03a7637f8e9  10-local-powersave.rules
+4d9908ea8d0a497133df155a9b263fcf793eaec4b23fd11604503c2d9126d2ed2e51e746e24f8daa4d35ae182bfb0690cff62a3c398684c0ed79afcd658fe009  gpu-nobin.sh
+"

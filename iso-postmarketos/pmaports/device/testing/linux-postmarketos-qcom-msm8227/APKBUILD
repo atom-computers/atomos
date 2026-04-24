@@ -1,0 +1,67 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on qcom_msm8930_defconfig which is based on qcom_apq8064_defconfig
+maintainer="User0 <user0thenyancat@proton.me>"
+_flavor="postmarketos-qcom-msm8227"
+pkgname=linux-$_flavor
+pkgver=6.19.0_rc1
+pkgrel=0
+pkgdesc="Close-to-mainline kernel fork for Qualcomm MSM8930 and MSM8227 devices"
+arch="armv7"
+_carch="arm"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bison
+	clang
+	devicepkg-dev
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+"
+
+# Source
+_repository="linux"
+_config="config-$_flavor.$arch"
+_tag="661c321a9c4bdf9ae41fc084e1f1bdb5bf338622"
+source="
+	$pkgname-$_tag.tar.gz::https://github.com/msm8227-mainline/$_repository/archive/$_tag.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_tag"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+ae86b83424c7aa7195ff951435fae20b5eb8598a27782a63e5cbd5234e97798bb94ecca72896fed3c1e5efb863a309fbcd1ab08b7449207f80c934b70bdba405  linux-postmarketos-qcom-msm8227-661c321a9c4bdf9ae41fc084e1f1bdb5bf338622.tar.gz
+ba2a15a0b4089a9f3ceb3806e1dbdd25e2e8efdb87d15cba88427bd8c89f43c0448b360c6adbdd3f46a2b44b64774597179bb8f7a0fb37948ad3275522145186  config-postmarketos-qcom-msm8227.armv7
+"

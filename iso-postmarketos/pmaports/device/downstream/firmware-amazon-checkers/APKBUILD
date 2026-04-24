@@ -1,0 +1,25 @@
+maintainer="User0 <user0thenyancat@proton.me>"
+pkgname=firmware-amazon-checkers
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Amazon Echo Show 5 (1st Gen)"
+url="https://github.com/user0-07161/wifi-firmware-amazon-checkers"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="1531bbbe7b5c22e084605210208d19a54f60054e"
+_repository="wifi-firmware-amazon-checkers"
+
+source="$_repository-$_commit.tar.gz::https://github.com/user0-07161/$_repository/archive/$_commit.tar.gz"
+builddir="$srcdir/$_repository-$_commit"
+
+package() {
+	mkdir -p "$pkgdir/usr/lib/firmware"
+
+	mv * "$pkgdir"/usr/lib/firmware/
+}
+
+sha512sums="
+f53713c18db69d62c10a9cdb9e51269134f5b7724b0c0decba53f5bb4c575bf80c2fc741db73de68e89349dbfbaf7440a36d89fc152945dab1b0a44519c2f873  wifi-firmware-amazon-checkers-1531bbbe7b5c22e084605210208d19a54f60054e.tar.gz
+"

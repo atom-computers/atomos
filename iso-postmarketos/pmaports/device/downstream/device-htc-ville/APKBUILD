@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-htc-ville
+pkgdesc="HTC One S"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-htc-ville mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="All non-free firmwares from a device image (wifi, modem, camera etc.)"
+	depends="firmware-htc-ville"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+9835519909e8862e215223c971898e651338fa5377d551a335ff99595ccf9ef1e1a29bb69d0fad22e5a7604cee89ada4f17878874e39e8f6b8ac6d094e29c0ad  deviceinfo
+9de2b4e870e58e9a6aa126b5633b150e2cb0419a0b6759765e409aded5ed33305053a7ce789f1ae1e81d357d15cfa395ebed3e29699fadce599bcf0598f3cd15  kernel-cmdline.conf
+"

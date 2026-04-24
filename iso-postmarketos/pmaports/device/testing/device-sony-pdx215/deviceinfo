@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Sony Xperia 1 III"
+deviceinfo_manufacturer="Sony"
+deviceinfo_codename="sony-pdx215"
+deviceinfo_year="2021"
+deviceinfo_dtb="qcom/sm8350-sony-xperia-sagami-pdx215"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_drm="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_header_version="1"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_dtb="0x01f00000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00000000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_append_dtb="true"

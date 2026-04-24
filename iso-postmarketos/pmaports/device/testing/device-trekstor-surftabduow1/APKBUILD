@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-trekstor-surftabduow1
+pkgdesc="Trekstor Surftab Duo W1"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="grub-x86 postmarketos-base linux-lts"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs grub.cfg"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	mkdir -p "$pkgdir"/boot/grub/
+	install -D -m644 "$srcdir"/grub.cfg \
+		"$pkgdir"/boot/grub/grub.cfg
+}
+
+sha512sums="
+c8e5275d1d18559b85da9e8901479710dfe98d784ebe1ba1d0988279fd90201469d48a543a721391f38f759f4336981069c379810a91c570860ddb407b34f50b  deviceinfo
+b993c88915885b04bb63b3c8e903a2248ceca61fedcf1bf43278bdebae216315251d0b6c2ef8d2632e38ed6a059dbfd4111b12740c39ceb7ed7b1fc5583d4b23  modules-initfs
+11fa2ef0a8434bdd6ff266f17585ae3f5ec7724a2053ec62c831845dc7cf6d74e690cdb3e67f84c7183e16f0d6a168275942490927143b1287330b45286f27e9  grub.cfg
+"

@@ -1,0 +1,34 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-huawei-alice
+pkgdesc="Huawei P8 Lite"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-huawei-alice mkbootimg msm-fb-refresher postmarketos-base-downstream"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+nonfree_firmware() {
+	pkgdesc="WiFi firmware"
+	depends="firmware-huawei-alice"
+	mkdir "$subpkgdir"
+}
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+23d0f92ebadf92e3f3fc5ee173023729c834a3786f9cdd43047e1d2a1daf9851dde9ebf634a02ac4d593805e23f8d826913716dc7e372a60fe7bcd279ae9e78c  deviceinfo
+51f03864080afd57a9d8e990c15f92f27ed8159d642d2c7e575a3e91f34a866388154ddd04f4e506ba9f078e56c9f19ad2abc2def71d7d4a1d5b5b43269db03d  kernel-cmdline.conf
+"

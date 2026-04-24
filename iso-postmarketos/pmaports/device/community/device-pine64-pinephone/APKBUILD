@@ -1,0 +1,280 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Jan Jasper de Kroon <jajadekroon@gmail.com>
+maintainer="Arnav Singh <me@arnavion.dev>"
+pkgname=device-pine64-pinephone
+pkgver=11
+pkgrel=1
+pkgdesc="PINE64 PinePhone"
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+subpackages="
+	$pkgname-audio
+	$pkgname-gnome
+	$pkgname-kirigami:kirigami
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-openrc
+	$pkgname-plasma-mobile:plasma_mobile
+	$pkgname-sensorfw
+	$pkgname-shelli
+	$pkgname-upower
+	$pkgname-vccq-mod:vccq_mod
+	$pkgname-sway
+	$pkgname-x11
+	"
+depends="
+	atinout
+	eg25-manager
+	iw
+	linux-postmarketos-allwinner>=5.14
+	megapixels
+	mesa-egl
+	postmarketos-base
+	postprocessd
+	u-boot-pinephone>=2021.01_git20201228-r2
+	u-boot-tools
+	fwupd>=1.8.6
+	"
+makedepends="
+	devicepkg-dev
+	dtc
+	u-boot-tools
+"
+install="
+	$pkgname.pre-upgrade
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	"
+source="
+	00_alsa_pinephone_dshare.conf
+	10-pinephone-proximity.rules
+	50_sleep.gschema.override
+	51_keyboard.gschema.override
+	60-flashlight.rules
+	70-wifi-pm.rules
+	90-modem-eg25.rules
+	UPower.conf
+	deviceinfo
+	modules-initfs
+	hwtest.ini
+	kirigami-lowpower.sh
+	kxkbrc
+	pinephone-vccq-mod.dts
+	pulse-pinephone.conf
+	sensorfw/90-pinephone.conf
+	setup-modem.sh
+	sun50i-a64-psci.dts
+	uboot-script.cmd
+	uboot-user.cmd
+	ucm/HiFi.conf
+	ucm/PinePhone.conf
+	ucm/VoiceCall.conf
+	ppkb.sh
+	sway-pinephone-keyboard.conf
+	x11-pinephone-keyboard.conf
+	"
+# workaround to purge the -elogind subpackage that was previously
+# created/installed
+provides="$pkgname-elogind=$pkgver-r$pkgrel"
+_pmb_recommends="$pkgname-nonfree-firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/uboot-script.cmd \
+		"$srcdir"/boot.scr
+	# Build user U-boot script for vccq-mod
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos-user \
+		-d "$srcdir"/uboot-user.cmd \
+		"$srcdir"/user.scr
+	# Build Device Tree Overlay for vccq-mod
+	dtc \
+		-@ \
+		-I dts \
+		-O dtb \
+		-o "$srcdir"/pinephone-vccq-mod.dtbo \
+		"$srcdir"/pinephone-vccq-mod.dts
+	# Build Device Tree Overlay for psci cpu
+	dtc \
+		-@ \
+		-I dts \
+		-O dtb \
+		-o "$srcdir"/sun50i-a64-psci.dtbo \
+		"$srcdir"/sun50i-a64-psci.dts
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+
+	install -Dm644 "$srcdir"/sun50i-a64-psci.dtbo \
+		"$pkgdir"/boot/sun50i-a64-psci.dtbo
+
+	# Make /boot/allwinner/sun50i-a64-pine64-pinephone*.dtb resolve to
+	# /boot/sun50i-a64-pine64-pinephone*.dtb. This is because the device tree
+	# names in u-boot include the vendor and the one in postmarketOS doesn't.
+	ln -s .. "$pkgdir"/boot/allwinner
+
+	install -Dm644 "$srcdir"/hwtest.ini \
+		"$pkgdir"/usr/share/hwtest.ini
+
+	install -D -m644 "$srcdir"/10-pinephone-proximity.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/10-pinephone-proximity.rules
+	install -Dm644 "$srcdir"/60-flashlight.rules -t "$pkgdir"/usr/lib/udev/rules.d/
+
+	# Modem
+	install -Dm755 "$srcdir"/setup-modem.sh \
+		"$pkgdir"/usr/bin/pinephone_setup-modem
+	install -Dm644 "$srcdir"/90-modem-eg25.rules -t \
+		"$pkgdir"/usr/lib/udev/rules.d/
+
+	# Wifi / PM
+	install -Dm644 "$srcdir"/70-wifi-pm.rules -t \
+		"$pkgdir"/usr/lib/udev/rules.d/
+
+	# Keyboard config
+	install -Dm755 "$srcdir"/ppkb.sh "$pkgdir"/etc/profile.d/ppkb.sh
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi, Bluetooth and Autofocus firmware"
+	depends="
+		linux-firmware-rtlwifi
+		linux-firmware-rtl_bt
+		firmware-pine64-ov5640
+		"
+	mkdir "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="eg25-manager-openrc openrc"
+	mkdir "$subpkgdir"
+}
+
+kirigami() {
+	install_if="$pkgname=$pkgver-r$pkgrel kirigami2"
+	install -Dm644 "$srcdir"/kirigami-lowpower.sh "$subpkgdir"/etc/profile.d/kirigami-lowpower.sh
+}
+
+gnome() {
+	install_if="$pkgname=$pkgver-r$pkgrel gnome-control-center"
+	install -Dm644 "$srcdir"/50_sleep.gschema.override \
+		"$subpkgdir"/usr/share/glib-2.0/schemas/50_sleep.gschema.override
+	install -Dm644 "$srcdir"/51_keyboard.gschema.override -t \
+		"$subpkgdir"/usr/share/glib-2.0/schemas
+}
+
+plasma_mobile() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-plasma-mobile"
+	install -Dm644 "$srcdir"/kxkbrc -t "$subpkgdir"/etc/xdg
+}
+
+upower() {
+	install_if="$pkgname=$pkgver-r$pkgrel upower"
+	replaces="upower"
+
+	# Shutdown when PMIC reports critical battery level
+	install -Dm644 "$srcdir"/UPower.conf \
+		"$subpkgdir"/etc/UPower/UPower.conf
+}
+
+shelli() {
+	install_if="$pkgname=$pkgver-r$pkgrel shelli"
+
+	# Alsa default audio must be stereo
+	install -Dm644 "$srcdir"/00_alsa_pinephone_dshare.conf \
+		"$subpkgdir"/usr/share/alsa/alsa.conf.d/00_alsa_pinephone_dshare.conf
+}
+
+vccq_mod() {
+	pkgdesc="Install only if you have done the Vccq hardware mod https://postmarketos.org/pp-vccq-mod"
+	install -Dm644 "$srcdir"/user.scr \
+		"$subpkgdir"/boot/user.scr
+	install -Dm644 "$srcdir"/pinephone-vccq-mod.dtbo \
+		"$subpkgdir"/boot/pinephone-vccq-mod.dtbo
+}
+
+sensorfw() {
+	install_if="$pkgname=$pkgver-r$pkgrel sensorfw"
+
+	install -Dm644 -t "$subpkgdir"/etc/sensorfw/sensord.conf.d \
+		"$srcdir"/90-pinephone.conf
+}
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel sway"
+	install -Dm644 "$srcdir"/sway-pinephone-keyboard.conf \
+		"$subpkgdir"/etc/sway/config.d/pinephone_keyboard.conf
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -Dm644 "$srcdir"/x11-pinephone-keyboard.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/pinephone-keyboard.conf
+}
+
+audio() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-base-ui-audio"
+	# FIXME: use upstream alsa-ucm-conf instead, once it works the same (pma#2115)
+	replaces="alsa-ucm-conf"
+	depends="
+		alsa-ucm-conf>=1.2.6.2
+		pinephone-callaudiod
+		postmarketos-base-ui-audio-backend-pipewire
+	"
+
+	# Alsa usecase manager config
+	install -Dm644 -t "$subpkgdir"/usr/share/alsa/ucm2/Allwinner/A64/PinePhone \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/PinePhone.conf \
+		"$srcdir"/VoiceCall.conf
+
+	# Pulseaudio config
+	install -Dm644 "$srcdir"/pulse-pinephone.conf \
+		"$subpkgdir"/etc/pulse/daemon.conf.d/89-pinephone.conf
+}
+
+sha512sums="
+5736444fd38ab4351d148ae96c479085f469bd1e51a692fb1827f8ac921a584389f7696985e1fba21c2deac88709910531f4ece282f45ff54e590c2b54b84ba3  00_alsa_pinephone_dshare.conf
+b53cc6f2531854cc9c1e4c334185a20551d64c8675ee8a8eaa03b99d80808fad421a0f6e99e5be212a974d88c85f461a71ba59ac59c29f298c82f211e3be1ef4  10-pinephone-proximity.rules
+bac664c504d9a3adc6e3d25f24ac63cf7c449a82374544a5b56c259dc25af580897b9dc992865ac83f854f95d17c439b7deb47bfb9557aabcb2e80c3942e22be  50_sleep.gschema.override
+2d68ffe143f633a86670f30e45dbad1cc313f219f22b7cd3319ab44bb7209c20cb29f2ff2c60c92390154af9c9a6815c4186be555364cf31552005eba024c0e7  51_keyboard.gschema.override
+9170da7ac869254644f2fc8d914102f2c16e917dbeb53e33b96c76936711d0540f55fa5c2526d73d5fe244500bc2728bc9d629e2524cf52c573d11e833aee666  60-flashlight.rules
+8b6fa7b12c15f439c561901f3ffe24a1ef2a0c343401c0a79281060854ab29e08a1fb5e7adae8684b12aa9f535ed99e2dad993dce9724822cb0fbf2497dd86e5  70-wifi-pm.rules
+7dc2b7c20b4a2b15f597a6417bd01797643dad84a3683b0dee648e030fb6326e9d020307643fdcdf1bb43fc44af9975697e417003bd359610bae2d8ce614fc00  90-modem-eg25.rules
+ed0e03f7e1c0348c06be9a7922414469245604ce813bbf0c8910ef211cb993bbb0d0d4615c9c961d50712415f85d6b73e0cf02780ac784666aac56e4889341e4  UPower.conf
+681c096e3cc99850aa87c8c3dcf941e68c9d30046fa8989382f2f80d238c01496fb1cadde3df3a1a7e90883058c6badfe24855edb927211f2f665bfcfb4af75a  deviceinfo
+b8482111e6fa805779c5c8d56c83ccf9ad360fe6481ea4e8e1fa3b71c82fe0c8de948c6f69d2b53fbcf43b4420a976f783f5d52947eccca95f24034bd4f3e32a  modules-initfs
+3dd6d612c381cb0002049d1974d8fb5aa5a53a1eb4d6bcbf62eb2ad52cfdc45f0f6ad24a699716d3513b0371aa1316f25dc72afc10d7176cc3b99d0965c3f030  hwtest.ini
+6bc22b369b2d9058b702ac7a7862abaefaf8179b43491868bdb008d181b59104f1ded89db1da51a810e1ccdc803a579b924a438674283a65afc3a9c4d2894caf  kirigami-lowpower.sh
+03d547ece68445579352d0419bf16a43ca1c567c1b0b14a977982cc8adddd34f1f8e8691465f1420091a5d33fa50daaefcee404d9d4b89e7598c4ad43a72469e  kxkbrc
+d66ecef1fa5481ff138fe4e12b194903ceacab9d0649e716049f32e56ec6d9be09b97e2ff769ebc5c9fbced542986b9214f47ed14511ad761d80a41b19e02df7  pinephone-vccq-mod.dts
+9c472065b19141dd4c7555869b955de2e679b36e597f9fa3bdac18d0e9460986b0e2fffe1e04751301305f1b6474c1375803afb7d6212eeae91b4905d0bf8ff8  pulse-pinephone.conf
+967e3a43c7e91ed37fc932a7c580cd168ca11d8ec7f60ff60ece7f286e5144f27faead95162fa7d571a2317ed0da970fd86f5bc9ed0235a25c0be9182d42d64d  90-pinephone.conf
+420ee1d7522d4d56c2909580fd6ba7580483ca5455b13eb6d22e700063ce0c1a5c6d2f5b161dfce0d777636fe9a712aa82f38a0585f2feabea3785b02bae7515  setup-modem.sh
+1f573b4a6686dac30b6e20507ec6590764a9e9e60c5373bda3838b1f25370b447a3220670710c43a64eb518a4aa54d4ab3beb942513ef269e596a73653c6528e  sun50i-a64-psci.dts
+551ace3a724fbe15ebc43ed948f1df111ef42fd3c03797c654d4e14ee65a1b3388c1a6a05c492a96bdff03ee978ef2c2e1c889d324d529eb156cf3d487e8e2a9  uboot-script.cmd
+f28902517bebe16f7ddbdbf9f4c52d5c97319e3b5ba7326ba96ed0e094d3d2a39c87061326893cdc34336bbfd56de084b2f217918ebba7ca6a080088cd0bd409  uboot-user.cmd
+efab4887136826089f2b7aa676bff751d68e56010d5a38e74a007a1c587fb23c899c4090b4543ab4e4b6793e545401afab33078193f9f731e6d2a0884d0cd70b  HiFi.conf
+6e54def33c91121ead0121a05ca7eb003155cd50a70833765ce4322d901ec05fef26057396732ce01f715178bfb21118ef2a7d21c5d4fd3fe119c53f3d05c3b3  PinePhone.conf
+f85c1c60ddcb8f302ae254888b955bcf0b174603595689ce963163e376f23e855bac437b331345ec00595ba1b36240f0400301743e49d3de17843769d7bd77bd  VoiceCall.conf
+43f67e94491791685cdbb4874bb3034b1d297bdf3d23e7405c45ba8c58de72b4fb6a9943b79f46ef7b8f4dbc4d9db254ebec8eb3453d720a5a8fad277c6a9d88  ppkb.sh
+bb11151e246d16e071761ebb35ca7f8b8cedbad8366e9bac6aed30554a795877cc9dccbe69ecca4b19b6f72bd87e613705f3ae4f2f40d2f9c2d09cc179999d59  sway-pinephone-keyboard.conf
+a7b49a638f664f7682ce6b00eb4d1ae26a429e89354056de05fb49d25fc9555d7f80e6d8f4b0a250878a4e7823860fd156068ed6604ce6cf58badef45c545161  x11-pinephone-keyboard.conf
+"

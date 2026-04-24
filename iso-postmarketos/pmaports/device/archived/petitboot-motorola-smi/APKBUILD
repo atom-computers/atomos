@@ -1,0 +1,83 @@
+# Archived: does not build and should not handle building a bootimg in packaging
+
+pkgname=petitboot-motorola-smi
+pkgver=1.13
+pkgrel=1
+_commit="c6e874098175b03deb6829c340fccad7bfb5a258"
+pkgdesc="Petitboot based bootloader for motorola-smi"
+url="https://github.com/open-power/petitboot"
+arch="x86"
+_carch="x86"
+_config="config-$pkgname.$arch"
+license="GPL-2.0-only"
+makedepends="
+	bash
+	bison
+	findutils
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+	petitboot
+	kexec-tools
+	udev
+	busybox
+	kbd
+	abootimg
+"
+options="!check"
+source="
+	inittab
+	fstab
+	keymap.map
+	https://gitlab.com/julianwi/linux-intel-medfield/-/archive/$_commit/linux-$_commit.tar.gz
+	$_config
+"
+builddir=$srcdir
+
+build() {
+	# build initramfs
+	mkdir -p initramfs/dev initramfs/mnt initramfs/proc initramfs/sys initramfs/etc initramfs/tmp initramfs/run
+	for binary in /usr/sbin/kexec /usr/sbin/pb-discover /usr/sbin/petitboot-nc /bin/busybox /sbin/udevd /bin/udevadm
+	do
+		cp --parents "$binary" initramfs
+		for library in $(ldd "$binary" | cut -d '>' -f 2 | awk '{print $1}')
+		do
+			cp --parents "$library" initramfs
+		done
+	done
+	/bin/busybox --install -s initramfs/bin
+	cp inittab fstab initramfs/etc/
+	cp --parents /etc/terminfo/l/linux initramfs
+	cp --parents /etc/terminfo/v/vt102 initramfs
+	ln -s /bin/init initramfs/init
+	cp --parents -r /etc/udev/rules.d initramfs
+	cp --parents -r /usr/lib/udev/rules.d initramfs
+	loadkeys -b keymap.map > initramfs/etc/keymap.bmap
+	cd initramfs; find . ! -name '*.*~' | cpio -o -H newc | gzip > $srcdir/initramfs.cpio.gz
+
+	# build kernel
+	cd $srcdir/linux-intel-medfield-$_commit
+	cp "$srcdir/$_config" .config
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-$_flavor" bzImage
+
+	# pack bootimg
+	cd $builddir
+	abootimg --create boot.img -k $srcdir/linux-intel-medfield-$_commit/arch/x86/boot/bzImage -r $srcdir/initramfs.cpio.gz -c "cmdline = loglevel=0 console=null"
+}
+
+package() {
+	install -D boot.img \
+		"$pkgdir"/boot/boot.img
+}
+sha512sums="
+c1ab96aec680b48cd88cc8c4f667dfa28463cf54fd45a9c62c1e37a8c4d7dbe0a64d7e3a2625f2cf72fc6842f002552ff4132cc66e742e2fc63b06dd3829c15d  inittab
+77898e390d1cac7eef2981072e81e3bbb085e5211a04b88522767ea798b6d28dcb77d48182655eafa4f5a60743234978639ceeb3aa52f81f5678df2a710dcd84  fstab
+ff6113a9dc620cefd7a9d84f20177315d8b1be90c76ae9628a84f0e5601f6ed46b1fd7531076352b70902445475fc117c1ed4c856b08dd97ce650af6f462401b  keymap.map
+8a4e1113e07ed968c82d882fa2b1fcc94017a4dc236b856cb78a32f42480bff9987c0cdd1586a293d78f5d4dd4366c08c534d13a77115bfcac4bf2d1ce416cb4  linux-c6e874098175b03deb6829c340fccad7bfb5a258.tar.gz
+770d8cc4a39142f61c4e250cd673dfd97344025c91e2ba84788b3c072934f615745adf85fdd8184a6fa101827e869ab543538fe6023d3f79b2cd3be866b8898b  config-petitboot-motorola-smi.x86
+"

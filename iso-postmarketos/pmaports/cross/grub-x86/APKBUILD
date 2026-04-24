@@ -1,0 +1,23 @@
+maintainer=""
+pkgname=grub-x86
+pkgver=1
+pkgrel=2
+pkgdesc="GRUB i386-efi image"
+url="https://www.gnu.org/software/grub/"
+license="GPL-3.0-or-later"
+arch="x86_64"
+makedepends="grub grub-efi-x86"
+options="pmb:strict"
+source="grub_early.cfg"
+
+package() {
+	mkdir -p "$pkgdir/boot/EFI/Boot"
+	grub_mod="all_video disk part_gpt part_msdos linux normal configfile search search_label efi_gop fat iso9660 cat echo ls test true help gzio"
+	grub-mkimage --config="$srcdir/grub_early.cfg" \
+		--prefix="" \
+		--output="$pkgdir/boot/EFI/Boot/bootia32.efi" \
+		--format="i386-efi" --compression="xz" \
+		$grub_mod
+}
+
+sha512sums="0f9357d4eea089628fbceb1e3e96d21a3f4329aeb6743158a6f877f967ef274506404eba949d5f01b7e1adea149f9a3aef992a5e8cd4181f93ab00909b1c5ecd  grub_early.cfg"

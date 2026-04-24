@@ -1,0 +1,2826 @@
+From b5061df5629469d9e1fe115ea13a14f8da05e951 Mon Sep 17 00:00:00 2001
+From: Oreeeee <oree3ee@gmail.com>
+Date: Sat, 18 Oct 2025 04:01:20 +0200
+Subject: [PATCH 1/3] Add netfilter headers and files
+
+Lenovo's kernel package archive had split netfilter headers
+from the main kernel source directory. This patch adds these
+back to the main kernel package so that the kernel can compile.
+---
+ .../netfilter/nf_conntrack_tuple_common.h     |  39 +++++
+ include/linux/netfilter/nf_nat.h              |  33 +++++
+ include/linux/netfilter/xt_AUDIT.h            |  30 ++++
+ include/linux/netfilter/xt_CHECKSUM.h         |  20 +++
+ include/linux/netfilter/xt_CLASSIFY.h         |  10 ++
+ include/linux/netfilter/xt_CONNMARK.h         |   6 +
+ include/linux/netfilter/xt_CONNSECMARK.h      |  15 ++
+ include/linux/netfilter/xt_CT.h               |  34 +++++
+ include/linux/netfilter/xt_IDLETIMER.h        |  53 +++++++
+ include/linux/netfilter/xt_LED.h              |  15 ++
+ include/linux/netfilter/xt_NFLOG.h            |  20 +++
+ include/linux/netfilter/xt_NFQUEUE.h          |  38 +++++
+ include/linux/netfilter/xt_RATEEST.h          |  15 ++
+ include/linux/netfilter/xt_SECMARK.h          |  22 +++
+ include/linux/netfilter/xt_TCPMSS.h           |  12 ++
+ include/linux/netfilter/xt_TCPOPTSTRIP.h      |  15 ++
+ include/linux/netfilter/xt_TEE.h              |  12 ++
+ include/linux/netfilter/xt_TPROXY.h           |  23 +++
+ include/linux/netfilter/xt_addrtype.h         |  44 ++++++
+ include/linux/netfilter/xt_bpf.h              |  17 +++
+ include/linux/netfilter/xt_cluster.h          |  19 +++
+ include/linux/netfilter/xt_comment.h          |  10 ++
+ include/linux/netfilter/xt_connbytes.h        |  26 ++++
+ include/linux/netfilter/xt_connlabel.h        |  12 ++
+ include/linux/netfilter/xt_connlimit.h        |  34 +++++
+ include/linux/netfilter/xt_conntrack.h        |  77 ++++++++++
+ include/linux/netfilter/xt_cpu.h              |  11 ++
+ include/linux/netfilter/xt_dccp.h             |  25 ++++
+ include/linux/netfilter/xt_devgroup.h         |  21 +++
+ include/linux/netfilter/xt_dscp.h             |  31 ++++
+ include/linux/netfilter/xt_ecn.h              |  33 +++++
+ include/linux/netfilter/xt_esp.h              |  15 ++
+ include/linux/netfilter/xt_helper.h           |   8 ++
+ include/linux/netfilter/xt_iprange.h          |  19 +++
+ include/linux/netfilter/xt_ipvs.h             |  29 ++++
+ include/linux/netfilter/xt_length.h           |  11 ++
+ include/linux/netfilter/xt_limit.h            |  24 ++++
+ include/linux/netfilter/xt_mac.h              |   8 ++
+ include/linux/netfilter/xt_mark.h             |  15 ++
+ include/linux/netfilter/xt_multiport.h        |  29 ++++
+ include/linux/netfilter/xt_nfacct.h           |  17 +++
+ include/linux/netfilter/xt_osf.h              | 135 ++++++++++++++++++
+ include/linux/netfilter/xt_owner.h            |  18 +++
+ include/linux/netfilter/xt_pkttype.h          |   8 ++
+ include/linux/netfilter/xt_policy.h           |  58 ++++++++
+ include/linux/netfilter/xt_quota.h            |  22 +++
+ include/linux/netfilter/xt_realm.h            |  12 ++
+ include/linux/netfilter/xt_recent.h           |  45 ++++++
+ include/linux/netfilter/xt_sctp.h             |  92 ++++++++++++
+ include/linux/netfilter/xt_set.h              |  74 ++++++++++
+ include/linux/netfilter/xt_socket.h           |  14 ++
+ include/linux/netfilter/xt_state.h            |  12 ++
+ include/linux/netfilter/xt_statistic.h        |  36 +++++
+ include/linux/netfilter/xt_string.h           |  34 +++++
+ include/linux/netfilter/xt_tcpudp.h           |  36 +++++
+ include/linux/netfilter/xt_time.h             |  30 ++++
+ include/linux/netfilter/xt_u32.h              |  42 ++++++
+ include/linux/netfilter_ipv4/ip_queue.h       |  72 ++++++++++
+ include/linux/netfilter_ipv4/ipt_CLUSTERIP.h  |  36 +++++
+ include/linux/netfilter_ipv4/ipt_ECN.h        |  33 +++++
+ include/linux/netfilter_ipv4/ipt_LOG.h        |  19 +++
+ include/linux/netfilter_ipv4/ipt_REJECT.h     |  20 +++
+ include/linux/netfilter_ipv4/ipt_SAME.h       |  20 +++
+ include/linux/netfilter_ipv4/ipt_TTL.h        |  23 +++
+ include/linux/netfilter_ipv4/ipt_ULOG.h       |  49 +++++++
+ include/linux/netfilter_ipv4/ipt_addrtype.h   |  27 ++++
+ include/linux/netfilter_ipv4/ipt_ah.h         |  17 +++
+ include/linux/netfilter_ipv4/ipt_realm.h      |   7 +
+ include/linux/netfilter_ipv6/ip6t_LOG.h       |  19 +++
+ include/linux/netfilter_ipv6/ip6t_NPT.h       |  16 +++
+ include/linux/netfilter_ipv6/ip6t_REJECT.h    |  20 +++
+ include/linux/netfilter_ipv6/ip6t_ah.h        |  22 +++
+ include/linux/netfilter_ipv6/ip6t_frag.h      |  25 ++++
+ include/linux/netfilter_ipv6/ip6t_hl.h        |  24 ++++
+ .../linux/netfilter_ipv6/ip6t_ipv6header.h    |  28 ++++
+ include/linux/netfilter_ipv6/ip6t_mh.h        |  16 +++
+ include/linux/netfilter_ipv6/ip6t_opts.h      |  24 ++++
+ include/linux/netfilter_ipv6/ip6t_rt.h        |  33 +++++
+ net/netfilter/Makefile                        |   4 +-
+ 79 files changed, 2167 insertions(+), 2 deletions(-)
+ create mode 100755 include/linux/netfilter/nf_conntrack_tuple_common.h
+ create mode 100755 include/linux/netfilter/nf_nat.h
+ create mode 100755 include/linux/netfilter/xt_AUDIT.h
+ create mode 100755 include/linux/netfilter/xt_CHECKSUM.h
+ create mode 100755 include/linux/netfilter/xt_CLASSIFY.h
+ create mode 100755 include/linux/netfilter/xt_CONNMARK.h
+ create mode 100755 include/linux/netfilter/xt_CONNSECMARK.h
+ create mode 100755 include/linux/netfilter/xt_CT.h
+ create mode 100755 include/linux/netfilter/xt_IDLETIMER.h
+ create mode 100755 include/linux/netfilter/xt_LED.h
+ create mode 100755 include/linux/netfilter/xt_NFLOG.h
+ create mode 100755 include/linux/netfilter/xt_NFQUEUE.h
+ create mode 100755 include/linux/netfilter/xt_RATEEST.h
+ create mode 100755 include/linux/netfilter/xt_SECMARK.h
+ create mode 100755 include/linux/netfilter/xt_TCPMSS.h
+ create mode 100755 include/linux/netfilter/xt_TCPOPTSTRIP.h
+ create mode 100755 include/linux/netfilter/xt_TEE.h
+ create mode 100755 include/linux/netfilter/xt_TPROXY.h
+ create mode 100755 include/linux/netfilter/xt_addrtype.h
+ create mode 100755 include/linux/netfilter/xt_bpf.h
+ create mode 100755 include/linux/netfilter/xt_cluster.h
+ create mode 100755 include/linux/netfilter/xt_comment.h
+ create mode 100755 include/linux/netfilter/xt_connbytes.h
+ create mode 100755 include/linux/netfilter/xt_connlabel.h
+ create mode 100755 include/linux/netfilter/xt_connlimit.h
+ create mode 100755 include/linux/netfilter/xt_conntrack.h
+ create mode 100755 include/linux/netfilter/xt_cpu.h
+ create mode 100755 include/linux/netfilter/xt_dccp.h
+ create mode 100755 include/linux/netfilter/xt_devgroup.h
+ create mode 100755 include/linux/netfilter/xt_dscp.h
+ create mode 100755 include/linux/netfilter/xt_ecn.h
+ create mode 100755 include/linux/netfilter/xt_esp.h
+ create mode 100755 include/linux/netfilter/xt_helper.h
+ create mode 100755 include/linux/netfilter/xt_iprange.h
+ create mode 100755 include/linux/netfilter/xt_ipvs.h
+ create mode 100755 include/linux/netfilter/xt_length.h
+ create mode 100755 include/linux/netfilter/xt_limit.h
+ create mode 100755 include/linux/netfilter/xt_mac.h
+ create mode 100755 include/linux/netfilter/xt_mark.h
+ create mode 100755 include/linux/netfilter/xt_multiport.h
+ create mode 100755 include/linux/netfilter/xt_nfacct.h
+ create mode 100755 include/linux/netfilter/xt_osf.h
+ create mode 100755 include/linux/netfilter/xt_owner.h
+ create mode 100755 include/linux/netfilter/xt_pkttype.h
+ create mode 100755 include/linux/netfilter/xt_policy.h
+ create mode 100755 include/linux/netfilter/xt_quota.h
+ create mode 100755 include/linux/netfilter/xt_realm.h
+ create mode 100755 include/linux/netfilter/xt_recent.h
+ create mode 100755 include/linux/netfilter/xt_sctp.h
+ create mode 100755 include/linux/netfilter/xt_set.h
+ create mode 100755 include/linux/netfilter/xt_socket.h
+ create mode 100755 include/linux/netfilter/xt_state.h
+ create mode 100755 include/linux/netfilter/xt_statistic.h
+ create mode 100755 include/linux/netfilter/xt_string.h
+ create mode 100755 include/linux/netfilter/xt_tcpudp.h
+ create mode 100755 include/linux/netfilter/xt_time.h
+ create mode 100755 include/linux/netfilter/xt_u32.h
+ create mode 100755 include/linux/netfilter_ipv4/ip_queue.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_CLUSTERIP.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_ECN.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_LOG.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_REJECT.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_SAME.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_TTL.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_ULOG.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_addrtype.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_ah.h
+ create mode 100755 include/linux/netfilter_ipv4/ipt_realm.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_LOG.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_NPT.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_REJECT.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_ah.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_frag.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_hl.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_ipv6header.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_mh.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_opts.h
+ create mode 100755 include/linux/netfilter_ipv6/ip6t_rt.h
+
+diff --git a/include/linux/netfilter/nf_conntrack_tuple_common.h b/include/linux/netfilter/nf_conntrack_tuple_common.h
+new file mode 100755
+index 00000000..2f6bbc5b
+--- /dev/null
++++ b/include/linux/netfilter/nf_conntrack_tuple_common.h
+@@ -0,0 +1,39 @@
++#ifndef _NF_CONNTRACK_TUPLE_COMMON_H
++#define _NF_CONNTRACK_TUPLE_COMMON_H
++
++enum ip_conntrack_dir {
++	IP_CT_DIR_ORIGINAL,
++	IP_CT_DIR_REPLY,
++	IP_CT_DIR_MAX
++};
++
++/* The protocol-specific manipulable parts of the tuple: always in
++ * network order
++ */
++union nf_conntrack_man_proto {
++	/* Add other protocols here. */
++	__be16 all;
++
++	struct {
++		__be16 port;
++	} tcp;
++	struct {
++		__be16 port;
++	} udp;
++	struct {
++		__be16 id;
++	} icmp;
++	struct {
++		__be16 port;
++	} dccp;
++	struct {
++		__be16 port;
++	} sctp;
++	struct {
++		__be16 key;	/* GRE key is 32bit, PPtP only uses 16bit */
++	} gre;
++};
++
++#define CTINFO2DIR(ctinfo) ((ctinfo) >= IP_CT_IS_REPLY ? IP_CT_DIR_REPLY : IP_CT_DIR_ORIGINAL)
++
++#endif /* _NF_CONNTRACK_TUPLE_COMMON_H */
+diff --git a/include/linux/netfilter/nf_nat.h b/include/linux/netfilter/nf_nat.h
+new file mode 100755
+index 00000000..bf0cc373
+--- /dev/null
++++ b/include/linux/netfilter/nf_nat.h
+@@ -0,0 +1,33 @@
++#ifndef _NETFILTER_NF_NAT_H
++#define _NETFILTER_NF_NAT_H
++
++#include <linux/netfilter.h>
++#include <linux/netfilter/nf_conntrack_tuple_common.h>
++
++#define NF_NAT_RANGE_MAP_IPS		1
++#define NF_NAT_RANGE_PROTO_SPECIFIED	2
++#define NF_NAT_RANGE_PROTO_RANDOM	4
++#define NF_NAT_RANGE_PERSISTENT		8
++
++struct nf_nat_ipv4_range {
++	unsigned int			flags;
++	__be32				min_ip;
++	__be32				max_ip;
++	union nf_conntrack_man_proto	min;
++	union nf_conntrack_man_proto	max;
++};
++
++struct nf_nat_ipv4_multi_range_compat {
++	unsigned int			rangesize;
++	struct nf_nat_ipv4_range	range[1];
++};
++
++struct nf_nat_range {
++	unsigned int			flags;
++	union nf_inet_addr		min_addr;
++	union nf_inet_addr		max_addr;
++	union nf_conntrack_man_proto	min_proto;
++	union nf_conntrack_man_proto	max_proto;
++};
++
++#endif /* _NETFILTER_NF_NAT_H */
+diff --git a/include/linux/netfilter/xt_AUDIT.h b/include/linux/netfilter/xt_AUDIT.h
+new file mode 100755
+index 00000000..38751d2e
+--- /dev/null
++++ b/include/linux/netfilter/xt_AUDIT.h
+@@ -0,0 +1,30 @@
++/*
++ * Header file for iptables xt_AUDIT target
++ *
++ * (C) 2010-2011 Thomas Graf <tgraf@redhat.com>
++ * (C) 2010-2011 Red Hat, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef _XT_AUDIT_TARGET_H
++#define _XT_AUDIT_TARGET_H
++
++#include <linux/types.h>
++
++enum {
++	XT_AUDIT_TYPE_ACCEPT = 0,
++	XT_AUDIT_TYPE_DROP,
++	XT_AUDIT_TYPE_REJECT,
++	__XT_AUDIT_TYPE_MAX,
++};
++
++#define XT_AUDIT_TYPE_MAX (__XT_AUDIT_TYPE_MAX - 1)
++
++struct xt_audit_info {
++	__u8 type; /* XT_AUDIT_TYPE_* */
++};
++
++#endif /* _XT_AUDIT_TARGET_H */
+diff --git a/include/linux/netfilter/xt_CHECKSUM.h b/include/linux/netfilter/xt_CHECKSUM.h
+new file mode 100755
+index 00000000..9a2e4661
+--- /dev/null
++++ b/include/linux/netfilter/xt_CHECKSUM.h
+@@ -0,0 +1,20 @@
++/* Header file for iptables ipt_CHECKSUM target
++ *
++ * (C) 2002 by Harald Welte <laforge@gnumonks.org>
++ * (C) 2010 Red Hat Inc
++ * Author: Michael S. Tsirkin <mst@redhat.com>
++ *
++ * This software is distributed under GNU GPL v2, 1991
++*/
++#ifndef _XT_CHECKSUM_TARGET_H
++#define _XT_CHECKSUM_TARGET_H
++
++#include <linux/types.h>
++
++#define XT_CHECKSUM_OP_FILL	0x01	/* fill in checksum in IP header */
++
++struct xt_CHECKSUM_info {
++	__u8 operation;	/* bitset of operations */
++};
++
++#endif /* _XT_CHECKSUM_TARGET_H */
+diff --git a/include/linux/netfilter/xt_CLASSIFY.h b/include/linux/netfilter/xt_CLASSIFY.h
+new file mode 100755
+index 00000000..a813bf14
+--- /dev/null
++++ b/include/linux/netfilter/xt_CLASSIFY.h
+@@ -0,0 +1,10 @@
++#ifndef _XT_CLASSIFY_H
++#define _XT_CLASSIFY_H
++
++#include <linux/types.h>
++
++struct xt_classify_target_info {
++	__u32 priority;
++};
++
++#endif /*_XT_CLASSIFY_H */
+diff --git a/include/linux/netfilter/xt_CONNMARK.h b/include/linux/netfilter/xt_CONNMARK.h
+new file mode 100755
+index 00000000..2f2e48ec
+--- /dev/null
++++ b/include/linux/netfilter/xt_CONNMARK.h
+@@ -0,0 +1,6 @@
++#ifndef _XT_CONNMARK_H_target
++#define _XT_CONNMARK_H_target
++
++#include <linux/netfilter/xt_connmark.h>
++
++#endif /*_XT_CONNMARK_H_target*/
+diff --git a/include/linux/netfilter/xt_CONNSECMARK.h b/include/linux/netfilter/xt_CONNSECMARK.h
+new file mode 100755
+index 00000000..b973ff80
+--- /dev/null
++++ b/include/linux/netfilter/xt_CONNSECMARK.h
+@@ -0,0 +1,15 @@
++#ifndef _XT_CONNSECMARK_H_target
++#define _XT_CONNSECMARK_H_target
++
++#include <linux/types.h>
++
++enum {
++	CONNSECMARK_SAVE = 1,
++	CONNSECMARK_RESTORE,
++};
++
++struct xt_connsecmark_target_info {
++	__u8 mode;
++};
++
++#endif /*_XT_CONNSECMARK_H_target */
+diff --git a/include/linux/netfilter/xt_CT.h b/include/linux/netfilter/xt_CT.h
+new file mode 100755
+index 00000000..54528fdd
+--- /dev/null
++++ b/include/linux/netfilter/xt_CT.h
+@@ -0,0 +1,34 @@
++#ifndef _XT_CT_H
++#define _XT_CT_H
++
++#include <linux/types.h>
++
++enum {
++	XT_CT_NOTRACK		= 1 << 0,
++	XT_CT_NOTRACK_ALIAS	= 1 << 1,
++};
++
++struct xt_ct_target_info {
++	__u16 flags;
++	__u16 zone;
++	__u32 ct_events;
++	__u32 exp_events;
++	char helper[16];
++
++	/* Used internally by the kernel */
++	struct nf_conn	*ct __attribute__((aligned(8)));
++};
++
++struct xt_ct_target_info_v1 {
++	__u16 flags;
++	__u16 zone;
++	__u32 ct_events;
++	__u32 exp_events;
++	char helper[16];
++	char timeout[32];
++
++	/* Used internally by the kernel */
++	struct nf_conn	*ct __attribute__((aligned(8)));
++};
++
++#endif /* _XT_CT_H */
+diff --git a/include/linux/netfilter/xt_IDLETIMER.h b/include/linux/netfilter/xt_IDLETIMER.h
+new file mode 100755
+index 00000000..faaa28b3
+--- /dev/null
++++ b/include/linux/netfilter/xt_IDLETIMER.h
+@@ -0,0 +1,53 @@
++/*
++ * linux/include/linux/netfilter/xt_IDLETIMER.h
++ *
++ * Header file for Xtables timer target module.
++ *
++ * Copyright (C) 2004, 2010 Nokia Corporation
++ *
++ * Written by Timo Teras <ext-timo.teras@nokia.com>
++ *
++ * Converted to x_tables and forward-ported to 2.6.34
++ * by Luciano Coelho <luciano.coelho@nokia.com>
++ *
++ * Contact: Luciano Coelho <luciano.coelho@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ */
++
++#ifndef _XT_IDLETIMER_H
++#define _XT_IDLETIMER_H
++
++#include <linux/types.h>
++
++#define MAX_IDLETIMER_LABEL_SIZE 28
++#define NLMSG_MAX_SIZE 64
++
++#define NL_EVENT_TYPE_INACTIVE 0
++#define NL_EVENT_TYPE_ACTIVE 1
++
++struct idletimer_tg_info {
++	__u32 timeout;
++
++	char label[MAX_IDLETIMER_LABEL_SIZE];
++
++	/* Use netlink messages for notification in addition to sysfs */
++	__u8 send_nl_msg;
++
++	/* for kernel module internal use only */
++	struct idletimer_tg *timer __attribute__((aligned(8)));
++};
++
++#endif
+diff --git a/include/linux/netfilter/xt_LED.h b/include/linux/netfilter/xt_LED.h
+new file mode 100755
+index 00000000..f5509e75
+--- /dev/null
++++ b/include/linux/netfilter/xt_LED.h
+@@ -0,0 +1,15 @@
++#ifndef _XT_LED_H
++#define _XT_LED_H
++
++#include <linux/types.h>
++
++struct xt_led_info {
++	char id[27];        /* Unique ID for this trigger in the LED class */
++	__u8 always_blink;  /* Blink even if the LED is already on */
++	__u32 delay;        /* Delay until LED is switched off after trigger */
++
++	/* Kernel data used in the module */
++	void *internal_data __attribute__((aligned(8)));
++};
++
++#endif /* _XT_LED_H */
+diff --git a/include/linux/netfilter/xt_NFLOG.h b/include/linux/netfilter/xt_NFLOG.h
+new file mode 100755
+index 00000000..87b58311
+--- /dev/null
++++ b/include/linux/netfilter/xt_NFLOG.h
+@@ -0,0 +1,20 @@
++#ifndef _XT_NFLOG_TARGET
++#define _XT_NFLOG_TARGET
++
++#include <linux/types.h>
++
++#define XT_NFLOG_DEFAULT_GROUP		0x1
++#define XT_NFLOG_DEFAULT_THRESHOLD	0
++
++#define XT_NFLOG_MASK			0x0
++
++struct xt_nflog_info {
++	__u32	len;
++	__u16	group;
++	__u16	threshold;
++	__u16	flags;
++	__u16	pad;
++	char		prefix[64];
++};
++
++#endif /* _XT_NFLOG_TARGET */
+diff --git a/include/linux/netfilter/xt_NFQUEUE.h b/include/linux/netfilter/xt_NFQUEUE.h
+new file mode 100755
+index 00000000..8bb5fe65
+--- /dev/null
++++ b/include/linux/netfilter/xt_NFQUEUE.h
+@@ -0,0 +1,38 @@
++/* iptables module for using NFQUEUE mechanism
++ *
++ * (C) 2005 Harald Welte <laforge@netfilter.org>
++ *
++ * This software is distributed under GNU GPL v2, 1991
++ * 
++*/
++#ifndef _XT_NFQ_TARGET_H
++#define _XT_NFQ_TARGET_H
++
++#include <linux/types.h>
++
++/* target info */
++struct xt_NFQ_info {
++	__u16 queuenum;
++};
++
++struct xt_NFQ_info_v1 {
++	__u16 queuenum;
++	__u16 queues_total;
++};
++
++struct xt_NFQ_info_v2 {
++	__u16 queuenum;
++	__u16 queues_total;
++	__u16 bypass;
++};
++
++struct xt_NFQ_info_v3 {
++	__u16 queuenum;
++	__u16 queues_total;
++	__u16 flags;
++#define NFQ_FLAG_BYPASS		0x01 /* for compatibility with v2 */
++#define NFQ_FLAG_CPU_FANOUT	0x02 /* use current CPU (no hashing) */
++#define NFQ_FLAG_MASK		0x03
++};
++
++#endif /* _XT_NFQ_TARGET_H */
+diff --git a/include/linux/netfilter/xt_RATEEST.h b/include/linux/netfilter/xt_RATEEST.h
+new file mode 100755
+index 00000000..6605e20a
+--- /dev/null
++++ b/include/linux/netfilter/xt_RATEEST.h
+@@ -0,0 +1,15 @@
++#ifndef _XT_RATEEST_TARGET_H
++#define _XT_RATEEST_TARGET_H
++
++#include <linux/types.h>
++
++struct xt_rateest_target_info {
++	char			name[IFNAMSIZ];
++	__s8			interval;
++	__u8		ewma_log;
++
++	/* Used internally by the kernel */
++	struct xt_rateest	*est __attribute__((aligned(8)));
++};
++
++#endif /* _XT_RATEEST_TARGET_H */
+diff --git a/include/linux/netfilter/xt_SECMARK.h b/include/linux/netfilter/xt_SECMARK.h
+new file mode 100755
+index 00000000..989092bd
+--- /dev/null
++++ b/include/linux/netfilter/xt_SECMARK.h
+@@ -0,0 +1,22 @@
++#ifndef _XT_SECMARK_H_target
++#define _XT_SECMARK_H_target
++
++#include <linux/types.h>
++
++/*
++ * This is intended for use by various security subsystems (but not
++ * at the same time).
++ *
++ * 'mode' refers to the specific security subsystem which the
++ * packets are being marked for.
++ */
++#define SECMARK_MODE_SEL	0x01		/* SELinux */
++#define SECMARK_SECCTX_MAX	256
++
++struct xt_secmark_target_info {
++	__u8 mode;
++	__u32 secid;
++	char secctx[SECMARK_SECCTX_MAX];
++};
++
++#endif /*_XT_SECMARK_H_target */
+diff --git a/include/linux/netfilter/xt_TCPMSS.h b/include/linux/netfilter/xt_TCPMSS.h
+new file mode 100755
+index 00000000..9a6960af
+--- /dev/null
++++ b/include/linux/netfilter/xt_TCPMSS.h
+@@ -0,0 +1,12 @@
++#ifndef _XT_TCPMSS_H
++#define _XT_TCPMSS_H
++
++#include <linux/types.h>
++
++struct xt_tcpmss_info {
++	__u16 mss;
++};
++
++#define XT_TCPMSS_CLAMP_PMTU 0xffff
++
++#endif /* _XT_TCPMSS_H */
+diff --git a/include/linux/netfilter/xt_TCPOPTSTRIP.h b/include/linux/netfilter/xt_TCPOPTSTRIP.h
+new file mode 100755
+index 00000000..71573184
+--- /dev/null
++++ b/include/linux/netfilter/xt_TCPOPTSTRIP.h
+@@ -0,0 +1,15 @@
++#ifndef _XT_TCPOPTSTRIP_H
++#define _XT_TCPOPTSTRIP_H
++
++#include <linux/types.h>
++
++#define tcpoptstrip_set_bit(bmap, idx) \
++	(bmap[(idx) >> 5] |= 1U << (idx & 31))
++#define tcpoptstrip_test_bit(bmap, idx) \
++	(((1U << (idx & 31)) & bmap[(idx) >> 5]) != 0)
++
++struct xt_tcpoptstrip_target_info {
++	__u32 strip_bmap[8];
++};
++
++#endif /* _XT_TCPOPTSTRIP_H */
+diff --git a/include/linux/netfilter/xt_TEE.h b/include/linux/netfilter/xt_TEE.h
+new file mode 100755
+index 00000000..5c21d5c8
+--- /dev/null
++++ b/include/linux/netfilter/xt_TEE.h
+@@ -0,0 +1,12 @@
++#ifndef _XT_TEE_TARGET_H
++#define _XT_TEE_TARGET_H
++
++struct xt_tee_tginfo {
++	union nf_inet_addr gw;
++	char oif[16];
++
++	/* used internally by the kernel */
++	struct xt_tee_priv *priv __attribute__((aligned(8)));
++};
++
++#endif /* _XT_TEE_TARGET_H */
+diff --git a/include/linux/netfilter/xt_TPROXY.h b/include/linux/netfilter/xt_TPROXY.h
+new file mode 100755
+index 00000000..902043c2
+--- /dev/null
++++ b/include/linux/netfilter/xt_TPROXY.h
+@@ -0,0 +1,23 @@
++#ifndef _XT_TPROXY_H
++#define _XT_TPROXY_H
++
++#include <linux/types.h>
++
++/* TPROXY target is capable of marking the packet to perform
++ * redirection. We can get rid of that whenever we get support for
++ * mutliple targets in the same rule. */
++struct xt_tproxy_target_info {
++	__u32 mark_mask;
++	__u32 mark_value;
++	__be32 laddr;
++	__be16 lport;
++};
++
++struct xt_tproxy_target_info_v1 {
++	__u32 mark_mask;
++	__u32 mark_value;
++	union nf_inet_addr laddr;
++	__be16 lport;
++};
++
++#endif /* _XT_TPROXY_H */
+diff --git a/include/linux/netfilter/xt_addrtype.h b/include/linux/netfilter/xt_addrtype.h
+new file mode 100755
+index 00000000..b156baa9
+--- /dev/null
++++ b/include/linux/netfilter/xt_addrtype.h
+@@ -0,0 +1,44 @@
++#ifndef _XT_ADDRTYPE_H
++#define _XT_ADDRTYPE_H
++
++#include <linux/types.h>
++
++enum {
++	XT_ADDRTYPE_INVERT_SOURCE	= 0x0001,
++	XT_ADDRTYPE_INVERT_DEST		= 0x0002,
++	XT_ADDRTYPE_LIMIT_IFACE_IN	= 0x0004,
++	XT_ADDRTYPE_LIMIT_IFACE_OUT	= 0x0008,
++};
++
++
++/* rtn_type enum values from rtnetlink.h, but shifted */
++enum {
++	XT_ADDRTYPE_UNSPEC = 1 << 0,
++	XT_ADDRTYPE_UNICAST = 1 << 1,	/* 1 << RTN_UNICAST */
++	XT_ADDRTYPE_LOCAL  = 1 << 2,	/* 1 << RTN_LOCAL, etc */
++	XT_ADDRTYPE_BROADCAST = 1 << 3,
++	XT_ADDRTYPE_ANYCAST = 1 << 4,
++	XT_ADDRTYPE_MULTICAST = 1 << 5,
++	XT_ADDRTYPE_BLACKHOLE = 1 << 6,
++	XT_ADDRTYPE_UNREACHABLE = 1 << 7,
++	XT_ADDRTYPE_PROHIBIT = 1 << 8,
++	XT_ADDRTYPE_THROW = 1 << 9,
++	XT_ADDRTYPE_NAT = 1 << 10,
++	XT_ADDRTYPE_XRESOLVE = 1 << 11,
++};
++
++struct xt_addrtype_info_v1 {
++	__u16	source;		/* source-type mask */
++	__u16	dest;		/* dest-type mask */
++	__u32	flags;
++};
++
++/* revision 0 */
++struct xt_addrtype_info {
++	__u16	source;		/* source-type mask */
++	__u16	dest;		/* dest-type mask */
++	__u32	invert_source;
++	__u32	invert_dest;
++};
++
++#endif
+diff --git a/include/linux/netfilter/xt_bpf.h b/include/linux/netfilter/xt_bpf.h
+new file mode 100755
+index 00000000..5dda450e
+--- /dev/null
++++ b/include/linux/netfilter/xt_bpf.h
+@@ -0,0 +1,17 @@
++#ifndef _XT_BPF_H
++#define _XT_BPF_H
++
++#include <linux/filter.h>
++#include <linux/types.h>
++
++#define XT_BPF_MAX_NUM_INSTR	64
++
++struct xt_bpf_info {
++	__u16 bpf_program_num_elem;
++	struct sock_filter bpf_program[XT_BPF_MAX_NUM_INSTR];
++
++	/* only used in the kernel */
++	struct sk_filter *filter __attribute__((aligned(8)));
++};
++
++#endif /*_XT_BPF_H */
+diff --git a/include/linux/netfilter/xt_cluster.h b/include/linux/netfilter/xt_cluster.h
+new file mode 100755
+index 00000000..9b883c8f
+--- /dev/null
++++ b/include/linux/netfilter/xt_cluster.h
+@@ -0,0 +1,19 @@
++#ifndef _XT_CLUSTER_MATCH_H
++#define _XT_CLUSTER_MATCH_H
++
++#include <linux/types.h>
++
++enum xt_cluster_flags {
++	XT_CLUSTER_F_INV	= (1 << 0)
++};
++
++struct xt_cluster_match_info {
++	__u32 total_nodes;
++	__u32 node_mask;
++	__u32 hash_seed;
++	__u32 flags;
++};
++
++#define XT_CLUSTER_NODES_MAX	32
++
++#endif /* _XT_CLUSTER_MATCH_H */
+diff --git a/include/linux/netfilter/xt_comment.h b/include/linux/netfilter/xt_comment.h
+new file mode 100755
+index 00000000..0ea5e79f
+--- /dev/null
++++ b/include/linux/netfilter/xt_comment.h
+@@ -0,0 +1,10 @@
++#ifndef _XT_COMMENT_H
++#define _XT_COMMENT_H
++
++#define XT_MAX_COMMENT_LEN 256
++
++struct xt_comment_info {
++	char comment[XT_MAX_COMMENT_LEN];
++};
++
++#endif /* XT_COMMENT_H */
+diff --git a/include/linux/netfilter/xt_connbytes.h b/include/linux/netfilter/xt_connbytes.h
+new file mode 100755
+index 00000000..f1d6c15b
+--- /dev/null
++++ b/include/linux/netfilter/xt_connbytes.h
+@@ -0,0 +1,26 @@
++#ifndef _XT_CONNBYTES_H
++#define _XT_CONNBYTES_H
++
++#include <linux/types.h>
++
++enum xt_connbytes_what {
++	XT_CONNBYTES_PKTS,
++	XT_CONNBYTES_BYTES,
++	XT_CONNBYTES_AVGPKT,
++};
++
++enum xt_connbytes_direction {
++	XT_CONNBYTES_DIR_ORIGINAL,
++	XT_CONNBYTES_DIR_REPLY,
++	XT_CONNBYTES_DIR_BOTH,
++};
++
++struct xt_connbytes_info {
++	struct {
++		__aligned_u64 from;	/* count to be matched */
++		__aligned_u64 to;	/* count to be matched */
++	} count;
++	__u8 what;		/* ipt_connbytes_what */
++	__u8 direction;	/* ipt_connbytes_direction */
++};
++#endif
+diff --git a/include/linux/netfilter/xt_connlabel.h b/include/linux/netfilter/xt_connlabel.h
+new file mode 100755
+index 00000000..c4bc9ee9
+--- /dev/null
++++ b/include/linux/netfilter/xt_connlabel.h
+@@ -0,0 +1,12 @@
++#include <linux/types.h>
++
++#define XT_CONNLABEL_MAXBIT 127
++enum xt_connlabel_mtopts {
++	XT_CONNLABEL_OP_INVERT = 1 << 0,
++	XT_CONNLABEL_OP_SET    = 1 << 1,
++};
++
++struct xt_connlabel_mtinfo {
++	__u16 bit;
++	__u16 options;
++};
+diff --git a/include/linux/netfilter/xt_connlimit.h b/include/linux/netfilter/xt_connlimit.h
+new file mode 100755
+index 00000000..f9e8c67c
+--- /dev/null
++++ b/include/linux/netfilter/xt_connlimit.h
+@@ -0,0 +1,34 @@
++#ifndef _XT_CONNLIMIT_H
++#define _XT_CONNLIMIT_H
++
++#include <linux/types.h>
++
++struct xt_connlimit_data;
++
++enum {
++	XT_CONNLIMIT_INVERT = 1 << 0,
++	XT_CONNLIMIT_DADDR  = 1 << 1,
++};
++
++struct xt_connlimit_info {
++	union {
++		union nf_inet_addr mask;
++		union {
++			__be32 v4_mask;
++			__be32 v6_mask[4];
++		};
++	};
++	unsigned int limit;
++	union {
++		/* revision 0 */
++		unsigned int inverse;
++
++		/* revision 1 */
++		__u32 flags;
++	};
++
++	/* Used internally by the kernel */
++	struct xt_connlimit_data *data __attribute__((aligned(8)));
++};
++
++#endif /* _XT_CONNLIMIT_H */
+diff --git a/include/linux/netfilter/xt_conntrack.h b/include/linux/netfilter/xt_conntrack.h
+new file mode 100755
+index 00000000..e9715011
+--- /dev/null
++++ b/include/linux/netfilter/xt_conntrack.h
+@@ -0,0 +1,77 @@
++/* Header file for kernel module to match connection tracking information.
++ * GPL (C) 2001  Marc Boucher (marc@mbsi.ca).
++ */
++
++#ifndef _XT_CONNTRACK_H
++#define _XT_CONNTRACK_H
++
++#include <linux/types.h>
++#include <linux/netfilter/nf_conntrack_tuple_common.h>
++
++#define XT_CONNTRACK_STATE_BIT(ctinfo) (1 << ((ctinfo)%IP_CT_IS_REPLY+1))
++#define XT_CONNTRACK_STATE_INVALID (1 << 0)
++
++#define XT_CONNTRACK_STATE_SNAT (1 << (IP_CT_NUMBER + 1))
++#define XT_CONNTRACK_STATE_DNAT (1 << (IP_CT_NUMBER + 2))
++#define XT_CONNTRACK_STATE_UNTRACKED (1 << (IP_CT_NUMBER + 3))
++
++/* flags, invflags: */
++enum {
++	XT_CONNTRACK_STATE        = 1 << 0,
++	XT_CONNTRACK_PROTO        = 1 << 1,
++	XT_CONNTRACK_ORIGSRC      = 1 << 2,
++	XT_CONNTRACK_ORIGDST      = 1 << 3,
++	XT_CONNTRACK_REPLSRC      = 1 << 4,
++	XT_CONNTRACK_REPLDST      = 1 << 5,
++	XT_CONNTRACK_STATUS       = 1 << 6,
++	XT_CONNTRACK_EXPIRES      = 1 << 7,
++	XT_CONNTRACK_ORIGSRC_PORT = 1 << 8,
++	XT_CONNTRACK_ORIGDST_PORT = 1 << 9,
++	XT_CONNTRACK_REPLSRC_PORT = 1 << 10,
++	XT_CONNTRACK_REPLDST_PORT = 1 << 11,
++	XT_CONNTRACK_DIRECTION    = 1 << 12,
++	XT_CONNTRACK_STATE_ALIAS  = 1 << 13,
++};
++
++struct xt_conntrack_mtinfo1 {
++	union nf_inet_addr origsrc_addr, origsrc_mask;
++	union nf_inet_addr origdst_addr, origdst_mask;
++	union nf_inet_addr replsrc_addr, replsrc_mask;
++	union nf_inet_addr repldst_addr, repldst_mask;
++	__u32 expires_min, expires_max;
++	__u16 l4proto;
++	__be16 origsrc_port, origdst_port;
++	__be16 replsrc_port, repldst_port;
++	__u16 match_flags, invert_flags;
++	__u8 state_mask, status_mask;
++};
++
++struct xt_conntrack_mtinfo2 {
++	union nf_inet_addr origsrc_addr, origsrc_mask;
++	union nf_inet_addr origdst_addr, origdst_mask;
++	union nf_inet_addr replsrc_addr, replsrc_mask;
++	union nf_inet_addr repldst_addr, repldst_mask;
++	__u32 expires_min, expires_max;
++	__u16 l4proto;
++	__be16 origsrc_port, origdst_port;
++	__be16 replsrc_port, repldst_port;
++	__u16 match_flags, invert_flags;
++	__u16 state_mask, status_mask;
++};
++
++struct xt_conntrack_mtinfo3 {
++	union nf_inet_addr origsrc_addr, origsrc_mask;
++	union nf_inet_addr origdst_addr, origdst_mask;
++	union nf_inet_addr replsrc_addr, replsrc_mask;
++	union nf_inet_addr repldst_addr, repldst_mask;
++	__u32 expires_min, expires_max;
++	__u16 l4proto;
++	__u16 origsrc_port, origdst_port;
++	__u16 replsrc_port, repldst_port;
++	__u16 match_flags, invert_flags;
++	__u16 state_mask, status_mask;
++	__u16 origsrc_port_high, origdst_port_high;
++	__u16 replsrc_port_high, repldst_port_high;
++};
++
++#endif /*_XT_CONNTRACK_H*/
+diff --git a/include/linux/netfilter/xt_cpu.h b/include/linux/netfilter/xt_cpu.h
+new file mode 100755
+index 00000000..93c7f11d
+--- /dev/null
++++ b/include/linux/netfilter/xt_cpu.h
+@@ -0,0 +1,11 @@
++#ifndef _XT_CPU_H
++#define _XT_CPU_H
++
++#include <linux/types.h>
++
++struct xt_cpu_info {
++	__u32	cpu;
++	__u32	invert;
++};
++
++#endif /*_XT_CPU_H*/
+diff --git a/include/linux/netfilter/xt_dccp.h b/include/linux/netfilter/xt_dccp.h
+new file mode 100755
+index 00000000..a579e1b6
+--- /dev/null
++++ b/include/linux/netfilter/xt_dccp.h
+@@ -0,0 +1,25 @@
++#ifndef _XT_DCCP_H_
++#define _XT_DCCP_H_
++
++#include <linux/types.h>
++
++#define XT_DCCP_SRC_PORTS	        0x01
++#define XT_DCCP_DEST_PORTS	        0x02
++#define XT_DCCP_TYPE			0x04
++#define XT_DCCP_OPTION			0x08
++
++#define XT_DCCP_VALID_FLAGS		0x0f
++
++struct xt_dccp_info {
++	__u16 dpts[2];  /* Min, Max */
++	__u16 spts[2];  /* Min, Max */
++
++	__u16 flags;
++	__u16 invflags;
++
++	__u16 typemask;
++	__u8 option;
++};
++
++#endif /* _XT_DCCP_H_ */
++
+diff --git a/include/linux/netfilter/xt_devgroup.h b/include/linux/netfilter/xt_devgroup.h
+new file mode 100755
+index 00000000..1babde0e
+--- /dev/null
++++ b/include/linux/netfilter/xt_devgroup.h
+@@ -0,0 +1,21 @@
++#ifndef _XT_DEVGROUP_H
++#define _XT_DEVGROUP_H
++
++#include <linux/types.h>
++
++enum xt_devgroup_flags {
++	XT_DEVGROUP_MATCH_SRC	= 0x1,
++	XT_DEVGROUP_INVERT_SRC	= 0x2,
++	XT_DEVGROUP_MATCH_DST	= 0x4,
++	XT_DEVGROUP_INVERT_DST	= 0x8,
++};
++
++struct xt_devgroup_info {
++	__u32	flags;
++	__u32	src_group;
++	__u32	src_mask;
++	__u32	dst_group;
++	__u32	dst_mask;
++};
++
++#endif /* _XT_DEVGROUP_H */
+diff --git a/include/linux/netfilter/xt_dscp.h b/include/linux/netfilter/xt_dscp.h
+new file mode 100755
+index 00000000..15f8932a
+--- /dev/null
++++ b/include/linux/netfilter/xt_dscp.h
+@@ -0,0 +1,31 @@
++/* x_tables module for matching the IPv4/IPv6 DSCP field
++ *
++ * (C) 2002 Harald Welte <laforge@gnumonks.org>
++ * This software is distributed under GNU GPL v2, 1991
++ *
++ * See RFC2474 for a description of the DSCP field within the IP Header.
++ *
++ * xt_dscp.h,v 1.3 2002/08/05 19:00:21 laforge Exp
++*/
++#ifndef _XT_DSCP_H
++#define _XT_DSCP_H
++
++#include <linux/types.h>
++
++#define XT_DSCP_MASK	0xfc	/* 11111100 */
++#define XT_DSCP_SHIFT	2
++#define XT_DSCP_MAX	0x3f	/* 00111111 */
++
++/* match info */
++struct xt_dscp_info {
++	__u8 dscp;
++	__u8 invert;
++};
++
++struct xt_tos_match_info {
++	__u8 tos_mask;
++	__u8 tos_value;
++	__u8 invert;
++};
++
++#endif /* _XT_DSCP_H */
+diff --git a/include/linux/netfilter/xt_ecn.h b/include/linux/netfilter/xt_ecn.h
+new file mode 100755
+index 00000000..c21cc280
+--- /dev/null
++++ b/include/linux/netfilter/xt_ecn.h
+@@ -0,0 +1,33 @@
++/* iptables module for matching the ECN header in IPv4 and TCP header
++ *
++ * (C) 2002 Harald Welte <laforge@netfilter.org>
++ *
++ * This software is distributed under GNU GPL v2, 1991
++*/
++#ifndef _XT_ECN_H
++#define _XT_ECN_H
++
++#include <linux/types.h>
++#include <linux/netfilter/xt_dscp.h>
++
++#define XT_ECN_IP_MASK	(~XT_DSCP_MASK)
++
++#define XT_ECN_OP_MATCH_IP	0x01
++#define XT_ECN_OP_MATCH_ECE	0x10
++#define XT_ECN_OP_MATCH_CWR	0x20
++
++#define XT_ECN_OP_MATCH_MASK	0xce
++
++/* match info */
++struct xt_ecn_info {
++	__u8 operation;
++	__u8 invert;
++	__u8 ip_ect;
++	union {
++		struct {
++			__u8 ect;
++		} tcp;
++	} proto;
++};
++
++#endif /* _XT_ECN_H */
+diff --git a/include/linux/netfilter/xt_esp.h b/include/linux/netfilter/xt_esp.h
+new file mode 100755
+index 00000000..ee688240
+--- /dev/null
++++ b/include/linux/netfilter/xt_esp.h
+@@ -0,0 +1,15 @@
++#ifndef _XT_ESP_H
++#define _XT_ESP_H
++
++#include <linux/types.h>
++
++struct xt_esp {
++	__u32 spis[2];	/* Security Parameter Index */
++	__u8  invflags;	/* Inverse flags */
++};
++
++/* Values for "invflags" field in struct xt_esp. */
++#define XT_ESP_INV_SPI	0x01	/* Invert the sense of spi. */
++#define XT_ESP_INV_MASK	0x01	/* All possible flags. */
++
++#endif /*_XT_ESP_H*/
+diff --git a/include/linux/netfilter/xt_helper.h b/include/linux/netfilter/xt_helper.h
+new file mode 100755
+index 00000000..6b42763f
+--- /dev/null
++++ b/include/linux/netfilter/xt_helper.h
+@@ -0,0 +1,8 @@
++#ifndef _XT_HELPER_H
++#define _XT_HELPER_H
++
++struct xt_helper_info {
++	int invert;
++	char name[30];
++};
++#endif /* _XT_HELPER_H */
+diff --git a/include/linux/netfilter/xt_iprange.h b/include/linux/netfilter/xt_iprange.h
+new file mode 100755
+index 00000000..c1f21a77
+--- /dev/null
++++ b/include/linux/netfilter/xt_iprange.h
+@@ -0,0 +1,19 @@
++#ifndef _LINUX_NETFILTER_XT_IPRANGE_H
++#define _LINUX_NETFILTER_XT_IPRANGE_H 1
++
++#include <linux/types.h>
++
++enum {
++	IPRANGE_SRC     = 1 << 0,	/* match source IP address */
++	IPRANGE_DST     = 1 << 1,	/* match destination IP address */
++	IPRANGE_SRC_INV = 1 << 4,	/* negate the condition */
++	IPRANGE_DST_INV = 1 << 5,	/* -"- */
++};
++
++struct xt_iprange_mtinfo {
++	union nf_inet_addr src_min, src_max;
++	union nf_inet_addr dst_min, dst_max;
++	__u8 flags;
++};
++
++#endif /* _LINUX_NETFILTER_XT_IPRANGE_H */
+diff --git a/include/linux/netfilter/xt_ipvs.h b/include/linux/netfilter/xt_ipvs.h
+new file mode 100755
+index 00000000..eff34ac1
+--- /dev/null
++++ b/include/linux/netfilter/xt_ipvs.h
+@@ -0,0 +1,29 @@
++#ifndef _XT_IPVS_H
++#define _XT_IPVS_H
++
++#include <linux/types.h>
++
++enum {
++	XT_IPVS_IPVS_PROPERTY =	1 << 0, /* all other options imply this one */
++	XT_IPVS_PROTO =		1 << 1,
++	XT_IPVS_VADDR =		1 << 2,
++	XT_IPVS_VPORT =		1 << 3,
++	XT_IPVS_DIR =		1 << 4,
++	XT_IPVS_METHOD =	1 << 5,
++	XT_IPVS_VPORTCTL =	1 << 6,
++	XT_IPVS_MASK =		(1 << 7) - 1,
++	XT_IPVS_ONCE_MASK =	XT_IPVS_MASK & ~XT_IPVS_IPVS_PROPERTY
++};
++
++struct xt_ipvs_mtinfo {
++	union nf_inet_addr	vaddr, vmask;
++	__be16			vport;
++	__u8			l4proto;
++	__u8			fwd_method;
++	__be16			vportctl;
++
++	__u8			invert;
++	__u8			bitmask;
++};
++
++#endif /* _XT_IPVS_H */
+diff --git a/include/linux/netfilter/xt_length.h b/include/linux/netfilter/xt_length.h
+new file mode 100755
+index 00000000..b82ed7c4
+--- /dev/null
++++ b/include/linux/netfilter/xt_length.h
+@@ -0,0 +1,11 @@
++#ifndef _XT_LENGTH_H
++#define _XT_LENGTH_H
++
++#include <linux/types.h>
++
++struct xt_length_info {
++    __u16	min, max;
++    __u8	invert;
++};
++
++#endif /*_XT_LENGTH_H*/
+diff --git a/include/linux/netfilter/xt_limit.h b/include/linux/netfilter/xt_limit.h
+new file mode 100755
+index 00000000..bb47fc4d
+--- /dev/null
++++ b/include/linux/netfilter/xt_limit.h
+@@ -0,0 +1,24 @@
++#ifndef _XT_RATE_H
++#define _XT_RATE_H
++
++#include <linux/types.h>
++
++/* timings are in milliseconds. */
++#define XT_LIMIT_SCALE 10000
++
++struct xt_limit_priv;
++
++/* 1/10,000 sec period => max of 10,000/sec.  Min rate is then 429490
++   seconds, or one every 59 hours. */
++struct xt_rateinfo {
++	__u32 avg;    /* Average secs between packets * scale */
++	__u32 burst;  /* Period multiplier for upper limit. */
++
++	/* Used internally by the kernel */
++	unsigned long prev; /* moved to xt_limit_priv */
++	__u32 credit; /* moved to xt_limit_priv */
++	__u32 credit_cap, cost;
++
++	struct xt_limit_priv *master;
++};
++#endif /*_XT_RATE_H*/
+diff --git a/include/linux/netfilter/xt_mac.h b/include/linux/netfilter/xt_mac.h
+new file mode 100755
+index 00000000..b892cdc6
+--- /dev/null
++++ b/include/linux/netfilter/xt_mac.h
+@@ -0,0 +1,8 @@
++#ifndef _XT_MAC_H
++#define _XT_MAC_H
++
++struct xt_mac_info {
++    unsigned char srcaddr[ETH_ALEN];
++    int invert;
++};
++#endif /*_XT_MAC_H*/
+diff --git a/include/linux/netfilter/xt_mark.h b/include/linux/netfilter/xt_mark.h
+new file mode 100755
+index 00000000..ecadc40d
+--- /dev/null
++++ b/include/linux/netfilter/xt_mark.h
+@@ -0,0 +1,15 @@
++#ifndef _XT_MARK_H
++#define _XT_MARK_H
++
++#include <linux/types.h>
++
++struct xt_mark_tginfo2 {
++	__u32 mark, mask;
++};
++
++struct xt_mark_mtinfo1 {
++	__u32 mark, mask;
++	__u8 invert;
++};
++
++#endif /*_XT_MARK_H*/
+diff --git a/include/linux/netfilter/xt_multiport.h b/include/linux/netfilter/xt_multiport.h
+new file mode 100755
+index 00000000..5b7e72df
+--- /dev/null
++++ b/include/linux/netfilter/xt_multiport.h
+@@ -0,0 +1,29 @@
++#ifndef _XT_MULTIPORT_H
++#define _XT_MULTIPORT_H
++
++#include <linux/types.h>
++
++enum xt_multiport_flags {
++	XT_MULTIPORT_SOURCE,
++	XT_MULTIPORT_DESTINATION,
++	XT_MULTIPORT_EITHER
++};
++
++#define XT_MULTI_PORTS	15
++
++/* Must fit inside union xt_matchinfo: 16 bytes */
++struct xt_multiport {
++	__u8 flags;				/* Type of comparison */
++	__u8 count;				/* Number of ports */
++	__u16 ports[XT_MULTI_PORTS];	/* Ports */
++};
++
++struct xt_multiport_v1 {
++	__u8 flags;				/* Type of comparison */
++	__u8 count;				/* Number of ports */
++	__u16 ports[XT_MULTI_PORTS];	/* Ports */
++	__u8 pflags[XT_MULTI_PORTS];	/* Port flags */
++	__u8 invert;			/* Invert flag */
++};
++
++#endif /*_XT_MULTIPORT_H*/
+diff --git a/include/linux/netfilter/xt_nfacct.h b/include/linux/netfilter/xt_nfacct.h
+new file mode 100755
+index 00000000..59ab00dd
+--- /dev/null
++++ b/include/linux/netfilter/xt_nfacct.h
+@@ -0,0 +1,17 @@
++#ifndef _XT_NFACCT_MATCH_H
++#define _XT_NFACCT_MATCH_H
++
++#include <linux/types.h>
++
++#ifndef NFACCT_NAME_MAX
++#define NFACCT_NAME_MAX 32
++#endif
++
++struct nf_acct;
++
++struct xt_nfacct_match_info {
++	char		name[NFACCT_NAME_MAX];
++	struct nf_acct	*nfacct;
++};
++
++#endif /* _XT_NFACCT_MATCH_H */
+diff --git a/include/linux/netfilter/xt_osf.h b/include/linux/netfilter/xt_osf.h
+new file mode 100755
+index 00000000..18afa495
+--- /dev/null
++++ b/include/linux/netfilter/xt_osf.h
+@@ -0,0 +1,135 @@
++/*
++ * Copyright (c) 2003+ Evgeniy Polyakov <johnpol@2ka.mxt.ru>
++ *
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++
++#ifndef _XT_OSF_H
++#define _XT_OSF_H
++
++#include <linux/types.h>
++
++#define MAXGENRELEN		32
++
++#define XT_OSF_GENRE		(1<<0)
++#define	XT_OSF_TTL		(1<<1)
++#define XT_OSF_LOG		(1<<2)
++#define XT_OSF_INVERT		(1<<3)
++
++#define XT_OSF_LOGLEVEL_ALL	0	/* log all matched fingerprints */
++#define XT_OSF_LOGLEVEL_FIRST	1	/* log only the first matced fingerprint */
++#define XT_OSF_LOGLEVEL_ALL_KNOWN	2 /* do not log unknown packets */
++
++#define XT_OSF_TTL_TRUE		0	/* True ip and fingerprint TTL comparison */
++#define XT_OSF_TTL_LESS		1	/* Check if ip TTL is less than fingerprint one */
++#define XT_OSF_TTL_NOCHECK	2	/* Do not compare ip and fingerprint TTL at all */
++
++struct xt_osf_info {
++	char			genre[MAXGENRELEN];
++	__u32			len;
++	__u32			flags;
++	__u32			loglevel;
++	__u32			ttl;
++};
++
++/*
++ * Wildcard MSS (kind of).
++ * It is used to implement a state machine for the different wildcard values
++ * of the MSS and window sizes.
++ */
++struct xt_osf_wc {
++	__u32			wc;
++	__u32			val;
++};
++
++/*
++ * This struct represents IANA options
++ * http://www.iana.org/assignments/tcp-parameters
++ */
++struct xt_osf_opt {
++	__u16			kind, length;
++	struct xt_osf_wc	wc;
++};
++
++struct xt_osf_user_finger {
++	struct xt_osf_wc	wss;
++
++	__u8			ttl, df;
++	__u16			ss, mss;
++	__u16			opt_num;
++
++	char			genre[MAXGENRELEN];
++	char			version[MAXGENRELEN];
++	char			subtype[MAXGENRELEN];
++
++	/* MAX_IPOPTLEN is maximum if all options are NOPs or EOLs */
++	struct xt_osf_opt	opt[MAX_IPOPTLEN];
++};
++
++struct xt_osf_nlmsg {
++	struct xt_osf_user_finger	f;
++	struct iphdr		ip;
++	struct tcphdr		tcp;
++};
++
++/* Defines for IANA option kinds */
++
++enum iana_options {
++	OSFOPT_EOL = 0,		/* End of options */
++	OSFOPT_NOP, 		/* NOP */
++	OSFOPT_MSS, 		/* Maximum segment size */
++	OSFOPT_WSO, 		/* Window scale option */
++	OSFOPT_SACKP,		/* SACK permitted */
++	OSFOPT_SACK,		/* SACK */
++	OSFOPT_ECHO,
++	OSFOPT_ECHOREPLY,
++	OSFOPT_TS,		/* Timestamp option */
++	OSFOPT_POCP,		/* Partial Order Connection Permitted */
++	OSFOPT_POSP,		/* Partial Order Service Profile */
++
++	/* Others are not used in the current OSF */
++	OSFOPT_EMPTY = 255,
++};
++
++/*
++ * Initial window size option state machine: multiple of mss, mtu or
++ * plain numeric value. Can also be made as plain numeric value which
++ * is not a multiple of specified value.
++ */
++enum xt_osf_window_size_options {
++	OSF_WSS_PLAIN	= 0,
++	OSF_WSS_MSS,
++	OSF_WSS_MTU,
++	OSF_WSS_MODULO,
++	OSF_WSS_MAX,
++};
++
++/*
++ * Add/remove fingerprint from the kernel.
++ */
++enum xt_osf_msg_types {
++	OSF_MSG_ADD,
++	OSF_MSG_REMOVE,
++	OSF_MSG_MAX,
++};
++
++enum xt_osf_attr_type {
++	OSF_ATTR_UNSPEC,
++	OSF_ATTR_FINGER,
++	OSF_ATTR_MAX,
++};
++
++#endif				/* _XT_OSF_H */
+diff --git a/include/linux/netfilter/xt_owner.h b/include/linux/netfilter/xt_owner.h
+new file mode 100755
+index 00000000..20817617
+--- /dev/null
++++ b/include/linux/netfilter/xt_owner.h
+@@ -0,0 +1,18 @@
++#ifndef _XT_OWNER_MATCH_H
++#define _XT_OWNER_MATCH_H
++
++#include <linux/types.h>
++
++enum {
++	XT_OWNER_UID    = 1 << 0,
++	XT_OWNER_GID    = 1 << 1,
++	XT_OWNER_SOCKET = 1 << 2,
++};
++
++struct xt_owner_match_info {
++	__u32 uid_min, uid_max;
++	__u32 gid_min, gid_max;
++	__u8 match, invert;
++};
++
++#endif /* _XT_OWNER_MATCH_H */
+diff --git a/include/linux/netfilter/xt_pkttype.h b/include/linux/netfilter/xt_pkttype.h
+new file mode 100755
+index 00000000..f265cf52
+--- /dev/null
++++ b/include/linux/netfilter/xt_pkttype.h
+@@ -0,0 +1,8 @@
++#ifndef _XT_PKTTYPE_H
++#define _XT_PKTTYPE_H
++
++struct xt_pkttype_info {
++	int	pkttype;
++	int	invert;
++};
++#endif /*_XT_PKTTYPE_H*/
+diff --git a/include/linux/netfilter/xt_policy.h b/include/linux/netfilter/xt_policy.h
+new file mode 100755
+index 00000000..d246eac8
+--- /dev/null
++++ b/include/linux/netfilter/xt_policy.h
+@@ -0,0 +1,58 @@
++#ifndef _XT_POLICY_H
++#define _XT_POLICY_H
++
++#include <linux/types.h>
++
++#define XT_POLICY_MAX_ELEM	4
++
++enum xt_policy_flags {
++	XT_POLICY_MATCH_IN	= 0x1,
++	XT_POLICY_MATCH_OUT	= 0x2,
++	XT_POLICY_MATCH_NONE	= 0x4,
++	XT_POLICY_MATCH_STRICT	= 0x8,
++};
++
++enum xt_policy_modes {
++	XT_POLICY_MODE_TRANSPORT,
++	XT_POLICY_MODE_TUNNEL
++};
++
++struct xt_policy_spec {
++	__u8	saddr:1,
++			daddr:1,
++			proto:1,
++			mode:1,
++			spi:1,
++			reqid:1;
++};
++
++union xt_policy_addr {
++	struct in_addr	a4;
++	struct in6_addr	a6;
++};
++
++struct xt_policy_elem {
++	union {
++		struct {
++			union xt_policy_addr saddr;
++			union xt_policy_addr smask;
++			union xt_policy_addr daddr;
++			union xt_policy_addr dmask;
++		};
++	};
++	__be32			spi;
++	__u32		reqid;
++	__u8		proto;
++	__u8		mode;
++
++	struct xt_policy_spec	match;
++	struct xt_policy_spec	invert;
++};
++
++struct xt_policy_info {
++	struct xt_policy_elem pol[XT_POLICY_MAX_ELEM];
++	__u16 flags;
++	__u16 len;
++};
++
++#endif /* _XT_POLICY_H */
+diff --git a/include/linux/netfilter/xt_quota.h b/include/linux/netfilter/xt_quota.h
+new file mode 100755
+index 00000000..9314723f
+--- /dev/null
++++ b/include/linux/netfilter/xt_quota.h
+@@ -0,0 +1,22 @@
++#ifndef _XT_QUOTA_H
++#define _XT_QUOTA_H
++
++#include <linux/types.h>
++
++enum xt_quota_flags {
++	XT_QUOTA_INVERT		= 0x1,
++};
++#define XT_QUOTA_MASK		0x1
++
++struct xt_quota_priv;
++
++struct xt_quota_info {
++	__u32 flags;
++	__u32 pad;
++	__aligned_u64 quota;
++
++	/* Used internally by the kernel */
++	struct xt_quota_priv	*master;
++};
++
++#endif /* _XT_QUOTA_H */
+diff --git a/include/linux/netfilter/xt_realm.h b/include/linux/netfilter/xt_realm.h
+new file mode 100755
+index 00000000..d4a82ee5
+--- /dev/null
++++ b/include/linux/netfilter/xt_realm.h
+@@ -0,0 +1,12 @@
++#ifndef _XT_REALM_H
++#define _XT_REALM_H
++
++#include <linux/types.h>
++
++struct xt_realm_info {
++	__u32 id;
++	__u32 mask;
++	__u8 invert;
++};
++
++#endif /* _XT_REALM_H */
+diff --git a/include/linux/netfilter/xt_recent.h b/include/linux/netfilter/xt_recent.h
+new file mode 100755
+index 00000000..6ef36c11
+--- /dev/null
++++ b/include/linux/netfilter/xt_recent.h
+@@ -0,0 +1,45 @@
++#ifndef _LINUX_NETFILTER_XT_RECENT_H
++#define _LINUX_NETFILTER_XT_RECENT_H 1
++
++#include <linux/types.h>
++
++enum {
++	XT_RECENT_CHECK    = 1 << 0,
++	XT_RECENT_SET      = 1 << 1,
++	XT_RECENT_UPDATE   = 1 << 2,
++	XT_RECENT_REMOVE   = 1 << 3,
++	XT_RECENT_TTL      = 1 << 4,
++	XT_RECENT_REAP     = 1 << 5,
++
++	XT_RECENT_SOURCE   = 0,
++	XT_RECENT_DEST     = 1,
++
++	XT_RECENT_NAME_LEN = 200,
++};
++
++/* Only allowed with --rcheck and --update */
++#define XT_RECENT_MODIFIERS (XT_RECENT_TTL|XT_RECENT_REAP)
++
++#define XT_RECENT_VALID_FLAGS (XT_RECENT_CHECK|XT_RECENT_SET|XT_RECENT_UPDATE|\
++			       XT_RECENT_REMOVE|XT_RECENT_TTL|XT_RECENT_REAP)
++
++struct xt_recent_mtinfo {
++	__u32 seconds;
++	__u32 hit_count;
++	__u8 check_set;
++	__u8 invert;
++	char name[XT_RECENT_NAME_LEN];
++	__u8 side;
++};
++
++struct xt_recent_mtinfo_v1 {
++	__u32 seconds;
++	__u32 hit_count;
++	__u8 check_set;
++	__u8 invert;
++	char name[XT_RECENT_NAME_LEN];
++	__u8 side;
++	union nf_inet_addr mask;
++};
++
++#endif /* _LINUX_NETFILTER_XT_RECENT_H */
+diff --git a/include/linux/netfilter/xt_sctp.h b/include/linux/netfilter/xt_sctp.h
+new file mode 100755
+index 00000000..a501e619
+--- /dev/null
++++ b/include/linux/netfilter/xt_sctp.h
+@@ -0,0 +1,92 @@
++#ifndef _XT_SCTP_H_
++#define _XT_SCTP_H_
++
++#include <linux/types.h>
++
++#define XT_SCTP_SRC_PORTS	        0x01
++#define XT_SCTP_DEST_PORTS	        0x02
++#define XT_SCTP_CHUNK_TYPES		0x04
++
++#define XT_SCTP_VALID_FLAGS		0x07
++
++struct xt_sctp_flag_info {
++	__u8 chunktype;
++	__u8 flag;
++	__u8 flag_mask;
++};
++
++#define XT_NUM_SCTP_FLAGS	4
++
++struct xt_sctp_info {
++	__u16 dpts[2];  /* Min, Max */
++	__u16 spts[2];  /* Min, Max */
++
++	__u32 chunkmap[256 / sizeof (__u32)];  /* Bit mask of chunks to be matched according to RFC 2960 */
++
++#define SCTP_CHUNK_MATCH_ANY   0x01  /* Match if any of the chunk types are present */
++#define SCTP_CHUNK_MATCH_ALL   0x02  /* Match if all of the chunk types are present */
++#define SCTP_CHUNK_MATCH_ONLY  0x04  /* Match if these are the only chunk types present */
++
++	__u32 chunk_match_type;
++	struct xt_sctp_flag_info flag_info[XT_NUM_SCTP_FLAGS];
++	int flag_count;
++
++	__u32 flags;
++	__u32 invflags;
++};
++
++#define bytes(type) (sizeof(type) * 8)
++
++#define SCTP_CHUNKMAP_SET(chunkmap, type) 		\
++	do { 						\
++		(chunkmap)[type / bytes(__u32)] |= 	\
++			1 << (type % bytes(__u32));	\
++	} while (0)
++
++#define SCTP_CHUNKMAP_CLEAR(chunkmap, type)		 	\
++	do {							\
++		(chunkmap)[type / bytes(__u32)] &= 		\
++			~(1 << (type % bytes(__u32)));	\
++	} while (0)
++
++#define SCTP_CHUNKMAP_IS_SET(chunkmap, type) 			\
++({								\
++	((chunkmap)[type / bytes (__u32)] & 		\
++		(1 << (type % bytes (__u32)))) ? 1: 0;	\
++})
++
++#define SCTP_CHUNKMAP_RESET(chunkmap) \
++	memset((chunkmap), 0, sizeof(chunkmap))
++
++#define SCTP_CHUNKMAP_SET_ALL(chunkmap) \
++	memset((chunkmap), ~0U, sizeof(chunkmap))
++
++#define SCTP_CHUNKMAP_COPY(destmap, srcmap) \
++	memcpy((destmap), (srcmap), sizeof(srcmap))
++
++#define SCTP_CHUNKMAP_IS_CLEAR(chunkmap) \
++	__sctp_chunkmap_is_clear((chunkmap), ARRAY_SIZE(chunkmap))
++static __inline__ bool
++__sctp_chunkmap_is_clear(const __u32 *chunkmap, unsigned int n)
++{
++	unsigned int i;
++	for (i = 0; i < n; ++i)
++		if (chunkmap[i])
++			return false;
++	return true;
++}
++
++#define SCTP_CHUNKMAP_IS_ALL_SET(chunkmap) \
++	__sctp_chunkmap_is_all_set((chunkmap), ARRAY_SIZE(chunkmap))
++static __inline__ bool
++__sctp_chunkmap_is_all_set(const __u32 *chunkmap, unsigned int n)
++{
++	unsigned int i;
++	for (i = 0; i < n; ++i)
++		if (chunkmap[i] != ~0U)
++			return false;
++	return true;
++}
++
++#endif /* _XT_SCTP_H_ */
++
+diff --git a/include/linux/netfilter/xt_set.h b/include/linux/netfilter/xt_set.h
+new file mode 100755
+index 00000000..964d3d42
+--- /dev/null
++++ b/include/linux/netfilter/xt_set.h
+@@ -0,0 +1,74 @@
++#ifndef _XT_SET_H
++#define _XT_SET_H
++
++#include <linux/types.h>
++#include <linux/netfilter/ipset/ip_set.h>
++
++/* Revision 0 interface: backward compatible with netfilter/iptables */
++
++/*
++ * Option flags for kernel operations (xt_set_info_v0)
++ */
++#define IPSET_SRC		0x01	/* Source match/add */
++#define IPSET_DST		0x02	/* Destination match/add */
++#define IPSET_MATCH_INV		0x04	/* Inverse matching */
++
++struct xt_set_info_v0 {
++	ip_set_id_t index;
++	union {
++		__u32 flags[IPSET_DIM_MAX + 1];
++		struct {
++			__u32 __flags[IPSET_DIM_MAX];
++			__u8 dim;
++			__u8 flags;
++		} compat;
++	} u;
++};
++
++/* match and target infos */
++struct xt_set_info_match_v0 {
++	struct xt_set_info_v0 match_set;
++};
++
++struct xt_set_info_target_v0 {
++	struct xt_set_info_v0 add_set;
++	struct xt_set_info_v0 del_set;
++};
++
++/* Revision 1  match and target */
++
++struct xt_set_info {
++	ip_set_id_t index;
++	__u8 dim;
++	__u8 flags;
++};
++
++/* match and target infos */
++struct xt_set_info_match_v1 {
++	struct xt_set_info match_set;
++};
++
++struct xt_set_info_target_v1 {
++	struct xt_set_info add_set;
++	struct xt_set_info del_set;
++};
++
++/* Revision 2 target */
++
++struct xt_set_info_target_v2 {
++	struct xt_set_info add_set;
++	struct xt_set_info del_set;
++	__u32 flags;
++	__u32 timeout;
++};
++
++/* Revision 3 match */
++
++struct xt_set_info_match_v3 {
++	struct xt_set_info match_set;
++	struct ip_set_counter_match packets;
++	struct ip_set_counter_match bytes;
++	__u32 flags;
++};
++
++#endif /*_XT_SET_H*/
+diff --git a/include/linux/netfilter/xt_socket.h b/include/linux/netfilter/xt_socket.h
+new file mode 100755
+index 00000000..26d7217b
+--- /dev/null
++++ b/include/linux/netfilter/xt_socket.h
+@@ -0,0 +1,14 @@
++#ifndef _XT_SOCKET_H
++#define _XT_SOCKET_H
++
++#include <linux/types.h>
++
++enum {
++	XT_SOCKET_TRANSPARENT = 1 << 0,
++};
++
++struct xt_socket_mtinfo1 {
++	__u8 flags;
++};
++
++#endif /* _XT_SOCKET_H */
+diff --git a/include/linux/netfilter/xt_state.h b/include/linux/netfilter/xt_state.h
+new file mode 100755
+index 00000000..7b32de88
+--- /dev/null
++++ b/include/linux/netfilter/xt_state.h
+@@ -0,0 +1,12 @@
++#ifndef _XT_STATE_H
++#define _XT_STATE_H
++
++#define XT_STATE_BIT(ctinfo) (1 << ((ctinfo)%IP_CT_IS_REPLY+1))
++#define XT_STATE_INVALID (1 << 0)
++
++#define XT_STATE_UNTRACKED (1 << (IP_CT_NUMBER + 1))
++
++struct xt_state_info {
++	unsigned int statemask;
++};
++#endif /*_XT_STATE_H*/
+diff --git a/include/linux/netfilter/xt_statistic.h b/include/linux/netfilter/xt_statistic.h
+new file mode 100755
+index 00000000..4e983ef0
+--- /dev/null
++++ b/include/linux/netfilter/xt_statistic.h
+@@ -0,0 +1,36 @@
++#ifndef _XT_STATISTIC_H
++#define _XT_STATISTIC_H
++
++#include <linux/types.h>
++
++enum xt_statistic_mode {
++	XT_STATISTIC_MODE_RANDOM,
++	XT_STATISTIC_MODE_NTH,
++	__XT_STATISTIC_MODE_MAX
++};
++#define XT_STATISTIC_MODE_MAX (__XT_STATISTIC_MODE_MAX - 1)
++
++enum xt_statistic_flags {
++	XT_STATISTIC_INVERT		= 0x1,
++};
++#define XT_STATISTIC_MASK		0x1
++
++struct xt_statistic_priv;
++
++struct xt_statistic_info {
++	__u16			mode;
++	__u16			flags;
++	union {
++		struct {
++			__u32	probability;
++		} random;
++		struct {
++			__u32	every;
++			__u32	packet;
++			__u32	count; /* unused */
++		} nth;
++	} u;
++	struct xt_statistic_priv *master __attribute__((aligned(8)));
++};
++
++#endif /* _XT_STATISTIC_H */
+diff --git a/include/linux/netfilter/xt_string.h b/include/linux/netfilter/xt_string.h
+new file mode 100755
+index 00000000..235347c0
+--- /dev/null
++++ b/include/linux/netfilter/xt_string.h
+@@ -0,0 +1,34 @@
++#ifndef _XT_STRING_H
++#define _XT_STRING_H
++
++#include <linux/types.h>
++
++#define XT_STRING_MAX_PATTERN_SIZE 128
++#define XT_STRING_MAX_ALGO_NAME_SIZE 16
++
++enum {
++	XT_STRING_FLAG_INVERT		= 0x01,
++	XT_STRING_FLAG_IGNORECASE	= 0x02
++};
++
++struct xt_string_info {
++	__u16 from_offset;
++	__u16 to_offset;
++	char	  algo[XT_STRING_MAX_ALGO_NAME_SIZE];
++	char 	  pattern[XT_STRING_MAX_PATTERN_SIZE];
++	__u8  patlen;
++	union {
++		struct {
++			__u8  invert;
++		} v0;
++
++		struct {
++			__u8  flags;
++		} v1;
++	} u;
++
++	/* Used internally by the kernel */
++	struct ts_config __attribute__((aligned(8))) *config;
++};
++
++#endif /*_XT_STRING_H*/
+diff --git a/include/linux/netfilter/xt_tcpudp.h b/include/linux/netfilter/xt_tcpudp.h
+new file mode 100755
+index 00000000..38aa7b39
+--- /dev/null
++++ b/include/linux/netfilter/xt_tcpudp.h
+@@ -0,0 +1,36 @@
++#ifndef _XT_TCPUDP_H
++#define _XT_TCPUDP_H
++
++#include <linux/types.h>
++
++/* TCP matching stuff */
++struct xt_tcp {
++	__u16 spts[2];			/* Source port range. */
++	__u16 dpts[2];			/* Destination port range. */
++	__u8 option;			/* TCP Option iff non-zero*/
++	__u8 flg_mask;			/* TCP flags mask byte */
++	__u8 flg_cmp;			/* TCP flags compare byte */
++	__u8 invflags;			/* Inverse flags */
++};
++
++/* Values for "inv" field in struct ipt_tcp. */
++#define XT_TCP_INV_SRCPT	0x01	/* Invert the sense of source ports. */
++#define XT_TCP_INV_DSTPT	0x02	/* Invert the sense of dest ports. */
++#define XT_TCP_INV_FLAGS	0x04	/* Invert the sense of TCP flags. */
++#define XT_TCP_INV_OPTION	0x08	/* Invert the sense of option test. */
++#define XT_TCP_INV_MASK		0x0F	/* All possible flags. */
++
++/* UDP matching stuff */
++struct xt_udp {
++	__u16 spts[2];			/* Source port range. */
++	__u16 dpts[2];			/* Destination port range. */
++	__u8 invflags;			/* Inverse flags */
++};
++
++/* Values for "invflags" field in struct ipt_udp. */
++#define XT_UDP_INV_SRCPT	0x01	/* Invert the sense of source ports. */
++#define XT_UDP_INV_DSTPT	0x02	/* Invert the sense of dest ports. */
++#define XT_UDP_INV_MASK	0x03	/* All possible flags. */
++
++
++#endif
+diff --git a/include/linux/netfilter/xt_time.h b/include/linux/netfilter/xt_time.h
+new file mode 100755
+index 00000000..0b866d00
+--- /dev/null
++++ b/include/linux/netfilter/xt_time.h
+@@ -0,0 +1,30 @@
++#ifndef _XT_TIME_H
++#define _XT_TIME_H 1
++
++#include <linux/types.h>
++
++struct xt_time_info {
++	__u32 date_start;
++	__u32 date_stop;
++	__u32 daytime_start;
++	__u32 daytime_stop;
++	__u32 monthdays_match;
++	__u8 weekdays_match;
++	__u8 flags;
++};
++
++enum {
++	/* Match against local time (instead of UTC) */
++	XT_TIME_LOCAL_TZ = 1 << 0,
++	XT_TIME_CONTIGUOUS = 1 << 1,
++
++	/* Shortcuts */
++	XT_TIME_ALL_MONTHDAYS = 0xFFFFFFFE,
++	XT_TIME_ALL_WEEKDAYS  = 0xFE,
++	XT_TIME_MIN_DAYTIME   = 0,
++	XT_TIME_MAX_DAYTIME   = 24 * 60 * 60 - 1,
++};
++
++#define XT_TIME_ALL_FLAGS (XT_TIME_LOCAL_TZ|XT_TIME_CONTIGUOUS)
++
++#endif /* _XT_TIME_H */
+diff --git a/include/linux/netfilter/xt_u32.h b/include/linux/netfilter/xt_u32.h
+new file mode 100755
+index 00000000..04d1bfea
+--- /dev/null
++++ b/include/linux/netfilter/xt_u32.h
+@@ -0,0 +1,42 @@
++#ifndef _XT_U32_H
++#define _XT_U32_H 1
++
++#include <linux/types.h>
++
++enum xt_u32_ops {
++	XT_U32_AND,
++	XT_U32_LEFTSH,
++	XT_U32_RIGHTSH,
++	XT_U32_AT,
++};
++
++struct xt_u32_location_element {
++	__u32 number;
++	__u8 nextop;
++};
++
++struct xt_u32_value_element {
++	__u32 min;
++	__u32 max;
++};
++
++/*
++ * Any way to allow for an arbitrary number of elements?
++ * For now, I settle with a limit of 10 each.
++ */
++#define XT_U32_MAXSIZE 10
++
++struct xt_u32_test {
++	struct xt_u32_location_element location[XT_U32_MAXSIZE+1];
++	struct xt_u32_value_element value[XT_U32_MAXSIZE+1];
++	__u8 nnums;
++	__u8 nvalues;
++};
++
++struct xt_u32 {
++	struct xt_u32_test tests[XT_U32_MAXSIZE+1];
++	__u8 ntests;
++	__u8 invert;
++};
++
++#endif /* _XT_U32_H */
+diff --git a/include/linux/netfilter_ipv4/ip_queue.h b/include/linux/netfilter_ipv4/ip_queue.h
+new file mode 100755
+index 00000000..a03507f4
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ip_queue.h
+@@ -0,0 +1,72 @@
++/*
++ * This is a module which is used for queueing IPv4 packets and
++ * communicating with userspace via netlink.
++ *
++ * (C) 2000 James Morris, this code is GPL.
++ */
++#ifndef _IP_QUEUE_H
++#define _IP_QUEUE_H
++
++#ifdef __KERNEL__
++#ifdef DEBUG_IPQ
++#define QDEBUG(x...) printk(KERN_DEBUG ## x)
++#else
++#define QDEBUG(x...)
++#endif  /* DEBUG_IPQ */
++#else
++#include <net/if.h>
++#endif	/* ! __KERNEL__ */
++
++/* Messages sent from kernel */
++typedef struct ipq_packet_msg {
++	unsigned long packet_id;	/* ID of queued packet */
++	unsigned long mark;		/* Netfilter mark value */
++	long timestamp_sec;		/* Packet arrival time (seconds) */
++	long timestamp_usec;		/* Packet arrvial time (+useconds) */
++	unsigned int hook;		/* Netfilter hook we rode in on */
++	char indev_name[IFNAMSIZ];	/* Name of incoming interface */
++	char outdev_name[IFNAMSIZ];	/* Name of outgoing interface */
++	__be16 hw_protocol;		/* Hardware protocol (network order) */
++	unsigned short hw_type;		/* Hardware type */
++	unsigned char hw_addrlen;	/* Hardware address length */
++	unsigned char hw_addr[8];	/* Hardware address */
++	size_t data_len;		/* Length of packet data */
++	unsigned char payload[0];	/* Optional packet data */
++} ipq_packet_msg_t;
++
++/* Messages sent from userspace */
++typedef struct ipq_mode_msg {
++	unsigned char value;		/* Requested mode */
++	size_t range;			/* Optional range of packet requested */
++} ipq_mode_msg_t;
++
++typedef struct ipq_verdict_msg {
++	unsigned int value;		/* Verdict to hand to netfilter */
++	unsigned long id;		/* Packet ID for this verdict */
++	size_t data_len;		/* Length of replacement data */
++	unsigned char payload[0];	/* Optional replacement packet */
++} ipq_verdict_msg_t;
++
++typedef struct ipq_peer_msg {
++	union {
++		ipq_verdict_msg_t verdict;
++		ipq_mode_msg_t mode;
++	} msg;
++} ipq_peer_msg_t;
++
++/* Packet delivery modes */
++enum {
++	IPQ_COPY_NONE,		/* Initial mode, packets are dropped */
++	IPQ_COPY_META,		/* Copy metadata */
++	IPQ_COPY_PACKET		/* Copy metadata + packet (range) */
++};
++#define IPQ_COPY_MAX IPQ_COPY_PACKET
++
++/* Types of messages */
++#define IPQM_BASE	0x10	/* standard netlink messages below this */
++#define IPQM_MODE	(IPQM_BASE + 1)		/* Mode request from peer */
++#define IPQM_VERDICT	(IPQM_BASE + 2)		/* Verdict from peer */ 
++#define IPQM_PACKET	(IPQM_BASE + 3)		/* Packet from kernel */
++#define IPQM_MAX	(IPQM_BASE + 4)
++
++#endif /*_IP_QUEUE_H*/
+diff --git a/include/linux/netfilter_ipv4/ipt_CLUSTERIP.h b/include/linux/netfilter_ipv4/ipt_CLUSTERIP.h
+new file mode 100755
+index 00000000..c6a204c9
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_CLUSTERIP.h
+@@ -0,0 +1,36 @@
++#ifndef _IPT_CLUSTERIP_H_target
++#define _IPT_CLUSTERIP_H_target
++
++#include <linux/types.h>
++
++enum clusterip_hashmode {
++    CLUSTERIP_HASHMODE_SIP = 0,
++    CLUSTERIP_HASHMODE_SIP_SPT,
++    CLUSTERIP_HASHMODE_SIP_SPT_DPT,
++};
++
++#define CLUSTERIP_HASHMODE_MAX CLUSTERIP_HASHMODE_SIP_SPT_DPT
++
++#define CLUSTERIP_MAX_NODES 16
++
++#define CLUSTERIP_FLAG_NEW 0x00000001
++
++struct clusterip_config;
++
++struct ipt_clusterip_tgt_info {
++
++	__u32 flags;
++
++	/* only relevant for new ones */
++	__u8 clustermac[6];
++	__u16 num_total_nodes;
++	__u16 num_local_nodes;
++	__u16 local_nodes[CLUSTERIP_MAX_NODES];
++	__u32 hash_mode;
++	__u32 hash_initval;
++
++	/* Used internally by the kernel */
++	struct clusterip_config *config;
++};
++
++#endif /*_IPT_CLUSTERIP_H_target*/
+diff --git a/include/linux/netfilter_ipv4/ipt_ECN.h b/include/linux/netfilter_ipv4/ipt_ECN.h
+new file mode 100755
+index 00000000..bb88d531
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_ECN.h
+@@ -0,0 +1,33 @@
++/* Header file for iptables ipt_ECN target
++ *
++ * (C) 2002 by Harald Welte <laforge@gnumonks.org>
++ *
++ * This software is distributed under GNU GPL v2, 1991
++ * 
++ * ipt_ECN.h,v 1.3 2002/05/29 12:17:40 laforge Exp
++*/
++#ifndef _IPT_ECN_TARGET_H
++#define _IPT_ECN_TARGET_H
++
++#include <linux/types.h>
++#include <linux/netfilter/xt_DSCP.h>
++
++#define IPT_ECN_IP_MASK	(~XT_DSCP_MASK)
++
++#define IPT_ECN_OP_SET_IP	0x01	/* set ECN bits of IPv4 header */
++#define IPT_ECN_OP_SET_ECE	0x10	/* set ECE bit of TCP header */
++#define IPT_ECN_OP_SET_CWR	0x20	/* set CWR bit of TCP header */
++
++#define IPT_ECN_OP_MASK		0xce
++
++struct ipt_ECN_info {
++	__u8 operation;	/* bitset of operations */
++	__u8 ip_ect;	/* ECT codepoint of IPv4 header, pre-shifted */
++	union {
++		struct {
++			__u8 ece:1, cwr:1; /* TCP ECT bits */
++		} tcp;
++	} proto;
++};
++
++#endif /* _IPT_ECN_TARGET_H */
+diff --git a/include/linux/netfilter_ipv4/ipt_LOG.h b/include/linux/netfilter_ipv4/ipt_LOG.h
+new file mode 100755
+index 00000000..dcdbadf9
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_LOG.h
+@@ -0,0 +1,19 @@
++#ifndef _IPT_LOG_H
++#define _IPT_LOG_H
++
++/* make sure not to change this without changing netfilter.h:NF_LOG_* (!) */
++#define IPT_LOG_TCPSEQ		0x01	/* Log TCP sequence numbers */
++#define IPT_LOG_TCPOPT		0x02	/* Log TCP options */
++#define IPT_LOG_IPOPT		0x04	/* Log IP options */
++#define IPT_LOG_UID		0x08	/* Log UID owning local socket */
++#define IPT_LOG_NFLOG		0x10	/* Unsupported, don't reuse */
++#define IPT_LOG_MACDECODE	0x20	/* Decode MAC header */
++#define IPT_LOG_MASK		0x2f
++
++struct ipt_log_info {
++	unsigned char level;
++	unsigned char logflags;
++	char prefix[30];
++};
++
++#endif /*_IPT_LOG_H*/
+diff --git a/include/linux/netfilter_ipv4/ipt_REJECT.h b/include/linux/netfilter_ipv4/ipt_REJECT.h
+new file mode 100755
+index 00000000..4293a1ad
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_REJECT.h
+@@ -0,0 +1,20 @@
++#ifndef _IPT_REJECT_H
++#define _IPT_REJECT_H
++
++enum ipt_reject_with {
++	IPT_ICMP_NET_UNREACHABLE,
++	IPT_ICMP_HOST_UNREACHABLE,
++	IPT_ICMP_PROT_UNREACHABLE,
++	IPT_ICMP_PORT_UNREACHABLE,
++	IPT_ICMP_ECHOREPLY,
++	IPT_ICMP_NET_PROHIBITED,
++	IPT_ICMP_HOST_PROHIBITED,
++	IPT_TCP_RESET,
++	IPT_ICMP_ADMIN_PROHIBITED
++};
++
++struct ipt_reject_info {
++	enum ipt_reject_with with;      /* reject type */
++};
++
++#endif /*_IPT_REJECT_H*/
+diff --git a/include/linux/netfilter_ipv4/ipt_SAME.h b/include/linux/netfilter_ipv4/ipt_SAME.h
+new file mode 100755
+index 00000000..a8551671
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_SAME.h
+@@ -0,0 +1,20 @@
++#ifndef _IPT_SAME_H
++#define _IPT_SAME_H
++
++#include <linux/types.h>
++
++#define IPT_SAME_MAX_RANGE	10
++
++#define IPT_SAME_NODST		0x01
++
++struct ipt_same_info {
++	unsigned char info;
++	__u32 rangesize;
++	__u32 ipnum;
++	__u32 *iparray;
++
++	/* hangs off end. */
++	struct nf_nat_ipv4_range range[IPT_SAME_MAX_RANGE];
++};
++
++#endif /*_IPT_SAME_H*/
+diff --git a/include/linux/netfilter_ipv4/ipt_TTL.h b/include/linux/netfilter_ipv4/ipt_TTL.h
+new file mode 100755
+index 00000000..f6ac169d
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_TTL.h
+@@ -0,0 +1,23 @@
++/* TTL modification module for IP tables
++ * (C) 2000 by Harald Welte <laforge@netfilter.org> */
++
++#ifndef _IPT_TTL_H
++#define _IPT_TTL_H
++
++#include <linux/types.h>
++
++enum {
++	IPT_TTL_SET = 0,
++	IPT_TTL_INC,
++	IPT_TTL_DEC
++};
++
++#define IPT_TTL_MAXMODE	IPT_TTL_DEC
++
++struct ipt_TTL_info {
++	__u8	mode;
++	__u8	ttl;
++};
++
++
++#endif
+diff --git a/include/linux/netfilter_ipv4/ipt_ULOG.h b/include/linux/netfilter_ipv4/ipt_ULOG.h
+new file mode 100755
+index 00000000..417aad28
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_ULOG.h
+@@ -0,0 +1,49 @@
++/* Header file for IP tables userspace logging, Version 1.8
++ *
++ * (C) 2000-2002 by Harald Welte <laforge@gnumonks.org>
++ * 
++ * Distributed under the terms of GNU GPL */
++
++#ifndef _IPT_ULOG_H
++#define _IPT_ULOG_H
++
++#ifndef NETLINK_NFLOG
++#define NETLINK_NFLOG 	5
++#endif
++
++#define ULOG_DEFAULT_NLGROUP	1
++#define ULOG_DEFAULT_QTHRESHOLD	1
++
++#define ULOG_MAC_LEN	80
++#define ULOG_PREFIX_LEN	32
++
++#define ULOG_MAX_QLEN	50
++/* Why 50? Well... there is a limit imposed by the slab cache 131000
++ * bytes. So the multipart netlink-message has to be < 131000 bytes.
++ * Assuming a standard ethernet-mtu of 1500, we could define this up
++ * to 80... but even 50 seems to be big enough. */
++
++/* private data structure for each rule with a ULOG target */
++struct ipt_ulog_info {
++	unsigned int nl_group;
++	size_t copy_range;
++	size_t qthreshold;
++	char prefix[ULOG_PREFIX_LEN];
++};
++
++/* Format of the ULOG packets passed through netlink */
++typedef struct ulog_packet_msg {
++	unsigned long mark;
++	long timestamp_sec;
++	long timestamp_usec;
++	unsigned int hook;
++	char indev_name[IFNAMSIZ];
++	char outdev_name[IFNAMSIZ];
++	size_t data_len;
++	char prefix[ULOG_PREFIX_LEN];
++	unsigned char mac_len;
++	unsigned char mac[ULOG_MAC_LEN];
++	unsigned char payload[0];
++} ulog_packet_msg_t;
++
++#endif /*_IPT_ULOG_H*/
+diff --git a/include/linux/netfilter_ipv4/ipt_addrtype.h b/include/linux/netfilter_ipv4/ipt_addrtype.h
+new file mode 100755
+index 00000000..0da42237
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_addrtype.h
+@@ -0,0 +1,27 @@
++#ifndef _IPT_ADDRTYPE_H
++#define _IPT_ADDRTYPE_H
++
++#include <linux/types.h>
++
++enum {
++	IPT_ADDRTYPE_INVERT_SOURCE	= 0x0001,
++	IPT_ADDRTYPE_INVERT_DEST	= 0x0002,
++	IPT_ADDRTYPE_LIMIT_IFACE_IN	= 0x0004,
++	IPT_ADDRTYPE_LIMIT_IFACE_OUT	= 0x0008,
++};
++
++struct ipt_addrtype_info_v1 {
++	__u16	source;		/* source-type mask */
++	__u16	dest;		/* dest-type mask */
++	__u32	flags;
++};
++
++/* revision 0 */
++struct ipt_addrtype_info {
++	__u16	source;		/* source-type mask */
++	__u16	dest;		/* dest-type mask */
++	__u32	invert_source;
++	__u32	invert_dest;
++};
++
++#endif
+diff --git a/include/linux/netfilter_ipv4/ipt_ah.h b/include/linux/netfilter_ipv4/ipt_ah.h
+new file mode 100755
+index 00000000..4e02bb01
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_ah.h
+@@ -0,0 +1,17 @@
++#ifndef _IPT_AH_H
++#define _IPT_AH_H
++
++#include <linux/types.h>
++
++struct ipt_ah {
++	__u32 spis[2];			/* Security Parameter Index */
++	__u8  invflags;			/* Inverse flags */
++};
++
++
++
++/* Values for "invflags" field in struct ipt_ah. */
++#define IPT_AH_INV_SPI		0x01	/* Invert the sense of spi. */
++#define IPT_AH_INV_MASK	0x01	/* All possible flags. */
++
++#endif /*_IPT_AH_H*/
+diff --git a/include/linux/netfilter_ipv4/ipt_realm.h b/include/linux/netfilter_ipv4/ipt_realm.h
+new file mode 100755
+index 00000000..b3996eaa
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_realm.h
+@@ -0,0 +1,7 @@
++#ifndef _IPT_REALM_H
++#define _IPT_REALM_H
++
++#include <linux/netfilter/xt_realm.h>
++#define ipt_realm_info xt_realm_info
++
++#endif /* _IPT_REALM_H */
+diff --git a/include/linux/netfilter_ipv6/ip6t_LOG.h b/include/linux/netfilter_ipv6/ip6t_LOG.h
+new file mode 100755
+index 00000000..9dd5579e
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_LOG.h
+@@ -0,0 +1,19 @@
++#ifndef _IP6T_LOG_H
++#define _IP6T_LOG_H
++
++/* make sure not to change this without changing netfilter.h:NF_LOG_* (!) */
++#define IP6T_LOG_TCPSEQ		0x01	/* Log TCP sequence numbers */
++#define IP6T_LOG_TCPOPT		0x02	/* Log TCP options */
++#define IP6T_LOG_IPOPT		0x04	/* Log IP options */
++#define IP6T_LOG_UID		0x08	/* Log UID owning local socket */
++#define IP6T_LOG_NFLOG		0x10	/* Unsupported, don't use */
++#define IP6T_LOG_MACDECODE	0x20	/* Decode MAC header */
++#define IP6T_LOG_MASK		0x2f
++
++struct ip6t_log_info {
++	unsigned char level;
++	unsigned char logflags;
++	char prefix[30];
++};
++
++#endif /*_IPT_LOG_H*/
+diff --git a/include/linux/netfilter_ipv6/ip6t_NPT.h b/include/linux/netfilter_ipv6/ip6t_NPT.h
+new file mode 100755
+index 00000000..f7633554
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_NPT.h
+@@ -0,0 +1,16 @@
++#ifndef __NETFILTER_IP6T_NPT
++#define __NETFILTER_IP6T_NPT
++
++#include <linux/types.h>
++#include <linux/netfilter.h>
++
++struct ip6t_npt_tginfo {
++	union nf_inet_addr	src_pfx;
++	union nf_inet_addr	dst_pfx;
++	__u8			src_pfx_len;
++	__u8			dst_pfx_len;
++	/* Used internally by the kernel */
++	__sum16			adjustment;
++};
++
++#endif /* __NETFILTER_IP6T_NPT */
+diff --git a/include/linux/netfilter_ipv6/ip6t_REJECT.h b/include/linux/netfilter_ipv6/ip6t_REJECT.h
+new file mode 100755
+index 00000000..205ed62e
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_REJECT.h
+@@ -0,0 +1,20 @@
++#ifndef _IP6T_REJECT_H
++#define _IP6T_REJECT_H
++
++#include <linux/types.h>
++
++enum ip6t_reject_with {
++	IP6T_ICMP6_NO_ROUTE,
++	IP6T_ICMP6_ADM_PROHIBITED,
++	IP6T_ICMP6_NOT_NEIGHBOUR,
++	IP6T_ICMP6_ADDR_UNREACH,
++	IP6T_ICMP6_PORT_UNREACH,
++	IP6T_ICMP6_ECHOREPLY,
++	IP6T_TCP_RESET
++};
++
++struct ip6t_reject_info {
++	__u32	with;	/* reject type */
++};
++
++#endif /*_IP6T_REJECT_H*/
+diff --git a/include/linux/netfilter_ipv6/ip6t_ah.h b/include/linux/netfilter_ipv6/ip6t_ah.h
+new file mode 100755
+index 00000000..5da2b65c
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_ah.h
+@@ -0,0 +1,22 @@
++#ifndef _IP6T_AH_H
++#define _IP6T_AH_H
++
++#include <linux/types.h>
++
++struct ip6t_ah {
++	__u32 spis[2];			/* Security Parameter Index */
++	__u32 hdrlen;			/* Header Length */
++	__u8  hdrres;			/* Test of the Reserved Filed */
++	__u8  invflags;			/* Inverse flags */
++};
++
++#define IP6T_AH_SPI 0x01
++#define IP6T_AH_LEN 0x02
++#define IP6T_AH_RES 0x04
++
++/* Values for "invflags" field in struct ip6t_ah. */
++#define IP6T_AH_INV_SPI		0x01	/* Invert the sense of spi. */
++#define IP6T_AH_INV_LEN		0x02	/* Invert the sense of length. */
++#define IP6T_AH_INV_MASK	0x03	/* All possible flags. */
++
++#endif /*_IP6T_AH_H*/
+diff --git a/include/linux/netfilter_ipv6/ip6t_frag.h b/include/linux/netfilter_ipv6/ip6t_frag.h
+new file mode 100755
+index 00000000..b47f61b9
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_frag.h
+@@ -0,0 +1,25 @@
++#ifndef _IP6T_FRAG_H
++#define _IP6T_FRAG_H
++
++#include <linux/types.h>
++
++struct ip6t_frag {
++	__u32 ids[2];			/* Security Parameter Index */
++	__u32 hdrlen;			/* Header Length */
++	__u8  flags;			/*  */
++	__u8  invflags;			/* Inverse flags */
++};
++
++#define IP6T_FRAG_IDS 		0x01
++#define IP6T_FRAG_LEN 		0x02
++#define IP6T_FRAG_RES 		0x04
++#define IP6T_FRAG_FST 		0x08
++#define IP6T_FRAG_MF  		0x10
++#define IP6T_FRAG_NMF  		0x20
++
++/* Values for "invflags" field in struct ip6t_frag. */
++#define IP6T_FRAG_INV_IDS	0x01	/* Invert the sense of ids. */
++#define IP6T_FRAG_INV_LEN	0x02	/* Invert the sense of length. */
++#define IP6T_FRAG_INV_MASK	0x03	/* All possible flags. */
++
++#endif /*_IP6T_FRAG_H*/
+diff --git a/include/linux/netfilter_ipv6/ip6t_hl.h b/include/linux/netfilter_ipv6/ip6t_hl.h
+new file mode 100755
+index 00000000..6e76dbc6
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_hl.h
+@@ -0,0 +1,24 @@
++/* ip6tables module for matching the Hop Limit value
++ * Maciej Soltysiak <solt@dns.toxicfilms.tv>
++ * Based on HW's ttl module */
++
++#ifndef _IP6T_HL_H
++#define _IP6T_HL_H
++
++#include <linux/types.h>
++
++enum {
++	IP6T_HL_EQ = 0,		/* equals */
++	IP6T_HL_NE,		/* not equals */
++	IP6T_HL_LT,		/* less than */
++	IP6T_HL_GT,		/* greater than */
++};
++
++
++struct ip6t_hl_info {
++	__u8	mode;
++	__u8	hop_limit;
++};
++
++
++#endif
+diff --git a/include/linux/netfilter_ipv6/ip6t_ipv6header.h b/include/linux/netfilter_ipv6/ip6t_ipv6header.h
+new file mode 100755
+index 00000000..efae3a20
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_ipv6header.h
+@@ -0,0 +1,28 @@
++/* ipv6header match - matches IPv6 packets based
++on whether they contain certain headers */
++
++/* Original idea: Brad Chapman 
++ * Rewritten by: Andras Kis-Szabo <kisza@sch.bme.hu> */
++
++
++#ifndef __IPV6HEADER_H
++#define __IPV6HEADER_H
++
++#include <linux/types.h>
++
++struct ip6t_ipv6header_info {
++	__u8 matchflags;
++	__u8 invflags;
++	__u8 modeflag;
++};
++
++#define MASK_HOPOPTS    128
++#define MASK_DSTOPTS    64
++#define MASK_ROUTING    32
++#define MASK_FRAGMENT   16
++#define MASK_AH         8
++#define MASK_ESP        4
++#define MASK_NONE       2
++#define MASK_PROTO      1
++
++#endif /* __IPV6HEADER_H */
+diff --git a/include/linux/netfilter_ipv6/ip6t_mh.h b/include/linux/netfilter_ipv6/ip6t_mh.h
+new file mode 100755
+index 00000000..a7729a50
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_mh.h
+@@ -0,0 +1,16 @@
++#ifndef _IP6T_MH_H
++#define _IP6T_MH_H
++
++#include <linux/types.h>
++
++/* MH matching stuff */
++struct ip6t_mh {
++	__u8 types[2];	/* MH type range */
++	__u8 invflags;	/* Inverse flags */
++};
++
++/* Values for "invflags" field in struct ip6t_mh. */
++#define IP6T_MH_INV_TYPE	0x01	/* Invert the sense of type. */
++#define IP6T_MH_INV_MASK	0x01	/* All possible flags. */
++
++#endif /*_IP6T_MH_H*/
+diff --git a/include/linux/netfilter_ipv6/ip6t_opts.h b/include/linux/netfilter_ipv6/ip6t_opts.h
+new file mode 100755
+index 00000000..17d419a8
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_opts.h
+@@ -0,0 +1,24 @@
++#ifndef _IP6T_OPTS_H
++#define _IP6T_OPTS_H
++
++#include <linux/types.h>
++
++#define IP6T_OPTS_OPTSNR 16
++
++struct ip6t_opts {
++	__u32 hdrlen;			/* Header Length */
++	__u8 flags;				/*  */
++	__u8 invflags;			/* Inverse flags */
++	__u16 opts[IP6T_OPTS_OPTSNR];	/* opts */
++	__u8 optsnr;			/* Nr of OPts */
++};
++
++#define IP6T_OPTS_LEN 		0x01
++#define IP6T_OPTS_OPTS 		0x02
++#define IP6T_OPTS_NSTRICT	0x04
++
++/* Values for "invflags" field in struct ip6t_rt. */
++#define IP6T_OPTS_INV_LEN	0x01	/* Invert the sense of length. */
++#define IP6T_OPTS_INV_MASK	0x01	/* All possible flags. */
++
++#endif /*_IP6T_OPTS_H*/
+diff --git a/include/linux/netfilter_ipv6/ip6t_rt.h b/include/linux/netfilter_ipv6/ip6t_rt.h
+new file mode 100755
+index 00000000..7605a5ff
+--- /dev/null
++++ b/include/linux/netfilter_ipv6/ip6t_rt.h
+@@ -0,0 +1,33 @@
++#ifndef _IP6T_RT_H
++#define _IP6T_RT_H
++
++#include <linux/types.h>
++/*#include <linux/in6.h>*/
++
++#define IP6T_RT_HOPS 16
++
++struct ip6t_rt {
++	__u32 rt_type;			/* Routing Type */
++	__u32 segsleft[2];			/* Segments Left */
++	__u32 hdrlen;			/* Header Length */
++	__u8  flags;			/*  */
++	__u8  invflags;			/* Inverse flags */
++	struct in6_addr addrs[IP6T_RT_HOPS];	/* Hops */
++	__u8 addrnr;			/* Nr of Addresses */
++};
++
++#define IP6T_RT_TYP 		0x01
++#define IP6T_RT_SGS 		0x02
++#define IP6T_RT_LEN 		0x04
++#define IP6T_RT_RES 		0x08
++#define IP6T_RT_FST_MASK	0x30
++#define IP6T_RT_FST 		0x10
++#define IP6T_RT_FST_NSTRICT	0x20
++
++/* Values for "invflags" field in struct ip6t_rt. */
++#define IP6T_RT_INV_TYP		0x01	/* Invert the sense of type. */
++#define IP6T_RT_INV_SGS		0x02	/* Invert the sense of Segments. */
++#define IP6T_RT_INV_LEN		0x04	/* Invert the sense of length. */
++#define IP6T_RT_INV_MASK	0x07	/* All possible flags. */
++
++#endif /*_IP6T_RT_H*/
+diff --git a/net/netfilter/Makefile b/net/netfilter/Makefile
+index d9655f6f..ef98bd44 100755
+--- a/net/netfilter/Makefile
++++ b/net/netfilter/Makefile
+@@ -80,7 +80,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CLASSIFY) += xt_CLASSIFY.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSECMARK) += xt_CONNSECMARK.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_CT) += xt_CT.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_DSCP) += xt_DSCP.o
+-obj-$(CONFIG_NETFILTER_XT_TARGET_HL) += xt_HL.o
++obj-$(CONFIG_NETFILTER_XT_TARGET_HL) += xt_hl.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_HMARK) += xt_HMARK.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_LOG) += xt_LOG.o
+@@ -91,7 +91,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_RATEEST) += xt_RATEEST.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_REDIRECT) += xt_REDIRECT.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_SECMARK) += xt_SECMARK.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_TPROXY) += xt_TPROXY.o
+-obj-$(CONFIG_NETFILTER_XT_TARGET_TCPMSS) += xt_TCPMSS.o
++obj-$(CONFIG_NETFILTER_XT_TARGET_TCPMSS) += xt_tcpmss.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_TCPOPTSTRIP) += xt_TCPOPTSTRIP.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_TEE) += xt_TEE.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_TRACE) += xt_TRACE.o
+-- 
+2.51.0
+

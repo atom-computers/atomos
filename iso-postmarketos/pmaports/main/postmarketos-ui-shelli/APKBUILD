@@ -1,0 +1,36 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Craig Comstock <craig@unreasonablefarm.org>"
+pkgname=postmarketos-ui-shelli
+pkgver=3
+pkgrel=8
+pkgdesc="Plain console with touchscreen gesture support"
+url="https://gitlab.com/unrznbl/shelli"
+arch="all"
+license="GPL-3.0-or-later"
+depends="
+	dnsmasq
+	ofono
+	ofonoctl
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	shelli
+	"
+subpackages="$pkgname-openrc"
+options="!check" # No tests
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.pre-deinstall $subpkgname.post-upgrade"
+	depends="
+		networkmanager-openrc
+		ofono-openrc
+		shelli-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}

@@ -1,0 +1,165 @@
+# Forked from Alpine to adjust dependencies for systemd
+maintainer=""
+pkgname=xorg-server
+_pkgver=21.1.22
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="X.Org X servers"
+url="https://www.x.org/wiki"
+# armhf: pmb#2618
+arch="all !armhf"
+license="MIT"
+# !check: fails with pmbootstrap cross compile to armv7
+options="suid !check"
+subpackages="
+	$pkgname-dbg
+	$pkgname-dev
+	$pkgname-doc
+	xvfb
+	$pkgname-xephyr
+	$pkgname-xnest
+	$pkgname-common::noarch
+	"
+depends="
+	font-cursor-misc
+	font-misc-misc
+	mesa-egl
+	xkbcomp
+	xkeyboard-config
+	xorg-server-common
+	"
+depends_dev="
+	libepoxy-dev
+	libpciaccess-dev
+	libxfont2-dev
+	mesa-dev
+	"
+makedepends="
+	$depends_dev
+	dbus-dev
+	libdrm-dev
+	libx11-dev
+	libxau-dev
+	libxcb-dev
+	libxcvt-dev
+	libxdmcp-dev
+	libxext-dev
+	libxkbfile-dev
+	libxshmfence-dev
+	meson
+	nettle-dev
+	pixman-dev
+	wayland-dev
+	wayland-protocols
+	xcb-util-dev
+	xcb-util-image-dev
+	xcb-util-keysyms-dev
+	xcb-util-renderutil-dev
+	xcb-util-wm-dev
+	xkbcomp-dev
+	xorgproto
+	xtrans
+
+	systemd-dev
+	"
+source="https://www.x.org/releases/individual/xserver/xorg-server-$_pkgver.tar.xz"
+builddir="$srcdir/xorg-server-$_pkgver"
+
+# the modesetting driver is now shipped with xorg server
+provides="xf86-video-modesetting=$pkgver-r$pkgrel"
+replaces="xf86-video-modesetting"
+
+prepare() {
+	default_prepare
+	sed -i -e 's/termio.h/termios.h/' hw/xfree86/os-support/xf86_OSlib.h
+}
+
+build() {
+	# xorg modules does not work with the -z now and it seems like we
+	# cannot pass over the linker flag to .so files. so we tweak the
+	# gcc specs.
+	export CFLAGS="${CFLAGS/-fno-plt}"
+	export CXXFLAGS="${CXXFLAGS/-fno-plt}"
+	export LDFLAGS="$LDFLAGS -Wl,-z,lazy"
+	_fontroot="/usr/share/fonts"
+
+	# 32-bit fails otherwise
+	export CFLAGS="$CFLAGS -Wno-error=array-bounds"
+
+	# b_lto fails with pmbootstrap CI
+
+	abuild-meson \
+		-Dxorg=true \
+		-Dxephyr=true \
+		-Dglamor=true \
+		-Dxnest=true \
+		-Dxvfb=true \
+		-Dxwin=false \
+		-Ddefault_font_path=$_fontroot/misc,$_fontroot/100dpi:unscaled,$_fontroot/75dpi:unscaled,$_fontroot/TTF,$_fontroot/Type1 \
+		-Dglx=true \
+		-Dxdmcp=true \
+		-Dxdm-auth-1=true \
+		-Dxcsecurity=true \
+		-Dsecure-rpc=false \
+		-Dipv6=true \
+		-Dxkb_dir=/usr/share/X11/xkb \
+		-Dxkb_output_dir=/var/lib/xkb \
+		-Dlisten_tcp=false \
+		-Dlisten_unix=true \
+		-Dlisten_local=true \
+		-Dsuid_wrapper=true \
+		-Dpciaccess=true \
+		-Dudev=true \
+		-Dhal=false \
+		-Dsystemd_logind=true \
+		-Ddpms=true \
+		-Ddri1=false \
+		-Ddri2=true \
+		-Ddri3=true \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	chmod u+s "$pkgdir"/usr/libexec/Xorg.wrap
+
+	# Don't conflict with xf86-input-evdev
+	rm -f "$pkgdir"/usr/share/X11/xorg.conf.d/10-evdev.conf
+
+	install -Dm0644 xkb/README.compiled -t "$pkgdir"/var/lib/xkb
+}
+
+xvfb() {
+	pkgdesc="Virtual Framebuffer 'fake' X server"
+
+	amove usr/bin/Xvfb
+}
+
+xephyr() {
+	pkgdesc="kdrive based X Server which targets a window on a host X Server as its framebuffer"
+
+	amove usr/bin/Xephyr
+}
+
+xnest() {
+	pkgdesc="A nested Xorg server"
+
+	amove usr/bin/Xnest
+}
+
+common() {
+	depends=""
+	pkgdesc="Xorg server common files"
+
+	amove usr/lib/xorg/protocol.txt
+}
+
+sha512sums="
+6cb37ff971e10eb4a7dfcb3e8071afd769c7632d50e4ad8bc948b810dc4847e152b8a05ec135f55e0695b35908abd07e7728ef85dd3135456fd532e919f440f4  xorg-server-21.1.22.tar.xz
+"

@@ -1,0 +1,26 @@
+"The arm64 port doesn't provide a screen_info struct for console support
+which leads to a build failure with some configurations:
+
+  drivers/video/console/vgacon.c:820: undefined reference to `screen_info'
+
+This patch adds an empty declaration of screen_info to fix the build
+problem. Some additional runtime code is needed to actually make it
+useful."
+
+
+diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
+index ab04a996..54c76fc6 100644
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -73,6 +73,10 @@ unsigned int compat_elf_hwcap __read_mostly = COMPAT_ELF_HWCAP_DEFAULT;
+ unsigned int compat_elf_hwcap2 __read_mostly;
+ #endif
+ 
++#if defined(CONFIG_VGA_CONSOLE) || defined(CONFIG_DUMMY_CONSOLE)
++struct screen_info screen_info;
++#endif
++
+ static const char *cpu_name;
+ static const char *machine_name;
+ phys_addr_t __fdt_pointer __initdata;
+

@@ -1,0 +1,40 @@
+maintainer="Yassine Oudjana (Tooniis) <y.oudjana@protonmail.com>"
+pkgname=soc-qcom-msm8996
+pkgdesc="Common package for Qualcomm MSM8996 devices"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck !tracedeps"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-ucm
+	"
+
+_ucm_commit="9f2fd084eccbb01c5bffa6dbc50dcd2b116371d8"
+source="
+	alsa-ucm-conf-$_ucm_commit.tar.gz::https://gitlab.com/msm8996-mainline/alsa-ucm-conf/-/archive/$_ucm_commit/alsa-ucm-conf-$_ucm_commit.tar.gz
+	"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for GPU and modem"
+	depends="linux-firmware-qcom msm-modem"
+	mkdir "$subpkgdir"
+}
+
+ucm() {
+	provides="alsa-ucm-conf"
+	provider_priority=1
+
+	# install audio config files
+	mkdir -p "$subpkgdir"/usr/share/alsa/ucm2
+	cp -r "$srcdir/alsa-ucm-conf-$_ucm_commit"/ucm2 "$subpkgdir"/usr/share/alsa/
+}
+sha512sums="
+11183d9cc3b3bd01aaed64dccf166521c028b24bb2f9cb7deeba9488fb7306cef64ecfb414bd1dc157d731dcddd79a23a59eb016f5c5273d1e9df2f0391122a6  alsa-ucm-conf-9f2fd084eccbb01c5bffa6dbc50dcd2b116371d8.tar.gz
+"

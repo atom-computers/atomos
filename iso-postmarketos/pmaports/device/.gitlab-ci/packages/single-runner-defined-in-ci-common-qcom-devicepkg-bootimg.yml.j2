@@ -1,0 +1,34 @@
+# Use this gitlab-ci snippet if your package:
+#
+# * is a Qualcomm device
+# * has its runner tags definition found in ci-common's ci-tron/common.yml
+# * uses U-boot as bootloader
+# * The devicepackage does not support U-boot and UEFI, but still uses the stock
+#   bootloader
+test-{{ device.name }}:
+  extends:
+    # Extended from jobs defined in ci-common/ci-tron/common.yml
+    - .pmos-ci-tron-runner-{{ device.name }}
+    - .pmos-ci-tron-initramfs-test
+
+    # Extended from build-jobs.yaml.j2
+    - .device-boot-flow-separate-artifacts
+    - .test-{{ device.name }}
+
+  # NOTE: set the job to manually started and allow failure until HW CI is
+  # stable
+  allow_failure: true
+  when: manual
+
+  variables:
+    # Let CI-tron construct the bootimg accepted by U-boot in a standard
+    # Qualcomm way
+    CI_TRON_FASTBOOT__HEADER_VERSION: 2
+    CI_TRON_FASTBOOT__BASE: 0x00000000
+    CI_TRON_FASTBOOT__KERNEL_OFFSET: 0x00008000
+    CI_TRON_FASTBOOT__RAMDISK_OFFSET: 0x01000000
+    CI_TRON_FASTBOOT__TAGS_OFFSET: 0x00000100
+    CI_TRON_FASTBOOT__PAGESIZE: 4096
+    # Devices should not have the serial console enabled, but we want it
+    # to be able to get logs. And all qcom devices use the same one!
+    CI_TRON_KERNEL_CMDLINE__CONSOLE: "console=ttyMSM0,115200"

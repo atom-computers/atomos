@@ -1,0 +1,6 @@
+# Touchscreen (use 'weston-calibrator' to calibrate)
+SUBSYSTEM=="input", ATTRS{name}=="synaptics-rmi-touchscreen", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1", \
+ENV{WL_CALIBRATION}="0.963488 0.004947 14.422623 -0.076271 1.026566 -7.303467"
+
+

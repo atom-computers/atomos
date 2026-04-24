@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/merge_hi3650_defconfig
+
+pkgname=linux-huawei-frd
+pkgver=4.1.18
+pkgrel=2
+pkgdesc="Huawei Honor 8 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="huawei-frd"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_huawei_frd"
+_commit="b339c4b748cfceba3b52e8e91b64b2136a4cef8a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/Sandelinos/$_repository/-/archive/7.0/$_repository-7.0.tar.gz?sha=$_commit
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	01_fix_undeclared_AID_INET.patch
+"
+builddir="$srcdir/$_repository-7.0"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+3ef907f743ac82e3b713845bb49a298a1e86f37b5ac4dc6a8b968845d9273a80a4fea98fd07e564b4a7166e834f652f820f583fe77d82d48fb1ebc7c4045f408  linux-huawei-frd-b339c4b748cfceba3b52e8e91b64b2136a4cef8a.tar.gz
+781ad150a92bfe59418a957a7aefda3b9721ffd50b7bf46905393541b46b1932c395cc1ad8438e072552f138a6d961c9b96d0305ad8fec3f204c4b850e43eecf  config-huawei-frd.aarch64
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+33599989d5088bb58bcbebe1b33f324fca130fac7f4938e848c07abafb119af9cebf94ef4acf786b5e43e9199a8200aa216a4238a0331d426861651204aea8c8  01_fix_undeclared_AID_INET.patch
+"

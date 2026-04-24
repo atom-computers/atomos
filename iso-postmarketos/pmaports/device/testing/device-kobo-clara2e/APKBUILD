@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=device-kobo-clara2e
+pkgdesc="Kobo Clara 2E"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-imx-ereader
+	kobo-epdc-extractor
+	postmarketos-base
+	u-boot-kobo-clara2e
+"
+_pmb_recommends="
+	linux-firmware-mrvl
+	linux-firmware-nxp
+"
+makedepends="devicepkg-dev"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+300986c4a58b6c7568bccdfb6927ca7456cf05c39049b189e2a727bd422b3777228e0844823ad0edd54cf1d4da78d95d3048f89c877949267fc5122fdbedd0e0  deviceinfo
+b4ab1b5ce58c0c46e655cfe898ff28897abae0e0ba2d927613f7ce2b21fb3fdb3ffaa8b5b260daa9baebef49f71e3c068932fe255ffa420d6ecc9c9e99c67aca  kernel-cmdline.conf
+431a126cc1d544e04d1b548bef55d2c1b470e622bdf8313e368e8413d77c30e316c2d8265a0ccb141db2f18ba6aa0c732dd215df82a1254993e0bca498980b04  modules-initfs
+"

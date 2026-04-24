@@ -1,0 +1,60 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/vendor/willow-perf_defconfig
+maintainer="Eli Riggs <eli@rje.li>"
+pkgname=linux-xiaomi-willow
+pkgver=4.14.117
+pkgrel=3
+pkgdesc="Xiaomi Redmi Note 8T kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-willow"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="lineage_kernel_sm6125"
+_commit="111707a52c4b7bffbc28d61ee1edb24979725e4d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/rjeli/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix_gcc.patch
+	selinux_include_generated_headers.patch
+	remove_bootloader_cmdline_opts.patch
+	touchscreen_nt36xxx_module.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	# Modules
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="6ee15c755bccbb4b36096cc11ae8a696be03d347f98de1805c58737ad5776b6d1542bc5ea89099e58bb502034af37b5183a461abf868bed7e90c161081bc2a99  linux-xiaomi-willow-111707a52c4b7bffbc28d61ee1edb24979725e4d.tar.gz
+fd85c31cf20cfc474d46a162d3b05f7c78c10c97634e812fc7b36f7b13ee3bc56e5ac3123689d21434018f02a72ba5dd5145436d90572f276fad54ef0b3c9507  config-xiaomi-willow.aarch64
+f9339f17504e0d37c5f7847d09b5e38bf608ef146696a352d3a102fe59cf285984a94b4c5a0c7dad63c11fef82df94213a9c3fe4b3f8ff64b18e99741ed11561  fix_gcc.patch
+6ab9db01d35f7f5cc2c19ebe5f65a7dc479a1c68de587300cdde9a6c759d34610666c72f0f321cd450cf56c13df3b54a774e0f7ebdbf0f8608fbfd66b49d04e7  selinux_include_generated_headers.patch
+9ce867c4254b537ef5d2485780c26b72da8a3a8767ba71557f3b48d6c550e0e14c8c3e575b31bf65d2878f08a8a4926e48a1c2f1be534bf80a7a57f58313b0fd  remove_bootloader_cmdline_opts.patch
+c6c03502e89b9038ec929441377f802b1739470260d9aeac2f6763bb12b1758b547acbb3685df4e3038d250139c2fe4a9fd38b7badb15ad5d08847cf7223a5a5  touchscreen_nt36xxx_module.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch"

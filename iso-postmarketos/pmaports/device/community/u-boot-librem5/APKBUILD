@@ -1,0 +1,124 @@
+# Mainline u-boot with Librem 5 support and config
+# Co-Maintainer: Newbyte <newbyte@postmarketos.org>
+# Contributor: Clayton Craft <clayton@craftyguy.net>
+maintainer="Alistair Francis <alistair@alistair23.me>"
+pkgname=u-boot-librem5
+pkgver=2022.10
+pkgrel=3
+# 'upstream/librem5' branch in uboot repo
+_commit="c4960dade272da9d6a7f53f6956d4d6747d573e9"
+# 'librem5' branch in atf repo
+_atf_commit="1fd3ff86cd4a05cd3e5637bf5a6902ac58fcafb9"
+_firmwareversion="8.12"
+pkgdesc="u-boot bootloader for the Purism Librem5 phone"
+url="http://www.denx.de/wiki/U-Boot/"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs"
+makedepends="
+	bc
+	binutils
+	bison
+	coreutils
+	dtc
+	flex
+	openssl-dev
+	py3-setuptools
+	python3-dev
+	swig
+	zlib-dev
+	"
+options="!check !tracedeps pmb:cross-native"
+source="
+	https://source.puri.sm/angus.ainslie/uboot-imx/-/archive/$_commit/uboot-imx-$_commit.tar.gz
+	https://source.puri.sm/Librem5/arm-trusted-firmware/-/archive/$_atf_commit/arm-trusted-firmware-$_atf_commit.tar.gz
+	https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-$_firmwareversion.bin
+	update-u-boot
+	0001-librem5-enable-console-on-UART4.patch
+	0002-libfdt-Fix-invalid-version-warning.patch
+	0003-libfdt.i_shipped-use-SWIG_AppendOutput.patch
+	"
+install="$pkgname.post-upgrade"
+install="$pkgname.post-upgrade $pkgname-devkit.post-upgrade"
+subpackages="$pkgname-devkit"
+
+_atf_builddir="$srcdir/arm-trusted-firmware-$_atf_commit"
+_firmware_builddir="$srcdir/firmware-imx-$_firmwareversion"
+builddir="$srcdir/uboot-imx-$_commit"
+
+prepare() {
+	default_prepare
+
+	msg "Extracting DDR & HDMI firmware"
+	cd "$srcdir"
+	chmod +x firmware-imx-$_firmwareversion.bin
+	./firmware-imx-$_firmwareversion.bin --auto-accept
+	cp -v "$_firmware_builddir"/firmware/ddr/synopsys/lpddr4*.bin $builddir/
+	cp -v "$_firmware_builddir"/firmware/hdmi/cadence/signed_*imx8m.bin $builddir/
+
+	# Disable -Werror in arm-trusted-firmware so it builds with GCC 12. The
+	# version we use here is missing E=0 introduced here:
+	# https://github.com/ARM-software/arm-trusted-firmware/commit/6336b07ad25cb05ca75f5a465d816af7956e0a59
+	sed -i "s/-Werror//g" "$_atf_builddir"/Makefile
+}
+
+build() {
+	msg "Building ARM trusted firmware"
+	cd "$_atf_builddir"
+	LDFLAGS="-no-warn-rwx-segment" make PLAT=imx8mq bl31
+	# Overwrite default bl31 binary with one made here
+	export BL31="$_atf_builddir/build/imx8mq/release/bl31.bin"
+	cp -v "$_atf_builddir"/build/imx8mq/release/bl31.bin "$builddir"/
+
+	msg "Building u-boot"
+	cd $builddir
+
+	# Devkit uboot firmware
+	# NOTE: disabled, not supported yet in the new mainline branch
+	# make distclean
+	# make librem5_devkit_defconfig
+	# make ARCH=arm
+	# mv "$builddir"/flash.bin "$builddir"/devkit-boot.img
+	# sha512sum -b "$builddir"/devkit-boot.img > "$builddir"/devkit-boot.img.sha512
+
+	# Phone uboot firmware
+	make distclean
+	make librem5_defconfig
+	make ARCH=arm
+	mv flash.bin phone-boot.img
+	sha512sum -b phone-boot.img > phone-boot.img.sha512
+}
+
+package() {
+	install -D -m644 "$builddir"/phone-boot.img \
+		"$pkgdir/usr/share/u-boot/librem5/phone-boot.img"
+	install -D -m644 "$builddir"/phone-boot.img.sha512 \
+		"$pkgdir/usr/share/u-boot/librem5/phone-boot.img.sha512"
+	install -D -m 755 "$srcdir"/update-u-boot \
+		"$pkgdir"/usr/sbin/update-u-boot
+}
+
+devkit() {
+	pkgdesc="u-boot bootloader for the Purism Librem5 devkit"
+
+	# NOTE: package is empty since this u-boot doesn't support the devkit yet,
+	# but should in the future.
+
+	mkdir "$subpkgdir"
+
+	# install -D -m644 "$builddir"/devkit-boot.img \
+	# 	"$pkgdir/usr/share/u-boot/librem5/devkit-boot.img"
+	# install -D -m644 "$builddir"/devkit-boot.img.sha512 \
+	# 	"$pkgdir/usr/share/u-boot/librem5/devkit-boot.img.sha512"
+	# install -D -m 755 "$srcdir"/update-u-boot \
+	# 	"$pkgdir"/usr/sbin/update-u-boot
+}
+
+sha512sums="
+d35e46b94ebf50a7ffcedf824f19bca5195cbf0bbcee1dd6cea115f090a3a963975e6eaaa33eac623bbbf9ade62ab983a434adaf9435c993eacba9f7b4bb48a8  uboot-imx-c4960dade272da9d6a7f53f6956d4d6747d573e9.tar.gz
+088b1b159e54d97cf3e47cb2de8327719779e558d1fe2453a46eb12081de4f1641e84dea37bb01518a6760a49e83b6d96ad185cdb5d9ec2b64f5ac934c368adf  arm-trusted-firmware-1fd3ff86cd4a05cd3e5637bf5a6902ac58fcafb9.tar.gz
+1f968558bf158401ee5afe1c67e67bdd8ca2cb5d07029e78c745e751c665b68fa74128fca8b7161501a6445bbb18e8d463b42d787a61132db5c8778703462668  firmware-imx-8.12.bin
+e46a863001872943301f9712e45797553ce52d8b0c3e63dba7beb1a54b857e8f3a715863b84cd7ab784f039f82d29a2b19b581891d11a84c342b1570e5ccfed3  update-u-boot
+f5c8a49bda189639386f2367418ab492f10e0e3c0c3f4ca078c461c0cf4427e113a90f49c37f01ef4db0a6e0f55d4f0a6346777e291918866821e659077e374a  0001-librem5-enable-console-on-UART4.patch
+895a6e7794257a2b13ecd4e10426d1539338b3ed2000df99ec94c7a319154895794a60aeae2946f4ca32d37095e4142ebbdb049bbccf70f257e77e977b1cedf8  0002-libfdt-Fix-invalid-version-warning.patch
+016ef30dbbb1021dad4f58eeda3f5a5e89ff3a76dbc69e8e4cf6a3fc3983aef998cfe1087abb4b21bb2f859bd5cffe26c1da42d13f1c3d2e3c053c399f38720b  0003-libfdt.i_shipped-use-SWIG_AppendOutput.patch
+"

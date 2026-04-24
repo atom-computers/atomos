@@ -1,0 +1,8 @@
+exynosdrm
+hid_generic
+scsi_mod
+sd_mod
+t10_pi
+uas
+usb-storage
+usbhid

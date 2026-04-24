@@ -1,0 +1,54 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/kitakami-ivy-defconfig
+
+pkgname=linux-sony-ivy
+pkgver=3.10.84
+pkgrel=1
+pkgdesc="Sony Xperia Z3+ kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="sony-ivy"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="gcc4 linux-headers lz4 bash bc bison devicepkg-dev flex openssl-dev perl"
+# Compiler: GCC 4 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_sony_msm8994"
+_commit="0c7176b039b6deeecdd31ceea97b39910393a563"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+789e9abdc5fd7e93ef3a80e332d045302f699adcef1e69c56a9798ac4cea01c9853170bfaf03ac7603f1f2d970cb723ced430a85b03dc602eab14a8a9876cb75  linux-sony-ivy-0c7176b039b6deeecdd31ceea97b39910393a563.tar.gz
+5d7dd8b739525a8f0a4c53092bd1e377a3e418c1e6c74e044bd7829f09b24520925c973ba49a21461541b49de80e878cf6bad778947983cc8921e808299141e8  config-sony-ivy.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

@@ -1,0 +1,35 @@
+# Archived: Kernel doesn't build anymore
+#
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Achill Gilgenast <achill@achill.org>"
+pkgname=device-bq-tenshi
+pkgdesc="BQ Aquaris U Plus"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-bq-tenshi
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+0b163bb1df42ddc914a36512aeb44ad7cb0bad6933a27ca801c501bfedef9773d4175ab443bb632e787d6658032f82e039e82b5b609e9eed4125afd21a31ee83  deviceinfo
+cb07af75b15e2394d94df459d26b399371f18d24489763855388b1155dce4f6d17070716d8581fec178cd7848a7caea3431aad56e83b70e9f27287c4bccda2f2  kernel-cmdline.conf
+"

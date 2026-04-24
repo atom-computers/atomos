@@ -1,0 +1,20 @@
+pkgname=firmware-zuk-z2-row
+pkgver=0.20200125
+pkgrel=1
+pkgdesc="Firmware for Lenovo ZUK Z2 Pro"
+url="https://github.com/cuihaoleo/pmos-firmware-zuk-z2-row"
+arch="aarch64"
+license="proprietary"
+depends="wcnss-wlan"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+
+_commit="532094ed73675baab03c439f5c1b9248012b5ae8"
+source="$url/archive/$_commit.tar.gz"
+
+package() {
+	cd "$srcdir/pmos-firmware-zuk-z2-row-$_commit"
+	mkdir -p "$pkgdir/lib/firmware"
+	cp -r "firmware" "$pkgdir/lib/firmware/postmarketos"
+}
+
+sha512sums="d86e7cd1241a1db4ef8adaf110b0fc1e8df16f2464431a2c0b16c189a86fcfdc33034f6552fe719902c8bb00aaf589530dee6f77d8ae4d7cfcc9f42aff54df5b  532094ed73675baab03c439f5c1b9248012b5ae8.tar.gz"

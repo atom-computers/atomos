@@ -1,0 +1,45 @@
+maintainer="Newbyte <newbie13xd@gmail.com>"
+pkgname=firmware-htc-m8qlul
+pkgver=1
+pkgrel=1
+_commit=079fc1c4faec2555153b905b7be80ff2b86804f2
+pkgdesc="Firmware for HTC One M8s"
+url="https://github.com/evokelektrique/firmware-htc-m8qlul"
+subpackages="$pkgname-modem $pkgname-venus $pkgname-wcnss"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://github.com/evokelektrique/firmware-htc-m8qlul/archive/$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+modem() {
+	pkgdesc="HTC One M8s modem firmware"
+	install -Dm644 "$builddir"/MBA.MBN -t "$subpkgdir/$_fwdir"
+	install -Dm644 "$builddir"/MODEM.* -t "$subpkgdir/$_fwdir"
+}
+
+venus() {
+	pkgdesc="HTC One M8s video firmware"
+	install -Dm644 "$builddir"/venus.* -t "$subpkgdir/$_fwdir"/qcom/venus-1.8
+}
+
+wcnss() {
+	pkgdesc="HTC One M8s WiFi/Bluetooth firmware"
+	_files="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+	install -Dm644 "$builddir"/wcnss.* -t "$subpkgdir/$_fwdir"
+	for file in $_files; do
+		install -Dm644 "$builddir"/wlan/prima/"$file" -t "$subpkgdir/$_fwdir"/wlan/prima
+	done
+}
+
+
+sha512sums="
+744f8e787c89b8d0f8eed52956992961233236adae05ee541a01866006a7407d63b605991fa8935f16054dfd671e5b9bf94660310b70d3e1bc610f9563e05bc4  079fc1c4faec2555153b905b7be80ff2b86804f2.tar.gz
+"

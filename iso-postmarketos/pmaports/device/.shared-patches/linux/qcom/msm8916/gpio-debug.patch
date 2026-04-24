@@ -1,0 +1,95 @@
+This change allows dumping the state of all GPIOs via debugfs. This is useful
+for debugging sometimes. The code is mostly copied from the mainline driver
+to allow comparison: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/pinctrl/qcom/pinctrl-msm.c
+
+diff --git a/drivers/pinctrl/pinctrl-msm-tlmm.c b/drivers/pinctrl/pinctrl-msm-tlmm.c
+index fc8076162a0..fa628ca0dc1 100644
+--- a/drivers/pinctrl/pinctrl-msm-tlmm.c
++++ b/drivers/pinctrl/pinctrl-msm-tlmm.c
+@@ -671,6 +671,78 @@ static int msm_tlmm_gp_dir_out(struct gpio_chip *gc, unsigned offset, int val)
+ 	return 0;
+ }
+
++#ifdef CONFIG_DEBUG_FS
++#include <linux/seq_file.h>
++
++/* GP PIN TYPE REG MASKS */
++#define TLMM_GP_DRV_SHFT		6
++#define TLMM_GP_DRV_MASK		0x7
++#define TLMM_GP_PULL_SHFT		0
++#define TLMM_GP_PULL_MASK		0x3
++#define TLMM_GP_DIR_SHFT		9
++#define TLMM_GP_DIR_MASK		1
++#define TLMM_GP_FUNC_SHFT		2
++#define TLMM_GP_FUNC_MASK		0xF
++#define GPIO_OUT_BIT			1
++#define GPIO_IN_BIT			0
++#define GPIO_OE_BIT			9
++
++static void msm_gpio_dbg_show_one(struct seq_file *s,
++				  struct gpio_chip *gc,
++				  unsigned offset,
++				  unsigned gpio)
++{
++	struct msm_pintype_info *pinfo = gc_to_pintype(gc);
++	void __iomem *cfg_regp = TLMM_GP_CFG(pinfo, offset);
++	void __iomem *inout_regp = TLMM_GP_INOUT(pinfo, offset);
++
++	unsigned func;
++	int is_out;
++	int drive;
++	int pull;
++	int val;
++	u32 ctl_reg, io_reg;
++
++	static const char * const pulls_keeper[] = {
++		"no pull",
++		"pull down",
++		"keeper",
++		"pull up"
++	};
++
++	ctl_reg = readl_relaxed(cfg_regp);
++	io_reg = readl_relaxed(inout_regp);
++
++	is_out = !!(ctl_reg & BIT(GPIO_OE_BIT));
++	func = (ctl_reg >> TLMM_GP_FUNC_SHFT) & TLMM_GP_FUNC_MASK;
++	drive = (ctl_reg >> TLMM_GP_DRV_SHFT) & TLMM_GP_DRV_SHFT;
++	pull = (ctl_reg >> TLMM_GP_PULL_SHFT) & TLMM_GP_PULL_MASK;
++
++	if (is_out)
++		val = !!(io_reg & BIT(GPIO_OUT_BIT));
++	else
++		val = !!(io_reg & BIT(GPIO_IN_BIT));
++
++	seq_printf(s, " gpio%d: %-3s", offset, is_out ? "out" : "in");
++	seq_printf(s, " %-4s func%d", val ? "high" : "low", func);
++	seq_printf(s, " %dmA", rval_to_drv_str(drive));
++	seq_printf(s, " %s", pulls_keeper[pull]);
++	seq_puts(s, "\n");
++}
++
++static void msm_gpio_dbg_show(struct seq_file *s, struct gpio_chip *chip)
++{
++	unsigned gpio = chip->base;
++	unsigned i;
++
++	for (i = 0; i < chip->ngpio; i++, gpio++)
++		msm_gpio_dbg_show_one(s, chip, i, gpio);
++}
++
++#else
++#define msm_gpio_dbg_show NULL
++#endif
++
+ static int msm_tlmm_gp_to_irq(struct gpio_chip *gc, unsigned offset)
+ {
+ 	struct msm_pintype_info *pinfo = gc_to_pintype(gc);
+@@ -1073,6 +1145,7 @@ static struct msm_pintype_info tlmm_pininfo[] = {
+ 			.get              = msm_tlmm_gp_get,
+ 			.set              = msm_tlmm_gp_set,
+ 			.to_irq           = msm_tlmm_gp_to_irq,
++			.dbg_show         = msm_gpio_dbg_show,
+ 		},
+ 		.init_irq = msm_tlmm_gp_irq_init,
+ 		.irq_chip = &msm_tlmm_gp_irq,

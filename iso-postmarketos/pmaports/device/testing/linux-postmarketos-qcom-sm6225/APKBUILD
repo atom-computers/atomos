@@ -1,0 +1,66 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+maintainer="TQMatvey <maybeetube@gmail.com>"
+pkgname=linux-postmarketos-qcom-sm6225
+pkgver=6.1
+pkgrel=2
+pkgdesc="Mainline Kernel fork for SM6225 devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-qcom-sm6225"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="linux-sm6225"
+_commit="849f3f471b6268280dc8418e0bddda435ae5d4a5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/TQMatvey/$_repository/-/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	# V=1: workaround for pma#1990
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" V=1
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+df2584f29d4e2c753eed2f843da9c2134211c6359d0bd58d0d5f3ab3baf6cdebf57e37997da5a92a2401669329fcb30dd3c8c2c65c7be1eb86fe67abc9c2da91  linux-postmarketos-qcom-sm6225-849f3f471b6268280dc8418e0bddda435ae5d4a5.tar.gz
+5c2409f1f165b70f10450591274662630005280087102427ee4a3e6b22794747157bc3f474f16962d108203283f00b1c20e04b420d1bddbac49c11e3d0b13669  config-postmarketos-qcom-sm6225.aarch64
+"

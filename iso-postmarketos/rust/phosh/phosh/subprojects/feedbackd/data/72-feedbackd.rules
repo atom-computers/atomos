@@ -1,0 +1,59 @@
+#  SPDX-License-Identifier: LGPL-2.1+
+#
+#  This file is part of feedbackd.
+
+ACTION=="remove", GOTO="feedbackd_end"
+
+#
+# Haptic
+#
+# Awinic AW86927 driver (not mainline)
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="aw86927-haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Awinic AW8695 driver (not mainline)
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="aw8695-haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Generic gpio-vibra driver (e.g. PinePhone)
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="gpio-vibrator", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Generic pwm-vibra driver (e.g. Librem 5)
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="pwm-vibrator", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Generic regulator-haptic driver
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="regulator-haptic", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Imagis ISA1200 driver (e.g. Google Nexus 10, Samung Note 10.1) (not mainline)
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="isa1200-haptic", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Maxim MAX77693 driver
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="max77693-haptic", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Nokia TWL4030 driver
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="twl4030:vibrator", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Qualcomm pm8xxx-vibrator driver
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="pm8xxx_vib_ffmemless", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Qualcomm spmi-haptics driver (e.g. Oneplus Enchilada, Fajita) (not mainline)
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="spmi_haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+# Texas Instruments drivers
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="drv260x:haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="drv2624:haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+
+
+#
+# See include/dt-bindings/leds/common.h in the linux kernel
+#
+# Status LEDs
+SUBSYSTEM=="leds", DEVPATH=="*/*:status", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+SUBSYSTEM=="leds", DEVPATH=="*/*:status-[0-9]*", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+SUBSYSTEM=="leds", DEVPATH=="*/*:indicator", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+# Camera Flash
+SUBSYSTEM=="leds", DEVPATH=="*/*:flash", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+SUBSYSTEM=="leds", DEVPATH=="*/*:torch", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+# Legacy LEDs
+### Motorola Droid 4
+SUBSYSTEM=="leds", DEVPATH=="*/status-led:*", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+### Nokia N900
+SUBSYSTEM=="leds", DEVPATH=="*/lp5523:r", ENV{FEEDBACKD_LED_COLOR}="red", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+SUBSYSTEM=="leds", DEVPATH=="*/lp5523:g", ENV{FEEDBACKD_LED_COLOR}="green", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+SUBSYSTEM=="leds", DEVPATH=="*/lp5523:b", ENV{FEEDBACKD_LED_COLOR}="blue", ENV{FEEDBACKD_TYPE}="led", RUN{builtin}+="kmod load ledtrig-pattern", RUN+="/usr/libexec/fbd-ledctrl -p %S%p -t pattern -G feedbackd"
+
+#
+# Alert sliders
+#
+# OnePlus 6,6T (DT bits not yet upstream)
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", ENV{ID_PATH}=="platform-alert-slider", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="alert-slider"
+
+LABEL="feedbackd_end"

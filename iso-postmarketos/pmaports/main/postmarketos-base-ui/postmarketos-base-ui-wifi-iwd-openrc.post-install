@@ -1,0 +1,4 @@
+#!/bin/sh -e
+
+rc-update -qq del wpa_supplicant || true
+rc-update -q add iwd default

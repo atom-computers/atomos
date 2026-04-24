@@ -1,0 +1,50 @@
+maintainer=""
+pkgname=firmware-htc-m8
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for HTC One M8"
+url="https://github.com/TheMuppets/proprietary_vendor_htc"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07 wcnss.b08 wcnss.b09 wcnss.mdt"
+_files_prima="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+_commit="81b0d1394261882adfef18d72f38eec2189f5e7a"
+_commit_prima="80fa5952d92c7f12cb4e7c26a4e1f475562acf13"
+_url="https://github.com/TheMuppets/proprietary_vendor_htc/raw/$_commit/m8-common/proprietary/vendor/firmware"
+_url_prima="https://github.com/LineageOS/android_device_htc_msm8974-common/raw/$_commit_prima/wifi"
+for _i in $_files; do
+	source="$source $pkgname-$_commit-$_i::$_url/$_i"
+done
+for _i in $_files_prima; do
+	source="$source $pkgname-$_commit-$_i::$_url_prima/$_i"
+done
+
+package() {
+	for _i in $_files; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files_prima; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="
+80de3dde5ccbb292bd1a2a28847be542e246859a271f8b1db1ede129c85c1594e4a9499540897d9b0503a58ed782a6ac3e7a130296769dbd464c721af80fa44b  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b00
+46302f43d1b2431fa95adc05e01de3c668a591425bc1ffd52a1aecdd1d2342a7bce07549ff43d1a91ce8e36202d754fc23e6fbb6ede09ae3f6f41249a43611b3  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b01
+2e1bcdfaac92064358693126adfe4ec25be6e075c35ba9400cf36649111f854511d351e697ef281737478cc16ca289b73ccc8b44f0ff89c5eeb6eb20ad866253  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b02
+63d7bcf22ab13da27ed15301c1129dbb286e1793cb491c1d025909a163eeb55a881918911cae6e2f1ad4a4698a26b95f13028fa3153bca567dfd9e0a4898bfb5  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b04
+bab20dc74c757a30afad00192a1a4cc18e48713f33557a70e27c1bb0276e29300768f17ebc09bd4957a3fc6cad1356cdc26ec2c3e0f746d41c80d2f6956cf377  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b06
+0a2cbdc97d1b676a5842dca27a58404af4ac09ce8bf0d4ee3c356082ca7ee203642b1502910fd30afbcbb1eaa4264cc8eff73f1350806a2b82660e3b1e4cb02c  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b07
+6033893c75b32cc906bcabdff02fdbbbb75f0b4d568962b38ea023c00b2273f90bce4482358d4ecc64c22bceaa628d55d17877c8301a1406f67c55c86fc08723  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b08
+8a51439b6b041e57268071d8d83e77b1f4c73502f48b131d844d6428993e706dd17ebe9bd45acb60e41688a0594f8a165e95cf8ba4aaedc086f212dc04a9c3bc  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.b09
+edf8ecd23503ef160eff881223ff161a9dc37917546a7e71e7f5fb73cee786bf93ccb0b208587888be29478adea293123156647b611ca6835234b24ae79c8c92  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-wcnss.mdt
+fb92214f928143228c0683934342ceff11f19bec0581684e98e155262bed03f51c21a21881ec03316f917c127b607a2943efea4847b908f1c02864a1e507fb50  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-WCNSS_cfg.dat
+08cef17a17972f97c012bd2ef921b5e509a3372ff52cc5d0904bf88f1b6d8c37a33bb06e3676cea707513afbc0dba34436996bee5af4f291591e2bc3a5e37921  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-WCNSS_qcom_cfg.ini
+0dd92b6f97731e84c0aaa01b0cc1651ada0fa55d279ec436128266a76b52ddb1d45961956f06e0cfd59ac96832e4bc68458999400a40998d0e1fb176a4010391  firmware-htc-m8-81b0d1394261882adfef18d72f38eec2189f5e7a-WCNSS_qcom_wlan_nv.bin
+"

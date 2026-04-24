@@ -1,0 +1,30 @@
+From 31c9667cbc59c8711ed77cc4a260d0acc0dada3a Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 23 Jun 2025 16:20:26 +0200
+Subject: [PATCH] Fix display colors, use RGB instead of BGR
+
+---
+ drivers/video/fbdev/exynos/dpu/decon_dsi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/fbdev/exynos/dpu/decon_dsi.c b/drivers/video/fbdev/exynos/dpu/decon_dsi.c
+index eeaa2ba19778..b9ddbdf96716 100644
+--- a/drivers/video/fbdev/exynos/dpu/decon_dsi.c
++++ b/drivers/video/fbdev/exynos/dpu/decon_dsi.c
+@@ -862,11 +862,11 @@ int decon_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ 	case 24:
+ 		/* our 24bpp is unpacked, so 32bpp */
+ 		var->bits_per_pixel	= 32;
+-		var->red.offset		= 16;
++		var->red.offset		= 0;
+ 		var->red.length		= 8;
+ 		var->green.offset	= 8;
+ 		var->green.length	= 8;
+-		var->blue.offset	= 0;
++		var->blue.offset	= 16;
+ 		var->blue.length	= 8;
+ 		break;
+ 
+-- 
+2.50.0
+

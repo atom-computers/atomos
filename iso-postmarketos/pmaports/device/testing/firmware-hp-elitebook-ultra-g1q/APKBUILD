@@ -1,0 +1,42 @@
+maintainer="askiiart <mail@askiiart.net>"
+pkgname=firmware-hp-elitebook-ultra-g1q
+pkgdesc="Firmware for the HP EliteBook Ultra G1q"
+pkgver=1
+pkgrel=1
+url="https://postmarketos.org"
+license="proprietary"
+arch="aarch64"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+depends="
+	firmware-asus-s5507q-common
+	linux-firmware-ath11k
+	linux-firmware-qcom
+"
+_wifi_commit="4be38939a006c76e12436636843135713112de1c"
+source="
+	https://github.com/jglathe/qca-swiss-army-knife/raw/$_wifi_commit/tools/scripts/ath11k/board-2.bin.zst
+"
+subpackages="
+	$pkgname-common:common
+	$pkgname-wifi:wifi
+"
+replaces="linux-firmware-ath11k"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+common() {
+	# just a symlink to make the asus-s5507q firmware work on here as well
+	mkdir -p "$subpkgdir/lib/firmware/qcom/x1e80100/hp/"
+	ln -s ../ASUSTeK/vivobook-s15/ "$subpkgdir/lib/firmware/qcom/x1e80100/hp/elitebook-ultra-g1q"
+}
+
+wifi() {
+	mkdir -p "$subpkgdir/lib/firmware/ath11k/WCN6855/hw2.1/"
+	install -Dm644 "$srcdir/board-2.bin.zst" "$subpkgdir/lib/firmware/ath11k/WCN6855/hw2.1/board-2.bin.zst"
+}
+
+sha512sums="
+fde93fb24fa17a0c8c279592819d99cb20c1271a4ae83f7e97ea390a36a331bc58ff7f91fb102193c85771c82e48325deae629f7a8e21fb71f0652fe2b096db0  board-2.bin.zst
+"

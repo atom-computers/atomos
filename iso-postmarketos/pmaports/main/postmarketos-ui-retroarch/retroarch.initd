@@ -1,0 +1,26 @@
+#!/sbin/openrc-run
+supervisor="supervise-daemon"
+name="retroarch"
+description="retroarch"
+
+command="/usr/bin/autologin"
+command_args="postmarketos-ui-retroarch"
+
+depend() {
+	provide display-manager
+	need localmount
+	want elogind
+}
+
+start_pre() {
+    # default to 10000 if none set in config
+    [ -z "$AUTOLOGIN_UID" ] && AUTOLOGIN_UID=10000
+
+	user=$(getent passwd ${AUTOLOGIN_UID} | cut -d: -f1)
+	[ -z "$user" ] && {
+		eerror "ERROR: unable to find user with uid $AUTOLOGIN_UID"
+		return 1
+	}
+
+	command_args="$user $command_args"
+}

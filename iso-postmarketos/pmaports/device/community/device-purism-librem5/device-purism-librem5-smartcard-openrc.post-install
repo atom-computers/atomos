@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# smartcard reader service
+rc-update add pcscd-librem5
+
+cat 1>&2 <<EOF
+*
+* If the smartcard firmware hasn't been upgraded, an upgrade might be necessary!
+* For more info: https://wiki.postmarketos.org/wiki/Purism_Librem5_(purism-librem5)#OpenPGP_Smartcard
+*
+EOF

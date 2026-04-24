@@ -1,0 +1,34 @@
+--- a/drivers/misc/mediatek/lcm/mt65xx_lcm_list.c
++++ b/drivers/misc/mediatek/lcm/mt65xx_lcm_list.c
+@@ -1513,29 +1513,20 @@
+ #endif
+ };
+ 
+-#define LCM_COMPILE_ASSERT(condition) \
+-	LCM_COMPILE_ASSERT_X(condition, __LINE__)
+-#define LCM_COMPILE_ASSERT_X(condition, line) \
+-	LCM_COMPILE_ASSERT_XX(condition, line)
+-#define LCM_COMPILE_ASSERT_XX(condition, line) \
+-	char assertion_failed_at_line_##line[(condition) ? 1 : -1]
+-
+-
+ /*hs14 code for AL6528A-20 by duanyaoming at 20220906 start*/
+ #ifdef CONFIG_HQ_PROJECT_O22
+ unsigned int lcm_count =
+ 	sizeof(o22_lcm_driver_list) / sizeof(struct LCM_DRIVER *);
+-LCM_COMPILE_ASSERT(sizeof(o22_lcm_driver_list) / sizeof(struct LCM_DRIVER *) != 0);
++
+ /*hs14 code for AL6528A-20 by duanyaoming at 20220906 end*/
+ /*hs04 code for DEAL6398A-1875 by zhawei at 20221017 start*/
+ #elif defined CONFIG_HQ_PROJECT_HS04
+ unsigned int lcm_count = sizeof(hs04_lcm_driver_list) / sizeof(struct LCM_DRIVER *);
+-LCM_COMPILE_ASSERT(sizeof(hs04_lcm_driver_list) / sizeof(struct LCM_DRIVER *) != 0);
++
+ /*hs04 code for DEAL6398A-1875 by zhawei at 20221017 end*/
+ #else
+ unsigned int lcm_count =
+ 	sizeof(lcm_driver_list) / sizeof(struct LCM_DRIVER *);
+-LCM_COMPILE_ASSERT(sizeof(lcm_driver_list) / sizeof(struct LCM_DRIVER *) != 0);
+ 
+ #endif
+ #if defined(NT35520_HD720_DSI_CMD_TM) | \

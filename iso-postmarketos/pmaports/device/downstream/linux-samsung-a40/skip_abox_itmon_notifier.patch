@@ -1,0 +1,28 @@
+Subject: [PATCH] skip abox_itmon_notifier
+---
+Index: sound/soc/samsung/abox/abox.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/sound/soc/samsung/abox/abox.c b/sound/soc/samsung/abox/abox.c
+--- a/sound/soc/samsung/abox/abox.c	(revision 5eeafe2bfcb93847b403fd92bd92f9d0a9f6341d)
++++ b/sound/soc/samsung/abox/abox.c	(date 1740664990038)
+@@ -5591,17 +5591,6 @@
+ static int abox_itmon_notifier(struct notifier_block *nb,
+ 		unsigned long action, void *nb_data)
+ {
+-	struct abox_data *data = container_of(nb, struct abox_data, itmon_nb);
+-	struct device *dev = &data->pdev->dev;
+-	struct itmon_notifier *itmon_data = nb_data;
+-
+-	if (itmon_data && itmon_data->dest && (strncmp("ABOX", itmon_data->dest,
+-			sizeof("ABOX") - 1) == 0)) {
+-		dev_info(dev, "%s(%lu)\n", __func__, action);
+-		data->enabled = false;
+-		return NOTIFY_OK;
+-	}
+-
+ 	return NOTIFY_DONE;
+ }
+ 

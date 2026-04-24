@@ -1,0 +1,25 @@
+maintainer="Dylan Van Assche <dylan@postmarketos.org>"
+pkgname=mobile-config-thunderbird
+pkgver=0.1.2
+pkgrel=0
+pkgdesc="Thunderbird tweaks for mobile and privacy"
+url="https://gitlab.postmarketos.org/DylanVanAssche/mobile-config-thunderbird"
+source="
+	https://gitlab.postmarketos.org/postmarketOS/mobile-config-thunderbird/-/archive/$pkgver/mobile-config-thunderbird-$pkgver.tar.bz2
+"
+arch="noarch"
+makedepends="zip"
+license="GPL-3.0-or-later"
+options="!check" # No tests
+
+build() {
+	make VERSION=$pkgver-r$pkgrel
+}
+
+package() {
+	make DESTDIR="$pkgdir" VERSION=$pkgver-r$pkgrel THUNDERBIRD_DIR=/usr/lib/thunderbird install
+	make DESTDIR="$pkgdir" VERSION=$pkgver-r$pkgrel THUNDERBIRD_DIR=/usr/lib/thunderbird-esr install
+}
+sha512sums="
+6b37eac212819618066368d9bf9b0437ae81dcea26e7a293af8864a575ffadd8dc00371d3cabfdada20f3b519b377abd04306d7a910d1d506c3a0ea0532cf423  mobile-config-thunderbird-0.1.2.tar.bz2
+"

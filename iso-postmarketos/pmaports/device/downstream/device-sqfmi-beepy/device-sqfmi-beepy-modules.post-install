@@ -1,0 +1,20 @@
+#!/bin/sh
+
+kdir=$(find /usr/src/ -type d -iname 'linux-headers-*-rpi' -mindepth 1 -maxdepth 1)
+
+dispdir=/usr/src/sharp-drm
+kbddir=/usr/src/beepy-kbd
+
+# force use of rpi kernel in Makefiles
+KERNELRELEASE=$(find /lib/modules -type d -iname '*-rpi' -mindepth 1 -maxdepth 1 -exec basename {} \;|sort|tail -n1)
+
+dtc -@ -I dts -O dtb -W no-unit_address_vs_reg -o $dispdir/sharp-drm.dtbo $dispdir/sharp-drm.dts
+/usr/bin/make -C $kdir M=$dispdir
+/usr/bin/make -C $kdir M=$dispdir modules_install
+
+dtc -@ -I dts -O dtb -W no-unit_address_vs_reg -o $kbddir/beepy-kbd.dtbo $kbddir/beepy-kbd.dts
+/usr/bin/make -C $kdir M=$kbddir
+/usr/bin/make -C $kdir M=$kbddir modules_install
+
+# akms hooks fail in pmbootstrap chroot. This is necessary to build an image
+exit 0

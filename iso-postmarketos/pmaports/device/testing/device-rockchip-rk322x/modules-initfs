@@ -1,0 +1,5 @@
+clk_scmi
+drm_kms_helper
+drm_shmem_helper
+pvi_waveform
+rockchip_ebc

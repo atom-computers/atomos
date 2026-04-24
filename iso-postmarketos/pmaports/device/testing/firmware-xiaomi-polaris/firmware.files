@@ -1,0 +1,17 @@
+./lib/firmware/tas2559_uCDSP.bin
+./lib/firmware/postmarketos/ath10k/WCN3990/hw1.0/board-2.bin
+./lib/firmware/postmarketos/qca/crbtfw21.tlv
+./lib/firmware/qcom/sdm845/polaris/adspr.jsn
+./lib/firmware/qcom/sdm845/polaris/adspua.jsn
+./lib/firmware/qcom/sdm845/polaris/cdspr.jsn
+./lib/firmware/qcom/sdm845/polaris/modemr.jsn
+./lib/firmware/qcom/sdm845/polaris/modemuw.jsn
+./lib/firmware/qcom/sdm845/polaris/venus.mbn
+./lib/firmware/qcom/sdm845/polaris/wlanmdsp.mbn
+./lib/firmware/qcom/sdm845/polaris/a630_zap.mbn
+./lib/firmware/qcom/sdm845/polaris/adsp.mbn
+./lib/firmware/qcom/sdm845/polaris/cdsp.mbn
+./lib/firmware/qcom/sdm845/polaris/ipa_fws.mbn
+./lib/firmware/qcom/sdm845/polaris/mba.mbn
+./lib/firmware/qcom/sdm845/polaris/modem.mbn
+./lib/firmware/qca/polaris/crnv21.bin

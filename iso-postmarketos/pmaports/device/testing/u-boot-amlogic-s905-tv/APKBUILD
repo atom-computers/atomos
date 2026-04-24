@@ -1,0 +1,40 @@
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=u-boot-amlogic-s905-tv
+pkgver=2020.07
+pkgrel=1
+pkgdesc="U-Boot for devices using the Amlogic S905 SoC"
+url="https://www.denx.de/wiki/U-Boot/"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+options="!check"
+depends="soc-amlogic-aarch64-boot"
+makedepends="$depends_dev bc dtc python3-dev swig bison flex openssl-dev
+	py3-setuptools linux-headers u-boot-tools"
+source="
+	https://ftp.denx.de/pub/u-boot/u-boot-${pkgver//_/-}.tar.bz2
+	0001-p201_defconfig-v2020.07.patch
+	gcc-12-u-boot-2020-fix-read-only-segment-has-dynamic-relocations-error.patch
+"
+builddir="$srcdir/u-boot-${pkgver//_/-}"
+
+prepare() {
+	default_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH=arm p201_defconfig
+	make ARCH=arm CC="${CC:-gcc}"
+}
+
+package() {
+	mkdir -p "$pkgdir/boot/"
+	install -Dm644 "$builddir/u-boot.bin" \
+		"$pkgdir/boot/u-boot.bin"
+}
+sha512sums="
+df91264fe8a42e676c3f2aa09d644c6a3035cc8169bf52a8ab95efe7e542cfc758a0ef150949b0d9f03c7dec7d95f8d20a2efe2dbb60c2ef1a61c8063770478d  u-boot-2020.07.tar.bz2
+36b1c22b312ce0998dee2c44a498a15daf69613f0968bb1e1c0e7c64411a67797fd137db11297345717164f1841cee025c56b41f95130f08d545caa0bddee7b2  0001-p201_defconfig-v2020.07.patch
+e8d27471665a89a882d8add3c4446bec3e0fd84fb830381e00c71e159d528c129ae9f14469ac52ef3b2f40d144c10241ebb8004276a962b87c22751cb28ab96c  gcc-12-u-boot-2020-fix-read-only-segment-has-dynamic-relocations-error.patch
+"

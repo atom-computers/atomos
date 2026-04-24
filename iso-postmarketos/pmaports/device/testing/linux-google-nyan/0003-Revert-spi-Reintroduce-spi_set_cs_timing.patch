@@ -1,0 +1,70 @@
+From 394c7d15b0aab3eef9bdd8df6bcf4a76d0991e49 Mon Sep 17 00:00:00 2001
+From: Anton Bambura <jenneron@protonmail.com>
+Date: Mon, 19 Feb 2024 02:21:51 +0200
+Subject: [PATCH 3/5] Revert "spi: Reintroduce spi_set_cs_timing()"
+
+This reverts commit 684a47847ae639689e7b823251975348a8e5434f.
+
+Thanks hexdump0815
+---
+ drivers/spi/spi.c | 37 -------------------------------------
+ 1 file changed, 37 deletions(-)
+
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 8d6304cb061e..70dc5ba504f8 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -3660,37 +3660,6 @@ static int __spi_validate_bits_per_word(struct spi_controller *ctlr,
+ 	return 0;
+ }
+ 
+-/**
+- * spi_set_cs_timing - configure CS setup, hold, and inactive delays
+- * @spi: the device that requires specific CS timing configuration
+- *
+- * Return: zero on success, else a negative error code.
+- */
+-static int spi_set_cs_timing(struct spi_device *spi)
+-{
+-	struct device *parent = spi->controller->dev.parent;
+-	int status = 0;
+-
+-	if (spi->controller->set_cs_timing && !spi_get_csgpiod(spi, 0)) {
+-		if (spi->controller->auto_runtime_pm) {
+-			status = pm_runtime_get_sync(parent);
+-			if (status < 0) {
+-				pm_runtime_put_noidle(parent);
+-				dev_err(&spi->controller->dev, "Failed to power device: %d\n",
+-					status);
+-				return status;
+-			}
+-
+-			status = spi->controller->set_cs_timing(spi);
+-			pm_runtime_mark_last_busy(parent);
+-			pm_runtime_put_autosuspend(parent);
+-		} else {
+-			status = spi->controller->set_cs_timing(spi);
+-		}
+-	}
+-	return status;
+-}
+-
+ /**
+  * spi_setup - setup SPI mode and clock rate
+  * @spi: the device whose settings are being modified
+@@ -3787,12 +3756,6 @@ int spi_setup(struct spi_device *spi)
+ 		}
+ 	}
+ 
+-	status = spi_set_cs_timing(spi);
+-	if (status) {
+-		mutex_unlock(&spi->controller->io_mutex);
+-		return status;
+-	}
+-
+ 	if (spi->controller->auto_runtime_pm && spi->controller->set_cs) {
+ 		status = pm_runtime_resume_and_get(spi->controller->dev.parent);
+ 		if (status < 0) {
+-- 
+2.42.0
+

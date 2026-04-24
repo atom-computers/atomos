@@ -1,0 +1,2 @@
+# For auto-unlocking the volume if the default/empty passphrase is set
+root	PARTLABEL=pmOS_root	/dev/null	luks,keyfile-timeout=0

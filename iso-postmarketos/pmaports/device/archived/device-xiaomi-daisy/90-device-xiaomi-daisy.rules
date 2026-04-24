@@ -1,0 +1,5 @@
+SUBSYSTEM=="input", ENV{DEVNAME}=="/dev/input/event1", \
+ATTRS{name}=="Goodix Capacitive TouchScreen", \
+ENV{WL_CALIBRATION}="4.00 0.00 0.00 0.00 1.80 0.00", \
+ENV{LIBINPUT_CALIBRATION_MATRIX}="4.00 0.00 0 0.00 1.80 0", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1"

@@ -1,0 +1,25 @@
+From 04672e4f79acfb7fb2c7779573c8c769013e88dc Mon Sep 17 00:00:00 2001
+From: Alexandros Feuerstein <32029275+afeuerstein@users.noreply.github.com>
+Date: Tue, 13 Jul 2021 02:00:31 +0200
+Subject: [PATCH] Update Makefile
+
+---
+ arch/arm64/Makefile | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index c0ad8588b140..86036baab29c 100644
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -49,11 +49,6 @@ $(warning Detected assembler with broken .inst; disassembly will be unreliable)
+   endif
+ endif
+
+-ifeq ($(cc-name),clang)
+-KBUILD_CFLAGS	+= -mno-implicit-float
+-else
+-KBUILD_CFLAGS	+= -mgeneral-regs-only
+-endif
+ KBUILD_CFLAGS	+= $(lseinstr) $(brokengasinst)
+ KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, psabi)

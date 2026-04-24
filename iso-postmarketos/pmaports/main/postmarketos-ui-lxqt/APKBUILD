@@ -1,0 +1,113 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Antoni Aloy <aaloytorrens@gmail.com>"
+pkgname=postmarketos-ui-lxqt
+pkgver=0.4
+pkgrel=2
+pkgdesc="(X11) Lightweight Qt Desktop Environment (stylus recommended)"
+url="https://lxqt-project.org/"
+# armhf: lxqt-desktop not available
+arch="noarch !armhf"
+license="GPL-3.0-or-later"
+depends="
+	brightnessctl
+	dbus-x11
+	dnsmasq
+	elogind
+	font-dejavu
+	lxqt-desktop
+	lxqt-policykit
+	mesa-egl
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	setxkbmap
+	tinydm
+	upower
+	xfce4-screensaver
+	xorg-server
+	"
+_pmb_recommends="
+	adwaita-icon-theme
+	alsa-plugins-pulse
+	alsa-utils
+	bluedevil
+	gnome-keyring
+	gvfs
+	lximage-qt
+	network-manager-applet
+	obconf-qt
+	onboard
+	paper-icon-theme
+	pavucontrol-qt
+	pm-utils
+	postmarketos-artwork-wallpapers
+	qps
+	screengrab
+	unclutter-xfixes
+	"
+install="$pkgname.post-install $pkgname.post-upgrade"
+subpackages="$pkgname-openrc"
+source="
+	$pkgname-$pkgver.tar.gz::https://gitlab.com/antoni.aloytorrens/lxqt-tablet/-/archive/$pkgver/lxqt-tablet-$pkgver.tar.gz
+	10_onboard.gschema.override
+	lxqt-tablet.sh
+	lxqt-xscreensaver-autostart.desktop
+	onboard-autostart.desktop
+	unclutter-xfixes.desktop
+	xfce4-screensaver.desktop
+	xfce4-screensaver-preferences.desktop
+	xscreensaver-settings.desktop
+	"
+options="!check" # No testsuite
+builddir="$srcdir/lxqt-tablet-$pkgver"
+
+package() {
+	mkdir -p "$pkgdir"/etc/xdg
+	cp -a "$builddir"/config "$pkgdir"/etc/xdg/lxqt-tablet
+
+	mkdir -p "$pkgdir"/usr/share/themes
+	cp -a "$builddir"/openbox-themes/* "$pkgdir"/usr/share/themes/.
+
+	install -Dm644 -t "$pkgdir"/etc/xdg/lxqt-tablet/autostart \
+		"$srcdir"/lxqt-xscreensaver-autostart.desktop \
+		"$srcdir"/onboard-autostart.desktop \
+		"$srcdir"/unclutter-xfixes.desktop \
+		"$srcdir"/xfce4-screensaver.desktop
+
+	install -Dm644 -t "$pkgdir"/usr/share/lxqt-tablet/applications \
+		"$srcdir"/xfce4-screensaver-preferences.desktop \
+		"$srcdir"/xscreensaver-settings.desktop
+
+	install -Dm644 -t "$pkgdir"/usr/share/glib-2.0/schemas \
+		"$srcdir"/10_onboard.gschema.override
+
+	install -Dm644 -t "$pkgdir"/etc/profile.d \
+		"$srcdir"/lxqt-tablet.sh
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		brightnessctl-openrc
+		elogind-openrc
+		networkmanager-openrc
+		openrc
+		tinydm-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+f442f9aeea54e2c41efa4505a4c14c08557ab6a1a7f6dbd4bb782bc023332a647d7d957a3fb79f00aedb0767240d297f7814f46ad40c9393b4909d17da35a3ed  postmarketos-ui-lxqt-0.4.tar.gz
+ffcc518ff58d37de302bd101e57bf983800e45899645d476045d0a74096704333a0b513f45e6a5485fdbd80ac1caebce14a760cab6fcc6d5dde0d766ade8b58b  10_onboard.gschema.override
+1b5ca0c5bc6ef0c06cd60f8ca26259da42e992f9aed8918901d52d267ce3d9861c514643d33a1e45257012e28631d07c244bfb821782cf4c2eab3094bf6a32fc  lxqt-tablet.sh
+688f1920f64fa9996d598a44c4a4e7a73d7b032489cebfdb52f3cb1b410b9843a696b0de25579fd0e8436f3f72cfdb4a9b6cb491479185deac0f8ce4e95746a5  lxqt-xscreensaver-autostart.desktop
+ecf85cd0547ff4195ad4e5c15c1a5a1a23704e17318cc0fcde63cf8560df516b744fd64f85d3bb9450294fef0d4241398898acaa21068dca942359256b471b4b  onboard-autostart.desktop
+b626c8b27d9418df15124d6e97f5174c173863536e9c3eebfb11473d764c81e1db40cf4b7cdabe44b67a0e295d920c7a849a3e2e40dd86402de8200242c7b05a  unclutter-xfixes.desktop
+ffd31188677c1befcf94e47b350aa691f615b0320ef433ed9250d622c5be25b36b913ff551578329b32971c3320beba6794b1e3da93997811d0d1019be2b41ce  xfce4-screensaver.desktop
+d3182a58383f5e1f5c93129f69f6949565b566a7101037cd6a5643a6ec105aa31a5333877f89623981ca49ca8b0ad601e66b60957602ebc18883ecdce2d2a2de  xfce4-screensaver-preferences.desktop
+ff04ecf59aeeff3f0cee8bc53099ecadddec6ff33547fbcec9aa8debb0b8d6db629c45866d9809f992247f02c488ffd1f059755b2367cb1fb92c4b376ab4e5ec  xscreensaver-settings.desktop
+"

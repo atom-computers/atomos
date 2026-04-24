@@ -1,0 +1,71 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+_flavor="postmarketos-qcom-milos"
+pkgname=linux-$_flavor
+pkgver=7.0.0
+pkgrel=0
+pkgdesc="Mainline Kernel fork for Qualcomm Milos SoC (SM7635, etc.) devices"
+arch="aarch64"
+_carch="arm64"
+url="https://github.com/milos-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	installkernel
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+	zstd
+"
+
+_repo="linux"
+_config="config-$_flavor.$arch"
+_tag="v$pkgver-milos"
+
+# Source
+source="
+	https://github.com/milos-mainline/$_repo/archive/refs/tags/$_tag/$_repo-$_tag.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repo-$pkgver-milos"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+54ea6329edd6b25947078c71207e3cf4ee8486e29b0e35fa3585eed62979ede561a84524a64d844042ac23bee2d125434a4a8b1d0bc02f65008eb12cbcf932d5  linux-v7.0.0-milos.tar.gz
+24ee5cada1f5bb09874229abf8b31aeac7826af0d322e679bbc1545e364f086e58656d988134da7505f42381b200cb009c0a54776c22bcc7583a95c216128f7d  config-postmarketos-qcom-milos.aarch64
+"

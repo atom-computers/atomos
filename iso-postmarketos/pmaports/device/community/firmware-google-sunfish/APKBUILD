@@ -1,0 +1,28 @@
+
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=firmware-google-sunfish
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for Google Pixel 4a"
+url="https://github.com/sm7150-mainline/firmware-google-sunfish"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native textrels"
+_commit="fe63598e1bd9884bd68ba89e4670dae4d70b1e3e"
+source="
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-initramfs-$pkgname.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+c94511f6e6d6aa6ebf3238e27b7092498f3d58be9893d05e874ce9551cffb1a3e38b994a822c4364c97da0f03925d4d554045234b1f78b59af63207a396ee713  firmware-google-sunfish-fe63598e1bd9884bd68ba89e4670dae4d70b1e3e.tar.gz
+d07e3a34791608d432cb119507299dabedc5772ad34763c5494daf68f28892b3556ca6ca34994b5f32cc097cd6d1795db3b952db11e0522f6ef33a663761f289  30-initramfs-firmware-google-sunfish.files
+"

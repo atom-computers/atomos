@@ -1,0 +1,16 @@
+Fixes clang: error: unknown argument: '-mno-thumb-interwork' for armv7
+
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -104,9 +104,9 @@
+ tune-y := $(tune-y)
+ 
+ ifeq ($(CONFIG_AEABI),y)
+-CFLAGS_ABI	:=-mabi=aapcs-linux -mno-thumb-interwork -mfpu=vfp
++CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+ else
+-CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
++CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu)
+ endif
+ 
+ ifeq ($(CONFIG_ARM_UNWIND),y)

@@ -1,0 +1,33 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-crespo
+pkgdesc="Samsung Nexus S"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-crespo mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Nexus S firmware"
+	depends="firmware-samsung-crespo"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+ce239a88e24782fab255a54947abe38bb6557ca3013e55923a90aeb7d3caceab6bbd4c6cb770db8031377ab1b5587213e88c990c0fdbedd0a4bba5b8661508b0  deviceinfo
+3e96eda8d580992ecc2bfcb959df91bb7bfb3cbc28d046ac3a714b3f22ee598762070f30228f9e943d6f4e6b2603da652e748939f72584cdb4f564c2b3736eb5  kernel-cmdline.conf
+"

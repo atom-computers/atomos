@@ -1,0 +1,28 @@
+maintainer=""
+pkgname=firmware-realme-porsche
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Realme GT 2 (porsche)"
+url="https://github.com/Saikatsaha1996/firmware-realme-porsche"
+_repository="firmware-realme-porsche"
+_commit="7774d27505c22c44d4344ce6b5747bb33fa57af4"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+source="$pkgname-$_commit.tar.gz::https://github.com/Saikatsaha1996/$_repository/archive/$_commit.tar.gz
+firmware.files"
+
+package() {
+	cd "$srcdir/$pkgname-$_commit/"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		echo $_i
+		install -Dm644 $_i "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+}
+
+sha512sums="
+1de757b703610319d343dfe138e224bff1feba3c3109b43c516575acb4795cab04f701ef838bb10bb7241b0a2f63a2a9d7bd34fb78e5adbf96bea4cafe1f6479  firmware-realme-porsche-7774d27505c22c44d4344ce6b5747bb33fa57af4.tar.gz
+65a1dd20da92e599c83ea9b233b287ebd801d7ab669e176caec6d08bf4cbd1169710bf416718a876c5b07e70c0dc722fbf54e6aaf60b2d88a0709283ed22978e  firmware.files
+"

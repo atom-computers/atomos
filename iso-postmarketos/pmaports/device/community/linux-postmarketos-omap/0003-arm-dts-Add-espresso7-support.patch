@@ -1,0 +1,102 @@
+From b72698bf16d1b1bb487f82c80e3cd467a674f65d Mon Sep 17 00:00:00 2001
+From: Mithil Bavishi <bavishimithil@gmail.com>
+Date: Thu, 20 Oct 2022 20:46:21 +0530
+Subject: [PATCH 2/3] arm/dts: Add espresso7 support
+
+---
+ arch/arm/boot/dts/ti/omap/Makefile        	       |  1 +
+ arch/arm/boot/dts/ti/omap/omap4-samsung-espresso7.dts | 70 +++++++++++++++++++
+ 2 files changed, 71 insertions(+)
+ create mode 100644 arch/arm/boot/dts/ti/omap/omap4-samsung-espresso7.dts
+
+diff --git a/arch/arm/boot/dts/ti/omap/Makefile b/arch/arm/boot/dts/ti/omap/Makefile
+index 6aa7dc4db..c0c55b1a7 100644
+--- a/arch/arm/boot/dts/ti/omap/Makefile
++++ b/arch/arm/boot/dts/ti/omap/Makefile
+@@ -95,6 +95,7 @@ dtb-$(CONFIG_ARCH_OMAP4) += \
+ 	omap4-panda.dtb \
+ 	omap4-panda-a4.dtb \
+ 	omap4-panda-es.dtb \
++	omap4-samsung-espresso7.dtb \
+ 	omap4-sdp.dtb \
+ 	omap4-sdp-es23plus.dtb \
+ 	omap4-var-dvk-om44.dtb \
+diff --git a/arch/arm/boot/dts/ti/omap/omap4-samsung-espresso7.dts b/arch/arm/boot/dts/ti/omap/omap4-samsung-espresso7.dts
+new file mode 100644
+index 000000000..9d715bd7e
+--- /dev/null
++++ b/arch/arm/boot/dts/ti/omap/omap4-samsung-espresso7.dts
+@@ -0,0 +1,70 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/dts-v1/;
++
++#include "omap4-samsung-espresso-common.dtsi"
++
++/ {
++	model = "Samsung Galaxy Tab 2 (7 inch)";
++	compatible = "samsung,espresso7", "ti,omap4430", "ti,omap4";
++
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pinctrl-names = "default";
++		pinctrl-0 = <&backlight_pins>;
++		pwms = <&pwm10 0 1200 0>;
++		power-supply = <&reg_lcd>;
++		enable-gpios = <&gpio3 31 GPIO_ACTIVE_HIGH>;
++		brightness-levels = <0 4 8 16 32 64 128 255>;
++		default-brightness-level = <7>;
++	};
++
++	panel {
++		compatible ="samsung,ltn070nl01", "panel-lvds";
++		power-supply = <&reg_lcd>;
++		width-mm = <154>;
++		height-mm = <90>;
++		data-mapping = "vesa-24";
++		backlight = <&backlight>;
++
++		panel-timing {
++			clock-frequency = <47255554>;
++
++			hback-porch = <210>;
++			hactive = <1024>;
++			hfront-porch = <186>;
++			hsync-len = <50>;
++
++			vback-porch = <11>;
++			vactive = <600>;
++			vfront-porch = <24>;
++			vsync-len = <10>;
++
++			hsync-active = <0>;
++			vsync-active = <0>;
++			de-active = <1>;
++			pixelclk-active = <1>;
++			syncclk-active = <0>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&bridge_out>;
++			};
++		};
++	};
++};
++
++&i2c3 {
++	touchscreen@48 {
++		compatible = "melfas,mms136";
++		reg = <0x48>;
++		interrupt-parent = <&gpio2>;
++		interrupts = <14 IRQ_TYPE_EDGE_FALLING>;
++		touchscreen-size-x = <1023>;
++		touchscreen-size-y = <599>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&touch_pins>;
++		avdd-supply = <&reg_touch_ldo_en>;
++		vdd-supply = <&vcxio>;
++	};
++};
+-- 
+2.25.1
+

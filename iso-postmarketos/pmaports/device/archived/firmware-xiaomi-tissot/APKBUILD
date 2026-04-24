@@ -1,0 +1,25 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-tissot
+pkgver=2
+pkgrel=2
+pkgdesc="Firmware files for Xiaomi Mi A1"
+url="https://gitlab.com/jiaxyga/firmware-xiaomi-tissot"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="bf686895224cae33c2130932b4a5914fea415287"
+
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit/lib/firmware/postmarketos"
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/tissot"
+
+package() {
+	# GPU firmwares
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+e82c953fd1a1a665bcfcfc4eaab95fe8a017f1804e4bc66f6449cfeb21137f2ebcc0f8abab9ef9975c438d9836d68974b417bbe58c128b06cec605abecfad008  firmware-xiaomi-tissot-bf686895224cae33c2130932b4a5914fea415287.tar.gz
+"

@@ -1,0 +1,78 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Eray Tutmaz <tarkanttmz261@gmail.com>"
+pkgname=device-samsung-j7y17lte
+pkgdesc="Samsung Galaxy J7 2017"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-utils
+	mkbootimg
+	postmarketos-base
+	samsungipcd
+	util-linux
+	postmarketos-base-downstream
+	linux-samsung-j7y17lte
+	msm-fb-refresher
+	pipewire-pulse
+"
+replaces="
+	udev-init-scripts-openrc
+"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+subpackages="$pkgname-openrc"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	etc-conf.d-samsungipcd
+	etc-init.d-udev-settle
+	etc-init.d-wlan0-up
+	NetworkManager-conf.d-wlan0-unmanaged.conf
+	usr-libexec-samsungipcd-voicecall.sh
+	usr-share-alsa-ucm2-conf.d-Universal7870-I-HiFi.conf
+	usr-share-alsa-ucm2-conf.d-Universal7870-I-Universal7870-I.conf
+	usr-share-alsa-ucm2-conf.d-Universal7870-I-VoiceCall.conf
+"
+
+# pulseaudio does not seem to work on this device. Will use pipewire-pulse instead.
+# (For downstream kernel, mainline does not have audio yet and I'd like to run Phosh)
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 NetworkManager-conf.d-wlan0-unmanaged.conf "$pkgdir"/usr/lib/NetworkManager/conf.d/swlan0-unmanaged.conf
+	install -Dm755 usr-libexec-samsungipcd-voicecall.sh "$pkgdir"/usr/libexec/samsungipcd/voicecall.sh
+	install -Dm644 usr-share-alsa-ucm2-conf.d-Universal7870-I-HiFi.conf "$pkgdir"/usr/share/alsa/ucm2/conf.d/Universal7870-I/HiFi.conf
+	install -Dm644 usr-share-alsa-ucm2-conf.d-Universal7870-I-Universal7870-I.conf "$pkgdir"/usr/share/alsa/ucm2/conf.d/Universal7870-I/Universal7870-I.conf
+	install -Dm644 usr-share-alsa-ucm2-conf.d-Universal7870-I-VoiceCall.conf "$pkgdir"/usr/share/alsa/ucm2/conf.d/Universal7870-I/VoiceCall.conf
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	install -Dm644 etc-conf.d-samsungipcd "$subpkgdir"/etc/conf.d/samsungipcd
+	install -Dm755 etc-init.d-udev-settle "$subpkgdir"/etc/init.d/udev-settle
+	install -Dm755 etc-init.d-wlan0-up "$subpkgdir"/etc/init.d/wlan0-up
+}
+
+sha512sums="
+d451f1b58a20b23aadff65f15560c8838ac26d486e9b5b6f9afca0e80a31499ef8baa751619ba3f9593f381d00e15a54a4c2f1575d57bea8860b5fb10e803dd9  deviceinfo
+6263b6dab9ea670bd1af22feff8fb7ce9d143ed5ab99223bcef9da76bb0947c89e62dbf7004e1a307e2b71df48de84ea95cad258d88a44cedb37e347c56db8d2  kernel-cmdline.conf
+3e5bb764529010d2b6b1f2759a7799f665d140aebcee2dd63433e68cd4282e09b5d3b34fb7c21e737595b406501e7f02ece4592651c60e4c2b9419de4aedb438  etc-conf.d-samsungipcd
+203b832a7080d5f1351c5e024e444f9fe509f6e0fd4b376a60c7d73359b7e356863a4f15caf9b2e4e733dc44d2971722083e7c69ca94a012eb004b4b8ded9d09  etc-init.d-udev-settle
+7caddfe4659c969a33adcc27a760bc78d4f70ca4b7a4a5ec28a6411c12f3e6dd6d427b59f75976a737a5fe0f09806f8b6d65798f6358bd1e1954ad2a28fbfdc8  etc-init.d-wlan0-up
+8a8720d86b4c98f02d3a6cd8ed97ed77b1c341548f5917c81133810c632780e118c178ae0496c222882da6403035c2ebace6e1b589995e153e9068876dc9591a  NetworkManager-conf.d-wlan0-unmanaged.conf
+abe1c4a2f59fe862cebef75c54b8806bd86ce06aeb15d8c0699ab1338c9d575cb72a4d5b099f94272b1d9c9c3f4960af209a9e058ea9e57733b7d905dad0d33f  usr-libexec-samsungipcd-voicecall.sh
+cdee42ea2766397dfa0a93fd9041489328b087a594e0fa8252bf36a8e44f7fca1f1b084b453b50205d434ea8eed248259e03f397ea41ba9d24110deefbc250f6  usr-share-alsa-ucm2-conf.d-Universal7870-I-HiFi.conf
+5f460a5951a8255b2456babc72ad38470888e2ba02ab4545d05a7f91d85fcaf99123776416967d4a111c70610a5e2cd9ba66e4bdbb8be25342f82f822deab51d  usr-share-alsa-ucm2-conf.d-Universal7870-I-Universal7870-I.conf
+482e881e9a5e3a6130bdb0a04143e21d4accb3e00ff2d11755f79cea5ef0ee7d6dc4e9877caf0460c9b812c32e51689aa5efec9c905c6fd77793d614a687b1e2  usr-share-alsa-ucm2-conf.d-Universal7870-I-VoiceCall.conf
+"

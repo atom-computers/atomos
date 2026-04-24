@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-sony-nicki
+pkgdesc="Sony Xperia M"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-sony-nicki-mainline
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+036b767d88c7f3ab452a21f0c1ce2958e9e6bdbfd9242da6479f12df1e306d3ba418c3197a158a55f39396f25b76851a6889ce6a3b7bbe84831ba8351bd04a83  deviceinfo
+9c5426701335c8898bf1ee1dc22c22a17ed0360a5f7cd5a5f31e910fe68140b3f32546dfe08ae81ffb5531ba7907c70a71d60a4c224ff4b36c46345090aa96dd  kernel-cmdline.conf
+"

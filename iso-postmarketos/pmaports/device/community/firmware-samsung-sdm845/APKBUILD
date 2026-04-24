@@ -1,0 +1,27 @@
+maintainer="Dzmitry Sankouski <dsankouski@gmail.com>"
+pkgname=firmware-samsung-sdm845
+pkgver=20260323
+pkgrel=0
+pkgdesc="Firmware for Samsung Galaxy S9 series phones based on SDM845 SoC"
+url="https://github.com/dsankouski/firmware-samsung-sdm845"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !spdx !archcheck !tracedeps textrels pmb:cross-native"
+
+_version="538a9464ebd63d6b65ba9f217f6056762b93150d"
+
+source="$pkgname-$_version.tar.gz::$url/archive/$_version.tar.gz
+	sensors.files
+"
+
+package() {
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
+		install -Dm644 "$srcdir/$pkgname-$_version/$_i" "$pkgdir/$_i"
+	done < "$srcdir/sensors.files"
+}
+
+sha512sums="
+55df6eac3260c64062e8d8334c3d315c1a14cdecef481353aac589f8f855a90effc738b36b42afb872e2caa2cff71c3e995738799506809aac8fe47ae4f683f4  firmware-samsung-sdm845-538a9464ebd63d6b65ba9f217f6056762b93150d.tar.gz
+e890c4b5acd5f992ea2eb5449b00f665d5ceff1919a5d8ef26d963be91a0870b80d1292329eb25e9af9065c8c73e8f414e85ba3526494c76fc9a64f399d24064  sensors.files
+"

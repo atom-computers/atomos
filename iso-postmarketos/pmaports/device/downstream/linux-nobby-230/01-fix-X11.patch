@@ -1,0 +1,13 @@
+diff --git a/drivers/video/sprdfb/sprdfb_main.c b/drivers/video/sprdfb/sprdfb_main.c
+index cdb8c0c..e5fff6b 100644
+--- a/drivers/video/sprdfb/sprdfb_main.c
++++ b/drivers/video/sprdfb/sprdfb_main.c
+@@ -330,7 +330,7 @@ static int sprdfb_check_var(struct fb_var_screeninfo *var, struct fb_info *fb)
+ 	if ((var->xres != fb->var.xres) ||
+ 		(var->yres != fb->var.yres) ||
+ 		(var->xres_virtual != fb->var.xres_virtual) ||
+-		(var->yres_virtual != fb->var.yres_virtual) ||
++		(fb->var.yres_virtual % var->yres_virtual != 0) ||
+ 		(var->xoffset != fb->var.xoffset) ||
+ #ifndef BIT_PER_PIXEL_SURPPORT
+ 		(var->bits_per_pixel != fb->var.bits_per_pixel) ||

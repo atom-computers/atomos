@@ -1,0 +1,19 @@
+commit a6c7d0f4d5d1e17121a9c91aa10289a86d2fbfc8
+Author: Antoine Fontaine <antoine.fontaine@epfl.ch>
+Date:   Wed Nov 27 02:22:56 2019 +0100
+
+    busybox sh adaptation
+
+diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
+index 32b10f53..27cbbbc3 100755
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -105,7 +105,7 @@ sortextable()
+ }
+ 
+ # Delete output files in case of error
+-trap cleanup SIGHUP SIGINT SIGQUIT SIGTERM ERR
++trap cleanup SIGHUP SIGINT SIGQUIT SIGTERM
+ cleanup()
+ {
+ 	rm -f .old_version

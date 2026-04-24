@@ -1,0 +1,29 @@
+--- a/kernel/gen_kheaders.sh
++++ b/kernel/gen_kheaders.sh
+@@ -8,7 +8,6 @@
+ outdir="$(pwd)"
+ tarfile=$1
+ cpio_dir=$outdir/$tarfile.tmp
+-cpio=$KBUILD_SRC/tools/build/cpio
+ 
+ dir_list="
+ include/
+@@ -59,7 +58,7 @@
+ pushd $srctree > /dev/null
+ for f in $dir_list;
+ 	do find "$f" -name "*.h";
+-done | $cpio --quiet -pd $cpio_dir
++done | cpio --quiet -pd $cpio_dir
+ 
+ popd > /dev/null
+ 
+@@ -67,7 +66,7 @@
+ # happen with out of tree builds. Just silence CPIO for now.
+ for f in $dir_list;
+ 	do find "$f" -name "*.h";
+-done | $cpio --quiet -pd $cpio_dir >/dev/null 2>&1
++done | cpio --quiet -pd $cpio_dir >/dev/null 2>&1
+ 
+ 
+ # Remove comments except SDPX lines
+

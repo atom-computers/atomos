@@ -1,0 +1,54 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/hollyss_defconfig
+
+pkgname=linux-sony-hollyss
+pkgver=3.10.72
+pkgrel=4
+pkgdesc="Sony Xperia M5 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="sony-hollyss"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="linux-sony-hollyss-kernel-3.10"
+_commit="c008d85533efdc940e6052922cfeec91e582eeb2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/empyreal96/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	mt_cpufreq_64.c.patch
+	setup.c.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="db24fa217ec5877c688e376b3bc9b8c76c59dc3bd89bdbba5a1c133c2645d0cb945c558ed83faa24f91339cf0a600f0f86da7ee4500250a63498537ec95ddab2  linux-sony-hollyss-c008d85533efdc940e6052922cfeec91e582eeb2.tar.gz
+dacfaf3ad4bc54036d8b3e5db87b2ef23cbdc312a8f657969dbb9508255cc18edeb1daf6151fbd77079c5e886913a475856c407cbd1c4fc6ddf98908a2f0ea3f  config-sony-hollyss.aarch64
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+e0ededeef62e49a36bfc27b18cb65b1d417e771e8500463dd394f5c7558571aacabac251873a8476ee1f91d7c8bf84ee6b6444f4f198e2fe7ddb310138f15e7c  mt_cpufreq_64.c.patch
+d290271d2133e071f2d8a2ac8c54a2e0be0b556b2faf87954ff69f15db31a9dc16a312c45d1955f7dfd227443f418242f41c3a6c88ccac43d4d43cfbcd210143  setup.c.patch"

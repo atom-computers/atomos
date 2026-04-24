@@ -1,0 +1,101 @@
+From 71846fb0e72ac8f7c05ca85f28b50cae4703acfc Mon Sep 17 00:00:00 2001
+From: Al Viro <viro@zeniv.linux.org.uk>
+Date: Mon, 1 Jul 2019 23:47:19 +0300
+Subject: [PATCH 1/5] cache the value of file_inode() in struct file
+
+Note that this thing does *not* contribute to inode refcount;
+it's pinned down by dentry.
+
+Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+---
+ fs/f2fs/f2fs.h     | 3 ++-
+ fs/file_table.c    | 2 ++
+ fs/open.c          | 2 ++
+ include/linux/fs.h | 7 +++++++
+ 4 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index 6ef8c890a57..2b511f8a416 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -1844,10 +1844,11 @@ static inline bool f2fs_cp_error(struct f2fs_sb_info *sbi)
+ 	return is_set_ckpt_flags(sbi->ckpt, CP_ERROR_FLAG);
+ }
+ 
++/* Implementation of file_inode added to include/linux/fs.h
+ static inline struct inode *file_inode(struct file *f)
+ {
+ 	return f->f_path.dentry->d_inode;
+-}
++}*/
+ 
+ static inline bool is_dot_dotdot(const struct qstr *str)
+ {
+diff --git a/fs/file_table.c b/fs/file_table.c
+index a01710a6ff3..07838af0737 100644
+--- a/fs/file_table.c
++++ b/fs/file_table.c
+@@ -172,6 +172,7 @@ struct file *alloc_file(struct path *path, fmode_t mode,
+ 		return NULL;
+ 
+ 	file->f_path = *path;
++	file->f_inode = path->dentry->d_inode;
+ 	file->f_mapping = path->dentry->d_inode->i_mapping;
+ 	file->f_mode = mode;
+ 	file->f_op = fop;
+@@ -254,6 +255,7 @@ static void __fput(struct file *file)
+ 		drop_file_write_access(file);
+ 	file->f_path.dentry = NULL;
+ 	file->f_path.mnt = NULL;
++	file->f_inode = NULL;
+ 	file_free(file);
+ 	dput(dentry);
+ 	mntput(mnt);
+diff --git a/fs/open.c b/fs/open.c
+index 3f716e9b896..2388e788e10 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -673,6 +673,7 @@ static struct file *__dentry_open(struct dentry *dentry, struct vfsmount *mnt,
+ 		f->f_mode = FMODE_PATH;
+ 
+ 	inode = dentry->d_inode;
++	f->f_inode = dentry->d_inode;
+ 	if (f->f_mode & FMODE_WRITE) {
+ 		error = __get_file_write_access(inode, mnt);
+ 		if (error)
+@@ -748,6 +749,7 @@ cleanup_all:
+ 	}
+ 	f->f_path.dentry = NULL;
+ 	f->f_path.mnt = NULL;
++	f->f_inode = NULL;
+ cleanup_file:
+ 	put_filp(f);
+ 	dput(dentry);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index ef6e82ce1c1..11265501da0 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1029,6 +1029,7 @@ struct file {
+ 	struct path		f_path;
+ #define f_dentry	f_path.dentry
+ #define f_vfsmnt	f_path.mnt
++	struct inode		*f_inode;       /* cached value */
+ 	const struct file_operations	*f_op;
+ 
+ 	/*
+@@ -2304,6 +2305,12 @@ static inline bool execute_ok(struct inode *inode)
+ 	return (inode->i_mode & S_IXUGO) || S_ISDIR(inode->i_mode);
+ }
+ 
++static inline struct inode *file_inode(struct file *f)
++{
++	/* return f->f_path.dentry->d_inode; / can also use this */
++	return f->f_inode;
++}
++
+ /*
+  * get_write_access() gets write permission for a file.
+  * put_write_access() releases this write permission.
+-- 
+2.20.1
+

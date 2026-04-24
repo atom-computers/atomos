@@ -1,0 +1,26 @@
+From aedfcba925841807c0d401eb55ffbdd9d57ef16b Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Fri, 27 Jun 2025 11:17:12 +0200
+Subject: [PATCH] Makefile: ignore bundled toolchain
+
+Use the gcc from the system instead.
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 7bece7a1f052..27ed5fea30b1 100755
+--- a/Makefile
++++ b/Makefile
+@@ -256,7 +256,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ #CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+ ARCH            ?= arm64
+ #CROSS_COMPILE   ?= ../PLATFORM/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+-CROSS_COMPILE	?= $(srctree)/toolchain/gcc-cfp/gcc-cfp-jopp-only/aarch64-linux-android-4.9/bin/aarch64-linux-android-
++# CROSS_COMPILE	?= $(srctree)/toolchain/gcc-cfp/gcc-cfp-jopp-only/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+-- 
+2.50.0
+

@@ -1,0 +1,1025 @@
+diff --git a/arch/arm/boot/dts/qcom/batterydata-qrd-skub-fih1500.dtsi b/arch/arm/boot/dts/qcom/batterydata-qrd-skub-fih1500.dtsi
+new file mode 100644
+index 000000000000..0b9ec5d8a6a3
+--- /dev/null
++++ b/arch/arm/boot/dts/qcom/batterydata-qrd-skub-fih1500.dtsi
+@@ -0,0 +1,33 @@
++qcom,FIH1500-batterydata {
++	qcom,battery-type = "FIH1500";
++	qcom,batt-id-kohm = <0xdc>;
++	qcom,chg-term-ua = <0x249f0>;
++	qcom,default-rbatt-mohm = <0xce>;
++	qcom,fcc-mah = <0x5dc>;
++	qcom,max-voltage-uv = <0x432380>;
++	qcom,rbatt-capacitive-mohm = <0x32>;
++	qcom,v-cutoff-uv = <0x33e140>;
++
++	qcom,fcc-temp-lut {
++		qcom,lut-col-legend = <0xffffffec 0x00 0x19 0x28 0x3c>;
++		qcom,lut-data = <0x64a 0x648 0x64a 0x648 0x640>;
++	};
++
++	qcom,ibat-acc-lut {
++		qcom,lut-col-legend = <0xffffffec 0x00 0x19>;
++		qcom,lut-row-legend = <0x00 0x190 0x2bc 0x3e8 0x5dc>;
++		qcom,lut-data = <0x62a 0x638 0x62a 0x04 0x516 0x61b 0x06 0x3ca 0x5fe 0x06 0x269 0x5be 0x09 0xd8 0x4c8>;
++	};
++
++	qcom,pc-temp-ocv-lut {
++		qcom,lut-col-legend = <0xffffffec 0x00 0x19 0x28 0x3c>;
++		qcom,lut-row-legend = <0x64 0x5f 0x5a 0x55 0x50 0x4b 0x46 0x41 0x3c 0x37 0x32 0x2d 0x28 0x23 0x1e 0x19 0x14 0x10 0x0d 0x0b 0x0a 0x09 0x08 0x07 0x06 0x05 0x04 0x03 0x02 0x01 0x00>;
++		qcom,lut-data = <0x1124 0x1122 0x111c 0x1117 0x1110 0x1092 0x10bd 0x10c4 0x10c2 0x10be 0x1040 0x107d 0x108a 0x1086 0x1082 0x100a 0x1044 0x105e 0x104c 0x1048 0xfc8 0x1010 0x103e 0x1028 0x101c 0xf70 0xfdc 0x101d 0x1013 0xff2 0xf44 0xf95 0xffa 0xfe6 0xfcc 0xf1f 0xf5c 0xfc8 0xfb0 0xf83 0xf04 0xf3a 0xf94 0xf5d 0xf5b 0xef2 0xf16 0xf6e 0xf2d 0xf2c 0xee4 0xef9 0xf55 0xf06 0xf06 0xed8 0xee2 0xf28 0xeec 0xeec 0xeca 0xed2 0xf00 0xed8 0xed8 0xebc 0xec8 0xed8 0xec8 0xec8 0xeae 0xebe 0xec8 0xeba 0xeb9 0xe9d 0xeb1 0xeb1 0xeaa 0xe9c 0xe8c 0xea0 0xe9f 0xe96 0xe88 0xe7c 0xe8e 0xe8a 0xe82 0xe75 0xe6c 0xe7b 0xe76 0xe6d 0xe60 0xe5e 0xe73 0xe6a 0xe62 0xe57 0xe54 0xe70 0xe68 0xe62 0xe56 0xe4a 0xe6c 0xe67 0xe60 0xe55 0xe3e 0xe69 0xe65 0xe5f 0xe54 0xe2e 0xe66 0xe63 0xe5c 0xe51 0xe1a 0xe5e 0xe5d 0xe56 0xe48 0xe00 0xe4c 0xe48 0xe3c 0xe2e 0xddc 0xe28 0xe1c 0xe0f 0xe00 0xdad 0xdf1 0xde2 0xdd2 0xdc3 0xd5e 0xda7 0xd86 0xd81 0xd6f 0xcca 0xd1a 0xcfa 0xcfc 0xcea 0xbbc 0xbb8 0xbb8 0xbb8 0xbb8>;
++	};
++
++	qcom,rbatt-sf-lut {
++		qcom,lut-col-legend = <0xffffffec 0x00 0x19 0x28 0x3c>;
++		qcom,lut-row-legend = <0x64 0x5f 0x5a 0x55 0x50 0x4b 0x46 0x41 0x3c 0x37 0x32 0x2d 0x28 0x23 0x1e 0x19 0x14 0x10 0x0d 0x0b 0x0a 0x09 0x08 0x07 0x06 0x05 0x04 0x03 0x02 0x01>;
++		qcom,lut-data = <0x502 0x168 0x64 0x49 0x3c 0x4fa 0x168 0x64 0x49 0x3c 0x492 0x163 0x65 0x4a 0x3d 0x45f 0x15e 0x67 0x4c 0x3e 0x433 0x15c 0x6a 0x4f 0x40 0x3f3 0x15d 0x6f 0x52 0x42 0x3e6 0x147 0x75 0x56 0x45 0x3df 0x136 0x78 0x5b 0x48 0x3e5 0x134 0x75 0x5f 0x4c 0x3f2 0x131 0x68 0x53 0x45 0x408 0x132 0x61 0x4a 0x3e 0x428 0x136 0x61 0x4a 0x3f 0x450 0x13f 0x62 0x4c 0x41 0x47e 0x14b 0x64 0x50 0x44 0x4af 0x15e 0x67 0x4f 0x46 0x4e3 0x177 0x66 0x4c 0x3d 0x543 0x199 0x66 0x4b 0x3e 0x53d 0x190 0x63 0x4a 0x3e 0x641 0x1b2 0x64 0x4a 0x3e 0x72d 0x1d4 0x65 0x49 0x3c 0x7c4 0x1e9 0x67 0x4a 0x3e 0x877 0x203 0x6a 0x4d 0x41 0x952 0x21e 0x6d 0x50 0x42 0xa74 0x241 0x72 0x53 0x43 0xbf5 0x26a 0x75 0x53 0x43 0xe00 0x293 0x75 0x50 0x41 0x110d 0x2c1 0x76 0x51 0x42 0x15c3 0x307 0x7e 0x54 0x44 0x1eef 0x35f 0x8d 0x5d 0x4c 0x3ddf 0x6bd 0x11a 0xb9 0x63>;
++	};
++};
+diff --git a/arch/arm/boot/dts/qcom/msm-pm8909.dtsi b/arch/arm/boot/dts/qcom/msm-pm8909.dtsi
+index 711acb2eb48f..731d3c8ba1c8 100644
+--- a/arch/arm/boot/dts/qcom/msm-pm8909.dtsi
++++ b/arch/arm/boot/dts/qcom/msm-pm8909.dtsi
+@@ -33,10 +33,12 @@
+ 			qcom,system-reset;
+ 			qcom,clear-warm-reset;
+ 			qcom,store-hard-reset-reason;
++			qcom,s3-debounce = <0x0a>;
++			qcom,s3-src = "kpdpwr-and-resin";
+ 
+ 			qcom,pon_1 {
+ 				qcom,pon-type = <0>;
+-				qcom,support-reset = <1>;
++				qcom,support-reset = <0>;
+ 				qcom,pull-up = <1>;
+ 				qcom,s1-timer = <10256>;
+ 				qcom,s2-timer = <2000>;
+@@ -47,7 +49,7 @@
+ 			qcom,pon_2 {
+ 				qcom,pon-type = <1>;
+ 				qcom,pull-up = <1>;
+-				linux,code = <114>;
++				linux,code = <0x72>;
+ 			};
+ 		};
+ 
+@@ -202,24 +204,26 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+ 
+-			qcom,vddmax-mv = <4200>;
+-			qcom,vddsafe-mv = <4200>;
+-			qcom,vinmin-mv = <4308>;
+-			qcom,ibatsafe-ma = <1440>;
+-			qcom,thermal-mitigation = <1440 720 630 0>;
+-			qcom,cool-bat-decidegc = <100>;
+-			qcom,warm-bat-decidegc = <450>;
+-			qcom,cool-bat-mv = <4100>;
+-			qcom,warm-bat-mv = <4100>;
+-			qcom,ibatmax-warm-ma = <360>;
+-			qcom,ibatmax-cool-ma = <360>;
+-			qcom,batt-hot-percentage = <25>;
+-			qcom,batt-cold-percentage = <80>;
+-			qcom,tchg-mins = <232>;
++			qcom,vddmax-mv = <0x1130>;
++			qcom,vddsafe-mv = <0x1130>;
++			qcom,vinmin-mv = <0x11ac>;
++			qcom,ibatsafe-ma = <0x21c>;
++			qcom,thermal-mitigation = <0x21c 0x1c2 0x168 0x00>;
++			qcom,cold-bat-decidegc = <0x0a>;
++			qcom,cool-bat-decidegc = <0x96>;
++			qcom,warm-bat-decidegc = <0x1c2>;
++			qcom,overheat-bat-decidegc = <0x226>;
++			qcom,cool-bat-mv = <0x1130>;
++			qcom,warm-bat-mv = <0x1004>;
++			qcom,ibatmax-warm-ma = <0x1c2>;
++			qcom,ibatmax-cool-ma = <0x172>;
++			qcom,batt-hot-percentage = <0x23>;
++			qcom,batt-cold-percentage = <0x46>;
++			qcom,tchg-mins = <0xe8>;
+ 			qcom,chg-vadc = <&pm8909_vadc>;
+ 			qcom,chg-adc_tm = <&pm8909_adc_tm>;
+ 
+-			status = "disabled";
++			status = "okay";
+ 
+ 			qcom,chgr@1000 {
+ 				reg = <0x1000 0x100>;
+@@ -274,7 +278,7 @@
+ 			status = "disabled";
+ 
+ 			qcom,v-cutoff-uv = <3400000>;
+-			qcom,max-voltage-uv = <4200000>;
++			qcom,max-voltage-uv = <0x432380>;
+ 			qcom,r-conn-mohm = <0>;
+ 			qcom,shutdown-soc-valid-limit = <100>;
+ 			qcom,low-soc-calculate-soc-threshold = <15>;
+@@ -293,7 +297,7 @@
+ 			qcom,force-s3-on-suspend;
+ 			qcom,force-s2-in-charging;
+ 			qcom,report-charger-eoc;
+-			qcom,resume-soc = <99>;
++			qcom,resume-soc = <0x63>;
+ 
+ 			qcom,batt-pres-status@1208 {
+ 				reg = <0x1208 0x1>;
+diff --git a/arch/arm/boot/dts/qcom/msm8905-camera-sensor-skub.dtsi b/arch/arm/boot/dts/qcom/msm8905-camera-sensor-skub.dtsi
+index 618fa0e409b3..02e18f6bc235 100644
+--- a/arch/arm/boot/dts/qcom/msm8905-camera-sensor-skub.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8905-camera-sensor-skub.dtsi
+@@ -17,8 +17,8 @@
+ 		qcom,pin-func = <2>;
+ 		label = "SY7807_pins";
+ 		SY7807_default: en_default {
+-		drive-strength = <2>;
+-		bias-pull-down;
++			drive-strength = <2>;
++			bias-disable = <0x00>;
+ 		};
+ 	};
+ };
+@@ -107,14 +107,14 @@
+ 		qcom,mem9 = <0 0x0 2 0 1 0>;
+ 
+ 		cam_vdig-supply = <&pm8909_l2>;
+-		cam_vana-supply = <&pm8909_l17>;
++		cam_vana-supply = <&pm8909_l8>;
+ 		cam_vio-supply = <&pm8909_l6>;
+ 		cam_vaf-supply = <&pm8909_l8>;
+ 		qcom,cam-vreg-name = "cam_vdig", "cam_vio", "cam_vana",
+ 			"cam_vaf";
+ 		qcom,cam-vreg-type = <0 0 0 0>;
+-		qcom,cam-vreg-min-voltage = <1200000 1800000 2800000 2850000>;
+-		qcom,cam-vreg-max-voltage = <1200000 1800000 2850000 2900000>;
++		qcom,cam-vreg-min-voltage = <0x124f80 0x1b7740 0x2b7cd0 0x2b7cd0>;
++		qcom,cam-vreg-max-voltage = <0x124f80 0x1b7740 0x2c4020 0x2c4020>;
+ 		qcom,cam-vreg-op-mode = <200000 0 80000 100000>;
+ 		pinctrl-names = "cam_default", "cam_suspend";
+ 		pinctrl-0 = <&cam_sensor_mclk0_default
+diff --git a/arch/arm/boot/dts/qcom/msm8905-qrd-skub.dtsi b/arch/arm/boot/dts/qcom/msm8905-qrd-skub.dtsi
+index 6d0f84e416dd..1afe4f3b6b30 100644
+--- a/arch/arm/boot/dts/qcom/msm8905-qrd-skub.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8905-qrd-skub.dtsi
+@@ -15,75 +15,72 @@
+ #include "msm8905-camera-sensor-skub.dtsi"
+ 
+ &soc {
++
+ 	matrix_keypad: matrix_keypad@0 {
+-		       compatible = "gpio-matrix-keypad";
+-		       input-name = "matrix_keypad";
+-		       debounce-delay-ms = <5>;
+-		       col-scan-delay-us = <2>;
+-		       pinctrl-names = "tlmm_gpio_key_active","tlmm_gpio_key_suspend";
+-		       pinctrl-0 = <&gpio_key_active>;
+-		       pinctrl-1 = <&gpio_key_suspend>;
+-
+-		       row-gpios = <&msm_gpio 97 0
+-			       &msm_gpio 96 0
+-			       &msm_gpio 95 0
+-			       &msm_gpio 94 0>;
+-
+-		       col-gpios = <&msm_gpio 52 0
+-			       &msm_gpio 56 0
+-			       &msm_gpio 7 0
+-			       &msm_gpio 99 0
+-			       &msm_gpio 6 0>;
+-		       linux,keymap = <0x000000e7      /* (0,0) KEY_DIAL */
+-			       0x00010004      /* (1,0) KEY_3 */
+-			       0x00020007      /* (2,0) KEY_6 */
+-			       0x0003000A      /* (3,0) KEY_9 */
+-			       0x0004020b      /* (4,0) KEY_NUMERIC_POUND */
+-
+-			       0x01000069      /* (0,1) KEY_LEFT */
+-			       0x01010003      /* (1,1) KEY_2 */
+-			       0x01020006      /* (2,1) KEY_5 */
+-			       0x01030009      /* (3,1) KEY_8 */
+-			       0x0104000b      /* (4,1) KEY_0 */
+-
+-			       0x0200008b      /* (0,2) KEY_MENU */
+-			       0x02010002      /* (1,2) KEY_1 */
+-			       0x02020005      /* (2,2) KEY_4 */
+-			       0x02030008      /* (3,2) KEY_7 */
+-			       0x0204020a      /* (4,2) KEY_NUMERIC_STAR */
+-
+-			       0x03000160      /* (0,3) KEY_OK */
+-			       0x0301006A      /* (1,3) KEY_RIGHT */
+-			       0x0302009e>;      /* (3,3) KEY_BACK */
+-
+-	       };
+-
+-
+-		       gpio_keys {
+-			       compatible = "gpio-keys";
+-			       input-name = "gpio-keys";
+-			       pinctrl-names = "tlmm_gpio_key_active","tlmm_gpio_key_suspend";
+-			       pinctrl-0 = <&gpio_key_active>;
+-			       pinctrl-1 = <&gpio_key_suspend>;
+-
+-			       vol_up {
+-				       label = "volume_up";
+-				       gpios = <&msm_gpio 90 0x1>;
+-				       linux,input-type = <1>;
+-				       linux,code = <103>;
+-				       gpio-key,wakeup;
+-				       debounce-interval = <15>;
+-			       };
+-		       };
++		compatible = "gpio-matrix-keypad";
++		input-name = "matrix_keypad";
++		debounce-delay-ms = <5>;
++		col-scan-delay-us = <2>;
++		gpio-active-low;
++		linux,wakeup;
++		pinctrl-names = "default";
++		pinctrl-0 = <&matrix_keypad_row_default &matrix_keypad_col_default>;
++
++		row-gpios = <&msm_gpio 0x61 0x00 &msm_gpio 0x60 0x00 &msm_gpio 0x5f 0x00 &msm_gpio 0x5e 0x00>;
++		col-gpios = <&msm_gpio 0x34 0x00 &msm_gpio 0x38 0x00 &msm_gpio 0x07 0x00 &msm_gpio 0x63 0x00 &msm_gpio 0x06 0x00 &msm_gpio 0x01 0x00>;
++		linux,keymap = <0xe7 0x10002 0x20005 0x30008 0x4020a 0x500d4 0x1000069 0x1010003 0x1020006 0x1030009 0x104000b 0x105000e 0x200008b 0x2010004 0x2020007 0x203000a 0x204020b 0x3000160 0x301006a 0x302009e 0x3030067 0x304006c>;
++	};
+ 
++	gpio_keys {
++		compatible = "gpio-keys";
++		input-name = "gpio-keys";
++		pinctrl-names = "tlmm_gpio_key_active","tlmm_gpio_key_suspend";
++		pinctrl-0 = <&gpio_key_active>;
++		pinctrl-1 = <&gpio_key_suspend>;
++
++		vol_up {
++			label = "volume_up";
++			gpios = <&msm_gpio 0x5a 0x01>;
++			linux,input-type = <0x01>;
++			linux,code = <0x73>;
++			gpio-key,wakeup;
++			debounce-interval = <0x0f>;
++		};
+ 
++		end_key {
++			label = "end_key";
++			gpios = <&msm_gpio 0x62 0x01>;
++			linux,input-type = <0x01>;
++			linux,code = <0x70>;
++			gpio-key,wakeup;
++			debounce-interval = <0x0f>;
++		};
++	};
++
++	hall_sensor1 {
++		compatible = "hall-switch";
++		hall,gpio_name = "hall_sensor1_gpio";
++		hall,irq_name = "hall_sensor1_irq";
++		hall,dev_name = "hall_sensor1";
++		hall,input_name = "/dev/input/hall_sensor1";
++		pinctl-names = "default";
++		pinctrl-0 = <&hall_sensor1_int_default>;
++		interrupt-parent = <&msm_gpio>;
++		interrupts = <0x24 0x2003>;
++		vddio-supply = <&pm8909_l5>;
++		linux,gpio-int = <&msm_gpio 0x24 0x01>;
++		linux,wakeup;
++		linux,min-uv = <0x1b7740>;
++		linux,max-uv = <0x1b7740>;
++		qcom,platform-spi-switch-gpio = <&msm_gpio 0x0d 0x00>;
++	};
+ };
+ 
+ &tlmm_pinmux {
+ 	tlmm_gpio_key {
+-		qcom,pins = <&gp 52>, <&gp 56>, <&gp 7>, <&gp 99>, <&gp 6>;
++		qcom,pins = <&gp 0x62>;
+ 		qcom,pin-func = <0>;
+-		qcom,num-grp-pins = <5>;
++		qcom,num-grp-pins = <1>;
+ 		label = "tlmm_gpio_key";
+ 	gpio_key_active: gpio_key_active {
+ 			 drive-strength = <2>;
+@@ -107,11 +104,13 @@
+ 		    qcom,pon-dbc-delay = <15625>;
+ 		    qcom,system-reset;
+ 		    qcom,clear-warm-reset;
++		    qcom,s3-debounce = <0x0a>;
++		    qcom,s3-src = "kpdpwr-and-resin";
+ 
+ 		    qcom,pon_2 {
+ 			    qcom,pon-type = <1>;
+ 			    qcom,pull-up = <1>;
+-			    linux,code = <108>;
++			    linux,code = <0x72>;
+ 		    };
+ 		};
+ 	};
+@@ -138,29 +137,30 @@
+ 				qcom,turn-off-delay-ms = <1000>;
+ 				qcom,source-sel = <1>;
+ 				qcom,mode-ctrl = <0x10>;
+-				qcom,vin-ctrl = <0x02>;
++				qcom,vin-ctrl = <0x03>;
+ 			};
+ 		};
+ 	};
+ };
+ 
+ &pm8909_chg {
+-	qcom,cool-bat-mv = <4000>;
+-	qcom,warm-bat-mv = <4000>;
+-	qcom,ibatmax-warm-ma = <500>;
+-	qcom,ibatmax-cool-ma = <500>;
+-	qcom,batt-hot-percentage = <35>;
+-	qcom,batt-cold-percentage = <70>;
++	qcom,cool-bat-mv = <0x1130>;
++	qcom,warm-bat-mv = <0x1004>;
++	qcom,ibatmax-warm-ma = <0x1c2>;
++	qcom,ibatmax-cool-ma = <0x172>;
++	qcom,batt-hot-percentage = <0x23>;
++	qcom,batt-cold-percentage = <0x46>;
+ 	qcom,chgr-led-support;
+ 	status = "okay";
++	qcom,disable-vbatdet-based-recharge;
+ };
+ 
+ / {
+ 	qrd_batterydata: qcom,battery-data {
+-		qcom,rpull-up-kohm = <0>;
+-		qcom,vref-batt-therm = <1800000>;
++		qcom,rpull-up-kohm = <0xc8>;
++		qcom,vref-batt-therm = <0x1b7740>;
+ 
+-		#include "batterydata-qrd-skub-4v2-2000mah.dtsi"
++		#include "batterydata-qrd-skub-fih1500.dtsi"
+ 	};
+ };
+ 
+@@ -276,7 +276,6 @@
+ 
+ 	spi@78b9000 { /* BLSP1 QUP5 */
+ 		status = "okay";
+-		qcom,shared;
+ 		mdss_spi_client {
+ 			reg = <0>;
+ 			compatible = "qcom,mdss-spi-client";
+@@ -296,7 +295,7 @@
+ 		qcom,mode = <1>;		/* Digital output */
+ 		qcom,invert = <0>;		/* Disable invert */
+ 		qcom,src-sel = <4>;		/* DTEST1 */
+-		qcom,vin-sel = <0>;		/* VPH_PWR */
++		qcom,vin-sel = <3>;		/* VPH_PWR */
+ 		qcom,master-en = <1>;		/* Enable MPP */
+ 	};
+ };
+@@ -315,14 +314,46 @@
+ 	qcom,cont-splash-enabled;
+ };
+ 
++
++&spi_gc9305_v2_qvga_cmd{
++	qcom,mdss-spi-bl-pmic-control-type = "bl_ctrl_pwm";
++	qcom,mdss-spi-bl-pmic-pwm-frequency = <100>;
++	qcom,mdss-spi-bl-pmic-bank-select = <0>;
++	qcom,mdss-spi-pwm-gpio = <&pm8909_mpps 2 0>;
++	qcom,cont-splash-enabled;
++};
++
++// external display makes kernel panic
++/*
++&spi_gc9305_v2_qvga_ext_cmd {
++	qcom,mdss-spi-bl-pmic-control-type = "bl_ctrl_pwm";
++	qcom,mdss-spi-bl-pmic-pwm-frequency = <100>;
++	qcom,mdss-spi-bl-pmic-bank-select = <0>;
++	qcom,mdss-spi-pwm-gpio = <&pm8909_mpps 2 0>;
++};
++*/
++
+ &pmx_mdss_te {
+ 	qcom,pin-func = <0>;
+ 	qcom,num-grp-pins = <1>;
+ 	qcom,pins = <&gp 24>;
+ };
+ 
++&pmx_mdss_ext_te {
++	qcom,pin-func = <0>;
++	qcom,num-grp-pins = <1>;
++	qcom,pins = <&gp 0x15>;
++};
++
++&pmx_mdss_ext_rst {
++	qcom,pin-func = <0>;
++	qcom,num-grp-pins = <1>;
++	qcom,pins = <&gp 0x17>;
++};
++
+ &mdss_spi {
+-	qcom,spi-pref-prim-pan = <&spi_gc9305_qvga_cmd>;
++	cell-index = <0x00>;
++	qcom,spi-pref-prim-pan = <&spi_gc9305_v2_qvga_cmd>;
+ 	pinctrl-names = "mdss_default", "mdss_sleep";
+ 	pinctrl-0 = <&mdss_te_active>;
+ 	pinctrl-1 = <&mdss_te_suspend>;
+@@ -332,6 +363,22 @@
+ 	qcom,platform-spi-dc-gpio = <&msm_gpio 110 0>;
+ };
+ 
++// external display makes kernel panic
++/*
++&mdss_spi_ext {
++	cell-index = <0x01>;
++	qcom,spi-pref-prim-pan = <&spi_gc9305_v2_qvga_ext_cmd>;
++	pinctrl-names = "mdss_default", "mdss_sleep";
++	pinctrl-0 = <&mdss_ext_te_active &mdss_ext_rst_active>;
++	pinctrl-1 = <&mdss_ext_te_suspend &mdss_ext_rst_suspend>;
++
++	qcom,platform-te-gpio = <&msm_gpio 0x15 0>;
++	qcom,platform-reset-gpio = <&msm_gpio 0x17 0>;
++	qcom,platform-spi-dc-gpio = <&msm_gpio 0x6e 0>;
++	qcom,platform-spi-switch-gpio = <&msm_gpio 0x0d 0>;
++};
++*/
++
+ &pm8909_gpios {
+         /* GPIO 2 (NFC_CLK_REQ) */
+         gpio@c100 {
+diff --git a/arch/arm/boot/dts/qcom/msm8909-mdss.dtsi b/arch/arm/boot/dts/qcom/msm8909-mdss.dtsi
+index c349c3343dbc..dbe6a5cac231 100644
+--- a/arch/arm/boot/dts/qcom/msm8909-mdss.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8909-mdss.dtsi
+@@ -28,21 +28,6 @@
+ 		clock-names = "iface_clk", "bus_clk", "core_clk_src",
+ 				"core_clk", "vsync_clk";
+ 
+-		qcom,regs-dump-mdp =    <0x0300 0x0358>,
+-					<0x10000 0x101E0>,
+-					<0x20004 0x0020044>,
+-					<0x90000 0x90074>;
+-		qcom,regs-dump-names-mdp =      "MDP_SYNC",
+-						"PPP","PPP_FETCH",
+-						"DMA_P";
+-
+-		qcom,regs-dump-vbif =   <0x0004 0x0010>,
+-					<0x0194 0x01b0>,
+-					<0x0200 0x020c>;
+-
+-		qcom,regs-dump-names-vbif =     "VBIF_CLK",
+-						"VBIF_ERR","VBIF_XIN_HALT";
+-
+ 		mdss_fb0: qcom,mdss_fb_primary {
+ 			cell-index = <0>;
+ 			compatible = "qcom,mdss-fb";
+@@ -50,6 +35,12 @@
+ 				linux,contiguous-region = <&cont_splash_mem>;
+ 			};
+ 		};
++	
++		mdss_fb1: qcom,mdss_fb1_primary {
++			cell-index = <1>;
++			compatible = "qcom,mdss-fb";
++		};
++
+ 	};
+ 
+ 	mdss_dsi0: qcom,mdss_dsi@1ac8000 {
+@@ -175,6 +166,43 @@
+ 			};
+ 		};
+ 	};
++
++// external display makes kernel panic
++/*
++	mdss_spi_ext: qcom,mdss_spi_ext {
++		compatible = "qcom,mdss-spi-display";
++		label = "mdss spi ext panel";
++
++		qcom,mdss-fb-map = <&mdss_fb1>;
++		qcom,mdss-mdp = <&mdss_mdp>;
++		vdd-supply = <&pm8909_l17>;
++		vddio-supply = <&pm8909_l6>;
++
++		qcom,panel-supply-entries {
++		#address-cells = <1>;
++			#size-cells = <0>;
++
++			qcom,panel-supply-entry@0 {
++				reg = <0>;
++				qcom,supply-name = "vdd";
++				qcom,supply-min-voltage = <2850000>;
++				qcom,supply-max-voltage = <2850000>;
++				qcom,supply-enable-load = <100000>;
++				qcom,supply-disable-load = <100>;
++			};
++
++			qcom,panel-supply-entry@1 {
++				reg = <1>;
++				qcom,supply-name = "vddio";
++				qcom,supply-min-voltage = <1800000>;
++				qcom,supply-max-voltage = <1800000>;
++				qcom,supply-enable-load = <100000>;
++				qcom,supply-disable-load = <100>;
++			};
++		};
++	};
++*/
++
+ };
+ 
+ #include "dsi-panel-sim-video.dtsi"
+diff --git a/arch/arm/boot/dts/qcom/msm8909-pinctrl.dtsi b/arch/arm/boot/dts/qcom/msm8909-pinctrl.dtsi
+index 3cb6c918696a..b05e4449ab5e 100644
+--- a/arch/arm/boot/dts/qcom/msm8909-pinctrl.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8909-pinctrl.dtsi
+@@ -254,14 +254,15 @@
+ 		cdc-ext-mclk-lines {
+ 			qcom,pins = <&gp 98>;
+ 			qcom,num-grp-pins = <1>;
+-			qcom,pin-func = <2>;
++			qcom,pin-func = <0>;
+ 			label = "cdc-ext-mclk-lines";
+ 			cdc_ext_mclk_act: ext_mclk_on {
+-				drive-strength = <8>;
++				drive-strength = <2>;
++				bias-pull-up;
+ 			};
+ 			cdc_ext_mclk_sus: ext_mclk_off {
+ 				drive-strength = <2>;
+-				bias-disable;
++				bias-pull-up;
+ 			};
+ 		};
+ 
+@@ -1040,27 +1041,51 @@
+ 
+ 		spi5_active {
+ 			/* MOSI, MISO, CLK */
+-			qcom,pins = <&gp 16>, <&gp 17>, <&gp 19>;
+-			qcom,num-grp-pins = <3>;
++			qcom,pins = <&gp 0x10>, <&gp 0x13>;
++			qcom,num-grp-pins = <2>;
+ 			qcom,pin-func = <1>;
+ 			label = "spi5-active";
+ 			/* active state */
+ 			spi5_default: spi5_default {
+-				drive-strength = <12>; /* 12 MA */
+-				bias-disable = <0>; /* No PULL */
++				drive-strength = <0x08>;
++				bias-pull-up;
++			};
++		};
++
++		spi5_miso_active {
++			qcom,pins = <&gp 0x11>;
++			qcom,num-grp-pins = <0x01>;
++			qcom,pin-func = <0x01>;
++			label = "spi5-miso-active";
++
++			spi5_miso_active: spi5_miso_active {
++				drive-strength = <0x08>;
++				bias-disable;
++			};
++		};
++
++		spi5_miso_suspend {
++			qcom,pins = <&gp 0x11>;
++			qcom,num-grp-pins = <0x01>;
++			qcom,pin-func = <0x01>;
++			label = "spi5-miso-suspend";
++
++			spi5_miso_sleep: spi5_miso_sleep {
++				drive-strength = <0x02>;
++				bias-disable;
+ 			};
+ 		};
+ 
+ 		spi5_suspend {
+ 			/* MOSI, MISO, CLK */
+-			qcom,pins = <&gp 16>, <&gp 17>, <&gp 19>;
+-			qcom,num-grp-pins = <3>;
++			qcom,pins = <&gp 0x10>, <&gp 0x13>;
++			qcom,num-grp-pins = <2>;
+ 			qcom,pin-func = <0>;
+ 			label = "spi5-suspend";
+ 			/* suspended state */
+ 			spi5_sleep: spi5_sleep {
+ 				drive-strength = <2>; /* 2 MA */
+-				bias-pull-down; /* pull down */
++				bias-disable = <0x00>;
+ 			};
+ 		};
+ 
+@@ -1071,8 +1096,9 @@
+ 			qcom,pin-func = <1>;
+ 			label = "spi5-cs0-active";
+ 			spi5_cs0_active: cs0_active {
+-				drive-strength = <2>;
+-				bias-disable = <0>;
++				drive-strength = <0x8>;
++				bias-pull-up;
++				output-high;
+ 			};
+ 		};
+ 
+@@ -1084,7 +1110,8 @@
+ 			label = "spi5-cs0-suspend";
+ 			spi5_cs0_sleep: cs0_sleep {
+ 				drive-strength = <2>;
+-				bias-disable = <0>;
++				bias-pull-up;
++				output-high;
+ 			};
+ 		};
+ 
+@@ -1119,6 +1146,34 @@
+ 			};
+ 		};
+ 
++		pmx_mdss_ext_te: pmx_mdss_ext_te {
++			label = "mdss-ext-te-pin";
++			qcom,pin-func = <0>;
++			mdss_ext_te_active: active {
++				drive-strength = <2>; /* 2 mA */
++				bias-pull-down; /* pull down */
++				input-debounce = <0>;
++			};
++			mdss_ext_te_suspend: suspend {
++				drive-strength = <2>; /* 2 mA */
++				bias-pull-down; /* pull down */
++				input-debounce = <0>;
++			};
++		};
++
++		pmx_mdss_ext_rst: pmx_mdss_ext_rst {
++			label = "mdss-ext-rst-pin";
++			qcom,pin-func = <0>;
++			mdss_ext_rst_active: active {
++				drive-strength = <2>; /* 2 mA */
++				bias-pull-up;
++			};
++			mdss_ext_rst_suspend: suspend {
++				drive-strength = <2>; /* 2 mA */
++				bias-pull-up;
++			};
++		};
++
+ 		pmx_i2c_4 {
+ 			qcom,pins = <&gp 14>, <&gp 15>; /* SDA, SCL */
+ 			qcom,num-grp-pins = <2>;
+@@ -1277,9 +1332,9 @@
+ 		};
+ 
+ 		tlmm_gpio_key {
+-			qcom,pins = <&gp 90>, <&gp 91>, <&gp 92>;
++			qcom,pins = <&gp 0x62>;
+ 			qcom,pin-func = <0>;
+-			qcom,num-grp-pins = <3>;
++			qcom,num-grp-pins = <1>;
+ 			label = "tlmm_gpio_key";
+ 			gpio_key_active: gpio_key_active {
+ 				drive-strength = <2>;
+@@ -1477,5 +1532,55 @@
+ 					 bias-disable;
+ 			};
+ 		};
++
++		hall_sensor0_int_pin {
++			qcom,pins = <&gp 0x5c>;
++			qcom,pin-func = <0x00>;
++			qcom,num-grp-pins = <0x01>;
++			label = "hall_sensor0-irq";
++
++			hall_sensor0_int_default {
++				drive-strength = <0x06>;
++				bias-pull-up;
++			};
++		};
++
++		hall_sensor1_int_pin {
++			qcom,pins = <&gp 0x24>;
++			qcom,pin-func = <0x00>;
++			qcom,num-grp-pins = <0x01>;
++			label = "hall_sensor1-irq";
++
++			hall_sensor1_int_default: hall_sensor1_int_default {
++				drive-strength = <0x06>;
++				bias-pull-up;
++			};
++		};
++
++		matrix_keypad_row_pins {
++			qcom,pins = <&gp 0x5e &gp 0x5f &gp 0x60 &gp 0x61>;
++			qcom,pin-func = <0x00>;
++			qcom,num-grp-pins = <0x04>;
++			label = "matrix_keypad_row_default";
++
++			matrix_keypad_row_default: matrix_keypad_row_default {
++				drive-strength = <0x02>;
++				bias-pull-up;
++			};
++		};
++
++		matrix_keypad_col_pins {
++			qcom,pins = <&gp 0x34 &gp 0x38 &gp 0x07 &gp 0x63 &gp 0x06 &gp 0x01>;
++			qcom,pin-func = <0x00>;
++			qcom,num-grp-pins = <0x06>;
++			label = "matrix_keypad_col_default";
++
++			matrix_keypad_col_default: matrix_keypad_col_default {
++				drive-strength = <0x02>;
++				bias-disable;
++				output-low;
++			};
++		};
++
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/qcom/msm8909-pm8909-pm.dtsi b/arch/arm/boot/dts/qcom/msm8909-pm8909-pm.dtsi
+index 0bc3cc9f1758..7f3743718bb1 100644
+--- a/arch/arm/boot/dts/qcom/msm8909-pm8909-pm.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8909-pm8909-pm.dtsi
+@@ -48,44 +48,6 @@
+ 				0b 94 5b 80 10 26 30 0f];
+ 	};
+ 
+-	qcom,spm@b0a9000 {
+-		compatible = "qcom,spm-v2";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		reg = <0xb0a9000 0x1000>;
+-		qcom,name = "cpu2";
+-		qcom,cpu = <&CPU2>;
+-		qcom,core-id = <2>;
+-		qcom,saw2-ver-reg = <0xfd0>;
+-		qcom,saw2-cfg = <0x01>;
+-		qcom,saw2-spm-dly= <0x3c102800>;
+-		qcom,saw2-spm-ctl = <0xe>;
+-		qcom,saw2-spm-cmd-wfi = [60 03 60 0b 0f];
+-		qcom,saw2-spm-cmd-spc = [20 10 80 30 90 5b 60 03 60 76 76
+-				0b 94 5b 80 10 26 30 0f];
+-		qcom,saw2-spm-cmd-pc = [20 10 80 30 90 5b 60 03 60 76 76
+-				0b 94 5b 80 10 26 30 0f];
+-	};
+-
+-	qcom,spm@b0b9000 {
+-		compatible = "qcom,spm-v2";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		reg = <0xb0b9000 0x1000>;
+-		qcom,name = "cpu3";
+-		qcom,cpu = <&CPU3>;
+-		qcom,core-id = <3>;
+-		qcom,saw2-ver-reg = <0xfd0>;
+-		qcom,saw2-cfg = <0x01>;
+-		qcom,saw2-spm-dly= <0x3c102800>;
+-		qcom,saw2-spm-ctl = <0xe>;
+-		qcom,saw2-spm-cmd-wfi = [60 03 60 0b 0f];
+-		qcom,saw2-spm-cmd-spc = [20 10 80 30 90 5b 60 03 60 76 76
+-				0b 94 5b 80 10 26 30 0f];
+-		qcom,saw2-spm-cmd-pc = [20 10 80 30 90 5b 60 03 60 76 76
+-				0b 94 5b 80 10 26 30 0f];
+-	};
+-
+ 	qcom,spm@0xb012000 {
+ 		compatible = "qcom,spm-v2";
+ 		#address-cells = <1>;
+diff --git a/arch/arm/boot/dts/qcom/msm8909-pm8916.dtsi b/arch/arm/boot/dts/qcom/msm8909-pm8916.dtsi
+index d7c8ab628684..dabb9b8bea3b 100644
+--- a/arch/arm/boot/dts/qcom/msm8909-pm8916.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8909-pm8916.dtsi
+@@ -187,6 +187,13 @@
+ 		vddio-supply = <&pm8916_l6>;
+ 	};
+ 
++// external display makes kernel panic
++/*
++	qcom,mdss_spi_ext {
++		vdd-supply = <&pm8916_l17>;
++		vddio-supply = <&pm8916_l6>;
++	};
++*/
+ 	qcom,mdss_dsi@1ac8000 {
+ 		vdda-supply = <&pm8916_l2>;
+ 		vdd-supply = <&pm8916_l17>;
+diff --git a/arch/arm/boot/dts/qcom/msm8909-qrd.dtsi b/arch/arm/boot/dts/qcom/msm8909-qrd.dtsi
+index afa63dbac974..be6a8166ab34 100644
+--- a/arch/arm/boot/dts/qcom/msm8909-qrd.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8909-qrd.dtsi
+@@ -45,25 +45,6 @@
+ 	status = "okay";
+ };
+ 
+-&soc {
+-	gpio_keys {
+-		compatible = "gpio-keys";
+-		input-name = "gpio-keys";
+-		pinctrl-names = "tlmm_gpio_key_active","tlmm_gpio_key_suspend";
+-		pinctrl-0 = <&gpio_key_active>;
+-		pinctrl-1 = <&gpio_key_suspend>;
+-
+-		vol_up {
+-			label = "volume_up";
+-			gpios = <&msm_gpio 90 0x1>;
+-			linux,input-type = <1>;
+-			linux,code = <115>;
+-			gpio-key,wakeup;
+-			debounce-interval = <15>;
+-		};
+-	};
+-};
+-
+ &sdhc_1 {
+ 	vdd-supply = <&pm8909_l8>;
+ 	qcom,vdd-voltage-level = <2900000 2900000>;
+diff --git a/arch/arm/boot/dts/qcom/msm8909.dtsi b/arch/arm/boot/dts/qcom/msm8909.dtsi
+index a4a29303237d..ab6006fc5a4c 100644
+--- a/arch/arm/boot/dts/qcom/msm8909.dtsi
++++ b/arch/arm/boot/dts/qcom/msm8909.dtsi
+@@ -127,6 +127,14 @@
+ 			reg = <0x0 0x83000000 0x0 0xc00000>;
+ 			label = "cont_splash_mem";
+ 		};
++
++		fih_region@0 {
++			linux,reserve-contiguous-region;
++			linux,reserve-region;
++			linux,remove-completely;
++			reg = <0x00 0x84a00000 0x00 0x100000>;
++			label = "fih_mem";
++		};
+ 	};
+ 
+ 	soc: soc { };
+@@ -916,9 +924,9 @@
+ 		cell-index = <0>;
+ 	};
+ 
+-	qcom,rmtfs_sharedmem@87c00000 {
++	qcom,rmtfs_sharedmem@00000000 {
+ 		compatible = "qcom,sharedmem-uio";
+-		reg = <0x87c00000 0xe0000>;
++		reg = <0x00 0x300000>;
+ 		reg-names = "rmtfs";
+ 		qcom,client-id = <0x00000001>;
+ 	};
+@@ -1185,8 +1193,8 @@
+ 		interrupts = <0 99 0>, <0 238 0>;
+ 		spi-max-frequency = <50000000>;
+ 		pinctrl-names = "spi_default", "spi_sleep";
+-		pinctrl-0 = <&spi5_default &spi5_cs0_active>;
+-		pinctrl-1 = <&spi5_sleep &spi5_cs0_sleep>;
++		pinctrl-0 = <&spi5_default &spi5_cs0_active &spi5_miso_active>;
++		pinctrl-1 = <&spi5_sleep &spi5_cs0_sleep &spi5_miso_sleep>;
+ 		clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
+ 			 <&clock_gcc clk_gcc_blsp1_qup5_spi_apps_clk>;
+ 		clock-names = "iface_clk", "core_clk";
+@@ -1198,6 +1206,7 @@
+ 		qcom,bam-producer-pipe-index = <13>;
+ 		qcom,master-id = <86>;
+ 		status = "disabled";
++		qcom,shared;
+ 	};
+ 
+ 	i2c_2: i2c@78b6000 { /* BLSP1 QUP2 */
+diff --git a/arch/arm/boot/dts/qcom/spi-panel-gc9305-qvga-cmd.dtsi b/arch/arm/boot/dts/qcom/spi-panel-gc9305-qvga-cmd.dtsi
+index 959e0e696c1f..450047fb187d 100644
+--- a/arch/arm/boot/dts/qcom/spi-panel-gc9305-qvga-cmd.dtsi
++++ b/arch/arm/boot/dts/qcom/spi-panel-gc9305-qvga-cmd.dtsi
+@@ -12,60 +12,100 @@
+ 
+ &mdss_mdp {
+ 	spi_gc9305_qvga_cmd: qcom,mdss_spi_gc9305_qvga_cmd {
+-		qcom,mdss-spi-panel-name = "gc9305 qvga command mode spi panel";
++		qcom,mdss-spi-panel-name = "gc9305_first qvga command mode spi panel";
+ 		qcom,mdss-spi-panel-destination = "display_1";
+ 		qcom,mdss-spi-panel-controller = <&mdss_spi>;
+ 		qcom,mdss-spi-panel-framerate = <30>;
+ 		qcom,mdss-spi-panel-width = <240>;
+ 		qcom,mdss-spi-panel-height = <320>;
+-		qcom,mdss-spi-h-front-porch = <79>;
+-		qcom,mdss-spi-h-back-porch = <59>;
+-		qcom,mdss-spi-h-pulse-width = <60>;
++		qcom,mdss-spi-h-front-porch = <0x0c>;
++		qcom,mdss-spi-h-back-porch = <0x0c>;
++		qcom,mdss-spi-h-pulse-width = <0x04>;
+ 		qcom,mdss-spi-v-back-porch = <10>;
+-		qcom,mdss-spi-v-front-porch = <7>;
++		qcom,mdss-spi-v-front-porch = <0x08>;
+ 		qcom,mdss-spi-v-pulse-width = <2>;
+ 		qcom,mdss-spi-h-left-border = <0>;
+ 		qcom,mdss-spi-h-right-border = <0>;
+ 		qcom,mdss-spi-v-top-border = <0>;
+ 		qcom,mdss-spi-v-bottom-border = <0>;
+ 		qcom,mdss-spi-bpp = <16>;
+-		qcom,mdss-spi-on-command = [00 01 FE
+-			00 01 EF
+-			00 02 36 48
+-			00 02 3A 05
+-			00 02 35 00
+-			00 03 44 00 14
+-			00 03 A4 44 44
+-			00 03 A5 42 42
+-			00 03 AA 88 88
+-			00 03 E8 12 40
+-			00 03 E3 01 10
+-			00 02 FF 61
+-			00 02 AC 00
+-			00 03 A6 2A 2A
+-			00 03 A7 2B 2B
+-			00 03 A8 18 18
+-			00 03 A9 2A 2A
+-			00 02 AD 33
+-			00 02 AF 55
+-			00 02 AE 2B
+-			00 05 2A 00 00 00 EF
+-			00 05 2B 00 00 01 3F
+-			00 01 2C
+-			00 07 F0 02 02 00 08 0C 10
+-			00 07 F1 01 00 00 14 1D 0E
+-			00 07 F2 10 09 37 04 04 48
+-			00 07 F3 10 0B 3F 05 05 4E
+-			00 07 F4 0D 19 17 1D 1E 0F
+-			00 07 F5 06 12 13 1A 1B 0F
+-			78 01 11
+-			00 01 29
+-			00 01 2C];
+-		qcom,mdss-spi-off-command = [20 01 28
+-				 20 01 10];
++		qcom,mdss-spi-on-command = [00 02 36 00 00 02 3a 05 00 02 35 00 00 06 b2 0c 0c 00 33 33 00 02 b7 71 00 02 bb 35 00 02 c0 2c 00 02 c2 01 00 02 c3 19 00 02 c4 20 00 02 c6 ef 00 03 44 00 00 00 03 d0 a4 81 00 0f e0 d0 08 12 0f 10 0a 39 54 4a 2b 17 16 1b 1d 00 0f e1 d0 08 11 0e 0f 0a 39 44 4a 2b 17 16 1b 1e 00 05 2a 00 00 00 ef 00 05 2b 00 00 01 3f 78 01 11 00 01 29 00 01 2c];
++		qcom,mdss-spi-off-command = [00 01 28 78 01 10];
+ 		qcom,mdss-spi-bl-min-level = <1>;
+-		qcom,mdss-spi-bl-max-level = <4095>;
+-		qcom,mdss-spi-bl-pmic-control-type = "bl_ctrl_wled";
+-		qcom,mdss-spi-reset-sequence = <1 20>, <0 1>, <1 20>;
++		qcom,mdss-spi-bl-max-level = <0xff>;
++		qcom-mdss-spi-reset-sequence = <0x01 0x0a>, <0x00 0x02>, <0x01 0x0a>;
++		// new stuff
++		qcom,mdss-brightness-max-level = <0xff>;
++		qcom,esd-check-enabled;
++		qcom,mdss-spi-panel-status-check-mode = "reg_read";
++		qcom,mdss-spi-panel-status-reg = [0a];
++		qcom,mdss-spi-panel-status-read-length = <0x02>;
++		qcom,mdss-spi-panel-status-value = [9c 00];
+ 	};
++
++	spi_gc9305_v2_qvga_cmd: qcom,mdss_spi_gc9305_v2_qvga_cmd {
++            qcom,mdss-spi-panel-name = "gc9305_second qvga command mode spi panel";
++            qcom,mdss-spi-panel-destination = "display_1";
++            qcom,mdss-spi-panel-controller = <&mdss_spi>;
++            qcom,mdss-spi-panel-framerate = <0x1e>;
++            qcom,mdss-spi-panel-width = <0xf0>;
++            qcom,mdss-spi-panel-height = <0x140>;
++            qcom,mdss-spi-h-front-porch = <0x0c>;
++            qcom,mdss-spi-h-back-porch = <0x0c>;
++            qcom,mdss-spi-h-pulse-width = <0x04>;
++            qcom,mdss-spi-v-back-porch = <0x0a>;
++            qcom,mdss-spi-v-front-porch = <0x08>;
++            qcom,mdss-spi-v-pulse-width = <0x02>;
++            qcom,mdss-spi-h-left-border = <0x00>;
++            qcom,mdss-spi-h-right-border = <0x00>;
++            qcom,mdss-spi-v-top-border = <0x00>;
++            qcom,mdss-spi-v-bottom-border = <0x00>;
++            qcom,mdss-spi-bpp = <0x10>;
++            qcom,mdss-spi-on-command = [00 01 fe 00 01 ef 00 02 3a 05 00 02 35 00 00 05 2a 00 00 00 ef 00 05 2b 00 00 01 3f 00 01 2c 78 01 11 00 01 29 00 01 2c];
++            qcom,mdss-spi-off-command = [00 01 28 78 01 10];
++            qcom,mdss-spi-no-esd-command = [00 01 11 00 01 29 00 01 13 00 01 38 00 01 20 00 02 36 00 00 02 3a 05 00 02 35 00 00 02 89 0b 00 02 eb 02 00 01 2c];
++            qcom,mdss-brightness-max-level = <0xff>;
++            qcom,mdss-spi-bl-min-level = <0x01>;
++            qcom,mdss-spi-bl-max-level = <0xff>;
++            qcom,mdss-spi-reset-sequence = <0x01 0x01 0x00 0x0a 0x01 0x0a>;
++            qcom,esd-check-enabled;
++            qcom,mdss-spi-panel-status-check-mode = "reg_read";
++            qcom,mdss-spi-panel-status-reg = [09];
++            qcom,mdss-spi-panel-status-read-length = <0x04>;
++            qcom,mdss-spi-panel-status-value = <0xa0530600>;
++        };
++
++// external display makes kernel panic
++/*
++        spi_gc9305_v2_qvga_ext_cmd: qcom,mdss_spi_gc9305_v2_qvga_ext_cmd {
++            qcom,mdss-spi-panel-name = "gc9305_second qvga command mode spi ext panel";
++            qcom,mdss-spi-panel-destination = "display_2";
++            qcom,mdss-spi-panel-controller = <&mdss_spi_ext>;
++            qcom,mdss-spi-panel-framerate = <0x1e>;
++            qcom,mdss-spi-panel-width = <0xf0>;
++            qcom,mdss-spi-panel-height = <0xf0>;
++            qcom,mdss-spi-h-front-porch = <0x0c>;
++            qcom,mdss-spi-h-back-porch = <0x0c>;
++            qcom,mdss-spi-h-pulse-width = <0x04>;
++            qcom,mdss-spi-v-back-porch = <0x0a>;
++            qcom,mdss-spi-v-front-porch = <0x08>;
++            qcom,mdss-spi-v-pulse-width = <0x02>;
++            qcom,mdss-spi-h-left-border = <0x00>;
++            qcom,mdss-spi-h-right-border = <0x00>;
++            qcom,mdss-spi-v-top-border = <0x00>;
++            qcom,mdss-spi-v-bottom-border = <0x00>;
++            qcom,mdss-spi-bpp = <0x10>;
++            qcom,mdss-spi-on-command = [00 01 fe 00 01 ef 00 02 3a 05 00 02 35 00 00 05 2a 00 00 00 ef 00 05 2b 00 00 00 ef 00 01 2c 78 01 11 00 01 29 00 01 2c];
++            qcom,mdss-spi-off-command = [00 01 28 78 01 10];
++            qcom,mdss-brightness-max-level = <0xff>;
++            qcom,mdss-spi-bl-min-level = <0x01>;
++            qcom,mdss-spi-bl-max-level = <0xff>;
++            qcom,mdss-spi-reset-sequence = <0x01 0x01 0x00 0x0a 0x01 0x0a>;
++            qcom,esd-check-enabled;
++            qcom,mdss-spi-panel-status-check-mode = "reg_read";
++            qcom,mdss-spi-panel-status-reg = [09];
++            qcom,mdss-spi-panel-status-read-length = <0x04>;
++            qcom,mdss-spi-panel-status-value = <0xa0530600>;
++        };
++*/
+ };

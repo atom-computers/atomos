@@ -1,0 +1,11 @@
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/wallpapers/postmarketos/contents/images/2000x2000.png'
+picture-uri-dark='file:///usr/share/wallpapers/postmarketos/contents/images_dark/2000x2000.png'
+
+[org.gnome.desktop.background:Phosh]
+picture-uri='file:///usr/share/wallpapers/postmarketos/contents/images/2000x2000.png'
+picture-uri-dark='file:///usr/share/wallpapers/postmarketos/contents/images_dark/2000x2000.png'
+
+[org.gnome.desktop.screensaver:Phosh]
+picture-options='zoom'
+picture-uri='file:///usr/share/wallpapers/postmarketos/contents/images/2000x2000.png'

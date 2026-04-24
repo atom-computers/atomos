@@ -1,0 +1,32 @@
+# Reference: <https://postmarketos.org/devicepkg>
+
+pkgname=device-samsung-a52sxq
+pkgdesc="Samsung Galaxy A52s 5G"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	android-tools
+	linux-samsung-a52sxq
+	postmarketos-base
+	postmarketos-base-downstream
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+d749cb074550a9e771251fa7a17d50ba8c60633800b45a10acdb41a87d7643ff26f1304c4cd30176298fd706c076780609561578aaa881c1f9fedbc67200fd33  deviceinfo
+"

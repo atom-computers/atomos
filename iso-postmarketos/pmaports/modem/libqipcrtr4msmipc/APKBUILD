@@ -1,0 +1,22 @@
+maintainer=""
+pkgname=libqipcrtr4msmipc
+pkgver=0.1
+pkgrel=0
+pkgdesc="LD_PRELOADable library to emulate AF_QIPCRTR socket on devices with only AF_MSM_IPC"
+url="https://github.com/scintill/libqipcrtr4msmipc"
+arch="armhf armv7 aarch64"
+license="GPL-3.0-or-later"
+_tag="v$pkgver"
+makedepends="msmipc-dev"
+source="$pkgname-$_tag.tar.gz::https://github.com/scintill/libqipcrtr4msmipc/archive/$_tag.tar.gz"
+options="!check"
+
+build() {
+	make C_INCLUDE_PATH=/usr/src/msmipc-dev/include
+}
+
+package() {
+	install -Dm644 "$builddir"/libqipcrtr4msmipc.so "$pkgdir"/usr/lib/preload/libqipcrtr4msmipc.so
+}
+
+sha512sums="5fd22a64d1f5dc743de2d485e3ec5c264abed4af4b63204f73a750847c15c2f91c3d0cf350bb341b61650ecb43e103475f81d77ad7b6ebb43751dcda3abb22d7  libqipcrtr4msmipc-v0.1.tar.gz"

@@ -1,0 +1,23 @@
+# Co-Maintainer: Newbyte <newbyte@postmarketos.org>
+# Contributor: Clayton Craft <clayton@craftyguy.net>
+maintainer="Alistair Francis <alistair@alistair23.me>"
+pkgname=firmware-brcm43752
+pkgver=3_git20230613
+pkgrel=1
+_commit="84b8b00f57a9495c05190477c5895cd66f69b873"
+pkgdesc="Firmware for the Broadcom brcm43752 Wifi/BT adapter"
+url="https://source.puri.sm/Librem5/firmware-brcm43752-nonfree"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://source.puri.sm/Librem5/firmware-brcm43752-nonfree/-/archive/$_commit/firmware-brcm43752-nonfree-$_commit.tar.gz"
+builddir="$srcdir/firmware-brcm43752-nonfree-$_commit"
+
+package() {
+	mkdir -p "$pkgdir/lib/firmware/postmarketos"
+	cp -r "$builddir/firmware/brcm" "$pkgdir/lib/firmware/postmarketos"
+}
+
+sha512sums="
+f205dc47caf072c72965d3ad1b10a726c661105970bcfc191655f17706b693bd75e06325342315109ebd27e4d4a6c8934b74e2737edbf5756d1f68ec1286b318  firmware-brcm43752-nonfree-84b8b00f57a9495c05190477c5895cd66f69b873.tar.gz
+"

@@ -1,0 +1,9 @@
+# In postmarketOS, this file gets used, when no /etc/xdg/weston/weston.ini exists.
+# That is, so we can install a device specific config file (which may disable
+# xwayland for example) from the device specific package to /etc/xdg/weston/weston.ini.
+
+[core]
+xwayland=true
+backend=drm-backend.so
+[shell]
+background-image=/usr/share/wallpapers/postmarketos.jpg

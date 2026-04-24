@@ -1,0 +1,25 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=adsp-audio
+pkgver=1
+pkgrel=5
+pkgdesc="Init script for enabling the adsp audio subsystem (downstream Android kernels)"
+url="https://gitlab.postmarketos.org/postmarketOS/pmaports"
+arch="noarch"
+license="GPL-3.0-or-later"
+source="$pkgname.initd"
+subpackages="$pkgname-openrc"
+# no tests
+options="!check"
+
+package() {
+	install -Dm755 "$srcdir"/$pkgname.initd "$pkgdir"/etc/init.d/adsp-audio
+}
+
+openrc() {
+	install="$subpkgname.post-install"
+	default_openrc
+}
+
+sha512sums="
+1edd94b45d37d82b37e04a4f3ff9f3c116bee088a0f83c7b605a0107a3da4f5c9f7d0c1a50c082eb05914352979114135bde8942be9f6ac4fe3a7041e9190bc3  adsp-audio.initd
+"

@@ -1,0 +1,167 @@
+This is needed in order for the kernel to work. Without it, the kernel panics on startup.
+---
+diff --git a/drivers/tty/serial/msm_serial_hs.c b/drivers/tty/serial/msm_serial_hs.c
+index fd191761bfa1..844c7617b9e6 100644
+--- a/drivers/tty/serial/msm_serial_hs.c
++++ b/drivers/tty/serial/msm_serial_hs.c
+@@ -62,7 +62,6 @@
+ #include <linux/ipc_logging.h>
+ #include <asm/irq.h>
+ #include <linux/kthread.h>
+-#include <uapi/linux/sched.h>
+ 
+ #include <linux/msm-sps.h>
+ #include <linux/platform_data/msm_serial_hs.h>
+@@ -3395,7 +3394,6 @@ static void  msm_serial_hs_rt_init(struct uart_port *uport)
+ 	msm_uport->pm_state = MSM_HS_PM_SUSPENDED;
+ 	mutex_unlock(&msm_uport->mtx);
+ 	pm_runtime_enable(uport->dev);
+-	tty_port_set_policy(&uport->state->port, SCHED_FIFO, 1);
+ }
+ 
+ static int msm_hs_runtime_suspend(struct device *dev)
+diff --git a/drivers/tty/tty_buffer.c b/drivers/tty/tty_buffer.c
+index 92af201f9030..4706df20191b 100644
+--- a/drivers/tty/tty_buffer.c
++++ b/drivers/tty/tty_buffer.c
+@@ -71,7 +71,7 @@ void tty_buffer_unlock_exclusive(struct tty_port *port)
+ 	atomic_dec(&buf->priority);
+ 	mutex_unlock(&buf->lock);
+ 	if (restart)
+-		queue_kthread_work(&port->worker, &buf->work);
++		queue_work(system_unbound_wq, &buf->work);
+ }
+ EXPORT_SYMBOL_GPL(tty_buffer_unlock_exclusive);
+ 
+@@ -132,8 +132,6 @@ void tty_buffer_free_all(struct tty_port *port)
+ 	buf->tail = &buf->sentinel;
+ 
+ 	atomic_set(&buf->mem_used, 0);
+-	if (!IS_ERR_OR_NULL(port->worker_thread))
+-		kthread_stop(port->worker_thread);
+ }
+ 
+ /**
+@@ -406,7 +404,7 @@ void tty_schedule_flip(struct tty_port *port)
+ 	 * flush_to_ldisc() sees buffer data.
+ 	 */
+ 	smp_store_release(&buf->tail->commit, buf->tail->used);
+-	queue_kthread_work(&port->worker, &buf->work);
++	queue_work(system_unbound_wq, &buf->work);
+ }
+ EXPORT_SYMBOL(tty_schedule_flip);
+ 
+@@ -474,7 +472,7 @@ receive_buf(struct tty_struct *tty, struct tty_buffer *head, int count)
+  *		 'consumer'
+  */
+ 
+-static void flush_to_ldisc(struct kthread_work *work)
++static void flush_to_ldisc(struct work_struct *work)
+ {
+ 	struct tty_port *port = container_of(work, struct tty_port, buf.work);
+ 	struct tty_bufhead *buf = &port->buf;
+@@ -564,20 +562,8 @@ void tty_buffer_init(struct tty_port *port)
+ 	init_llist_head(&buf->free);
+ 	atomic_set(&buf->mem_used, 0);
+ 	atomic_set(&buf->priority, 0);
++	INIT_WORK(&buf->work, flush_to_ldisc);
+ 	buf->mem_limit = TTYB_DEFAULT_MEM_LIMIT;
+-	init_kthread_work(&buf->work, flush_to_ldisc);
+-	init_kthread_worker(&port->worker);
+-	port->worker_thread = kthread_run(kthread_worker_fn, &port->worker,
+-					  "tty_worker_thread");
+-	if (IS_ERR(port->worker_thread)) {
+-		/*
+-		 * Not good, we can't unwind, this tty is going to be really
+-		 * sad...
+-		 */
+-		pr_err("Unable to start tty_worker_thread\n");
+-	}
+-
+-
+ }
+ 
+ /**
+@@ -605,15 +591,15 @@ void tty_buffer_set_lock_subclass(struct tty_port *port)
+ 
+ bool tty_buffer_restart_work(struct tty_port *port)
+ {
+-	return queue_kthread_work(&port->worker, &port->buf.work);
++	return queue_work(system_unbound_wq, &port->buf.work);
+ }
+ 
+ bool tty_buffer_cancel_work(struct tty_port *port)
+ {
+-	return kthread_cancel_work_sync(&port->buf.work);
++	return cancel_work_sync(&port->buf.work);
+ }
+ 
+ void tty_buffer_flush_work(struct tty_port *port)
+ {
+-	flush_kthread_work(&port->buf.work);
++	flush_work(&port->buf.work);
+ }
+diff --git a/drivers/tty/tty_port.c b/drivers/tty/tty_port.c
+index 9f06fc11bc5f..482f33f20043 100644
+--- a/drivers/tty/tty_port.c
++++ b/drivers/tty/tty_port.c
+@@ -16,7 +16,6 @@
+ #include <linux/bitops.h>
+ #include <linux/delay.h>
+ #include <linux/module.h>
+-#include <uapi/linux/sched.h>
+ 
+ void tty_port_init(struct tty_port *port)
+ {
+@@ -599,12 +598,3 @@ int tty_port_open(struct tty_port *port, struct tty_struct *tty,
+ }
+ 
+ EXPORT_SYMBOL(tty_port_open);
+-
+-int tty_port_set_policy(struct tty_port *port, int policy, int sched_priority)
+-{
+-	struct sched_param param = { .sched_priority = sched_priority };
+-
+-	return sched_setscheduler(port->worker_thread, policy, &param);
+-}
+-EXPORT_SYMBOL_GPL(tty_port_set_policy);
+-
+diff --git a/include/linux/tty.h b/include/linux/tty.h
+index 1c1bb90f6819..572af7c9a65d 100644
+--- a/include/linux/tty.h
++++ b/include/linux/tty.h
+@@ -12,7 +12,6 @@
+ #include <uapi/linux/tty.h>
+ #include <linux/rwsem.h>
+ #include <linux/llist.h>
+-#include <linux/kthread.h>
+ 
+ /*
+  * Lock subclasses for tty locks
+@@ -82,7 +81,7 @@ static inline char *flag_buf_ptr(struct tty_buffer *b, int ofs)
+ 
+ struct tty_bufhead {
+ 	struct tty_buffer *head;	/* Queue head */
+-	struct kthread_work work;
++	struct work_struct work;
+ 	struct mutex	   lock;
+ 	atomic_t	   priority;
+ 	struct tty_buffer sentinel;
+@@ -240,8 +239,6 @@ struct tty_port {
+ 						   based drain is needed else
+ 						   set to size of fifo */
+ 	struct kref		kref;		/* Ref counter */
+-	struct kthread_worker   worker;         /* worker thread */
+-	struct task_struct      *worker_thread; /* worker thread */
+ };
+ 
+ /*
+@@ -582,8 +579,6 @@ static inline int tty_port_users(struct tty_port *port)
+ {
+ 	return port->count + port->blocked_open;
+ }
+-extern int tty_port_set_policy(struct tty_port *port, int policy,
+-			       int sched_priority);
+ 
+ extern int tty_register_ldisc(int disc, struct tty_ldisc_ops *new_ldisc);
+ extern int tty_unregister_ldisc(int disc);

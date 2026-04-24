@@ -1,0 +1,104 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos9610-a50_core_defconfig
+
+pkgname=linux-samsung-a50
+pkgver=4.14.194
+pkgrel=2
+pkgdesc="Samsung Galaxy A50 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a50"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	gcc6
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+"
+
+# Sources
+_kernel_repo="android_kernel_samsung_exynos9610_mint"
+_kernel_repo_commit="7f72a8b689677562f028d78b2e91bd79277a0aba"
+_kernel_archive_url="https://github.com/FreshROMs/$_kernel_repo/archive/$_kernel_repo_commit.tar.gz"
+
+_config="config-$_flavor.$arch"
+
+source="
+	$pkgname-$_kernel_repo_commit.tar.gz::$_kernel_archive_url
+	$_config
+	fix-check-lxdialog.patch
+	lz4_missing_label.patch
+	disable_optimization_flags.patch
+	remove_kernelsu_entirely.patch
+	scsc_use_path_from_kconfig.patch
+	various_firmware_paths.patch
+	dtbinst_remove_target.patch
+	no_trailingspaces.patch
+"
+builddir="$srcdir/$_kernel_repo-$_kernel_repo_commit"
+_outdir="out"
+
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	mkdir -p $_outdir/firmware/tsp_imagis
+	cp firmware/tsp_imagis/ist40xx_a80.bin $_outdir/firmware/tsp_imagis/ist40xx_a80.bin
+	cp firmware/tsp_imagis/ist40xx_a80_cmcs.bin $_outdir/firmware/tsp_imagis/ist40xx_a80_cmcs.bin
+
+	mkdir -p $_outdir/drivers/misc/tzdev
+	cp drivers/misc/tzdev/startup.tzar $_outdir/drivers/misc/tzdev/startup.tzar
+	cp drivers/misc/tzdev/startup_old.tzar $_outdir/drivers/misc/tzdev/startup_old.tzar
+
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	# Modules
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		MODLIB="$pkgdir/lib/modules/4.14.194" \
+		INSTALL_PATH="$pkgdir/boot" \
+		modules_install dtbs_install
+
+}
+
+sha512sums="
+a8937404ae7547c7a4b623f77f44a08390749c0d527c783bb7f99758dbfc204b7fe95df1d7b5c3f52bd0febf84fc8fcb28196574436cbd131d476ea707ffdf22  linux-samsung-a50-7f72a8b689677562f028d78b2e91bd79277a0aba.tar.gz
+aad95fc57648cab5d27635abedddfcf7e783d7c557ca9c50b384997f6a3ccc6ef8ec7a147cce48d72fcbf7650d12a34814cce49bb9302d52f3d4545f43880a3d  config-samsung-a50.aarch64
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+c3024ec5bab940c2792d9dd2d6407c6a099ad1c301de3bea087f166e2d0102d653efd7fe21fd74abbeb289cab89090eb8cbd9abf325dcb8327ae75820358b87c  lz4_missing_label.patch
+dd5cbce4ffca5c919b9819bec8ff9d4902e3fb024780d12467c498f933fd9bc4af638ab1eaaf53269e491e1a4576bb34cda980a2e70252aed1b831264aa48e01  disable_optimization_flags.patch
+c635cfc37b84e7cebb70275bd90dd3db6f73e3e6507c34a075dfb870b1b5305939cd4d52c8a2ccb19b62f90dad08d4548d10eabace3df06387e38c9f30f6cd39  remove_kernelsu_entirely.patch
+a3b72366255eeb3a339646b56857171c8f9a20b020ce2fe0837ee0fd32e07a866d0329624cf6d60481eb75f80a19cfb356e67f44dff61dc9b7ae822ab91d6137  scsc_use_path_from_kconfig.patch
+5ae731527b5f9fddeb1f5fa853ded918dc323414453d0600d9c27b42b76a55a47c471344115cb0628195c13815f776e73705bf51c20197c011fbda36a619bcd9  various_firmware_paths.patch
+00ea85c43059d24b6930781ef2e9d1b62ad73416d771445135650d41c4e045528b5237a896de451a68ceeace89223700392e67772efaa723c3e0b11e95e431dc  dtbinst_remove_target.patch
+3143ad3241632d287916216cc0c712307a7efc54f92a2bc57f70948e3e3a102b3140e91030aaff055abd8201309725690c26120551afe6acbe2e9019a0b95939  no_trailingspaces.patch
+"

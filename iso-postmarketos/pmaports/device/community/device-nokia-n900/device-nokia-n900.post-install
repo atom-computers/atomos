@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Generate symlinks for acpid events, based on definitions in /etc/acpi.map
+for i in $(awk '{if($NF && ($1 !~ /^#/)) print $NF}' /etc/acpi.map); do
+        ln -s /etc/acpi/handler.sh /etc/acpi/$i
+done
+
+exit 0

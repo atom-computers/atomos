@@ -1,0 +1,69 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/v12bnlite-perf_defconfig
+
+pkgname=linux-wiko-v12bnlite
+pkgver=3.18.31
+pkgrel=2
+pkgdesc="Wiko View kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="wiko-v12bnlite"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	gcc6
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_wiko_v12bnlite"
+_commit="e9c55996a1067e310b21e9855b91db1efe9a5568"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Firstbober/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	fix_fp_driver_path_makefile.patch
+	fix_ft5364i_makefile.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+c71b4172e344aad579a988b379b3f5d5276574248032b09c69be437d1c734fb3f3c844badbe5c50a4f805691c366731ce5b41afcdcf91a5fa73192a60cf51c3c  linux-wiko-v12bnlite-e9c55996a1067e310b21e9855b91db1efe9a5568.tar.gz
+471a503dda855fe0dfc2c9b32531ceadac66f38f22589a27cfb9ece860aa9e5506be46e64605f46f30ba91f430b1218736b425985ea1d68ecb23a9045044a6b6  config-wiko-v12bnlite.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+751cc042c000dfb9ff9230a9f1d2120ae185eaeb2eb76dde371014007f8cf3a42e7e3bc2a976c88227839c7a25eecfd793b267837ba9da5cb4ad62d66be061d0  fix_fp_driver_path_makefile.patch
+ea925d3956d6e3f39d5e88423e9eb89002a22a00346ed82860b53b2c2713772e10e126f043d8b3d4944137340f169a9accd865234bd48bcde197c1af12ebe38c  fix_ft5364i_makefile.patch
+"

@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-meizu-turbo
+pkgdesc="Meizu Pro 5"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-meizu-turbo mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+b1180fbc65e15823c79b206fc77001e3aad48f2f33c62aba288f68adaa04f253050a150340af2b5d06839431a8cad542675435fb58a0c3edcdbd494adf70b767  deviceinfo
+ceed24d92a3a81bfb0b38db49533512512e12f6789e000bc61be495197f250175d16d3747c3b2a5f7e80ced666505dce89972b9de393fc4a43d4ba818b0211cc  kernel-cmdline.conf
+"

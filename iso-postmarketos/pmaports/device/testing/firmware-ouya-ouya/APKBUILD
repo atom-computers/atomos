@@ -1,0 +1,42 @@
+maintainer=""
+pkgname=firmware-ouya-ouya
+pkgver=0
+pkgrel=0
+pkgdesc="Ouya Firmware"
+url="https://github.com/milaq"
+arch="armv7"
+license="proprietary"
+options="!check !tracedeps pmb:cross-native"
+
+_nvram_file="nvram_4330.txt"
+_nvram_commit="26c691e75f897adf95641ddb55cb56bbade48edf"
+_nvram_repo="android_device_boxer8_ouya"
+_nvram_url="https://github.com/milaq/$_nvram_repo/raw/$_nvram_commit/configs/$_nvram_file"
+
+_fw_file="fw_bcmdhd.bin"
+_fw_commit="7ba28a076fec16c46b2513cc45eee30f1f73a9bc"
+_fw_repo="android_vendor_boxer8_ouya"
+_fw_url="https://github.com/milaq/$_fw_repo/raw/$_fw_commit/proprietary/vendor/firmware/bcm4330/$_fw_file"
+
+source="
+	$pkgname-$_fw_commit-$_fw_file::$_fw_url
+	$pkgname-$_nvram_commit-$_nvram_file::$_nvram_url
+	"
+
+package() {
+	# close to mainline kernel
+	install -Dm644 "$srcdir/$pkgname-$_fw_commit-$_fw_file" \
+		"$pkgdir/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.bin"
+	install -Dm644 "$srcdir/$pkgname-$_nvram_commit-$_nvram_file" \
+		"$pkgdir/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.txt"
+
+	# downstream kernel
+	mkdir -p "$pkgdir/lib/firmware/postmarketos/bcm4330/"
+	cd "$pkgdir/lib/firmware/postmarketos/bcm4330/"
+	ln -s "/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.bin" \
+		"fw_bcmdhd.bin"
+	ln -s "/lib/firmware/postmarketos/brcm/brcmfmac4330-sdio.txt" \
+		"nvram_4330.txt"
+}
+sha512sums="51e4f0e42d13c88b360c1f2d62f11d72cd7495c10d48839291705e47775db226191ddfea4abaf09ab681bfcfa66d1953ccd7b217c0420d11df07d3920d21bd86  firmware-ouya-ouya-7ba28a076fec16c46b2513cc45eee30f1f73a9bc-fw_bcmdhd.bin
+84de1a63dc4f9c8036dfd8b900ebf6507e254cf7bc06b8ec51d3409f5eb4f4e1a8d4cc805cb35782dd09cfb3b7a6cfb57ba3e4f1857acba426e09fa2d7bf8cea  firmware-ouya-ouya-26c691e75f897adf95641ddb55cb56bbade48edf-nvram_4330.txt"

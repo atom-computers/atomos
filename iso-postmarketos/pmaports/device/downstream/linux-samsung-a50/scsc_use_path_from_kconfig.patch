@@ -1,0 +1,30 @@
+diff --git a/drivers/net/wireless/scsc/reg_info.c b/drivers/net/wireless/scsc/reg_info.c
+index c6b2626d3..5736b02a1 100644
+--- a/drivers/net/wireless/scsc/reg_info.c
++++ b/drivers/net/wireless/scsc/reg_info.c
+@@ -8,6 +8,7 @@
+ #include "debug.h"
+ #include <linux/fs.h>
+ #include <linux/firmware.h>
++#include <linux/string.h>
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+ MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+@@ -76,7 +77,16 @@ int firmware_read(const struct firmware *firm, void *dest, size_t size, int *off
+ int slsi_read_regulatory(struct slsi_dev *sdev)
+ {
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+-	char *reg_file_t = "/vendor/etc/wifi/slsi_reg_database.bin";
++	const char *FIRMWARE_BLOB_PATH = "/slsi_reg_database.bin";
++
++	// CONFIC_SCSC_CORE_FW_LOCATION must be set!
++	char *reg_file_t = kmalloc(
++		strlen(CONFIG_SCSC_CORE_FW_LOCATION) + strlen(FIRMWARE_BLOB_PATH) + 1,
++		GFP_KERNEL
++	);
++	strcpy(reg_file_t, CONFIG_SCSC_CORE_FW_LOCATION);
++	strcat(reg_file_t, FIRMWARE_BLOB_PATH);
++
+ #else
+ 	char *reg_file_t = "../etc/wifi/slsi_reg_database.bin";
+ #endif

@@ -1,0 +1,28 @@
+maintainer=""
+pkgname=firmware-samsung-heatqlte
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Samsung Galaxy Ace 4 (SM-G357FZ)"
+url="https://postmarketos.org"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="armv7"
+license="proprietary"
+_commit="42688acee71c12777900f6e661ced6ef67c92271"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-$pkgver.tar.gz::https://github.com/garethppls/firmware-sm-g357fz/archive/$_commit.tar.gz"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="$_name WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/firmware-sm-g357fz-"$_commit"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+c04c1c1addbd52003658e9c7c305cdc86aa6489f794322a9390c544ef0a062cc76dcb5d83cc167d1399f710f193603d8aa573f02aef97edd8e32d2c4ad1eaecd  firmware-samsung-heatqlte-1.tar.gz
+"

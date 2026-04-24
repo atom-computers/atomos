@@ -1,0 +1,291 @@
+author	Vinay Simha BN <simhavcs@gmail.com>	2016-09-02 20:46:57 +0530
+committer	John Stultz <john.stultz@linaro.org>	2017-05-12 12:39:41 -0700
+commit	cba521131c17b70b5973c662a59d134d607ad311 (patch)
+tree	d32a9ea9e23590ab7703944bc0b3db5b9d8b8835
+parent	04be7aa13586e450728845951f969f39ed577f0e (diff)
+download	flo-cba521131c17b70b5973c662a59d134d607ad311.tar.gz
+power: smb347-charger: Summit SMB345 charger IC
+Summit microelectronics SMB358 charger chip added.
+It shares the same register map and functionality
+with SMB347.
+
+Cc: Jonghwa Lee <jonghwa3.lee@samsung.com>
+Cc: Sumit Semwal <sumit.semwal@linaro.org>
+Cc: John Stultz <john.stultz@linaro.org>
+Signed-off-by: Vinay Simha BN <simhavcs@gmail.com>
+Diffstat
+-rw-r--r--	Documentation/devicetree/bindings/power_supply/smb347_charger.txt	1	
+		
+-rw-r--r--	drivers/power/supply/smb347-charger.c	122	
+		
+2 files changed, 61 insertions, 62 deletions
+diff --git a/Documentation/devicetree/bindings/power_supply/smb347_charger.txt b/Documentation/devicetree/bindings/power_supply/smb347_charger.txt
+index 91570a5..ee39b58 100644
+--- a/Documentation/devicetree/bindings/power_supply/smb347_charger.txt
++++ b/Documentation/devicetree/bindings/power_supply/smb347_charger.txt
+@@ -3,6 +3,7 @@ smb347_charger bindings
+ 
+ [Required porperties]
+ - compatible : "summit,smb347"
++	       "summit,smb345"
+ - reg : Slave address for i2c interface
+ # At least one of followings should be set
+   - enable-usb-charging
+diff --git a/drivers/power/supply/smb347-charger.c b/drivers/power/supply/smb347-charger.c
+index 0231844..4be638c 100644
+--- a/drivers/power/supply/smb347-charger.c
++++ b/drivers/power/supply/smb347-charger.c
+@@ -136,6 +136,7 @@
+  * @pdata: pointer to platform data
+  */
+ struct smb347_charger {
++	int			id;
+ 	struct mutex		lock;
+ 	struct device		*dev;
+ 	struct regmap		*regmap;
+@@ -148,58 +149,46 @@ struct smb347_charger {
+ 	const struct smb347_charger_platform_data *pdata;
+ };
+ 
++enum smb_charger_chipid {
++	SMB347,
++	SMB345,
++	NUM_CHIP_TYPES,
++};
++
+ /* Fast charge current in uA */
+-static const unsigned int fcc_tbl[] = {
+-	700000,
+-	900000,
+-	1200000,
+-	1500000,
+-	1800000,
+-	2000000,
+-	2200000,
+-	2500000,
++static const unsigned int fcc_tbl[NUM_CHIP_TYPES][8] = {
++	[SMB347] = { 700000, 900000, 1200000, 1500000,
++			1800000, 2000000, 2200000, 2500000 },
++	[SMB345] = { 200000, 450000, 600000, 900000,
++			1300000, 1500000, 1800000, 2000000 },
+ };
+ 
+ /* Pre-charge current in uA */
+-static const unsigned int pcc_tbl[] = {
+-	100000,
+-	150000,
+-	200000,
+-	250000,
++static const unsigned int pcc_tbl[NUM_CHIP_TYPES][4] = {
++	[SMB347] = { 100000, 150000, 200000, 250000 },
++	[SMB345] = { 150000, 250000, 350000, 450000 },
+ };
+ 
+ /* Termination current in uA */
+-static const unsigned int tc_tbl[] = {
+-	37500,
+-	50000,
+-	100000,
+-	150000,
+-	200000,
+-	250000,
+-	500000,
+-	600000,
++static const unsigned int tc_tbl[NUM_CHIP_TYPES][8] = {
++	[SMB347] = { 37500, 50000, 100000, 150000,
++			200000, 250000, 500000, 600000 },
++	[SMB345] = { 30000, 40000, 60000, 80000,
++			100000, 125000, 150000, 200000 },
+ };
+ 
+ /* Input current limit in uA */
+-static const unsigned int icl_tbl[] = {
+-	300000,
+-	500000,
+-	700000,
+-	900000,
+-	1200000,
+-	1500000,
+-	1800000,
+-	2000000,
+-	2200000,
+-	2500000,
++static const unsigned int icl_tbl[NUM_CHIP_TYPES][10] = {
++	[SMB347] = { 300000, 500000, 700000, 900000, 1200000,
++			1500000, 1800000, 2000000, 2200000, 2500000 },
++	[SMB345] = { 300000, 500000, 700000, 1000000, 1500000,
++			1800000, 2000000, 2000000, 2000000, 2000000 },
+ };
+ 
+ /* Charge current compensation in uA */
+-static const unsigned int ccc_tbl[] = {
+-	250000,
+-	700000,
+-	900000,
+-	1200000,
++static const unsigned int ccc_tbl[NUM_CHIP_TYPES][4] = {
++	[SMB347] = { 250000, 700000, 900000, 1200000 },
++	[SMB345] = { 200000, 450000, 600000, 900000 },
+ };
+ 
+ /* Convert register value to current using lookup table */
+@@ -354,10 +343,10 @@ static int smb347_start_stop_charging(struct smb347_charger *smb)
+ 
+ static int smb347_set_charge_current(struct smb347_charger *smb)
+ {
+-	int ret;
++	int ret, id = smb->id;
+ 
+ 	if (smb->pdata->max_charge_current) {
+-		ret = current_to_hw(fcc_tbl, ARRAY_SIZE(fcc_tbl),
++		ret = current_to_hw(fcc_tbl[id], ARRAY_SIZE(fcc_tbl[id]),
+ 				    smb->pdata->max_charge_current);
+ 		if (ret < 0)
+ 			return ret;
+@@ -370,7 +359,7 @@ static int smb347_set_charge_current(struct smb347_charger *smb)
+ 	}
+ 
+ 	if (smb->pdata->pre_charge_current) {
+-		ret = current_to_hw(pcc_tbl, ARRAY_SIZE(pcc_tbl),
++		ret = current_to_hw(pcc_tbl[id], ARRAY_SIZE(pcc_tbl[id]),
+ 				    smb->pdata->pre_charge_current);
+ 		if (ret < 0)
+ 			return ret;
+@@ -383,7 +372,7 @@ static int smb347_set_charge_current(struct smb347_charger *smb)
+ 	}
+ 
+ 	if (smb->pdata->termination_current) {
+-		ret = current_to_hw(tc_tbl, ARRAY_SIZE(tc_tbl),
++		ret = current_to_hw(tc_tbl[id], ARRAY_SIZE(tc_tbl[id]),
+ 				    smb->pdata->termination_current);
+ 		if (ret < 0)
+ 			return ret;
+@@ -399,10 +388,10 @@ static int smb347_set_charge_current(struct smb347_charger *smb)
+ 
+ static int smb347_set_current_limits(struct smb347_charger *smb)
+ {
+-	int ret;
++	int ret, id = smb->id;
+ 
+ 	if (smb->pdata->mains_current_limit) {
+-		ret = current_to_hw(icl_tbl, ARRAY_SIZE(icl_tbl),
++		ret = current_to_hw(icl_tbl[id], ARRAY_SIZE(icl_tbl[id]),
+ 				    smb->pdata->mains_current_limit);
+ 		if (ret < 0)
+ 			return ret;
+@@ -415,7 +404,7 @@ static int smb347_set_current_limits(struct smb347_charger *smb)
+ 	}
+ 
+ 	if (smb->pdata->usb_hc_current_limit) {
+-		ret = current_to_hw(icl_tbl, ARRAY_SIZE(icl_tbl),
++		ret = current_to_hw(icl_tbl[id], ARRAY_SIZE(icl_tbl[id]),
+ 				    smb->pdata->usb_hc_current_limit);
+ 		if (ret < 0)
+ 			return ret;
+@@ -467,7 +456,7 @@ static int smb347_set_temp_limits(struct smb347_charger *smb)
+ {
+ 	bool enable_therm_monitor = false;
+ 	int ret = 0;
+-	int val;
++	int val, id = smb->id;
+ 
+ 	if (smb->pdata->chip_temp_threshold) {
+ 		val = smb->pdata->chip_temp_threshold;
+@@ -589,7 +578,7 @@ static int smb347_set_temp_limits(struct smb347_charger *smb)
+ 	}
+ 
+ 	if (smb->pdata->charge_current_compensation) {
+-		val = current_to_hw(ccc_tbl, ARRAY_SIZE(ccc_tbl),
++		val = current_to_hw(ccc_tbl[id], ARRAY_SIZE(ccc_tbl[id]),
+ 				    smb->pdata->charge_current_compensation);
+ 		if (val < 0)
+ 			return val;
+@@ -723,10 +712,12 @@ static irqreturn_t smb347_interrupt(int irq, void *data)
+ 		return IRQ_NONE;
+ 	}
+ 
+-	ret = regmap_read(smb->regmap, IRQSTAT_D, &irqstat_d);
+-	if (ret < 0) {
+-		dev_warn(smb->dev, "reading IRQSTAT_D failed\n");
+-		return IRQ_NONE;
++	if(smb->id != SMB345) {
++		ret = regmap_read(smb->regmap, IRQSTAT_D, &irqstat_d);
++		if (ret < 0) {
++			dev_warn(smb->dev, "reading IRQSTAT_D failed\n");
++			return IRQ_NONE;
++		}
+ 	}
+ 
+ 	ret = regmap_read(smb->regmap, IRQSTAT_E, &irqstat_e);
+@@ -761,13 +752,15 @@ static irqreturn_t smb347_interrupt(int irq, void *data)
+ 	 * If we got a charger timeout INT that means the charge
+ 	 * full is not detected with in charge timeout value.
+ 	 */
+-	if (irqstat_d & IRQSTAT_D_CHARGE_TIMEOUT_IRQ) {
+-		dev_dbg(smb->dev, "total Charge Timeout INT received\n");
++	if(smb->id != SMB345) {
++		if (irqstat_d & IRQSTAT_D_CHARGE_TIMEOUT_IRQ) {
++			dev_dbg(smb->dev, "total Charge Timeout INT received\n");
+ 
+-		if (irqstat_d & IRQSTAT_D_CHARGE_TIMEOUT_STAT)
+-			dev_warn(smb->dev, "charging stopped due to timeout\n");
+-		power_supply_changed(smb->battery);
+-		handled = true;
++			if (irqstat_d & IRQSTAT_D_CHARGE_TIMEOUT_STAT)
++				dev_warn(smb->dev, "charging stopped due to timeout\n");
++			power_supply_changed(smb->battery);
++			handled = true;
++		}
+ 	}
+ 
+ 	/*
+@@ -871,7 +864,7 @@ out:
+  */
+ static int get_const_charge_current(struct smb347_charger *smb)
+ {
+-	int ret, intval;
++	int ret, intval, id = smb->id;
+ 	unsigned int v;
+ 
+ 	if (!smb347_is_ps_online(smb))
+@@ -886,10 +879,12 @@ static int get_const_charge_current(struct smb347_charger *smb)
+ 	 * and we can detect which table to use from bit 5.
+ 	 */
+ 	if (v & 0x20) {
+-		intval = hw_to_current(fcc_tbl, ARRAY_SIZE(fcc_tbl), v & 7);
++		intval = hw_to_current(fcc_tbl[id],
++					ARRAY_SIZE(fcc_tbl[id]), v & 7);
+ 	} else {
+ 		v >>= 3;
+-		intval = hw_to_current(pcc_tbl, ARRAY_SIZE(pcc_tbl), v & 7);
++		intval = hw_to_current(pcc_tbl[id],
++					ARRAY_SIZE(pcc_tbl[id]), v & 7);
+ 	}
+ 
+ 	return intval;
+@@ -1296,6 +1291,7 @@ static int smb347_probe(struct i2c_client *client,
+ 	i2c_set_clientdata(client, smb);
+ 
+ 	mutex_init(&smb->lock);
++	smb->id = id->driver_data;
+ 	smb->dev = &client->dev;
+ 
+ 	smb->regmap = devm_regmap_init_i2c(client, &smb347_regmap);
+@@ -1370,7 +1366,8 @@ static int smb347_remove(struct i2c_client *client)
+ }
+ 
+ static const struct i2c_device_id smb347_id[] = {
+-	{ "smb347", 0 },
++	{ "smb347", SMB347 },
++	{ "smb345", SMB345 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, smb347_id);
+@@ -1378,6 +1375,7 @@ MODULE_DEVICE_TABLE(i2c, smb347_id);
+ #ifdef CONFIG_OF
+ static struct of_device_id of_smb347_ids[] = {
+ 	{ .compatible = "summit,smb347" },
++	{ .compatible = "summit,smb345" },
+ 	{},
+ };
+ #endif

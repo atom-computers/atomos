@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Google Pixel 3 XL"
+deviceinfo_manufacturer="Google"
+deviceinfo_codename="google-crosshatch-downstream"
+deviceinfo_year="2018"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_screen_width="1440"
+deviceinfo_screen_height="2960"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_pagesize="4096"
+# Pixel 3 XL uses 4096 byte per sector UFS flash, unlike most devices.
+# fdisk -l shows "Note: sector size is 4096 (not 512)"
+deviceinfo_rootfs_image_sector_size="4096"
+# Framebuffer doesn't work yet. For now, avoid waiting for a nonexistent framebuffer.
+deviceinfo_no_framebuffer="true"

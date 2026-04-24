@@ -1,0 +1,52 @@
+/dts-v1/;
+
+/ {
+	description = "Samsung Galaxy Grand Prime+ FIT";
+	#address-cells = <1>;
+
+	images {
+		bootscript {
+			description = "Boot script";
+			data = /incbin/("boot.cmd");
+			type = "script";
+			compression = "none";
+		};
+
+		kernel {
+			description = "Linux kernel";
+			data = /incbin/("vmlinuz");
+			type = "kernel";
+			arch = "arm64";
+			os = "linux";
+			compression = "gzip";
+			load = <0x40080000>;
+			entry = <0x40080000>;
+		};
+
+		fdt {
+			description = "Device tree";
+			data = /incbin/("/boot/dtbs/mediatek/mt6737t-samsung-grandpplte.dtb");
+			type = "flat_dt";
+			compression = "none";
+		};
+
+		initrd {
+			description = "Initramfs image";
+			data = /incbin/("initramfs");
+			type = "ramdisk";
+			arch = "arm64";
+			os = "linux";
+		};
+	};
+
+	configurations {
+		default = "standard";
+
+		standard {
+			description = "Standard boot";
+			kernel = "kernel";
+			fdt = "fdt";
+			ramdisk = "initrd";
+		};
+	};
+};

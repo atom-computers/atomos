@@ -1,0 +1,24 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="GoClever Orion 7OL"
+deviceinfo_manufacturer="GoClever"
+deviceinfo_codename="goclever-gcta741l"
+deviceinfo_year="2013"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="800"
+deviceinfo_screen_height="480"
+
+# Bootloader related
+deviceinfo_sd_embed_firmware="u-boot/goclever-gcta741l/u-boot-sunxi-with-spl.bin:8"
+
+# Allwinner Technology Co., Ltd.
+deviceinfo_usb_idVendor="0x1f3a"
+# Reference Android device
+deviceinfo_usb_idProduct="0x1007"

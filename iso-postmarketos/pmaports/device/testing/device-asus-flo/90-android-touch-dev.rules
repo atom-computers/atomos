@@ -1,0 +1,14 @@
+# udev rules file
+# All device names can be read from weston's logfile
+
+# Touchscreen
+# default			ENV{LIBINPUT_CALIBRATION_MATRIX}="1 0 0 0 1 0"
+# Left - 90 degree clockwise	ENV{LIBINPUT_CALIBRATION_MATRIX}="0 -1 1 1 0 0"
+# 180 degree clockwise		ENV{LIBINPUT_CALIBRATION_MATRIX}="-1 0 1 0 -1 1"
+# Right - 270 degree clockwise	ENV{LIBINPUT_CALIBRATION_MATRIX}="0 1 0 -1 0 1"
+# reflect along y axis		ENV{LIBINPUT_CALIBRATION_MATRIX}="-1 0 1 1 0 0"
+
+SUBSYSTEM=="input", ATTRS{name}=="Elan Touchscreen", \
+ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1", \
+ENV{LIBINPUT_CALIBRATION_MATRIX}="1 0 0 0 1 0"
+

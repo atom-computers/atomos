@@ -1,0 +1,25 @@
+Subject: [PATCH] dont_skip_initramfs
+---
+Index: init/initramfs.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/init/initramfs.c b/init/initramfs.c
+--- a/init/initramfs.c	(revision 5eeafe2bfcb93847b403fd92bd92f9d0a9f6341d)
++++ b/init/initramfs.c	(date 1740665050412)
+@@ -620,13 +620,7 @@
+ static int __init populate_rootfs(void)
+ {
+ 	char *err;
+-
+-	if (do_skip_initramfs) {
+-		if (initrd_start)
+-			free_initrd();
+-		return default_rootfs();
+-	}
+-
++	
+ 	err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
+ 	if (err)
+ 		panic("%s", err); /* Failed to decompress INTERNAL initramfs */

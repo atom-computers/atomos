@@ -1,0 +1,9 @@
+i2c-hid-of
+i2c-hid-of-goodix
+elan-i2c
+elants-i2c
+cros-ec-keyb
+hid-generic
+sbs-battery
+uas
+usb-storage

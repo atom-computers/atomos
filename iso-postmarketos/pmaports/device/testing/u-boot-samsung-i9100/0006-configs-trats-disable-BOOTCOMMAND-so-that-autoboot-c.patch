@@ -1,0 +1,35 @@
+From 33fe50f03c35fe49a4564a7772aab62a82d95d4f Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Sat, 9 Aug 2025 07:30:48 +0200
+Subject: [PATCH] configs: trats: disable BOOTCOMMAND so that autoboot can work
+
+BOOTCOMMAND was set to `run autoboot`, which does not work. Unset the
+variable so that it runs `run distro_bootcmd` instead, which does
+work. Also re-generate config while at it.
+---
+ configs/trats_defconfig | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/configs/trats_defconfig b/configs/trats_defconfig
+index 486b91137615..f2d3908f6bc4 100644
+--- a/configs/trats_defconfig
++++ b/configs/trats_defconfig
+@@ -22,7 +22,6 @@ CONFIG_FIT_VERBOSE=y
+ CONFIG_DISTRO_DEFAULTS=y
+ CONFIG_USE_BOOTARGS=y
+ CONFIG_BOOTARGS="Please use defined boot"
+-CONFIG_BOOTCOMMAND="run autoboot"
+ CONFIG_SYS_PBSIZE=1024
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_SYS_CONSOLE_INFO_QUIET=y
+@@ -30,7 +29,6 @@ CONFIG_MISC_INIT_R=y
+ CONFIG_SYS_PROMPT="Trats # "
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
+-CONFIG_CMD_CLK=y
+ CONFIG_CMD_DFU=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_GPT=y
+-- 
+2.50.1
+

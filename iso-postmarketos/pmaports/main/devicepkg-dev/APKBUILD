@@ -1,0 +1,85 @@
+maintainer=""
+pkgname=devicepkg-dev
+pkgver=0.22.2
+pkgrel=0
+pkgdesc="Provides default device package functions"
+url="https://postmarketos.org"
+arch="noarch"
+license="MIT"
+source="
+	compiler-gcc.h
+	devicepkg_build.sh
+	devicepkg_package.sh
+	downstreamkernel_prepare.sh
+	downstreamkernel_package.sh
+	devicepkg_subpackage_kernel.sh
+	testdata/deviceinfo
+	testdata/expected-deviceinfo-downstream
+	testdata/expected-deviceinfo-mainline
+"
+
+check() {
+	# Prepare a temporary dir to run the tests
+	testdir=$(mktemp -d)
+	install -Dm644 "$srcdir/deviceinfo" \
+		"$testdir/src/deviceinfo"
+
+	# Execute the script to create the subpackage deviceinfo
+	sh devicepkg_subpackage_kernel.sh \
+		$testdir device-test device-test-kernel-downstream
+	sh devicepkg_subpackage_kernel.sh \
+		$testdir device-test device-test-kernel-mainline
+
+	# Compare the result with the expected files
+	if ! cmp -s "$srcdir/expected-deviceinfo-downstream" \
+		"$testdir/pkg/device-test-kernel-downstream/usr/share/deviceinfo/device-test-kernel-downstream"
+	then
+		echo "ERROR: unexpected result with downstream deviceinfo"
+		exit 1
+	fi
+	if ! cmp -s "$srcdir/expected-deviceinfo-mainline" \
+		"$testdir/pkg/device-test-kernel-mainline/usr/share/deviceinfo/device-test-kernel-mainline"
+	then
+		echo "ERROR: unexpected result with mainline deviceinfo"
+		exit 1
+	fi
+	# Check that the link is a link, and that it points to the right place
+	if [ "$(readlink $testdir/pkg/device-test-kernel-mainline/usr/share/deviceinfo/deviceinfo)" != "device-test-kernel-mainline" ];
+	then
+		echo "ERROR: mainline deviceinfo link not pointing to correct location"
+	fi
+	if ! cmp -s "$testdir/pkg/device-test-kernel-mainline/usr/share/deviceinfo/deviceinfo" \
+		"$srcdir/expected-deviceinfo-mainline";
+	then
+		echo "ERROR: mainline deviceinfo contains incorrect data"
+	fi
+
+	# Cleanup
+	rm -r "$testdir"
+}
+
+package() {
+	install -Dm755 "$srcdir/devicepkg_build.sh" \
+		"$pkgdir/usr/bin/devicepkg_build"
+	install -Dm755 "$srcdir/devicepkg_package.sh" \
+		"$pkgdir/usr/bin/devicepkg_package"
+	install -Dm755 "$srcdir/downstreamkernel_prepare.sh" \
+		"$pkgdir/usr/bin/downstreamkernel_prepare"
+	install -Dm755 "$srcdir/downstreamkernel_package.sh" \
+		"$pkgdir/usr/bin/downstreamkernel_package"
+	install -Dm755 "$srcdir/devicepkg_subpackage_kernel.sh" \
+		"$pkgdir/usr/bin/devicepkg_subpackage_kernel"
+	install -Dm644 "$srcdir/compiler-gcc.h" \
+		"$pkgdir/usr/share/devicepkg-dev/compiler-gcc.h"
+}
+sha512sums="
+d69930dd790b00fb39760a37d95a10899f0d167e10e2804feb05d9ce04f94185dc32d36edc90214aba2ea2aa09bf18f7dab93f1d2eff23f67beb2cc83be30e7c  compiler-gcc.h
+1ed82c638bda2c2edff4f2f314b466a3ce0e8a2a33b05e5f31ddc2b06fc06d2d8ea4dca7cc354262ac28402c90ea36d77b0347fafeccee8894c9ff013911a7d1  devicepkg_build.sh
+a2b9848480e3200d2a4053ce18989e5d711b95abf3e383f5ad67bda5e2e5c1d63c1e9b142d6c02be079a8402197a2049e7008aa0cf90a765ed2ca8ed981b1f63  devicepkg_package.sh
+6f17b8029e42cba87de156f1adf19b0d939ab1f171868582b11ab983a671cd7c31c4ca6fc85dd33ccfc50170cd1e4dcbd85c88b9a538a3f94e85a87d93c29f1c  downstreamkernel_prepare.sh
+107242a3da38a574c46cb779e0c75afbeef4cfe659e1b85971973ac55843df06f70f53a5985ca623d4123f05f2984f5dace4a53a3509ecefd7dfdc3c8b705cfe  downstreamkernel_package.sh
+4b807ea2e773a66f699bba9f76fbb6349b0ca6f6fc6d867b540c2327b304f82d57365a0e9f5b7cae30ad5c5990553162152d1947aca5335a53e641b0c6b08ef6  devicepkg_subpackage_kernel.sh
+ca330f9f6771bdb13fe973c9a57a7718958b515e81ddb8a1ce54c4f8c7ef5907c8ab346e7aa1628e237945fccab0b3b70bf782c00ad318f71f0adcd839c1d966  deviceinfo
+9df20672cd7e6ee836a821cb671ec333beef4dfc1160c81d2afa007d1abe04a27798678a0a9def9ab4e9046e334fe7c4373b453994ffdc852b454db112702a9d  expected-deviceinfo-downstream
+a37dd9e355abf74d47f8e365fcd4876d99ef9a63bbb7be9e529057cb1e91778433d83e99339ee6401003f77cbc40ad3f14562bf9716b107ebad9da84b19ced0d  expected-deviceinfo-mainline
+"

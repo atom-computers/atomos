@@ -1,0 +1,74 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_bacon_defconfig
+
+pkgname=linux-oneplus-bacon-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="OnePlus One kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="oneplus-bacon"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_oneplus_msm8974"
+_commit="dd65620ba04a8c6ba0e30553c9c95388daefae02"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	0001-fix-video-argb-setting.patch
+	mdss_fb_refresh_rate.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 modules_install
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+94d0048439e70b11637a7a122e8652d4e997ee413d6e54ea0aed7f2c68e137fcc19b6784dcc0dedf0b80240ba16060634b517d5865ec6c7222e4dea44d3c059a  linux-oneplus-bacon-downstream-dd65620ba04a8c6ba0e30553c9c95388daefae02.tar.gz
+a436a2568bb8704cdbbe81fad9e3419aa0b2d2408e93e101ec8eda0fa0b0c36b26f148a981c5911991c1c1b33ac3b5aebf87222fee56202aad414449debb307a  config-oneplus-bacon.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+a48336bbfead6ad0c84d2fce0c40a3f5530aebdff356a6835cceaf59a50a6f860d2f8027703a92927955fbb18857ba78788e010d017bf67730f069b36e96fe87  0001-fix-video-argb-setting.patch
+a8c955bf718f155011e980f3d0948be98e1fee5649f418299a4851780543019daf7afa406aa7b0829375645107e4e6fbf241026b0cabe2b2ac895a47df83d2d8  mdss_fb_refresh_rate.patch
+"

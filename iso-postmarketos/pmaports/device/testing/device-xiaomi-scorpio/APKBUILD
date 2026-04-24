@@ -1,0 +1,81 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Yassine Oudjana (Tooniis) <y.oudjana@protonmail.com>"
+pkgname=device-xiaomi-scorpio
+pkgdesc="Xiaomi Mi Note 2"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	bootmac
+	linux-postmarketos-qcom-msm8996
+	mesa-egl
+	megapixels
+	mkbootimg
+	postmarketos-base
+	postprocessd
+	soc-qcom-msm8996
+	soc-qcom-msm8996-ucm
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-phosh
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	"
+
+source="
+	30-gpu-firmware.files
+	deviceinfo
+	modules-initfs
+	pointercal
+	phoc.ini
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/Modem/Venus/ADSP/SLPI/WiFi/Bluetooth Firmware"
+	depends="
+		firmware-xiaomi-scorpio
+		linux-firmware-ath10k
+		linux-firmware-qca
+		soc-qcom-msm8996-nonfree-firmware
+		"
+	mkdir "$subpkgdir"
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" -t \
+		"$subpkgdir/usr/share/mkinitfs/files"
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+
+sha512sums="
+b033e7357c4ef91ba84f6f715e96e67637c2631d4746402f8a92333ba8974bbee7736a7bc081b0f84a84dc5b555a7db4dbb4f14f628bbfc42cbfa501c4f0ed36  30-gpu-firmware.files
+abb476a5504cae20109d68e4246bfcf6605ec76a9d603f75f418b2b03b1a7ec01305c48eca57f06c5c67caf5c2e8a29b7f43d6e1d6a9513a93b1653f730536d0  deviceinfo
+93518206c01baa4ef8216dfdbbc5df27c61ea7f17d11c1167a074f4324411b195be2fb29124430a537b1e724067806060f53a2d769a89a4928c33eae93279847  modules-initfs
+e9ee9c1404b41ba15eafff3f728ff6e0e78dc17e9a88483fca92db1aa3efe0e4d5bf26142e533c4ff12b1bf8ce04ccabb7ca0f93aaea586d5b30910282aad237  pointercal
+38409d4ce48db4624539dbfd695d3c6e1596a29fd7c3004a41368b28cba646495d05360420ad728f82c63d6ddeeca71d09944df06ebaca120aedd9cc2b436eb3  phoc.ini
+"

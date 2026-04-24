@@ -1,0 +1,27 @@
+ARM based systems the udelay function imposes a maximum of 2000 and designed to fail when higher than that,
+so I lowered the number based off various mailinglists to prevent the fail.
+
+
+
+diff --git a/drivers/misc/mediatek/mach/mt6795/mt_cpufreq_64.c b/drivers/misc/mediatek/mach/mt6795/mt_cpufreq_64.c
+index 760025c2..918e2713 100755
+--- a/drivers/misc/mediatek/mach/mt6795/mt_cpufreq_64.c
++++ b/drivers/misc/mediatek/mach/mt6795/mt_cpufreq_64.c
+@@ -1848,7 +1848,7 @@ static int set_cur_volt_extbuck(struct mt_cpu_dvfs *p, unsigned int mv) /* volt:
+ 				ret = -1;
+ 			}
+ 
+-			udelay(PMIC_SETTLE_TIME(cur_vproc_mv - MAX_DIFF_VSRAM_VPROC, cur_vproc_mv)); // TODO: always fix max gap <- refine it???
++			udelay(20); // TODO: always fix max gap <- refine it???
+ 
+ 			// cpufreq_dbg("@%s(), UP, cur_vsram_mv = %d, cur_vproc_mv = %d, delay = %d\n", __func__, cur_vsram_mv, cur_vproc_mv, PMIC_SETTLE_TIME(cur_vproc_mv - MAX_DIFF_VSRAM_VPROC, cur_vproc_mv));
+ 		} while (target_vsram_mv > cur_vsram_mv);
+@@ -1891,7 +1891,7 @@ static int set_cur_volt_extbuck(struct mt_cpu_dvfs *p, unsigned int mv) /* volt:
+ 			mt_cpufreq_set_pmic_cmd(PMIC_WRAP_PHASE_NORMAL, IDX_NM_VSRAM_CA7, VOLT_TO_PMIC_VAL(cur_vsram_mv));
+ 			mt_cpufreq_apply_pmic_cmd(IDX_NM_VSRAM_CA7);
+ 
+-			udelay(PMIC_SETTLE_TIME(cur_vproc_mv + MAX_DIFF_VSRAM_VPROC, cur_vproc_mv)); // TODO: always fix max gap <- refine it???
++			udelay(20); // TODO: always fix max gap <- refine it???
+ 
+ 			// cpufreq_dbg("@%s(), DOWN, cur_vsram_mv = %d, cur_vproc_mv = %d, delay = %d\n", __func__, cur_vsram_mv, cur_vproc_mv, PMIC_SETTLE_TIME(cur_vproc_mv + MAX_DIFF_VSRAM_VPROC, cur_vproc_mv));
+ 		} while (cur_vproc_mv > mv);

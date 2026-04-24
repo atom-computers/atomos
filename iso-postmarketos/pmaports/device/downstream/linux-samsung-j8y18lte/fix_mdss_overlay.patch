@@ -1,0 +1,10 @@
+diff --git a/drivers/video/msm/mdss/mdss_mdp_overlay.c b/drivers/video/msm/mdss/mdss_mdp_overlay.c
+@@ -3846,7 +3846,7 @@
+ 	 * data, so any further call to get the screen
+ 	 * info has the updated timings.
+ 	 */
+-	mdss_panelinfo_to_fb_var(&pdata->panel_info, var);
++	mdss_panelinfo_to_fb_var(mfd);
+
+ 	MDSS_XLOG(dfps);
+ 	mutex_unlock(&mdp5_data->dfps_lock);

@@ -11,6 +11,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PMB_HOST="$ROOT_DIR/scripts/pmb/pmb.sh"
 PMB_CONTAINER="$ROOT_DIR/scripts/pmb/pmb-container.sh"
 AGENTS_SRC_DIR="$ROOT_DIR/../core/atomos-agents"
+DIRECT_ROOTFS_DIR="${ROOTFS_DIR:-}"
 
 PROFILE_ENV_SOURCE="$PROFILE_ENV"
 if [ ! -f "$PROFILE_ENV_SOURCE" ] && [ -f "$ROOT_DIR/$PROFILE_ENV" ]; then
@@ -36,6 +37,60 @@ fi
 if [ ! -f "$AGENTS_SRC_DIR/pyproject.toml" ]; then
     echo "ERROR: atomos-agents pyproject missing: $AGENTS_SRC_DIR/pyproject.toml" >&2
     exit 1
+fi
+
+install_direct_rootfs() {
+    local root="$1"
+    install -d "$root/opt/atomos"
+    rm -rf "$root/opt/atomos/agents"
+    install -d "$root/opt/atomos/agents"
+    tar \
+        --exclude='.venv*' \
+        --exclude='__pycache__' \
+        --exclude='.pytest_cache' \
+        --exclude='*.pyc' \
+        -C "$ROOT_DIR/../core" -cf - atomos-agents \
+        | tar -xf - -C "$root/opt/atomos/agents" --strip-components=1
+    rm -rf "$root/opt/atomos/agents/.deps"
+    mkdir -p "$root/opt/atomos/agents/.deps"
+    cat > "$root/usr/local/bin/atomos-agents-run" << "EOF"
+#!/bin/sh
+set -eu
+cd /opt/atomos/agents/src
+export PYTHONPATH="/opt/atomos/agents/.deps:/opt/atomos/agents/src"
+exec /usr/bin/python3 /opt/atomos/agents/src/server.py
+EOF
+    chmod 755 "$root/usr/local/bin/atomos-agents-run"
+    ln -sf /usr/local/bin/atomos-agents-run "$root/usr/bin/atomos-agents-run"
+    install -d "$root/etc/systemd/system"
+    cat > "$root/etc/systemd/system/atomos-agents.service" << "EOF"
+[Unit]
+Description=AtomOS Agents Service (gRPC bridge for applet clients)
+After=network-online.target ollama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/atomos/agents/src
+Environment=PYTHONPATH=/opt/atomos/agents/src
+Environment=PORT=50051
+ExecStart=/usr/local/bin/atomos-agents-run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+if [ -n "$DIRECT_ROOTFS_DIR" ]; then
+    install -d "$DIRECT_ROOTFS_DIR/usr/local/bin" "$DIRECT_ROOTFS_DIR/usr/bin"
+    install_direct_rootfs "$DIRECT_ROOTFS_DIR"
+    test -x "$DIRECT_ROOTFS_DIR/usr/local/bin/atomos-agents-run"
+    test -f "$DIRECT_ROOTFS_DIR/etc/systemd/system/atomos-agents.service"
+    echo "Installed atomos-agents service (direct rootfs mode)."
+    exit 0
 fi
 
 PMB="$PMB_HOST"

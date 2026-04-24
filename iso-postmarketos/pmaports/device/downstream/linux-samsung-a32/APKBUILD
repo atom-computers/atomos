@@ -1,0 +1,79 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/a32_defconfig
+maintainer="Veronika Bušová <paricbat@email.cz>"
+pkgname=linux-samsung-a32
+pkgver=4.14.195
+pkgrel=1
+pkgdesc="Samsung Galaxy A32 4G kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a32"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	clang
+	cpio
+	xz
+"
+
+# Source
+_repository="kernel_samsung_a32-old"
+_commit="69ebc099071238de52ad4a3ac4a65fbda1865fda"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/A325F/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_use_system_cpio.patch
+	02_remove_duplicate_set_selection.patch
+	03_fix_pointer_ref_and_deref_errors.patch
+	04_cast_ints_to_the_correct_return_type.patch
+	05_dont_use_prebuilt_dtc.patch
+	06_enable_gzip_compression.patch
+	10_add_stpcpy.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	export CC="clang"
+	export HOSTCC="clang"
+	make O="$_outdir" ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	cp $_outdir/arch/$_carch/boot/Image.gz $_outdir/arch/$_carch/boot/zImage
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+}
+
+sha512sums="
+22e930e02bbfdfef9da145b103e5773c00fec238e42796e9983ef3e6f8bea976e7a907bbb31247caea1978f8f3b9a1419de9e7704046b6a0adb4fe0d3895d6a8  linux-samsung-a32-69ebc099071238de52ad4a3ac4a65fbda1865fda.tar.gz
+2ca8154e922baa037dfd1e5271c27153655c17299008b16d8698a1b11c0b8d27cd214ce63f6f80b2526b2077c4d65b37922da9fa469ca0bb86bb8540180fbada  config-samsung-a32.aarch64
+3b139f775eec7d41c4baae6550c3d1036e9d853f5fedcb1992d7cff56b2922fcf42f363f79ad7a718fe79ee10bd0bc87c4c68187fa6332f478d4ec288d12a2cf  01_use_system_cpio.patch
+5a724f4ea619ba222f2b39fcd5aaabf9a5439e1d5430bb74ca64dfdc3b47d83a92b2e64969e5f6d198b9d57ba1c192618fc47f18f6a6bb1be3ac54d0e8dab58e  02_remove_duplicate_set_selection.patch
+bde0ddf1d41e0d736a5aad88d78bdc8ad1448397e7af19f411ef544c0241723a8c1d548aacae410a1553afbfa2a7ef838113dcc127fcb649498f2d85cc37199a  03_fix_pointer_ref_and_deref_errors.patch
+d6eb027d525a385a191b0fb11b0d0ce12685f0b69f67fc192d92d6c1c90c4ccf78c5ccbf2a3f83d3a50f5544b078761222f23b58464cda3a2096747a0057444b  04_cast_ints_to_the_correct_return_type.patch
+80f52b1abf6f05c4b28553ed6a08e0ecb536a2c74118eb25926f682a808814fb340d50662d1085edb99248e8f50d59f476c7a4bc124894fd3720510f291a916f  05_dont_use_prebuilt_dtc.patch
+5bc48f3a3971f6e4ec16b80f56aaac72010d9a06290738b4b8de5e72faa429777490d0eeb9dea2c6404ef5858fcc0fcef3bd95bb89e0a6dfe9031c44fc978f4d  06_enable_gzip_compression.patch
+706c2d3a178231d9f79f5f594cebaafdc6a39add602cca4c8a381ca181d27a82afb49aef494dc7b11905089d337c344cb9ce05b6d94199af37a4a46cc9cf22f1  10_add_stpcpy.patch
+"

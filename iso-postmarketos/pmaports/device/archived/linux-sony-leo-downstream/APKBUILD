@@ -1,0 +1,60 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_shinano_leo_defconfig
+maintainer="Audun MG <audun@gangsto.org>"
+pkgname=linux-sony-leo-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Sony Xperia Z3 LineageOS Kernel"
+arch="armv7"
+_carch="arm"
+_flavor="sony-leo"
+url="https://github.com/LineageOS/android_kernel_sony_msm8974"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz"
+
+# Source
+_repository="android_kernel_sony_msm8974"
+_commit="bd06661fef846ee569888a27f3d12db9cf1d8741"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	00_fix-video-argb-setting.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+baf5e90b83abd8d9630563144faae13c72df50b9d1867325061f78738e0c6a8b5cbd0086f96359cea79f1cd8cd87aab8f8a8149daca6466ae2c08881c6a57447  linux-sony-leo-downstream-bd06661fef846ee569888a27f3d12db9cf1d8741.tar.gz
+be6d687d7dcc849a9a52fe2969d9adbb0e27ac219fa2b6174f91163abb8f27de31aeab6e71ab1531e18540fc2a0621b4b6d314997eb905a332aa2a30138a5bf7  config-sony-leo.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+25217ec622dbcb811c9a7375c6e360f313e58c8433a300c9a9afd3f17712ec0d322e16501c72c49fef9e38a2d3a69718401bf4269977fccd075a4a57d8458c5d  linux3.4-Fix-signature-mismatch-for-msm_pm_boot_init.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+a48336bbfead6ad0c84d2fce0c40a3f5530aebdff356a6835cceaf59a50a6f860d2f8027703a92927955fbb18857ba78788e010d017bf67730f069b36e96fe87  00_fix-video-argb-setting.patch
+"

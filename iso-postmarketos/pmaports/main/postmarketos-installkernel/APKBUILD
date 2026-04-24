@@ -1,0 +1,29 @@
+# APKBUILD is inspired by Alpine's:
+# https://gitlab.alpinelinux.org/alpine/aports/-/tree/master/main/installkernel
+# Co-Maintainer: Alexey Minnekhanov <alexeymin@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=postmarketos-installkernel
+pkgver=0.1
+pkgrel=4
+pkgdesc="postmarketOS script for installing mainline kernels"
+url="https://gitlab.postmarketos.org/postmarketOS/pmaports/tree/main/postmarketos-installkernel"
+arch="noarch"
+license="GPL-2.0"
+options="!check" # no test suite
+provides="installkernel=3.5-r1"
+provider_priority=100
+replaces="installkernel"
+source="installkernel-pmos"
+
+build() {
+	return 0
+}
+
+package() {
+	install -Dm755 "$srcdir"/installkernel-pmos "$pkgdir"/sbin/installkernel
+}
+
+sha512sums="
+ba3bdb2d27f7b866a49354fcc4b83ec85747a71265c6b585cb062fc1ff00e88faeba7b77f463d6699e81685c8927ee1d316d5934f374aeebfd4949007d8cb4d8  installkernel-pmos
+"

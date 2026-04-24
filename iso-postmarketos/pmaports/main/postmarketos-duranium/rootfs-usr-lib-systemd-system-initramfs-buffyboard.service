@@ -1,0 +1,13 @@
+[Unit]
+Description=Framebuffer Touchscreen Keyboard (initramfs)
+DefaultDependencies=no
+ConditionPathExists=/dev/fb0
+After=modprobe@uinput.service
+Requires=modprobe@uinput.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/buffyboard
+
+[Install]
+WantedBy=emergency.target

@@ -1,0 +1,1 @@
+rm_conffile /etc/modules-load.d/feedbackd.conf 0.0.4

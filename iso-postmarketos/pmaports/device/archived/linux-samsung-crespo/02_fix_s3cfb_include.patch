@@ -1,0 +1,34 @@
+From f04ca0b45fb3fa0e042b53db8bea27238664fb15 Mon Sep 17 00:00:00 2001
+From: Denis 'GNUtoo' Carikli <gnu...@no-log.org>
+Date: Thu, 4 Feb 2016 14:31:11 +0100
+Subject: [PATCH 3/3] fb: Fix compilation with gcc 4.8.2
+
+This fix the following error:
+  CC      drivers/video/fbmem.o
+drivers/video/fbmem.c:39:27: fatal error: samsung/s3cfb.h: No such file or directory
+ #include <samsung/s3cfb.h>
+                           ^
+compilation terminated.
+
+Signed-off-by: Denis 'GNUtoo' Carikli <gnu...@no-log.org>
+
+From: https://www.mail-archive.com/replicant@lists.osuosl.org/msg00599.html
+---
+ drivers/video/fbmem.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
+index 7464a0a..ebfa04b 100644
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
+@@ -36,7 +36,7 @@
+ #include <asm/fb.h>
+ 
+ #ifdef CONFIG_FB_S3C
+-#include <samsung/s3cfb.h>
++#include "samsung/s3cfb.h"
+ #endif
+ 
+     /*
+-- 
+1.9.1

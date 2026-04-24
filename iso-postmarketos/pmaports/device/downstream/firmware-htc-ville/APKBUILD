@@ -1,0 +1,52 @@
+pkgname=firmware-htc-ville
+pkgver=2
+pkgrel=0
+pkgdesc="Firmware files for HTC One S (htc-ville)"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+options="!check !strip !archcheck !spdx textrels !tracedeps pmb:cross-native"
+
+# Source
+
+# List of files from WLAN section of https://github.com/LineageOS/android_device_htc_s4-common/blob/cm-14.1/common-proprietary-files.txt
+_files="
+wlan/prima/WCNSS_cfg.dat
+wlan/prima/WCNSS_qcom_wlan_nv.bin
+wcnss.b00
+wcnss.b01
+wcnss.b02
+wcnss.b04
+wcnss.b05
+wcnss.mdt
+"
+_commit="2d427402bde8379e990c555abace4b14b7be2341" # latest on cm-14.1 branch
+_url="https://raw.githubusercontent.com/TheMuppets/proprietary_vendor_htc/$_commit/s4-common/proprietary/etc/firmware"
+for _i in $_files; do
+	source="$source $pkgname-$_commit-$(basename $_i)::$_url/$_i"
+done
+
+_commit_wlan_config="630a97ee53f1b6a43f02f9fb3841db026967f5ed"
+_url="https://raw.githubusercontent.com/LineageOS/android_device_htc_s4-common/$_commit_wlan_config/configs/WCNSS_qcom_cfg.ini"
+source="$source $pkgname-$_commit_wlan_config-WCNSS_qcom_cfg.ini::$_url"
+
+package() {
+	for _i in $_files; do
+		install -D -m644 "$srcdir/$pkgname-$_commit-$(basename $_i)" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	install -D -m644 "$srcdir/$pkgname-$_commit_wlan_config-WCNSS_qcom_cfg.ini" \
+		"$pkgdir"/lib/firmware/postmarketos/wlan/prima/WCNSS_qcom_cfg.ini
+}
+sha512sums="
+523dd31de87d657fa0872a65d5e120caa3dfcc6e55c9d7f18b546d53c0a5d1ebf5558240ad5d4de880622673d8ffa3f0ab1c984e1c53046948b05eea2f81642f  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-WCNSS_cfg.dat
+e7be24e3f5759932405a6447916703c8bf0c3771966af392645932a9ac3cce2d60869fa4b0c68074be3d54cdd45e8754791d3738b1cbf3d94f93df162fca59f1  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-WCNSS_qcom_wlan_nv.bin
+3493b5f266367fcacad1dc6a569d3cd7df73e1d05cc95a40dac27108c7fbbd5e07f72d564e0ec6625511808cef5afe3c79e83679142beb3f26adbd90ac3e70c6  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-wcnss.b00
+c09bbf2cd3ae450b49862e09aeb4ffac6b4ad180be7ddf57935c5fd5ae3a41f219c4ebbe25ee032630ffb62d4be30cfb9d9437f8d5d1d4f52b25aa1644cdf91b  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-wcnss.b01
+e6941dbdede1da62e74c007e33c53c5d6a7e7cc72dee84172f8dadca368e30c86e0a236caee6eb4e31efdd828dd6ab37bd21e6e57b4dd8bd84bcff14614444fc  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-wcnss.b02
+57b3f92f613427ac4e0fe5d4b46af29c6d355920cfb1f2d715ddca97924ab4e549375248d9dae09be57a9d5fbab96e3dd1fc6e227b119b38bed8c754b93206b9  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-wcnss.b04
+1d5c5e4769bb0b5b5f27eae2cb70b1fc25587a831a3eff8eb96c31c4d338e8986d44c4fb1cf3ed0dd4b890a7991db8bd76ffd82210cd5565ce6c143c5cb449a8  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-wcnss.b05
+dfbbba50fa883709c69765495dff9b5ec8406e36a8df15ec9865340b01e35f5e23b88c59caa2c20eff509f0115e0e563d502b66a59e381a364b729038a5cd11a  firmware-htc-ville-2d427402bde8379e990c555abace4b14b7be2341-wcnss.mdt
+e1ccd46807fe94c3371ee63ba9fb3ca83b45f1a0ba136a54edb49b0b0d98429643b83f05d3212c5dfc46423bb3089873e25e56c8fcd64f935c0b8f30d7733d06  firmware-htc-ville-630a97ee53f1b6a43f02f9fb3841db026967f5ed-WCNSS_qcom_cfg.ini
+"

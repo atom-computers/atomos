@@ -1,0 +1,79 @@
+# Kernel config based on: arch/arm/configs/lineageos_cancro_defconfig
+
+pkgname=linux-xiaomi-cancro
+pkgver=3.4.0
+pkgrel=5
+pkgdesc="Mi 3 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="xiaomi-cancro"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="xz perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_xiaomi_cancro"
+_commit="b263a8914dcb8f9609be55070c3e40c85020188d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_smd_private.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03t_spdrv.patch
+	tspdrv_2.patch
+	tspdrv_3.patch
+	tspdrv_4.patch
+	tspdrv_5.patch
+	05_q6voice.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+f24bf599d5a4de3729ceea6a558013a71b550ae772968928cc0825115665a267f65cb16c3b69ed3223e069886c7a1ca16bd0a754cc081accda2ce34fec3b1b58  linux-xiaomi-cancro-b263a8914dcb8f9609be55070c3e40c85020188d.tar.gz
+4fe5d9e36f1e806da326942f61aeaf967b5f1e84c309857758240dbd2e76e1ac3ca0be2936437f734a85d4052f495b423ddb997163434bf3cc593260b799e2a5  config-xiaomi-cancro.armhf
+39892cc41e484c51dccc29cadea475aaf99772bafb19231086b614b9eaee520843cd9361c89a6780229961e0ebf4bbf0e115d0e30f8302944b78091fcf7900e7  01_smd_private.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+b16626bcf66016aee891050cade45127630062339227ce5d20862ab48eba712f92b3ab09e5e0e1bd8e57084fb20dafc4f8a6b3be61823b51136de2ba4c5a9986  03t_spdrv.patch
+c1a70619ffb7aec52b8e4b0847800ff7eeae7f1061e61f68030849e0542175c1f83ca5fa12ab78c12e4cce5900467c5c07677d45abff4bc9889d529a7dd20522  tspdrv_2.patch
+977e8b6bd17b148fea92952ea92d50c35dd94b3b585af2b30dee000c1092539139b08128494a63b7963bdd6ed4e6a2f44d5faba7e48af41e01440e41f9538b3b  tspdrv_3.patch
+4b6c12f0591302fe50617ce49eae456befd1e8b9cfcf7ec8a322cbff5f54fbfd85c1b5ea68ad5f84e63450a0972eb07e46bbeb9c5f76c9b42cc2d88e5ef295b7  tspdrv_4.patch
+a509f9fbe351fd22d3f036ed3718f9f1e0b24791b7ddb6851bc683fa5197f5856477f6b5552cd6bb6e07df1e355c2a65c228f29e896b158e369ca4c7c7e9e07b  tspdrv_5.patch
+4e7484eaa142e013c9aee12053d91a65983f7629d2b923566d4431143fa0529988dbc28b01dee21336995090ce8127b2ba79208bf61df359632bfeebae9c6618  05_q6voice.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

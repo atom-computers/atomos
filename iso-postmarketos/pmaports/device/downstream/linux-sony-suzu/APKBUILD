@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/aosp_loire_suzu_defconfig
+
+pkgname=linux-sony-suzu
+pkgver=4.9
+pkgrel=3
+pkgdesc="Sony Xperia X kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="sony-suzu"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool file bison flex gcc6 openssl-dev"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel"
+_commit="6593c13acef86ad284ca49aa890e593855210dd1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/sonyxperiadev/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="c21d609d76ed65bd87e05e0b2874b861fce2af342286f65cf189dd651e54bce34147222880c812ccc7d70ae92d170c2b994c4a94b59fe0f69066240bb67326a2  linux-sony-suzu-6593c13acef86ad284ca49aa890e593855210dd1.tar.gz
+feb287658042a71e4d584b1833bd159fd082889feef2f1a6bb9af298528501e0ab60421e56a0675b3be4b159de2276f5a71f28a7910052918905d99e20e63ce8  config-sony-suzu.aarch64
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch"

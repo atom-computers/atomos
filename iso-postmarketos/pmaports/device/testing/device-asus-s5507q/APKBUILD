@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="binarycraft007 <keep.it.sns@gmail.com>"
+pkgname=device-asus-s5507q
+pkgdesc="ASUS Vivobook S 15"
+pkgver=6
+pkgrel=2
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-laptop
+	postmarketos-base
+	systemd-boot
+	firmware-asus-s5507q-dpu
+	dtbloader
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+_pmb_recommends="
+	firmware-asus-s5507q-common
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+a1cab3c635b322dfa9b561a07770dd1c879d5ae2864a572e2e19e4cbed72b712a370d5e18a4f9675aaf473e49246e6faee697c514c01567828c4b8cb7fc606eb  deviceinfo
+04cc87ed6b0041ede7edb2693ee4dd58d6ac8f1b036a0b37e1a86cce57b66e35d9f400a3ea75d75278b028132535033915f3a2fff919866e85336c5f92a68ffe  kernel-cmdline.conf
+67ee789a0c6bb0daacc5795abc5cad87a17d51194234bf58b7e26b6a733b0fcf501a8fa78695d02067aa233f58733228e09558cd6f001095d2122011ccee7357  modules-initfs
+"

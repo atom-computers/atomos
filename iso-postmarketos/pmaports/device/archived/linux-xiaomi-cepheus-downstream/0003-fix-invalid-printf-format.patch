@@ -1,0 +1,26 @@
+From 92488ccb1c0dcf91e530e2525e1331a8bc0f4be2 Mon Sep 17 00:00:00 2001
+From: Alexey Min <alexey.min@gmail.com>
+Date: Wed, 14 Jul 2021 01:23:50 +0300
+Subject: [PATCH 3/7] fix invalid printf format
+
+Signed-off-by: Alexey Min <alexey.min@gmail.com>
+---
+ techpack/audio/asoc/codecs/cs35l41/wm_adsp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/techpack/audio/asoc/codecs/cs35l41/wm_adsp.c b/techpack/audio/asoc/codecs/cs35l41/wm_adsp.c
+index e40063cf61f0..797ce1e2c730 100644
+--- a/techpack/audio/asoc/codecs/cs35l41/wm_adsp.c
++++ b/techpack/audio/asoc/codecs/cs35l41/wm_adsp.c
+@@ -1247,7 +1247,7 @@ static int wm_adsp2_raw_read(size_t maxbulk, struct regmap *map,
+ 		ret = regmap_raw_read(map, reg + read_len,
+ 				      val + read_len, toread_len);
+ 		if (ret < 0) {
+-			printk("%s failed, toread_len:%u reg base:%u reg:%u read_len:%u\n",
++			printk("%s failed, toread_len:%lu reg base:%u reg:%lu read_len:%lu\n",
+ 			       __func__, toread_len, reg,
+ 			       reg + read_len, read_len);
+ 			return ret;
+-- 
+2.40.1
+

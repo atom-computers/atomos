@@ -1,0 +1,99 @@
+maintainer="Alicja Michalska <alicja.michalska@9elements.com>"
+pkgname=firmware-lynx-r1
+pkgver=20250704
+pkgrel=0
+pkgdesc="Firmware for Lynx R1"
+subpackages="
+	$pkgname-adreno
+	$pkgname-adsp
+	$pkgname-cdsp
+	$pkgname-cvpss
+	$pkgname-fingerpr
+	$pkgname-slpi
+	$pkgname-venus
+	"
+
+url="https://github.com/ellyq/lynx-firmware-mainline"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="5ee6f8cf08d50500123063e19744b84f239740b7"
+source="https://github.com/ellyq/lynx-firmware-mainline/archive/$_commit/lynx-firmware-mainline-$_commit.tar.gz"
+builddir="$srcdir/lynx-firmware-mainline-$_commit"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+# Adreno GPU
+adreno() {
+	pkgdesc="Adreno 650 FW"
+
+	install -Dm644 "$builddir"/a650_zap.mbn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+# Audio DSP
+adsp() {
+	pkgdesc="Lynx R1 ADSP FW"
+
+	install -Dm644 "$builddir"/adsp*.mbn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+	install -Dm644 "$builddir"/adsp*.jsn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+# Compute DSP
+cdsp() {
+	pkgdesc="Lynx R1 CDSP FW"
+
+	install -Dm644 "$builddir"/cdsp*.mbn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+	install -Dm644 "$builddir"/cdsp*.jsn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+# Camera V... Position? Not sure.
+cvpss() {
+	pkgdesc="Lynx R1 CVPSS FW"
+
+	install -Dm644 "$builddir"/cvpss.mbn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+# Finger tracking? Wincyj blobow, filesystem wytrzyma
+fingerpr() {
+	pkgdesc="Lynx R1 FingerPR FW"
+
+	install -Dm644 "$builddir"/fingerpr.mbn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+# Neural Processing Unit
+npu() {
+	pkgdesc="Lynx R1 NPU FW"
+
+	install -Dm644 "$builddir"/npu.mbn \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+# Sensor Low Power Island
+slpi() {
+	pkgdesc="Lynx R1 SLPI FW"
+
+	install -Dm644 "$builddir"/slpi.mbn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+# Video Processing Unit
+venus() {
+	pkgdesc="Lynx R1 Venus FW"
+
+	install -Dm644 "$builddir"/venus.mbn -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+sha512sums="
+853a95fdb2b88c56ae66083bcd71a9a1f63c09f91aa8c97290035abaf391524a516f7c47e60bdd82a74eb5cf7a0776a47e50dea667ba3d562d9c2a5280fe9e1d  lynx-firmware-mainline-5ee6f8cf08d50500123063e19744b84f239740b7.tar.gz
+"

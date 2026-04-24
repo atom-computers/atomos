@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ ! -f "$HOME"/.config/i3/config ]; then
+    pkill -f i3-config-wizard
+    touch "$HOME"/.config/i3/config
+    pkill -f i3-config-wizard
+fi
+exit 0

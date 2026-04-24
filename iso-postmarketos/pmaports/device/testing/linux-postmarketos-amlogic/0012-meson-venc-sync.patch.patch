@@ -1,0 +1,34 @@
+From 46a66919ef279bace11147d89c373bc4440a6d5a Mon Sep 17 00:00:00 2001
+From: "Lukas F. Hartmann" <lukas@mntre.com>
+Date: Sun, 9 Jul 2023 23:02:50 +0200
+Subject: [PATCH 14/21] meson-venc-sync.patch
+
+---
+ drivers/gpu/drm/meson/meson_venc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/meson/meson_venc.c b/drivers/gpu/drm/meson/meson_venc.c
+index 3bf0d6e4f..0e9a9bb07 100644
+--- a/drivers/gpu/drm/meson/meson_venc.c
++++ b/drivers/gpu/drm/meson/meson_venc.c
+@@ -1711,7 +1711,7 @@ void meson_venc_mipi_dsi_mode_set(struct meson_drm *priv,
+ 	writel_relaxed(vavon_eline, priv->io_base + _REG(L_OEV1_VE_ADDR));
+ 
+ 	/* Hsync signal for TTL */
+-	if (mode->flags & DRM_MODE_FLAG_PHSYNC) {
++	if (mode->flags & DRM_MODE_FLAG_NHSYNC) {
+ 		writel_relaxed(hso_begin, priv->io_base + _REG(L_STH1_HS_ADDR));
+ 		writel_relaxed(hso_end, priv->io_base + _REG(L_STH1_HE_ADDR));
+ 	} else {
+@@ -1724,7 +1724,7 @@ void meson_venc_mipi_dsi_mode_set(struct meson_drm *priv,
+ 	/* Vsync signal for TTL */
+ 	writel_relaxed(vso_begin, priv->io_base + _REG(L_STV1_HS_ADDR));
+ 	writel_relaxed(vso_end, priv->io_base + _REG(L_STV1_HE_ADDR));
+-	if (mode->flags & DRM_MODE_FLAG_PVSYNC) {
++	if (mode->flags & DRM_MODE_FLAG_NVSYNC) {
+ 		writel_relaxed(vso_bline, priv->io_base + _REG(L_STV1_VS_ADDR));
+ 		writel_relaxed(vso_eline, priv->io_base + _REG(L_STV1_VE_ADDR));
+ 	} else {
+-- 
+2.40.0
+

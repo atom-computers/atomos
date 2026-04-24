@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Veronika Bušová <paricbat@email.cz>"
+pkgname=device-samsung-a32
+pkgdesc="Samsung Galaxy A32 4G"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-a32
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	initfs-hook.sh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+ad32e13f095c3d5fefda103a7766ac514d4ce608a53e1ddb9d717f04984313ac75f6d14903b16801059e37018d4c58d2c746cec438df029276d1a828f2e68f47  deviceinfo
+2fbdc03a177ed1fc822574363b74ff796392d86b99a8cfbea9809c2526c1018fd3a7ef4f406f5da93edca51741ad791ed7a88d6d4e9a44c6d617589e48f0caad  kernel-cmdline.conf
+a47b56e5c8cb2bbf3450198d254b0de4c207329af971ea5006277e841541aa6a3f6a5f5457b0a24b767f53cede1bf9d4b8d0bfaf937dac9b231597cb6f449b6b  initfs-hook.sh
+"

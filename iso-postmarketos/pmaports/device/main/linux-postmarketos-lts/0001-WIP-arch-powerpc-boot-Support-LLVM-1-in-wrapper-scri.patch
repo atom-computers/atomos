@@ -1,0 +1,229 @@
+From 1036fc931dcd28ea093949a07873545665b0c520 Mon Sep 17 00:00:00 2001
+From: Nathan Chancellor <nathan@kernel.org>
+Date: Fri, 21 Jan 2022 11:53:52 -0700
+Subject: [PATCH 1/3] WIP: arch/powerpc/boot: Support LLVM=1 in wrapper script
+
+When LLVM=1 is set, pass through the make variables, as they will
+generally be multi-targeted.
+
+Signed-off-by: Nathan Chancellor <nathan@kernel.org>
+---
+ arch/powerpc/boot/Makefile | 11 +++++-
+ arch/powerpc/boot/wrapper  | 72 +++++++++++++++++++++++++++++---------
+ 2 files changed, 66 insertions(+), 17 deletions(-)
+
+diff --git a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
+index f1a4761ebd44..655750126ce9 100644
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -264,6 +264,15 @@ CROSSWRAP := -C "$(CROSS_COMPILE)"
+ endif
+ endif
+ 
++ifneq ($(LLVM),)
++WRAPTOOLS := --ld $(LD)
++WRAPTOOLS += --nm $(NM)
++WRAPTOOLS += --objcopy $(OBJCOPY)
++WRAPTOOLS += --objdump $(OBJDUMP)
++# No $(STRINGS)
++WRAPTOOLS += --strings llvm-strings
++endif
++
+ compressor-$(CONFIG_KERNEL_GZIP) := gz
+ compressor-$(CONFIG_KERNEL_XZ)   := xz
+ compressor-$(CONFIG_KERNEL_LZMA)   := lzma
+@@ -272,7 +281,7 @@ compressor-$(CONFIG_KERNEL_LZO) := lzo
+ # args (to if_changed): 1 = (this rule), 2 = platform, 3 = dts 4=dtb 5=initrd
+ quiet_cmd_wrap	= WRAP    $@
+       cmd_wrap	=$(CONFIG_SHELL) $(wrapper) -Z $(compressor-y) -c -o $@ -p $2 \
+-		$(CROSSWRAP) $(if $3, -s $3)$(if $4, -d $4)$(if $5, -i $5) \
++		$(CROSSWRAP) $(WRAPTOOLS) $(if $3, -s $3)$(if $4, -d $4)$(if $5, -i $5) \
+ 		vmlinux
+ 
+ image-$(CONFIG_PPC_PSERIES)		+= zImage.pseries
+diff --git a/arch/powerpc/boot/wrapper b/arch/powerpc/boot/wrapper
+index 1efd1206fcab..8dabcf5406b2 100755
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -167,6 +167,31 @@ while [ "$#" -gt 0 ]; do
+         compression=
+ 	uboot_comp=none
+         ;;
++    --ld)
++	shift
++	[ "$#" -gt 0 ] || usage
++	ld="$1"
++	;;
++    --nm)
++	shift
++	[ "$#" -gt 0 ] || usage
++	nm="$1"
++	;;
++    --objcopy)
++	shift
++	[ "$#" -gt 0 ] || usage
++	objcopy="$1"
++	;;
++    --objdump)
++	shift
++	[ "$#" -gt 0 ] || usage
++	objdump="$1"
++	;;
++    --strings)
++	shift
++	[ "$#" -gt 0 ] || usage
++	strings="$1"
++	;;
+     -?)
+ 	usage
+ 	;;
+@@ -178,6 +203,21 @@ while [ "$#" -gt 0 ]; do
+     shift
+ done
+ 
++if [ -z "$ld" ]; then
++    ld=${CROSS}ld
++fi
++if [ -z "$nm" ]; then
++    nm=${CROSS}nm
++fi
++if [ -z "$objcopy" ]; then
++    objcopy=${CROSS}objcopy
++fi
++if [ -z "$objdump" ]; then
++    objdump=${CROSS}objdump
++fi
++if [ -z "$strings" ]; then
++    strings=${CROSS}strings
++fi
+ 
+ if [ -n "$dts" ]; then
+     if [ ! -r "$dts" -a -r "$object/dts/$dts" ]; then
+@@ -193,7 +233,7 @@ if [ -z "$kernel" ]; then
+     kernel=vmlinux
+ fi
+ 
+-LC_ALL=C elfformat="`${CROSS}objdump -p "$kernel" | grep 'file format' | awk '{print $4}'`"
++LC_ALL=C elfformat="`$objdump -p "$kernel" | grep 'file format' | awk '{print $4}'`"
+ case "$elfformat" in
+     elf64-powerpcle)	format=elf64lppc	;;
+     elf64-powerpc)	format=elf32ppc	;;
+@@ -230,7 +270,7 @@ nodl="--no-dynamic-linker"
+ 
+ # suppress some warnings in recent ld versions
+ nowarn="-z noexecstack"
+-if "${CROSS}ld" -v --no-warn-rwx-segments >/dev/null 2>&1; then
++if $ld -v --no-warn-rwx-segments >/dev/null 2>&1; then
+ 	nowarn="$nowarn --no-warn-rwx-segments"
+ fi
+ 
+@@ -369,7 +409,7 @@ epapr)
+     link_address='0x20000000'
+     pie=-pie
+     notext='-z notext'
+-    rodynamic=$(if ${CROSS}ld -V 2>&1 | grep -q LLD ; then echo "-z rodynamic"; fi)
++    rodynamic=$(if $ld -V 2>&1 | grep -q LLD ; then echo "-z rodynamic"; fi)
+     ;;
+ mvme5100)
+     platformo="$object/fixed-head.o $object/mvme5100.o"
+@@ -385,7 +425,7 @@ esac
+ vmz="$tmpdir/`basename \"$kernel\"`.$ext"
+ 
+ # Calculate the vmlinux.strip size
+-${CROSS}objcopy $objflags "$kernel" "$vmz.$$"
++$objcopy $objflags "$kernel" "$vmz.$$"
+ strip_size=$(${CONFIG_SHELL} "${srctree}/scripts/file-size.sh" "$vmz.$$")
+ 
+ if [ -z "$cacheit" -o ! -f "$vmz$compression" -o "$vmz$compression" -ot "$kernel" ]; then
+@@ -438,14 +478,14 @@ fi
+ 
+ # Extract kernel version information, some platforms want to include
+ # it in the image header
+-version=`${CROSS}strings "$kernel" | grep '^Linux version [-0-9.]' | \
++version=`$strings "$kernel" | grep '^Linux version [-0-9.]' | \
+     head -n1 | cut -d' ' -f3`
+ if [ -n "$version" ]; then
+     uboot_version="-n Linux-$version"
+ fi
+ 
+ # physical offset of kernel image
+-membase=`${CROSS}objdump -p "$kernel" | grep -m 1 LOAD | awk '{print $7}'`
++membase=`$objdump -p "$kernel" | grep -m 1 LOAD | awk '{print $7}'`
+ 
+ case "$platform" in
+ uboot)
+@@ -460,7 +500,7 @@ uboot)
+ esac
+ 
+ addsec() {
+-    ${CROSS}objcopy $4 $1 \
++    $objcopy $4 $1 \
+ 	--add-section=$3="$2" \
+ 	--set-section-flags=$3=contents,alloc,load,readonly,data
+ }
+@@ -490,18 +530,18 @@ if [ "$platform" != "miboot" ]; then
+         text_start="-Ttext $link_address"
+     fi
+ #link everything
+-    ${CROSS}ld -m $format -T $lds $text_start $pie $nodl $nowarn $rodynamic $notext -o "$ofile" $map \
++    $ld -m $format -T $lds $text_start $pie $nodl $nowarn $rodynamic $notext -o "$ofile" $map \
+ 	$platformo $tmp $object/wrapper.a
+     rm $tmp
+ fi
+ 
+ # Some platforms need the zImage's entry point and base address
+-base=0x`${CROSS}nm "$ofile" | grep ' _start$' | cut -d' ' -f1`
+-entry=`${CROSS}objdump -f "$ofile" | grep '^start address ' | cut -d' ' -f3`
++base=0x`$nm "$ofile" | grep ' _start$' | cut -d' ' -f1`
++entry=`$objdump -f "$ofile" | grep '^start address ' | cut -d' ' -f3`
+ 
+ if [ -n "$binary" ]; then
+     mv "$ofile" "$ofile".elf
+-    ${CROSS}objcopy -O binary "$ofile".elf "$ofile"
++    $objcopy -O binary "$ofile".elf "$ofile"
+ fi
+ 
+ # post-processing needed for some platforms
+@@ -510,7 +550,7 @@ pseries|chrp)
+     $objbin/addnote "$ofile"
+     ;;
+ coff)
+-    ${CROSS}objcopy -O aixcoff-rs6000 --set-start "$entry" "$ofile"
++    $objcopy -O aixcoff-rs6000 --set-start "$entry" "$ofile"
+     $objbin/hack-coff "$ofile"
+     ;;
+ cuboot*)
+@@ -538,18 +578,18 @@ ps3)
+     # copied to offset 0x100.  At runtime the bootwrapper program copies
+     # the data at __system_reset_kernel back to addr 0x100.
+ 
+-    system_reset_overlay=0x`${CROSS}nm "$ofile" \
++    system_reset_overlay=0x`$nm "$ofile" \
+         | grep ' __system_reset_overlay$'       \
+         | cut -d' ' -f1`
+     system_reset_overlay=`printf "%d" $system_reset_overlay`
+-    system_reset_kernel=0x`${CROSS}nm "$ofile" \
++    system_reset_kernel=0x`$nm "$ofile" \
+         | grep ' __system_reset_kernel$'       \
+         | cut -d' ' -f1`
+     system_reset_kernel=`printf "%d" $system_reset_kernel`
+     overlay_dest="256"
+     overlay_size="512"
+ 
+-    ${CROSS}objcopy -O binary "$ofile" "$ofile.bin"
++    $objcopy -O binary "$ofile" "$ofile.bin"
+ 
+     run_cmd dd if="$ofile.bin" of="$ofile.bin" conv=notrunc   \
+         skip=$overlay_dest seek=$system_reset_kernel          \
+@@ -567,7 +607,7 @@ ps3)
+     # reached, then enter the system reset vector of the partially decompressed
+     # image.  No warning is issued.
+     rm -f "$odir"/{otheros,otheros-too-big}.bld
+-    size=$(${CROSS}nm --no-sort --radix=d "$ofile" | grep -E ' _end$' | cut -d' ' -f1)
++    size=$($nm --no-sort --radix=d "$ofile" | grep -E ' _end$' | cut -d' ' -f1)
+     bld="otheros.bld"
+     if [ $size -gt $((0x1000000)) ]; then
+         bld="otheros-too-big.bld"
+-- 
+2.53.0
+

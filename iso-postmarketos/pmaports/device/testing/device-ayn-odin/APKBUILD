@@ -1,0 +1,89 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-ayn-odin
+pkgdesc="AYN Odin"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-ayn-odin
+	hexagonrpcd>=0.3.2-r3
+	linux-firmware-ath10k
+	linux-firmware-qca
+	linux-firmware-qcom
+	postmarketos-base
+	alsa-ucm-conf-sdm845
+	soc-qcom
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+	phoc.ini.odin
+	phoc.ini.odin-m2
+"
+subpackages="
+	$pkgname-kernel-odin:kernel_odin
+	$pkgname-kernel-odin-m2:kernel_odin_m2
+	$pkgname-openrc
+	$pkgname-phosh:_phosh
+	$pkgname-phosh-m2:_phosh_m2
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+}
+
+kernel_odin() {
+	pkgdesc="AYN Odin"
+	depends="linux-ayn-odin"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_odin_m2() {
+	pkgdesc="AYN Odin M2"
+	depends="linux-ayn-odin"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="hexagonrpcd-openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+_phosh() {
+	install_if="$pkgname-kernel-odin=$pkgver-r$pkgrel postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini.odin \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+_phosh_m2() {
+	install_if="$pkgname-kernel-odin-m2=$pkgver-r$pkgrel postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini.odin-m2 \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+f5276b15b372c9be47c0b2905bc5574eda8458456e9bb7e56d3a85f6eaa925786252608c11eee0a18edb1a325c6819bf74114d6bc0359e0edef9ab3c3e877a22  deviceinfo
+4991bd4df62daf75dc051f45c9250636d819c3509fec650026da72b6fb5fe57a6703fb8a15c1b1d4eb63751eed403fc90e3cf867f799596a0a52960cabfc4f58  kernel-cmdline.conf
+cd3da21e666698f92382938bf75c8e57e7582b440c8de69c19841a5d36861a8bdd3f4e1ac5282c1e9a8ad5009cc4ffbb2bf40cd8bb8fb9a22acdf5d8caf37e67  hexagonrpcd.confd
+dc987332abe6d5c7ac511be1045af227d80b9dbe2f907e23e89b62217ca867dd064484caec36f0605dda89a9894da780b75beb23d9b893bd0f9a46593e675393  modules-initfs
+01bec0b7efad2b44920cd9403b1121240ad16a4ee720c457778cd6bb427065bc471aa021e571ce0b88fb213a79b572faaf12ab5428f1dd25c7850471cddc3880  phoc.ini.odin
+455e428ba7d3eb125f9f810f08f36f5b533b7b6490d3fd955822e759b4c0ac846cc25af3056d70a9a163a58f538d5b70d6940a9a1a9441a4ca4357f01fadb8d1  phoc.ini.odin-m2
+"

@@ -1,0 +1,13 @@
+diff --git a/drivers/video/msm/mdss/mdp3_ctrl.c b/drivers/video/msm/mdss/mdp3_ctrl.c
+index db089c07..811c0705 100755
+--- a/drivers/video/msm/mdss/mdp3_ctrl.c
++++ b/drivers/video/msm/mdss/mdp3_ctrl.c
+@@ -2481,7 +2481,7 @@ int mdp3_ctrl_init(struct msm_fb_data_type *mfd)
+ 		splash_mismatch = 1;
+ 
+ 	mdp3_interface->on_fnc = mdp3_ctrl_on;
+-	mdp3_interface->off_fnc = mdp3_ctrl_off;
++	mdp3_interface->off_fnc = NULL;
+ 	mdp3_interface->do_histogram = NULL;
+ 	mdp3_interface->cursor_update = NULL;
+ 	mdp3_interface->dma_fnc = mdp3_ctrl_pan_display;

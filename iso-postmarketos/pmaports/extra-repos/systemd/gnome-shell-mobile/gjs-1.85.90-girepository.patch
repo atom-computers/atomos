@@ -1,0 +1,393 @@
+From a3c6751085ff8d6ab552bab8fb50ccc55e9e2cee Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Florian=20M=C3=BCllner?= <fmuellner@gnome.org>
+Date: Mon, 4 Aug 2025 08:04:30 +0200
+Subject: [PATCH 1/6] environment: Work around introspection issue
+
+Methods of all classes from GioUnix erroneously show up as static
+methods, see https://gitlab.gnome.org/GNOME/glib/-/issues/3744.
+
+Work around this by defining the methods ourselves if we detect
+that case.
+
+Part-of: <https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/3801>
+---
+ js/ui/environment.js | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/js/ui/environment.js b/js/ui/environment.js
+index b2f5e81f6..50409f61e 100644
+--- a/js/ui/environment.js
++++ b/js/ui/environment.js
+@@ -8,6 +8,7 @@ import Cairo from 'cairo';
+ import Clutter from 'gi://Clutter';
+ import Gdk from 'gi://Gdk';
+ import Gio from 'gi://Gio';
++import GioUnix from 'gi://GioUnix';
+ import GLib from 'gi://GLib';
+ import GObject from 'gi://GObject';
+ import Meta from 'gi://Meta';
+@@ -353,6 +354,17 @@ Object.prototype.toString = function () {
+     }
+ };
+ 
++// Work around https://gitlab.gnome.org/GNOME/glib/-/issues/3744
++if (!GioUnix.DesktopAppInfo.prototype.has_key) {
++    GioUnix.DesktopAppInfo.prototype.has_key = function (key) {
++        return GioUnix.DesktopAppInfo.has_key(this, key);
++    };
++
++    GioUnix.DesktopAppInfo.prototype.get_categories = function () {
++        return GioUnix.DesktopAppInfo.get_categories(this);
++    };
++}
++
+ const slowdownEnv = GLib.getenv('GNOME_SHELL_SLOWDOWN_FACTOR');
+ if (slowdownEnv) {
+     let factor = parseFloat(slowdownEnv);
+-- 
+2.51.0
+
+
+From db2e0b8672386410444b3f7e5d3c3ca753b5d32d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Florian=20M=C3=BCllner?= <fmuellner@gnome.org>
+Date: Wed, 16 Jul 2025 19:06:34 +0200
+Subject: [PATCH 2/6] Port to gjs-1.85/girepository-2.0
+
+gjs ported from the stand-alone gobject-introspection-1.0 to the
+new girepository-2.0 library bundled with glib.
+
+Bump the requirements for gjs/glib and adjust to the (fairly minor)
+changes.
+
+Part-of: <https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/3801>
+---
+ meson.build       |  5 ++---
+ src/main.c        | 23 +++++++++++++----------
+ src/run-js-test.c |  9 ++++++---
+ 3 files changed, 21 insertions(+), 16 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 5eecf09da..533e2d56d 100644
+--- a/meson.build
++++ b/meson.build
+@@ -22,8 +22,7 @@ ecal_req = '>= 3.33.1'
+ eds_req = '>= 3.33.1'
+ gcr_req = '>= 3.90.0'
+ gio_req = '>= 2.79.2'
+-gi_req = '>= 1.49.1'
+-gjs_req = '>= 1.73.1'
++gjs_req = '>= 1.85.1'
+ gtk_req = '>= 4.0'
+ mutter_req = '= 48.mobile.0'
+ polkit_req = '>= 0.100'
+@@ -73,7 +72,7 @@ ecal_dep = dependency('libecal-2.0', version: ecal_req)
+ eds_dep = dependency('libedataserver-1.2', version: eds_req)
+ gcr_dep = dependency('gcr-4', version: gcr_req)
+ gdk_pixbuf_dep = dependency('gdk-pixbuf-2.0')
+-gi_dep = dependency('gobject-introspection-1.0', version: gi_req)
++gi_dep = dependency('girepository-2.0', version: gio_req)
+ gio_dep = dependency('gio-2.0', version: gio_req)
+ gio_unix_dep = dependency('gio-unix-2.0', version: gio_req)
+ gjs_dep = dependency('gjs-1.0', version: gjs_req)
+diff --git a/src/main.c b/src/main.c
+index af4fa8597..99eca3e3c 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -13,7 +13,7 @@
+ #include <clutter/clutter.h>
+ #include <glib-unix.h>
+ #include <glib/gi18n-lib.h>
+-#include <girepository.h>
++#include <girepository/girepository.h>
+ #include <meta/meta-context.h>
+ #include <meta/meta-plugin.h>
+ #include <meta/prefs.h>
+@@ -133,7 +133,7 @@ shell_dbus_init (gboolean replace)
+ 
+ #ifdef HAVE_EXE_INTROSPECTION
+ static void
+-maybe_add_rpath_introspection_paths (void)
++maybe_add_rpath_introspection_paths (GIRepository *repo)
+ {
+   ElfW (Dyn) *dyn;
+   ElfW (Dyn) *rpath = NULL;
+@@ -210,8 +210,8 @@ maybe_add_rpath_introspection_paths (void)
+       g_debug ("Prepending RPATH directory '%s' "
+                "to introsepciton library search path",
+                rpath_dir->str);
+-      g_irepository_prepend_search_path (rpath_dir->str);
+-      g_irepository_prepend_library_path (rpath_dir->str);
++      gi_repository_prepend_search_path (repo, rpath_dir->str);
++      gi_repository_prepend_library_path (repo, rpath_dir->str);
+     }
+ }
+ #endif /* HAVE_EXE_INTROSPECTION */
+@@ -219,20 +219,23 @@ maybe_add_rpath_introspection_paths (void)
+ static void
+ shell_introspection_init (void)
+ {
++  g_autoptr (GIRepository) repo = NULL;
+ 
+-  g_irepository_prepend_search_path (MUTTER_TYPELIB_DIR);
+-  g_irepository_prepend_search_path (SHELL_TYPELIB_DIR);
++  repo = gi_repository_dup_default ();
++
++  gi_repository_prepend_search_path (repo, MUTTER_TYPELIB_DIR);
++  gi_repository_prepend_search_path (repo, SHELL_TYPELIB_DIR);
+ 
+   /* We need to explicitly add the directories where the private libraries are
+    * installed to the GIR's library path, so that they can be found at runtime
+    * when linking using DT_RUNPATH (instead of DT_RPATH), which is the default
+    * for some linkers (e.g. gold) and in some distros (e.g. Debian).
+    */
+-  g_irepository_prepend_library_path (MUTTER_TYPELIB_DIR);
+-  g_irepository_prepend_library_path (GNOME_SHELL_PKGLIBDIR);
++  gi_repository_prepend_library_path (repo, MUTTER_TYPELIB_DIR);
++  gi_repository_prepend_library_path (repo, GNOME_SHELL_PKGLIBDIR);
+ 
+ #ifdef HAVE_EXE_INTROSPECTION
+-  maybe_add_rpath_introspection_paths ();
++  maybe_add_rpath_introspection_paths (repo);
+ #endif
+ }
+ 
+@@ -611,7 +614,7 @@ main (int argc, char **argv)
+   context = meta_create_context (WM_NAME);
+   meta_context_add_option_entries (context, gnome_shell_options,
+                                    GETTEXT_PACKAGE);
+-  meta_context_add_option_group (context, g_irepository_get_option_group ());
++  meta_context_add_option_group (context, gi_repository_get_option_group ());
+ 
+   session_mode = (char *) g_getenv ("GNOME_SHELL_SESSION_MODE");
+ 
+diff --git a/src/run-js-test.c b/src/run-js-test.c
+index 4f795252c..7a539d3a2 100644
+--- a/src/run-js-test.c
++++ b/src/run-js-test.c
+@@ -30,7 +30,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#include <girepository.h>
++#include <girepository/girepository.h>
+ #include <gjs/gjs.h>
+ 
+ #include "shell-global.h"
+@@ -64,6 +64,7 @@ int
+ main (int argc, char **argv)
+ {
+   GOptionContext *context;
++  g_autoptr (GIRepository) repo = NULL;
+   g_autoptr (GError) error = NULL;
+   ShellGlobal *global;
+   GjsContext *js_context;
+@@ -85,8 +86,10 @@ main (int argc, char **argv)
+   global = shell_global_get ();
+   js_context = _shell_global_get_gjs_context (global);
+ 
+-  g_irepository_prepend_search_path (MUTTER_TYPELIB_DIR);
+-  g_irepository_prepend_search_path (SHELL_TYPELIB_DIR);
++  repo = gi_repository_dup_default ();
++
++  gi_repository_prepend_search_path (repo, MUTTER_TYPELIB_DIR);
++  gi_repository_prepend_search_path (repo, SHELL_TYPELIB_DIR);
+ 
+   if (argc < 2)
+     {
+-- 
+2.51.0
+
+
+From bb84f7b248c26a7500433a1c9975d25149e97810 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marco=20Trevisan=20=28Trevi=C3=B1o=29?= <mail@3v1n0.net>
+Date: Tue, 12 Aug 2025 03:59:14 +0200
+Subject: [PATCH 3/6] shell: Use proper path to include girepository headers
+
+girepository-2.0 headers are inside ${PREFIX}/include/glib-2.0/girepository
+and the pkg-config file provides the glib-2.0 subpath as include
+directory, so we are required to use the full header path, or we may not
+be able to find them.
+
+This is triggered a build failure in debian (with clean setup where no
+libgirepository-1.0 was installed):
+
+  ../src/shell-global.c:19:10: fatal error: girepository.h: No such file or
+  directory
+     19 | #include <girepository.h>
+
+Part-of: <https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/3837>
+---
+ src/shell-global.c       | 2 +-
+ src/shell-tray-manager.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/shell-global.c b/src/shell-global.c
+index c941701b6..9a6de28e9 100644
+--- a/src/shell-global.c
++++ b/src/shell-global.c
+@@ -16,7 +16,7 @@
+ #include <locale.h>
+ 
+ #include <gio/gio.h>
+-#include <girepository.h>
++#include <girepository/girepository.h>
+ #include <meta/meta-backend.h>
+ #include <meta/meta-context.h>
+ #include <meta/display.h>
+diff --git a/src/shell-tray-manager.c b/src/shell-tray-manager.c
+index ddbd17608..5455211f2 100644
+--- a/src/shell-tray-manager.c
++++ b/src/shell-tray-manager.c
+@@ -3,7 +3,7 @@
+ #include "config.h"
+ 
+ #include <clutter/clutter.h>
+-#include <girepository.h>
++#include <girepository/girepository.h>
+ #include <meta/display.h>
+ 
+ #include "shell-tray-manager.h"
+-- 
+2.51.0
+
+
+From 7f75067c59acda71ef4f8052df5fd15a37e8b2bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marco=20Trevisan=20=28Trevi=C3=B1o=29?= <mail@3v1n0.net>
+Date: Tue, 12 Aug 2025 03:45:19 +0200
+Subject: [PATCH 4/6] build: Depend on gjs 1.85.90
+
+While the actual version that was ported to libgirepository-2.0 was
+1.85.2, we also rely on Gio wrappers that are part of gjs 1.85.90
+
+See: https://gitlab.gnome.org/GNOME/gjs/-/blob/master/NEWS
+Part-of: <https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/3836>
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 533e2d56d..a71d45ff3 100644
+--- a/meson.build
++++ b/meson.build
+@@ -22,7 +22,7 @@ ecal_req = '>= 3.33.1'
+ eds_req = '>= 3.33.1'
+ gcr_req = '>= 3.90.0'
+ gio_req = '>= 2.79.2'
+-gjs_req = '>= 1.85.1'
++gjs_req = '>= 1.85.90'
+ gtk_req = '>= 4.0'
+ mutter_req = '= 48.mobile.0'
+ polkit_req = '>= 0.100'
+-- 
+2.51.0
+
+
+From 325d34197a0a87fffbf75f1b0dbdc3a229a3abad Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marco=20Trevisan=20=28Trevi=C3=B1o=29?= <mail@3v1n0.net>
+Date: Wed, 20 Aug 2025 13:23:33 +0200
+Subject: [PATCH 5/6] build: Include GioUnix-2.0 when scanning the libshell
+ headers
+
+libshell exposes in the headers types that are part of GioUnix
+(DesktopAppInfo), so we should make it an explicit dependency of the
+introspection parser, or we may not be able to parse these types.
+
+Related to: https://gitlab.gnome.org/GNOME/glib/-/issues/3744
+
+Part-of: <https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/3846>
+---
+ src/meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/meson.build b/src/meson.build
+index ddec70451..5733afb67 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -263,6 +263,7 @@ libshell_gir_includes = [
+   'Clutter-@0@'.format(mutter_api_version),
+   'Meta-@0@'.format(mutter_api_version),
+   'Gcr-4',
++  'GioUnix-2.0',
+   'PolkitAgent-1.0',
+   'GdkPixbuf-2.0'
+ ]
+-- 
+2.51.0
+
+
+From e802999c7f090605caa6e5ada5d622224279ab4d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marco=20Trevisan=20=28Trevi=C3=B1o=29?= <mail@3v1n0.net>
+Date: Sun, 31 Aug 2025 02:55:13 +0200
+Subject: [PATCH 6/6] js: Use DesktopAppInfo from GioUnix
+
+The type was never part of Gio, but it's an Unix specific type, so use
+the platform-specific typelib instead.
+
+This would still work in gjs for 49 but would trigger a warning.
+
+See: https://gitlab.gnome.org/GNOME/glib/-/issues/3744
+See: https://gitlab.gnome.org/GNOME/glib/-/merge_requests/4761
+See: https://gitlab.gnome.org/GNOME/gjs/-/merge_requests/1018
+Part-of: <https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/3855>
+---
+ js/misc/parentalControlsManager.js | 2 +-
+ js/ui/main.js                      | 3 ++-
+ js/ui/remoteSearch.js              | 3 ++-
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/js/misc/parentalControlsManager.js b/js/misc/parentalControlsManager.js
+index cd5353154..55ffed246 100644
+--- a/js/misc/parentalControlsManager.js
++++ b/js/misc/parentalControlsManager.js
+@@ -127,7 +127,7 @@ const ParentalControlsManager = GObject.registerClass({
+         return this._initialized;
+     }
+ 
+-    // Calculate whether the given app (a Gio.DesktopAppInfo) should be shown
++    // Calculate whether the given app (a GioUnix.DesktopAppInfo) should be shown
+     // on the desktop, in search results, etc. The app should be shown if:
+     //  - The .desktop file doesn’t say it should be hidden.
+     //  - The executable from the .desktop file’s Exec line isn’t denied in
+diff --git a/js/ui/main.js b/js/ui/main.js
+index 252cfef8c..0c19bb700 100644
+--- a/js/ui/main.js
++++ b/js/ui/main.js
+@@ -1,5 +1,6 @@
+ import Clutter from 'gi://Clutter';
+ import Gio from 'gi://Gio';
++import GioUnix from 'gi://GioUnix';
+ import GLib from 'gi://GLib';
+ import GObject from 'gi://GObject';
+ import Meta from 'gi://Meta';
+@@ -170,7 +171,7 @@ export async function start() {
+ 
+     let currentDesktop = GLib.getenv('XDG_CURRENT_DESKTOP');
+     if (!currentDesktop || !currentDesktop.split(':').includes('GNOME'))
+-        Gio.DesktopAppInfo.set_desktop_env('GNOME');
++        GioUnix.DesktopAppInfo.set_desktop_env('GNOME');
+ 
+     sessionMode = new SessionMode.SessionMode();
+     sessionMode.connect('updated', _sessionUpdated);
+diff --git a/js/ui/remoteSearch.js b/js/ui/remoteSearch.js
+index 3a6a9f2a1..1c93aa8b1 100644
+--- a/js/ui/remoteSearch.js
++++ b/js/ui/remoteSearch.js
+@@ -1,5 +1,6 @@
+ import GdkPixbuf from 'gi://GdkPixbuf';
+ import Gio from 'gi://Gio';
++import GioUnix from 'gi://GioUnix';
+ import GLib from 'gi://GLib';
+ import Shell from 'gi://Shell';
+ import St from 'gi://St';
+@@ -96,7 +97,7 @@ export function loadRemoteSearchProviders(searchSettings) {
+             let appInfo = null;
+             try {
+                 let desktopId = keyfile.get_string(group, 'DesktopId');
+-                appInfo = Gio.DesktopAppInfo.new(desktopId);
++                appInfo = GioUnix.DesktopAppInfo.new(desktopId);
+                 if (!appInfo.should_show())
+                     return;
+             } catch (e) {
+-- 
+2.51.0
+

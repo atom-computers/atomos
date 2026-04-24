@@ -1,0 +1,60 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/cyanogenmod_superior_defconfig
+
+pkgname=linux-samsung-superior
+pkgver=3.0.31
+pkgrel=2
+pkgdesc="Samsung Galaxy Premier kernel from LineageOS"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-superior"
+url="https://github.com/LineageOS/android_kernel_samsung_piranha"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl"
+
+# Source
+_repository="android_kernel_samsung_piranha"
+_commit="63b62b25f355535aa03956f957658f29f4a62cf2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	fix_aid_net_on_apn_disable.patch
+	timeconst.pl-Eliminate-Perl-warning.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 modules_install
+}
+
+sha512sums="048619a71e7f7565807ada4a16286cf3844c3ce547c832ad77c267d597488ad6cf3bf24289cb0172075e61b89a635a28a2bf4d5b698ccdf96145d50db1ff20c8  linux-samsung-superior-63b62b25f355535aa03956f957658f29f4a62cf2.tar.gz
+f48a1521e4ccf1245363158b87bcf570c3f98af8aa62398b8afd67f4c4631cce492740fa424c8c1740a05ef729e9798604b85829377e4b4a4a54a79dd9c77f17  config-samsung-superior.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+1cae09c775d787e877f82cb164b5d68530f4bd9b108b7abaf8192bd85a3d8975456762ce9f563fa766b1c03519e09ef93e177fd6972e439e4aa0c3a5709ea691  fix_aid_net_on_apn_disable.patch
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch"

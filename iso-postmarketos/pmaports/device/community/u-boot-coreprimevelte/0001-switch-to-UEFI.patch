@@ -1,0 +1,94 @@
+From c458834e684aa5b06744fa2f0394f782177877f2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Duje=20Mihanovi=C4=87?= <duje@dujemihanovic.xyz>
+Date: Mon, 13 Apr 2026 19:01:57 +0200
+Subject: [PATCH] switch to UEFI
+
+---
+ .../samsung/coreprimevelte/coreprimevelte.env  | 18 ++++++++----------
+ configs/coreprimevelte_defconfig               |  8 ++++++++
+ 2 files changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/board/samsung/coreprimevelte/coreprimevelte.env b/board/samsung/coreprimevelte/coreprimevelte.env
+index f96b3ee9fd6..a575fd4896d 100644
+--- a/board/samsung/coreprimevelte/coreprimevelte.env
++++ b/board/samsung/coreprimevelte/coreprimevelte.env
+@@ -1,27 +1,25 @@
+-bootcmd_mmc1=
+-	if mmc dev 1; then sysboot mmc 1 any; fi
+-bootcmd_blkmap0=
++# Make sure we scan pmOS's nested partitions
++setup_blkmap0=
+ 	part size mmc 0 19 user_size;
+ 	part start mmc 0 19 user_start;
+ 	blkmap create emmc_user;
+-	blkmap map emmc_user 0 0x${user_size} linear mmc 0 0x${user_start};
+-	sysboot blkmap 0 any
+-bootcmd_blkmap1=
++	blkmap map emmc_user 0 0x${user_size} linear mmc 0 0x${user_start}
++setup_blkmap1=
+ 	part size mmc 0 16 system_size;
+ 	part start mmc 0 16 system_start;
+ 	blkmap create emmc_system;
+ 	blkmap map emmc_system 0 0x${system_size} linear mmc 0 0x${system_start};
+-	sysboot blkmap 1 any
+-boot_targets=mmc1 blkmap0 blkmap1
+-bootcmd=for i in $boot_targets; do run bootcmd_$i; done
++preboot=run setup_blkmap0; run setup_blkmap1
++boot_targets=mmc blkmap
++bootcmd=bootflow scan -lb
+ 
++# Reasonable memory map
+ kernel_addr_r=0x10000000
+ ramdisk_addr_r=0x14000000
+ pxefile_addr_r=0xfe00000
+ fdt_addr_r=0xfd00000
+ kernel_comp_addr_r=0x20000000
+ kernel_comp_size=0x4000000
+-bootfile=/extlinux/extlinux.conf
+ 
+ stdin=serial
+ stdout=serial,vidconsole
+diff --git a/configs/coreprimevelte_defconfig b/configs/coreprimevelte_defconfig
+index b6f8d997b1d..120787837d7 100644
+--- a/configs/coreprimevelte_defconfig
++++ b/configs/coreprimevelte_defconfig
+@@ -5,6 +5,7 @@ CONFIG_ARCH_CPU_INIT=y
+ CONFIG_ARCH_MMP=y
+ CONFIG_TEXT_BASE=0x1000000
+ CONFIG_NR_DRAM_BANKS=2
++CONFIG_ENV_OFFSET=0x1d1f20000
+ CONFIG_DEFAULT_DEVICE_TREE="marvell/mmp/pxa1908-samsung-coreprimevelte"
+ CONFIG_TARGET_COREPRIMEVELTE=y
+ CONFIG_SYS_BOOTM_LEN=0x4000000
+@@ -16,9 +17,14 @@ CONFIG_BOOTSTD_FULL=y
+ CONFIG_BOOTSTD_BOOTCOMMAND=y
+ CONFIG_DISTRO_DEFAULTS=y
+ # CONFIG_USE_BOOTCOMMAND is not set
++CONFIG_USE_PREBOOT=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
+ CONFIG_DISPLAY_BOARDINFO_LATE=y
+ CONFIG_BOOTM_NETBSD=y
++CONFIG_CMD_NVEDIT_EFI=y
++CONFIG_CMD_NVEDIT_INFO=y
++CONFIG_CMD_NVEDIT_LOAD=y
++CONFIG_CMD_NVEDIT_SELECT=y
+ CONFIG_CMD_DM=y
+ CONFIG_CMD_LSBLK=y
+ CONFIG_CMD_MMC=y
+@@ -34,6 +40,7 @@ CONFIG_CMD_LOG=y
+ # CONFIG_ISO_PARTITION is not set
+ CONFIG_PARTITION_TYPE_GUID=y
+ CONFIG_OF_BOARD=y
++CONFIG_ENV_IS_IN_MMC=y
+ CONFIG_NO_NET=y
+ CONFIG_REGMAP=y
+ CONFIG_BLKMAP=y
+@@ -53,4 +60,5 @@ CONFIG_VIDEO=y
+ CONFIG_SYS_WHITE_ON_BLACK=y
+ CONFIG_VIDEO_SIMPLE=y
+ CONFIG_EXT4_WRITE=y
++# CONFIG_HEXDUMP is not set
+ # CONFIG_TOOLS_MKEFICAPSULE is not set
+-- 
+2.53.0
+

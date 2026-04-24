@@ -1,0 +1,66 @@
+# Kernel config based on: arch/arm/configs/pxa986_lt023g_blackhawk_defconfig but modified to work with v3.4.113
+
+pkgname=linux-samsung-lt023g
+pkgver=3.4.113
+pkgrel=10
+pkgdesc="Samsung Galaxy Tab 3 7.0 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-lt023g"
+url="https://github.com/yahiashamaa/android_kernel_samsung_lt02"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_lt02"
+_commit="2c66a10df2b4943cbc3b7ad72773c8d70113c609"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/yahiashamaa/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	02-linux3.4-fix-piggy.gzip.S.patch
+	03-Backport-cache-the-value-of-file_inode-in-struct-file.patch
+	04-Backport-shm-add-sealing-API.patch
+	05-Backport-shm-add-memfd_create-syscall.patch
+	06-Backport-asm-generic-add-memfd_create-system-call-to-unistd.h.patch
+	07-Backport-ARM-wire-up-memfd_create-syscall.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+ca872bc6861b21f13d885ab5ba6ee436d0ba52fb95df67591793cc0e793c562a18a92fc6108202ed62d7ad901f5dec84905d9a9c7d86aeab41718907afd69631  linux-samsung-lt023g-2c66a10df2b4943cbc3b7ad72773c8d70113c609.tar.gz
+c35a106a32cdee3513d8e3d3f16f524a3041f808a8f1539a795d22cc7064ae51187a15ac665fe2574c356f5e782606e5b89f6e5ff71ed950b822812dda00255a  config-samsung-lt023g.armv7
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  01-linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  02-linux3.4-fix-piggy.gzip.S.patch
+8283737ae12864dd52bcb0765a250a94a4ba2cecdbe33bbbf9ff05f5882b29dc93c3f9919ad64242dc67e41395f95ce70817e0a3e7a4a0dc4af84db0f156d29e  03-Backport-cache-the-value-of-file_inode-in-struct-file.patch
+54d71b32b456a3d0abd090c820214240688484f4cadbbde0304bf3cb5246b1aa3893dd85736dc5db2f3d6f9de1f5e84a1adcf5a661a62586452f1002360dc691  04-Backport-shm-add-sealing-API.patch
+c62d67a5fb28082e86a585b4c64891525db640ce694445f0fb19e67fb8dcd9ccbfbcb6fba8692964fac8b026c39cfa558cf316a7e22828ac13f58f5b9938ef09  05-Backport-shm-add-memfd_create-syscall.patch
+cbf6e4bdf53b02f897923d0f6eea5320acc6760c3f3ed762e69928ced7e3b6f2a5355df4a2fccf560f010a4a1968e7ae1a3f62c2db299857d6bcc9715d932822  06-Backport-asm-generic-add-memfd_create-system-call-to-unistd.h.patch
+2f256f6ec9fa7b240dd1f9417622bfd5a8ca4a9ea12cd2ef171540e1425d4171122c0597fe12af913ef60979ef9a3dce8a6c1c523c91020cb9481560901cc92b  07-Backport-ARM-wire-up-memfd_create-syscall.patch
+"

@@ -1,0 +1,72 @@
+# Kernel config based on: arch/arm/configs/u8500_defconfig
+maintainer="Newbyte <newbyte@disroot.org>"
+_flavor="postmarketos-stericsson"
+_config="config-$_flavor.armv7"
+pkgname=linux-$_flavor
+pkgver=6.18.2
+pkgrel=0
+pkgdesc="Mainline kernel for ST-Ericsson NovaThor devices"
+arch="armv7"
+_carch="arm"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-waydroid
+	pmb:kconfigcheck-containers
+	pmb:kconfigcheck-zram
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bash
+	bison
+	findutils
+	gmp-dev
+	flex
+	mpc1-dev
+	mpfr-dev
+	openssl-dev
+	perl
+	postmarketos-installkernel
+"
+case $pkgver in
+	*.*.*)	_kernver=${pkgver%.0};;
+	*.*)	_kernver=$pkgver;;
+esac
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${_kernver%%.*}.x/linux-$_kernver.tar.xz
+	config-$_flavor.armv7
+
+	drm-regressions.patch
+	"
+builddir="$srcdir/linux-${_kernver//_/-}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION=$((pkgrel + 1 ))
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+15989d1a26c6a5200b8eab4ba348b308466398aa75dda3844b37e7eb320206236d47c94cbc0e0b1d7ead10385ca84d34d0f2aa02ba5c1bd65ca6a5aa71c57117  linux-6.18.2.tar.xz
+7c9a0bafece9390e7af9b86835a216227ee2237bf8595f757c918a0fbf7a1836e3b41b35342eee19aa3205d6add972d7ab6361a45777a0632a342e47a88a7fc6  config-postmarketos-stericsson.armv7
+2ba9304f4f2d8578906017699255aadb10d1f0dc62704400632859b9bdad06a10c5837ce1a524813b1d205b33e8b5f7990038a700942e2ee728b79b7ecc45282  drm-regressions.patch
+"

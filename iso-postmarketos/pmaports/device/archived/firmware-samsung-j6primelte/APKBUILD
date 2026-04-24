@@ -1,0 +1,26 @@
+# Archived: Kernel does not build anymore
+maintainer="omame <me@omame.xyz>"
+pkgname=firmware-samsung-j6primelte
+pkgver=0.1
+pkgrel=1
+pkgdesc="Firmware for the Samsung Galaxy J6+ (j6primelte)"
+_repository="pmos-j6primelte-firmware-blobs"
+url="https://github.com/omaemae/$_repository"
+arch="armv7"
+license="proprietary"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="c3b880b288658b0810ab5b59255937d573d8f776"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+package() {
+	cd "$srcdir"/$_repository-$_commit/blobs
+	for file in $(find * -type f); do
+		install -Dm644 $file "$pkgdir"/lib/firmware/postmarketos/$file
+	done
+}
+
+sha512sums="
+7b2c84ec71cb9641a99fb791f630ce4a9128f4f8d73aebaa563f959ae8caddab8e36280ce4e051520664a3dba61d5ba5974ef9d98fcc356314432b61eed87d1b  firmware-samsung-j6primelte-c3b880b288658b0810ab5b59255937d573d8f776.tar.gz
+"

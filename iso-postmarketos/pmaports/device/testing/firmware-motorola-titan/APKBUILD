@@ -1,0 +1,30 @@
+maintainer=""
+pkgname=firmware-motorola-titan
+pkgver=1
+pkgrel=3
+_commit="ac0d15c78cc705c9a76506e6f761cd006018d7bd"
+pkgdesc="Firmware files for Motorola Moto G 2014 (titan) and Moto G 4G 2013 (peregrine)"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://github.com/PabloCastellano/vendor_motorola_titan/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/vendor_motorola_titan-$_commit"
+
+package() {
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07
+		wcnss.b08 wcnss.b09 wcnss.mdt"
+	for _i in $_files; do
+		install -D -m644 "$_i" "$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	_files="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_cal.bin
+		WCNSS_qcom_wlan_nv.bin WCNSS_qcom_wlan_factory_nv.bin"
+	for _i in $_files; do
+		install -D -m644 wlan/prima/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="9dce12dda861140b8ac074620e2d4657f59bf7a540935f115db9956076ff770274e486f228b0811ce108862cf6e2beef77c1394a4a950287f19f307f10c9bfc4  firmware-motorola-titan-ac0d15c78cc705c9a76506e6f761cd006018d7bd.tar.gz"

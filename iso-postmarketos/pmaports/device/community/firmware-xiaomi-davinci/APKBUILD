@@ -1,0 +1,28 @@
+
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=firmware-xiaomi-davinci
+pkgver=3
+pkgrel=1
+pkgdesc="Firmware for Xiaomi Mi 9T / Redmi K20"
+url="https://github.com/sm7150-mainline/firmware-xiaomi-davinci"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="6532694920dd05ee7d930fe6d3ede74d2b9ea60d"
+source="
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
+	30-initramfs-$pkgname.files
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+ceef2f6a57322563756573ab1a80b9d5bdc53969feaf7550ec3432e3b888dbd6e56efa56abd94fe5b690e2a22a1c3a9246557a46be7f02c15282e8dfe660f230  firmware-xiaomi-davinci-6532694920dd05ee7d930fe6d3ede74d2b9ea60d.tar.gz
+ff063c86aad660107aa646a092cf8d5c6e64a3e4510dfd8d0fe969bee6a7877bd1a5482ab4980b7431d6c743ad98cdf5b31352eb2383ea030a52a5632860fcc5  30-initramfs-firmware-xiaomi-davinci.files
+"

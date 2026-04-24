@@ -1,0 +1,84 @@
+# Kernel config based on: arch/arm/configs/sbj_defconfig
+
+pkgname=linux-jolla-sbj
+pkgver=3.4.108
+pkgrel=3
+pkgdesc="Jolla phone kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="jolla-sbj"
+url="http://releases.sailfishos.org/sources/3.4.0.24/"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev rpm2cpio"
+_kbuildver="3.4.108.20200929.1"
+_rpm_wlan_commit="2f37d840cc7f52eb38b0613a832a55b216d89bd5"
+_rpm_adapt_commit="8472b1e422b50fb5aa1ea46231a64db8ab2573dd"
+_rpm_wlan_version="0.2.7-1.3.6"
+_rpm_adapt_version="1.11.2"
+_rpm_wlan_file="sbj-wlan-$_rpm_wlan_version.jolla.armv7hl.rpm"
+_rpm_adapt_file="kernel-adaptation-sbj-$_kbuildver-$_rpm_adapt_version.jolla.armv7hl.rpm"
+
+# Source
+_hash="3.4.0.24"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_hash.tar.bz2::http://releases.sailfishos.org/sources/$_hash/sailfish-$_hash-oss-adaptation-sbj.tar.bz2
+	$_config
+	01_fix-video-argb-setting.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	https://gitlab.com/postmarketeer/jolla-sbj-wlan/-/raw/$_rpm_wlan_commit/$_rpm_wlan_file
+	https://gitlab.com/postmarketeer/jolla-kernel-adaptation-sbj/-/raw/$_rpm_adapt_commit/$_rpm_adapt_file
+"
+_kver="kernel-adaptation-sbj-3.4.108.20200929.1"
+_kernelarchive="$srcdir/sailfish-$_hash-oss-adaptation-sbj/kernel-adaptation-sbj/$_kver.tar.bz2"
+builddir="$srcdir/$_kver"
+_rpm_mod_path="./lib/modules/$_kbuildver"
+_files="
+	kernel/net/wireless/wlan.ko
+	kernel/net/wireless/cfg80211.ko
+"
+
+prepare() {
+	cd "$srcdir"
+	tar -xf "$_kernelarchive"
+	cd "$ksrcdir"
+
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	rpm2cpio "$srcdir/$_rpm_wlan_file" | cpio -id "$_rpm_mod_path/kernel/net/wireless/*.ko"
+	rpm2cpio "$srcdir/$_rpm_adapt_file" | cpio -id "$_rpm_mod_path/kernel/net/wireless/*.ko"
+
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	make -j1 modules_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir"
+
+	_kernel_release=$(cat $builddir/include/config/kernel.release)
+	for _i in $_files; do
+		install -Dm644 "$_rpm_mod_path/$_i" \
+		"$pkgdir/lib/modules/$_kernel_release/$_i"
+	done
+}
+
+sha512sums="
+ad03298a08e068f5301f0672260c5109431a87fe1d2b23b3ae0d5a95bf11ca5de90810d7e491ad225821535e0937fcbb574ac098e9df5fd6b5a30bf997f1e30b  linux-jolla-sbj-3.4.0.24.tar.bz2
+996e1c02920764498a667b310f5a46461627ab0ca8e6f9bd033de5b271294fb33902cb04bfe3db2e07ad04e332b42c075f714f41ab6081bdb232e18b82a69f17  config-jolla-sbj.armv7
+e3083c260ed9c4fc0d83f43106700b6173876dbfae072f6e6696ac6785a4dc17771fbcb3e21601e04ed29a11bf0f7a2a09ad549375e0c34cea245c7f2e2bcbbd  01_fix-video-argb-setting.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+4c582883b609b5cd312b48213ac633e8c65ac3ea310c6016c01da769440f694f42c22f06f13599ce12e9992afe150de364fcaf2f816d9d678d019d00019f007b  sbj-wlan-0.2.7-1.3.6.jolla.armv7hl.rpm
+96e152268ff4f25bd67aadbca9b6059f1dcd076306ca2b9567f439dd42146c1e1cffeea23a90a862e436467eb375c2295078ed6b01490d8baac318faea0d2e12  kernel-adaptation-sbj-3.4.108.20200929.1-1.11.2.jolla.armv7hl.rpm
+"

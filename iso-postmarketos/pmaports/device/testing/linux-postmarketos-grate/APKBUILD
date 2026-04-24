@@ -1,0 +1,65 @@
+# Co-Maintainer: Jethrob <jeybee@hotmail.com>
+# Co-Maintainer: Robert Eckelmann <longnoserob@postmarketos.org>
+maintainer="Svyatoslav Ryhel <clamor95@gmail.com>"
+pkgname=linux-postmarketos-grate
+pkgver=6.16.0
+pkgrel=4
+pkgdesc="Linux kernel with experimental patches for Tegra"
+arch="armv7"
+url="https://gitlab.com/grate-driver/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community pmb:kconfigcheck-uefi"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+"
+
+# Source
+_flavor="${pkgname#linux-}"
+_tag="v${pkgver//_/-}-stable"
+_carch="arm"
+_config="config-$_flavor.$arch"
+source="$pkgname-$_tag.tar.bz2::$url/-/archive/$_tag/linux-$_tag.tar.bz2
+	$_config
+	0001-ARM-tegra-fix-wifi-on-Microsoft-Surface-RT.patch"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+f82b6736a1a4832bf12939a6d39ef11a4c1248491b77d031acd7712cd3e43016218a1e0b1944357e0c530db61d77b6d3404ca54da1a594b5fbddbf12cca2f449  linux-postmarketos-grate-v6.16.0-stable.tar.bz2
+7563c17047ea229e97c06545011f3d450b0911407587053012fb7a9e71cc10374b3b4f97ae7feac9a6d8ba4ef8ab07b4d3a6238d447f9f051889f60d27e16391  config-postmarketos-grate.armv7
+0d12323fa469f87c3b801fb2088bb36ce1fbbbff22ffef010f1ae5f8a976af286d0fd7ad8e1ce2e5f677f873f0b7206700cf096ff4f0fb7523d7901e81b049a4  0001-ARM-tegra-fix-wifi-on-Microsoft-Surface-RT.patch
+"

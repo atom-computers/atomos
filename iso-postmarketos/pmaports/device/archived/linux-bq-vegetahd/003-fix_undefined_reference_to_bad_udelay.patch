@@ -1,0 +1,26 @@
+Error:
+/home/pmos/build/src/android_kernel_bq_vegetahd-fc8ba1dc9fe42ee265d8dadcf6655a749a791ec1/drivers/misc/mediatek/video/mt6582/dsi_drv.c:224: undefined reference to `__bad_udelay'
+
+Source: https://github.com/Pablito2020/android_kernel_bq_vegetahd hfcmulti.c:800 :
+ARM arch at least disallows a udelay of
+more than 2ms... it gives a fake "__bad_udelay"
+reference at link-time.
+long delays in kernel code are pretty sucky anyway
+for now work around it using 5 x 2ms instead of 1 x 10ms
+diff --git a/drivers/misc/mediatek/video/mt6582/dsi_drv.c b/drivers/misc/mediatek/video/mt6582/dsi_drv.c
+index 1bc264d9..6b6ad461 100644
+--- a/drivers/misc/mediatek/video/mt6582/dsi_drv.c
++++ b/drivers/misc/mediatek/video/mt6582/dsi_drv.c
+@@ -221,7 +221,11 @@ unsigned int custom_pll_clock_remap(int input_mipi_clock)
+ #endif
+ static void lcm_mdelay(UINT32 ms)
+ {
+-    udelay(1000 * ms);
++    udelay(200 * ms);
++    udelay(200 * ms);
++    udelay(200 * ms);
++    udelay(200 * ms);
++    udelay(200 * ms);
+ }
+ void DSI_Enable_Log(bool enable)
+ {

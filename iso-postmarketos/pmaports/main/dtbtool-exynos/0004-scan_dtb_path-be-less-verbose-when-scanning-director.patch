@@ -1,0 +1,46 @@
+From 129bdc748223beb81a5cc516077909671a86e192 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 30 Jun 2025 16:33:47 +0200
+Subject: [PATCH] scan_dtb_path: be less verbose when scanning directories
+
+And add spaces between each printf arg.
+---
+ dtbtool-exynos.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/dtbtool-exynos.c b/dtbtool-exynos.c
+index 0e40e4036846..017f6d3bc408 100644
+--- a/dtbtool-exynos.c
++++ b/dtbtool-exynos.c
+@@ -129,14 +129,13 @@ static void *scan_dtb_path(char **dtb_files, const char *dtb_path)
+ 	if (files < 0)
+ 		error("failed to open '%s': %s", dtb_path, strerror(errno));
+ 
+-
+-	printf("%s","List of files:\n############################################");
++	printf("Scanning directory %s...\n", dtb_path);
+ 	for (f = 0, i = 0; f < files; f++) {
+-		printf("%s",de[f]->d_name);
++		printf("%s", de[f]->d_name);
+ 
+ 		namlen = strlen(de[f]->d_name);
+ 		if (namlen < 4 || strcmp(&de[f]->d_name[namlen - 4], ".dtb")) {
+-			printf("%s"," : skipped");
++			printf("%s", " : skipped");
+ 			goto next_f;
+ 		}
+ 
+@@ -153,9 +152,8 @@ static void *scan_dtb_path(char **dtb_files, const char *dtb_path)
+ 		snprintf(dtb_files[i], namlen, "%s/%s", dtb_path, de[f]->d_name);
+ next_f:
+ 		free(de[f]);
+-		printf("%s\n","");
++		printf("%s\n", "");
+ 	}
+-	printf("%s\n","End list of files\n#######################################");
+ 
+ 	return 0;
+ }
+-- 
+2.50.0
+

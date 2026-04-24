@@ -1,0 +1,22 @@
+maintainer=""
+pkgname=firmware-ath6kl
+pkgver=0.1
+pkgrel=0
+_commit=2e02576c1dab6fd35118eea1004f50aaaed3794f
+pkgdesc="Firmware for Atheros ath6kl / AR6004"
+url="https://github.com/qca/ath6kl-firmware"
+arch="all"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qca/ath6kl-firmware/archive/$_commit.tar.gz"
+builddir="$srcdir/ath6kl-firmware-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"/lib/firmware
+	mv ath6k "$pkgdir"/lib/firmware
+	# These conflict with linux-firmware-ath6k
+	rm -r "$pkgdir"/lib/firmware/ath6k/AR6004/hw1.*
+}
+sha512sums="
+a73577ac75dfc9d289ee7dc9eae1428cdad277d6e1fdef10425286fb58d7ae6761cafd533c6ce41f743afb75581e38b6b1dcd514cbbb97252708a8589db6c4e2  firmware-ath6kl-0.1.tar.gz
+"

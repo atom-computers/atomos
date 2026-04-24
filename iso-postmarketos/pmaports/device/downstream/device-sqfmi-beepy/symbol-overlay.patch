@@ -1,0 +1,12 @@
+diff --git a/beepy-symbol-overlay/src/PSF.hpp b/beepy-symbol-overlay/src/PSF.hpp
+index 5a8d6ce..775010c 100644
+--- a/beepy-symbol-overlay/src/PSF.hpp
++++ b/beepy-symbol-overlay/src/PSF.hpp
+@@ -1,6 +1,7 @@
+ #pragma once
+
+ #include <memory>
++#include <cstdint>
+ #include <unordered_map>
+
+ class PSF

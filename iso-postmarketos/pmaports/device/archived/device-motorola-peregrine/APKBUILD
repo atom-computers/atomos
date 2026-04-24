@@ -1,0 +1,36 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8226)
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-motorola-peregrine
+pkgdesc="Moto G 4G (2013)"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-motorola-titan
+	linux-postmarketos-qcom-msm8226
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8226
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+5e29fda2c9143124521789521d551593b4e6c7e7805e9b7293ed10201a86851ba3d1ac3b272af5cf1438a02f533cbafc2c62641d38738695d4cc8cb38ff9e246  deviceinfo
+01b3f81f77732b7bc32e01e1c242a30f03b7c02da3aa830e3eb21b6f10458616cc8752d532405c66cd54f488c53962cf1901ebe30019ddcd572ea13445e6d28b  modules-initfs
+"

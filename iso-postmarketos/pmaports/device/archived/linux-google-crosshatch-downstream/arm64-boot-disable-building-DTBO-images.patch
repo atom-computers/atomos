@@ -1,0 +1,27 @@
+From 55832681f3390b0d7868ed1156e2930672fbdd71 Mon Sep 17 00:00:00 2001
+From: Zhuowei Zhang <linux@worthdoingbadly.com>
+Date: Sun, 8 Mar 2020 00:41:12 -0500
+Subject: [PATCH] arm64: boot: disable building DTBO images
+
+postmarketOS doesn't flash the DTBO partition, and doesn't package
+the dtbo tools yet. Just don't build them.
+---
+ arch/arm64/boot/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/Makefile b/arch/arm64/boot/Makefile
+index 87c5d9dd76c1..ef52f38965d5 100644
+--- a/arch/arm64/boot/Makefile
++++ b/arch/arm64/boot/Makefile
+@@ -70,7 +70,7 @@ $(obj)/Image.lz4-dtb: $(obj)/Image.lz4 $(DTB_OBJS) FORCE
+ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+ ifeq ($(CONFIG_BOARD_B1C1),y)
+ $(obj)/dtbo.img: $(obj)/dts/dtboimg.cfg $(DTBO_OBJS) FORCE
+-	$(call if_changed,mkdtimg,4096) # align dtbo.img to 4kB
++	# $(call if_changed,mkdtimg,4096) # align dtbo.img to 4kB
+ else
+ $(obj)/dtbo.img: $(obj)/dts/dtboimg-sdm670.cfg $(DTBO_OBJS) FORCE
+ 	$(call if_changed,mkdtimg,4096) # align dtbo.img to 4kB
+-- 
+2.20.1
+

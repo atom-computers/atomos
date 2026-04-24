@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos7885-a7y18lte_defconfig
+
+pkgname=linux-samsung-a7y18lte
+pkgver=4.4.177
+pkgrel=0
+pkgdesc="Samsung Galaxy A7 (2018) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a7y18lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool-exynos"
+
+# Source
+_repository="Universal7885_native_linux"
+_commit="d39c5e1cbea46c97e2f6adea1b481c64b5f558cc"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/M0Rf30/$_repository/archive/$_commit.tar.gz
+	kernel-define-android-version.patch
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	# Needed for the SoC's power management. When booting without it, the kernel is
+	# unusably slow and glitchy.
+	objcopy -I binary -O ihex firmware/exynos7885_acpm_fvp.fw firmware/exynos7885_acpm_fvp.fw.ihex
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	dtbTool-exynos --pagesize 2048 --platform 0x50a6 --subtype 0x217584da \
+		-o "$_outdir/arch/arm64/boot/dtb.img" $(find "$_outdir/arch/arm64/boot/dts/exynos/" -name *a7y18lte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$_outdir/arch/arm64/boot/dtb.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+21fbd2ed1c64a0c715c0ffac75c1803b1dcc81984b2399d58d5be08916e6fc75fb2717648d2f1a2d558226f86485f652497b226d5592653de74ca2942cbe474c  linux-samsung-a7y18lte-d39c5e1cbea46c97e2f6adea1b481c64b5f558cc.tar.gz
+f3161f62a6ba0de56342b1410e509dce8320e43f788ae2670ebd59d93e5504aab77a913eecdebae33ff9135228869c5fd0559211c511f503fdc25f2fbab48351  kernel-define-android-version.patch
+84d3326efdbb5aee7380844034e7bf531c3d30a977f88dc4de3f1a074a18c2c6ec5855bffd604a214b724d7323fa1384266e686b71ab8ef1b6beb04fba27508c  config-samsung-a7y18lte.aarch64
+"

@@ -1,0 +1,11 @@
+atmel-mxt-ts
+cros-ec-keyb
+elan-i2c
+elants-i2c
+gpu-sched
+hid-generic
+hid-multitouch
+i2c-hid-of
+i2c-hid-of-goodix
+i2-hid-of
+sbs-battery

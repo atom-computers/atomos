@@ -1,0 +1,167 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Federico Amedeo Izzo <federico@izzo.pro>"
+pkgname=device-clockworkpi-uconsole-rpi
+pkgdesc="Clockwork Tech ClockworkPi uConsole with Raspberry Pi compute modules"
+pkgver=9
+# commit to fork of kernel with drivers maintained by ak-rex
+_commit=d340a0416d34bf94591b45b50c5538aecbf5b09b
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!archcheck"
+depends="
+	linux-rpi
+	postmarketos-base
+	raspberrypi-bootloader
+"
+makedepends="
+	devicepkg-dev
+	gcc
+	dtc
+	linux-rpi-dev
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-openrc
+	$pkgname-x11
+	$pkgname-akms
+"
+source="
+	clockworkpi-linux-$_commit.tar.gz::https://github.com/ak-rex/ClockworkPi-linux/archive/$_commit.tar.gz
+
+	deviceinfo
+	modules-initfs
+	usercfg.txt
+	95-vchiq-permissions.rules
+	xorg.conf
+
+	driver-makefile.in
+	driver-akmbuild.in
+"
+builddir="$srcdir"/ClockworkPi-linux-$_commit
+
+
+# Location of out-of-tree drivers to be built using AKMS
+# Set by looking at diff of bcm2711_defconfig in kernel fork
+# where added configs can be tied to relevant files
+_drivers="
+	drivers/power/supply/axp20x_usb_power.c
+	drivers/mfd/axp20x.c
+	drivers/iio/adc/axp20x_adc.c
+	drivers/iio/adc/ti-adc081c.c
+	drivers/mfd/axp20x-i2c.c
+	drivers/regulator/axp20x-regulator.c
+	drivers/input/misc/axp20x-pek.c
+	drivers/power/supply/axp20x_ac_power.c
+	drivers/power/supply/axp20x_battery.c
+	drivers/video/backlight/ocp8178_bl.c
+	drivers/gpu/drm/panel/panel-cwd686-cm3.c
+	drivers/gpu/drm/panel/panel-cwd686.c
+	drivers/gpu/drm/panel/panel-cwu50-cm3.c
+	drivers/gpu/drm/panel/panel-cwu50.c
+"
+
+# Location of relevant overlays to be built
+_dtso="
+	arch/arm/boot/dts/overlays/clockworkpi-uconsole-overlay.dts
+	arch/arm/boot/dts/overlays/clockworkpi-uconsole-cm5-overlay.dts
+	arch/arm/boot/dts/overlays/clockworkpi-custom-battery-overlay.dts
+"
+provides="device-clockworkpi-uconsole-cm4=$pkgver-r$pkgrel"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	local _modules=
+	local _objects=
+	local _file=
+
+	# setup akms folder
+	# this also generates information to complete AKMBUILD and Makefile
+	mkdir -p "$builddir"/akms "$builddir"/dtso
+	for driver in $_drivers; do
+		_file=${driver##*\/}
+		cp "$builddir"/$driver "$builddir"/akms/$_file
+		_modules="$_modules ${_file/.c/.ko}"
+		_objects="$_objects ${_file/.c/.o}"
+	done
+	sed -e "s/%%MODVER%%/$pkgver/" -e "s/%%DRIVER_MOD%%/$_modules/" "$srcdir"/driver-akmbuild.in > "$builddir"/akms/AKMBUILD
+	sed "s/%%DRIVER_OBJ%%/$_objects/" "$srcdir"/driver-makefile.in > "$builddir"/akms/Makefile
+
+	# setup dtso folder
+	for dtso in $_dtso; do
+		_file=${dtso##*\/}
+		cp "$builddir"/$dtso "$builddir"/dtso/$_file
+	done
+
+	# generate dtbo for uconsole
+	_kernel_ver=$(find /lib/modules -maxdepth 1 -mindepth 1 | grep rpi | sed 's|.*/||g')
+	echo ">>> Generating dtbo against $_kernel_ver"
+	for dts in "$builddir"/dtso/*.dts; do
+		cpp -nostdinc -I "/usr/src/linux-headers-$_kernel_ver/include" -I arch -undef -x assembler-with-cpp $dts $dts.preprocessed
+		dtc -O dtb -o ${dts/-overlay.dts/.dtbo} $dts.preprocessed
+	done
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/usercfg.txt "$pkgdir"/boot/usercfg.txt
+	install -Dm644 "$srcdir"/95-vchiq-permissions.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/95-vchiq-permissions.rules
+	install -Dm644 "$builddir"/dtso/*dtbo -t "$pkgdir"/boot/overlays
+}
+
+# Test build of drivers against kernel
+check() {
+	_kernel_ver=$(find /lib/modules -maxdepth 1 -mindepth 1 | sed 's|.*/||g')
+	for ver in $_kernel_ver; do
+		echo ">>> Testing module build against $ver"
+		cp -R "$builddir"/akms "$builddir"/akms-$ver
+		(
+			cd "$builddir"/akms-$ver
+			make KVER=$ver
+		)
+	done
+}
+
+akms() {
+	pkgdesc="uConsole kernel module (AKMS)"
+	depends="akms linux-rpi-dev build-base"
+	install_if="$pkgname=$pkgver-r$pkgrel"
+
+	mkdir -p "$subpkgdir"/usr/src
+	cp -R "$builddir"/akms "$subpkgdir"/usr/src/clockworkpi-rpi
+	chmod -R u=rwX,go=rX-w "$subpkgdir"/usr/src/clockworkpi-rpi
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/Bluetooth firmware"
+	depends="linux-firmware-brcm"
+	mkdir "$subpkgdir"
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-monitor.conf
+}
+
+openrc() {
+	pkgdesc="$pkgdesc (openrc)"
+	depends="openrc"
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+
+	mkdir -p "$subpkgdir"
+}
+sha512sums="
+a47b3819274fca4a5c554923391d73f98ff0d4e7b78481e288e1ea401ef8e71287ad8845940ad63e482bb205dcad8b2331a3a08b9d838c2a8ec1ec18b8d18dc9  clockworkpi-linux-d340a0416d34bf94591b45b50c5538aecbf5b09b.tar.gz
+f90a20cde37c64805450781b0663b3f18483220aa51641d333bf93f308a17f43e486d16759fdd3ff97ff46df2993d97f4288883807696b263d5b5f1a69b88000  deviceinfo
+3e71320c2ff362761000abd929eeb66e7da21691f0e30a46bf9da0a60f2dfc99fd496c0108bc53e94d00221d4e3b7204da01b46324b69c814bed07fe42692413  modules-initfs
+bc2bfea04073895f02e21d9248eb3f77910e95022d65bab7d80fd12484a6523d670f81d0aae2f4e811b7ab29f8537d73d87891572c212e647c69f1e98916685b  usercfg.txt
+7e5505cb07d5b4a81bd28443d508336b5c547356538f1c06f91ed93ad0d7d456d4f74f1d24df5a2e08c17e74f0a66607352ac4874e967e9a91dfec9522d2d58d  95-vchiq-permissions.rules
+15cde27e41304f988009e3a1cbc4bb6a85b9d09538c727e9c22e1ec8a45d025b4be5d0064d7d7bba1988006ad291c06c8aec8bcc974f0689fbd0d187f8dc6979  xorg.conf
+51a1fc5ba9336e784fe8dfb97eed8d3f51fd181a9a76c5266e227e1670aa423fdaec04b869795a2abd5afca6d472a1f107f30a0f0efd242ee16c8910773ddcc2  driver-makefile.in
+d36e2b1f9187f8269d557d867ccf6d5abd5925ea34c7a5c0b97dcdc96e3b76955701946c68309240e3bb3713f7466c5756806734fab4a8c2c2d161aab7ab1b26  driver-akmbuild.in
+"

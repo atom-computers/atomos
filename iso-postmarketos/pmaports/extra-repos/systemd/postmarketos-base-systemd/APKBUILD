@@ -1,0 +1,123 @@
+# pmbootstrap installs this, if systemd is selected in "pmbootstrap init".
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-base-systemd
+pkgver=75
+pkgrel=0
+pkgdesc="Meta package for running postmarketOS with systemd"
+url="https://postmarketos.org"
+# armhf: pmb#2618
+arch="noarch !armhf"
+license="GPL-3.0-or-later"
+options="!check"
+triggers="$pkgname.trigger=/usr/lib/systemd/system:/usr/lib/systemd/user"
+
+# systemd <-> util-linux is an expected cycial dependency
+# Also we can't parse .note.dlopen yet.
+#
+# Optional dependencies by systemd, but needed on an actual system:
+# less
+# login-utils
+# so:libkmod.so.2
+#
+# linux-pam:
+# - pam_systemd.so is added since 1.7.0-r1
+# - pam_limits.so isn't used in alpine/pmOS, so it isn't supported and tested.
+#   Additionally pam_limits.so can be compiled with (e)logind support, which
+#   isn't currently done in aports. In the unlikely case this is changed
+#   upstream and elogind-libs are used.
+depends="
+	dbus-broker
+	kbd
+	kmod
+	less
+	linux-pam>=1.7.0-r1
+	login-utils
+	polkit>9990
+	rtkit
+	so:libkmod.so.2
+	systemd
+	systemd-services
+	systemd-timesyncd
+	treescan
+	tzdata
+	"
+provides="postmarketos-base-init"
+provider_priority=100
+replaces="alpine-baselayout postmarketos-baselayout postmarketos-base systemd systemd-logind"
+replaces_priority=100
+install="
+	$pkgname.post-install
+	$pkgname.post-upgrade
+	$pkgname.pre-upgrade
+	"
+subpackages="
+	$pkgname-resolved
+	"
+
+_source644="
+	etc/profile.d/20locale.sh
+	etc/systemd/logind.conf
+	usr/share/mkinitfs/files-extra/01-initramfs-base-systemd.files
+	usr/lib/NetworkManager/conf.d/50-dns.conf
+	usr/lib/systemd/journald.conf.d/10-postmarketos.conf
+	usr/lib/systemd/system-preset/90-base.preset
+	usr/lib/systemd/system/-.slice.d/10-oomd-defaults.conf
+	usr/lib/systemd/system/system.slice.d/10-oomd-defaults.conf
+	usr/lib/systemd/system/user@.service.d/10-oomd-defaults.conf
+	usr/lib/systemd/user/app.slice.d/10-oomd-defaults.conf
+	usr/lib/systemd/user-preset/90-base.preset
+	usr/lib/systemd/resolved.conf.d/disable-dnsovertls.conf
+	usr/lib/systemd/resolved.conf.d/disable-mdns.conf
+"
+
+_source755="
+	etc/apk/commit_hooks.d/postmarketos-base-systemd
+	usr/bin/setup-timezone
+	usr/libexec/systemd-apk-trigger
+"
+
+flatpath() {
+	local i
+	for i in $@; do
+		echo "rootfs-$i" | sed s./.-.g
+	done
+}
+source="$(flatpath $_source644 $_source755)"
+
+package() {
+	local i
+	for i in $_source644; do
+		install -Dm644 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source755; do
+		install -Dm755 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+}
+
+resolved() {
+	install_if="$pkgname=$pkgver-r$pkgrel systemd-resolved"
+	install="$subpkgname.post-install"
+
+	amove usr/lib/systemd/resolved.conf.d/disable-dnsovertls.conf
+	amove usr/lib/systemd/resolved.conf.d/disable-mdns.conf
+	amove usr/lib/NetworkManager/conf.d/50-dns.conf
+}
+
+sha512sums="
+084f6256e712d33e605c4a1d794ed6ed2d3f31c7ddce5baaad7f44ba74f371f969a16e06f25884a71e4e7216496df0ff0afb6d3246e23932681ad64abfb96975  rootfs-etc-profile.d-20locale.sh
+2faac294bb632762e247b850f09ff4b544ccff6c462efd8d4faca71ba30bdfa9c460377a0dc88e92c5dbbe251017d164064a56ac0e0410f224b45d4f5f81866c  rootfs-etc-systemd-logind.conf
+15423bfda57c90ab62fe69865ca4072a0aeb83bf77d9c278257e346f4da81843d010b41003c91ae9f3fcb1c67447645e7c19078eea2bf11312051e6ad7523ad1  rootfs-usr-share-mkinitfs-files-extra-01-initramfs-base-systemd.files
+94063e3a3f983b7613d9de6bfc067096f79b12688f45667faf968f9a9bae194c4c8e554311f2ab5614edcc4d4499f6d30aa965a67b7417c26ce4d07edc847178  rootfs-usr-lib-NetworkManager-conf.d-50-dns.conf
+b7c3e70f5e4d88d6df6a8d58f4bb6af3d3051c5130cf13ad86a491fcbf7a69ae33ba31d663946c35ddaed03a16b6eb9d9d4b7cabcb58bfec7a254920ff375178  rootfs-usr-lib-systemd-journald.conf.d-10-postmarketos.conf
+0e9b203870d0f533a9ef1587e42fe7f83ee8e8cc32893e666f79409e0741101d60564cadbc97e127c75f516a21c08b1283d05ac6f102aa7a6a0f4407d6ea07df  rootfs-usr-lib-systemd-system-preset-90-base.preset
+bde7052939d1ddde22fe1df86439d3f1b0cd41810911cee7acf26aac08afe1610360cbbd257b3c1a2e5e7409dff27ade8f3a302a38cd1b99c6cc6eed4cc64a78  rootfs-usr-lib-systemd-system--.slice.d-10-oomd-defaults.conf
+bde7052939d1ddde22fe1df86439d3f1b0cd41810911cee7acf26aac08afe1610360cbbd257b3c1a2e5e7409dff27ade8f3a302a38cd1b99c6cc6eed4cc64a78  rootfs-usr-lib-systemd-system-system.slice.d-10-oomd-defaults.conf
+c5252710d8e2f95f5c216cce17737bb14e112c7f1e0b73f085ac0bc3da5a718bb831cc62c0c62e7e5e99337fdcc5c4ace76c5c11bb0ae1f242181ce6829e4fd3  rootfs-usr-lib-systemd-system-user@.service.d-10-oomd-defaults.conf
+4217385ab8e0d0e53a6f6eb2ad0ef5c1ae88cab431c9fdca3528f147241edfefe7eec8f2927670dcf79c6f853d2c8a930782fad7e2a28ef6575b55df115f2f83  rootfs-usr-lib-systemd-user-app.slice.d-10-oomd-defaults.conf
+4a7fbb021c550a430487637947a74eeee532f3565341aaea8a7294cf8c8308a851c3d2166494e63c5ff9f31b293a8e4c8397059be17d875b8c845682816e8277  rootfs-usr-lib-systemd-user-preset-90-base.preset
+e49972d276441e9da284315bab5f70d8d25ccba5e43d7e7ec6607c34a3d4dfa512f7303d5ce41076819ef24f5dced5acc74001b4d569258269de34da27912466  rootfs-usr-lib-systemd-resolved.conf.d-disable-dnsovertls.conf
+93ab180810dbd2a1477f7ea0f0959be90f099272fe5840030a0772771c97a066b70068c476d32c6a4610b8f7b9fc5bfcf1d7a93f071cec026553ac6a3b8b5324  rootfs-usr-lib-systemd-resolved.conf.d-disable-mdns.conf
+6ff3fbd88493e50de5821c6e3db92623b38de52be4e8e967f4f297d8f70e31a86d91f1243b973387b80c8520edcc89a8233db6f234bca22a56ee61a1b4333670  rootfs-etc-apk-commit_hooks.d-postmarketos-base-systemd
+605df1f004783d2e0ec5dd99a688bca27502c8c24bc05fb4dc26589b2070b0fbd1cf9bd56e6861d7cda2f8ac8147e7eb040acfd886185c01c8cf9de8b1ce2dcd  rootfs-usr-bin-setup-timezone
+d96898efb28508b172f148c0a468a7dddd363dde94efea7c2274b9f746544b4e8bf7905ce3f8134a97c1eb33210ad97380f3da452082f346f1f3f0f665f79d47  rootfs-usr-libexec-systemd-apk-trigger
+"

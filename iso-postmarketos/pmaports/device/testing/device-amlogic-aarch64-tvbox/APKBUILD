@@ -1,0 +1,111 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=device-amlogic-aarch64-tvbox
+pkgdesc="Amlogic AArch64 TV box"
+pkgver=12
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	dtc
+	postmarketos-base
+	soc-amlogic-aarch64
+	u-boot-tools
+"
+makedepends="devicepkg-dev"
+source="
+	boot-image.its
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+subpackages="
+	$pkgname-kernel-p201:kernel_p201
+	$pkgname-kernel-p212:kernel_p212
+	$pkgname-kernel-p241:kernel_p241
+	$pkgname-kernel-p281:kernel_p281
+	$pkgname-kernel-ugoos-am3:kernel_ugoos_am3
+	$pkgname-kernel-videostrong-kii-pro:kernel_videostrong_kii_pro
+	$pkgname-kernel-xiaomi-aquaman:kernel_xiaomi_aquaman
+"
+provides="device-amlogic-tvbox=$pkgver-r$pkgrel"
+replaces="device-amlogic-tvbox"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+aml_boot_prep() {
+	# uEnv.ini: Used to set kernel cmdline, and DTB if booting a legacy uImage
+	mkdir -p "$2"/boot/
+	echo "bootargs=console=tty0 console=ttyAML0,115200n8" > "$2"/boot/uEnv.ini
+	echo "pmos_env_dtb=$1" >> "$2"/boot/uEnv.ini
+
+	# FIT image used to boot Amlogic devices if their vendor U-Boot build supports it
+	mkdir -p "$2"/usr/share/u-boot/amlogic-tvbox
+	sed "s@\\[\\[\\[DEVICETREE\\]\\]\\]@/boot/dtbs/amlogic/$1@" "$srcdir/boot-image.its" > "$2"/usr/share/u-boot/amlogic-tvbox/boot-image.its
+	chmod 644 "$2"/usr/share/u-boot/amlogic-tvbox/boot-image.its # Perms fixup
+}
+
+kernel_p201() {
+	pkgdesc="Kernel for Amlogic P201-based TV box (S905)"
+	depends="linux-postmarketos-amlogic u-boot-amlogic-s905-tv"
+	aml_boot_prep "meson-gxbb-p201.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_p212() {
+	pkgdesc="Kernel for Amlogic P212-based TV box (S905X)"
+	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
+	aml_boot_prep "meson-gxl-s905x-p212.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_p241() {
+	pkgdesc="Kernel for Amlogic P241-based TV box (S805X/S805Y)"
+	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
+	aml_boot_prep "meson-gxl-s805x-p241.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_p281() {
+	pkgdesc="Kernel for Amlogic P281-based TV box (S905W)"
+	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
+	aml_boot_prep "meson-gxl-s905w-p281.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_ugoos_am3() {
+	pkgdesc="Kernel for Ugoos AM3 (S912)"
+	depends="linux-postmarketos-amlogic"
+	aml_boot_prep "meson-gxm-ugoos-am3.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_videostrong_kii_pro() {
+	pkgdesc="Kernel for Videostrong KII Pro (S905)"
+	depends="linux-postmarketos-amlogic u-boot-amlogic-s905-tv"
+	_pmb_recommends="firmware-videostrong-kii-pro"
+	aml_boot_prep "meson-gxbb-kii-pro.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_xiaomi_aquaman() {
+	pkgdesc="Kernel for Xiaomi Mi TV Stick (S805Y)"
+	depends="linux-postmarketos-amlogic soc-amlogic-aarch64-boot linux-firmware-meson linux-firmware-brcm linux-firmware-rtl_bt"
+	aml_boot_prep "meson-gxl-s805y-xiaomi-aquaman.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+17e803e341c362f54df2116125549ededc41deb89cd6f57974133e18053b30af35fc2b60cdb732b10efadf95234f154bdd7b32410c139f0166adfe9b4ffe02dd  boot-image.its
+566aa71f4d36c5834abb69a88f6d2606f91ad92168c6f971de9148c3c9c99b13a316a2591b95e96a43ec3ff6a45341017495ac28599e50f041985a0f1cb5f3eb  deviceinfo
+9b9c3d26f5dea76d58b7966d1a9ed7e19941d67d8b2fc4d8577aa11900b26a0f9230e158f3f3a99250624bd269da86c1ed1a1095530af0155eae008fd6c9646d  kernel-cmdline.conf
+52948c2884a6f6384e12b7a598f70878526d0d3293c214425170145231144ec7de805c038641741a4a5d75b50e554f6a3fa3769784a674217ed032f9b6a233c8  modules-initfs
+"

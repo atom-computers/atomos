@@ -1,0 +1,37 @@
+# Archived: does weird things, not needed for mainline kernels
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=u-boot-kobo-clara-downstream
+pkgver=2016.03
+pkgrel=0
+pkgdesc="U-Boot for Kobo Clara HD"
+arch="armv7"
+_carch="arm"
+license="GPL-2.0"
+url="https://github.com/pmsourcedump/kobo_clara_uboot"
+options="!check"
+
+_repository="kobo_clara_uboot"
+_commit="5af329fef886e21b777426d7bf5c6162e2317de7"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/$_repository/archive/$_commit.tar.gz
+	u-boot-env.txt
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+build() {
+	make ARCH="$_carch" mx6sll_ntx_lpddr2_512m_config
+	make ARCH="$_carch"
+	tools/mkenvimage -p 0 -s 8192 -o u-boot-env.bin "$srcdir/u-boot-env.txt"
+}
+
+package() {
+	install -D -m644 "$builddir/u-boot.bin" "$pkgdir/usr/share/u-boot/kobo-clara/u-boot.bin"
+	install -D -m644 "$builddir/u-boot.imx" "$pkgdir/usr/share/u-boot/kobo-clara/u-boot.imx"
+	install -D -m644 "$builddir/u-boot-env.bin" "$pkgdir/usr/share/u-boot/kobo-clara/u-boot-env.bin"
+}
+
+sha512sums="
+1712f5a922b44a8b80e49e00969f0948cd62864adedfb419d9d2f6ccf765b432f8632787f7c6d1502ec0aa6afb7b27bf4193733c2345ff4a0378b43b5b10643a  u-boot-kobo-clara-downstream-5af329fef886e21b777426d7bf5c6162e2317de7.tar.gz
+43c006f8198ac61e5c73dd4a2d583c5ab1da76b76492be9bee385096bdf33e3a42c8058707e8c2f61342faae152ba57f5046909d9ed403f74589d6604f77eb0d  u-boot-env.txt
+"

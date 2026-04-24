@@ -1,0 +1,77 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/gtexswifi-dt_defconfig
+maintainer="19atlas <warfarin@vern.cc>"
+pkgname=linux-samsung-gtexswifi
+pkgver=3.10.108
+pkgrel=1
+pkgdesc="Samsung Galaxy Tab A 7.0 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-gtexswifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-sprd
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+"
+
+# Source
+_repository="android_kernel_samsung_gtexswifi"
+_commit="d2e4ebf84f685a87acd90650f998facdefe06c51"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/bfourk/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	replace-solaris-style-directive.patch
+	printk-fix.patch
+	x11-fix.patch
+	fix-check-lxdialog-makefile.patch
+	fix-check-lxdialog.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-sprd -p "$_outdir/scripts/dtc/" \
+		-o "$_outdir/arch/$_carch/boot"/dt.img \
+		"$_outdir/arch/$_carch/boot/dts/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+3f1e93efa820a0967d601674f4b9204da88631fec3c5766d014b491c303f548fff7d5fbf058fe5e44cb88400cd9dda62eeaff70d934ba8544e1d31ff937eb2c8  linux-samsung-gtexswifi-d2e4ebf84f685a87acd90650f998facdefe06c51.tar.gz
+8394c3961b08a5ce08eaa9ba876537ed870c435dbb6db3732f476c83de1e6ad7471347cb1b824a2f07382c02802b3c54ec5379e342ccfb07ec144c912673e39f  config-samsung-gtexswifi.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+a4196e0184b3bb1bc8d0cf4fae931dab623bb9cd02732758bb8ac1d0588682960f58d4dba8ccebb1377e853ca5c135d2a700750228d54ac95a33d1cd44533bca  replace-solaris-style-directive.patch
+292a1a72cf956f0911918e5d07dccb937312838dc43c9ddd2030e96a1cf772cbf0c92ddde41ecfd05ce310f5c119d08b4992d31aabae3775425668eb74d91f35  printk-fix.patch
+1bab85f34cb955f25eae3c28e519c325dca3b1b87ad25c15a78f5538a775b3bc2699b615bfc5182e1cb0fdb4520999ff7a0ee03fe3c6a1cef70baa4fb3809b40  x11-fix.patch
+c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+"

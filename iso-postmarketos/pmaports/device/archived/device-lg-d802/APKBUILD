@@ -1,0 +1,26 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-d802
+pkgdesc="LG G2"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-lg-d802 mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+c3da0e80a51ef410c066370675591c868c2ac63182a3f222bb146e36a1bda19b50f615d6285fe06ad25e67fade2ca2237f23d5ab06bffdda4672af31bd958d6a  deviceinfo
+1af4fa5857be3f4656c7efb446148060fdb225436d291a4b96a9df801a511651d42a5e213e5df43e7b901ad8d83da0d2a1f8c1740366b8b67a9174d7cfd0b166  kernel-cmdline.conf
+"

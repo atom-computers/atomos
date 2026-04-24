@@ -1,0 +1,4 @@
+# Disable alsa-restore.service as it results in main audio speaker not working:
+# https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/3747
+disable alsa-restore.service
+disable alsa-state.service

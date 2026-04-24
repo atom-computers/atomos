@@ -1,0 +1,31 @@
+maintainer=""
+pkgname=firmware-samsung-milletwifi
+pkgver=1
+pkgrel=0
+_name="Samsung Galaxy Tab 4 8.0"
+pkgdesc="Firmware for $_name"
+url="https://postmarketos.org"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_repository="firmware-samsung-milletwifi"
+_commit=5e4b9570d31203d1f19fb5dbf591fb7a5b35a49b
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/susurrus/$_repository/-/archive/$_commit.tar.gz"
+builddir="$srcdir/$_repository-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="$_name WiFi/BT firmware configuration"
+	install -Dm644 "$builddir"/system/wlan/prima/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+21bffdc23294e118e622e70e3ed66af164aebeb0cf97488f5c55fca06129822085202f7cc27e5facd7ae54d7192a1c9e7ff0fe58abf5fc1e4e9e7db49481a2d3  firmware-samsung-milletwifi-5e4b9570d31203d1f19fb5dbf591fb7a5b35a49b.tar.gz
+"

@@ -1,0 +1,75 @@
+# Kernel config based on: arch/arm/configs/lineage_zeal_defconfig
+
+pkgname=linux-nokia-sand
+pkgver=3.4.0
+pkgrel=5
+pkgdesc="Lumia 620 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="nokia-sand"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_nokia_msm8x27"
+_commit="28fe134696ce748ddaaf3633d3e345d3509276bd"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Android4Lumia/android_kernel_nokia_msm8x27/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	psmouse_base.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	# kernel.release
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	# zImage (find the right one)
+	cd "$builddir/arch/$_carch/boot"
+	_target="$pkgdir/boot/vmlinuz"
+	for _zimg in zImage-dtb Image.gz-dtb *zImage Image; do
+		[ -e "$_zimg" ] || continue
+		msg "zImage found: $_zimg"
+		install -Dm644 "$_zimg" "$_target"
+		break
+	done
+	if ! [ -e "$_target" ]; then
+		error "Could not find zImage in $PWD!"
+		return 1
+	fi
+}
+sha512sums="
+6a576c9bfb645083d1d8477daae647ee44f15732414cb73a585d1c7e27c5481ccdcd98d6e8fe100b61400f1c3186a3339c2d438fb605177e1d11832e93dbc70b  linux-nokia-sand-28fe134696ce748ddaaf3633d3e345d3509276bd.tar.gz
+2486c86d2debe239a339d03a7ebddd34ef32a19694f88c71373d6ae3a08fd7ce21ee408225236d9ca25ff9a35c95e9df288f16655709a0c4e5682256c99c6c25  config-nokia-sand.armv7
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+f7e31cfe422696922aec52002e56c58103183966edee3bb8e1995d33f8d37b07c32280a8ecc213874e358a6ff367418556a4542fba7e3c17e4b8e82e05c3a543  psmouse_base.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

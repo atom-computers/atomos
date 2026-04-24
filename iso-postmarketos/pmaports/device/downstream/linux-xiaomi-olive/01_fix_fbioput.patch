@@ -1,0 +1,29 @@
+diff --git a/drivers/video/fbdev/msm/mdss_fb.c b/drivers/video/fbdev/msm/mdss_fb.c
+index 67f600aa77fa..c1e3c316e3ad 100644
+--- a/drivers/video/fbdev/msm/mdss_fb.c
++++ b/drivers/video/fbdev/msm/mdss_fb.c
+@@ -4232,13 +4232,13 @@ static int mdss_fb_check_var(struct fb_var_screeninfo *var,
+ 	if (var->yoffset > (var->yres_virtual - var->yres))
+ 		return -EINVAL;
+ 
+-	if (info->mode) {
++	/*if (info->mode) {
+ 		const struct fb_videomode *mode;
+ 
+ 		mode = fb_match_mode(var, &info->modelist);
+ 		if (mode == NULL)
+ 			return -EINVAL;
+-	} else if (mfd->panel_info && !(var->activate & FB_ACTIVATE_TEST)) {
++	} else */ if (mfd->panel_info && !(var->activate & FB_ACTIVATE_TEST)) {
+ 		struct mdss_panel_info *panel_info;
+ 		int rc;
+ 
+@@ -4386,7 +4386,7 @@ static int mdss_fb_set_par(struct fb_info *info)
+ 
+ 		mode = fb_match_mode(var, &info->modelist);
+ 		if (!mode)
+-			return -EINVAL;
++			mode = info->mode;
+ 
+ 		pr_debug("found mode: %s\n", mode->name);
+ 

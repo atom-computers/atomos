@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-nokia-ant
+pkgdesc="HMD Global Nokia 1"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	android-tools
+	linux-nokia-ant
+	msm-fb-refresher
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	generate_signed_boot.sh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm755 "$srcdir/generate_signed_boot.sh" "$pkgdir/usr/share/mkinitfs/generate_signed_boot.sh"
+}
+
+sha512sums="
+103386bf33799d9126531d589af25522214e25d06a4e334bd189c54deef40e3ef5c08291f6797cfa86fd02fddc6b92a55d3527b3fbd3973abd7194c2c1138c1e  deviceinfo
+53613c64bafe42607cca461b62ed97a3f653b50f0cad9b38c13f61ef12438c7c624afb8ecc7cc53d8c9de45f270a0456f43ee003df20f17928d088e15735504e  kernel-cmdline.conf
+ec3d18c68c816ebf2bfa7f0ad2fd158d14ca9fecabc56a6f8961c0a11be8b9af67722bc52ecdb3276abc06dd33f444d29fc3bf95660a21d6dacfd37a276d7d81  generate_signed_boot.sh
+"

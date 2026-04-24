@@ -1,0 +1,22 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Purism Librem 5 Phone"
+deviceinfo_manufacturer="Purism"
+deviceinfo_codename="purism-librem5"
+deviceinfo_year="2019"
+deviceinfo_dtb="freescale/imx8mq-librem5-r2 freescale/imx8mq-librem5-r3 freescale/imx8mq-librem5-r4"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1440"
+
+# Bootloader related
+deviceinfo_flash_method="uuu"
+deviceinfo_sd_embed_firmware="u-boot/librem5/phone-boot.img:33"
+deviceinfo_boot_part_start="4096"

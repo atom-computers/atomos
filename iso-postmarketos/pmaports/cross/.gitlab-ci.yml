@@ -1,0 +1,21 @@
+cross-gcc-tests:
+  extends: .package-test
+  tags: [qemu]
+  before_script:
+    - wget "https://gitlab.postmarketos.org/postmarketOS/ci-common/-/raw/main/install_pmbootstrap.sh"
+    - sh ./install_pmbootstrap.sh
+  script:
+    - su pmos -c "pmbootstrap build gcc-aarch64"
+    - su pmos -c "pmbootstrap build --arch=aarch64 hello-world --force"
+    - su pmos -c "pmbootstrap build --arch=aarch64 iskey --force"
+    - su pmos -c "pmbootstrap build --arch=aarch64 pbsplash --force"
+    - su pmos -c "pmbootstrap build --arch=aarch64 gcc-x86_64"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - cross/gcc-x86_64/APKBUILD
+  artifacts:
+    when: always
+    paths:
+      - log.txt
+    expire_in: 1 week

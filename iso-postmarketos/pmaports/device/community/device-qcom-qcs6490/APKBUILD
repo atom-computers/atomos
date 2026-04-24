@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Aelin <aelin@postmarketos.org>"
+pkgname=device-qcom-qcs6490
+pkgdesc="Generic QCS6490"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	dtbloader
+	firmware-thundercomm-rubikpi3
+	hexagonrpcd
+	linux-firmware-qcom
+	linux-firmware-rtl_nic
+	linux-postmarketos-qcom-sc7280
+	postmarketos-base
+	systemd-boot
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-vulkan
+"
+
+source="
+	30-initramfs-firmware-qcom-qcs6490.files
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir/30-initramfs-firmware-qcom-qcs6490.files" -t \
+		"$pkgdir"/usr/share/mkinitfs/files
+}
+
+vulkan() {
+	pkgdesc="Vulkan support for freedreno"
+	install_if="$pkgname=$pkgver-r$pkgrel vulkan-loader"
+	depends="mesa-vulkan-freedreno"
+
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+3287fbc2155133f350896028c205ebba910a491e8d4e951391ce414c8aa4f49801c80720df2c672894215e2a81ae65cfd2753dea1f76ff92e80e106cf211224f  30-initramfs-firmware-qcom-qcs6490.files
+f59289f88a4fabae73951a50d1ce54009800b409e6b9743a14a2ef57ce0fa8658f1fc009995e6188e1a644b7b3147263c16b9f8eedab1285f17f00d25d5f2084  deviceinfo
+b011963364382785cfc3b80ec380007ab8ff413b772421de40d2004f2f4bbe4bbfb0ed2ff038f1060329689edfedbfe7269e690309317db18d6c2c3ce08dcb5a  kernel-cmdline.conf
+a8c659732a4fa105baed0c94fb8d83cca84cb13392cd051765684f44a04e2ac0fd027ca7f363dcf137d2cc2a762bfcae257ff6c9728de211ea07230fceddf3dd  modules-initfs
+"

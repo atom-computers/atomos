@@ -1,0 +1,2 @@
+# Load actual boot script from the boot partition
+bootcmd=load mmc 0:1 0x80800000 boot.scr ; source

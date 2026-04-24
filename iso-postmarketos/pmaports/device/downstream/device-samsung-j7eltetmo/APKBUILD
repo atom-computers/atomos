@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-j7eltetmo
+pkgdesc="Samsung Galaxy J7 (T-Mobile)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-j7eltetmo
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream-disable-udev-v4l
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+
+sha512sums="
+040f7cf3518463eb6b63a647629af269bc5ee7a96b34b0607ad9fe8bcafdc08a2d839fd9aaf5b2b9c004768cf2ad0d01129555f7f697761e85ed70fc8e4f79a7  deviceinfo
+"

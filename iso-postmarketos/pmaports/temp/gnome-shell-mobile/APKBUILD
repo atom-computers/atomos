@@ -1,0 +1,153 @@
+# Forked from Alpine to add phone adaptivity patches
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=gnome-shell-mobile
+pkgver=48.0
+pkgrel=6
+pkgdesc="GNOME shell"
+url="https://wiki.gnome.org/Projects/GnomeShell"
+# armhf: gjs -> mozjs
+arch="all !armhf"
+license="GPL-2.0-or-later"
+depends="
+	accountsservice
+	adwaita-icon-theme
+	adwaita-fonts
+	desktop-file-utils
+	elogind
+	gnome-bluetooth
+	gnome-control-center
+	gnome-shell-mobile-schemas
+	gsettings-desktop-schemas
+	gst-plugin-pipewire
+	gst-plugins-good
+	gstreamer
+	ibus
+	librsvg
+	mutter-mobile>=46
+	tecla
+	unzip
+	upower
+	"
+makedepends="
+	asciidoc
+	elogind-dev
+	evolution-data-server-dev evolution-dev
+	gcr4-dev
+	gjs-dev>=1.85.90
+	gnome-autoar-dev
+	gnome-bluetooth-dev
+	gnome-control-center-dev
+	gnome-desktop-dev>=3.35.91
+	gobject-introspection-dev
+	gstreamer-dev
+	ibus-dev
+	libcanberra-dev
+	libnma-dev
+	libxml2-dev
+	libxml2-utils
+	meson
+	mutter-mobile-dev>=46
+	networkmanager-dev
+	pipewire-dev
+	polkit-dev
+	pulseaudio-dev
+	py3-docutils
+	py3-setuptools
+	python3
+	sassc
+	startup-notification-dev
+	tecla-dev
+	"
+checkdepends="
+	xvfb-run
+	mesa-dri-gallium
+	"
+	# gdm is also needed but introduces circular dep
+provides="gnome-shell=$pkgver-r$pkgrel"
+subpackages="
+	$pkgname-dbg
+	$pkgname-doc
+	$pkgname-lang
+	$pkgname-schemas::noarch
+	gnome-mobile-extensions-app:extensions_app:noarch
+	"
+_commit="48.mobile.0"
+_gvc_commit="47c47a423ff2f55bb038d92517e4782cf051496a"
+source="gnome-shell-mobile-$_commit.tar.gz::https://gitlab.gnome.org/verdre/gnome-shell-mobile/-/archive/$_commit/gnome-shell-mobile-$_commit.tar.gz
+	https://gitlab.gnome.org/GNOME/libgnome-volume-control/-/archive/$_gvc_commit/libgnome-volume-control-$_gvc_commit.tar.gz
+	gsh.patch
+	pcver.patch
+	gjs-1.85.90-girepository.patch
+	0001-main-Notify-gnome-session-when-we-re-ready.patch
+	0002-Revert-main-Notify-gnome-session-when-we-re-ready.patch
+	0003-data-Drop-org.gnome.Shell.desktop.patch
+	0004-data-Overhaul-systemd-units.patch
+	"
+builddir="$srcdir/gnome-shell-mobile-$_commit"
+options="!check" # Tests have circular dependency 'gnome-shell <-> gdm'
+
+prepare() {
+	default_prepare
+	rm -rf "$builddir/subprojects/gvc"
+	mv "$srcdir/libgnome-volume-control-$_gvc_commit" $builddir/subprojects/gvc
+}
+
+build() {
+	abuild-meson \
+		-Dsystemd=false \
+		-Dtests=false \
+		. output
+	meson compile ${JOBS:+-j ${JOBS}} -C output
+}
+
+check() {
+	xvfb-run meson test -v -C output
+}
+
+extensions_app() {
+	provides="gnome-extensions-app=$pkgver-r$pkgrel"
+	pkgdesc="Manage GNOME Shell extensions"
+	depends="gnome-shell-mobile libadwaita"
+	replaces="gnome-shell-mobile"
+
+	amove usr/bin/gnome-extensions-app
+	amove usr/share/applications/org.gnome.Shell.Extensions.desktop
+	amove usr/share/gnome-shell/org.gnome.Extensions
+	amove usr/share/gnome-shell/org.gnome.Extensions.data.gresource
+	amove usr/share/gnome-shell/org.gnome.Extensions.src.gresource
+}
+
+schemas() {
+	pkgdesc="GNOME Shell gsetting schemas"
+	depends=""
+	provides="gnome-shell-schemas=$pkgver-r$pkgrel"
+
+	amove usr/share/glib-2.0/schemas
+	amove usr/share/gnome-control-center/keybindings
+}
+
+lang() {
+	default_lang
+	provides="gnome-shell-lang=$pkgver-r$pkgrel"
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	# owned by postmarketos-hidden-desktop-entries
+	rm $pkgdir/usr/share/applications/org.gnome.Extensions.desktop
+}
+
+sha512sums="
+01a4beb195f48a7ce00a50453695ccc10c7a00fcda81428bf1bb07aacef70a14ffed8124faa50ac98d601d4d43f291c2cd48835bdb79d5e8e751677d877a6953  gnome-shell-mobile-48.mobile.0.tar.gz
+f1575dd86772e4bad9357f0322b2ba396478ec45a691c072c4ff98c299d8814aaaf0386fb90f883b3862f88495a07177453ac0fb163ce2b17eb7bb5e65ca5d6c  libgnome-volume-control-47c47a423ff2f55bb038d92517e4782cf051496a.tar.gz
+ae4ac679bacd35948b44068e5a70407f473bd96986ee126abb1bdf066db5cbc2087a3ffae0b390286689cacbe8325870fd43663ba39f4f7543216e02bf083934  gsh.patch
+0503440b547b78859c3bb87a66308899bcf33cc0b543e04e9c865904ff7fb86b10b66594c37a1726828ee1a497b0e034150be8cf1a9fbd06c59809619f6a31c8  pcver.patch
+7d1bd0a60ee389c8fbc830ac573235ac1053fe44e8c249d32fb34427d9a1c0129444d781d311a6474d5e0b97897a14a52013a3aec0c85c120b8b525b835378bb  gjs-1.85.90-girepository.patch
+dec336bf74305fa016ffc1f9272e2b671c41dba458ebbf62b782a3dd091f02ae85315f139ab7ac40fa533e6fae67bf8648bd6557cb1ca917ce760ec1e0fb653f  0001-main-Notify-gnome-session-when-we-re-ready.patch
+f10643bf010135cdc2d6bc122d47d4905e6ef3cea5e7a82e44d9a5d66ec147cd85872eaf869d05c1477ad5211a499d2351b4a20ee0085af1ff933769230bc242  0002-Revert-main-Notify-gnome-session-when-we-re-ready.patch
+0f859f4c879a432cddf0127f518b95ed4f21720be6490ee96b17414cae461e5dd643d8d918376c2656a08c5537c79b069d3acf6838b5b3ea0b4f880d620ad3e7  0003-data-Drop-org.gnome.Shell.desktop.patch
+413bd3cd1ba63dae79afc84a2cc1cdce7b8ea8f5457fdae7a1472ea41d0c6c93a8b66c115bd112699b72ea8b7f1050d8cda23f1259f14c7b0fd7b423a1afde35  0004-data-Overhaul-systemd-units.patch
+"

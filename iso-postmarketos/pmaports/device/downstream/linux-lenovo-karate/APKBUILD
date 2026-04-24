@@ -1,0 +1,58 @@
+# Kernel config based on: arch/arm64/configs/karate_defconfig
+
+pkgname=linux-lenovo-karate
+pkgver=3.18.31
+pkgrel=5
+pkgdesc="Lenovo K6 Power kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lenovo-karate"
+url="https://github.com/karthick111/android_kernel_lenovo_msm8937"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_lenovo_msm8937"
+_commit="d99e6751356d0d310db6a16f3fe7eeaea8041675"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/karthick111/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_prima_gcc6.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+bc362a70215315eee0c63e52701488f9aa31c7e6af8d80f9dcef7c06b1d522f5e5a7a21c80c554575b21568ffb0fc2101407eb33c8d030f326943925275e34f9  linux-lenovo-karate-d99e6751356d0d310db6a16f3fe7eeaea8041675.tar.gz
+ca6dfdf30aaf50a25e738eb6d6fdd299ba679e97800285467f6fdde21961333f57dc2c0508a7f002ae195944b52efa4e7578f264bfa1735b6afe5e6ecd377cd2  config-lenovo-karate.aarch64
+972e98523d6ef06342e69a09e979bdd86904cf7f9a843b519b37791e531b680182564a2ab537c94629c3589f4e775b2c39de04c64e210a0f8b6f10745c3596f1  01_prima_gcc6.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

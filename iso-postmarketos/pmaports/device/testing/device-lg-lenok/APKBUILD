@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-lg-lenok
+pkgdesc="LG G Watch R"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-lg-lenok-adsp
+	firmware-lg-lenok-wifi
+	firmware-qcom-adreno-a330
+	linux-postmarketos-qcom-msm8226
+	lk2nd-msm8226
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8226
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+30f65acdc73dbfe40f972b5fdea6faf0932f93780f71cfd1d3afaea2658f3b6cc7a81ec12a0ae9f230e3ebc1451e91f58605387dc8c53575e674dbd91936326c  deviceinfo
+0e25257eb8f48d3b6b0d88855af31d3fb7cf4c494ea3a12e09e46d51f351d5e77af6f5d9812dc6a424bc00d65999195569a2a84cdfb01fa0c307e499aa3a27e5  kernel-cmdline.conf
+36b66e90934e267238384c36b4e41b6b796e9df99892fd18ba416098fd66f48911c34a7f7585b1c472b09047e7a149f4d937a732140f8292f3d043b1e4ba9c87  modules-initfs
+"

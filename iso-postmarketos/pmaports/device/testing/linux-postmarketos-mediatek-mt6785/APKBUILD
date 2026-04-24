@@ -1,0 +1,65 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Dinolek <git@dinolek.me>"
+_flavor="postmarketos-mediatek-mt6785"
+pkgname=linux-$_flavor
+pkgver=6.16.4
+pkgrel=0
+pkgdesc="Mainline kernel fork for MT6785"
+arch="aarch64"
+_carch="arm64"
+
+url="https://gitlab.postmarketos.org/mt6785-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+"
+makedepends="
+	bash
+	bison
+	findutils
+	flex
+	openssl-dev
+	perl
+	postmarketos-installkernel
+"
+
+# Source
+_tag="$pkgver-r0"
+_config="config-$_flavor.$arch"
+source="
+	$url/-/archive/$_tag/linux-$_tag.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+d65e1b9fb3950b6535bbe8b901809f2ff790f52adadb3f0a6e1bb48c0b39949ef49e08bd9e5ba9f5f632a0ad1cd18abba5d8316d33ad1ebc887fce59a0a94489  linux-6.16.4-r0.tar.gz
+23e93d2b92c498d565b3669f9d57d91fbd9267b262f071fad6cab288f2e8cdffe189a0a66072d69b299ca44edeb1d55d37ec2baea16c2238736e23f6b6855a40  config-postmarketos-mediatek-mt6785.aarch64
+"

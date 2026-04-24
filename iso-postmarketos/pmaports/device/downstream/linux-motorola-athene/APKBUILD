@@ -1,0 +1,69 @@
+# Kernel config based on: arch/arm64/configs/athene_defconfig
+
+pkgname=linux-motorola-athene
+pkgver=3.10.108
+pkgrel=7
+pkgdesc="Motorola Moto G4 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-athene"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_motorola_msm8952"
+_commit="4f6c8d2e1507595b5ef404d076128874176f1219"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/fengjiongmax/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_fix_gcc6_errors.patch
+	scripts-dtc-yylloc.patch
+	disable-wireguard-Kconfig.patch
+	optimize_compile_options.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm64/boot/dt.img" "arch/arm64/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm64/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+74d13e6787337454dc09c643efcf95cd46a2f02deecbe687c7a451f53bc2a5978aca394cf76f828cced88a6cffb310deb430c2c8c989471b368733f1aad728c2  linux-motorola-athene-4f6c8d2e1507595b5ef404d076128874176f1219.tar.gz
+394049c60d59cf5230522a6bcbb9bdedee2a7f282465f73b7816a11c5d090381a4e1f2cf1521e3d2e08548c47039dbb7975b65482c98bdae3eef0381ba6bd3ff  config-motorola-athene.aarch64
+972e98523d6ef06342e69a09e979bdd86904cf7f9a843b519b37791e531b680182564a2ab537c94629c3589f4e775b2c39de04c64e210a0f8b6f10745c3596f1  01_fix_gcc6_errors.patch
+84f97f389b6a7305519a257666367157f84ed20c64633d51b8608f7d55517514870b487ac7428ac5c2a49b0a1371100a8862120b415c3eda5255ad485385ac81  scripts-dtc-yylloc.patch
+a32585798f24bb764718209e6c35e304b3499b53e2b34aa9e935bc55197d041aa1169f8352319abbe174a3d5f3ad68b01a7ea5addd3652fe7bcfe8ae4a2a1a6e  disable-wireguard-Kconfig.patch
+c6123ff692663f383151d722d0c43501ba4c24c0e5c8b5206356fd76bde6b72d20eebee9fcce1a01e6ee5bb637976f7f4349746ccdc7bc474a1a1e83b68a3f08  optimize_compile_options.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

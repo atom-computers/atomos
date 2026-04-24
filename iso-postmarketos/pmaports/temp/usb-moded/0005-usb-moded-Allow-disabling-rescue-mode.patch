@@ -1,0 +1,56 @@
+From 1615aa38a63ead9dde88442f5f1b9ab1b615f76d Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Sun, 18 May 2025 10:54:02 +0200
+Subject: [PATCH 5/5] [usb-moded] Allow disabling rescue mode
+
+Some distros have their own rescue mode builtin and launch usb-moded
+after initialization is complete. Therefore, no checks need to be
+performed anymore. Furthermore, this allows non-systemd init systems
+to launch usb-moded as well after initialization is complete.
+
+Signed-off-by: Dylan Van Assche <me@dylanvanassche.be>
+---
+ configure.ac    | 8 ++++++++
+ src/usb_moded.c | 6 ++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/configure.ac b/configure.ac
+index e8fdc69..2c56ae6 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -99,6 +99,14 @@ AC_ARG_ENABLE([ofono], AS_HELP_STRING([--enable-ofono], [Enable ofono DBUS inter
+    esac],[ofono=false])
+ AM_CONDITIONAL([OFONO], [test x$ofono = xtrue])
+ 
++AC_ARG_ENABLE([rescue], AS_HELP_STRING([--enable-rescue], [Enable rescue mode  @<:@default=true@:>@]),
++  [case "${enableval}" in
++   yes) rescue=true ; CFLAGS="-DRESCUE $CFLAGS" ;;
++   no)  rescue=false ;;
++   *) AC_MSG_ERROR([bad value ${enableval} for --enable-rescue]) ;;
++   esac],[rescue=true])
++AM_CONDITIONAL([RESCUE], [test x$rescue = xtrue])
++
+ PKG_CHECK_MODULES([DBUS], dbus-1 >= 1.8)
+ PKG_CHECK_MODULES([GLIB], glib-2.0 >= 2.24.0)
+ PKG_CHECK_MODULES([USB_MODED], [
+diff --git a/src/usb_moded.c b/src/usb_moded.c
+index f7443d6..76625d9 100644
+--- a/src/usb_moded.c
++++ b/src/usb_moded.c
+@@ -686,7 +686,13 @@ void usbmoded_probe_init_done(void)
+ {
+     LOG_REGISTER_CONTEXT;
+ 
++#ifdef RESCUE
+     usbmoded_set_init_done(access(usbmoded_init_done_flagfile, F_OK) == 0);
++    return;
++#endif
++
++    /* If rescue mode is not enabled, bypass init done check */
++    usbmoded_set_init_done(true);
+ }
+ 
+ /* ------------------------------------------------------------------------- *
+-- 
+2.49.0
+

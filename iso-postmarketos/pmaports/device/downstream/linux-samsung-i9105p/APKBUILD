@@ -1,0 +1,89 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/bcm28155_capri_ss_s2vep_rev05_defconfig
+
+pkgname=linux-samsung-i9105p
+pkgver=3.0.101
+pkgrel=1
+pkgdesc="Samsung Galaxy S2 Plus kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-i9105p"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	gcc4
+	msm-fb-refresher
+	openssl-dev
+	perl
+"
+
+# Compiler: GCC 4 (doesn't compile with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+
+# Source
+_repository="android_kernel_samsung_galaxys2plus-common"
+_commit="6625d1eba424bf57bd64f466a1c25db10cb68f26"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/surblazer/$_repository/archive/$_commit.tar.gz
+	$_config
+	kernel-use-the-gnu89-standard-explicitly.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	03_fix_paranoid_network_disabled.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	fix-check-lxdialog.patch
+	vc_cam.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	make ARCH="$_carch" mrproper
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Modules
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+
+sha512sums="
+3b48ad727127707a18503d1f77a5ef60de831fbbcfd4c65745ebb4e1de3419b82f42e3e9a0c0ae2d4e4d0d5349baa4364f28d6c0198463871362c470172a61f1  linux-samsung-i9105p-6625d1eba424bf57bd64f466a1c25db10cb68f26.tar.gz
+d0e6ca72932384f3548786318b7ba8bdb5e5d13d134b0b3b5c76d38282a4d4aa215a2e6cd50a3ca6aab998f8f6ca82291ab619d874d3fcb6abd81e201170d92c  config-samsung-i9105p.armv7
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+df62e03666313bb03d9a455eac875f170a55d378b6e56b847c1c6ff1ce5cfafcfdf1d7605754ca3c684840ea00357f9ec4c6621f6ff77377132a484b9258f6f7  03_fix_paranoid_network_disabled.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+f6f40fccdff52ff0849b5170186ec46c5f247477b5ba3f95a4f431c81337b42df175ff6e6208df63ee3e802617b3e361690aa049f03084d42b851be850fac3b2  vc_cam.patch
+"

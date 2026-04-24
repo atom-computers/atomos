@@ -1,0 +1,917 @@
+diff --git a/arch/arm/boot/dts/ti/omap/Makefile b/arch/arm/boot/dts/ti/omap/Makefile
+index 95c68135d..4a119f1ba 100644
+--- a/arch/arm/boot/dts/ti/omap/Makefile
++++ b/arch/arm/boot/dts/ti/omap/Makefile
+@@ -43,6 +43,7 @@ dtb-$(CONFIG_ARCH_OMAP3) += \
+ 	omap3-n900.dtb \
+ 	omap3-n9.dtb \
+ 	omap3-n950.dtb \
++	omap3-nookcolor.dtb \
+ 	omap3-overo-alto35.dtb \
+ 	omap3-overo-chestnut43.dtb \
+ 	omap3-overo-gallop43.dtb \
+diff --git a/arch/arm/boot/dts/ti/omap/omap3-nookcolor.dts b/arch/arm/boot/dts/ti/omap/omap3-nookcolor.dts
+new file mode 100644
+index 000000000..2ba23d2f3
+--- /dev/null
++++ b/arch/arm/boot/dts/ti/omap/omap3-nookcolor.dts
+@@ -0,0 +1,899 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * omap3-nookcolor.dts - Device Tree file for Barnes & Noble Nook Color
++ *
++ * Written by: Scott C
++ */
++
++/dts-v1/;
++
++#include "omap36xx.dtsi"
++#include <dt-bindings/input/input.h>
++
++/ {
++	model = "Barnes & Noble Nook Color (BNRV200)";
++	compatible = "bn,omap3-nookcolor", "ti,omap3621", "ti,omap3630", "ti,omap3";
++
++	cpus {
++		cpu@0 {
++			cpu0-supply = <&vcc>;
++		};
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x80000000 0x20000000>; /* 512 MB */
++	};
++
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* I never made use of this, but likely works if desired.
++		ram_console@8E000000 {
++			reg = <0x8E000000 0x00100000>;
++			no-map;
++		};
++		*/
++	};
++
++	backlight: backlight {
++		compatible = "pwm-backlight";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&backlight_pins>;
++
++		pwms = <&pwm8 0 7812500 0>;
++
++		enable-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>; /* gpio47 */
++
++		brightness-levels = <5 32 64 75 105 128 179 254>;
++		default-brightness-level = <4>;
++	};
++
++	max8903_charger: charger {
++		compatible = "maxim,max8903";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&charger_pins>;
++
++		dok-gpios = <&gpio4 18 GPIO_ACTIVE_LOW>; /* gpio114 - DOK: DC Power-OK Output */
++		uok-gpios = <&gpio4 19 GPIO_ACTIVE_LOW>; /* gpio115 - UOK: USB Power-OK Output */
++		cen-gpios = <&gpio4 14 GPIO_ACTIVE_LOW>; /* gpio110 - CEN: Charger Enable Input */
++		dcm-gpios = <&gpio2 29 GPIO_ACTIVE_HIGH>; /* gpio61 - DCM: Current-Limit Mode Setting for the DC Power Input */
++		iusb-gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>; /* gpio102 - IUSB: USB Current-Limit Set Input */
++		usus-gpios = <&gpio4 8 GPIO_ACTIVE_HIGH>; /* gpio104 - USUS: USB Suspend Input */
++		flt-gpios = <&gpio4 5 GPIO_ACTIVE_LOW>; /* gpio101 - FLT: Fault Output */
++
++		/* This one may not be wired up/ connected in the device.
++		 * Doesn't seem to change status. */
++		/* chg-gpios = <&gpio4 15 GPIO_ACTIVE_LOW>; // gpio111 - CHG: Charger Status Output */
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&gpio_key_home_pins &gpio_key_power_pins>;
++
++		home-button {
++			label = "Home Button";
++			linux,code = <KEY_HOME>;
++			gpios = <&gpio2 16 GPIO_ACTIVE_LOW>; /* gpio48 */
++			wakeup-source;
++		};
++
++		power-button {
++			label = "Power Button";
++			linux,code = <KEY_POWER>;
++			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* gpio14 */
++			wakeup-source;
++		};
++	};
++
++	lvds-encoder {
++		compatible = "ti,sn75lvds83", "lvds-encoder";
++
++		/* power-supply = <&dummy_reg_vcc_lvds>; */
++
++		pclk-sample = <1>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++
++				lvds_encoder_input: endpoint {
++					remote-endpoint = <&dss_dpi_out>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++
++				lvds_encoder_output: endpoint {
++					remote-endpoint = <&panel_in_lvds>;
++				};
++			};
++		};
++	};
++
++	/* fixed 26MHz oscillator */
++	hfclk_26m: oscillator {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <26000000>;
++	};
++
++	pwm8: pwm-8 {
++		compatible = "ti,omap-dmtimer-pwm";
++		#pwm-cells = <3>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pwm8_pins>;
++
++		ti,timers = <&timer8>;
++		ti,clock-source = <0x00>; /* system clock */
++	};
++
++	reg_codec_3v3: regulator-codec-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "codec_3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&audio_codec_power_pins>;
++
++		gpio = <&gpio4 7 GPIO_ACTIVE_HIGH>; /* gpio103 */
++		enable-active-high;
++
++		startup-delay-us = <10000>;
++	};
++
++	dummy_reg_codec_dvdd: regulator-dummy-codec-dvdd {
++		compatible = "regulator-fixed";
++		regulator-name = "dummy_reg_codec_dvdd";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++	};
++
++	/*
++	dummy_reg_vcc_lvds: regulator-dummy-vcclvds {
++		compatible = "regulator-fixed";
++		regulator-name = "dummy_reg_vcc_lvds";
++		regulator-always-on;
++	};
++	*/
++
++	vdd_lcdtp: regulator-vddlcdtp {
++		compatible = "regulator-fixed";
++		regulator-name = "vdd_lcdtp";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&lcd_power_pins>;
++
++		gpio = <&gpio2 4 GPIO_ACTIVE_HIGH>; /* gpio36 */
++		enable-active-high;
++	};
++
++	/* NOTE: There is also mention of gpio16, with comments like 'wifi_en_pow'
++	 * and 'EN_WIFI_POW'. That gpio is set by the older cyanogenmod kernel 
++	 * code in a function called 'encore_wifi_init'
++	 */
++
++	vwl1271: regulator-vwl1271 {
++		compatible = "regulator-fixed";
++		regulator-name = "vwl1271";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&wifi_power_pins>;
++
++		gpio = <&gpio1 22 GPIO_ACTIVE_HIGH>; /* gpio22 */
++		startup-delay-us = <70000>;
++		enable-active-high;
++	};
++
++	sound {
++		compatible = "simple-audio-card";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&headset_detect_pins>;
++
++		simple-audio-card,name = "Nook Sound";
++
++		simple-audio-card,widgets =
++			"Speaker", "Internal Speaker",
++			"Headphone", "Headphones";
++
++		simple-audio-card,routing =
++			"Internal Speaker", "SPK",
++			"Headphones", "HPL",
++			"Headphones", "HPR";
++
++		simple-audio-card,format = "i2s"; /* REVIEW! Seems to be either: "i2s" or "dsp_b" */
++
++		simple-audio-card,bitclock-master = <&sound_master>;
++		simple-audio-card,frame-master = <&sound_master>;
++
++		simple-audio-card,hp-det-gpios = <&gpio5 29 GPIO_ACTIVE_LOW>; /* gpio157 - should be correct gpio but needs testing */
++
++		simple-audio-card,cpu {
++			sound-dai = <&mcbsp2>; /* REVIEW! */
++		};
++
++		sound_master: simple-audio-card,codec {
++			sound-dai = <&audio_codec>;
++			clocks = <&sys_clkout2>;
++			system-clock-frequency = <12000000>;
++		};
++	};
++
++};
++
++/* Audio Codec Clock Setup Attempt:
++ * Older barnes & noble and cyanogenmod kernel code sets up the
++ * parents of sys_clkout2 to be clkout2_src_ck, then sys_ck. However that can't
++ * be divided by a power of two to produce 12000000, which is in the rate table
++ * in the codec driver. 
++ * So my thought was to try a different upstream clock which can be divided
++ * to reach 12000000, and that clock is cm_96m_fck. 
++ * Of course I don't really know what I'm doing and ChatGPT only pretends to
++ * know. But leaving this here since it at least allows the codec to probe
++ * without errors.
++ */
++&sys_clkout2 {
++	assigned-clocks = <&clkout2_src_ck>;
++	assigned-clock-parents = <&cm_96m_fck>;
++};
++
++&omap3_pmx_core {
++
++	accelerometer_pins: accelerometer-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x2136, PIN_INPUT | MUX_MODE4)	/* gpio113 / gpio4-17  kxtf9_irq  MOT-nINT */
++		>;
++	};
++
++	/* This gpio pinctrl item originates from some hint/ note of its possible
++	 * functionality in older u-boot / linux kernel code, but it hasn't been 
++	 * used nor tested. Note also that should this be enabled at some point
++	 * it should likely be marked as an output.
++	 * 
++	 * accelerometer_power_pins: accelerometer-power-pins {
++	 * 	pinctrl-single,pins = <
++	 * 		OMAP3_CORE1_IOPAD(0x207a, PIN_INPUT_PULLDOWN | MUX_MODE4)	// gpio34 / gpio2-2  kxtf9_pwr
++	 * 	>;
++	 * };
++	 */
++
++	audio_codec_pins: audio-codec-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x2080, PIN_OUTPUT | MUX_MODE4)	/* gpio37 / gpio2-5  audio_codec_reset  AUD_nRESET */
++
++			/* Line below is commented as item was mentioned but seemingly unused in 
++			 * older u-boot/ linux kernel code and is not implemented nor tested. */
++			// OMAP3_CORE1_IOPAD(0x20be, PIN_INPUT | MUX_MODE4)	/* gpio59 / gpio2-27  audio_codec_irq  AUD-CODEC-nINT */
++		>;
++	};
++
++	audio_codec_power_pins: audio-codec-power-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x211e, PIN_OUTPUT | MUX_MODE4)	/* gpio103 / gpio4-7  audio_codec_power_enable  AUD-CODEC-EN */
++		>;
++	};
++
++	backlight_pins: backlight-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x20a4, PIN_OUTPUT | MUX_MODE4)	/* gpio47 / gpio2-15  lcd_backlight_en */
++		>;
++	};
++
++	bluetooth_pins: bluetooth-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x20c6, PIN_OUTPUT | MUX_MODE4)	// gpio60 / gpio2-28  bt_reset__kim  BT-EN
++		>;
++	};
++
++	charger_pins: charger-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x20c8, PIN_OUTPUT | MUX_MODE4)	/* gpio61 / gpio2-29  max8903_chg_ilm  DC-CHG-ILM */
++			OMAP3_CORE1_IOPAD(0x211a, PIN_INPUT | MUX_MODE4)	/* gpio101 / gpio4-5  max8903_chg_flt  nCHG_FAULT */
++			OMAP3_CORE1_IOPAD(0x211c, PIN_OUTPUT | MUX_MODE4)	/* gpio102 / gpio4-6  max8903_chg_iusb  CHRG_EN1 */
++			OMAP3_CORE1_IOPAD(0x2120, PIN_OUTPUT | MUX_MODE4)	/* gpio104 / gpio4-8  max8903_chg_usus  CHRG_EN2 */
++			OMAP3_CORE1_IOPAD(0x212c, PIN_OUTPUT | MUX_MODE4)	/* gpio110 / gpio4-14  max8903_chg_en  CHRG_Cen */
++			OMAP3_CORE1_IOPAD(0x212e, PIN_INPUT | MUX_MODE4)	/* gpio111 / gpio4-15    CHRG_STATUS - This might not function correctly on Nook Color */
++			OMAP3_CORE1_IOPAD(0x2138, PIN_INPUT | WAKEUP_EN | MUX_MODE4)	/* gpio114 / gpio4-18  max8903_chg_dok_irq  nDC-CHG-OK, should be wakup source */
++			OMAP3_CORE1_IOPAD(0x213a, PIN_INPUT | WAKEUP_EN | MUX_MODE4)	/* gpio115 / gpio4-19  max8903_chg_uok_irq  nUSB-CHG-OK should be wakeup source */
++		>;
++	};
++
++	dss_dpi_pins: dss-dpi-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x20d4, PIN_OUTPUT | MUX_MODE0)	/* DSS_PCLK  DSS_PCLK */
++			OMAP3_CORE1_IOPAD(0x20d6, PIN_OUTPUT | MUX_MODE0)	/* DSS_HSYNC  DSS_HSYNC */
++			OMAP3_CORE1_IOPAD(0x20d8, PIN_OUTPUT | MUX_MODE0)	/* DSS_VSYNC  DSS_VSYNC */
++			OMAP3_CORE1_IOPAD(0x20da, PIN_INPUT | MUX_MODE0)	/* LCD_ENABLE  DSS_ACBIAS */
++			OMAP3_CORE1_IOPAD(0x20dc, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA0  DSS_DATA0 */
++			OMAP3_CORE1_IOPAD(0x20de, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA1  DSS_DATA1 */
++			OMAP3_CORE1_IOPAD(0x20e0, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA2  DSS_DATA2 */
++			OMAP3_CORE1_IOPAD(0x20e2, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA3  DSS_DATA3 */
++			OMAP3_CORE1_IOPAD(0x20e4, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA4  DSS_DATA4 */
++			OMAP3_CORE1_IOPAD(0x20e6, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA5  DSS_DATA5 */
++			OMAP3_CORE1_IOPAD(0x20e8, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA6  DSS_DATA6 */
++			OMAP3_CORE1_IOPAD(0x20ea, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA7  DSS_DATA7 */
++			OMAP3_CORE1_IOPAD(0x20ec, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA8  DSS_DATA8 */
++			OMAP3_CORE1_IOPAD(0x20ee, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA9  DSS_DATA9 */
++			OMAP3_CORE1_IOPAD(0x20f0, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA10  DSS_DATA10 */
++			OMAP3_CORE1_IOPAD(0x20f2, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA11  DSS_DATA11 */
++			OMAP3_CORE1_IOPAD(0x20f4, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA12  DSS_DATA12 */
++			OMAP3_CORE1_IOPAD(0x20f6, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA13  DSS_DATA13 */
++			OMAP3_CORE1_IOPAD(0x20f8, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA14  DSS_DATA14 */
++			OMAP3_CORE1_IOPAD(0x20fa, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA15  DSS_DATA15 */
++			OMAP3_CORE1_IOPAD(0x20fc, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA16  DSS_DATA16 */
++			OMAP3_CORE1_IOPAD(0x20fe, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA17  DSS_DATA17 */
++			OMAP3_CORE1_IOPAD(0x2100, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA18  DSS_DATA18 */
++			OMAP3_CORE1_IOPAD(0x2102, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA19  DSS_DATA19 */
++			OMAP3_CORE1_IOPAD(0x2104, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA20  DSS_DATA20 */
++			OMAP3_CORE1_IOPAD(0x2106, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA21  DSS_DATA21 */
++			OMAP3_CORE1_IOPAD(0x2108, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA22  DSS_DATA22 */
++			OMAP3_CORE1_IOPAD(0x210a, PIN_OUTPUT | MUX_MODE0)	/* DSS_DATA23  DSS_DATA23 */
++		>;
++	};
++
++	fuel_gauge_pins: fuel-gauge-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x2118, PIN_INPUT | MUX_MODE4)	/* gpio100 / gpio4-4  max17042_irq  GG_INT */
++		>;
++	};
++
++	gpio_key_home_pins: gpio-key-home-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x20a6, PIN_INPUT_PULLUP | MUX_MODE4)	/* gpio48 / gpio2-16  Button-Home */
++		>;
++	};
++
++	gpio2_pins: gpio2-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x209e, PIN_OUTPUT_PULLDOWN | MUX_MODE4)	/* gpio44 / gpio2-12  lcd_cabc0  CABC0 */
++			OMAP3_CORE1_IOPAD(0x20a0, PIN_OUTPUT_PULLDOWN | MUX_MODE4)	/* gpio45 / gpio2-13  lcd_cabc1  CABC1 */
++		>;
++	};
++
++	headset_detect_pins: headset-detect-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x218e, PIN_INPUT | MUX_MODE4)	/* gpio157 / gpio5-29  dac3100-headset  HS-nDETECT */
++		>;
++	};
++
++	hsusb0_pins: hsusb0-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x21a2, PIN_INPUT | MUX_MODE0)	/* HSUSB0_CLK  HSUSB0_CLK */
++			OMAP3_CORE1_IOPAD(0x21a4, PIN_OUTPUT | PULL_UP | MUX_MODE0)	/* HSUSB0_STP  HSUSB0_STP */
++			OMAP3_CORE1_IOPAD(0x21a6, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DIR  HSUSB0_DIR */
++			OMAP3_CORE1_IOPAD(0x21a8, PIN_INPUT | MUX_MODE0)	/* HSUSB0_NXT  HSUSB0_NXT */
++			OMAP3_CORE1_IOPAD(0x21aa, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA0  HSUSB0_DATA0 */
++			OMAP3_CORE1_IOPAD(0x21ac, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA1  HSUSB0_DATA1 */
++			OMAP3_CORE1_IOPAD(0x21ae, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA2  HSUSB0_DATA2 */
++			OMAP3_CORE1_IOPAD(0x21b0, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA3  HSUSB0_DATA3 */
++			OMAP3_CORE1_IOPAD(0x21b2, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA4  HSUSB0_DATA4 */
++			OMAP3_CORE1_IOPAD(0x21b4, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA5  HSUSB0_DATA5 */
++			OMAP3_CORE1_IOPAD(0x21b6, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA6  HSUSB0_DATA6 */
++			OMAP3_CORE1_IOPAD(0x21b8, PIN_INPUT | MUX_MODE0)	/* HSUSB0_DATA7  HSUSB0_DATA7 */
++		>;
++	};
++
++	i2c1_pins: i2c1-pins {
++		pinctrl-single,pins = <
++			/* Settings for these pins were changed from original board code
++			 * to match what is done in the twl4030_omap3.dtsi file for i2c4
++			 * as well as what is done in most other omap3 boards.
++			 */
++			OMAP3_CORE1_IOPAD(0x21ba, PIN_INPUT | MUX_MODE0)	/* I2C1_SCL  I2C1_SCL */
++			OMAP3_CORE1_IOPAD(0x21bc, PIN_INPUT | MUX_MODE0)	/* I2C1_SDA  I2C1_SDA */
++		>;
++	};
++
++	i2c2_pins: i2c2-pins {
++		pinctrl-single,pins = <
++			/* Settings for these pins were changed from original board code
++			 * to match what is done in the twl4030_omap3.dtsi file for i2c4
++			 * as well as what is done in most other omap3 boards.
++			 */
++			OMAP3_CORE1_IOPAD(0x21be, PIN_INPUT | MUX_MODE0)	/* I2C2_SCL  I2C2_SCL */
++			OMAP3_CORE1_IOPAD(0x21c0, PIN_INPUT | MUX_MODE0)	/* I2C2_SDA  I2C2_SDA */
++		>;
++	};
++
++	lcd_power_pins: lcd-power-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x207e, PIN_OUTPUT | MUX_MODE4)	/* gpio36 / gpio2-4  lcd_en__vdd_lcdtp  LCD_PWR_EN */
++		>;
++	};
++
++	mcbsp2_pins: mcbsp2-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x213c, PIN_INPUT | MUX_MODE0)	/* McBSP2_FSX  McBSP2_FSX */
++			OMAP3_CORE1_IOPAD(0x213e, PIN_INPUT | MUX_MODE0)	/* McBSP2_CLKX  McBSP2_CLKX */
++			OMAP3_CORE1_IOPAD(0x2140, PIN_INPUT | MUX_MODE0)	/* McBSP2_DR  McBSP2_DR */
++			OMAP3_CORE1_IOPAD(0x2142, PIN_OUTPUT | MUX_MODE0)	/* McBSP2_DX  McBSP2_DX */
++		>;
++	};
++
++	mcspi4_pins: mcspi4-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x218c, PIN_INPUT | MUX_MODE1)	/* McSPI4-CLK  McBSP1_CLKR */
++			OMAP3_CORE1_IOPAD(0x2190, PIN_OUTPUT | MUX_MODE1)	/* McSPI4-SIMO  McBSP1_DX */
++			OMAP3_CORE1_IOPAD(0x2192, PIN_INPUT | MUX_MODE1)	/* McSPI4-SOMI  McBSP1_DR */
++			OMAP3_CORE1_IOPAD(0x2196, PIN_OUTPUT | MUX_MODE1)	/* McSPI4-CS0  McBSP1_FSX */
++		>;
++	};
++
++	/* Set MMC1 and MMC2 pins to be 'PIN_INPUT_PULLUP' based on most other
++	 * omap3 devices and discovery that old 3.0.101-ish omap kernel
++	 * sets PIN_INPUT_PULLUP in 'omap_hsmmc_mux' function in arch/arm/mach-omap2/hsmmc.c.
++	 */
++	mmc1_pins: mmc1-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x2144, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC1_CLK  MMC1_CLK */
++			OMAP3_CORE1_IOPAD(0x2146, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC1_CMD  MMC1_CMD */
++			OMAP3_CORE1_IOPAD(0x2148, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC1_DAT0  MMC1_DAT0 */
++			OMAP3_CORE1_IOPAD(0x214a, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC1_DAT1  MMC1_DAT1 */
++			OMAP3_CORE1_IOPAD(0x214c, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC1_DAT2  MMC1_DAT2 */
++			OMAP3_CORE1_IOPAD(0x214e, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC1_DAT3  MMC1_DAT3 */
++		>;
++	};
++
++	mmc2_pins: mmc2-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x2158, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_CLK  MMC2_CLK */
++			OMAP3_CORE1_IOPAD(0x215a, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_CMD  MMC2_CMD */
++			OMAP3_CORE1_IOPAD(0x215c, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_DAT0  MMC2_DAT0 */
++			OMAP3_CORE1_IOPAD(0x215e, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_DAT1  MMC2_DAT1 */
++			OMAP3_CORE1_IOPAD(0x2160, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_DAT2  MMC2_DAT2 */
++			OMAP3_CORE1_IOPAD(0x2162, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_DAT3  MMC2_DAT3 */
++			OMAP3_CORE1_IOPAD(0x2164, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_DIR_DAT0  MMC2_DAT4 */
++			OMAP3_CORE1_IOPAD(0x2166, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_DIR_DAT1  MMC2_DAT5 */
++			OMAP3_CORE1_IOPAD(0x2168, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_DIR_CMD  MMC2_DAT6 */
++			OMAP3_CORE1_IOPAD(0x216a, PIN_INPUT_PULLUP | MUX_MODE0)	/* MMC2_CLKIN  MMC2_DAT7 */
++		>;
++	};
++
++	pwm8_pins: pwm8-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x20bc, PIN_OUTPUT | MUX_MODE3)	/* GPT_8_PWM_EVT  GPMC_nCS7 */
++		>;
++	};
++
++	touchscreen_pins: touchscreen-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x20a2, PIN_OUTPUT | MUX_MODE4)	/* gpio46 / gpio2-14  cyttsp_tma340_reset  TP-nRESET */
++			OMAP3_CORE1_IOPAD(0x2116, PIN_INPUT | MUX_MODE4)	/* gpio99 / gpio4-3  cyttsp_touch_irq  TS_INT */
++		>;
++	};
++
++	/* Moving over but leaving commented since I am not using/testing this at all
++	 * U-Boot code notes this as 'Console Interface'.
++	 * uart1_pins: uart1-pins {
++	 * 	pinctrl-single,pins = <
++	 * 		OMAP3_CORE1_IOPAD(0x217c, PIN_OUTPUT | MUX_MODE0)	// UART1_TX  UART1_TX
++	 * 		OMAP3_CORE1_IOPAD(0x217e, PIN_OUTPUT | MUX_MODE0)	// UART1_RTS  UART1_RTS
++	 * 		OMAP3_CORE1_IOPAD(0x2180, PIN_INPUT_PULLUP | MUX_MODE0)	// UART1_CTS even if input for omap as pin is connected to test point  UART1_CTS
++	 * 		OMAP3_CORE1_IOPAD(0x2182, PIN_INPUT_PULLUP | WAKEUP_EN | MUX_MODE0)	// UART1_RX  UART1_RX
++	 * 	>;
++	 * };
++	 */
++
++	uart2_pins: uart2-pins {
++		pinctrl-single,pins = <
++			OMAP3_CORE1_IOPAD(0x216c, PIN_INPUT_PULLUP | MUX_MODE1)	/* UART2_CTS  McBSP3_DX */
++			OMAP3_CORE1_IOPAD(0x216e, PIN_OUTPUT | MUX_MODE1)	/* UART2_RTS  McBSP3_DR */
++			OMAP3_CORE1_IOPAD(0x2170, PIN_OUTPUT | MUX_MODE1)	/* UART2_TX  McBSP3_CLKX */
++			OMAP3_CORE1_IOPAD(0x2172, PIN_INPUT_PULLUP | MUX_MODE1)	/* UART2_RX  McBSP3_FSX - or maybe just PIN_INPUT? */
++		>;
++	};
++
++};
++
++&omap3_pmx_core2 {
++
++	gpio_key_power_pins: gpio-key-power-pins {
++		pinctrl-single,pins = <
++			OMAP3630_CORE2_IOPAD(0x25dc, PIN_INPUT | WAKEUP_EN | MUX_MODE4)	/* gpio14 / gpio1-14  Button-Power  SYS-PWR-ON-KEY */
++		>;
++	};
++
++	mmc3_pins: mmc3-pins {
++		pinctrl-single,pins = <
++			OMAP3630_CORE2_IOPAD(0x25da, PIN_INPUT_PULLUP | MUX_MODE2)	/* MMC3_CMD  ETK_CTL_ES2 */
++			OMAP3630_CORE2_IOPAD(0x25d8, PIN_INPUT_PULLUP | MUX_MODE2)	/* MMC3_CLK  ETK_CLK_ES2 */
++			OMAP3630_CORE2_IOPAD(0x25e4, PIN_INPUT_PULLUP | MUX_MODE2)	/* MMC3_DAT0  ETK_D4_ES2 */
++			OMAP3630_CORE2_IOPAD(0x25e6, PIN_INPUT_PULLUP | MUX_MODE2)	/* MMC3_DAT1  ETK_D5_ES2 */
++			OMAP3630_CORE2_IOPAD(0x25e8, PIN_INPUT_PULLUP | MUX_MODE2)	/* MMC3_DAT2  ETK_D6_ES2 */
++			OMAP3630_CORE2_IOPAD(0x25e2, PIN_INPUT_PULLUP | MUX_MODE2)	/* MMC3_DAT3  ETK_D3_ES2 */
++		>;
++	};
++
++	wifi_pins: wifi-pins {
++		pinctrl-single,pins = <
++			OMAP3630_CORE2_IOPAD(0x25de, PIN_INPUT | MUX_MODE4)	/* gpio15 / gpio1-15  wifi_irq  WLAN-IRQ */
++		>;
++	};
++
++	wifi_power_pins: wifi-power-pins {
++		pinctrl-single,pins = <
++			OMAP3630_CORE2_IOPAD(0x25ec, PIN_OUTPUT | MUX_MODE4)	/* gpio22 / gpio1-22  wifi_pmena__vwl1271  WLAN-EN */
++			/* Line below is commented as item was mentioned but seemingly unused in 
++			 * older u-boot/ linux kernel code and has not been implemented nor tested.
++			 * 
++			 * OMAP3630_CORE2_IOPAD(0x25e0, PIN_INPUT | MUX_MODE4)	// gpio16 / gpio1-16  wifi_en_pow  EN_WIFI_POW
++			 */
++		>;
++	};
++
++};
++
++&dss {
++	status = "okay";
++
++	/* NOTE: To get dss working on this device and to avoid FIFO underflow errors,
++	 * this kernel config flag must be set: CONFIG_OMAP2_DSS_MIN_FCK_PER_PCK.
++	 * In particular, it needs to be set to 4 to work with the display and timings.
++	 *
++	 * CONFIG_OMAP2_DSS_MIN_FCK_PER_PCK=4
++	 */
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&dss_dpi_pins>;
++
++	/* vdda_video-supply = <&vpll2>; */
++	vdds_dsi-supply = <&vpll2>;
++
++	port {
++		dss_dpi_out: endpoint {
++			remote-endpoint = <&lvds_encoder_input>;
++			data-lines = <24>;
++		};
++	};
++};
++
++/*
++ * GPIOs 44 and 45 "CABC0" and "CABC1" seem to be set once and left 
++ * that way by earlier code as follows  
++ * gpio_direction_output(LCD_CABC0_GPIO,0);
++ * gpio_set_value(LCD_CABC0_GPIO,0);
++ */
++&gpio2 {
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&gpio2_pins>;
++
++	cabc0-hog {
++		gpio-hog;
++		gpios = <12 GPIO_ACTIVE_LOW>;	/* gpio44 */
++		output-low;
++		line-name = "CABC0";
++	};
++
++	cabc1-hog {
++		gpio-hog;
++		gpios = <13 GPIO_ACTIVE_LOW>;	/* gpio45 */
++		output-low;
++		line-name = "CABC1";
++	};
++};
++
++&gpmc {
++	status = "disabled";
++};
++
++&i2c1 {
++	clock-frequency = <100000>;  /* 100 kHz */
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++
++	kxtf9: accelerometer@f {
++		compatible = "kionix,kxtf9";
++		reg = <0x0f>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&accelerometer_pins>;
++
++		interrupt-parent = <&gpio4>;
++		interrupts = <17 IRQ_TYPE_EDGE_FALLING>; /* gpio113 */
++
++		mount-matrix = "0", "1", "0",
++				"-1", "0", "0",
++				"0", "0", "1";
++	};
++
++	fuel-gauge@36 {
++		compatible = "maxim,max17042";
++		reg = <0x36>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&fuel_gauge_pins>;
++
++		interrupt-parent = <&gpio4>;
++		interrupts = <4 IRQ_TYPE_EDGE_FALLING>; /* gpio100 */
++
++		power-supplies = <&max8903_charger>;
++	};
++
++	twl: pmic@48 {
++		reg = <0x48>;
++		interrupts = <7>; /* SYS_NIRQ cascaded to intc */
++		interrupt-parent = <&intc>;
++
++		clocks = <&hfclk_26m>;
++		clock-names = "fck";
++
++		system-power-controller;
++
++		power {
++			compatible = "ti,twl4030-power-idle-osc-off";
++		};
++	};
++};
++
++#include "twl4030.dtsi"
++#include "twl4030_omap3.dtsi"
++
++&i2c2 {
++	clock-frequency = <400000>;
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c2_pins>;
++
++	audio_codec: audio-codec@18 {
++		compatible = "ti,tlv320dac3100";
++		reg = <0x18>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&audio_codec_pins>;
++
++		#sound-dai-cells = <0>;
++
++		reset-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>; /* gpio37 */
++
++		HPVDD-supply = <&reg_codec_3v3>;
++		SPRVDD-supply = <&reg_codec_3v3>;
++		SPLVDD-supply = <&reg_codec_3v3>;
++		AVDD-supply = <&reg_codec_3v3>;
++		IOVDD-supply = <&reg_codec_3v3>;
++		DVDD-supply = <&dummy_reg_codec_dvdd>;
++	};
++
++	touchscreen@22 {
++		compatible = "cypress,cy8ctma340";
++		reg = <0x22>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&touchscreen_pins>;
++
++		interrupt-parent = <&gpio4>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>; /* gpio99 for IRQ */
++
++		reset-gpios = <&gpio2 14 GPIO_ACTIVE_LOW>; /* gpio46 */
++
++		vdd-supply = <&vdd_lcdtp>;
++		vcpin-supply = <&vdd_lcdtp>;
++
++		touchscreen-size-x = <600>;
++		touchscreen-size-y = <1024>;
++
++		active-interval-ms = <0>;
++		touch-timeout-ms = <255>;
++		lowpower-interval-ms = <10>;
++
++		// touchscreen-max-pressure = <255>;
++
++		bootloader-key = /bits/ 8 <0x00 0x01 0x02 0x03 0x04 0x05 0x06 0x07>;
++	};
++};
++
++&i2c3 {
++	status = "disabled";
++};
++
++&mcbsp2 {
++	status = "okay";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&mcbsp2_pins>;
++
++	#sound-dai-cells = <0>;
++};
++
++&mcspi1 {
++	status = "disabled";
++};
++
++&mcspi2 {
++	status = "disabled";
++};
++
++&mcspi3 {
++	status = "disabled";
++};
++
++&mcspi4 {
++	status = "okay";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&mcspi4_pins>;
++
++	panel: panel@0 {
++		compatible = "lg,ld070ws1";
++		reg = <0>;  /* Chip select 0 */
++
++		spi-max-frequency = <375000>;
++
++		vlcd-supply = <&vdd_lcdtp>;
++
++		backlight = <&backlight>;
++
++		rotation = <270>;
++
++		/* These timings were pulled from old CyanogenMod code and match
++		 * the requirement of this device that FCLK / PCLK >= 4. See note
++		 * in DSS section for more info.
++		 */
++		panel-timing {
++			clock-frequency = <43200000>;
++			hactive = <1024>;
++			vactive = <600>;
++			hsync-len = <30>;
++			hfront-porch = <64>;
++			hback-porch = <132>;
++			vsync-len = <8>;
++			vfront-porch = <12>;
++			vback-porch = <20>;
++
++			hsync-active = <0>;
++			vsync-active = <0>;
++		};
++
++		port {
++			panel_in_lvds: endpoint {
++				remote-endpoint = <&lvds_encoder_output>;
++			};
++		};
++	};
++};
++
++/* microSD Card Slot */
++&mmc1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc1_pins>;
++
++	vmmc-supply = <&vmmc1>;
++	bus-width = <4>;
++
++	cd-gpios = <&twl_gpio 0 GPIO_ACTIVE_HIGH>;
++	
++	/* CHECK: is there a 'power_saving' flag available? if so, try setting it */
++};
++
++/* Internal/eMMC */
++&mmc2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc2_pins>;
++
++	vmmc-supply = <&vmmc2>;
++	vqmmc-supply = <&vsim>;
++	bus-width = <8>;
++
++	non-removable;
++	ti,non-removable;
++	
++	/* CHECK: is there a 'power_saving' flag available? if so, try setting it */
++};
++
++
++&mmc3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc3_pins>;
++
++	vmmc-supply = <&vwl1271>;
++	vqmmc-supply = <&vaux2>;
++	bus-width = <4>;
++
++	non-removable;
++	ti,non-removable;
++
++	cap-power-off-card;
++
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	/* Note: In the old board files, there is some code around 
++	 * ENCORE_WIFI_ENPOW_GPIO = 16, which I haven't accounted for anywhere.
++	 * See the encore_wifi_init function in board_encore.c and 
++	 * evt_wifi_init in board_evt_wifi.c, depending on kernel,
++	 * for more information.
++	 */
++	wlcore: wifi@2 {
++		compatible = "ti,wl1271";
++		reg = <2>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&wifi_pins>;
++
++		interrupt-parent = <&gpio1>;
++		interrupts = <15 IRQ_TYPE_EDGE_RISING>; /* gpio15 */
++		ref-clock-frequency = <38400000>;
++	};
++};
++
++&twl_keypad {
++	linux,keymap = < MATRIX_KEY(0, 0, KEY_HOME)
++			 MATRIX_KEY(1, 0, KEY_VOLUMEUP)
++			 MATRIX_KEY(2, 0, KEY_VOLUMEDOWN)
++			 >;
++};
++
++&uart2 {
++	status = "disabled";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart2_pins &bluetooth_pins>;
++
++	bluetooth {
++		status = "disabled";
++
++		compatible = "ti,wl1271-st";
++
++		enable-gpios = <&gpio2 28 GPIO_ACTIVE_HIGH>; /* gpio60 */
++	};
++};
++
++&uart3 {
++	status = "disabled";
++};
++
++&uart4 {
++	status = "disabled";
++};
++
++&usb_otg_hs {
++	pinctrl-names = "default";
++	pinctrl-0 = <&hsusb0_pins>;
++
++	interface-type = <0>;
++	usb-phy = <&usb2_phy>;
++	phys = <&usb2_phy>;
++	phy-names = "usb2-phy";
++	mode = <3>;
++	power = <50>;
++};
++
++
++&vaux2 {
++	regulator-always-on;
++};
++
++/* try without setting the voltages. 
++&vmmc2 {
++	regulator-name = "vmmc2";
++	regulator-min-microvolt = <1850000>;
++	regulator-max-microvolt = <1850000>;
++};
++*/
++
++/* Below section was added as it appears in similar devices.
++ * I haven't tested without it.
++ */
++/* Needed to power the DPI pins */
++&vpll2 {
++	regulator-always-on;
++};

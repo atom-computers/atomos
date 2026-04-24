@@ -1,0 +1,52 @@
+# Reference: https://postmarketos.org/uipkg
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=postmarketos-ui-gnome-mobile
+pkgver=4
+pkgrel=5
+pkgdesc="(Wayland) Gnome Shell patched to adapt better to phones (Experimental)"
+url="https://gnome.org/"
+arch="noarch !armhf !riscv64" # gnome-shell / riscv64: mutter-mobile
+license="GPL-3.0-or-later"
+depends="
+	bolt
+	dbus-x11
+	gdm
+	gnome-browser-connector
+	gnome-control-center
+	gnome-initial-setup
+	gnome-online-accounts
+	gnome-remote-desktop
+	gnome-shell-extensions
+	gnome-shell-mobile
+	gnome-user-docs
+	gsettings-desktop-schemas
+	pinentry-gnome
+	polkit-gnome
+	postmarketos-base-ui-gnome-mobile
+	postmarketos-usb-moded
+	tracker
+	tracker-miners
+	udisks2
+	xdg-desktop-portal-gnome
+	"
+_pmb_recommends="
+	gnome-mobile-extensions-app
+	postmarketos-welcome
+	"
+subpackages="$pkgname-openrc"
+options="!check pmb:systemd"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="gdm-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}
+

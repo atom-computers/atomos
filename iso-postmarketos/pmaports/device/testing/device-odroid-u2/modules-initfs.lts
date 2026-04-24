@@ -1,0 +1,11 @@
+uas
+usb-storage
+scsi_mod
+sd_mod
+dw_mmc
+sdhci
+mmc_block
+max77686
+max77686-regulator
+dw_mmc-exynos
+sdhci-s3c

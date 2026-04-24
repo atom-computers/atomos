@@ -1,0 +1,28 @@
+maintainer="Alec Su (AlecJY) <ae40515@yahoo.com.tw>"
+pkgname=firmware-xiaomi-natrium
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi 5s Plus"
+url="https://gitlab.com/AlecJY/firmware-xiaomi-natrium"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+
+_commit="ec5784e0abed3ce08a45543144f19fd32450b297"
+
+source="
+	$pkgname.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	firmware.files
+	"
+
+package() {
+	cd "$srcdir/$pkgname-$_commit/"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		echo $_i
+		install -Dm644 $_i "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+}
+sha512sums="
+6c83241b34961514e1add96c2585f9880db45e96f655e7799dcfffd282447601319bc9697bfed9a9dece353f5ad74f9296049cf1655aa60f7d083c4f8e1392ad  firmware-xiaomi-natrium.tar.gz
+306e48947c9bf35a6cc9d2fbca995e5e6e930e6efc43d4dc0a93358330e0949fe099ec735515bb033ab1cf0d55d450ff154a070789a9878f782cc6084a4063f7  firmware.files
+"

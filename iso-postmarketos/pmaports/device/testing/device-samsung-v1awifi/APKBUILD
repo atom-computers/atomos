@@ -1,0 +1,45 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=device-samsung-v1awifi
+pkgdesc="Samsung Galaxy Note Pro 12.2 WiFi"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-v1awifi
+	linux-firmware-brcm
+	linux-firmware-s5p-mfc
+	linux-postmarketos-exynos5
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-disable-gsd-color:disable_gsd_color"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+disable_gsd_color() {
+	# Prevent high CPU usage of gsd-color (see issue #3853)
+	install_if="$pkgname=$pkgver-r$pkgrel gnome-settings-daemon"
+
+	mkdir -p "$subpkgdir"/usr/share/systemd/user/
+	ln -s /dev/null "$subpkgdir"/usr/share/systemd/user/org.gnome.SettingsDaemon.Color.service
+}
+
+sha512sums="
+35e109d6145bd13ff0e400d80b1b57cdf68792303274907a7cd6ffbd85e38d410d738c9f6e791b628b9d891f2ced58dbf4cc7c4c8d67e624e0874f222e09eab9  deviceinfo
+4b3cb9dca85c04f1bfc5676029a6ae225409f173c6f0fc025786c1a72326dabad4b5ad75d0dd9a41cdebe8c15db5ca9761e15f3b9f99f8bf70b19769bb116fe6  modules-initfs
+"

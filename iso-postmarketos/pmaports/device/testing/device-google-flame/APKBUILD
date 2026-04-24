@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Vladimir Muromskii <vmuromskii@ya.ru>
+maintainer="Andrew Gigena <mail@andrewgigena.dev>"
+pkgname=device-google-flame
+pkgdesc="Google Pixel 4"
+pkgver=1
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-qcom-sm7150
+	firmware-google-flame
+	hexagonrpcd
+	linux-postmarketos-qcom-sm8150
+	make-dynpart-mappings
+	msm-firmware-loader
+	postmarketos-base
+	systemd-boot
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-qbootctl
+"
+makedepends="devicepkg-dev"
+
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+458f238284bbbabaedae4d4176439e1919a20d614062af50acd843287d65312621d3d38432f27782255afd97808b24c756352f1ec56ded2e33ce13e027793c0f  deviceinfo
+"

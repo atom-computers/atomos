@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Enable autostart of deferred initcalls (needed to bring Wi-Fi online)
+# deferred-initcalls comes from postmarketos-base package
+rc-update -q add deferred-initcalls sysinit
+
+# Explicitly specify wlan device. Without this, p2p0 will be
+# selected automatically instead of wlan0, and Wi-Fi will not work.
+if ! grep -q "i wlan0" /etc/conf.d/wpa_supplicant ; then
+	sed -i 's/-Dwext,nl80211/-Dwext,nl80211 -i wlan0/' /etc/conf.d/wpa_supplicant
+fi
+
+# Append Android mount points to fstab, if needed
+if ! grep -q "# Android specific mount points:" /etc/fstab ; then
+	cat /etc/fstab.android >> /etc/fstab
+fi

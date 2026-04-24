@@ -1,0 +1,22 @@
+From 50f223713472d5edced4cac7b8b32db0310973fc Mon Sep 17 00:00:00 2001
+From: BeastRein <80418545+BeastRein@users.noreply.github.com>
+Date: Mon, 8 Jan 2024 19:43:05 -0500
+Subject: [PATCH] Update proc-v7.S
+
+---
+ arch/arm/mm/proc-v7.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mm/proc-v7.S b/arch/arm/mm/proc-v7.S
+index 8e1ea433c3f1..e35a5e8cd700 100644
+--- a/arch/arm/mm/proc-v7.S
++++ b/arch/arm/mm/proc-v7.S
+@@ -504,7 +504,7 @@ __v7_setup_stack:
+ 	string	cpu_elf_name, "v7"
+ 	.align
+ 
+-	.section ".proc.info.init", #alloc
++	.section ".proc.info.init", "a"
+ 
+ 	/*
+ 	 * Standard v7 proc info content

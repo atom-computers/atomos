@@ -1,0 +1,36 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lenovo-kuntao
+pkgdesc="Lenovo P2"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-lenovo-kuntao
+	firmware-qcom-adreno-a530
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+92c34c51d12cf5ace1a76d2980e0979da8a2adbde0f73e8df8c76ad48a88ff4ac537f703953c817956feee93c0ba7f2f36011854445e311058521dad147d31a8  deviceinfo
+7025641401411a9dc58a99b420a9ae3a764dfb9af0381b0dcc407330d18781889baab3a00667a24fe6caea92298a1ec8b9bd79b6eb588e2be6b2b611d8d77935  kernel-cmdline.conf
+2ce6911ef54351f46819b3323e361ce60297b30f94e81a77e2d20b1bc294e51e3a0fa859ad8e257fa3fdef404a47dd3b64c247222cb7ca73f03cb4dcd083d1f8  modules-initfs
+"

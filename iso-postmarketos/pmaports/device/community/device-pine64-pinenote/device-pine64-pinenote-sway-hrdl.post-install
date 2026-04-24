@@ -1,0 +1,3 @@
+#!/bin/sh
+
+tinydm-set-session -f -s  /usr/share/wayland-sessions/sway_hrdl.desktop

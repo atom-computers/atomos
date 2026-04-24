@@ -1,0 +1,66 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+pkgname=device-xiaomi-lavender
+pkgdesc="Xiaomi Redmi Note 7"
+pkgver=7
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-xiaomi-lavender
+	firmware-qcom-adreno-a530
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-boe:kernel_boe
+	$pkgname-kernel-shenchao:kernel_shenchao
+	$pkgname-kernel-tianma:kernel_tianma
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs.boe
+	modules-initfs.shenchao
+	modules-initfs.tianma
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_boe() {
+	pkgdesc="For Redmi Note 7 with BOE panel"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_shenchao() {
+	pkgdesc="For Redmi Note 7 with Shenchao panel"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_tianma() {
+	pkgdesc="For Redmi Note 7 with Tianma panel"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+f79b3d39d9603a8ab1dc11fe25eaebed66c19e97e7dd4ea29bcad4b14b45a73afade45d6b3bf4fc27fc85d0fc093e1860227ba9c6b576fe55a0992fa35fe7f3e  deviceinfo
+20c49c33c9a887ad9c7c724de9047d9855e12c0a7b494beb8d60c2e584a174425d897d0afb875a204ac1ba841aca2c65df26eed9c5736ce99a6f4b516c6184a0  kernel-cmdline.conf
+8a8ff0eca50b93602e3c4bc38ce343264b8054b732d1bc0bf230987d5e36a1a6003a74d10519b8f40b7aa23b62df70886bf593539e0569114caa2143ca30cf03  modules-initfs.boe
+063a4f0ecfba79d1d47bc7aaf621c3a6314be97b1565ec9e6a0ad19afad6c2ef262da024c7df25292fb18a9d576bec5a060b8c4210125ad292bcc1bf61f7dc82  modules-initfs.shenchao
+063a4f0ecfba79d1d47bc7aaf621c3a6314be97b1565ec9e6a0ad19afad6c2ef262da024c7df25292fb18a9d576bec5a060b8c4210125ad292bcc1bf61f7dc82  modules-initfs.tianma
+"

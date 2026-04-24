@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-sony-amami
+pkgver=7
+pkgrel=0
+pkgdesc="Sony Xperia Z1 Compact"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	firmware-sony-rhine
+	linux-postmarketos-qcom-msm8974
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8974
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+6fd8407556d220f298c26a1fdf4a2c84b14a0093795be315cb6cead424c3513ae308b6a203db21c672732a9ba0714d0df8db54c9ef9e684b2c3a62fd1cd03ad5  deviceinfo
+ba352ba64f8c81fc984281d94c1418ba83ad00812631061b48765068c64887bffc653c8806abc0b9eb83067cdd4b0274d9252c72e86dac8bc595f47de31252bb  kernel-cmdline.conf
+760cc0e57426a534412c113addf8406c43463b3153a8517cc5d97eb9eec57d1e3a4af7f36dfcb1b5ed1d2b0be7d57af7903b5209096a902949f05df79b96dd66  modules-initfs
+"

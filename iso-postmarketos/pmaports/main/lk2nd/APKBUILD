@@ -1,0 +1,151 @@
+maintainer="Alexey Minnekhanov <alexeymin@postmarketos.org>"
+pkgname=lk2nd
+pkgver=22.0
+pkgrel=0
+pkgdesc="Secondary little kernel (lk) bootloader for several Qualcomm devices"
+arch="armv7 aarch64"
+url="https://github.com/msm8916-mainline/lk2nd"
+license="MIT AND BSD-3-Clause AND GPL-2.0-only"
+makedepends="
+	dtc
+	dtc-dev
+	gcc-arm-none-eabi
+	python3
+	py3-asn1-modules
+	py3-libfdt
+	py3-pycryptodome
+"
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/msm8916-mainline/lk2nd/archive/refs/tags/$pkgver.tar.gz
+"
+options="!check !archcheck !tracedeps !strip pmb:cross-native"
+# This APKBUILD builds bare metal executable; options are very specific!
+# * there are no tests (how do you even test the bootloader?);
+# * binaries are "arch-independent"; aarch64 build also produces armv7 binary,
+#   because ARM CPUs boot in 32-bit mode;
+# * there are no depends for bootloader, it's a kernel and OS in one binary;
+# * stripping of unused sections is done in lk2nd's own ld script.
+
+subpackages="
+	$pkgname-msm8916
+	$pkgname-msm8952
+"
+if [ "$CARCH" = "aarch64" ]; then
+	subpackages="
+		$subpackages
+		$pkgname-msm8953
+		$pkgname-msm8953-signed:msm8953_signed
+		$pkgname-msm8996
+	"
+fi
+
+if [ "$CARCH" = "armv7" ]; then
+	subpackages="
+		$subpackages
+		$pkgname-msm8226
+		$pkgname-msm8226-htc-memul:msm8226_htc_memul
+		$pkgname-msm8974
+		$pkgname-msm8974-htc-m8:msm8974_htc_m8
+		$pkgname-msm8974-lg-hammerhead:msm8974_lg_hammerhead
+	"
+fi
+
+_build() {
+	# This builds baremetal executable; distro-specific compiler flags
+	#   and optimizations can't be set by build system.
+	unset CFLAGS
+	unset CXXFLAGS
+	unset CPPFLAGS
+	unset LDFLAGS
+	unset CROSS_COMPILE
+	unset CC
+	unset CXX
+
+	# ccache and crossdirect "gcc"s are in PATH, get rid of them too,
+	#    redefine PATH to be bare minimum
+	unset PATH
+	export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+	local project="$1"; shift
+
+	make LK2ND_VERSION="$pkgver-r$pkgrel-postmarketos" TOOLCHAIN_PREFIX=arm-none-eabi- "$@" "$project"
+}
+
+build() {
+	_build lk2nd-msm8916
+	_build lk2nd-msm8952
+
+	if [ "$CARCH" = "aarch64" ]; then
+		# Ignore devices with QCDTB it fixes regression on other devices
+		_build lk2nd-msm8953 LK2ND_QCDTBS=""
+		_build lk2nd-msm8953 BOOTLOADER_OUT=msm8953-signed LK2ND_QCDTBS="" SIGN_BOOTIMG=1
+		_build lk2nd-msm8996
+	fi
+
+	if [ "$CARCH" = "armv7" ]; then
+		_build lk2nd-msm8974
+		_build lk2nd-msm8974 BOOTLOADER_OUT=htc-m8 MKBOOTIMG_ARGS="--ramdisk_offset=0x2000000 --tags_offset=0x1e00000"
+		_build lk2nd-msm8974 BOOTLOADER_OUT=lg-hammerhead LK2ND_QCDTBS=""
+		_build lk2nd-msm8226
+		_build lk2nd-msm8226 BOOTLOADER_OUT=htc-memul SCRATCH_ADDR=0x20000000 SCRATCH_ADDR_512MAP=0x20000000 SCRATCH_SIZE_512MAP=0x10000000
+	fi
+}
+
+package() {
+	# main package is empty
+	mkdir -p "$pkgdir"
+}
+
+msm8916() {
+	install -Dm644 "$builddir"/build-lk2nd-msm8916/lk2nd.img -t \
+		"$subpkgdir"/boot
+}
+
+msm8952() {
+	install -Dm644 "$builddir"/build-lk2nd-msm8952/lk2nd.img -t \
+		"$subpkgdir"/boot
+}
+
+msm8953() {
+	install -Dm644 "$builddir"/build-lk2nd-msm8953/lk2nd.img -t \
+		"$subpkgdir"/boot
+}
+
+msm8953_signed() {
+	install -Dm644 "$builddir"/msm8953-signed/build-lk2nd-msm8953/lk2nd.img -t \
+		"$subpkgdir"/boot
+}
+
+msm8974() {
+	install -Dm644 "$builddir"/build-lk2nd-msm8974/lk2nd.img -t \
+		"$subpkgdir"/boot
+}
+
+msm8974_htc_m8() {
+	install -Dm644 "$builddir"/htc-m8/build-lk2nd-msm8974/lk2nd.img -t \
+		"$subpkgdir"/boot
+}
+
+msm8974_lg_hammerhead() {
+	install -Dm644 "$builddir"/lg-hammerhead/build-lk2nd-msm8974/lk2nd.img -t \
+		"$subpkgdir"/boot
+}
+
+msm8996() {
+	install -Dm644 "$builddir"/build-lk2nd-msm8996/lk2nd.img \
+		"$subpkgdir"/boot/lk2nd.img
+}
+
+msm8226() {
+	install -Dm644 "$builddir"/build-lk2nd-msm8226/lk2nd.img \
+		"$subpkgdir"/boot/lk2nd.img
+}
+
+msm8226_htc_memul() {
+	install -Dm644 "$builddir"/htc-memul/build-lk2nd-msm8226/lk2nd.img \
+		"$subpkgdir"/boot/lk2nd.img
+}
+
+sha512sums="
+a09854fc967a42c0bcfa273e665839d101cd7ccfb66312f0f5f87109879578aad5875e699d745d04317a1a6c014ad9aae9f33485df09206e79523d88891de85b  lk2nd-22.0.tar.gz
+"

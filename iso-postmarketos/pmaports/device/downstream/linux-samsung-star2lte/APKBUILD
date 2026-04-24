@@ -1,0 +1,78 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos9810-star2lte_defconfig
+
+pkgname=linux-samsung-star2lte
+pkgver=4.9.299
+pkgrel=0
+pkgdesc="Samsung Galaxy S9+ kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-star2lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	findutils
+	flex
+	openssl-dev
+	perl
+	clang
+"
+
+CC="clang"
+HOSTCC="clang"
+
+# Source
+_repository="android_kernel_samsung_universal9810"
+_commit="5eaa43c40667ef407f826ca2bab9552568327c23"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Exynos9810-LTS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-decon_reg.patch
+	02-decon_dsi-BGRA-to-RGBA.patch
+	03-decon_dsi-UNBLANK-missed.patch
+	04-wifi-firmware-path.patch
+	05-decon_core-disable-decon_release.patch
+	06-fix-read-only-segment-has-dynamic-relocations-error.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *star2lte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+2825193c94868c2e301e773e5cc5eef0e4fb4030a7e02a14e4ccfcab491af884e27ffabe92aabbbf77c0e74764e190ee800b9cdd5ff495f28666bfc9754888f2  linux-samsung-star2lte-5eaa43c40667ef407f826ca2bab9552568327c23.tar.gz
+7e9cc0654ecee8768b1d89043b1e36471b0eaf3f02923621e5946ce65bb803d9e21e60661d13d51e65791359c231477c04b141f9b85d1a5b6a58202328880cd4  config-samsung-star2lte.aarch64
+8d56a239cbd488692249ba856f3e949863dbb60edacfc862171f7b42c2564e99009ba88c8299b2179f468291fdc0de118235307acad07ec88342b8e68ee6f075  01-decon_reg.patch
+65f5b1541bf3d4dab9db3d5de2aa888e794772f66d85541d11fbf515e7ec9188cda2ec46411f5469d8485caa5f405ffa16159f556bd9180c0cd3a527b14f9f5f  02-decon_dsi-BGRA-to-RGBA.patch
+24eb8701d77ad6cfc98a153341874d753a67930a369b1a08d8d51682a5d1014971e106bda93b7180bcacdf7032bb952fdca02f68886ea27c761eab8fefdb03fa  03-decon_dsi-UNBLANK-missed.patch
+596235334147a430d0104d01647e57aeac71b7a9e484daf4ad8fca9cd1cf23e040fbf2c00dea7fb2a096e741eb1dde71471585a59d71d47dcdb1336e5c16efad  04-wifi-firmware-path.patch
+3bae3abd47766eba42ebe1ca758f0d9e1f8a926132d98705985b493fb99115af863700cc76cfaf3a8b812fcae86b52b7c6807dc8fbade95f98c1e965c5e3dddc  05-decon_core-disable-decon_release.patch
+b24594b1bb1d5629338312236957e93f92422289a43f4865763e427f50b0e6a1ca0a7cd12cbdeb81135705b8d76d165b3b8f1b4ac6cb4c5b8d68ed3275ec299d  06-fix-read-only-segment-has-dynamic-relocations-error.patch
+"

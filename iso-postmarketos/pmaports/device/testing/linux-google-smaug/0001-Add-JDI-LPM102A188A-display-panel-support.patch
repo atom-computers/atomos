@@ -1,0 +1,1147 @@
+From patchwork Tue Oct 25 15:37:45 2022
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+X-Patchwork-Id: 1694475
+Return-Path: <linux-tegra-owner@vger.kernel.org>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@legolas.ozlabs.org
+Authentication-Results: legolas.ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=vger.kernel.org
+ (client-ip=2620:137:e000::1:20; helo=out1.vger.email;
+ envelope-from=linux-tegra-owner@vger.kernel.org; receiver=<UNKNOWN>)
+Authentication-Results: legolas.ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ secure) header.d=tecnico.ulisboa.pt header.i=@tecnico.ulisboa.pt
+ header.a=rsa-sha256 header.s=mail header.b=GViLoP3X;
+	dkim-atps=neutral
+Received: from out1.vger.email (out1.vger.email [IPv6:2620:137:e000::1:20])
+	by legolas.ozlabs.org (Postfix) with ESMTP id 4Mxbh11CxVz23kR
+	for <incoming@patchwork.ozlabs.org>; Wed, 26 Oct 2022 02:38:41 +1100 (AEDT)
+Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
+        id S232319AbiJYPij (ORCPT <rfc822;incoming@patchwork.ozlabs.org>);
+        Tue, 25 Oct 2022 11:38:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57098 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232152AbiJYPii (ORCPT
+        <rfc822;linux-tegra@vger.kernel.org>);
+        Tue, 25 Oct 2022 11:38:38 -0400
+Received: from smtp1.tecnico.ulisboa.pt (smtp1.tecnico.ulisboa.pt
+ [193.136.128.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E280185410;
+        Tue, 25 Oct 2022 08:38:37 -0700 (PDT)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTP id 45FBA6008777;
+        Tue, 25 Oct 2022 16:38:36 +0100 (WEST)
+X-Virus-Scanned: by amavisd-new-2.11.0 (20160426) (Debian) at
+        tecnico.ulisboa.pt
+Received: from smtp1.tecnico.ulisboa.pt ([127.0.0.1])
+        by localhost (smtp1.tecnico.ulisboa.pt [127.0.0.1]) (amavisd-new,
+ port 10025)
+        with LMTP id E-UtSeaQ8SqG; Tue, 25 Oct 2022 16:38:31 +0100 (WEST)
+Received: from mail1.tecnico.ulisboa.pt (mail1.ist.utl.pt
+ [IPv6:2001:690:2100:1::b3dd:b9ac])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTPS id BCFB36008763;
+        Tue, 25 Oct 2022 16:38:31 +0100 (WEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=tecnico.ulisboa.pt;
+        s=mail; t=1666712311;
+        bh=mOfuX1v6w2LK1O2hWFLzbZ86Qnb8CAZ7MrjT98fuOTU=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=GViLoP3XavVcSCe4Bh5eRxFAdoK/oT8OkGKG1ahNLuL7Ixis1CS0QhtmriO2eJUHH
+         U7dzow6t8JYKGvAweJz5Pv8xUCP7u47dkVCTFjmB+o7W5SsA0YdVQ7ibw2SP2s3SLu
+         UOys7kLQwyWBxui/2qoFOiHxPvkELwcsB7v6hx4k=
+Received: from localhost.localdomain (unknown [89.207.171.77])
+        (Authenticated sender: ist187313)
+        by mail1.tecnico.ulisboa.pt (Postfix) with ESMTPSA id 249A636007E;
+        Tue, 25 Oct 2022 16:38:17 +0100 (WEST)
+From: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+Cc: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>, thierry.reding@gmail.com,
+        sam@ravnborg.org, airlied@linux.ie, daniel@ffwll.ch,
+        robh+dt@kernel.org, krzysztof.kozlowski+dt@linaro.org,
+        jonathanh@nvidia.com, arnd@arndb.de,
+        dri-devel@lists.freedesktop.org, devicetree@vger.kernel.org,
+        linux-tegra@vger.kernel.org
+Subject: [PATCH v2 1/4] dt-bindings: display: Add bindings for JDI LPM102A188A
+Date: Tue, 25 Oct 2022 16:37:45 +0100
+Message-Id: <20221025153746.101278-2-diogo.ivo@tecnico.ulisboa.pt>
+X-Mailer: git-send-email 2.38.1
+In-Reply-To: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+References: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+MIME-Version: 1.0
+X-Spam-Status: No, score=-4.3 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+        DKIM_VALID,DKIM_VALID_AU,RCVD_IN_DNSWL_MED,RCVD_IN_MSPIKE_H3,
+        RCVD_IN_MSPIKE_WL,SPF_HELO_PASS,SPF_PASS,URIBL_BLOCKED autolearn=ham
+        autolearn_force=no version=3.4.6
+X-Spam-Checker-Version: SpamAssassin 3.4.6 (2021-04-09) on
+        lindbergh.monkeyblade.net
+To: unlisted-recipients:; (no To-header on input)
+Precedence: bulk
+List-ID: <linux-tegra.vger.kernel.org>
+X-Mailing-List: linux-tegra@vger.kernel.org
+
+The LPM102A188A is a 10.2" 2560x1800 IPS panel found in
+the Google Pixel C.
+
+Signed-off-by: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+Changes in v2:
+ - removed the touch screen property
+
+ .../display/panel/jdi,lpm102a188a.yaml        | 94 +++++++++++++++++++
+ 1 file changed, 94 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/display/panel/jdi,lpm102a188a.yaml
+
+diff --git a/Documentation/devicetree/bindings/display/panel/jdi,lpm102a188a.yaml b/Documentation/devicetree/bindings/display/panel/jdi,lpm102a188a.yaml
+new file mode 100644
+index 000000000000..2f4d27a309a7
+--- /dev/null
++++ b/Documentation/devicetree/bindings/display/panel/jdi,lpm102a188a.yaml
+@@ -0,0 +1,94 @@
++# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/display/panel/jdi,lpm102a188a.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: JDI LPM102A188A 2560x1800 10.2" DSI Panel
++
++maintainers:
++  - Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
++
++description: |
++  This panel requires a dual-channel DSI host to operate. It supports two modes:
++  - left-right: each channel drives the left or right half of the screen
++  - even-odd: each channel drives the even or odd lines of the screen
++
++  Each of the DSI channels controls a separate DSI peripheral. The peripheral
++  driven by the first link (DSI-LINK1) is considered the primary peripheral
++  and controls the device. The 'link2' property contains a phandle to the
++  peripheral driven by the second link (DSI-LINK2).
++
++allOf:
++  - $ref: panel-common.yaml#
++
++properties:
++  compatible:
++    const: jdi,lpm102a188a
++
++  reg: true
++  enable-gpios: true
++  reset-gpios: true
++  power-supply: true
++  backlight: true
++
++  ddi-supply:
++    description: The regulator that provides IOVCC (1.8V).
++
++  link2:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: |
++      phandle to the DSI peripheral on the secondary link. Note that the
++      presence of this property marks the containing node as DSI-LINK1.
++
++required:
++  - compatible
++  - reg
++
++if:
++  required:
++    - link2
++then:
++  required:
++    - power-supply
++    - ddi-supply
++    - enable-gpios
++    - reset-gpios
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/gpio/gpio.h>
++    #include <dt-bindings/gpio/tegra-gpio.h>
++
++    dsia: dsi@54300000 {
++        #address-cells = <1>;
++        #size-cells = <0>;
++        reg = <0x0 0x54300000 0x0 0x00040000>;
++
++        link2: panel@0 {
++            compatible = "jdi,lpm102a188a";
++            reg = <0>;
++        };
++    };
++
++    dsib: dsi@54400000{
++        #address-cells = <1>;
++        #size-cells = <0>;
++        reg = <0x0 0x54400000 0x0 0x00040000>;
++        nvidia,ganged-mode = <&dsia>;
++
++        link1: panel@0 {
++            compatible = "jdi,lpm102a188a";
++            reg = <0>;
++            power-supply = <&pplcd_vdd>;
++            ddi-supply = <&pp1800_lcdio>;
++            enable-gpios = <&gpio TEGRA_GPIO(V, 1) GPIO_ACTIVE_HIGH>;
++            reset-gpios = <&gpio TEGRA_GPIO(V, 2) GPIO_ACTIVE_LOW>;
++            link2 = <&link2>;
++            backlight = <&backlight>;
++        };
++    };
++
++...
+
+From patchwork Tue Oct 25 15:37:47 2022
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+X-Patchwork-Id: 1694477
+Return-Path: <linux-tegra-owner@vger.kernel.org>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@legolas.ozlabs.org
+Authentication-Results: legolas.ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=vger.kernel.org
+ (client-ip=2620:137:e000::1:20; helo=out1.vger.email;
+ envelope-from=linux-tegra-owner@vger.kernel.org; receiver=<UNKNOWN>)
+Authentication-Results: legolas.ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ secure) header.d=tecnico.ulisboa.pt header.i=@tecnico.ulisboa.pt
+ header.a=rsa-sha256 header.s=mail header.b=WzZtI1ai;
+	dkim-atps=neutral
+Received: from out1.vger.email (out1.vger.email [IPv6:2620:137:e000::1:20])
+	by legolas.ozlabs.org (Postfix) with ESMTP id 4MxbhD6RBTz23js
+	for <incoming@patchwork.ozlabs.org>; Wed, 26 Oct 2022 02:38:52 +1100 (AEDT)
+Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
+        id S232284AbiJYPiw (ORCPT <rfc822;incoming@patchwork.ozlabs.org>);
+        Tue, 25 Oct 2022 11:38:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57226 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232152AbiJYPiv (ORCPT
+        <rfc822;linux-tegra@vger.kernel.org>);
+        Tue, 25 Oct 2022 11:38:51 -0400
+Received: from smtp1.tecnico.ulisboa.pt (smtp1.tecnico.ulisboa.pt
+ [IPv6:2001:690:2100:1::15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 08FA8189538;
+        Tue, 25 Oct 2022 08:38:48 -0700 (PDT)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTP id 434016008764;
+        Tue, 25 Oct 2022 16:38:47 +0100 (WEST)
+X-Virus-Scanned: by amavisd-new-2.11.0 (20160426) (Debian) at
+        tecnico.ulisboa.pt
+Received: from smtp1.tecnico.ulisboa.pt ([127.0.0.1])
+        by localhost (smtp1.tecnico.ulisboa.pt [127.0.0.1]) (amavisd-new,
+ port 10025)
+        with LMTP id h9NZeVGhtjag; Tue, 25 Oct 2022 16:38:43 +0100 (WEST)
+Received: from mail1.tecnico.ulisboa.pt (mail1.ist.utl.pt [193.136.128.10])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTPS id 9CA006008790;
+        Tue, 25 Oct 2022 16:38:43 +0100 (WEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=tecnico.ulisboa.pt;
+        s=mail; t=1666712323;
+        bh=rLPSMEa5QR4W2bAIa2PZGeA+BLLtvrDQHBpWE5Lx8n4=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=WzZtI1aiSjFPDTDQA3ObLNWAX5xJb0l8isR7FxOHTPVgWRbn6rIHszEwQeCyJ358G
+         DQny2Tk84sfFHUQIMmHo2l7vVAeOo18kd9pEHsKovoqBOYAgcZ9193tEwf5Vz7n25U
+         u9ukXcUHKLVfQ1dvH1MHOC5IquZ0kqyfhpn5bjhI=
+Received: from localhost.localdomain (unknown [89.207.171.77])
+        (Authenticated sender: ist187313)
+        by mail1.tecnico.ulisboa.pt (Postfix) with ESMTPSA id A8454360085;
+        Tue, 25 Oct 2022 16:38:40 +0100 (WEST)
+From: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+Cc: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>, thierry.reding@gmail.com,
+        sam@ravnborg.org, airlied@linux.ie, daniel@ffwll.ch,
+        robh+dt@kernel.org, krzysztof.kozlowski+dt@linaro.org,
+        jonathanh@nvidia.com, arnd@arndb.de,
+        dri-devel@lists.freedesktop.org, devicetree@vger.kernel.org,
+        linux-tegra@vger.kernel.org
+Subject: [PATCH v2 2/4] drm/tegra: dsi: Clear enable register if powered by
+ bootloader
+Date: Tue, 25 Oct 2022 16:37:47 +0100
+Message-Id: <20221025153746.101278-3-diogo.ivo@tecnico.ulisboa.pt>
+X-Mailer: git-send-email 2.38.1
+In-Reply-To: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+References: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+MIME-Version: 1.0
+X-Spam-Status: No, score=-4.3 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+        DKIM_VALID,DKIM_VALID_AU,RCVD_IN_DNSWL_MED,SPF_HELO_PASS,SPF_PASS,
+        URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.6
+X-Spam-Checker-Version: SpamAssassin 3.4.6 (2021-04-09) on
+        lindbergh.monkeyblade.net
+To: unlisted-recipients:; (no To-header on input)
+Precedence: bulk
+List-ID: <linux-tegra.vger.kernel.org>
+X-Mailing-List: linux-tegra@vger.kernel.org
+
+In cases where the DSI module is left on by the bootloader
+some panels may fail to initialize if the enable register is not cleared
+before the panel's initialization sequence is sent, so clear it if that
+is the case. 
+
+Signed-off-by: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+---
+Changes in v2:
+ - detect if the DSI module is on based on the register value,
+   instead of a DT property.
+ - remove Display Controller clear, since it is redundant.
+
+ drivers/gpu/drm/tegra/dsi.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/gpu/drm/tegra/dsi.c b/drivers/gpu/drm/tegra/dsi.c
+index de1333dc0d86..5954676a7ab1 100644
+--- a/drivers/gpu/drm/tegra/dsi.c
++++ b/drivers/gpu/drm/tegra/dsi.c
+@@ -912,6 +912,15 @@ static void tegra_dsi_encoder_enable(struct drm_encoder *encoder)
+ 	u32 value;
+ 	int err;
+ 
++	/* If the bootloader enabled DSI it needs to be disabled
++	 * in order for the panel initialization commands to be
++	 * properly sent.
++	 */
++	value = tegra_dsi_readl(dsi, DSI_POWER_CONTROL);
++
++	if (value & DSI_POWER_CONTROL_ENABLE)
++		tegra_dsi_disable(dsi);
++
+ 	err = tegra_dsi_prepare(dsi);
+ 	if (err < 0) {
+ 		dev_err(dsi->dev, "failed to prepare: %d\n", err);
+
+From patchwork Tue Oct 25 15:37:48 2022
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Patchwork-Submitter: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+X-Patchwork-Id: 1694478
+Return-Path: <linux-tegra-owner@vger.kernel.org>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@legolas.ozlabs.org
+Authentication-Results: legolas.ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=vger.kernel.org
+ (client-ip=2620:137:e000::1:20; helo=out1.vger.email;
+ envelope-from=linux-tegra-owner@vger.kernel.org; receiver=<UNKNOWN>)
+Authentication-Results: legolas.ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ secure) header.d=tecnico.ulisboa.pt header.i=@tecnico.ulisboa.pt
+ header.a=rsa-sha256 header.s=mail header.b=G9jW0AyR;
+	dkim-atps=neutral
+Received: from out1.vger.email (out1.vger.email [IPv6:2620:137:e000::1:20])
+	by legolas.ozlabs.org (Postfix) with ESMTP id 4MxbhZ4dzxz23js
+	for <incoming@patchwork.ozlabs.org>; Wed, 26 Oct 2022 02:39:10 +1100 (AEDT)
+Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
+        id S232152AbiJYPjJ (ORCPT <rfc822;incoming@patchwork.ozlabs.org>);
+        Tue, 25 Oct 2022 11:39:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57350 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233335AbiJYPjH (ORCPT
+        <rfc822;linux-tegra@vger.kernel.org>);
+        Tue, 25 Oct 2022 11:39:07 -0400
+Received: from smtp1.tecnico.ulisboa.pt (smtp1.tecnico.ulisboa.pt
+ [193.136.128.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 56176156272;
+        Tue, 25 Oct 2022 08:39:06 -0700 (PDT)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTP id 171D46000423;
+        Tue, 25 Oct 2022 16:39:05 +0100 (WEST)
+X-Virus-Scanned: by amavisd-new-2.11.0 (20160426) (Debian) at
+        tecnico.ulisboa.pt
+Received: from smtp1.tecnico.ulisboa.pt ([127.0.0.1])
+        by localhost (smtp1.tecnico.ulisboa.pt [127.0.0.1]) (amavisd-new,
+ port 10025)
+        with LMTP id mKq8NXh8mVvI; Tue, 25 Oct 2022 16:38:59 +0100 (WEST)
+Received: from mail1.tecnico.ulisboa.pt (mail1.ist.utl.pt [193.136.128.10])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTPS id 15FE86008808;
+        Tue, 25 Oct 2022 16:38:59 +0100 (WEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=tecnico.ulisboa.pt;
+        s=mail; t=1666712339;
+        bh=8+N1CCqStgkdwlH3d9b5Pgu3DCSMvsKXHOuMYZzP5bU=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=G9jW0AyRVTRJT8gkR/V4vCNBLRHqxWQs2lYGsh9Ebnk5u2B/y36+lamBL0/PWrvFD
+         7lCcQyQ5AmHAyvPxc7dHlBOMLU87sZAmvMe0h+sjixW0ZdBP22VIQAHsefE6OrJdRP
+         HIfoRi2hz+a5+euPW5JY1UD//9LAnCpDi/h80cAk=
+Received: from localhost.localdomain (unknown [89.207.171.77])
+        (Authenticated sender: ist187313)
+        by mail1.tecnico.ulisboa.pt (Postfix) with ESMTPSA id 696DC360085;
+        Tue, 25 Oct 2022 16:38:50 +0100 (WEST)
+From: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+Cc: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>, thierry.reding@gmail.com,
+        sam@ravnborg.org, airlied@linux.ie, daniel@ffwll.ch,
+        robh+dt@kernel.org, krzysztof.kozlowski+dt@linaro.org,
+        jonathanh@nvidia.com, arnd@arndb.de,
+        dri-devel@lists.freedesktop.org, devicetree@vger.kernel.org,
+        linux-tegra@vger.kernel.org
+Subject: [PATCH v2 3/4] drm/panel: Add driver for JDI LPM102A188A
+Date: Tue, 25 Oct 2022 16:37:48 +0100
+Message-Id: <20221025153746.101278-4-diogo.ivo@tecnico.ulisboa.pt>
+X-Mailer: git-send-email 2.38.1
+In-Reply-To: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+References: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+MIME-Version: 1.0
+X-Spam-Status: No, score=-4.3 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+        DKIM_VALID,DKIM_VALID_AU,RCVD_IN_DNSWL_MED,RCVD_IN_MSPIKE_H3,
+        RCVD_IN_MSPIKE_WL,SPF_HELO_PASS,SPF_PASS,URIBL_BLOCKED autolearn=ham
+        autolearn_force=no version=3.4.6
+X-Spam-Checker-Version: SpamAssassin 3.4.6 (2021-04-09) on
+        lindbergh.monkeyblade.net
+To: unlisted-recipients:; (no To-header on input)
+Precedence: bulk
+List-ID: <linux-tegra.vger.kernel.org>
+X-Mailing-List: linux-tegra@vger.kernel.org
+
+The JDI LPM102A188A is a 2560x1800 IPS panel found in the Google Pixel C.
+This driver is based on the downstream GPLv2 driver released by Google
+written by Sean Paul [1], which was then adapted to the newer kernel APIs.
+
+[1]: https://android.googlesource.com/kernel/tegra/+/refs/heads/android-tegra-dragon-3.18-oreo/drivers/gpu/drm/panel/panel-jdi-lpm102a188a.c
+
+Signed-off-by: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+---
+Changes in v2:
+ - tuned backlight delays
+
+ drivers/gpu/drm/panel/Kconfig                 |  11 +
+ drivers/gpu/drm/panel/Makefile                |   1 +
+ drivers/gpu/drm/panel/panel-jdi-lpm102a188a.c | 509 ++++++++++++++++++
+ 3 files changed, 521 insertions(+)
+ create mode 100644 drivers/gpu/drm/panel/panel-jdi-lpm102a188a.c
+
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+index a582ddd583c2..80eda8f6bee0 100644
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -214,6 +214,17 @@ config DRM_PANEL_JDI_LT070ME05000
+ 	  The panel has a 1200(RGB)×1920 (WUXGA) resolution and uses
+ 	  24 bit per pixel.
+ 
++config DRM_PANEL_JDI_LPM102A188A
++	tristate "JDI LPM102A188A DSI panel"
++	depends on OF && GPIOLIB
++	depends on DRM_MIPI_DSI
++	depends on BACKLIGHT_CLASS_DEVICE
++	help
++	  Say Y here if you want to enable support for JDI LPM102A188A DSI
++	  control mode panel as found in Google Pixel C devices.
++	  The panel has a 2560×1800 resolution. It provides a MIPI DSI interface
++	  to the host.
++
+ config DRM_PANEL_JDI_R63452
+ 	tristate "JDI R63452 Full HD DSI panel"
+ 	depends on OF
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+index 34e717382dbb..2870cba96d14 100644
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9881C) += panel-ilitek-ili9881c.o
+ obj-$(CONFIG_DRM_PANEL_INNOLUX_EJ030NA) += panel-innolux-ej030na.o
+ obj-$(CONFIG_DRM_PANEL_INNOLUX_P079ZCA) += panel-innolux-p079zca.o
+ obj-$(CONFIG_DRM_PANEL_JDI_LT070ME05000) += panel-jdi-lt070me05000.o
++obj-$(CONFIG_DRM_PANEL_JDI_LPM102A188A) += panel-jdi-lpm102a188a.o
+ obj-$(CONFIG_DRM_PANEL_JDI_R63452) += panel-jdi-fhd-r63452.o
+ obj-$(CONFIG_DRM_PANEL_KHADAS_TS050) += panel-khadas-ts050.o
+ obj-$(CONFIG_DRM_PANEL_KINGDISPLAY_KD097D04) += panel-kingdisplay-kd097d04.o
+diff --git a/drivers/gpu/drm/panel/panel-jdi-lpm102a188a.c b/drivers/gpu/drm/panel/panel-jdi-lpm102a188a.c
+new file mode 100644
+index 000000000000..980af82ad6d6
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-jdi-lpm102a188a.c
+@@ -0,0 +1,509 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (C) 2014 Google, Inc.
++ *
++ * Copyright (C) 2022 Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
++ *
++ * Adapted from the downstream Pixel C driver written by Sean Paul
++ */
++
++#include <linux/backlight.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/regulator/consumer.h>
++
++#include <video/mipi_display.h>
++
++#include <drm/drm_crtc.h>
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_panel.h>
++
++struct jdi_panel {
++	struct drm_panel base;
++	struct mipi_dsi_device *link1;
++	struct mipi_dsi_device *link2;
++
++	struct regulator *supply;
++	struct regulator *ddi_supply;
++	struct backlight_device *backlight;
++
++	struct gpio_desc *enable_gpio;
++	struct gpio_desc *reset_gpio;
++
++	const struct drm_display_mode *mode;
++
++	bool prepared;
++	bool enabled;
++};
++
++static inline struct jdi_panel *to_panel_jdi(struct drm_panel *panel)
++{
++	return container_of(panel, struct jdi_panel, base);
++}
++
++static void jdi_wait_frames(struct jdi_panel *jdi, unsigned int frames)
++{
++	unsigned int refresh = drm_mode_vrefresh(jdi->mode);
++
++	if (WARN_ON(frames > refresh))
++		return;
++
++	msleep(1000 / (refresh / frames));
++}
++
++static int jdi_panel_disable(struct drm_panel *panel)
++{
++	struct jdi_panel *jdi = to_panel_jdi(panel);
++
++	if (!jdi->enabled)
++		return 0;
++
++	backlight_disable(jdi->backlight);
++
++	jdi_wait_frames(jdi, 2);
++
++	jdi->enabled = false;
++
++	return 0;
++}
++
++static int jdi_panel_unprepare(struct drm_panel *panel)
++{
++	struct jdi_panel *jdi = to_panel_jdi(panel);
++	int ret;
++
++	if (!jdi->prepared)
++		return 0;
++
++	ret = mipi_dsi_dcs_set_display_off(jdi->link1);
++	if (ret < 0)
++		dev_err(panel->dev, "failed to set display off: %d\n", ret);
++	ret = mipi_dsi_dcs_set_display_off(jdi->link2);
++	if (ret < 0)
++		dev_err(panel->dev, "failed to set display off: %d\n", ret);
++
++	/* Specified by JDI @ 50ms, subject to change */
++	msleep(50);
++
++	ret = mipi_dsi_dcs_enter_sleep_mode(jdi->link1);
++	if (ret < 0)
++		dev_err(panel->dev, "failed to enter sleep mode: %d\n", ret);
++	ret = mipi_dsi_dcs_enter_sleep_mode(jdi->link2);
++	if (ret < 0)
++		dev_err(panel->dev, "failed to enter sleep mode: %d\n", ret);
++
++	/* Specified by JDI @ 150ms, subject to change */
++	msleep(150);
++
++	gpiod_set_value(jdi->reset_gpio, 1);
++
++	/* T4 = 1ms */
++	usleep_range(1000, 3000);
++
++	gpiod_set_value(jdi->enable_gpio, 0);
++
++	/* T5 = 2ms */
++	usleep_range(2000, 4000);
++
++	regulator_disable(jdi->ddi_supply);
++
++	/* T6 = 2ms */
++	usleep_range(5000, 6000);
++
++	regulator_disable(jdi->supply);
++
++	jdi->prepared = false;
++
++	return 0;
++}
++
++static int jdi_setup_symmetrical_split(struct mipi_dsi_device *left,
++				       struct mipi_dsi_device *right,
++				       const struct drm_display_mode *mode)
++{
++	int err;
++
++	err = mipi_dsi_dcs_set_column_address(left, 0, mode->hdisplay / 2 - 1);
++	if (err < 0) {
++		dev_err(&left->dev, "failed to set column address: %d\n", err);
++		return err;
++	}
++
++	err = mipi_dsi_dcs_set_column_address(right, 0, mode->hdisplay / 2 - 1);
++	if (err < 0) {
++		dev_err(&right->dev, "failed to set column address: %d\n", err);
++		return err;
++	}
++
++	err = mipi_dsi_dcs_set_page_address(left, 0, mode->vdisplay - 1);
++	if (err < 0) {
++		dev_err(&left->dev, "failed to set page address: %d\n", err);
++		return err;
++	}
++
++	err = mipi_dsi_dcs_set_page_address(right, 0, mode->vdisplay - 1);
++	if (err < 0) {
++		dev_err(&right->dev, "failed to set page address: %d\n", err);
++		return err;
++	}
++
++	return 0;
++}
++
++static int jdi_panel_prepare(struct drm_panel *panel)
++{
++	struct jdi_panel *jdi = to_panel_jdi(panel);
++	u8 format = MIPI_DCS_PIXEL_FMT_24BIT;
++	int err;
++
++	if (jdi->prepared)
++		return 0;
++
++	/* Disable backlight to avoid showing random pixels
++	 * with a conservative delay for it to take effect.
++	 */
++	backlight_disable(jdi->backlight);
++	msleep(100);
++
++	jdi->link1->mode_flags |= MIPI_DSI_MODE_LPM;
++	jdi->link2->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	err = regulator_enable(jdi->supply);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to enable supply: %d\n", err);
++		return err;
++	}
++	/* T1 = 2ms */
++	usleep_range(2000, 4000);
++
++	err = regulator_enable(jdi->ddi_supply);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to enable ddi_supply: %d\n", err);
++		return err;
++	}
++	/* T2 = 1ms */
++	usleep_range(1000, 3000);
++
++	gpiod_set_value(jdi->enable_gpio, 1);
++	/* T3 = 10ms */
++	usleep_range(10000, 15000);
++
++	gpiod_set_value(jdi->reset_gpio, 0);
++	/* Specified by JDI @ 3ms, subject to change */
++	usleep_range(3000, 5000);
++
++	/*
++	 * TODO: The device supports both left-right and even-odd split
++	 * configurations, but this driver currently supports only the left-
++	 * right split. To support a different mode a mechanism needs to be
++	 * put in place to communicate the configuration back to the DSI host
++	 * controller.
++	 */
++
++	err = jdi_setup_symmetrical_split(jdi->link1, jdi->link2,
++					    jdi->mode);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to set up symmetrical split: %d\n",
++			err);
++		goto poweroff;
++	}
++
++	err = mipi_dsi_dcs_set_tear_scanline(jdi->link1,
++					     jdi->mode->vdisplay - 16);
++	if (err < 0)
++		dev_err(panel->dev, "failed to set tear scanline: %d\n", err);
++
++	err = mipi_dsi_dcs_set_tear_scanline(jdi->link2,
++					     jdi->mode->vdisplay - 16);
++	if (err < 0)
++		dev_err(panel->dev, "failed to set tear scanline: %d\n", err);
++
++	err = mipi_dsi_dcs_set_tear_on(jdi->link1,
++				       MIPI_DSI_DCS_TEAR_MODE_VBLANK);
++	if (err < 0)
++		dev_err(panel->dev, "failed to set tear on: %d\n", err);
++
++	err = mipi_dsi_dcs_set_tear_on(jdi->link2,
++				       MIPI_DSI_DCS_TEAR_MODE_VBLANK);
++	if (err < 0)
++		dev_err(panel->dev, "failed to set tear on: %d\n", err);
++
++	err = mipi_dsi_dcs_set_pixel_format(jdi->link1, format);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to set pixel format: %d\n", err);
++		goto poweroff;
++	}
++
++	err = mipi_dsi_dcs_set_pixel_format(jdi->link2, format);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to set pixel format: %d\n", err);
++		goto poweroff;
++	}
++
++	err = mipi_dsi_dcs_exit_sleep_mode(jdi->link1);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to exit sleep mode: %d\n", err);
++		goto poweroff;
++	}
++
++	err = mipi_dsi_dcs_exit_sleep_mode(jdi->link2);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to exit sleep mode: %d\n", err);
++		goto poweroff;
++	}
++
++	/*
++	 * We need to wait 150ms between mipi_dsi_dcs_exit_sleep_mode() and
++	 * mipi_dsi_dcs_set_display_on().
++	 */
++	msleep(150);
++
++	err = mipi_dsi_dcs_set_display_on(jdi->link1);
++	if (err < 0)
++		dev_err(panel->dev, "failed to set display on: %d\n", err);
++
++
++	err = mipi_dsi_dcs_set_display_on(jdi->link2);
++	if (err < 0)
++		dev_err(panel->dev, "failed to set display on: %d\n", err);
++
++	jdi->prepared = true;
++
++	jdi->link1->mode_flags &= ~MIPI_DSI_MODE_LPM;
++	jdi->link2->mode_flags &= ~MIPI_DSI_MODE_LPM;
++
++	return 0;
++
++poweroff:
++	regulator_disable(jdi->ddi_supply);
++
++	/* T6 = 2ms */
++	usleep_range(7000, 9000);
++
++	regulator_disable(jdi->supply);
++
++	return err;
++}
++
++static int jdi_panel_enable(struct drm_panel *panel)
++{
++	struct jdi_panel *jdi = to_panel_jdi(panel);
++
++	if (jdi->enabled)
++		return 0;
++
++	/*
++	 * Ensure we send image data before turning the backlight on,
++	 * to avoid the display showing random pixels (colored snow).
++	 */
++	jdi_wait_frames(jdi, 3);
++
++	backlight_enable(jdi->backlight);
++
++	jdi->enabled = true;
++
++	return 0;
++}
++
++static const struct drm_display_mode default_mode = {
++	.clock = 331334,
++	.hdisplay = 2560,
++	.hsync_start = 2560 + 80,
++	.hsync_end = 2560 + 80 + 80,
++	.htotal = 2560 + 80 + 80 + 80,
++	.vdisplay = 1800,
++	.vsync_start = 1800 + 4,
++	.vsync_end = 1800 + 4 + 4,
++	.vtotal = 1800 + 4 + 4 + 4,
++	.flags = 0,
++};
++
++static int jdi_panel_get_modes(struct drm_panel *panel,
++			       struct drm_connector *connector)
++{
++	struct drm_display_mode *mode;
++	struct jdi_panel *jdi = to_panel_jdi(panel);
++	struct device *dev = &jdi->link1->dev;
++
++	mode = drm_mode_duplicate(connector->dev, &default_mode);
++	if (!mode) {
++		dev_err(dev, "failed to add mode %ux%ux@%u\n",
++			default_mode.hdisplay, default_mode.vdisplay,
++			drm_mode_vrefresh(&default_mode));
++		return -ENOMEM;
++	}
++
++	drm_mode_set_name(mode);
++
++	drm_mode_probed_add(connector, mode);
++
++	connector->display_info.width_mm = 211;
++	connector->display_info.height_mm = 148;
++	connector->display_info.bpc = 8;
++
++	return 1;
++}
++
++static const struct drm_panel_funcs jdi_panel_funcs = {
++	.prepare = jdi_panel_prepare,
++	.enable = jdi_panel_enable,
++	.disable = jdi_panel_disable,
++	.unprepare = jdi_panel_unprepare,
++	.get_modes = jdi_panel_get_modes,
++};
++
++static const struct of_device_id jdi_of_match[] = {
++	{ .compatible = "jdi,lpm102a188a", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, jdi_of_match);
++
++static int jdi_panel_add(struct jdi_panel *jdi)
++{
++	struct device *dev = &jdi->link1->dev;
++
++	jdi->mode = &default_mode;
++
++	jdi->supply = devm_regulator_get(dev, "power");
++	if (IS_ERR(jdi->supply))
++		return dev_err_probe(dev, PTR_ERR(jdi->supply),
++				     "failed to get power regulator\n");
++
++	jdi->ddi_supply = devm_regulator_get(dev, "ddi");
++	if (IS_ERR(jdi->ddi_supply))
++		return dev_err_probe(dev, PTR_ERR(jdi->ddi_supply),
++				     "failed to get ddi regulator\n");
++
++	jdi->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
++	if (IS_ERR(jdi->reset_gpio))
++		return dev_err_probe(dev, PTR_ERR(jdi->reset_gpio),
++				     "failed to get reset gpio\n");
++	usleep_range(1000, 3000);
++
++	jdi->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
++	if (IS_ERR(jdi->enable_gpio))
++		return dev_err_probe(dev, PTR_ERR(jdi->enable_gpio),
++				     "failed to get enable gpio\n");
++	usleep_range(2000, 4000);
++
++	jdi->backlight = devm_of_find_backlight(dev);
++	if (IS_ERR(jdi->backlight))
++		return dev_err_probe(dev, PTR_ERR(jdi->backlight),
++				     "failed to create backlight\n");
++
++	drm_panel_init(&jdi->base, &jdi->link1->dev, &jdi_panel_funcs,
++		       DRM_MODE_CONNECTOR_DSI);
++
++	drm_panel_add(&jdi->base);
++
++	return 0;
++}
++
++static void jdi_panel_del(struct jdi_panel *jdi)
++{
++	if (jdi->base.dev)
++		drm_panel_remove(&jdi->base);
++
++	if (jdi->link2)
++		put_device(&jdi->link2->dev);
++}
++
++static int jdi_panel_dsi_probe(struct mipi_dsi_device *dsi)
++{
++	struct mipi_dsi_device *secondary = NULL;
++	struct jdi_panel *jdi;
++	struct device_node *np;
++	int err;
++
++	dsi->lanes = 4;
++	dsi->format = MIPI_DSI_FMT_RGB888;
++	dsi->mode_flags = 0;
++
++	/* Find DSI-LINK1 */
++	np = of_parse_phandle(dsi->dev.of_node, "link2", 0);
++	if (np) {
++		secondary = of_find_mipi_dsi_device_by_node(np);
++		of_node_put(np);
++
++		if (!secondary)
++			return -EPROBE_DEFER;
++	}
++
++	/* register a panel for only the DSI-LINK1 interface */
++	if (secondary) {
++		jdi = devm_kzalloc(&dsi->dev, sizeof(*jdi), GFP_KERNEL);
++		if (!jdi) {
++			put_device(&secondary->dev);
++			return -ENOMEM;
++		}
++
++		mipi_dsi_set_drvdata(dsi, jdi);
++
++		jdi->link1 = dsi;
++		jdi->link2 = secondary;
++
++		err = jdi_panel_add(jdi);
++		if (err < 0) {
++			put_device(&secondary->dev);
++			return err;
++		}
++	}
++
++	err = mipi_dsi_attach(dsi);
++	if (err < 0) {
++		if (secondary)
++			jdi_panel_del(jdi);
++
++		return err;
++	}
++
++	return 0;
++}
++
++static void jdi_panel_dsi_remove(struct mipi_dsi_device *dsi)
++{
++	struct jdi_panel *jdi = mipi_dsi_get_drvdata(dsi);
++	int err;
++
++	/* only detach from host for the DSI-LINK2 interface */
++	if (!jdi)
++		mipi_dsi_detach(dsi);
++
++	err = jdi_panel_disable(&jdi->base);
++	if (err < 0)
++		dev_err(&dsi->dev, "failed to disable panel: %d\n", err);
++
++	err = mipi_dsi_detach(dsi);
++	if (err < 0)
++		dev_err(&dsi->dev, "failed to detach from DSI host: %d\n", err);
++
++	jdi_panel_del(jdi);
++}
++
++static void jdi_panel_dsi_shutdown(struct mipi_dsi_device *dsi)
++{
++	struct jdi_panel *jdi = mipi_dsi_get_drvdata(dsi);
++
++	if (!jdi)
++		return;
++
++	jdi_panel_disable(&jdi->base);
++}
++
++static struct mipi_dsi_driver jdi_panel_dsi_driver = {
++	.driver = {
++		.name = "panel-jdi-lpm102a188a-dsi",
++		.of_match_table = jdi_of_match,
++	},
++	.probe = jdi_panel_dsi_probe,
++	.remove = jdi_panel_dsi_remove,
++	.shutdown = jdi_panel_dsi_shutdown,
++};
++module_mipi_dsi_driver(jdi_panel_dsi_driver);
++
++MODULE_AUTHOR("Sean Paul <seanpaul@chromium.org>");
++MODULE_AUTHOR("Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>");
++MODULE_DESCRIPTION("DRM Driver for JDI LPM102A188A DSI panel, command mode");
++MODULE_LICENSE("GPL");
+
+From patchwork Tue Oct 25 15:37:49 2022
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+X-Patchwork-Id: 1694479
+Return-Path: <linux-tegra-owner@vger.kernel.org>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@legolas.ozlabs.org
+Authentication-Results: legolas.ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=vger.kernel.org
+ (client-ip=2620:137:e000::1:20; helo=out1.vger.email;
+ envelope-from=linux-tegra-owner@vger.kernel.org; receiver=<UNKNOWN>)
+Authentication-Results: legolas.ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ secure) header.d=tecnico.ulisboa.pt header.i=@tecnico.ulisboa.pt
+ header.a=rsa-sha256 header.s=mail header.b=DFoFdXZQ;
+	dkim-atps=neutral
+Received: from out1.vger.email (out1.vger.email [IPv6:2620:137:e000::1:20])
+	by legolas.ozlabs.org (Postfix) with ESMTP id 4Mxbhy0jw8z23js
+	for <incoming@patchwork.ozlabs.org>; Wed, 26 Oct 2022 02:39:30 +1100 (AEDT)
+Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
+        id S233354AbiJYPjZ (ORCPT <rfc822;incoming@patchwork.ozlabs.org>);
+        Tue, 25 Oct 2022 11:39:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57538 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233296AbiJYPjX (ORCPT
+        <rfc822;linux-tegra@vger.kernel.org>);
+        Tue, 25 Oct 2022 11:39:23 -0400
+Received: from smtp1.tecnico.ulisboa.pt (smtp1.tecnico.ulisboa.pt
+ [IPv6:2001:690:2100:1::15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 61B3C18C431;
+        Tue, 25 Oct 2022 08:39:18 -0700 (PDT)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTP id 1DD286008800;
+        Tue, 25 Oct 2022 16:39:17 +0100 (WEST)
+X-Virus-Scanned: by amavisd-new-2.11.0 (20160426) (Debian) at
+        tecnico.ulisboa.pt
+Received: from smtp1.tecnico.ulisboa.pt ([127.0.0.1])
+        by localhost (smtp1.tecnico.ulisboa.pt [127.0.0.1]) (amavisd-new,
+ port 10025)
+        with LMTP id P3tti42Jko2u; Tue, 25 Oct 2022 16:39:13 +0100 (WEST)
+Received: from mail1.tecnico.ulisboa.pt (mail1.ist.utl.pt
+ [IPv6:2001:690:2100:1::b3dd:b9ac])
+        by smtp1.tecnico.ulisboa.pt (Postfix) with ESMTPS id 827FD600880E;
+        Tue, 25 Oct 2022 16:39:13 +0100 (WEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=tecnico.ulisboa.pt;
+        s=mail; t=1666712353;
+        bh=TdKh3E/XenanfAlC8eRJ4MFy4v4lhEiS+bjmvYDecWA=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=DFoFdXZQPGg7hCvqp70azEQUKhX8PjoLkb6XiAg/qm2l5UsYJ4y/k9MiKcF/DzzOx
+         VEGAKzABha6nonD1mZqOsX3V//4CDBkb6t3SurJFaz108Md388KQJbCFIFVhxNauA5
+         WyyforKeAErwW1zf0wWDehMstF1yecDV/Go0egPM=
+Received: from localhost.localdomain (unknown [89.207.171.77])
+        (Authenticated sender: ist187313)
+        by mail1.tecnico.ulisboa.pt (Postfix) with ESMTPSA id 1025636007E;
+        Tue, 25 Oct 2022 16:39:01 +0100 (WEST)
+From: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+Cc: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>, thierry.reding@gmail.com,
+        sam@ravnborg.org, airlied@linux.ie, daniel@ffwll.ch,
+        robh+dt@kernel.org, krzysztof.kozlowski+dt@linaro.org,
+        jonathanh@nvidia.com, arnd@arndb.de,
+        dri-devel@lists.freedesktop.org, devicetree@vger.kernel.org,
+        linux-tegra@vger.kernel.org
+Subject: [PATCH v2 4/4] arm64: dts: smaug: Add display panel node
+Date: Tue, 25 Oct 2022 16:37:49 +0100
+Message-Id: <20221025153746.101278-5-diogo.ivo@tecnico.ulisboa.pt>
+X-Mailer: git-send-email 2.38.1
+In-Reply-To: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+References: <20221025153746.101278-1-diogo.ivo@tecnico.ulisboa.pt>
+MIME-Version: 1.0
+X-Spam-Status: No, score=-4.3 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+        DKIM_VALID,DKIM_VALID_AU,RCVD_IN_DNSWL_MED,SPF_HELO_PASS,SPF_PASS,
+        URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.6
+X-Spam-Checker-Version: SpamAssassin 3.4.6 (2021-04-09) on
+        lindbergh.monkeyblade.net
+To: unlisted-recipients:; (no To-header on input)
+Precedence: bulk
+List-ID: <linux-tegra.vger.kernel.org>
+X-Mailing-List: linux-tegra@vger.kernel.org
+
+The Google Pixel C has a JDI LPM102A188A display panel. Add a
+DT node for it. Tested on Pixel C.
+
+Signed-off-by: Diogo Ivo <diogo.ivo@tecnico.ulisboa.pt>
+---
+Changes in v2:
+ - renamed backlight node to a generic name
+ - removed underscores
+
+ arch/arm64/boot/dts/nvidia/tegra210-smaug.dts | 70 +++++++++++++++++++
+ 1 file changed, 70 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts b/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts
+index 84ec4d8b7f10..5db0b25c8d58 100644
+--- a/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts
++++ b/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts
+@@ -31,6 +31,37 @@ memory {
+ 	};
+ 
+ 	host1x@50000000 {
++		dc@54200000 {
++			status = "okay";
++		};
++
++		dsia: dsi@54300000 {
++			avdd-dsi-csi-supply = <&vdd_dsi_csi>;
++			status = "okay";
++
++			link2: panel@0 {
++				compatible = "jdi,lpm102a188a";
++				reg = <0>;
++			};
++		};
++
++		dsib: dsi@54400000 {
++			avdd-dsi-csi-supply = <&vdd_dsi_csi>;
++			nvidia,ganged-mode = <&dsia>;
++			status = "okay";
++
++			link1: panel@0 {
++				compatible = "jdi,lpm102a188a";
++				reg = <0>;
++				power-supply = <&pplcd_vdd>;
++				ddi-supply = <&pp1800_lcdio>;
++				enable-gpios = <&gpio TEGRA_GPIO(V, 1) GPIO_ACTIVE_HIGH>;
++				reset-gpios = <&gpio TEGRA_GPIO(V, 2) GPIO_ACTIVE_LOW>;
++				link2 = <&link2>;
++				backlight = <&backlight>;
++			};
++		};
++
+ 		dpaux: dpaux@545c0000 {
+ 			status = "okay";
+ 		};
+@@ -1627,6 +1658,37 @@ nau8825@1a {
+ 			status = "okay";
+ 		};
+ 
++		backlight: backlight@2c {
++			compatible = "ti,lp8557";
++			reg = <0x2c>;
++			power-supply = <&pplcd_vdd>;
++			enable-supply = <&pp1800_lcdio>;
++			bl-name = "lp8557-backlight";
++			dev-ctrl = /bits/ 8 <0x01>;
++			init-brt = /bits/ 8 <0x80>;
++
++			/* Full scale current, 20mA */
++			rom-11h {
++				rom-addr = /bits/ 8 <0x11>;
++				rom-val = /bits/ 8 <0x05>;
++			};
++			/* Frequency = 4.9kHz, magic undocumented val */
++			rom-12h {
++				rom-addr = /bits/ 8 <0x12>;
++				rom-val = /bits/ 8 <0x29>;
++			};
++			/* Boost freq = 1MHz, BComp option = 1 */
++			rom-13h {
++				rom-addr = /bits/ 8 <0x13>;
++				rom-val = /bits/ 8 <0x03>;
++			};
++			/* 4V OV, 6 output LED string enabled */
++			rom-14h {
++				rom-addr = /bits/ 8 <0x14>;
++				rom-val = /bits/ 8 <0xbf>;
++			};
++		};
++
+ 		audio-codec@2d {
+ 			compatible = "realtek,rt5677";
+ 			reg = <0x2d>;
+@@ -1908,4 +1970,12 @@ usbc_vbus: regulator-usbc-vbus {
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+ 	};
++
++	vdd_dsi_csi: regulator-vdd-dsi-csi {
++		compatible = "regulator-fixed";
++		regulator-name = "AVDD_DSI_CSI_1V2";
++		regulator-min-microvolt = <1200000>;
++		regulator-max-microvolt = <1200000>;
++		vin-supply = <&pp1200_avdd>;
++	};
+ };

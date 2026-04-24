@@ -1,0 +1,67 @@
+# Stable Linux kernel with patches for MSM8998 devices
+# Kernel config based on: msm8998_defconfig
+maintainer=""
+_flavor="postmarketos-qcom-msm8998"
+pkgname=linux-$_flavor
+pkgver=6.0
+pkgrel=3
+_commit="90169e6e9fee29fae14aeac0a905246be5ce6304"
+pkgdesc="Mainline Kernel fork for MSM8998 devices"
+arch="aarch64"
+_carch="arm64"
+_config="config-$_flavor.$arch"
+url="https://gitlab.com/msm8998-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+"
+makedepends="
+	bash
+	bison
+	findutils
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+"
+
+# Source
+source="
+	https://gitlab.com/msm8998-mainline/linux/-/archive/$_commit/linux-$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	# V=1: workaround for pma#1990, remove after upgrading to >= 6.2
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-$_flavor" V=1
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+e1d75369d58f823da5fe0cde17314a4ec2dc9dbab57452b7b8af6b97e91797720162e78f9ca7da2cbb533833b38be86743b8bf0084af1b36b5d23c9207a5248e  linux-90169e6e9fee29fae14aeac0a905246be5ce6304.tar.gz
+8fec183df26817cf7d8886c64a3c1b7a677584867920d6a54b108ddd2a11d49b163371384169a561912c118c423999ed61280cd99ce6e509a3389ab8d984d0b6  config-postmarketos-qcom-msm8998.aarch64
+"

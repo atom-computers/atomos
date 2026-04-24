@@ -1,0 +1,89 @@
+diff --git a/drivers/power/Makefile b/drivers/power/Makefile
+index fbd12449dae..6575f0ea241 100644
+--- a/drivers/power/Makefile
++++ b/drivers/power/Makefile
+@@ -1,6 +1,7 @@
+ ccflags-$(CONFIG_POWER_SUPPLY_DEBUG) := -DDEBUG
+ 
+ power_supply-y				:= power_supply_core.o
++power_supply-y				+= smb1360-dump.o
+ power_supply-$(CONFIG_SYSFS)		+= power_supply_sysfs.o
+ power_supply-$(CONFIG_LEDS_TRIGGERS)	+= power_supply_leds.o
+ 
+diff --git a/drivers/power/idol347/smb1360-charger-fg.c b/drivers/power/idol347/smb1360-charger-fg.c
+index bc8859cd9a2..1a087158d21 100644
+--- a/drivers/power/idol347/smb1360-charger-fg.c
++++ b/drivers/power/idol347/smb1360-charger-fg.c
+@@ -3760,6 +3760,41 @@ static int smb1360_jeita_init(struct smb1360_chip *chip)
+ 	return rc;
+ }
+ 
++extern void smb1360_dump(struct i2c_client *client);
++extern void smb1360_dump_fg_scratch(struct i2c_client *fg_client);
++extern void smb1360_dump_fg(struct i2c_client *client);
++
++static void smb1360_dump_locked(struct smb1360_chip *chip)
++{
++	mutex_lock(&chip->read_write_lock);
++	smb1360_dump(chip->client);
++	mutex_unlock(&chip->read_write_lock);
++}
++
++static void smb1360_dump_fg_access(struct smb1360_chip *chip)
++{
++	int ret;
++
++	ret = smb1360_enable_fg_access(chip);
++	if (ret)
++		return;
++
++	mutex_lock(&chip->read_write_lock);
++	smb1360_dump_fg_scratch(chip->client);
++
++	/* Do cool hacks to access FG I2C address instead */
++	chip->fg_access_type = FG_ACCESS_CFG;
++	smb1360_select_fg_i2c_address(chip);
++
++	chip->client->addr = chip->fg_i2c_addr;
++	smb1360_dump_fg(chip->client);
++	chip->client->addr = chip->default_i2c_addr;
++	mutex_unlock(&chip->read_write_lock);
++
++	smb1360_disable_fg_access(chip);
++	smb1360_check_cycle_stretch(chip);
++}
++
+ #define FG_POWERON_DELAY_MS    2000
+ static int smb1360_hw_init(struct smb1360_chip *chip)
+ {
+@@ -3767,6 +3802,9 @@ static int smb1360_hw_init(struct smb1360_chip *chip)
+ 	int i;
+ 	u8 reg, mask;
+ 
++	/* Dump initial FG registers */
++	smb1360_dump_fg_access(chip);
++
+ 	smb1360_check_feature_support(chip);
+ 
+ 	rc = smb1360_enable_volatile_writes(chip);
+@@ -4097,6 +4135,10 @@ static int smb1360_hw_init(struct smb1360_chip *chip)
+ 		dev_err(chip->dev, "Couldn't '%s' charging rc = %d\n",
+ 			chip->charging_disabled ? "disable" : "enable", rc);
+ 
++	/* Dump final registers */
++	smb1360_dump_locked(chip);
++	smb1360_dump_fg_access(chip);
++
+ 	return rc;
+ }
+ 
+@@ -4540,6 +4582,9 @@ static int smb1360_probe(struct i2c_client *client,
+ 	mutex_init(&chip->current_change_lock);
+ 	chip->default_i2c_addr = client->addr;
+ 
++	/* Dump initial registers */
++	smb1360_dump_locked(chip);
++
+ 	pr_debug("default_i2c_addr=%x\n", chip->default_i2c_addr);
+ 
+ 	rc = smb1360_hw_init(chip);

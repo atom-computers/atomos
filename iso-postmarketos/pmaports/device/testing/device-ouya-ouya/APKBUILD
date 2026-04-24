@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-ouya-ouya
+pkgver=5
+pkgrel=0
+pkgdesc="Ouya"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+options="!check !archcheck"
+depends="
+	firmware-ouya-ouya
+	linux-ouya-ouya-mainline
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	initfs-hook.sh
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+ebbe3267cb39ceef035d7336a8f63cf09ec7bf70d071d15541e8b9a4728f54918b709debfeb09b84495d5c0dada41e1566372c5145586439764fb79a7d9f746b  deviceinfo
+f0d9578cb0f5fda91b83717467e5f9e143bd4a24309406d7c9b59402325cb9dbe34c7f542083ac58ced18c6fd7277eb5710eba555ad1c98c1e06e6b72b26b91d  initfs-hook.sh
+"

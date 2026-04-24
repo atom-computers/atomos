@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-cubietech-cubieboard
+pkgdesc="Cubietech Cubieboard"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-stable
+	postmarketos-base
+	u-boot-sunxi
+	"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs extlinux.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/extlinux.conf \
+		"$pkgdir"/boot/extlinux/extlinux.conf
+}
+
+sha512sums="
+a3552a0b83871e12ea9bd7c1e3ec7a1fc6d7da4117ceedb35cdc3cff1f60befbe4b1c7ba9a340fe0a88466a9ee23565528b1e1d71c8e0103a4cdbf446ddee6f0  deviceinfo
+4218f3e3b4aa3d3dbacbfe4dbe997bce8a9bf9f077ad78df21c0754b3789e0dd8533e2c9a4ee9fffb0069ee08bf51977cc0a11308c30cf7551fec0b38e36881e  modules-initfs
+d653e00c3bbb5695e2c69359b684a2ef7f8d232d9d8db878261dd541a4272370f48f0f963adaa1b65ab611d8daca6908e43fb5e2600068b785f624d76cc98991  extlinux.conf
+"

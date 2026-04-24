@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_dtb="qcom-msm8930-samsung-loganrelte"
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy Ace 3 LTE"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-loganrelte"
+deviceinfo_year="2013"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+# deviceinfo_screen_width="800"
+# deviceinfo_screen_height="480"
+# Screen not mainlined yet.
+deviceinfo_no_framebuffer="true"
+
+# Bootloader related
+deviceinfo_generate_extlinux_config="true"
+deviceinfo_flash_method="fastboot"
+deviceinfo_partition_type="msdos"

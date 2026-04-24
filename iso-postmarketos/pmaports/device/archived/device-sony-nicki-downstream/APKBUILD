@@ -1,0 +1,53 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-nicki-downstream
+pkgdesc="Sony Xperia M (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-sony-nicki-downstream
+	mdss-fb-init-hack
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream-disable-udev-v4l
+	"
+makedepends="devicepkg-dev"
+source="
+	90-android-touch-dev.rules
+	deviceinfo
+	kernel-cmdline.conf
+	fb.modes
+	pointercal
+	screen-workaround.sh
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/etc/udev/rules.d/90-android-touch-dev.rules
+	install -D -m644 "$srcdir"/screen-workaround.sh \
+		"$pkgdir"/etc/profile.d/screen-workaround.sh
+	install -D -m644 "$srcdir"/fb.modes \
+		"$pkgdir"/etc/fb.modes
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+sha512sums="
+a3d3a0cf43c5f216279666143d6042f2669dbe3dc5ecec2817b6118a0c122f5b927799b37432bee3167359c118d0142fd8e8e8d67374e8ab1d837673f217e1ae  90-android-touch-dev.rules
+746ed7d2296ac81baab6850bf9eb1b1fa4b8287a19262b0e1e6670d6380a7097c9974227dccef21462da71231822184be190cd40001e97b8eae77fc0c148c40c  deviceinfo
+69606ce8913e054414b5beae41c8dd71112344b7eaf3e1ead280aa53fea5720adb8829c524ddfe190f13324705db42ad4241007cf655f24dc716e2bf58af54df  kernel-cmdline.conf
+aac9a5d4c856b6feaf4f2961251fbc81d9173e24c3b20806e803711b40e388a173abf2651d5d828d36a504ef2de12c1c1eacea1f1b9479e31f55234012140405  fb.modes
+016111b7618e2509186fd91dd238cdfb51c37a02af98ba01d3cf27358ff901f71f7ff5e798752334e720bf8108b907a31e9242085c8c915748f2d9391f86dfc4  pointercal
+336b6ac90946ec4b4626e9dcb8f1cce503d0ad6fc164177e53502b580aa509dc31ae2ef4fcb9fb04906576cdd6590f625f127e2c29ec61493e30cb6508fdb68d  screen-workaround.sh
+"

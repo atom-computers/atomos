@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=u-boot-epson-embt2ws
+pkgver=2022.10
+pkgrel=0
+pkgdesc="U-Boot for Epson Moverio BT-200"
+arch="armv7"
+_carch="arm"
+license="GPL-2.0"
+url="https://github.com/akemnade/u-boot"
+makedepends="bash bc dtc bison flex openssl-dev"
+options="!check !tracedeps pmb:cross-native"
+
+_repository="u-boot"
+_commit="913067d717b9e81ceca1d777db0e0774cd42f388"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/akemnade/$_repository/archive/$_commit.tar.gz
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+build() {
+	make ARCH="$_carch" omap4_embt2ws_defconfig
+	scripts/config --set-str BOOTCOMMAND "run distro_bootcmd ; fastboot 0"
+	make ARCH="$_carch"
+}
+
+package() {
+	install -Dm644 "$builddir/u-boot-dtb.img" "$pkgdir/usr/share/u-boot/epson-embt2ws/u-boot.img"
+	install -Dm644 "$builddir/u-boot-dtb.bin" "$pkgdir/usr/share/u-boot/epson-embt2ws/u-boot.bin"
+	install -Dm644 "$builddir/u-boot-dtb.bin" "$pkgdir/boot/u-boot-ml.bin"
+	install -Dm644 "$builddir/MLO" "$pkgdir/usr/share/u-boot/epson-embt2ws/MLO"
+}
+
+sha512sums="
+8f5f4d6444428dacc935734e7ab46749828ecb71ecfab54594282f276ef4677c30754771a0c939760e0210a9aeca844cf56e7bb887493b4d7d6d42fb6e11057e  u-boot-epson-embt2ws-913067d717b9e81ceca1d777db0e0774cd42f388.tar.gz
+"

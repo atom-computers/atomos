@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Add mdss-fb-init-hack to default runlevel
+rc-update add mdss-fb-init-hack default

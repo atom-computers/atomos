@@ -1,0 +1,45 @@
+maintainer="Hendrik Noack <hendrik.noack@protonmail.com>"
+pkgname=firmware-samsung-n1awifi
+pkgdesc="Firmware for Samsung Galaxy Note 10.1 (2014)"
+pkgver=2
+pkgrel=0
+url="https://github.com/exynos5420/android_vendor_samsung_n1a-common"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+_cfg_commit="5a1eb40e80f9de6c6bad9d0cd1438339c41af3ad"
+_cfg_url="https://gitlab.com/Eisenbahnfan/exynos5-firmware/-/raw/$_cfg_commit"
+_fw_commit="c2cc1a472c2fbd7e28b3ed0a5e67651f0cb86fe6"
+_fw_url="https://github.com/exynos5420/android_vendor_samsung_n1a-common/raw/$_fw_commit"
+source="
+	30-touchscreen-firmware.files
+	BCM4335C0.samsung,n1awifi.hcd::$_fw_url/proprietary/vendor/firmware/bcm4335_V0105.0552.hcd
+	brcmfmac4339-sdio.samsung,n1awifi.txt::$_fw_url/proprietary/etc/wifi/nvram_net.txt
+	maxtouch.cfg::$_cfg_url/mXT1664S_n.cfg
+"
+
+package() {
+	cd "$srcdir"
+
+	# Bluetooth
+	install -Dm644 BCM4335C0.samsung,n1awifi.hcd \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Wifi
+	install -Dm644 brcmfmac4339-sdio.samsung,n1awifi.txt \
+		-t "$pkgdir/lib/firmware/postmarketos/brcm/"
+
+	# Touchscreen
+	install -Dm644 maxtouch.cfg \
+		-t "$pkgdir/lib/firmware/postmarketos/"
+	install -Dm644 30-touchscreen-firmware.files \
+		-t "$pkgdir/usr/share/mkinitfs/files/"
+
+}
+
+sha512sums="
+d92d73d06d88371d8842cca02b9a396414d6f9e879c74afd8fd540c76a97edbd8655d903815a2aed508785b3fe96fa5798fbd1ceb918098b8b788555ba4267cf  30-touchscreen-firmware.files
+eef861b2e95828779846c0f07c2bf7d3af44ca12650142e2b0006497bfdfdb52ad5d845819d307c26fd471afea5a04c5fe765b9cd9737cd163eccc858bace3b3  BCM4335C0.samsung,n1awifi.hcd
+672138deab005424017c8febd4b6b9a84ddc8c33f1c2e97b70432fb0ba79386aeab38d3e22b8ee93acc424fa7fce6cd20906d4d756c04f57cefa2d4023f6f448  brcmfmac4339-sdio.samsung,n1awifi.txt
+9644a57849ed208037acd65e7f2341aeef8a1298b69d63e631c381d1cf33b19f78bfefa29b3a6110ba9d55468701224605acdce4ac9ba2d36f2fe545f03a608d  maxtouch.cfg
+"

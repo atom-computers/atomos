@@ -1,0 +1,77 @@
+From 4729b2a505cf18d16d484af5deb8627f937b773d Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Thu, 20 Jun 2019 20:31:45 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: USB OTG bindings
+
+OTG here is provided by ChipIdea controller, which uses OTG FSM to
+power on the connected device. However, OTG specification says that
+the device needs to receive power in 100ms, but this is not a strict
+requirement. We need to disable the charger first and then power on VBUS,
+which is slow process so we set a delay for the regulator to workaround
+this.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 25 ++++++++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index 0c6a903ef0c7..56e5407b2f42 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -1520,15 +1520,28 @@
+ 		};
+ 	};
+ 
++	/*
++	 * There's funny thing going on with OTG power
++	 * which I don't know how to fix properly.
++	 * When the OTG cable is plugged in, USB
++	 * controller detects this and enables VBUS
++	 * power. However, charger thinks that the
++	 * charging cable is plugged in and enables
++	 * charging. After that there's no power on
++	 * the port :)
++	 *
++	 * So we use a bit modified driver with "dummy"
++	 * regulator which disables charging when enabled.
++	 */
+ 	usb@c5000000 {
+ 		compatible = "nvidia,tegra20-udc";
+ 		status = "okay";
+-		dr_mode = "otg";
+-		vbus-supply = <&vbus_reg>;
++		vbus-supply = <&otg_reg>;
+ 	};
+ 
+ 	usb-phy@c5000000 {
+ 		status = "okay";
++		dr_mode = "otg";
+ 		vbus-supply = <&usb_phy_reg>;
+ 	};
+ 
+@@ -1708,7 +1721,7 @@
+ 			enable-active-high;
+ 		};
+ 
+-		vbus_reg: regulator@3 {
++		otg_reg: regulator@3 {
+ 			compatible = "regulator-fixed";
+ 			reg = <3>;
+ 			regulator-name = "otg-en";
+@@ -1716,6 +1729,12 @@
+ 			regulator-max-microvolt = <5000000>;
+ 			gpio = <&gpio TEGRA_GPIO(R, 7) GPIO_ACTIVE_HIGH>;
+ 			enable-active-high;
++			/*
++			 * CI HDRC controller requires delay in 100ms, but
++			 * this thing is so slow!
++			 */
++			regulator-enable-ramp-delay = <350000>;
++			vin-supply = <&charger_supply>;
+ 		};
+ 
+ 		gps_en: regulator@4 {
+-- 
+2.22.0
+

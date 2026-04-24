@@ -1,0 +1,6 @@
+[org.mate.panel.applet.clock]
+show-date=false
+show-temperature=false
+show-tooltip=false
+show-weather=false
+show-week-numbers=false

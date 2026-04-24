@@ -1,0 +1,19 @@
+From d4501f99a743889e89afea7f3d9675d8a5cb2907 Mon Sep 17 00:00:00 2001
+From: BeastRein <80418545+BeastRein@users.noreply.github.com>
+Date: Mon, 8 Jan 2024 20:12:08 -0500
+Subject: [PATCH] Update piggy.gzip.S
+
+---
+ arch/arm/boot/compressed/piggy.gzip.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/compressed/piggy.gzip.S b/arch/arm/boot/compressed/piggy.gzip.S
+index a68adf91a165..c71952cfe45d 100644
+--- a/arch/arm/boot/compressed/piggy.gzip.S
++++ b/arch/arm/boot/compressed/piggy.gzip.S
+@@ -1,4 +1,4 @@
+-	.section .piggydata,#alloc
++	.section .piggydata, "a"
+ 	.globl	input_data
+ input_data:
+ 	.incbin	"arch/arm/boot/compressed/piggy.gzip"

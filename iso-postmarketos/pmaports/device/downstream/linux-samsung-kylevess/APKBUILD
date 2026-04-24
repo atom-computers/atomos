@@ -1,0 +1,63 @@
+# Kernel config based on: arch/arm/configs/bcm21664_hawaii_ss_kylevess_rev00_defconfig
+pkgname=linux-samsung-kylevess
+pkgver=3.4.5
+pkgrel=10
+pkgdesc="Samsung Trend Lite kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="samsung-kylevess"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel_samsung_kylevess_f2fs"
+_commit="17667b5c69eaf3db40ca2040d965d14cfd09a427"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/opensource591/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_return_address.patch
+	01_patch_lifebook_detect.patch
+	02_patch_fsp_detect.patch
+	03_fix_to_state.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+ef1881e26be013a4f58eac86c884b3f2d50e7b742e97d7655832865089a4776e83b19df64ecda332a4cb44c5ce8006679428b22248590be881948821c45f469f  linux-samsung-kylevess-17667b5c69eaf3db40ca2040d965d14cfd09a427.tar.gz
+60a2c4342441d986d2545418f52f12b66578ca0ef1a55957ce282bd432fce2b5537a53b836cce369e792a4f3cd4acce5f081de948046156e7754a21134c122a1  config-samsung-kylevess.armhf
+c40eaa11547f5bc2b1ff965506bdfe3015ff16e4b5ad9ccb3b8134ceafd1d32407c4ef2b213e02e036ce1e9bdcbfe768dff7d4b054bec77705a176c1f783b6f5  00_return_address.patch
+36418ec3d31d1d6d9915afcf3d38d4549aeeb49c3825414b51b67db7a1ab6482f22d2723da3b258b671956809949278a51f6507df9b0052aec0bd0c59f56919a  01_patch_lifebook_detect.patch
+9da951bb0391564f33bdb0a97c339997eda7b15ec2f160da8af237cc87c233b8c3dcdc1a12759e04d69d075ae9b0afaf726101ef356e788d7f4606a03db2e248  02_patch_fsp_detect.patch
+7bc5894a412d45e45e308915dbe3a964419f443f149ef390d2f09151dd15ca86767c7fdd4e927cfb602d6d455755d4941d68a9f139a1cd3f89f0d90088dafde4  03_fix_to_state.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

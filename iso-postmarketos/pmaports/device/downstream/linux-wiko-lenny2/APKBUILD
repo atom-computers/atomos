@@ -1,0 +1,87 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/s5030_defconfig
+
+pkgname=linux-wiko-lenny2
+pkgver=3.10.72
+pkgrel=6
+pkgdesc="Wiko Lenny 2 downstream kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="wiko-lenny2"
+_config="config-wiko-lenny2.armv7"
+_commit="204adbdcc01951c8eb33fc8b5543320f760bd3e3"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc4"
+
+# Compiler: GCC 4 (doesn't compile when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+source="$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/linux-wiko-lenny2/archive/$_commit.tar.gz
+	don't-use-out-of-tree-vendor-tinno.patch
+	fix-paths.patch
+	fix-busybox-sh-compatibility.patch
+	use-gnu89-explicitly.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	$_config
+"
+builddir="$srcdir/$pkgname-$_commit"
+_outdir="KERNEL_OBJ"
+
+prepare() {
+	default_prepare
+
+	mkdir "$_outdir"
+	cp "$srcdir/$_config" "$_outdir"/.config
+
+	yes "" | make ARCH="$_carch" HOSTCC="$HOSTCC" O="$_outdir" oldconfig
+}
+
+
+build() {
+	unset LDFLAGS
+
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		O="$_outdir"
+}
+
+package() {
+	# kernel.release
+	install -D "$_outdir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	# zImage (find the right one)
+	cd "$_outdir/arch/$_carch/boot"
+	_target="$pkgdir/boot/vmlinuz"
+	for _zimg in zImage-dtb Image.gz-dtb *zImage Image; do
+		[ -e "$_zimg" ] || continue
+		msg "zImage found: $_zimg"
+		install -Dm644 "$_zimg" "$_target"
+		break
+	done
+	if ! [ -e "$_target" ]; then
+		error "Could not find zImage in $PWD!"
+		return 1
+	fi
+}
+
+sha512sums="
+1d99e56624c28d6f5336edda26edbc21bd62803a0d31143bd6c61506f245a6f9682f2a5135a63abbf0c9339eb6fda8510a01ae907f88dcb1b775f3b17e91d9de  linux-wiko-lenny2-204adbdcc01951c8eb33fc8b5543320f760bd3e3.tar.gz
+a88df2c0be9bcc26c738436036750c195986a5eda47529604cc4dd2ca0423e55ac6ae12031ec5553df244b7dc5d4ca8507a79568bf5af2ff27c4740a2f96865f  don't-use-out-of-tree-vendor-tinno.patch
+5a96db8474cdb9f7704c7b30cdf426d3f37b7a5f5d172eeebeb434bdb943555c0abd26ed63531855a7ef1122b7a8c1ef394539f8685a5da15f036f47e3a40564  fix-paths.patch
+9d5cbfb3fa0d076ae090778f4a80c172c296b71eca55bad69b25ecc6bd5658e38bcb53b7483b43066b21907bcb770974a2639983cb1ff59bb24f3fc429fc71d4  fix-busybox-sh-compatibility.patch
+7674bf62ce6ac7a6cffa9468d464ed66448b72fdae95023895992a2127c107b9914e1453a1e8913ed4a62416c12ea40a54095da9c581a265c0c08476449de20d  use-gnu89-explicitly.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+e130b58782d29978cf93f543b2581a7843529a81a807357472209872091d84354c6ed9a6c2ddedc0457f59fd48761bef25f099f26d990d01672edc4b259f1e65  config-wiko-lenny2.armv7
+"

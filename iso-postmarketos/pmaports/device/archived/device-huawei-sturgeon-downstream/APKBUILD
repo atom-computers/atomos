@@ -1,0 +1,39 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-huawei-sturgeon-downstream
+pkgdesc="Huawei Watch"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-huawei-sturgeon-adsp
+	firmware-huawei-sturgeon-wifi
+	linux-huawei-sturgeon
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	networkmanager.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+728b39211adf1f8fadadfc250f8e5c19bde5f392199eabc6a09698369472b3b599ae37980581f36ea23cbc48496f569259a6b10df58a77488ae680b847546486  deviceinfo
+15307969581076bbd48997d947fc74a79d331de83d13a6b327c6f0db6f9b35f91a47486838d83f6d21634a267d5ac7d8d7c0e9a08b0198be240a519973f8618a  kernel-cmdline.conf
+a19923f30ac1d328a85ab1162e44442da28dd1ae45529fb73e21d8004594487f61c8f5372e5bbaadfefd27fe27c8a22ce430b81891ac1965e5704bbfec108b82  networkmanager.conf
+"

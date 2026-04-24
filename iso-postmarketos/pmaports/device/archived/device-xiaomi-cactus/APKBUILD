@@ -1,0 +1,28 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Fedorov Bohdan <misterjdr@yandex.ru>"
+pkgname=device-xiaomi-cactus
+pkgdesc="Xiaomi Redmi 6A"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-xiaomi-cactus mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+e6e9aa762e12eea00d9a923476c4313519f2a5e1d31660f7514b0612b72b8520a2f63909d34b43b4c048b142e6240ae64cdd330381e1ec265b7825f8a989369a  deviceinfo
+00775a00c9b76495e84825348d1fa3e66874dd28a9396989199b0424857bbc0446ef5e91e68fbcdb089900e4dd67d1f277c49f3c62de28a60674a422939a14f4  kernel-cmdline.conf
+"

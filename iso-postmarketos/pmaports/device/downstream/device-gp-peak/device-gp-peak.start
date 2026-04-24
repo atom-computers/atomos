@@ -1,0 +1,6 @@
+#!/bin/sh
+udevadm test /devices/virtual/graphics/fb0
+udevadm test /devices/virtual/input/input2/event2
+udevadm test /devices/platform/soc-audio/sound/card0/controlC0
+udevadm test /devices/platform/soc-audio/sound/card0/pcmC0D0c
+udevadm test /devices/platform/soc-audio/sound/card0/pcmC0D0p

@@ -1,0 +1,68 @@
+maintainer=""
+pkgname=firmware-bq-picmt
+pkgver=4
+pkgrel=1
+_commit="04cced17ab21d84ea6145e58f0b12fd67ef640d0"
+pkgdesc="Firmware for BQ Aquaris X5"
+url="https://github.com/JonnyMe/picmt-firmware"
+subpackages="$pkgname-modem $pkgname-venus $pkgname-wcnss $pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64 armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="pil-squasher"
+source="https://github.com/JonnyMe/picmt-firmware/raw/$_commit/picmt_firmware_files.tar.xz"
+builddir="$srcdir"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	pil-squasher wcnss.mbn wcnss.mdt
+	pil-squasher modem.mbn modem.mdt
+	# venus.mbn exists already but seems a bit different
+	pil-squasher venus2.mbn venus.mdt
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+modem() {
+	pkgdesc="BQ Aquaris X5 modem firmware"
+	install -Dm644 "$srcdir"/modem.mbn "$subpkgdir/$_fwdir"/modem.mbn
+	ln -s modem.mbn "$subpkgdir/$_fwdir"/modem.mdt
+	install -Dm644 "$srcdir"/mba.mbn "$subpkgdir/$_fwdir"/mba.mbn
+}
+
+venus() {
+	pkgdesc="BQ Aquaris X5 video firmware"
+	provides="firmware-qcom-msm8916-venus=$pkgver-r$pkgrel"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to install venus.mbn to venus.mdt
+	# Older kernels look for venus.mdt, newer ones directly for venus.mbn
+	install -Dm644 "$srcdir"/venus2.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mbn
+	ln -s venus.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mdt
+}
+
+wcnss() {
+	pkgdesc="BQ Aquaris X5 WiFi/BT firmware"
+	provides="firmware-qcom-msm8916-wcnss=$pkgver-r$pkgrel"
+
+	install -Dm644 "$srcdir"/wcnss.mbn "$subpkgdir/$_fwdir"/wcnss.mbn
+	ln -s wcnss.mbn "$subpkgdir/$_fwdir"/wcnss.mdt
+}
+
+wcnss_nv() {
+	pkgdesc="BQ Aquaris X5 WiFi/BT firmware configuration"
+
+	case "$CARCH" in
+		# WCNSS_cfg.dat etc are only needed on downstream (armv7)
+		armv7)	files="WCNSS_*" ;;
+		*)	files="WCNSS_qcom_wlan_nv.bin" ;;
+	esac
+
+	install -Dm644 "$srcdir"/$files -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="7f426e5fdb20319ed22c16be1ce13d069532bdfb8dc754a735c2a019342758b1f0210614dfeaa1d850802083a550ec8a6931d3572d203267cae8ec59f6613d82  picmt_firmware_files.tar.xz"

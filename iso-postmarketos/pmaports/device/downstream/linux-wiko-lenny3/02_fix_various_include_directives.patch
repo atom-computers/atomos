@@ -1,0 +1,467 @@
+diff --git a/drivers/misc/mediatek/base/power/mt6580/mt_pm_init.c b/drivers/misc/mediatek/base/power/mt6580/mt_pm_init.c
+index fa94f49..44cc1ce 100644
+--- a/drivers/misc/mediatek/base/power/mt6580/mt_pm_init.c
++++ b/drivers/misc/mediatek/base/power/mt6580/mt_pm_init.c
+@@ -12,10 +12,10 @@
+ #include <mach/irqs.h>
+ #include <mach/mt_clkmgr.h>
+ #include <mach/mt_clkbuf_ctl.h>
+-#include <mt_cpufreq.h>
+-#include <mt_gpufreq.h>
++#include "mt_cpufreq.h"
++#include "mt_gpufreq.h"
+ #include <mt-plat/sync_write.h>
+-#include <mt_spm.h>
++#include "mt_spm.h"
+ #include "mt_sleep.h"
+ #include "mt_cpuidle.h"
+ 
+diff --git a/drivers/misc/mediatek/btcvsd/inc/mt6580/AudDrv_BTCVSD.h b/drivers/misc/mediatek/btcvsd/inc/mt6580/AudDrv_BTCVSD.h
+index d45756e..60a56f3 100644
+--- a/drivers/misc/mediatek/btcvsd/inc/mt6580/AudDrv_BTCVSD.h
++++ b/drivers/misc/mediatek/btcvsd/inc/mt6580/AudDrv_BTCVSD.h
+@@ -2,7 +2,7 @@
+ #define AUDDRV_BTCVSD_H
+ 
+ #include <linux/types.h>
+-#include "AudioBTCVSDDef.h"
++#include "../../AudioBTCVSDDef.h"
+ 
+ #undef DEBUG_AUDDRV
+ #ifdef DEBUG_AUDDRV
+diff --git a/drivers/misc/mediatek/cmdq/v2/cmdq_def.h b/drivers/misc/mediatek/cmdq/v2/cmdq_def.h
+index 9c93482..c9695ff 100644
+--- a/drivers/misc/mediatek/cmdq/v2/cmdq_def.h
++++ b/drivers/misc/mediatek/cmdq/v2/cmdq_def.h
+@@ -9,7 +9,7 @@
+ #ifdef CMDQ_COMMON_ENG_SUPPORT
+ #include "cmdq_engine_common.h"
+ #else
+-#include "cmdq_engine.h"
++#include "mt6580/cmdq_engine.h"
+ #endif
+ 
+ #define CMDQ_SPECIAL_SUBSYS_ADDR (99)
+diff --git a/drivers/misc/mediatek/gpio/mt6580/6580_gpio.h b/drivers/misc/mediatek/gpio/mt6580/6580_gpio.h
+index 5616652..70f57a1 100644
+--- a/drivers/misc/mediatek/gpio/mt6580/6580_gpio.h
++++ b/drivers/misc/mediatek/gpio/mt6580/6580_gpio.h
+@@ -1,7 +1,7 @@
+ #ifndef _6580_GPIO_H
+ #define _6580_GPIO_H
+ 
+-#include <mt_gpio_base.h>
++#include "mt_gpio_base.h"
+ #include <linux/slab.h>
+ #include <linux/device.h>
+ 
+diff --git a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_affix.c b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_affix.c
+index 2172877..df110eb 100644
+--- a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_affix.c
++++ b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_affix.c
+@@ -5,7 +5,7 @@
+ #include <linux/device.h>
+ /* #include <mach/mt_gpio.h> */
+ #include <mt-plat/mt_gpio_core.h>
+-#include <6580_gpio.h>
++#include "6580_gpio.h"
+ 
+ 
+ void mt_gpio_pin_decrypt(unsigned long *cipher)
+diff --git a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base.c b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base.c
+index bfcb1f2..2071012 100644
+--- a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base.c
++++ b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base.c
+@@ -9,14 +9,14 @@
+  ******************************************************************************/
+ 
+ 
+-#include <6580_gpio.h>
++#include "6580_gpio.h"
+ #include <linux/types.h>
+ #include "mt-plat/sync_write.h"
+ #include <mt-plat/mt_gpio.h>
+ #include <mt-plat/mt_gpio_core.h>
+-#include <mt_gpio_base.h>
++#include "mt_gpio_base.h"
+ /* autogen */
+-#include <gpio_cfg.h>
++#include "gpio_cfg.h"
+ #ifdef CONFIG_OF
+ #include <linux/of_address.h>
+ #endif
+diff --git a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base_linux.c b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base_linux.c
+index 3ebe637..149e03a 100644
+--- a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base_linux.c
++++ b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_base_linux.c
+@@ -6,7 +6,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/seq_file.h>
+ 
+-#include <mt_gpio_base.h>
++#include "mt_gpio_base.h"
+ #include <mt-plat/mt_gpio_core.h>
+ /*#include <mach/eint.h>*/
+ #include <linux/interrupt.h>
+diff --git a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_debug.c b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_debug.c
+index 61cb3b3..74c811d 100644
+--- a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_debug.c
++++ b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_debug.c
+@@ -9,7 +9,7 @@
+  ******************************************************************************/
+ 
+ #include <linux/slab.h>
+-#include <6580_gpio.h>
++#include "6580_gpio.h"
+ #include <mt-plat/mt_gpio.h>
+ #include <mt-plat/mt_gpio_core.h>
+ 
+diff --git a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_ext.c b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_ext.c
+index a35c91a..99245e1 100644
+--- a/drivers/misc/mediatek/gpio/mt6580/mt_gpio_ext.c
++++ b/drivers/misc/mediatek/gpio/mt6580/mt_gpio_ext.c
+@@ -10,7 +10,7 @@
+ 
+ #include <mt-plat/mt_gpio.h>
+ #include <mt-plat/mt_gpio_core.h>
+-#include <mt_gpio_ext.h>
++#include "mt_gpio_ext.h"
+ 
+ /* #define MAX_GPIO_REG_BITS      16 */
+ /* #define MAX_GPIO_MODE_PER_REG  5 */
+diff --git a/drivers/misc/mediatek/i2c/mt6580/i2c.c b/drivers/misc/mediatek/i2c/mt6580/i2c.c
+index 8d33223..d5b77d7 100644
+--- a/drivers/misc/mediatek/i2c/mt6580/i2c.c
++++ b/drivers/misc/mediatek/i2c/mt6580/i2c.c
+@@ -28,7 +28,7 @@
+ /* #include <mach/dma.h> */
+ /* #include <mach/mt_reg_base.h> */
+ /* #include "mach/memory.h" */
+-#include <mt_i2c.h>
++#include "mt_i2c.h"
+ #include <mt-plat/mt_gpio.h>
+ #include <mt-plat/sync_write.h>
+ 
+diff --git a/drivers/misc/mediatek/i2c/mt6580/i2c_common.c b/drivers/misc/mediatek/i2c/mt6580/i2c_common.c
+index a63c5d8..f8477a8 100644
+--- a/drivers/misc/mediatek/i2c/mt6580/i2c_common.c
++++ b/drivers/misc/mediatek/i2c/mt6580/i2c_common.c
+@@ -8,7 +8,7 @@
+ #include <linux/err.h>
+ /* #include <mach/mt_pm_ldo.h> */
+ #include <asm/memory.h>
+-#include <mt_i2c.h>
++#include "mt_i2c.h"
+ 
+ static char data_buffer[256 * 4];
+ 
+diff --git a/drivers/misc/mediatek/include/mt-plat/mt6580/include/mach/mt_thermal.h b/drivers/misc/mediatek/include/mt-plat/mt6580/include/mach/mt_thermal.h
+index 26d6e64..b64af3d 100644
+--- a/drivers/misc/mediatek/include/mt-plat/mt6580/include/mach/mt_thermal.h
++++ b/drivers/misc/mediatek/include/mt-plat/mt6580/include/mach/mt_thermal.h
+@@ -12,7 +12,7 @@
+ 
+ #include "mt-plat/sync_write.h"
+ #include "mtk_thermal_typedefs.h"
+-#include "mt_gpufreq.h"
++#include "../../../../../../../../drivers/misc/mediatek/base/power/mt6580/mt_gpufreq.h"
+ /* #include "mach/mt6575_auxadc_hw.h" */
+ 
+ #if !defined(CONFIG_MTK_LEGACY)
+diff --git a/drivers/misc/mediatek/include/mt-plat/sd_misc.h b/drivers/misc/mediatek/include/mt-plat/sd_misc.h
+index 7e6768c..81581dc 100644
+--- a/drivers/misc/mediatek/include/mt-plat/sd_misc.h
++++ b/drivers/misc/mediatek/include/mt-plat/sd_misc.h
+@@ -10,7 +10,7 @@
+ #include <linux/mmc/sd.h>
+ #endif
+ 
+-#include <mt_sd.h>
++#include "../../../../mmc/host/mediatek/mt6580/mt_sd.h"
+ 
+ #ifndef FPGA_PLATFORM
+ extern void msdc_set_driving(struct msdc_host *host, struct msdc_hw *hw, bool sd_18);
+diff --git a/drivers/misc/mediatek/m4u/2.0/m4u_pgtable.h b/drivers/misc/mediatek/m4u/2.0/m4u_pgtable.h
+index 48f896a..1948a02 100644
+--- a/drivers/misc/mediatek/m4u/2.0/m4u_pgtable.h
++++ b/drivers/misc/mediatek/m4u/2.0/m4u_pgtable.h
+@@ -1,7 +1,7 @@
+ #ifndef __M4U_PGTABLE_H__
+ #define __M4U_PGTABLE_H__
+ 
+-#include "m4u_reg.h"
++#include "../mt6580/m4u_reg.h"
+ 
+ /* ================================================================= */
+ /* 2 level pagetable: pgd -> pte */
+diff --git a/drivers/misc/mediatek/m4u/2.0/m4u_v2.h b/drivers/misc/mediatek/m4u/2.0/m4u_v2.h
+index 6063d8c..c5b2895 100644
+--- a/drivers/misc/mediatek/m4u/2.0/m4u_v2.h
++++ b/drivers/misc/mediatek/m4u/2.0/m4u_v2.h
+@@ -2,7 +2,7 @@
+ #define __M4U_V2_H__
+ #include <linux/ioctl.h>
+ #include <linux/fs.h>
+-#include "m4u_port.h"
++#include "../mt6580/m4u_port.h"
+ #include <linux/scatterlist.h>
+ 
+ typedef int M4U_PORT_ID;
+diff --git a/drivers/misc/mediatek/power/mt6580/pmic.c b/drivers/misc/mediatek/power/mt6580/pmic.c
+index 0018c5b..620814b 100644
+--- a/drivers/misc/mediatek/power/mt6580/pmic.c
++++ b/drivers/misc/mediatek/power/mt6580/pmic.c
+@@ -92,8 +92,8 @@
+ #endif
+ /* #include <mach/upmu_common.h> */
+ #include <mt-plat/upmu_common.h>
+-#include <pmic.h>
+-#include <pmic_dvt.h>
++#include "pmic.h"
++#include "pmic_dvt.h"
+ 
+ /*
+  * PMIC extern variable
+diff --git a/drivers/misc/mediatek/uart/include/mtk_uart.h b/drivers/misc/mediatek/uart/include/mtk_uart.h
+index d971cb0..65b86bd 100644
+--- a/drivers/misc/mediatek/uart/include/mtk_uart.h
++++ b/drivers/misc/mediatek/uart/include/mtk_uart.h
+@@ -5,7 +5,7 @@
+ #include <mach/mt_reg_base.h>
+ #endif
+ #include <mt-plat/sync_write.h>
+-#include "platform_uart.h"
++#include "../mt6580/platform_uart.h"
+ 
+ /*---------------------------------------------------------------------------*/
+ #if defined(ENABLE_VFIFO_DEBUG)
+diff --git a/drivers/misc/mediatek/uart/include/mtk_uart_intf.h b/drivers/misc/mediatek/uart/include/mtk_uart_intf.h
+index aff13c8..8d97dfa 100644
+--- a/drivers/misc/mediatek/uart/include/mtk_uart_intf.h
++++ b/drivers/misc/mediatek/uart/include/mtk_uart_intf.h
+@@ -1,7 +1,7 @@
+ #ifndef __MTK_UART_INTF_H__
+ #define __MTK_UART_INTF_H__
+ 
+-#include "platform_uart.h"
++#include "../mt6580/platform_uart.h"
+ #include <linux/platform_device.h>
+ /*---------------------------------------------------------------------------*/
+ /* fiq debugger */
+diff --git a/drivers/misc/mediatek/video/common/mtkfb_fence.h b/drivers/misc/mediatek/video/common/mtkfb_fence.h
+index d8bae15..0c783ae 100644
+--- a/drivers/misc/mediatek/video/common/mtkfb_fence.h
++++ b/drivers/misc/mediatek/video/common/mtkfb_fence.h
+@@ -4,8 +4,8 @@
+ #include <linux/mutex.h>
+ #include <linux/list.h>
+ #include "disp_session.h"
+-#include "disp_drv_platform.h"
+-#include "display_recorder.h"
++#include "../mt6580/videox/disp_drv_platform.h"
++#include "../mt6580/dispsys/display_recorder.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff --git a/drivers/misc/mediatek/video/common/rdma10/ddp_rdma.h b/drivers/misc/mediatek/video/common/rdma10/ddp_rdma.h
+index 4f4b3ac..fa72567 100644
+--- a/drivers/misc/mediatek/video/common/rdma10/ddp_rdma.h
++++ b/drivers/misc/mediatek/video/common/rdma10/ddp_rdma.h
+@@ -4,8 +4,8 @@
+ #include <mt-plat/sync_write.h>
+ #include <linux/types.h>
+ /* #include <mach/mt_reg_base.h> */
+-#include "ddp_info.h"
+-#include "ddp_hal.h"
++#include "../../mt6580/dispsys/ddp_info.h"
++#include "../../mt6580/dispsys/ddp_hal.h"
+ 
+ extern unsigned long long rdma_start_time[];
+ extern unsigned long long rdma_end_time[];
+diff --git a/drivers/misc/mediatek/video/common/wdma10/ddp_wdma.h b/drivers/misc/mediatek/video/common/wdma10/ddp_wdma.h
+index 78e8517..1649f10 100644
+--- a/drivers/misc/mediatek/video/common/wdma10/ddp_wdma.h
++++ b/drivers/misc/mediatek/video/common/wdma10/ddp_wdma.h
+@@ -1,8 +1,8 @@
+ #ifndef _DDP_WDMA_H_
+ #define _DDP_WDMA_H_
+ 
+-#include "ddp_hal.h"
+-#include "ddp_info.h"
++#include "../../mt6580/dispsys/ddp_hal.h"
++#include "../../mt6580/dispsys/ddp_info.h"
+ 
+ /* start module */
+ int wdma_start(DISP_MODULE_ENUM module, void *handle);
+diff --git a/drivers/misc/mediatek/video/mt6580/dispsys/ddp_dsi.h b/drivers/misc/mediatek/video/mt6580/dispsys/ddp_dsi.h
+index c47e64f..b311776 100644
+--- a/drivers/misc/mediatek/video/mt6580/dispsys/ddp_dsi.h
++++ b/drivers/misc/mediatek/video/mt6580/dispsys/ddp_dsi.h
+@@ -5,7 +5,7 @@
+ #include "lcm_drv.h"
+ #include "ddp_hal.h"
+ #include "ddp_info.h"
+-#include "fbconfig_kdebug_x.h"
++#include "../videox/fbconfig_kdebug_x.h"
+ #include "ddp_manager.h"
+ 
+ #ifdef __cplusplus
+diff --git a/drivers/misc/mediatek/video/mt6580/dispsys/ddp_log.h b/drivers/misc/mediatek/video/mt6580/dispsys/ddp_log.h
+index b7c226d..6cf5093 100644
+--- a/drivers/misc/mediatek/video/mt6580/dispsys/ddp_log.h
++++ b/drivers/misc/mediatek/video/mt6580/dispsys/ddp_log.h
+@@ -6,7 +6,7 @@
+ 
+ #include "display_recorder.h"
+ #include "ddp_debug.h"
+-#include "debug.h"
++#include "../videox/debug.h"
+ #ifndef LOG_TAG
+ #define LOG_TAG
+ #endif
+diff --git a/drivers/misc/mediatek/video/mt6580/dispsys/ddp_pwm_mux.c b/drivers/misc/mediatek/video/mt6580/dispsys/ddp_pwm_mux.c
+index 23923ea..4362b4d 100644
+--- a/drivers/misc/mediatek/video/mt6580/dispsys/ddp_pwm_mux.c
++++ b/drivers/misc/mediatek/video/mt6580/dispsys/ddp_pwm_mux.c
+@@ -3,7 +3,7 @@
+ #include <linux/delay.h>
+ #include <linux/sched.h>
+ #include <ddp_pwm_mux.h>
+-#include <ddp_reg.h>
++#include "ddp_reg.h"
+ #include <mach/mt_clkmgr.h>
+ 
+ #define PWM_MSG(fmt, arg...) pr_debug("[PWM] " fmt "\n", ##arg)
+diff --git a/drivers/misc/mediatek/video/mt6580/videox/disp_drv_log.h b/drivers/misc/mediatek/video/mt6580/videox/disp_drv_log.h
+index d64351f..bb464b9 100644
+--- a/drivers/misc/mediatek/video/mt6580/videox/disp_drv_log.h
++++ b/drivers/misc/mediatek/video/mt6580/videox/disp_drv_log.h
+@@ -1,7 +1,7 @@
+ #ifndef __DISP_DRV_LOG_H__
+ #define __DISP_DRV_LOG_H__
+-#include "display_recorder.h"
+-#include "ddp_debug.h"
++#include "../dispsys/display_recorder.h"
++#include "../dispsys/ddp_debug.h"
+ #include "debug.h"
+ 
+ extern unsigned int dprec_error_log_len;
+diff --git a/drivers/misc/mediatek/video/mt6580/videox/disp_drv_platform.h b/drivers/misc/mediatek/video/mt6580/videox/disp_drv_platform.h
+index ba468d8..2bf806f 100644
+--- a/drivers/misc/mediatek/video/mt6580/videox/disp_drv_platform.h
++++ b/drivers/misc/mediatek/video/mt6580/videox/disp_drv_platform.h
+@@ -11,9 +11,9 @@
+ /* #include <mach/mt_irq.h> */
+ /* #include <mach/boot.h> */
+ /* #include <board-custom.h> */
+-#include "ddp_hal.h"
+-#include "ddp_drv.h"
+-#include "ddp_path.h"
++#include "../dispsys/ddp_hal.h"
++#include "../dispsys/ddp_drv.h"
++#include "../dispsys/ddp_path.h"
+ 
+ #include <mt-plat/sync_write.h>
+ 
+diff --git a/drivers/misc/mediatek/video/mt6580/videox/primary_display.h b/drivers/misc/mediatek/video/mt6580/videox/primary_display.h
+index 788d960..3152813 100644
+--- a/drivers/misc/mediatek/video/mt6580/videox/primary_display.h
++++ b/drivers/misc/mediatek/video/mt6580/videox/primary_display.h
+@@ -1,8 +1,8 @@
+ #ifndef _PRIMARY_DISPLAY_H_
+ #define _PRIMARY_DISPLAY_H_
+ 
+-#include "ddp_hal.h"
+-#include "ddp_manager.h"
++#include "../dispsys/ddp_hal.h"
++#include "../dispsys/ddp_manager.h"
+ #include <linux/types.h>
+ #include "disp_session.h"
+ 
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-mt6580.h b/drivers/pinctrl/mediatek/pinctrl-mtk-mt6580.h
+index d4b96bc..c025194 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-mtk-mt6580.h
++++ b/drivers/pinctrl/mediatek/pinctrl-mtk-mt6580.h
+@@ -12,7 +12,7 @@
+ #define __PINCTRL_MTK_MT6580_H
+ 
+ #include <linux/pinctrl/pinctrl.h>
+-#include <pinctrl-mtk-common.h>
++#include "pinctrl-mtk-common.h"
+ 
+ static const struct mtk_desc_pin mtk_pins_mt6580[] = {
+ 	MTK_PIN(
+diff --git a/drivers/spi/mediatek/mt6580/spi-dev.c b/drivers/spi/mediatek/mt6580/spi-dev.c
+index 90bfad9..3d0d0d9 100644
+--- a/drivers/spi/mediatek/mt6580/spi-dev.c
++++ b/drivers/spi/mediatek/mt6580/spi-dev.c
+@@ -7,8 +7,8 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/sched.h>
+ #include <linux/kthread.h>
+-#include <mt_spi.h>
+-#include <mt_spi_hal.h>
++#include "mt_spi.h"
++#include "mt_spi_hal.h"
+ 
+ #define SPIDEV_LOG(fmt, args...) pr_err("[SPI-UT]: [%s]:[%d]" fmt, __func__, __LINE__, ##args)
+ #define SPIDEV_MSG(fmt, args...) pr_info(fmt, ##args)
+diff --git a/drivers/spi/mediatek/mt6580/spi.c b/drivers/spi/mediatek/mt6580/spi.c
+index aee730b..2697fd9 100644
+--- a/drivers/spi/mediatek/mt6580/spi.c
++++ b/drivers/spi/mediatek/mt6580/spi.c
+@@ -26,8 +26,8 @@
+ #include <mach/mt_clkmgr.h>
+ #endif
+ #include <mach/irqs.h>
+-#include <mt_spi.h>
+-#include <mt_spi_hal.h>
++#include "mt_spi.h"
++#include "mt_spi_hal.h"
+ 
+ #if (defined(CONFIG_MTK_FPGA))
+ #define  CONFIG_MT_SPI_FPGA_ENABLE
+diff --git a/drivers/watchdog/mediatek/wdt/mt6580/mtk_wdt.c b/drivers/watchdog/mediatek/wdt/mt6580/mtk_wdt.c
+index e8d765b..1613dc5 100644
+--- a/drivers/watchdog/mediatek/wdt/mt6580/mtk_wdt.c
++++ b/drivers/watchdog/mediatek/wdt/mt6580/mtk_wdt.c
+@@ -11,7 +11,7 @@
+ 
+ #include <asm/uaccess.h>
+ #include <linux/types.h>
+-#include <mt_wdt.h>
++#include "mt_wdt.h"
+ #include <linux/delay.h>
+ 
+ #include <linux/device.h>
+diff --git a/kernel/power/tuxonice_ui.c b/kernel/power/tuxonice_ui.c
+index fc3ac65..cdcc531 100644
+--- a/kernel/power/tuxonice_ui.c
++++ b/kernel/power/tuxonice_ui.c
+@@ -124,7 +124,7 @@ void toi_early_boot_message(int message_detail, int default_answer, char *warnin
+ 		say("BIG FAT WARNING!! %s", local_printf_buf);
+ 		switch (message_detail) {
+ 		case 0:
+-			say("If you continue booting, note that any image WILL NOT BE REMOVED")
++			say("If you continue booting, note that any image WILL NOT BE REMOVED");
+ 			/* TuxOnIce is unable to do so because the appropriate modules aren't loaded.
+ 			 * You should manually remove the image to avoid any possibility of corrupting
+ 			 * your filesystem(s) later.
+diff --git a/kernel/power/tuxonice_userui.c b/kernel/power/tuxonice_userui.c
+index 77e0a37..faf1919 100644
+--- a/kernel/power/tuxonice_userui.c
++++ b/kernel/power/tuxonice_userui.c
+@@ -315,10 +315,10 @@ static void userui_prepare_status(int clearbar, const char *fmt, ...)
+ 	if (clearbar)
+ 		toi_update_status(0, 1, NULL);
+ 
+-	if (ui_helper_data.pid == -1)
++	//if (ui_helper_data.pid == -1)
+ 		pr_err("%s\n", lastheader);
+-	else
+-		toi_message(0, TOI_STATUS, 1, lastheader, NULL);
++	//else
++	//	toi_message(0, TOI_STATUS, 1, lastheader, NULL);
+ }
+ 
+ /**

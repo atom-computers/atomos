@@ -1,0 +1,93 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos8895-dreamlte_defconfig
+
+pkgname=linux-samsung-dream
+pkgver=4.4.111
+pkgrel=4
+pkgdesc="Meta package for Samsung Galaxy S8/S8+ kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-dream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool-exynos"
+subpackages="
+	${pkgname}lte:kernel_dreamlte
+	${pkgname}2lte:kernel_dream2lte
+"
+
+# Source
+_repository="android_kernel_samsung_universal8895"
+_commit="abd876b3b5fc80dc302183cd372067bab40efab5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/exynos8895/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-Decrease-ext4-debug-prints.patch
+	0002-Fix-decon_reg-variable-type.patch
+	0003-Change-dtb-config-variable.patch
+	0004-Fix-wireless-firmware-path.patch
+	0005-Fix-display-colors-use-RGB-instead-of-BGR.patch
+	0006-Makefile-ignore-bundled-toolchain.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+	fix-check-lxdialog.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB dreamlte (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype  0x217584da \
+		-o "$_outdir/arch/$_carch/boot/dt_dreamlte.img" \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *dreamlte*.dtb)
+
+	# Master DTB dream2lte (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype  0x217584da \
+		-o "$_outdir/arch/$_carch/boot/dt_dream2lte.img" \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *dream2lte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+kernel_dreamlte() {
+	pkgdesc="Kernel for the Samsung Galaxy S8"
+	depends="$pkgname"
+	install -Dm644 "$builddir/$_outdir/arch/$_carch/boot/dt_dreamlte.img" \
+		"$subpkgdir"/boot/dt.img
+}
+
+kernel_dream2lte() {
+	pkgdesc="Kernel for the Samsung Galaxy S8+"
+	depends="$pkgname"
+	install -Dm644 "$builddir/$_outdir/arch/$_carch/boot/dt_dream2lte.img" \
+		"$subpkgdir"/boot/dt.img
+}
+
+sha512sums="
+a7c6d55d12ec5ef2bb388fae4106c63eb89ea0d4f8a682f45a0e15899484b633883cd40138eb2d36ef040b49301e48e3fdb44be92ecbfa20a7bbcda35f326a9c  linux-samsung-dream-abd876b3b5fc80dc302183cd372067bab40efab5.tar.gz
+5ea23ab5e7d1e87ea5a7340956ff4875a989a9518d738a54f76d4f331e084c784b66c5db3502758362d8a9489bd89c32940e4f3df42a804128c93ec08d720cf0  config-samsung-dream.aarch64
+bc035012f50c5f4736f54c15d1c46822ab5c99d055cc6428dd80c523bd308b4477a47c7afd5627cbbefea487e8f1d482ec4a7d5a69705d4f190a4f1af7cfa604  0001-Decrease-ext4-debug-prints.patch
+2ca6fb824afe860baaffbefb680e8463affd5ccf49d255060afdaca564ce3f9a2b1574c48fe2e357e3a2e58bcbfc66fe7ae0e7da4a7d3d0f0b2c31292d24b6d8  0002-Fix-decon_reg-variable-type.patch
+79e3b877ed125b1aa4dda684af44f2dccd52e4025908323c2b4c14484e5aab5dd4956a7d1ca7096bfc1d7427a25a2e18f5b07bcaebbf8f9e07433f918b0c4a36  0003-Change-dtb-config-variable.patch
+41a91d28c55243e6cbc2b56a7ec2c8e62f51f2ee5b889cd0629eb886d9b5b71fc1b7a2f9cca643026ae564c91f449e22ded53a6b3c361d02a27c4b4f7e8e9fe3  0004-Fix-wireless-firmware-path.patch
+b4b209f3de5de68377a2f7e518c0279c11972bc6b1369f09408acdfa9859206283bab8fe548626bc0fdd364e6adcb7eb197575fb711f805a03dad27c6c10c6fc  0005-Fix-display-colors-use-RGB-instead-of-BGR.patch
+60e8184c006f633c7cf459576fff6b5fe1b20831160a664cf3e6f2faaec7e7a11c01781d89a3eef9c482ff9629503661213cae4d38c527f74890bb5c2b9c2f36  0006-Makefile-ignore-bundled-toolchain.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+"

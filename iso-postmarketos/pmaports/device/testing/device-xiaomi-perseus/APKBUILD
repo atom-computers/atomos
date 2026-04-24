@@ -1,0 +1,90 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-xiaomi-perseus
+pkgdesc="Xiaomi Mi Mix 3"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-sdm845
+	postmarketos-base
+	mkbootimg
+	alsa-ucm-conf-sdm845
+	soc-qcom
+	soc-qcom-pd-mapper
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+install="
+	$pkgname-nonfree-firmware-openrc.post-install
+	$pkgname-nonfree-firmware-openrc.post-upgrade
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-nonfree-firmware-udev:nonfree_firmware_udev
+	$pkgname-pmtest
+"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+	81-libssc-xiaomi-perseus.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-xiaomi-perseus.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-xiaomi-perseus.rules
+
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU, venus, modem and sensor firmware"
+	depends="
+		firmware-xiaomi-perseus
+		hexagonrpcd>=0.3.2-r3
+		soc-qcom-modem
+	"
+
+	amove usr/share/hexagonrpcd
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	depends="hexagonrpcd-openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+nonfree_firmware_udev() {
+	default_udev
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel udev"
+}
+
+pmtest() {
+	depends="postmarketos-test-bootrr qrtr firmware-xiaomi-perseus postmarketos-test-unl0kr"
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+378d5e1fb573c2b3981abad9fb86f54d40dad6c1772fec9758a0d397152cd09606f23b0249437c067340673a9072244d16ff7a8a63ceb924765d269f79cf3890  deviceinfo
+003e5228a2b2825f24cb8b4842e3c3f72b99225f0aef3cda5bb2de4e4beb5e1c84800ba48c6cf1b84fe042bd039912e67c545c00981b604db0c0f0bcb546f7c5  kernel-cmdline.conf
+0b58abc4bb2416d146bbb4732453cfa8173108058c9293957320a6fdd488657afa21c4ef14c8eed96c9fd2df295ebcf73cb96928d5f5179595a9b91834b562d8  hexagonrpcd.confd
+e97278b252af952e8ad8d8bb72188791c64b7e7a0c94f0c43507ff5edf35276150d1461ea7e9244c19614c0260ab5a5a4806a8b8815f830d42d95b419d54baad  modules-initfs
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-xiaomi-perseus.rules
+"

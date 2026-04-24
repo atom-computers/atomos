@@ -1,0 +1,33 @@
+diff --git a/arch/arm64/boot/dts/qcom/sm8150-xiaomi-cepheus.dts b/arch/arm64/boot/dts/qcom/sm8150-xiaomi-cepheus.dts
+index 422119fbd..3faf5bdb0 100644
+--- a/arch/arm64/boot/dts/qcom/sm8150-xiaomi-cepheus.dts
++++ b/arch/arm64/boot/dts/qcom/sm8150-xiaomi-cepheus.dts
+@@ -573,3 +573,28 @@ &usb_1_qmpphy {
+ 	vdda-phy-supply = <&vreg_l3c_1p2>;
+ 	vdda-pll-supply = <&vreg_l5a_0p875>;
+ };
++
++&ufs_mem_hc {
++    status = "okay";
++    
++    reset-gpios = <&tlmm 175 GPIO_ACTIVE_LOW>;
++
++    /* Schematic: VREG_L10A_2P95 */
++    vcc-supply = <&vreg_l10a_2p5>; 
++    vcc-max-microamp = <750000>;
++
++
++    /* Schematic: VREG_S4A_1P8 */
++    vccq2-supply = <&vreg_s4a_1p8>;
++    vccq2-max-microamp = <750000>;
++};
++
++&ufs_mem_phy {
++    status = "okay";
++
++    /* Schematic: VREG_L5A_0P88 */
++    vdda-phy-supply = <&vreg_l5a_0p875>; 
++
++    /* Schematic: VREG_L3C_1P2 */
++    vdda-pll-supply = <&vreg_l3c_1p2>;
++};

@@ -1,0 +1,52 @@
+pkgname=firmware-xiaomi-dior
+pkgver=1
+pkgrel=0
+_commit="ac0d15c78cc705c9a76506e6f761cd006018d7bd"
+pkgdesc="Firmware files for Xiaomi Redmi Note 4G"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07 wcnss.b08 wcnss.b09 wcnss.mdt"
+_files_prima="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin WCNSS_qcom_wlan_nv_h3gbl.bin WCNSS_qcom_wlan_nv_h3td.bin WCNSS_qcom_wlan_nv_h3w.bin"
+_commit="421527f4e54d645adaf762b4f14cc5fd4d19a5b5"
+_commit_prima="b7a15a3640ac61c35ebe7cfdc6ae4007279dee55"
+_url="https://github.com/msfkonsole/proprietary_vendor_xiaomi/raw/$_commit/dior/proprietary/etc/firmware"
+_url_prima="https://github.com/edwin0cheng/android_device_xiaomi_dior/raw/$_commit_prima/wifi"
+for _i in $_files; do
+	source="$source $pkgname-$_commit-$_i::$_url/$_i"
+done
+for _i in $_files_prima; do
+	source="$source $pkgname-$_commit-$_i::$_url_prima/$_i"
+done
+
+package() {
+	for _i in $_files; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files_prima; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+
+sha512sums="b62c356d95b8c9748ec7c5ea698617652962e0dcd7513a9802e3957faebff729ab79263d65f3b8202b5b4102f7748c21583758aaff87ada1378d1243e031ebf8  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b00
+67349b5771de949777cdb513c7477a939ec0b80a1e767be6d01b15d40bfc7642354e4a154bec868d56f464198653a678d1814187b3892ece2f6a48797d7209f8  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b01
+3d3e2abb8f6499592d29a736e82c99a37252048a06d94795f9b75216315d7cdbfc43c2fa8a248c045ee70a95f9f9cc612797049540aec913ed07d7a37d413e42  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b02
+cbbfa987ab510173d95a36cc4342049607ec198465a659103ce8399429dd12e98a7cc3bdfb586575d43f250ff8fa9e6442c3dac1bf8a7479c46993bff2820a28  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b04
+356c490d4f4d053c48cbf58142446e906f1cc2e9a02bac43944a128ae7a6bb9aa149e12d28568f195f3ae2546d3bcd7d8504d866b54244ebd59feb363693a8de  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b06
+c331a2a21695186c1ebd2c9facdc5fa856bedc757a50936b72577e76147373747d26bacfce0e165f089e182cc227ada737a0b42e51d9bdec16fb5f8ca795b091  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b07
+6033893c75b32cc906bcabdff02fdbbbb75f0b4d568962b38ea023c00b2273f90bce4482358d4ecc64c22bceaa628d55d17877c8301a1406f67c55c86fc08723  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b08
+5aa10ec50de6cc0c8e455ee26b3eb890de642d142fb25be8357d9a6c94bdc458e3858e8a22e65f4542e1ed4cebf37f14785438ee40645a5e35109b6c3ee5291c  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.b09
+b0d8d7f378dd4278ad5d60ec0cdef59fc9c9ee794925ad99aeb3b373f642fd8a3dd4c7120ef1a95fcb39f7344c4d0341544225642ba4e8524c419f892593acfd  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-wcnss.mdt
+6b74749c49d8bbdeda1e2effc1fa36f32465a90b81b7fa40b6b0657eaa6005614d383c369d1273d050925e936177e4fa5093a4a90d8015933464dfea3370fce3  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-WCNSS_cfg.dat
+c0d5931a6b12009c1bc203e137e9a8085da042155a1145b60ff7696921256c37cc6b2195ec307ff4ca1cf9539445110e85ddd8001829e01a2632a32f1006edce  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-WCNSS_qcom_cfg.ini
+e7be24e3f5759932405a6447916703c8bf0c3771966af392645932a9ac3cce2d60869fa4b0c68074be3d54cdd45e8754791d3738b1cbf3d94f93df162fca59f1  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-WCNSS_qcom_wlan_nv.bin
+f937a38ceabe2b707b984a59f6472b2cf44c57672fc5ee8a8b1946bacf490a0f56f4acf4a0632ef513886b0f59a69e0ea6f60a63ebf17caa03fff62de255e911  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-WCNSS_qcom_wlan_nv_h3gbl.bin
+20bf3d90b164fb9ab042a3700fb10af9cb31170a3275eaafd25b0fdb0b501a60a870442c2533964d5800efc05d4b3afb56b4cb7b85cf18e2579d7cf537c185a5  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-WCNSS_qcom_wlan_nv_h3td.bin
+8a3ad96745943d98d93e84cd12387637c47c04f8e87e7192df71d514e5db589dbfd28b42b0245e4f695330aebe0c96b9c919250ef46e1aeb40db45aa4ee91424  firmware-xiaomi-dior-421527f4e54d645adaf762b4f14cc5fd4d19a5b5-WCNSS_qcom_wlan_nv_h3w.bin"

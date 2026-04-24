@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+name="Google Sargo (Pixel 3a) GNSS Modem Setup"
+
+start()
+{
+	qmicli -d qrtr://0 --loc-set-engine-lock=mt
+	qmicli -d qrtr://0 --loc-set-nmea-types=all
+	eend 0
+}

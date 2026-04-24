@@ -1,0 +1,102 @@
+maintainer="Johannes Marbach <n0-0ne+gitlab@mailbox.org>"
+pkgname=unl0kr
+pkgver=3.5.1
+pkgrel=0
+_commit_lvgl=85aa60d18b3d5e5588d7b247abf90198f07c8a63
+pkgdesc="Framebuffer-based disk unlocker for the initramfs based on LVGL"
+url="https://gitlab.postmarketos.org/postmarketOS/buffybox"
+arch="all"
+license="GPL-3.0-or-later"
+depends="
+	cryptsetup
+	inih
+	libdrm
+	libinput-libs
+	libxkbcommon
+	"
+makedepends="
+	eudev-dev
+	inih-dev
+	libdrm-dev
+	libinput-dev
+	libxkbcommon-dev
+	linux-headers
+	meson
+	scdoc
+	"
+source="
+	https://gitlab.postmarketos.org/postmarketOS/buffybox/-/archive/$pkgver/buffybox-$pkgver.tar.gz
+	lvgl-$_commit_lvgl.tar.gz::https://github.com/lvgl/lvgl/archive/$_commit_lvgl.tar.gz
+	unl0kr.conf
+	unl0kr.files
+	unlock.sh
+	10-fb-force-refresh.conf
+
+	0001-uinput-remove-initialization-of-.time.-in-static-inp.patch
+	"
+options="!check" # No tests
+# "providing" osk-sdl, since it was dropped from pmaports
+provides="postmarketos-fde-unlocker osk-sdl=$pkgver-r$pkgrel"
+provider_priority=1000
+subpackages="
+	$pkgname-agent
+	$pkgname-agent-systemd
+	$pkgname-doc
+	$pkgname-fbforcerefresh
+	"
+builddir="$srcdir/buffybox-$pkgver"
+
+prepare() {
+	default_prepare
+	mkdir -p "$builddir/lvgl"
+	mv "$srcdir/lvgl-$_commit_lvgl"/* "$builddir/lvgl"
+}
+
+build() {
+	abuild-meson \
+		-Dsystemd=true \
+		build
+	meson compile ${JOBS:+-j ${JOBS}} -C build
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C build
+	find "$pkgdir" -name "*buffyboard*" -exec rm "{}" \;
+
+	install -Dm644 "$srcdir"/unl0kr.conf -t "$pkgdir"/etc/
+
+	install -Dm755 "$srcdir"/unlock.sh \
+		"$pkgdir"/usr/bin/fde-unlock
+
+	touch unl0kr/unl0kr
+	install -Dm644 unl0kr/unl0kr \
+		"$pkgdir"/usr/share/mkinitfs-triggers/unl0kr
+
+	install -dm755 "$pkgdir"/etc/unl0kr.conf.d/
+
+	install -Dm644 "$srcdir"/unl0kr.files \
+		"$pkgdir"/usr/share/mkinitfs/files-extra/30-unl0kr.files
+}
+
+fbforcerefresh() {
+	pkgdesc="$pkgdesc (force refresh quirk)"
+
+	install -Dm644 "$srcdir"/10-fb-force-refresh.conf \
+		-t "$subpkgdir"/etc/unl0kr.conf.d/
+}
+
+agent() {
+	description="Password agent for unl0kr"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	amove usr/libexec/unl0kr-agent
+}
+
+sha512sums="
+4558edf2d4f43adcee1d12da359ad5c4b9a3f65eadabc354b945c46a08f51f06e0323e0825953b2f9cf08aeefef3161e32dc359a1733cdc2f033c2d60c2c9b50  buffybox-3.5.1.tar.gz
+b2a7c72e81cb60c9eb059bb7fb1f4a3765586941222591addc8f493af0bd45b5412fa24fb875a9878b2a8e8c16486b20c6d1715a6cd3ae26c9825eb9ad1f86c6  lvgl-85aa60d18b3d5e5588d7b247abf90198f07c8a63.tar.gz
+7155c2f95dcf3716c0f392cf5717e96f1414c383a1f7c2ed30a1f8518dfe0b17c3c0e0e93f6476a342504aa855404099e2f5444eeb099023491c9a9a26fa3d90  unl0kr.conf
+b57260da131a4f40a0a3ee045e8394d4ab79caede9926d77f241afe79c1813fa77f4e312fa3b5e2e5c9fc1b9af082e7c59717abdaf30d512a7eb838a5f623ef8  unl0kr.files
+5386f434cd4f1fb9e0d561a8689e5e85d6a8b3c562823122c082d4932d2fb0ad4edcd635f14f0c61e5c8b5e53648c9937b042409c21683007700faea8894c750  unlock.sh
+f700af3145b79d1ef9edfb22982899b25cabfb212f9620dcbd3a2e6f44b5ad591e0a66056c6fcd66c3fde89a2b5f551e8a8fe2e65cf0e2a48adec57c027d7825  10-fb-force-refresh.conf
+c83555dd9105ddff4f1925ae34470877478d83eeb2cf605d679a30e9703ca8a52fb5661b7000796fe77fca954589c997d838008d2c8fc939b388aa2365628637  0001-uinput-remove-initialization-of-.time.-in-static-inp.patch
+"

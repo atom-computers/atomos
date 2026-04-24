@@ -1,0 +1,32 @@
+commit 12b5d0f2186e13d41543c0e6088c942d153e24ce
+Author: Mayeul Cantan <mayeul.cantan@gmail.com>
+Date:   Sat Feb 17 13:10:58 2018 +0100
+
+    Fix undefined reference to to_state in camdrv_ss_sr352.c
+    
+    This involves fixing a header in camdrv_ss.h
+
+diff --git a/drivers/media/video/camdrv_ss.h b/drivers/media/video/camdrv_ss.h
+index acd6b0b4..a7b38fb6 100755
+--- a/drivers/media/video/camdrv_ss.h
++++ b/drivers/media/video/camdrv_ss.h
+@@ -169,6 +169,7 @@ enum camdrv_ss_cam_light {
+ 	CAM_HIGH_LIGHT,
+ };
+ 
++struct camdrv_ss_state *to_state(struct v4l2_subdev *sd);
+ 
+ struct camdrv_ss_sensor_cap {
+ /************************/
+diff --git a/drivers/media/video/camdrv_ss_sr352.c b/drivers/media/video/camdrv_ss_sr352.c
+index 4bc2900f..d04d6c8a 100644
+--- a/drivers/media/video/camdrv_ss_sr352.c
++++ b/drivers/media/video/camdrv_ss_sr352.c
+@@ -64,7 +64,6 @@ extern  int camdrv_ss_i2c_set_config_register(struct i2c_client *client,
+           				                 char *name);
+ extern int camdrv_ss_set_preview_size(struct v4l2_subdev *sd);
+ extern int camdrv_ss_set_dataline_onoff(struct v4l2_subdev *sd, int onoff);
+-extern struct camdrv_ss_state *to_state(struct v4l2_subdev *sd);
+ 
+ //#define __JPEG_CAPTURE__ 1        //denis_temp ; yuv capture
+ 

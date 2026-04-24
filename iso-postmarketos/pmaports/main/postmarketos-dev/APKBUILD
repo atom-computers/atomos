@@ -1,0 +1,36 @@
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=postmarketos-dev
+pkgver=1
+pkgrel=2
+pkgdesc="postmarketOS development tools"
+url="https://postmarketos.org"
+arch="noarch"
+license="MIT"
+options="!check"
+depends="
+	alpine-sdk
+	bash
+	bash-completion
+	coreutils
+	findutils
+	gawk
+	htop
+	nano
+	iputils
+	openssh-client
+	psutils
+"
+install="$pkgname.post-install $pkgname.post-deinstall"
+
+package() {
+	mkdir -p "$pkgdir/etc/skel"
+	cat > "$pkgdir/etc/skel/.bashrc" <<EOF
+# Just set a nice prompt
+PS1='\[\033[01;32m\]\u@\h\[\033[01;34m\] \w \$\[\033[00m\] '
+EOF
+
+	cat > "$pkgdir/etc/skel/.bash_profile" <<EOF
+# Source the users bashrc (global one is sourced by /etc/profile.d/00-bashrc.sh)
+[[ -f ~/.bashrc ]] && . ~/.bashrc
+EOF
+}

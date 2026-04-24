@@ -495,6 +495,103 @@ class TestInstallAtomosAgentsScript(unittest.TestCase):
         self.assertIn("overview-chat-ui-overlay-v5-lifecycle-only", text)
         self.assertIn("delete-native-rootfs-images.sh", text)
 
+    def test_build_image_reasserts_vendor_phosh_and_final_verifies_before_resync(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        # Defensive re-promote of vendor phosh after all apk-mutating
+        # customization steps, before apply-overlay + resync.
+        self.assertIn("verify_final_rootfs_customizations", text)
+        self.assertIn("Re-promote vendor phosh after every apk-mutating", text)
+        # Final pre-resync assertion catches silent phosh downgrade (e.g.
+        # install-atomos-agents.sh'"'"'s apk upgrade fallback) and missing
+        # overview-chat-ui / home-bg binaries.
+        self.assertIn("FINAL-VERIFY FAIL", text)
+        # Primary vendor-phosh signal: installed pkgver ends in _p<digits>,
+        # which abuild stamps only on --src= builds. Stock Alpine edge
+        # phosh never has this suffix.
+        self.assertIn("pkgver_has_p_suffix", text)
+        self.assertIn("_p[0-9]*", text)
+        # Secondary signal: atomos-overview-chat-submit marker visible via
+        # strings (it'"'"'s a C-level string literal). The other two markers
+        # (atomos-home-chat-entry, atomos-apps-toggle) are gresource-embedded
+        # and usually hidden by gzip compression inside the ELF, so we
+        # mention them as best-effort diagnostics rather than hard
+        # requirements.
+        self.assertIn("atomos-overview-chat-submit", text)
+        self.assertIn("atomos-home-chat-entry", text)
+        self.assertIn("atomos-apps-toggle", text)
+        self.assertIn("ATOMOS_SKIP_FINAL_VERIFY", text)
+        # Must appear after resync message so the hard-fail is plumbed in
+        # right before the rsync step that snapshots chroot -> disk image.
+        resync_call_idx = text.index("scripts/rootfs/resync-rootfs-to-disk-image.sh")
+        final_verify_call_idx = text.rindex("verify_final_rootfs_customizations")
+        self.assertLess(final_verify_call_idx, resync_call_idx)
+
+    def test_build_image_stages_vendor_phosh_apks_into_rootfs_chroot(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        # Host-side staging helper that copies the locally-built vendor
+        # phosh/phoc/phosh-mobile-settings APK files directly into the
+        # rootfs chroot filesystem at /tmp/atomos-vendor-phosh/, bypassing
+        # pmbootstrap bind-mount semantics. Required because
+        # /mnt/pmbootstrap/packages is NOT reliably mounted inside the
+        # rootfs chroot for `pmb chroot -r` invocations on pmbootstrap 3.9.
+        self.assertIn("stage_vendor_phosh_apks_into_rootfs_chroot", text)
+        self.assertIn("/tmp/atomos-vendor-phosh", text)
+        # The promote step must call the staging helper FIRST (so the apks
+        # are present in-chroot before `apk add` runs).
+        promote_def_idx = text.index("promote_local_vendor_phosh_into_rootfs() {")
+        stage_def_idx = text.index("stage_vendor_phosh_apks_into_rootfs_chroot() {")
+        self.assertLess(stage_def_idx, promote_def_idx)
+        # And the in-chroot searcher must prefer /tmp/atomos-vendor-phosh
+        # (the host-staged dir) over the unreliable /mnt/pmbootstrap/packages
+        # mount path.
+        tmp_search_idx = text.index('"/tmp/atomos-vendor-phosh"')
+        mnt_search_idx = text.index('"/mnt/pmbootstrap/packages/edge/${arch}"')
+        self.assertLess(tmp_search_idx, mnt_search_idx)
+        # phoc must be OPTIONAL: our pmbootstrap `build --src=rust/phosh/phosh`
+        # only produces the phosh package family, not the separate phoc
+        # package. Making phoc required makes the promote step permanently
+        # no-op.  Only phosh_apk is mandatory; the "phoc_apk=<empty>"
+        # abort path that used to exist must be gone.
+        self.assertNotIn('if [ -z "$phoc_apk" ] || [ -z "$phosh_apk" ]', text)
+        self.assertIn('if [ -z "$phosh_apk" ]', text)
+        # The staging function must pick up the full phosh subpackage set
+        # our build produces (libphosh/phosh-schemas/phosh-systemd/
+        # phosh-portalsconf), using the exact build-version match so we
+        # avoid dragging in older phosh-*.apk clutter from historical
+        # builds.
+        for subpkg in (
+            "libphosh",
+            "phosh-schemas",
+            "phosh-systemd",
+            "phosh-portalsconf",
+        ):
+            self.assertIn(subpkg, text)
+        # The in-chroot apk add step must promote the WHOLE staged set in
+        # one transaction rather than only phoc+phosh.
+        self.assertIn("/tmp/atomos-vendor-phosh/*.apk", text)
+        self.assertIn("apk add --upgrade --allow-untrusted $stage_apks", text)
+
+    def test_build_image_wires_home_bg_build_and_install(self):
+        text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
+        # CLI flag + default-on toggle.
+        self.assertIn("--without-home-bg", text)
+        self.assertIn("--skip-home-bg", text)
+        self.assertIn("BUILD_HOME_BG=1", text)
+        # Build + install + verify calls, parallel to the overview-chat-ui block.
+        self.assertIn("scripts/home-bg/build-atomos-home-bg.sh", text)
+        self.assertIn("scripts/home-bg/install-atomos-home-bg.sh", text)
+        self.assertIn("verify_home_bg_install", text)
+        self.assertIn("test -x /usr/local/bin/atomos-home-bg", text)
+        self.assertIn("test -x /usr/libexec/atomos-home-bg", text)
+        self.assertIn("test -d /usr/share/atomos-home-bg", text)
+        self.assertIn("Skip atomos-home-bg (BUILD_HOME_BG=0)", text)
+
+    def test_makefile_passes_without_home_bg_flag(self):
+        text = (ISO_ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("without-home-bg", text)
+        self.assertIn("WITHOUT_HOME_BG", text)
+        self.assertIn("--without-home-bg", text)
+
     def test_build_image_defaults_qemu_to_stock_phosh(self):
         text = (SCRIPTS / "build-image.sh").read_text(encoding="utf-8")
         self.assertIn("ATOMOS_ENABLE_VENDOR_PHOSH", text)

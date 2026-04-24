@@ -1,0 +1,72 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Kernel config based on: arch/arm/configs/falcon_defconfig
+
+pkgname=linux-motorola-falcon-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Moto G (2013) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="motorola-falcon"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="coreutils perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_motorola_msm8226"
+_commit="22bc4ed7f4149f95c84634e6c1baccbbd16c5cc5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_mdss_fb_refresh_rate.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	fix_redish_display.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# We need the dtb file
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+5e55db19f198fadf0f914c2726c034eeaf9a1f4ad5823a7e8a4e9be2664eb0279c91fb2f1c6a9292be2ac523e367551475ff40569676775a03a709ae50a3d0ec  linux-motorola-falcon-downstream-22bc4ed7f4149f95c84634e6c1baccbbd16c5cc5.tar.gz
+b2b0384dc9402e1d53a0856a4be2b1f098d1d50ce7e5e7dc4f562db96b0f58469d4ae34db7148e7f2b7c065624ff365ec1dc100573fde873819a814a78d72007  config-motorola-falcon.armv7
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+83e52e5c5eb9721fe256c04f371197e9befeb129c6a0826c134000b96f8c1987f5634a6a207f1924bd2e833c7822866794742b91b1833d14998d80b5c1d5e646  03_mdss_fb_refresh_rate.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+ebd2ff424c889775fce822da3dbdf580ff339bfd1a01739b19be9cb8f4edd176468e421d6bd3bbd6fefc302a2e656048d38fdc0760e6a2fb6bc072817a6d3a13  fix_redish_display.patch
+"

@@ -1,0 +1,70 @@
+From 3810f128e9ecf04cf07d243cd377fcb6046cfd73 Mon Sep 17 00:00:00 2001
+From: Newbyte <newbyte@postmarketos.org>
+Date: Tue, 30 Apr 2024 17:57:20 +0200
+Subject: [PATCH] ARM: 8933/1: replace Sun/Solaris style flag on section
+
+Taken from
+linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+and adapted for the Exynos 4412 vendor sources.
+---
+ arch/arm/boot/bootp/init.S            | 2 +-
+ arch/arm/boot/compressed/big-endian.S | 2 +-
+ arch/arm/boot/compressed/head.S       | 2 +-
+ arch/arm/mm/proc-v7.S                 | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/bootp/init.S b/arch/arm/boot/bootp/init.S
+index 78b50807516..868eeeaaa46 100644
+--- a/arch/arm/boot/bootp/init.S
++++ b/arch/arm/boot/bootp/init.S
+@@ -16,7 +16,7 @@
+  *  size immediately following the kernel, we could build this into
+  *  a binary blob, and concatenate the zImage using the cat command.
+  */
+-		.section .start,#alloc,#execinstr
++		.section .start, "ax"
+ 		.type	_start, #function
+ 		.globl	_start
+ 
+diff --git a/arch/arm/boot/compressed/big-endian.S b/arch/arm/boot/compressed/big-endian.S
+index 25ab26f1c6f..f22428e275f 100644
+--- a/arch/arm/boot/compressed/big-endian.S
++++ b/arch/arm/boot/compressed/big-endian.S
+@@ -5,7 +5,7 @@
+  *  Author: Nicolas Pitre
+  */
+ 
+-	.section ".start", #alloc, #execinstr
++	.section ".start", "ax"
+ 
+ 	mrc	p15, 0, r0, c1, c0, 0	@ read control reg
+ 	orr	r0, r0, #(1 << 7)	@ enable big endian mode
+diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+index 63cfa2e9236..3cd67aa3855 100644
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -112,7 +112,7 @@
+ #endif
+ 		.endm
+ 
+-		.section ".start", #alloc, #execinstr
++		.section ".start", "ax"
+ /*
+  * sort out different calling conventions
+  */
+diff --git a/arch/arm/mm/proc-v7.S b/arch/arm/mm/proc-v7.S
+index e1687990af9..a479702f198 100644
+--- a/arch/arm/mm/proc-v7.S
++++ b/arch/arm/mm/proc-v7.S
+@@ -519,7 +519,7 @@ __v7_setup_stack:
+ 	string	cpu_elf_name, "v7"
+ 	.align
+ 
+-	.section ".proc.info.init", #alloc, #execinstr
++	.section ".proc.info.init", "ax"
+ 
+ 	/*
+ 	 * Standard v7 proc info content
+-- 
+2.44.0
+

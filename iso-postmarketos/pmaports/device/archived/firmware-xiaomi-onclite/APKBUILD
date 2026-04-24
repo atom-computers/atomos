@@ -1,0 +1,25 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-onclite
+pkgver=2
+pkgrel=2
+pkgdesc="Firmware files for Xiaomi Redmi 7"
+url="https://gitlab.com/barni2000/$pkgname"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="5ab4968ab12acb60a5e165008fdf25345e80c309"
+
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/onclite"
+
+package() {
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+e95cf73b4a2e13c8ea3296670177372f5e3c07f40e73806546f7c28a12a3ba5a3b735994dcaeacb8da59f5e3561ab6b061cedd77757cf58686907d32b1a7162a  firmware-xiaomi-onclite-5ab4968ab12acb60a5e165008fdf25345e80c309.tar.gz
+"

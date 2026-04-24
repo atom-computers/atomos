@@ -1,0 +1,28 @@
+maintainer="Jasper Korten <jja2000@gmail.com>"
+pkgname=firmware-google-smaug
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for the Google Pixel C"
+url="https://android.googlesource.com/device/google/dragon/+/refs/heads/oreo-m8-release"
+arch="aarch64"
+license="custom:proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Sources
+_commit="608e63aff9b750900736561455fa3ce8618dc507"
+source="$pkgname.tar.gz::https://github.com/jja2000/dragon_vendor/archive/$_commit.tar.gz"
+builddir="$srcdir/android_hardware_broadcom_wlan-$_commit"
+
+package() {
+	# WiFi
+	install -Dm644 "$srcdir"/dragon_vendor-$_commit/bcmdhd.cal \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/brcmfmac4354-sdio.google,smaug-rev8.txt
+
+	# Bluetooth
+	install -Dm644 "$srcdir"/dragon_vendor-$_commit/bluetooth/"BCM4354_003.001.012.0443.0863.hcd" \
+		"$pkgdir"/lib/firmware/postmarketos/brcm/BCM4354.google,smaug-rev8.hcd
+}
+
+sha512sums="
+6ee1181a0669e81a2bfda528c78cd7d15ef55b7fa0f2e3f690667829c79adbfa92010ed57f5923707f9379a62cd87e90a9f3c1f4843df18759f677655d8af7aa  firmware-google-smaug.tar.gz
+"

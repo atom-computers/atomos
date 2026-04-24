@@ -1,0 +1,62 @@
+# Kernel config based on: arch/arm/configs/kminilte_00_defconfig
+
+pkgname=linux-samsung-kminilte
+pkgver=3.4.113
+pkgrel=10
+pkgdesc="Samsung Galaxy S5 Mini kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-kminilte"
+url="https://github.com/Spookcity/android_kernel_samsung_kminilte"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_kminilte"
+_commit="19064009217860c08c7167ba8be23fa9bde44fce"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Spookcity/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-drivers-leds-rt5033_fled-fix-use-of-usleep.patch
+	0002-drivers-leds-flashlight-add-support-for-setting-mode.patch
+	0003-netfilter-symbols.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+55cc9a7d1c2381bea2f4d4fc2282653d41d501e838610edd0ccf8acad9a01e05299d2c3301c55f9073db91f78a791708902ad28e5c8b7026bd6574bac395df89  linux-samsung-kminilte-19064009217860c08c7167ba8be23fa9bde44fce.tar.gz
+1751ca36d837691afd26c13ab1ffcedc36c11ec4a5635c5da278eb8dc397da43b683ff8a82e83cc72fd8efcb1dd2f0e30e4f1cc5af89c9800ec6c9437fbe48b7  config-samsung-kminilte.armv7
+873e4ff64521f685b7948e7a55aba4a95e3c0086b54c8e1440f67630c49a6b17b10c71837ba44d0bdb9afb05ff3ee8c0c890f0053fb79cd733aa76aed53579c2  0001-drivers-leds-rt5033_fled-fix-use-of-usleep.patch
+fb30ea67620fc0dae62943b512662e0f3a49b7509d5f3cddda4c1552fe365535ac414f4ae960356f18228ce49d5c362c512cec7a9b671ffe96408f91b1b9fdee  0002-drivers-leds-flashlight-add-support-for-setting-mode.patch
+5214a850d496bed9e17575bd0b52e9e4415bcbd5a89863f924c5bfed848f684c0a95e8d10c9ef93c0e00149f034cf5e897d1b268be35676a600b3ee6e1917501  0003-netfilter-symbols.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

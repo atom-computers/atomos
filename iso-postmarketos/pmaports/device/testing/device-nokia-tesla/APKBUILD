@@ -1,0 +1,34 @@
+maintainer="Dominduchami <dominikkobinski314@gmail.com>"
+pkgname=device-nokia-tesla
+pkgdesc="Nokia Lumia 830"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8226
+	lk2nd-msm8226
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+sha512sums="
+f09fba2c092c68c9362ecda5da1bb6a2e6d8bfd038b88fdb91ac659d6344b479a09e7d12adc330be43d1b2813e1b8b7b72daf3102d0eb2c73329a170e0816d10  deviceinfo
+07efb3ce5ec2c4a015a4d6c68a232b9334ceb81ccce8bedddae137cf5c6aa8b70ef49c29680099393b7e653e127c6b0402f7282be8626f7e7d78a44de3684587  kernel-cmdline.conf
+62d380a05828ec2cf180c0fcc105c7cf492f709fed086b37a093cacadf19ee7a4ca035db238c5d2e3f1f5e4f1d928248d6f1d7957430bb2cb8529e52c773429a  modules-initfs
+"

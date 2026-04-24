@@ -1,0 +1,31 @@
+diff --git a/drivers/misc/mediatek/mmc-host/mt8127/sd.c b/drivers/misc/mediatek/mmc-host/mt8127/sd.c
+index b78d8f83..d6f0130d 100644
+--- a/drivers/misc/mediatek/mmc-host/mt8127/sd.c
++++ b/drivers/misc/mediatek/mmc-host/mt8127/sd.c
+@@ -216,7 +216,7 @@ MSDC_DEV_ATTR(cmdtimeout_count, "%d", host->cmdtimeout_count, u32);
+ MSDC_DEV_ATTR(reqtimeout_count, "%d", host->reqtimeout_count, u32);
+ MSDC_DEV_ATTR(pc_count, "%d", host->pc_count, u32);
+ MSDC_DEV_ATTR(pc_suspend, "%d", host->pc_suspend, u32);
+-MSDC_DEV_ATTR(inserted, "%d", host->inserted, u32);
++MSDC_DEV_ATTR(inserted, "%d", host->card_inserted, u32);
+ 
+ static struct device_attribute *msdc_attrs[] = {
+ 	&dev_attr_crc_count,
+@@ -271,7 +271,7 @@ static void msdc_metrics_work(struct work_struct *work)
+ 	MSDC_LOG_COUNTER_TO_VITALS(reqto, host->reqtimeout_count);
+ 	MSDC_LOG_COUNTER_TO_VITALS(pc_count, host->pc_count);
+ 	MSDC_LOG_COUNTER_TO_VITALS(pc_suspend, host->pc_suspend);
+-	MSDC_LOG_COUNTER_TO_VITALS(inserted, host->inserted);
++	MSDC_LOG_COUNTER_TO_VITALS(inserted, host->card_inserted);
+ }
+ #endif
+ 
+@@ -1908,7 +1908,7 @@ static void msdc_tasklet_card(unsigned long arg)
+     }
+ 
+ 	if ((host->hw->host_function == MSDC_SD) && inserted) {
+-		host->inserted++;
++		host->card_inserted++;
+ #ifdef CONFIG_AMAZON_METRICS_LOG
+ 		mod_delayed_work(system_wq, &host->metrics_work, METRICS_DELAY);
+ #endif

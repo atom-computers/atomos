@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Nothing CMF Phone 1"
+deviceinfo_manufacturer="Nothing"
+deviceinfo_codename="nothing-tetris"
+deviceinfo_year="2024"
+deviceinfo_dtb="mt6878-nothing-tetris"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_drm="true"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+# NOTE: We do not use EFI, because of this board's quirk of needing
+# a SMC call on every jump to the kernel, else, the device will
+# not successfully boot and will bite a watchdog in Secure World.
+# As such, bootm is used (with a patch to u-boot).
+deviceinfo_flash_method="fastboot-bootpart"
+deviceinfo_flash_fastboot_partition_kernel="super"
+# Required for devices using UFS as storage (instead of e.g. eMMC)
+deviceinfo_rootfs_image_sector_size="4096"
+

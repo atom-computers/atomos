@@ -1,0 +1,30 @@
+
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=firmware-odroid-u2
+pkgver=2015.10
+pkgrel=1
+pkgdesc="Firmware for Odroid X/U2/U3"
+url="https://github.com/hardkernel/u-boot"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="u2-bl1.HardKernel::https://github.com/hardkernel/u-boot/raw/odroid-v$pkgver/sd_fuse/bl1.HardKernel
+	u2-bl2.HardKernel::https://github.com/hardkernel/u-boot/raw/odroid-v$pkgver/sd_fuse/bl2.HardKernel
+	u2-tzsw.HardKernel::https://github.com/hardkernel/u-boot/raw/odroid-v$pkgver/sd_fuse/tzsw.HardKernel
+	"
+_pmb_recommends="linux-firmware-s5p-mfc"
+
+package() {
+	# Install firmware
+	install -D -m644 "$srcdir"/u2-bl1.HardKernel \
+		"$pkgdir"/usr/share/u-boot/odroid-u2/bl1.bin
+	install -D -m644 "$srcdir"/u2-bl2.HardKernel \
+		"$pkgdir"/usr/share/u-boot/odroid-u2/bl2.bin
+	install -D -m644 "$srcdir"/u2-tzsw.HardKernel \
+		"$pkgdir"/usr/share/u-boot/odroid-u2/tzsw.bin
+}
+sha512sums="
+04bd91f8c46f72d0f6d09b4cec70e9617e82cccee5e6b660e2ec54aa64972169f48b7c81ee2a9f31fa513bf99021de443bebc871a25569eaaf25aaf4da208e8d  u2-bl1.HardKernel
+6f970437a1bc94a438be45473d18125e782cb89c9a3be29ec59fbe52d8787fb7e0943e3cc40505b71bb31e99b7d015a81c982aec15c0db61550b9084bd07b842  u2-bl2.HardKernel
+96636b2de5f43f879a9f96501719a13e240446b812154e0085a4584e19d2317b54e94c0745a3913e1b183ad23cda97e998a2308bbe04bee158653ea8c1835cd7  u2-tzsw.HardKernel
+"

@@ -1,0 +1,73 @@
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+# Co-Maintainer: Alicja Michalska <ellyqw@mainlining.org>
+maintainer="Ingo Reitz <9l@9lo.re>"
+pkgname=postmarketos-cros-common
+pkgdesc="Common package for Chrome OS devices"
+pkgver=2
+pkgrel=6
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64 armv7 x86_64 x86" # there are no cros devices of other arches
+options="!check !archcheck !tracedeps"
+subpackages="
+	$pkgname-gnome
+	$pkgname-sway
+	postmarketos-cros-keymap-openrc:_keymap_openrc
+"
+makedepends="
+	cros-keyboard-map-openrc
+	keyd-openrc
+	postmarketos-ui-sway-logo-key-alt
+"
+source="
+	00_postmarketos-cros-common-gnome.gschema.override
+"
+_pmb_recommends="cros-keyboard-map"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+# These devices have custom keyboard layout. They don't have "Meta"
+# (Win/Command/Super) key in the place. They also don't have a "Caps
+# Lock" key, but there is a "Search" key in the place of "Caps Lock".
+# This key is binded as "Meta" in Linux, and it is not that obvious
+# for new users (personal experience). Default Gnome hotkeys for
+# changing keyboard layout are "Super + Space" and "Shift + Super +
+# Space". Therefore on these devices it is "Search + Space" and
+# "Shift + Search + Space". When comparing it to a regular keyboard
+# it looks like "Caps + Space" and "Shift + Caps + Space" which is
+# not obvious at all.
+#
+# Configure it as "Ctrl + Space" and "Shift + Ctrl + Space" which
+# is closer to regular keyboards and matches Chrome OS hotkey.
+gnome() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-base-ui-gnome"
+	install -Dm644 "$srcdir/00_$subpkgname.gschema.override" \
+		-t "$subpkgdir"/usr/share/glib-2.0/schemas
+}
+
+# The Meta key on these devices is in the place where generally
+# "Caps Lock" key is located. This makes it more difficult to press
+# hotkeys like "Meta + Shift + Q". There is also the problem of
+# unobvious location of "Meta" key.
+#
+# Thus change the $mod key to Alt by default.
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sway"
+	depends="postmarketos-ui-sway-logo-key-alt"
+	mkdir -p "$subpkgdir"
+}
+
+# Custom keyboard layout documented on
+# https://wiki.postmarketos.org/wiki/Category:ChromeOS#Keyboard_mapping
+_keymap_openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel cros-keyboard-map openrc"
+	depends="cros-keyboard-map-openrc keyd-openrc"
+	install="postmarketos-cros-keymap-openrc.post-install"
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+7475db666ba78d524474070c1b880893b4cb1c98353226faeda4aff1d510e13131be75465732b00a5d027570933e7843fb3e13d26641db2f98d29e77700def6d  00_postmarketos-cros-common-gnome.gschema.override
+"

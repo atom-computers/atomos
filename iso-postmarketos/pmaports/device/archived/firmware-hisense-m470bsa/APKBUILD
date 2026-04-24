@@ -1,0 +1,30 @@
+# Archived: Kernel does not build anymore
+pkgname=firmware-hisense-m470bsa
+pkgver=1
+pkgrel=2
+_commit="42fbba77c06cf822021554ed1b0e4736dbce2e72"
+pkgdesc="Hisense Sero 7 Pro Firmware"
+url="https://github.com/dolorespark/android_vendor_hisense_m470bsa"
+arch="armv7"
+license="proprietary"
+source="https://github.com/dolorespark/android_vendor_hisense_m470bsa/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/android_vendor_hisense_m470bsa-$_commit"
+
+package() {
+	# Wifi
+	for _i in fw_bcmdhd.bin fw_bcmdhd_apsta.bin; do
+		install -Dm644 prebuilt/vendor/firmware/bcm4330/"$_i" \
+		  "$pkgdir"/lib/firmware/postmarketos/bcm4330/"$_i"
+	done
+
+	for _fw in BCM20791B4_002.005.010.0103.0000_Hisense_I2CGED_NCD_Signed_Test.ncd BCM20791B4_002.005.010.0103.0000_Hisense_PreI2C_NCD_Signed_Test.ncd tlv320aic3206_fw_v1.bin; do
+		install -Dm644 prebuilt/vendor/firmware/"$_fw" \
+		  "$pkgdir"/lib/firmware/postmarketos/"$_fw"
+	done
+
+	install -Dm644 prebuilt/etc/nvram_4330.txt \
+	  "$pkgdir"/lib/firmware/postmarketos/nvram_4330.txt
+}
+
+sha512sums="131f9bd8f50eae8df25f5857c775163a6d61e1e2a708b2a921c18a36d7b75d1075af82d927affe759e476932920e201da06100a9b975d116583c4401d84a8662  42fbba77c06cf822021554ed1b0e4736dbce2e72.tar.gz"

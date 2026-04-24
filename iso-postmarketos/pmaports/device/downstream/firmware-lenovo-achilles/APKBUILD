@@ -1,0 +1,32 @@
+pkgname=firmware-lenovo-achilles
+pkgver=1
+pkgrel=0
+_commit="12e11bf9e713114e177b82dee23b8dd457a29783"
+pkgdesc="Firmware files for Lenovo TB2-X30L (aka A10-30L, achilles)"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/aleiepure/proprietary_vendor_lenovo/-/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/proprietary_vendor_lenovo-$_commit"
+
+package() {
+	_files="
+		wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06
+		wcnss.b09 wcnss.b10 wcnss.b11 wcnss.b12 wcnss.mdt"
+	for _i in $_files; do
+		install -D -m644 "$_i" "$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	_files="WCNSS_cfg.dat WCNSS_qcom_cfg.ini
+		WCNSS_qcom_wlan_nv.bin WCNSS_qcom_wlan_nv_4x.bin WCNSS_wlan_dictionary.dat"
+	for _i in $_files; do
+		install -D -m644 wlan/prima/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+}
+
+sha512sums="
+0f14b6176b442cf3784e6c7d8035dd5688e437b63716e0adc4423e85b5c168a2e3c2a247809e559de56fa08d4474bbb2dc803312cf4fe4d1ddb966b8d6cada5f  firmware-lenovo-achilles-12e11bf9e713114e177b82dee23b8dd457a29783.tar.gz
+"

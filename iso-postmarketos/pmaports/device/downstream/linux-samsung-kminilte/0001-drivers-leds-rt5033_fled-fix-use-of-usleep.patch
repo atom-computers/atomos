@@ -1,0 +1,26 @@
+From 847af15f6683de0f131924555eb2ca1ac05527ac Mon Sep 17 00:00:00 2001
+From: Niklas Cathor <niklas.cathor@gmx.de>
+Date: Sun, 12 Apr 2020 15:56:54 +0200
+Subject: [PATCH 1/2] drivers/leds/rt5033_fled: fix use of 'usleep'
+
+Symbol seems to be deprecated, and replaced by usleep_range
+---
+ drivers/leds/rt5033_fled.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/leds/rt5033_fled.c b/drivers/leds/rt5033_fled.c
+index da0d2fc6be8..97e76c5acde 100644
+--- a/drivers/leds/rt5033_fled.c
++++ b/drivers/leds/rt5033_fled.c
+@@ -531,7 +531,7 @@ int32_t rt5033_charger_notification(struct rt_fled_info *fled_info,
+ 		* we will check torch had already been on or not
+ 		*/
+ 		if (mode == FLASHLIGHT_MODE_TORCH || mode == FLASHLIGHT_MODE_MIXED) {
+-			usleep(2500);
++			usleep_range(2500, 2500);
+ 			rt5033_clr_bits(info->i2c_client, 0x1a, 0x80);
+ 		}
+ 	}
+-- 
+2.20.1
+

@@ -1,0 +1,25 @@
+From ffed22975488007667b005f41e2b189dafc76a29 Mon Sep 17 00:00:00 2001
+From: realaravinth <realaravinth@batsense.net>
+Date: Fri, 3 Jul 2020 20:31:01 +0530
+Subject: [PATCH] buffere awareness to make x11 work
+
+---
+ drivers/video/sprdfb/sprdfb_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/sprdfb/sprdfb_main.c b/drivers/video/sprdfb/sprdfb_main.c
+index 9d572f0d..7ad1445b 100755
+--- a/drivers/video/sprdfb/sprdfb_main.c
++++ b/drivers/video/sprdfb/sprdfb_main.c
+@@ -435,7 +435,7 @@ static int sprdfb_check_var(struct fb_var_screeninfo *var, struct fb_info *fb)
+ 	if ((var->xres != fb->var.xres) ||
+ 			(var->yres != fb->var.yres) ||
+ 			(var->xres_virtual != fb->var.xres_virtual) ||
+-			(var->yres_virtual != fb->var.yres_virtual) ||
++			(fb->var.yres_virtual % var->yres_virtual != 0) ||
+ 			(var->xoffset != fb->var.xoffset) ||
+ #ifndef BIT_PER_PIXEL_SURPPORT
+ 			(var->bits_per_pixel != fb->var.bits_per_pixel) ||
+-- 
+2.27.0
+

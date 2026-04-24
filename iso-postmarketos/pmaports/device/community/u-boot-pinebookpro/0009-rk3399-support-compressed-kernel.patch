@@ -1,0 +1,28 @@
+From 9482bb0eea3ad397b06ef195f9c2f09de94e74cb Mon Sep 17 00:00:00 2001
+From: Tian Yuanhao <tianyuanhao@aliyun.com>
+Date: Mon, 6 Jul 2020 16:46:33 +0800
+Subject: [PATCH] rk3399: boot from compressed Image
+
+Add kernel_comp_addr_r and kernel_comp_size to rk3399_common.h, so that
+people can use compressed Image (e.g. Image.gz) in extlinux.conf.
+
+Signed-off-by: Tian Yuanhao <tianyuanhao@aliyun.com>
+---
+ include/configs/rk3399_common.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/include/configs/rk3399_common.h b/include/configs/rk3399_common.h
+index f0ae6e67a7..6a275818d0 100644
+--- a/include/configs/rk3399_common.h
++++ b/include/configs/rk3399_common.h
+@@ -53,7 +53,9 @@
+ 	"pxefile_addr_r=0x00600000\0" \
+ 	"fdt_addr_r=0x01f00000\0" \
+ 	"kernel_addr_r=0x02080000\0" \
+-	"ramdisk_addr_r=0x06000000\0"
++	"kernel_comp_addr_r=0x06000000\0" \
++	"kernel_comp_size=0x02000000\0" \
++	"ramdisk_addr_r=0x08000000\0"
+ 
+ #ifndef ROCKCHIP_DEVICE_SETTINGS
+ #define ROCKCHIP_DEVICE_SETTINGS

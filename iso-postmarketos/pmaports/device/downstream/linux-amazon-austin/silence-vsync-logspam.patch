@@ -1,0 +1,13 @@
+diff --git a/drivers/misc/mediatek/video/mt8127/mt8127/dpi_drv.c b/drivers/misc/mediatek/video/mt8127/mt8127/dpi_drv.c
+index 2a663ddf..e77e6477 100644
+--- a/drivers/misc/mediatek/video/mt8127/mt8127/dpi_drv.c
++++ b/drivers/misc/mediatek/video/mt8127/mt8127/dpi_drv.c
+@@ -218,7 +218,7 @@ static irqreturn_t _DPI_InterruptHandler(int irq, void *dev_id)
+ 	dpi_vsync_irq_count++;
+ 	if(dpi_vsync_irq_count > 120)
+ 	{
+-		printk("dpi vsync\n");
++//		printk("dpi vsync\n");
+ 		dpi_vsync_irq_count = 0;
+ 	}
+         if(dpiIntCallback)

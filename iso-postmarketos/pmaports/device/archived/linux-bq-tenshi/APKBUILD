@@ -1,0 +1,76 @@
+# Archived: Kernel doesn't build anymore
+#
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineage_tenshi_defconfig
+maintainer="Achill Gilgenast <achill@achill.org>"
+pkgname=linux-bq-tenshi
+pkgver=3.18.31
+pkgrel=0
+pkgdesc="BQ Aquaris U Plus kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="bq-tenshi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_bq_msm8937"
+_commit="9fe7be06bdbbad2d9cb86d9b135d082b4d28b9ea"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_rndis_ipa_trace_header_not_found.patch
+	01_prima_gcc6.patch
+	02_prima_misleading_indentation.patch
+	03_fix_u_f_header.patch
+	04_fix_usb_gadget_function.patch
+	fix-assembler-junk.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+c72365057ddc94d0fd051f0a40f12e6eb0ba31b8fc0ad673c352be0924bc96c643726afac5042fd63eca5d79c4366b706da0addad3aa521867c323a3eec542cd  linux-bq-tenshi-9fe7be06bdbbad2d9cb86d9b135d082b4d28b9ea.tar.gz
+bbf14634f66cadfb454805fefa05ba711df0a0e951dc82a4b2097dd50f24d17bf49ea0e09463d9c06ec9a00d89abbcca0c04bca5e0e5795e1935af657bc795ad  config-bq-tenshi.armv7
+9c549714f03c7a7666e8aa7508a48cfdccab7cf3e97fb59c4df8fa97f75492365926f82c4a677c50780d68d4905504dcccbdd6de6344bd8d4b88b2331933ed46  00_fix_rndis_ipa_trace_header_not_found.patch
+184875cf13a180d1c4bbe27d8ad24a8d6bd2e36ec35f9c4326809f1c8938ecebf3844c36ef71f4a0af9077e2506a82b2b4383ffd020dd1918aba1689d77b0c01  01_prima_gcc6.patch
+8cfd728ccf2bf19450dad5d9fe482ba2461dcf43d25440572a1df73b5a2599f4556ddcafd7cd594cb11c8da5767887d4c1585863c8b36335e7b371f7b735307d  02_prima_misleading_indentation.patch
+b408f157cc025d410b38f5aee9be977e670e1ac3f195f6c3a6681446fa0c3887067d62a4f729cfcd058fab42fca355b0265764dc2d21515f6e023ed025f55d41  03_fix_u_f_header.patch
+1f23466d1a864f2d2c67ae4250b0c166ecb7755779bbdad6732808a001cc2826cc1d013c2281d2ca1d5abd7d60d13783f0b9f11bb8359971f2b30b911e627220  04_fix_usb_gadget_function.patch
+341b1f6357d46b54e49afcc66b1d6052a954ec5be9b1cf5da47eed39ea3beff261d94c73d4b83532246b404f57abff1d0fa69db2f4c8cfb15b89f79aaab69bc8  fix-assembler-junk.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+"

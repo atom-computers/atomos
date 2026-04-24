@@ -1,0 +1,4 @@
+#!/bin/sh
+# Configure conservative CPU governor on system startup
+
+for CORE in 0 1 2 3; do cpufreq-set -c$CORE -g conservative; done

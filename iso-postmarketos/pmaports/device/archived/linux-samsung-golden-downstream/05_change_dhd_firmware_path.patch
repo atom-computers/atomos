@@ -1,0 +1,15 @@
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index ed549c3..09e83f6 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -360,8 +360,8 @@ uint dhd_download_fw_on_driverload = TRUE;
+ /* Definitions to provide path to the firmware and nvram
+  * example nvram_path[MOD_PARAM_PATHLEN]="/projects/wlan/nvram.txt"
+  */
+-char firmware_path[MOD_PARAM_PATHLEN] = "/system/etc/wifi/bcmdhd_sta.bin";
+-char nvram_path[MOD_PARAM_PATHLEN] = "/system/etc/wifi/nvram_net.txt";
++char firmware_path[MOD_PARAM_PATHLEN]="/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.bin";
++char nvram_path[MOD_PARAM_PATHLEN]="/lib/firmware/postmarketos/brcm/brcmfmac4334-sdio.samsung,golden.txt";
+
+ /* information string to keep firmware, chio, cheip version info visiable from log */
+ char info_string[MOD_PARAM_INFOLEN];

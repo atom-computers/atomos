@@ -1,0 +1,34 @@
+# Bluetooth
+/lib/firmware/qca/hmtbtfw20.tlv
+/lib/firmware/qca/hmtnv20.b10f
+/lib/firmware/qca/hmtnv20.b112
+/lib/firmware/qca/hmtnv20.bin
+
+# GPU
+/lib/firmware/qcom/gen70900_aqe.fw.zst
+/lib/firmware/qcom/gen70900_sqe.fw.zst
+/lib/firmware/qcom/gmu_gen70900.bin.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/gen70900_zap.mbn.zst
+
+# HW Video Decoding
+/lib/firmware/qcom/vpu/vpu33_p4.mbn.zst
+
+# remoteproc
+/lib/firmware/qcom/sm8650/ayaneo/ps2/adsp.mbn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/adsp_dtb.mbn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/adspr.jsn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/adsps.jsn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/adspua.jsn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/battmgr.jsn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/cdsp.mbn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/cdsp_dtb.mbn.zst
+/lib/firmware/qcom/sm8650/ayaneo/ps2/cdspr.jsn.zst
+/lib/firmware/qcom/sm8650/SM8650-APS2-tplg.bin.zst
+
+# Wi-Fi
+/lib/firmware/ath12k/WCN7850/hw2.0/amss.bin.zst
+/lib/firmware/ath12k/WCN7850/hw2.0/board-2.bin.zst
+/lib/firmware/ath12k/WCN7850/hw2.0/m3.bin.zst
+
+# USB Controller
+/lib/firmware/renesas_usb_fw.mem.zst

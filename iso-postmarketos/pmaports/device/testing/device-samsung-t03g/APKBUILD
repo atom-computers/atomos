@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-t03g
+pkgdesc="Samsung Galaxy Note II (GSM)"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	mkbootimg
+	postmarketos-base
+	soc-samsung-exynos4412-cameraflash
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-kernel-s6evr02:kernel_s6evr02
+	$pkgname-kernel-ea8061:kernel_ea8061
+"
+source="
+	deviceinfo
+	ucm/Midas.conf
+	ucm/HiFi.conf
+	modules-load.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Alsa UCM configs
+	install -Dm644 "$srcdir"/Midas.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Midas/Midas.conf
+	install -Dm644 "$srcdir"/HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/Midas/HiFi.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi, Bluetooth, MFC firmware"
+	depends="
+		firmware-samsung-midas-bluetooth
+		firmware-samsung-midas-wifi
+		linux-firmware-s5p-mfc
+		"
+	mkdir "$subpkgdir"
+}
+
+kernel_s6evr02() {
+	pkgdesc="Samsung S6EVR02 panel. To know which panel your device uses, see the wiki page of this device: https://wiki.postmarketos.org/wiki/Samsung_Galaxy_Note_II_(samsung-t03g)"
+	depends="linux-postmarketos-exynos4"
+	devicepkg_subpackage_kernel "$startdir" "$pkgname" "$subpkgname"
+}
+
+kernel_ea8061() {
+	pkgdesc="Magnachip EA8061 panel. To know which panel your device uses, see the wiki page of this device: https://wiki.postmarketos.org/wiki/Samsung_Galaxy_Note_II_(samsung-t03g)"
+	depends="linux-postmarketos-exynos4"
+	devicepkg_subpackage_kernel "$startdir" "$pkgname" "$subpkgname"
+}
+
+sha512sums="
+9b62e95ea95331f62d8fda731ae05e77abf3d94a1fa0af9b51cebfdd5ef5f4457e5187cc7559fd6561ba432ef7baaf3f5d02bed46adf402e820af432ab5d8c8c  deviceinfo
+7f07ea4bc279549844d071d94d9000d6335ed7548e06c1526f82cd6ccb39b5f5a50414b1e6e77d803ed86074d35e5f9f66f8e1b6b8352a2b1d2a7cd1a9b68472  Midas.conf
+b25c730d18b176bed5890c800f1c1d3e224c1ccd410d2e4d64e9136fa1a715e46f85e66116d7a66c3b649c6ed09cdd9a48fc74ed7142c48092aef6ecb98c526a  HiFi.conf
+56a2bdffc273cb0a581192e65378ff50e71c7bc8a696af7d5e7c165a53c005aae104c4514c68afb668454c5a94ce78bd509f8a40e3401d67e16636b1ed81d051  modules-load.conf
+"

@@ -1,0 +1,68 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/merge_hi3635_defconfig
+
+pkgname=linux-huawei-plank
+pkgver=3.10.108
+pkgrel=0
+pkgdesc="Huawei Honor 7 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="huawei-plank"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+"
+
+# Source
+_repository="android_kernel_huawei_hi3635"
+_commit="e3e70fb925e39bbcaaaf3c07e717e8d616c12672"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/skbeh/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	02_fix_undeclared_AID_INET.patch
+	02_patch_fsp_detect.patch
+	01_patch_lifebook_detect.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+6e08d2101e5a217547f68244ea9c96d146ac7ebe4b76e05258a90f9f1437b6885e16229a687e0f220709fd4ac5e3d838221014210f77de39005561a1cb3b33e9  linux-huawei-plank-e3e70fb925e39bbcaaaf3c07e717e8d616c12672.tar.gz
+ae54cbe79355bb1f5f707aa9c80f991476af12ff2e4c49e550f86bcd0c0cadf2e20e271df44c861f9c354c376e775bdf93b93789a2c917e62878329df233e3cf  config-huawei-plank.aarch64
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+33599989d5088bb58bcbebe1b33f324fca130fac7f4938e848c07abafb119af9cebf94ef4acf786b5e43e9199a8200aa216a4238a0331d426861651204aea8c8  02_fix_undeclared_AID_INET.patch
+9da951bb0391564f33bdb0a97c339997eda7b15ec2f160da8af237cc87c233b8c3dcdc1a12759e04d69d075ae9b0afaf726101ef356e788d7f4606a03db2e248  02_patch_fsp_detect.patch
+36418ec3d31d1d6d9915afcf3d38d4549aeeb49c3825414b51b67db7a1ab6482f22d2723da3b258b671956809949278a51f6507df9b0052aec0bd0c59f56919a  01_patch_lifebook_detect.patch
+"

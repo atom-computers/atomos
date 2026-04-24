@@ -1,0 +1,45 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="omame <me@omame.xyz>"
+pkgname=device-samsung-j6primelte
+pkgdesc="Samsung Galaxy J6+"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-j6primelte
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	brightness.start
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm755 "$srcdir"/brightness.start -t "$pkgdir"/etc/local.d
+}
+
+nonfree_firmware() {
+	pkgdesc="Proprietary firmware for things such as Wi-Fi"
+	depends="firmware-samsung-j6primelte wcnss-wlan adsp-audio"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+8d4fde501ebd6829de787e9d5a131da9bc2bbb0ae08acaa5443777231b4543034a9677ac26797cf77ddcb583f9388e9bf473ffab2316a021a9943d5f6b5a6ea2  deviceinfo
+1a6928df1fa08b3927b4ceca98b87dbfed0510fa3cf8f0dea4d0a513e141cd6029245d91dd38a307a0e595ab64ac9ecf31c5794137d5d74f1cd4ff7433ee7238  kernel-cmdline.conf
+7456a61514aabc557c77acacbac18cf167d0f675470cd6529f62c35fc0e1278ef3ca497f48ded813627e86e383664fa15ac124c45dd5c8558c746aee73e5fc10  brightness.start
+"

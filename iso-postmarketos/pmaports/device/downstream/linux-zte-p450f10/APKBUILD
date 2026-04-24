@@ -1,0 +1,68 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/config-from-device_defconfig
+
+pkgname=linux-zte-p450f10
+pkgver=3.18.71
+pkgrel=1
+pkgdesc="ZTE Blade V9 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="zte-p450f10"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	gcc6
+	openssl-dev
+	perl
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_zte_p450f10"
+_commit="2a68a7e2e0d9b2e55a5456f8e053f8f7c318189c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/sl-tx/$_repository/-/archive/$_commit/$_repository-$commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	chmod +x $builddir/arch/arm64/kernel/vdso/gen_vdso_offsets.sh
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+aeb39c5ccc4b3baac1ba6b9f4840f9b4c6bf0c21b3392431c6f22883d40f2783f9e0e381a6e3efbdc215ebdd0d0dacc9e0ee4726c68152979f287ba14f385a3b  linux-zte-p450f10-2a68a7e2e0d9b2e55a5456f8e053f8f7c318189c.tar.gz
+d78c83ae061cb3b89d3d80c749e625e662a4e30956c5aed38ba581a579a30b9c449b8f4a5242147b3c1aaacb29b6f39b8b55b00215e2dd6c49314b007c32b796  config-zte-p450f10.aarch64
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

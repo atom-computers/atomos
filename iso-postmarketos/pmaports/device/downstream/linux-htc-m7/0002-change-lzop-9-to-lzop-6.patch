@@ -1,0 +1,41 @@
+From cefe3fe6b51ab2cae8b009c0a84c73e2bc32f1ce Mon Sep 17 00:00:00 2001
+From: Tadeo Kondrak <me@tadeo.ca>
+Date: Thu, 28 Mar 2019 00:08:23 -0600
+Subject: [PATCH 2/2] change lzop -9 to lzop -6
+
+or else you get the error `lzop: high compression not compiled in` on
+busybox
+---
+ scripts/Makefile.lib          | 2 +-
+ scripts/gen_initramfs_list.sh | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index 8e40f069..fc46f991 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -301,7 +301,7 @@ cmd_lzma = (cat $(filter-out FORCE,$^) | \
+ 
+ quiet_cmd_lzo = LZO     $@
+ cmd_lzo = (cat $(filter-out FORCE,$^) | \
+-	lzop -9 && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
++	lzop -6 && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
+ 	(rm -f $@ ; false)
+ 
+ quiet_cmd_lz4 = LZ4     $@
+diff --git a/scripts/gen_initramfs_list.sh b/scripts/gen_initramfs_list.sh
+index 17fa9014..39d6f3b0 100644
+--- a/scripts/gen_initramfs_list.sh
++++ b/scripts/gen_initramfs_list.sh
+@@ -254,7 +254,7 @@ case "$arg" in
+                 && compr="xz --check=crc32 --lzma2=dict=1MiB"
+ 		echo "$output_file" | grep -q "\.lzo$" \
+                 && [ -x "`which lzop 2> /dev/null`" ] \
+-                && compr="lzop -9 -f"
++                && compr="lzop -6 -f"
+ 		echo "$output_file" | grep -q "\.lz4$" \
+                 && [ -x "`which lz4 2> /dev/null`" ] \
+                 && compr="lz4 -l -9 -f"
+-- 
+2.19.2
+

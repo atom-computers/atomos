@@ -1,0 +1,48 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-golden-downstream
+pkgdesc="Samsung Galaxy S III mini (Downstream)"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-u8500
+	linux-samsung-golden-downstream
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	init-usb-hook.sh
+	modules-load-wifi.conf
+	module-config.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# USB
+	install -Dm644 "$srcdir"/init-usb-hook.sh \
+		"$pkgdir"/usr/share/mkinitfs/hooks/00-init_usb.sh
+
+	# WiFi kernel module configuration
+	install -Dm644 "$srcdir"/modules-load-wifi.conf \
+		"$pkgdir"/etc/modules-load.d/00-load-wifi.conf
+	install -Dm644 "$srcdir"/module-config.conf \
+		"$pkgdir"/etc/modprobe.d/00-module-config.conf
+}
+
+sha512sums="
+d1427a4b5cfb440911fdb37d87e0b5e47e60b032b80418c9f796ccd6413f05902494a7548b678aa9072085aac3e635739b73f38fc0945ffa5b86f5e6b1b3866c  deviceinfo
+769f76b2b0dc5279c514181f6cc915c045562df0c1fe08c54b6588d11ff2c75441a3a4f78d6dde669c82e1c572a66bdde475da3e289d334e3255fcf15430c044  init-usb-hook.sh
+61e8becbf6fa7c1c6c42e481083f5981ae7af33a48cbc53e817d8ac2c6a8e4f67a54b32ae3b8f5f25f7b412165a849dc93a629110dc47b0d16927bf2a12eb7e1  modules-load-wifi.conf
+436900f627e4ec7e8359bfa6b5d0ac98c69cdd3f3b5e68d23354fa87d79beef866afd6c4cf27b97e9b608cce44fe8d116594f3b08520c9c05624bcf58b61c7f1  module-config.conf
+"

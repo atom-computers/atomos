@@ -1,0 +1,13 @@
+diff --git a/drivers/misc/ozmo/ozeventtrace.h b/drivers/misc/ozmo/ozeventtrace.h
+index 94e19477..4617e7e5 100644
+--- a/drivers/misc/ozmo/ozeventtrace.h
++++ b/drivers/misc/ozmo/ozeventtrace.h
+@@ -226,7 +226,7 @@ DEFINE_EVENT(debug_msg, info_msg_evt,
+ #endif /*_OZEVENTTRACE_H*/
+ 
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/misc/ozmo
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE ozeventtrace
+ #include <trace/define_trace.h>

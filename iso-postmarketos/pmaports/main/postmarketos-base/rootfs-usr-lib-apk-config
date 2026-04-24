@@ -1,0 +1,5 @@
+# Default global options of apk-tools v3.
+# The file contains one long option per line.
+
+# Download needed packages to cache before starting to commit a transtaction.
+cache-predownload

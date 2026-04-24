@@ -1,0 +1,33 @@
+From a38d90dab271fd9911cf338e2693fd608744d9f7
+From: Lukas F. Hartmann <lukas@mntre.com>
+Subject: sdio-improve-wifi-speed
+Date:   Tue Nov 12 03:00:14 2024 +0100
+
+--- a/arch/arm64/boot/dts/amlogic/meson-g12-common.dtsi
++++ b/arch/arm64/boot/dts/amlogic/meson-g12-common.dtsi
+@@ -937,17 +937,22 @@
+ 					};
+ 
+ 					sdio_pins: sdio {
+-						mux {
++						mux-0 {
+ 							groups = "sdio_d0",
+ 								 "sdio_d1",
+ 								 "sdio_d2",
+ 								 "sdio_d3",
+-								 "sdio_clk",
+ 								 "sdio_cmd";
+ 							function = "sdio";
+-							bias-disable;
++							bias-pull-up;
+ 							drive-strength-microamp = <4000>;
+ 						};
++
++						mux-1 {
++							groups = "sdio_clk";
++							function = "sdio";
++							bias-disable;
++						};
+ 					};
+ 
+ 					sdio_clk_gate_pins: sdio_clk_gate {

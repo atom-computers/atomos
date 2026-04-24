@@ -1,0 +1,17 @@
+boot_delay=0
+
+arm_control=0x200
+arm_64bit=1
+arm_boost=1
+
+kernel=vmlinuz-rpi
+initramfs initramfs
+
+dtoverlay=vc4-kms-v3d-pi4
+max_framebuffers=2
+
+display_auto_detect=1
+camera_auto_detect=1
+
+
+include usercfg.txt

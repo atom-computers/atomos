@@ -1,0 +1,2 @@
+#!/bin/sh
+rc-update add msm8909-modem-wwan-port default

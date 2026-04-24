@@ -1,0 +1,37 @@
+From 75dedb7524818dfa9904417fe1e5ac0c40291d89 Mon Sep 17 00:00:00 2001
+From: Zhuowei Zhang <linux@worthdoingbadly.com>
+Date: Tue, 27 Nov 2018 14:24:17 -0800
+Subject: [PATCH 2/2] init: initramfs: disable do_skip_initramfs
+
+On Android devices with A/B partition scheme, the initramfs is
+ignored when booting into the operating system. This breaks
+postmarketOS, which requires the initramfs.
+
+This reverts the change so the initramfs is always used.
+
+Based on a patch by erfanoabdi.
+---
+ init/initramfs.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/init/initramfs.c b/init/initramfs.c
+index bf3af10c500a..34af892143b2 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -622,11 +622,13 @@ static int __init populate_rootfs(void)
+ {
+ 	char *err;
+ 
++	/*
+ 	if (do_skip_initramfs) {
+ 		if (initrd_start)
+ 			free_initrd();
+ 		return default_rootfs();
+ 	}
++	*/
+ 
+ 	err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
+ 	if (err)
+-- 
+2.17.1
+

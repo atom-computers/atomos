@@ -1,0 +1,13 @@
+diff --git a/samsung-ipc/devices/galaxys2/galaxys2.h b/samsung-ipc/devices/galaxys2/galaxys2.h
+index c8142ec..0f95567 100644
+--- a/samsung-ipc/devices/galaxys2/galaxys2.h
++++ b/samsung-ipc/devices/galaxys2/galaxys2.h
+@@ -32,7 +32,7 @@
+ #define GALAXYS2_NV_DATA_OFFSET			0xA00000
+ #define GALAXYS2_NV_DATA_SIZE				0x200000
+ 
+-#define GALAXYS2_MODEM_IMAGE_DEVICE			"/dev/block/mmcblk0p8"
++#define GALAXYS2_MODEM_IMAGE_DEVICE			"/dev/mmcblk0p8"
+ 
+ struct galaxys2_transport_data {
+ 	int fd;

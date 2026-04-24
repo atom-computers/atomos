@@ -1,0 +1,58 @@
+# Kernel config based on: arch/arm/configs/lx_coconut_defconfig
+
+pkgname=linux-sony-coconut
+pkgver=3.4.0
+pkgrel=9
+pkgdesc="Live with Walkman kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="sony-coconut"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="xz perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_semc_msm7x30"
+_commit="9c6f07f81e2c0bcb2bef75fa9716cc30f8942286"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LegacyXperia/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_msm-fix-perf_trace_counters.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+234e8973236e6056c60a312340ef4ccb7598adc43bd1f0c2ca0e89d03f4e16ecfdd5ad4658d76993c7bae24242a7e134a9ed2fda662dfe229b61f3a88ea6c2f0  linux-sony-coconut-9c6f07f81e2c0bcb2bef75fa9716cc30f8942286.tar.gz
+c166fa92dba791f306ff7e8fb70f920c37efabce95a653213001865d918162cdb53d4a44f0842d01ae37040d17add1f4decc2def2d0afadd575050d0ce4653ba  config-sony-coconut.armv7
+f85ced49ee2f2461adea68dac0a10452aa809a7d41d869092d94eb085344919a9a385dec0c48011f4601ca4f441700f7fe49075c7eca4fb2d66b01f7d413ccb7  01_msm-fix-perf_trace_counters.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

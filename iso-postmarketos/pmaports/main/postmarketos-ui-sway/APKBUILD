@@ -1,0 +1,72 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=postmarketos-ui-sway
+pkgver=3.2
+pkgrel=0
+pkgdesc="(Wayland) Tiling WM, drop-in replacement for i3wm"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+subpackages="$pkgname-openrc $pkgname-logo-key-alt:logo_key_alt"
+depends="
+	bluez
+	dnsmasq
+	elogind
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	sway
+	swaybg
+	tinydm
+	xdg-desktop-portal-gtk
+	xdg-desktop-portal-wlr
+	"
+_pmb_recommends="
+	bemenu
+	foot
+	postmarketos-artwork-wallpapers
+	swayidle
+	swaylock
+	xwayland
+	"
+_pmb_groups="
+	seat
+	"
+source="
+	etc-sway-config
+	etc-sway-config.d-00-logo-key.conf
+	"
+options="!check pmb:drm" # no testsuite
+replaces="sway"
+
+package() {
+	install -Dm644 "$srcdir"/etc-sway-config \
+		"$pkgdir"/etc/sway/config
+}
+
+logo_key_alt() {
+	install -Dm644 "$srcdir"/etc-sway-config.d-00-logo-key.conf \
+		"$subpkgdir"/etc/sway/config.d/00-logo-key.conf
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		bluez-openrc
+		elogind-openrc
+		modemmanager-openrc
+		networkmanager-openrc
+		openrc
+		seatd-openrc
+		tinydm-openrc
+	"
+
+		mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+e68719d5ee99e4df9e23de0b1e1a33df20f0cbb46cd3767ebd2d6d524a831defea8e0145877a26bce161ca1ec020de7356ab25374402e1886fa0c60e53c61025  etc-sway-config
+889f10fb247396a11375057f7e81eae0f0b21ec90cd47964e02ba24fc0f6db8bb7678545e3272149535cf0bb6a2019456cc59d06a9564ce4a1797bb434013b78  etc-sway-config.d-00-logo-key.conf
+"

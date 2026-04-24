@@ -1,0 +1,67 @@
+maintainer="Vitaliy Ognev <vitaliy.ognev@gmail.com>"
+pkgname=u-boot-powkiddy-x55
+pkgver=v2024.01_rc4
+pkgrel=0
+pkgdesc="U-Boot bootloader for the Powkiddy X55 (rk3566)"
+url="https://source.denx.de/u-boot/u-boot.git"
+arch="aarch64"
+_carch="arm64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+options="!check"
+
+makedepends="
+	bc
+	bison
+	flex
+	libfdt
+	make
+	openssl-dev
+	py3-elftools
+	py3-setuptools
+	python3-dev
+	swig
+"
+
+_uboot="27089f1e4d11fd7e0619097b59258d0428cde2ac"
+_rkbin="a2a0b89b6c8c612dca5ed9ed8a68db8a07f68bc0"
+
+builddir=$srcdir/u-boot-$_uboot
+
+source="
+	uboot-$_uboot.tar.gz::https://github.com/u-boot/u-boot/archive/$_uboot.tar.gz
+	rkbin-$_rkbin.tar.gz::https://github.com/rockchip-linux/rkbin/archive/$_rkbin.tar.gz
+	powkiddy-x55.patch
+"
+
+build() {
+	cd $srcdir/rkbin-$_rkbin
+	./tools/boot_merger RKBOOT/RK3568MINIALL.ini
+
+	cd $builddir
+
+	make powkiddy-x55-rk3566_defconfig
+
+	export ROCKCHIP_TPL=$srcdir/rkbin-$_rkbin/bin/rk35/rk3566_ddr_1056MHz_v1.21.bin
+	export BL31=$srcdir/rkbin-$_rkbin/bin/rk35/rk3568_bl31_v1.44.elf
+
+	make spl/u-boot-spl.bin u-boot.dtb u-boot.img tools
+	make CONFIG_MKIMAGE_DTC_PATH="scripts/dtc/dtc"
+
+	tools/mkimage -n rk3568 -T rksd -d \
+		$ROCKCHIP_TPL:$srcdir/rkbin-$_rkbin/rk356x_spl_loader_v1.21.113.bin \
+		-C bzip2 idbloader.img
+}
+
+package() {
+	_installdir="$pkgdir/usr/share/u-boot/powkiddy-x55"
+
+	install -Dm644 u-boot.itb -t $_installdir
+	install -Dm644 idbloader.img -t $_installdir
+}
+
+sha512sums="
+2727d6bd70b17a9235dd7296dddfc458a9632a62119a61a7ddaf91059844e8fe213dfeafe8126b0c9c1966e6614ead8c9b4710ab3dc636744533fbc7138e3ff5  uboot-27089f1e4d11fd7e0619097b59258d0428cde2ac.tar.gz
+715253b5ef5c7fbcbce8478d4dea5ad3d1b4b738da437b5f0e9b31eed20f9bcb86cab082e4c04c69b42b6ffcc2cbb1a31079b33b968bb76826ff0dd4f83043e1  rkbin-a2a0b89b6c8c612dca5ed9ed8a68db8a07f68bc0.tar.gz
+f9c6850267fc47ee14358df4cd10c46687c6f6223bba6de3aa6c6401c973ced7753ba7e81c7bf8315428a9cef50472aa257a1737ba9271482a2c13f69bcf29c1  powkiddy-x55.patch
+"

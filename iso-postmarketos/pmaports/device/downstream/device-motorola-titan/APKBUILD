@@ -1,0 +1,48 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-motorola-titan
+pkgver=4
+pkgrel=0
+pkgdesc="Motorola Moto G 2014"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	postmarketos-base
+	postmarketos-base-downstream-disable-udev-v4l
+	linux-motorola-titan
+	mkbootimg
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-udev
+"
+source="deviceinfo kernel-cmdline.conf 90-android-touch-dev.rules profile.sh"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+	install -Dm644 "$srcdir"/profile.sh \
+		"$pkgdir"/etc/profile.d/00-$pkgname.sh
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-motorola-titan"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+6df11a6517dab321cd9b72fccde625d36c3469bed87cb65462cd8e7c1b3bfa402d417704f75622105ef8a87aafc8bda542e50a4dba142ddcd83b99197a697f53  deviceinfo
+041616fe111ac217376660feb5a9e57550f585f59033e84d4550679ac150cdb827da17d9cdb65580b23e11170ed751f8e1d77c2830a16bb9e5aadea9a83f0320  kernel-cmdline.conf
+8406968cd554393ea1e350967c80810d059de2b1d33ea1302e265780c1f0110d64cf15a68c2f374981a88906d0317315e0a71995c85fd5eaf93bb47ed427529c  90-android-touch-dev.rules
+d04013c17caf77a87ebea167dbe48f7efa9c9d3123c5743d359f3ea8ccc6b268fa021535a4bf8291eb4a352f0c92f6eb527da0db340421f53bc1cc439a453306  profile.sh
+"

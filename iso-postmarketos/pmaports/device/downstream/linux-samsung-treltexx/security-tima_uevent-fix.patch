@@ -1,0 +1,77 @@
+Fixes error:
+
+security/tima_uevent/tima_uevent.c:217:1: fatal error: opening dependency file security/tima_uevent/.tima_uevent.o.d: No such file or directory
+  217 | module_exit(tima_uevent_exit);
+      | ^~~~~~~~~~~
+
+This commit is basically the same as (part of)
+https://github.com/jcadduono/android_kernel_samsung_universal3475/commit/8b34f9d012cc
+
+diff --git a/security/Kconfig b/security/Kconfig
+index 0351ba7e4ed5..e332c9225bb1 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -133,6 +133,7 @@ source security/apparmor/Kconfig
+ source security/yama/Kconfig
+ 
+ source security/integrity/Kconfig
++source security/tima_uevent/Kconfig
+ source security/tz_iccc/Kconfig
+ 
+ choice
+@@ -178,4 +179,3 @@ config DEFAULT_SECURITY
+ 	default "" if DEFAULT_SECURITY_DAC
+ 
+ endmenu
+-
+diff --git a/security/Makefile b/security/Makefile
+index 36d3f0d176b7..597e4f0369a1 100644
+--- a/security/Makefile
++++ b/security/Makefile
+@@ -30,7 +30,7 @@ subdir-$(CONFIG_INTEGRITY)		+= integrity
+ obj-$(CONFIG_INTEGRITY)			+= integrity/built-in.o
+ 
+ # TIMA uevent 
+-obj-$(CONFIG_TIMA)     += tima_uevent/tima_uevent.o
++obj-$(CONFIG_TIMA)     += tima_uevent/
+ 
+ #TZ ICCC
+ obj-$(CONFIG_TZ_ICCC)	  += tz_iccc/
+diff --git a/security/tima_uevent/Kconfig b/security/tima_uevent/Kconfig
+index fd7ea958b753..5c8006f19b3a 100644
+--- a/security/tima_uevent/Kconfig
++++ b/security/tima_uevent/Kconfig
+@@ -2,14 +2,11 @@
+ # TIMA uevent configuration
+ #
+ 
+-menuconfig TIMA_UEVENT_MENU
+-    tristate "TIMA uevent support"
+-    help
+-      TIMA uevent device and driver provides a mechanism to propogate
+-      periodic kernel and module measurement events to observer. 
+-
+ config TIMA_UEVENT
+-    bool "TIMA uevents (EXPERIMENTAL)"
+-    depends on EXPERIMENTAL
+-    ---help---
+-    Generate udev events for TIMA events.
++	bool "TIMA uevents (EXPERIMENTAL)"
++	depends on EXPERIMENTAL
++	  default n
++	---help---
++	  Generate udev events for TIMA events.
++	  TIMA uevent device and driver provides a mechanism to propogate
++	  periodic kernel and module measurement events to observer.
+\ No newline at end of file
+diff --git a/security/tima_uevent/Makefile b/security/tima_uevent/Makefile
+index 4f1ca82645b7..ae0c213e371c 100644
+--- a/security/tima_uevent/Makefile
++++ b/security/tima_uevent/Makefile
+@@ -2,5 +2,4 @@
+ # Makefile for TIMA kernel uevent drivers.
+ #
+ 
+-#obj-$(CONFIG_TIMA)   += tima_uevent.o
+-
++obj-$(CONFIG_TIMA) += tima_uevent.o

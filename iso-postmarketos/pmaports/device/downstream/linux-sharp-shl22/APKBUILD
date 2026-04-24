@@ -1,0 +1,64 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/deckard_as96_defconfig
+
+pkgname=linux-sharp-shl22
+pkgver=3.4.0
+pkgrel=5
+pkgdesc="SHARP SHL22 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="sharp-shl22"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev"
+
+# Source
+_repository="android_kernel_sharp_deckard_as96"
+_commit="4e1878619e0cba19070b336f68afcb742eb8b52a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/letterarrow/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix_dependency_of_WEXT_CORE.patch
+	fix_get_time_ns_error.patch
+	fix_memset-related_crashes_caused_by_recent_GCC_4.7.2_optimizations.patch
+	fix_the_memset_fix.patch
+	03-fix-video-argb-setting.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+dfcf2d809229f55bf1a15f06e006620a546345ff5ce84d36e4411fd6906e086b08ff06056c4777c8e1a3d134445ffb77b1871999c4a4eb7170ffd20025a87117  linux-sharp-shl22-4e1878619e0cba19070b336f68afcb742eb8b52a.tar.gz
+d088a2ee87532fbba1df01ce3c157013577ee84f13a4cb214c5ec01392f0767990082506b5f9699f197d487bb5cf801707d3f5e4aaa6a622e3500b9f074c6a6d  config-sharp-shl22.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+40f3d782ec73e4324e5b0e96d661e4fb911a50cd4218d5993154decd1c102b51c6978dd5ac6e69402cea2e481fe0597ed39b0ecc55202bab3e83427869786034  fix_dependency_of_WEXT_CORE.patch
+df7a38951ef860d7d271fce436935a6fafa3e86fb2c6f43d9d3b1122351424fd9e22e6319129a5d56e8e2b415032af0005fcac1eefde4bbb9ee5905444bac467  fix_get_time_ns_error.patch
+eee0d4d84ddfe0516463c100a5fdaeb69fd916fe4c89ed6ac8708a93d2d187b6f4b78beb99e4e2cfd4ea17e376872d10215034bada934a040b4ba6fe59052908  fix_memset-related_crashes_caused_by_recent_GCC_4.7.2_optimizations.patch
+ad77b68cb99d035a7cbebf61cc3d24e1da4c30c7d57682f7315b24bb01c32875cd92a22483957c7cd3c6f3ea1b270e669a988b48ed2e391bdb743420ee12375f  fix_the_memset_fix.patch
+e3083c260ed9c4fc0d83f43106700b6173876dbfae072f6e6696ac6785a4dc17771fbcb3e21601e04ed29a11bf0f7a2a09ad549375e0c34cea245c7f2e2bcbbd  03-fix-video-argb-setting.patch
+"

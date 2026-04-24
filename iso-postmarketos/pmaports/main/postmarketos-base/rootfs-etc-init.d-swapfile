@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+
+depend()
+{
+	after localmount
+}
+
+start()
+{
+	ebegin "Activating swap file"
+	swapfile
+	eend $?
+}
+
+stop()
+{
+	ebegin "Deactivating swap file"
+	swapoff -a >/dev/null
+	eend $?
+}
+
+restart()
+{
+	ebegin "Restarting swap file"
+	start
+	eend $?
+}

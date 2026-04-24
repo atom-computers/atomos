@@ -1,0 +1,86 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=device-apple-mac-aarch64
+pkgdesc="Apple M-series Macs"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf-asahi
+	asahi-audio
+	asahi-scripts
+	linux-postmarketos-asahi
+	postmarketos-base
+	systemd-boot
+	u-boot-asahi
+"
+makedepends="devicepkg-dev systemd-boot"
+source="
+	deviceinfo
+	initramfs_copy_vendorfw.sh
+	initramfs_setup_vendorfw.sh
+	modules-initfs
+	os-installer-deploy.sh
+"
+subpackages="
+	$pkgname-audio
+	$pkgname-os-installer:os_installer
+	$pkgname-vulkan
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# vendor firmware management scripts
+	install -Dm755 "$srcdir"/initramfs_setup_vendorfw.sh \
+		-t "$pkgdir"/usr/share/mkinitfs/hooks/
+	install -Dm755 "$srcdir"/initramfs_copy_vendorfw.sh \
+		-t "$pkgdir"/usr/share/mkinitfs/hooks-cleanup/
+
+	# os-installer support
+	install -Dm755 "$srcdir"/os-installer-deploy.sh \
+		"$pkgdir"/etc/os-installer/deploy.sh
+
+	# u-boot-asahi has a trigger that installs m1n1+u-boot and expects this dir to
+	# exist, or else it crashes. This dir won't exist when building a new
+	# install/image so we have to create it manually.
+	mkdir -p "$pkgdir/boot/m1n1"
+}
+
+audio() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-base-ui-audio"
+	depends="
+		postmarketos-base-ui-audio-backend-pipewire
+	"
+
+	mkdir -p "$subpkgdir"
+}
+
+os_installer() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-os-installer"
+	description="Support for using os-installer"
+	depends="gojq"
+
+	amove etc/os-installer/deploy.sh
+}
+
+vulkan() {
+	install_if="$pkgname=$pkgver-r$pkgrel vulkan-loader"
+	depends="mesa-vulkan-asahi"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+77e5339d871af8166a5da0bb0adbc4b4f5863a4eb2458fbf1383ef1fd7f9cdb021a9aa3d8f43d772f5770f9d059d85f0272668e0f411aab74426f62788b328e7  deviceinfo
+f111ddc0484f079af23520dcc9b4d909b55da327aec91545921a4ceafc52b21d88f37fbdb702e51ca1e49440b6afc2011ada8b681c1801f572bddc9cd34c9d9e  initramfs_copy_vendorfw.sh
+11d5d6af50ed73e7e6940f7d56730f94a1bb42990d5dba9a798522060e7717c410c025b12def0345b4f43c97da268dabcb484c3004d23c1ac39b1eeaaefd2967  initramfs_setup_vendorfw.sh
+da0da9f07bb6f05d2275fc58c1ef0e3c3895def53dbc8247e73806b6e9ab88f005efae01f9fb8f5f8c7bdcc5f4d734900c634d804ea0f154f511ca0ef7f4c9a1  modules-initfs
+7b9a75b2d471be7eef06d4f4b6bff64a2164fd23332311388e1a1962a63b18dfed4d2252a910302313f556c84030ef92cdca4f853f9076874776db070b1c09cc  os-installer-deploy.sh
+"

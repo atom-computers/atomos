@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Print usage instructions
+cat << __EOF__
+*
+* To use this service, add it to the shutdown runlevel with:
+*
+*     rc-update add clear-rtc-wakealarm shutdown
+*
+__EOF__
+
+exit 0

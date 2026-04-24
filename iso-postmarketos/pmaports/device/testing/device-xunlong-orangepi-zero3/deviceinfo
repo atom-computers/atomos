@@ -1,0 +1,24 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Xunlong Orange Pi Zero 3"
+deviceinfo_manufacturer="Xunlong"
+deviceinfo_codename="xunlong-orangepi-zero3"
+deviceinfo_year="2023"
+deviceinfo_dtb="allwinner/sun50i-h618-orangepi-zero3"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1920"
+deviceinfo_screen_height="1080"
+deviceinfo_getty="ttyS0;115200"
+
+# Bootloader related
+deviceinfo_partition_type="msdos"
+deviceinfo_sd_embed_firmware="u-boot/orangepi_zero3/u-boot-sunxi-with-spl.bin:8"
+deviceinfo_generate_extlinux_config="true"

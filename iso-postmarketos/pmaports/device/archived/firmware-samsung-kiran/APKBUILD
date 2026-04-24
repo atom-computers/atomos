@@ -1,0 +1,29 @@
+# Archived: Kernel does not build anymore
+pkgname=firmware-samsung-kiran
+pkgver=0.1
+pkgrel=0
+_commit="f2e766aad4bf57439ba343395d458a3d95f06c8b"
+pkgdesc="Samsung Z1 Firmware"
+url="https://github.com/peremen/firmware-samsung-kiran"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/peremen/firmware-samsung-kiran/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/firmware-samsung-kiran-$_commit"
+
+package() {
+	# Wi-Fi
+	install -Dm644 wifi/nvram_mfg_bcm4343s_cob.txt \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_mfg_bcm4343s.txt
+	install -Dm644 wifi/nvram_net_bcm4343s_cob.txt \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_net_bcm4343s.txt
+	install -Dm644 wifi/wlan_apsta_bcm4343s.bin \
+		"$pkgdir"/lib/firmware/postmarketos/wlan_apsta_bcm4343s.bin
+	install -Dm644 wifi/wlan_mfg_bcm4343s.bin \
+		"$pkgdir"/lib/firmware/postmarketos/wlan_mfg_bcm4343s.bin
+	install -Dm644 wifi/wlan_net_bcm4343s.bin \
+		"$pkgdir"/lib/firmware/postmarketos/wlan_net_bcm4343s.bin
+}
+sha512sums="
+ea3d0ff9c8d87df70b602225008e589c8057868467e76ebddd8395a5347eaa7ff4873326bce96ec463db167c7e9d3305753b9e10519616a6d0b84298fdef097b  firmware-samsung-kiran-f2e766aad4bf57439ba343395d458a3d95f06c8b.tar.gz
+"

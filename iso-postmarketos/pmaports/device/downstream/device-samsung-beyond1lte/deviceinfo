@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy S10"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-beyond1lte"
+deviceinfo_year="2019"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1440"
+deviceinfo_screen_height="3040"
+
+# Bootloader related
+deviceinfo_flash_method="heimdall-bootimg"
+deviceinfo_flash_sparse="true"
+deviceinfo_generate_bootimg="true"
+deviceinfo_bootimg_custom_args="--header_version 1 --os_version 12.0.0 --os_patch_level 2021-12"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0xf0000000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_flash_heimdall_partition_vbmeta="VBMETA"
+deviceinfo_flash_heimdall_partition_kernel="BOOT"
+
+
+deviceinfo_no_framebuffer="true"
+deviceinfo_rootfs_image_sector_size="4096"
+deviceinfo_bootimg_append_seandroidenforce="true"
+deviceinfo_create_initfs_extra="true"

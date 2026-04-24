@@ -1,0 +1,50 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-fairphone-fp2-downstream
+pkgdesc="Fairphone 2 (Downstream)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	adsp-audio
+	firmware-fairphone-fp2-adsp
+	firmware-fairphone-fp2-modem
+	firmware-fairphone-fp2-wcnss
+	linux-fairphone-fp2-downstream
+	lk2nd-msm8974
+	mkbootimg
+	msm-modem-downstream
+	postmarketos-base
+	soc-qcom-msm8974
+	wcnss-wlan
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	FP2.conf
+	hifi
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm/FP2
+	install -Dm644 "$srcdir"/FP2.conf "$pkgdir"/usr/share/alsa/ucm/FP2/
+	install -Dm644 "$srcdir"/hifi "$pkgdir"/usr/share/alsa/ucm/FP2/
+}
+
+sha512sums="
+45103f8387940b8703c7fa2a2f340718aed9cd32335a13ef4fbae45ba5c357ab76ea9c15ea0d9000dc8bd83997588b93c128c8f2f2ddd712f786253a12ded271  deviceinfo
+09008fec33cc8c692d4e5fca1f2f4635985ad9b1d92085df3e15f2ee2555c8f7b78615298f9935cee03e3ba598a5326baf890333fa661f5b1833b4fb2d1a4328  kernel-cmdline.conf
+55360b1ba4ddadea341c9edb13c32ba5f19aabf75ab28602f30cfb79b9df8834f115ef979c70569f23ec1293b1fcd408baf320d87803293ce7106bdc73a26c9f  FP2.conf
+b834461c6866bb0c473dd089dd5da641dd42a00f610aad6503117aa50fe6e200db9ad0a264bb609f12350d59faee1f772907bacd75439f702ea7d52f6f85e2b1  hifi
+"

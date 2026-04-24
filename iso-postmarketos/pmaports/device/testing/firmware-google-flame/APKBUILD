@@ -1,0 +1,37 @@
+# Co-Maintainer: Vladimir Muromskii <vmuromskii@ya.ru>
+maintainer="Andrew Gigena <mail@andrewgigena.dev>"
+pkgname=firmware-google-flame
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Google Pixel 4"
+url="https://gitlab.postmarketos.org/andrewgigena/firmware-google-flame"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-qca linux-firmware-ath10k"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_version="f25f967d19a2f5cee5906bfce313ce734007a6be"
+
+source="
+	$pkgname.tar.gz::$url/-/archive/$_version.tar.gz
+	firmware.files
+	30-gpu-firmware.files
+"
+
+package() {
+	find
+	pwd
+	cd "$srcdir/$pkgname-$_version/"
+	for i in $(cat "$srcdir"/firmware.files); do
+		install -Dm644 "$i" "$pkgdir/$i"
+	done
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" \
+		"$pkgdir/usr/share/mkinitfs/files/30-gpu-firmware.files"
+}
+
+sha512sums="
+84ec5875eb5f7ce7daf3a300b9b0d76f61e7bcf160a35b7bdc401d8222439804cf3a849b57618602a9dca37e10b3c83b0a5f6614ba77da883dffcd6db42316be  firmware-google-flame.tar.gz
+fade10f542a017d21be31324e4b0268ca11f98ec7a631533d7133c20a266360583aae2ed735eb817678d911e1a04eacfa775fafeaa2fc82722e3ebed52ba41d0  firmware.files
+96cca9df1d931301d5928c7cb9242793880ac73309e5da783ae5845afc898df0a9560e828b879f7912a88cf83a5e971e5e97ca0ee7db83ea84e9284f3bc0812d  30-gpu-firmware.files
+"

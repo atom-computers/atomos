@@ -1,0 +1,65 @@
+From 14834398be0fcfb2f01bc714cc327b0257fcd35f Mon Sep 17 00:00:00 2001
+From: Arnav Singh <me@arnavion.dev>
+Date: Sun, 12 Oct 2025 13:54:17 -0700
+Subject: [PATCH] ARM: tegra: fix wifi on Microsoft Surface RT
+
+Restore properties from 6.6 version of this DT that are needed for
+WiFi to work.
+---
+ .../nvidia/tegra30-microsoft-surface-rt.dts    | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/nvidia/tegra30-microsoft-surface-rt.dts b/arch/arm/boot/dts/nvidia/tegra30-microsoft-surface-rt.dts
+index bb0d5b22d999..80860bdc0109 100644
+--- a/arch/arm/boot/dts/nvidia/tegra30-microsoft-surface-rt.dts
++++ b/arch/arm/boot/dts/nvidia/tegra30-microsoft-surface-rt.dts
+@@ -446,7 +446,7 @@ sdmmc1: mmc@78000000 {
+ 		vqmmc-supply = <&vddio_usd>;
+ 	};
+ 
+-	/* mrvl_wifi_pwrseq: pwrseq-wifi {
++	mrvl_wifi_pwrseq: pwrseq-wifi {
+ 		compatible = "mmc-pwrseq-simple";
+ 
+ 		clocks = <&tegra_pmc TEGRA_PMC_CLK_BLINK>;
+@@ -454,7 +454,7 @@ sdmmc1: mmc@78000000 {
+ 
+ 		post-power-on-delay-ms = <300>;
+ 		power-off-delay-us = <300>;
+-	}; */
++	};
+ 
+ 	sdmmc3: mmc@78000400 {
+ 		status = "okay";
+@@ -472,9 +472,9 @@ sdmmc3: mmc@78000400 {
+ 		bus-width = <4>;
+ 		non-removable;
+ 
+-		// mmc-pwrseq = <&mrvl_wifi_pwrseq>; TODO
++		mmc-pwrseq = <&mrvl_wifi_pwrseq>;
+ 		// vmmc-supply TODO
+-		// vqmmc-supply TODO
++		vqmmc-supply = <&vqmmc_wifi_reg>;
+ 
+ 		/* Marvell 88W8797 WiFi */
+ 		wifi@1 {
+@@ -799,6 +799,16 @@ vdd_usd: regulator-usd {
+ 		vin-supply = <&vdd_5v0_bat>;
+ 	};
+ 
++	vqmmc_wifi_reg: vddio-wifi {
++		compatible = "regulator-fixed";
++		regulator-name = "vqmmc_wifi";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++		vin-supply = <&vdd_5v0_sys>;
++	};
++
+ 	sound {
+ 		compatible = "microsoft,tegra-audio-wm8962-surface-rt",
+ 			     "nvidia,tegra-audio-wm8962";
+-- 
+2.51.0
+

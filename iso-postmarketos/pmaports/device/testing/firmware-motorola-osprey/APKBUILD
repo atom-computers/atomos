@@ -1,0 +1,58 @@
+maintainer=""
+pkgname=firmware-motorola-osprey
+pkgver=4
+pkgrel=3
+pkgdesc="Firmware for Motorola Moto G 2015"
+url="https://github.com/pmsourcedump/firmware-motorola-osprey"
+subpackages="$pkgname-wcnss $pkgname-wcnss-nv:wcnss_nv $pkgname-venus"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+makedepends="pil-squasher"
+
+_commit="a47c5a1c2dd806226c61305c9c97135f2734d0c7"
+_muppets_commit="d2ff868a61c42ab84e85597600fe9e1064802c7b"
+source="$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/firmware-motorola-osprey/archive/$_commit.tar.gz
+	WCNSS_qcom_wlan_nv_osprey.bin::https://github.com/TheMuppets/proprietary_vendor_motorola/raw/$_muppets_commit/osprey/proprietary/etc/firmware/wlan/prima/WCNSS_qcom_wlan_nv.bin"
+builddir="$srcdir/firmware-motorola-osprey-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+build() {
+	pil-squasher wcnss.mbn wcnss.mdt
+	# venus.mbn exists already but seems a bit different
+	pil-squasher venus2.mbn venus.mdt
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+wcnss() {
+	pkgdesc="Motorola Moto G 2015 WiFi/BT firmware"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to link wcnss.mbn to wcnss.mdt
+	install -Dm644 "$builddir"/wcnss.mbn "$subpkgdir/$_fwdir"/wcnss.mbn
+	ln -s wcnss.mbn "$subpkgdir/$_fwdir"/wcnss.mdt
+}
+
+wcnss_nv() {
+	pkgdesc="Motorola Moto G 2015 WiFi/BT firmware configuration"
+	install -Dm644 "$srcdir"/WCNSS_qcom_wlan_nv_osprey.bin "$subpkgdir/$_fwdir"/wlan/prima/WCNSS_qcom_wlan_nv.bin
+}
+
+venus() {
+	pkgdesc="Motorola Moto G 2015 video firmware"
+
+	# Linux detects squashed (.mbn) vs non-squashed (.mdt + .b*) based on
+	# file contents, so it is fine to link venus.mbn to venus.mdt
+	# Older kernels look for venus.mdt, newer ones directly for venus.mbn
+	install -Dm644 "$builddir"/venus2.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mbn
+	ln -s venus.mbn "$subpkgdir/$_fwdir"/qcom/venus-1.8/venus.mdt
+}
+
+sha512sums="
+7e8d02baa8864c50b4a8be1f9af830e8b5440eee61a012725ed114d93012f0fb19ec005908832d3c96e0ba54b51a5ec7bcf137bfcc64c63594212f2497604629  firmware-motorola-osprey-a47c5a1c2dd806226c61305c9c97135f2734d0c7.tar.gz
+1ee2e4f6eb3662b0f6b6034313d30a81d48dab78680ccd5f3c84ca023719e2c6021b2dbec79468719dc01e27b53b76e1097c9ed5edc476b601c4fd1d80373a7a  WCNSS_qcom_wlan_nv_osprey.bin
+"

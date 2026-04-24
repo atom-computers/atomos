@@ -1,0 +1,34 @@
+pkgname=firmware-huawei-berlin
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Huawei Honor 6X"
+url="https://gitlab.com/ignapk/warsaw-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="ce27f92d3d2af58150cefe0877cf6940b865dc28"
+_repository="warsaw-firmware"
+_url="https://gitlab.com/ignapk"
+source="$_repository-$_commit.tar.gz::$_url/$_repository/-/archive/$_commit.tar.gz"
+
+package() {
+	# Wifi
+	install -Dm644 "$srcdir/$_repository-$_commit/CPU_RAM_SCHED.bin" \
+		"$pkgdir/lib/firmware/postmarketos/CPU_RAM_SCHED.bin"
+	install -Dm644 "$srcdir/$_repository-$_commit/CPU_RAM_WBS.bin" \
+		"$pkgdir/lib/firmware/postmarketos/CPU_RAM_WBS.bin"
+	install -Dm644 "$srcdir/$_repository-$_commit/bfgx_and_wifi_cfg" \
+		"$pkgdir/lib/firmware/postmarketos/bfgx_and_wifi_cfg"
+	install -Dm644 "$srcdir/$_repository-$_commit/bfgx_cfg" \
+		"$pkgdir/lib/firmware/postmarketos/bfgx_cfg"
+	install -Dm644 "$srcdir/$_repository-$_commit/cr4_asic.bin" \
+		"$pkgdir/lib/firmware/postmarketos/cr4_asic.bin"
+	install -Dm644 "$srcdir/$_repository-$_commit/wifi_cfg" \
+		"$pkgdir/lib/firmware/postmarketos/wifi_cfg"
+}
+
+sha512sums="
+f30151200f1c554445e1dc451cd8c7bfb5a9dbb1c048eb468da714b72d00caea273333ebd749a58e78ad526715782b02691a896c6d9de076bd106bcf41ffaf4a  warsaw-firmware-ce27f92d3d2af58150cefe0877cf6940b865dc28.tar.gz
+"

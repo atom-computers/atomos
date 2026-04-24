@@ -1,0 +1,5 @@
+#!/sbin/openrc-run
+name="Purism Librem 5 Sparklan brcm bluetooth enabler"
+supervisor=supervise-daemon
+command="/usr/bin/hciattach"
+command_args="-s 115200 /dev/ttymxc3 bcm43xx 1500000"

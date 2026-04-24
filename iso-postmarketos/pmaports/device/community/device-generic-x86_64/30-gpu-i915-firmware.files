@@ -1,0 +1,4 @@
+# Newer integrated and discrete Intel GPUs won't work without GUC fw,
+# and older GPUs need DMC firmware for lower power states, so let's
+# include everything:
+/lib/firmware/i915

@@ -1,0 +1,70 @@
+# Mainline Linux kernel fork with patches for MediaTek MT6763 devices
+# Kernel config based on: arch/arm64/configs/mt6763_defconfig
+maintainer=""
+_flavor="postmarketos-mediatek-mt6763"
+pkgname=linux-$_flavor
+pkgver=6.1_rc5
+pkgrel=3
+_commit="e5f07514a6172f194c8829c45965137ffa1834ea"
+pkgdesc="Mainline Kernel fork for MT6763-based devices"
+arch="aarch64"
+_carch="arm64"
+_config="config-$_flavor.$arch"
+url="https://gitlab.com/mtk-mainline/mt6763/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+"
+makedepends="
+	android-tools
+	bash
+	bison
+	findutils
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	xz
+"
+
+# Source
+source="
+	https://gitlab.com/mtk-mainline/mt6763/linux/-/archive/$_commit/linux-$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-$_flavor" \
+		V=1
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+
+	dtbodir="$builddir/$_outdir/arch/arm64/boot/dts/mediatek"
+	mkdtboimg create "$pkgdir/boot/dtbo.img" \
+		"$dtbodir/mt6763v-volla-yggdrasil-minimal-dtbo.dtb"
+}
+
+sha512sums="
+1d740a1d0494dbdf3f1ccefc5fc7dc4e13410e4161c4f04060dee717675122ef35d36fc2bf827700bfbaddb20e7b9bf136af1b8ab1c13b196d8edf4070ba7685  linux-e5f07514a6172f194c8829c45965137ffa1834ea.tar.gz
+94fbfbf047bc78a4b15cd199e2c00a1bdda7a3c3a806fdc0a2402dcbc2a6e1b0d420bc5df79bca83c32cca8cd9a7a3372eed809f451e8e944d66fa958de2d957  config-postmarketos-mediatek-mt6763.aarch64
+"

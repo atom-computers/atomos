@@ -1,0 +1,51 @@
+pkgname=firmware-realme-rmx1851
+pkgver=1
+pkgrel=0
+_commit="697763677ea2d42757bf4bc3c585abd028aafdbb"
+pkgdesc="Firmware files for Realme 3 Pro"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_files="a615_zap.b00  a_fp.b05        cryptoeng.b07
+	a615_zap.b01  a_fp.b06        cryptoeng.mdt
+	a615_zap.b02  a_fp.b07        cryptoeng.b06
+	a615_zap.elf  a_fp.mdt        ipa_fws.b00
+	a615_zap.mdt  CAMERA_ICP.elf  ipa_fws.b01
+	a630_gmu.bin  cryptoeng.b00   ipa_fws.b02
+	a630_sqe.fw   cryptoeng.b01   ipa_fws.b03
+	a_fp.b00      cryptoeng.b02   ipa_fws.b04
+	a_fp.b01      cryptoeng.b03   ipa_fws.elf
+	a_fp.b02      cryptoeng.b04   ipa_fws.mdt
+	a_fp.b03      cryptoeng.b05   tfa98xx_18621.cnt
+	a_fp.b04"
+_files_fastchg="oppo_vooc_fw.bin"
+_files_tp="FW_HX_NF83112A_DSJM_FAE.img FW_HX_NF83112A_DSJM.img FW_HX_NF83112A_DSJM_TEST.img"
+source="$pkgname-$_commit.tar.gz::https://github.com/josephnglynn/firmware-realme-rmx1851/archive/$_commit.tar.gz"
+builddir="$srcdir/firmware-realme-rmx1851-$_commit"
+
+package() {
+	# /lib/firmware/postmarketos
+	for _i in $_files; do
+		install -D -m644 "$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	# /lib/firmware/postmarketos/fastchg/18621
+	for _i in $_files_fastchg; do
+		install -D -m644 "fastchg/18621/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/fastchg/18621/$_i"
+	done
+
+	# /lib/firmware/postmarketos/tp/18621
+	for _i in $_files_tp; do
+		install -D -m644 "tp/18621/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/tp/18621/$_i"
+	done
+}
+
+sha512sums="
+877be6fe85f408e7f87a762ba5058fe68f725c76132f9385ba246fa3bd6a2407104b3d608cc8da0e453ea2832e388e0e6488b2d70326604825dddd7b803a06f1  firmware-realme-rmx1851-697763677ea2d42757bf4bc3c585abd028aafdbb.tar.gz
+"

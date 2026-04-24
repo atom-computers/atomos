@@ -1,0 +1,75 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Contributor: Jenneron <jenneron@protonmail.com>
+maintainer="Sebastian Fleer <dev@dwurp.de>"
+pkgname=device-google-gru
+pkgdesc="Google Gru Chromebooks"
+pkgver=12
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-postmarketos-rockchip
+	postmarketos-base
+	postmarketos-cros-common
+	soc-rockchip-rk3399
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-openrc
+	$pkgname-systemd
+"
+source="
+	deviceinfo
+	modules-initfs
+	systemd-gru-watchdog.conf
+"
+
+# provides and replaces to switch old installations to this package
+provides="
+	device-google-dru=$pkgver-r$pkgrel
+	device-google-druwl=$pkgver-r$pkgrel
+	device-google-dumo=$pkgver-r$pkgrel
+	device-google-kevin=$pkgver-r$pkgrel
+	device-google-bob=$pkgver-r$pkgrel
+"
+replaces="
+	device-google-dru
+	device-google-druwl
+	device-google-dumo
+	device-google-kevin
+	device-google-bob
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/systemd-gru-watchdog.conf \
+	  "$pkgdir"/usr/lib/systemd/system.conf.d/90-gru-watchdog.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT and DP firmware"
+	depends="linux-firmware-ath10k linux-firmware-qca linux-firmware-mrvl linux-firmware-rockchip"
+	mkdir "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="eudev-hwids>=3.2.12-r0"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+aa8ded3034eae5bca4c3cfd8add13d8aaa4f1f1dde3e86b4c6f001507d4b5a4d89a532adc9813f42a0fa2526db8223643481736eeffaf13bd673d312ecd06adf  deviceinfo
+a750a0c41068082e0b82351d5aec91715e1a5215b09b26fec644dfe259cea2d662e878433a732a8c06dab2a9b420baec2bcc6161d8357cf3ed770239c5165090  modules-initfs
+54989f531765745629565ea8506afaccf07a0968b9165304f704d529467eb21cecac0ec49d2cf14ebe2779958e4eaafe6721103163c760dcaf6099b761461ff6  systemd-gru-watchdog.conf
+"

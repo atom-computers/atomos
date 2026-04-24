@@ -1,0 +1,40 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-google-spring
+pkgdesc="HP Chromebook 11 G1"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-postmarketos-exynos5
+	postmarketos-base
+	postmarketos-cros-common
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT and MFC firmware"
+	depends="linux-firmware-mrvl linux-firmware-s5p-mfc"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+50932fe26d8df30f0d298b3ac0d86c65adf49e0294233ff51021d603adf2b2d1819eab06f7094b42e6994c99cca0f8450d53cd26af045a45cfb0222aa5a728e9  deviceinfo
+4991bd4df62daf75dc051f45c9250636d819c3509fec650026da72b6fb5fe57a6703fb8a15c1b1d4eb63751eed403fc90e3cf867f799596a0a52960cabfc4f58  kernel-cmdline.conf
+59a59149b995f8936da68b08852996725da70fc51b43204180602537c4fc6c59e21452994773685b49cf1e3add76cfd5d72ea9ce0b79aacaa9c4ef93295baa61  modules-initfs
+"

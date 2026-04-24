@@ -1,0 +1,16 @@
+Fix incorrect path in vc_cam.c
+
+--- a/drivers/char/broadcom/vc_cam/vc_cam.c	2025-01-25 23:29:32.053542157 +0100
++++ b/drivers/char/broadcom/vc_cam/vc_cam.c	2025-01-25 23:32:33.378735947 +0100
+@@ -45,9 +45,9 @@
+ 
+ /* name of the partition which holds the vc-firmware */
+ #define CAMD_FW_DEV_PATH \
+-	"/dev/block/platform/sdhci.1/by-name/vc-firmware"
++	"/dev/disk/by-partlabel/VC-Firmware"
+ #define CAMD_FW_DEV_PATH_ALT \
+-	"/dev/block/platform/sdhci.1/by-name/VC-Firmware"
++	"/dev/disk/by-partlabel/VC-Firmware"
+ /* default udpate firmware name */
+ #define CAMD_FW_DEFAULT_UPDATE \
+ 	"/sdcard/SlimISP.bin"

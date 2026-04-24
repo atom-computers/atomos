@@ -1,0 +1,129 @@
+# Forked from Alpine to add systemd!
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=gnome-shell
+_pkgver=50.1
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="GNOME shell"
+url="https://gitlab.gnome.org/GNOME/gnome-shell"
+# armhf: gjs -> mozjs
+arch="all !armhf"
+license="GPL-2.0-or-later"
+depends="
+	accountsservice
+	adwaita-fonts
+	adwaita-icon-theme
+	desktop-file-utils
+	gnome-bluetooth
+	gnome-control-center
+	gnome-shell-schemas
+	gsettings-desktop-schemas>=46
+	gst-plugin-pipewire
+	gst-plugins-good
+	gstreamer
+	ibus
+	librsvg
+	networkmanager
+	systemd
+	tecla
+	unzip
+	upower
+	"
+makedepends="
+	asciidoc
+	evolution-data-server-dev evolution-dev
+	gcr4-dev
+	gjs-dev>=1.78.0
+	gnome-autoar-dev
+	gnome-bluetooth-dev
+	gnome-control-center-dev
+	gnome-desktop-dev>=44.0
+	gobject-introspection-dev
+	gstreamer-dev
+	ibus-dev
+	libcanberra-dev
+	libnma-dev
+	libxml2-dev
+	libxml2-utils
+	meson
+	mutter-dev>=99947
+	networkmanager-dev
+	pipewire-dev
+	polkit-dev
+	pulseaudio-dev
+	py3-docutils
+	py3-setuptools
+	python3
+	sassc
+	startup-notification-dev
+	systemd-dev
+	tecla-dev
+	"
+checkdepends="
+	mesa-dri-gallium
+	xvfb-run
+	"
+	# gdm is also needed but introduces circular dep
+subpackages="
+	$pkgname-dbg
+	$pkgname-doc
+	$pkgname-lang
+	$pkgname-schemas::noarch
+	gnome-extensions-app:extensions_app:noarch
+	"
+source="https://download.gnome.org/sources/gnome-shell/${_pkgver%.*}/gnome-shell-$_pkgver.tar.xz
+	gsh.patch
+	"
+# TODO: crossdirect disabled due to armv7 crosscompile failure on x86_64, see
+# https://gitlab.com/postmarketOS/pmaports/-/merge_requests/5115#note_1899890119
+options="!check !pmb:crossdirect" # Tests have circular dependency 'gnome-shell <-> gdm'
+builddir="$srcdir/$pkgname-$_pkgver"
+
+# secfixes:
+#   0:
+#     - CVE-2019-3820
+
+build() {
+	abuild-meson \
+		-Db_lto=true \
+		-Dsystemd=true \
+		-Dtests=false \
+		. output
+	meson compile -C output
+}
+
+check() {
+	xvfb-run meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+extensions_app() {
+	pkgdesc="Manage GNOME Shell extensions"
+	depends="gnome-shell libadwaita"
+	replaces="gnome-shell"
+
+	amove usr/bin/gnome-extensions-app
+	amove usr/share/applications/org.gnome.Extensions.desktop
+	amove usr/share/gnome-shell/org.gnome.Extensions
+	amove usr/share/gnome-shell/org.gnome.Extensions.data.gresource
+	amove usr/share/gnome-shell/org.gnome.Extensions.src.gresource
+}
+
+schemas() {
+	pkgdesc="GNOME Shell gsetting schemas"
+	depends=""
+	replaces="gnome-shell"
+
+	amove usr/share/glib-2.0/schemas
+	amove usr/share/gnome-control-center/keybindings
+}
+
+sha512sums="
+3dd66936603b46043ec6757c555dc5172d1b2b700d5bfad53d3a648eb81f50be761827f00eab04e98392edaa207565250ce40b6fc871ea41b554977dffc2aac4  gnome-shell-50.1.tar.xz
+ae4ac679bacd35948b44068e5a70407f473bd96986ee126abb1bdf066db5cbc2087a3ffae0b390286689cacbe8325870fd43663ba39f4f7543216e02bf083934  gsh.patch
+"

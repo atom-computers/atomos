@@ -1,0 +1,1 @@
+SUBSYSTEM=="input", ATTRS{name}=="max1187x_touchscreen_0", ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1"

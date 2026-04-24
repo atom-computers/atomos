@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# legacy u-boot images are no longer necessary, but were generated outside of
+# packaging so remove them here to prevent a failed upgrade if /boot is too
+# full
+# see: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/2449
+rm -f /boot/uImage-postmarketos-allwinner
+rm -f /boot/uInitrd-postmarketos-allwinner
+
+exit 0

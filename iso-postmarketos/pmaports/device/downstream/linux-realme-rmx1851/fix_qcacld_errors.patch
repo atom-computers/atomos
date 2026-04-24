@@ -1,0 +1,281 @@
+diff --git a/drivers/staging/qca-wifi-host-cmn/umac/cmn_services/serialization/src/wlan_serialization_utils_i.h b/drivers/staging/qca-wifi-host-cmn/umac/cmn_services/serialization/src/wlan_serialization_utils_i.h
+index 6b9c82f0b..8f7206343 100644
+--- a/drivers/staging/qca-wifi-host-cmn/umac/cmn_services/serialization/src/wlan_serialization_utils_i.h
++++ b/drivers/staging/qca-wifi-host-cmn/umac/cmn_services/serialization/src/wlan_serialization_utils_i.h
+@@ -570,7 +570,7 @@ bool wlan_serialization_match_cmd_blocking(
+  * Return: Pointer to the node member in the list
+  */
+ qdf_list_node_t *
+-wlan_serialization_find_cmd(qdf_list_t *queue, uint32_t match_type,
++wlan_serialization_find_cmd(qdf_list_t *queue, enum wlan_serialization_match_type match_type,
+ 			    struct wlan_serialization_command *cmd,
+ 			    enum wlan_serialization_cmd_type cmd_type,
+ 			    struct wlan_objmgr_pdev *pdev,
+diff --git a/drivers/staging/qca-wifi-host-cmn/umac/cp_stats/dispatcher/src/wlan_cp_stats_mc_ucfg_api.c b/drivers/staging/qca-wifi-host-cmn/umac/cp_stats/dispatcher/src/wlan_cp_stats_mc_ucfg_api.c
+index 44c517de4..cd31abbc7 100644
+--- a/drivers/staging/qca-wifi-host-cmn/umac/cp_stats/dispatcher/src/wlan_cp_stats_mc_ucfg_api.c
++++ b/drivers/staging/qca-wifi-host-cmn/umac/cp_stats/dispatcher/src/wlan_cp_stats_mc_ucfg_api.c
+@@ -626,7 +626,7 @@ QDF_STATUS ucfg_mc_cp_stats_cca_stats_get(struct wlan_objmgr_vdev *vdev,
+ }
+ 
+ QDF_STATUS ucfg_mc_cp_stats_set_rate_flags(struct wlan_objmgr_vdev *vdev,
+-					   uint32_t flags)
++					   enum tx_rate_info flags)
+ {
+ 	struct vdev_mc_cp_stats *vdev_mc_stats;
+ 	struct vdev_cp_stats *vdev_cp_stats_priv;
+diff --git a/drivers/staging/qca-wifi-host-cmn/utils/logging/src/wlan_logging_sock_svc.c b/drivers/staging/qca-wifi-host-cmn/utils/logging/src/wlan_logging_sock_svc.c
+index 724ae687a..18bc25772 100644
+--- a/drivers/staging/qca-wifi-host-cmn/utils/logging/src/wlan_logging_sock_svc.c
++++ b/drivers/staging/qca-wifi-host-cmn/utils/logging/src/wlan_logging_sock_svc.c
+@@ -606,9 +606,9 @@ static int pktlog_send_per_pkt_stats_to_user(void)
+ 	 * Free old skb in case or error before assigning new skb
+ 	 * to the free list.
+ 	 */
+-	if (free_old_skb)
++	if (free_old_skb) {
+ 		dev_kfree_skb(pstats_msg->skb);
+-
++	}
+ 		spin_lock_irqsave(&gwlan_logging.pkt_stats_lock, flags);
+ 		pstats_msg->skb = skb_new;
+ 		list_add_tail(&pstats_msg->node,
+diff --git a/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified.c b/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified.c
+index f0a5b32ad..6be0b2096 100644
+--- a/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified.c
++++ b/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified.c
+@@ -1233,7 +1233,7 @@ static int debug_wmi_log_size_show(struct seq_file *m, void *v)
+ 			((struct seq_file *)file->private_data)->private;\
+ 		struct wmi_log_buf_t *wmi_log = &wmi_handle->log_info.	\
+ 				wmi_##func_base##_buf_info;		\
+-		char locbuf[50];					\
++		char locbuf[50] = {};					\
+ 									\
+ 		if ((!buf) || (count > 50))				\
+ 			return -EFAULT;					\
+@@ -1289,7 +1289,7 @@ static ssize_t debug_wmi_enable_write(struct file *file, const char __user *buf,
+ 	wmi_unified_t wmi_handle =
+ 		((struct seq_file *)file->private_data)->private;
+ 	int k, ret;
+-	char locbuf[50];
++	char locbuf[50] = {};
+ 
+ 	if ((!buf) || (count > 50))
+ 		return -EFAULT;
+diff --git a/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified_api.c b/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified_api.c
+index ceeccd673..7e59134d7 100644
+--- a/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified_api.c
++++ b/drivers/staging/qca-wifi-host-cmn/wmi/src/wmi_unified_api.c
+@@ -345,7 +345,7 @@ wmi_unified_wow_remove_wakeup_pattern_send(
+ }
+ 
+ QDF_STATUS wmi_unified_ap_ps_cmd_send(wmi_unified_t wmi_handle,
+-				      uint8_t *peer_addr,
++				      uint8_t peer_addr[QDF_MAC_ADDR_SIZE],
+ 				      struct ap_ps_params *param)
+ {
+ 	if (wmi_handle->ops->send_set_ap_ps_param_cmd)
+diff --git a/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_cfg80211.h b/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_cfg80211.h
+index eb9e83d7a..5ab5942da 100644
+--- a/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_cfg80211.h
++++ b/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_cfg80211.h
+@@ -373,7 +373,7 @@ int wlan_hdd_send_avoid_freq_event(struct hdd_context *hdd_ctx,
+  * Return: 0 on success or failure reason
+  */
+ int wlan_hdd_send_hang_reason_event(struct hdd_context *hdd_ctx,
+-				    uint32_t reason, uint8_t *data,
++				    enum qdf_hang_reason reason, uint8_t *data,
+ 				    size_t data_len);
+ 
+ int wlan_hdd_send_avoid_freq_for_dnbs(struct hdd_context *hdd_ctx,
+diff --git a/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_tx_rx.c b/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_tx_rx.c
+index 6621c1582..8cc598ff0 100644
+--- a/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_tx_rx.c
++++ b/drivers/staging/qcacld-3.0/core/hdd/src/wlan_hdd_tx_rx.c
+@@ -3099,7 +3099,7 @@ int hdd_set_mon_rx_cb(struct net_device *dev)
+ 	}
+ 
+ 	qdf_status = sme_create_mon_session(hdd_ctx->mac_handle,
+-					    adapter->mac_addr.bytes,
++					    (uint8_t (*)[6])adapter->mac_addr.bytes,
+ 					    adapter->vdev_id);
+ 	if (QDF_STATUS_SUCCESS != qdf_status) {
+ 		hdd_err("sme_create_mon_session() failed to register. Status= %d [0x%08X]",
+diff --git a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_admit_control.c b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_admit_control.c
+index 2ab5220c0..e08a63b4d 100644
+--- a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_admit_control.c
++++ b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_admit_control.c
+@@ -166,10 +166,11 @@ lim_validate_tspec(struct mac_context *mac,
+ 	switch (pTspec->tsinfo.traffic.accessPolicy) {
+ 	case SIR_MAC_ACCESSPOLICY_EDCA:
+ 		retval = lim_validate_tspec_edca(mac, pTspec, pe_session);
+-		if (retval != QDF_STATUS_SUCCESS)
++		if (retval != QDF_STATUS_SUCCESS) {
+ 			pe_warn("EDCA tspec invalid");
+-			break;
+-
++		}
++		break;
++		
+ 	case SIR_MAC_ACCESSPOLICY_HCCA:
+ 	case SIR_MAC_ACCESSPOLICY_BOTH:
+ 	/* TBD: should we support hybrid tspec as well?? for now, just fall through */
+@@ -329,9 +330,10 @@ static QDF_STATUS lim_admit_policy(struct mac_context *mac,
+ 							   admitPolicyInfo,
+ 							   &mac->lim.tspecInfo[0],
+ 							   pe_session);
+-		if (retval != QDF_STATUS_SUCCESS)
++		if (retval != QDF_STATUS_SUCCESS) {
+ 			pe_err("rejected by BWFactor policy");
+-			break;
++		}	
++		break;
+ 
+ 	case WNI_CFG_ADMIT_POLICY_REJECT_ALL:
+ 		retval = QDF_STATUS_E_FAILURE;
+diff --git a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_api.c b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_api.c
+index 514b29fe9..f373f043b 100644
+--- a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_api.c
++++ b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_api.c
+@@ -1074,9 +1074,10 @@ static QDF_STATUS pe_drop_pending_rx_mgmt_frames(struct mac_context *mac_ctx,
+ 	qdf_spin_unlock(&mac_ctx->sys.bbt_mgmt_lock);
+ 	if (mac_ctx->sys.sys_bbt_pending_mgmt_count ==
+ 	    (MGMT_RX_PACKETS_THRESHOLD / 4)) {
+-		if (!(mac_ctx->rx_packet_drop_counter % 100))
++		if (!(mac_ctx->rx_packet_drop_counter % 100)) {
+ 			pe_debug("No.of pending RX management frames reaches to 1/4th of threshold, rx_packet_drop_counter: %d",
+ 				mac_ctx->rx_packet_drop_counter);
++		}
+ 			mac_ctx->rx_packet_drop_counter++;
+ 	}
+ 	return QDF_STATUS_SUCCESS;
+diff --git a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_cfg_updates.c b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_cfg_updates.c
+index 31f1be6d4..8e2c2396f 100644
+--- a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_cfg_updates.c
++++ b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_cfg_updates.c
+@@ -127,9 +127,10 @@ void lim_handle_param_update(struct mac_context *mac, eUpdateIEsType cfgId)
+ 		msg.type = SIR_LIM_UPDATE_BEACON;
+ 		status = lim_post_msg_api(mac, &msg);
+ 
+-		if (status != QDF_STATUS_SUCCESS)
++		if (status != QDF_STATUS_SUCCESS) {
+ 			pe_err("Failed lim_post_msg_api %u", status);
+-			break;
++		}
++		break;
+ 	}
+ 	default:
+ 		break;
+diff --git a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_sme_req_messages.c b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_sme_req_messages.c
+index d10581d17..d824bb113 100644
+--- a/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_sme_req_messages.c
++++ b/drivers/staging/qcacld-3.0/core/mac/src/pe/lim/lim_process_sme_req_messages.c
+@@ -4630,9 +4630,10 @@ bool lim_process_sme_req_messages(struct mac_context *mac,
+ 		break;
+ 
+ 	case eWNI_SME_ASSOC_CNF:
+-		if (pMsg->type == eWNI_SME_ASSOC_CNF)
++		if (pMsg->type == eWNI_SME_ASSOC_CNF) {
+ 			pe_debug("Received ASSOC_CNF message");
+-			__lim_process_sme_assoc_cnf_new(mac, pMsg->type,
++		}
++		__lim_process_sme_assoc_cnf_new(mac, pMsg->type,
+ 							msg_buf);
+ 		break;
+ 
+diff --git a/drivers/staging/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/parser_api.c b/drivers/staging/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/parser_api.c
+index fd867753c..1e4cc643f 100644
+--- a/drivers/staging/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/parser_api.c
++++ b/drivers/staging/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/parser_api.c
+@@ -5910,7 +5910,7 @@ QDF_STATUS populate_dot11f_rrm_ie(struct mac_context *mac,
+ 
+ void populate_mdie(struct mac_context *mac,
+ 		   tDot11fIEMobilityDomain *pDot11f,
+-		   uint8_t mdie[SIR_MDIE_SIZE])
++		   uint8_t * mdie)
+ {
+ 	pDot11f->present = 1;
+ 	pDot11f->MDID = (uint16_t) ((mdie[1] << 8) | (mdie[0]));
+diff --git a/drivers/staging/qcacld-3.0/core/sme/inc/sme_api.h b/drivers/staging/qcacld-3.0/core/sme/inc/sme_api.h
+index a44e8e8c1..d473bea09 100644
+--- a/drivers/staging/qcacld-3.0/core/sme/inc/sme_api.h
++++ b/drivers/staging/qcacld-3.0/core/sme/inc/sme_api.h
+@@ -2102,7 +2102,7 @@ sme_apf_read_work_memory(mac_handle_t mac_handle,
+ #endif /* FEATURE_WLAN_APF */
+ 
+ uint32_t sme_get_wni_dot11_mode(mac_handle_t mac_handle);
+-QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, uint8_t *bssid,
++QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, tSirMacAddr *bssid,
+ 				  uint8_t vdev_id);
+ 
+ /**
+diff --git a/drivers/staging/qcacld-3.0/core/sme/src/common/sme_api.c b/drivers/staging/qcacld-3.0/core/sme/src/common/sme_api.c
+index 6ace402e0..9ec5c2df9 100644
+--- a/drivers/staging/qcacld-3.0/core/sme/src/common/sme_api.c
++++ b/drivers/staging/qcacld-3.0/core/sme/src/common/sme_api.c
+@@ -13283,7 +13283,7 @@ uint32_t sme_get_wni_dot11_mode(mac_handle_t mac_handle)
+  *
+  * Return: QDF_STATUS_SUCCESS on success, non-zero error code on failure.
+  */
+-QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, tSirMacAddr bss_id,
++QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, tSirMacAddr* bss_id,
+ 				  uint8_t vdev_id)
+ {
+ 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
+diff --git a/drivers/staging/qcacld-3.0/core/sme/src/csr/csr_api_scan.c b/drivers/staging/qcacld-3.0/core/sme/src/csr/csr_api_scan.c
+index ea344f1ba..a484851df 100644
+--- a/drivers/staging/qcacld-3.0/core/sme/src/csr/csr_api_scan.c
++++ b/drivers/staging/qcacld-3.0/core/sme/src/csr/csr_api_scan.c
+@@ -59,7 +59,7 @@ static void csr_set_cfg_valid_channel_list(struct mac_context *mac,
+ 
+ static void csr_save_tx_power_to_cfg(struct mac_context *mac,
+ 				     tDblLinkList *pList,
+-				     uint32_t cfgId);
++				     enum band_info band);
+ 
+ static void csr_set_cfg_country_code(struct mac_context *mac,
+ 				     uint8_t *countryCode);
+diff --git a/drivers/staging/qcacld-3.0/core/wma/src/wma_dev_if.c b/drivers/staging/qcacld-3.0/core/wma/src/wma_dev_if.c
+index 4327dcaca..18251b68d 100644
+--- a/drivers/staging/qcacld-3.0/core/wma/src/wma_dev_if.c
++++ b/drivers/staging/qcacld-3.0/core/wma/src/wma_dev_if.c
+@@ -2717,7 +2717,7 @@ QDF_STATUS wma_post_vdev_create_setup(struct wlan_objmgr_vdev *vdev)
+ 	return QDF_STATUS_E_FAILURE;
+ }
+ 
+-enum mlme_bcn_tx_rate_code wma_get_bcn_rate_code(uint16_t rate)
++uint32_t wma_get_bcn_rate_code(uint16_t rate)
+ {
+ 	/* rate in multiples of 100 Kbps */
+ 	switch (rate) {
+diff --git a/drivers/staging/qcacld-3.0/core/wma/src/wma_main.c b/drivers/staging/qcacld-3.0/core/wma/src/wma_main.c
+index 2ffe11508..18a81f63a 100644
+--- a/drivers/staging/qcacld-3.0/core/wma/src/wma_main.c
++++ b/drivers/staging/qcacld-3.0/core/wma/src/wma_main.c
+@@ -6312,13 +6312,11 @@ static void wma_print_populate_soc_caps(struct target_psoc_info *tgt_hdl)
+ 	WMA_LOGD("%s: <====== HW mode cap printing starts ======>", __func__);
+ 	/* print cap of each hw mode */
+ 	for (i = 0; i < total_mac_phy_cnt; i++) {
+-		if (&mac_phy_cap[i]) {
+ 			WMA_LOGD("====>: hw mode id[%d], phy id[%d]",
+ 				 mac_phy_cap[i].hw_mode_id,
+ 				 mac_phy_cap[i].phy_id);
+ 			tmp = &mac_phy_cap[i];
+ 			wma_print_mac_phy_capabilities(tmp, i);
+-		}
+ 	}
+ 	WMA_LOGD("%s: <====== HW mode cap printing ends ======>\n", __func__);
+ }
+diff --git a/drivers/usb/gadget/configfs.c b/drivers/usb/gadget/configfs.c
+index f0e867e78..a8541f3c6 100755
+--- a/drivers/usb/gadget/configfs.c
++++ b/drivers/usb/gadget/configfs.c
+@@ -15,7 +15,7 @@
+ #include <linux/usb/ch9.h>
+ 
+ #ifdef CONFIG_USB_F_NCM
+-#include <function/u_ncm.h>
++#include "function/u_ncm.h"
+ #endif
+ 
+ #ifdef CONFIG_USB_CONFIGFS_F_ACC

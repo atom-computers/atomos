@@ -1,0 +1,6 @@
+./lib/firmware/qcom/msm8996/natrium/a530_zap.mbn
+./lib/firmware/qcom/msm8996/natrium/adsp.mbn
+./lib/firmware/qcom/msm8996/natrium/mba.mbn
+./lib/firmware/qcom/msm8996/natrium/modem.mbn
+./lib/firmware/qcom/msm8996/natrium/slpi.mbn
+./lib/firmware/qcom/msm8996/natrium/venus.mbn

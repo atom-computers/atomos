@@ -1,0 +1,26 @@
+diff --git a/drivers/misc/mediatek/i2c/mt8127/i2c.c b/drivers/misc/mediatek/i2c/mt8127/i2c.c
+index 328e6867..4934a19e 100644
+--- a/drivers/misc/mediatek/i2c/mt8127/i2c.c
++++ b/drivers/misc/mediatek/i2c/mt8127/i2c.c
+@@ -54,6 +54,7 @@ static mt_i2c  *g_i2c[2];
+ #endif
+ /***********************************i2c debug********************************************************/
+ //#define I2C_DEBUG_FS
++#undef I2C_DEBUG_FS
+ #ifdef I2C_DEBUG_FS
+   #define PORT_COUNT 7
+   #define MESSAGE_COUNT 16
+@@ -367,10 +368,12 @@ static S32 _i2c_deal_result(mt_i2c *i2c)
+       I2CERR("I2C_HS_NACKERR\n");
+     if (i2c->irq_stat & I2C_ACKERR)
+       I2CERR("I2C_ACKERR\n");
++    #ifdef I2C_DEBUG_FS
+     if (i2c->filter_msg==FALSE) //TEST
+     {
+       _i2c_dump_info(i2c);
+-   }
++    }
++    #endif
+ 
+     spin_lock(&i2c->lock);
+     /*Reset i2c port*/

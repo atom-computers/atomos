@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Nikita Travkin <nikita@trvn.ru>"
+pkgname=device-qcom-msm8916
+pkgdesc="Generic device package for various Qualcomm MSM8916/MSM8939-based devices"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	soc-qcom-msm8916
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-kernel-extlinux:kernel_extlinux
+	$pkgname-kernel-efi:kernel_efi
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT/Modem/Video firmware"
+	depends="msm-firmware-loader firmware-qcom-adreno-a300 firmware-qcom-adreno-a420 firmware-qcom-db410c-wcnss-nv"
+	mkdir "$subpkgdir"
+
+	# HACK: For devices that don't have a nv file in persist we
+	# temporarily link the db410c file to the expected location.
+	# It will be overriden if the file is in persist or when user
+	# installs the device-specific firmware packages.
+	mkdir -p "$subpkgdir"/lib/firmware/wlan/prima/
+	ln -s /lib/firmware/qcom/apq8016/WCNSS_qcom_wlan_nv_sbc.bin \
+		"$subpkgdir"/lib/firmware/wlan/prima/WCNSS_qcom_wlan_nv.bin
+}
+
+kernel_extlinux() {
+	pkgdesc="Use lk2nd to boot via extlinux.conf"
+	depends="linux-postmarketos-qcom-msm8916"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_efi() {
+	pkgdesc="Use U-Boot to boot via EFI"
+	depends="linux-postmarketos-qcom-msm8916 systemd-boot"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+dedb29f4ec8859b24323c7f640694949331692a5aa38ff8770d5848a876a954dffeb7b6c8428c4938a2831c6a309bbd117b29f2209fe2a7283d62088413be603  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+80b037998756dab0c6b2a3bb438fb2d6bf727148c4af29648074b85c3beacdbbbffb2fefd477e68904d4c3bedb76bf0e532719a15a3bb7c8ef5f922be0d73c1d  modules-initfs
+"

@@ -1,0 +1,27 @@
+# Co-Maintainer: Bart Ribbers <bribbers@disroot.org>
+maintainer="@exkc <exkc@exkc.moe>"
+pkgname=firmware-pine64-rockpro64
+pkgver=1
+pkgrel=1
+_commit="4b370cd415a2dd7b0ecdbe8bbf1d86fb35ce6985"
+pkgdesc="Firmware for the RockPro64 (pine64-rockpro64)"
+url="https://github.com/LibreELEC/brcmfmac_sdio-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://github.com/LibreELEC/brcmfmac_sdio-firmware/archive/$_commit/brcmfmac_sdio-firmware-$_commit.tar.gz"
+builddir="$srcdir/brcmfmac_sdio-firmware-$_commit"
+
+package() {
+	#
+	# AMPAK AP6359SA
+	#
+
+	mv brcmfmac4359-sdio.txt brcmfmac4359-sdio.pine64,rockpro64-v2.1.txt
+
+	for file in BCM4359C0.hcd brcmfmac4359-sdio.*; do
+		install -Dm 0644 "$file" -t "$pkgdir"/lib/firmware/postmarketos/brcm
+	done
+}
+
+sha512sums="6bd2551370bdf2b4e0b8d8f5016a1b937ba497a4fe2058fde3ac96f1fe4a8a95b638c82f2b0411d6fe1e46877ad5c475e4037ed02521f08e2483ccc4c03430c8  brcmfmac_sdio-firmware-4b370cd415a2dd7b0ecdbe8bbf1d86fb35ce6985.tar.gz"

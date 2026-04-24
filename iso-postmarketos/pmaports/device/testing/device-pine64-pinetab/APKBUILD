@@ -1,0 +1,178 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-pine64-pinetab
+pkgdesc="PINE64 PineTab"
+pkgver=4
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf>=1.2.6.2
+	mesa-egl
+	postmarketos-base
+	u-boot-pinephone>=2021.01_git20201228-r2
+	u-boot-tools
+"
+makedepends="
+	devicepkg-dev
+	u-boot-tools
+"
+subpackages="
+	$pkgname-kernel-allwinner:kernel_allwinner
+	$pkgname-kernel-allwinner-dev:kernel_allwinner_dev
+	$pkgname-sway
+	$pkgname-weston
+	$pkgname-phosh
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-plasma-mobile:plasma_mobile
+	$pkgname-udev
+	$pkgname-upower
+	"
+install="$pkgname.post-install"
+source="
+	99-pinetab-keyboard.hwdb
+	deviceinfo
+	gsk-renderer-gl.sh
+	kirigami-lowpower.sh
+	phoc.ini
+	sway.conf
+	uboot-script.cmd
+	ucm/HiFi.conf
+	ucm/PineTab.conf
+	pulse-pinetab.conf
+	weston.ini
+	UPower.conf
+	"
+
+prepare() {
+	default_prepare
+	for version in pinetab-dev pinetab; do
+		sed "1s;^;\nsetenv pinetabfdt sun50i-a64-$version.dtb\;\n;" \
+			"$srcdir"/uboot-script.cmd > "$srcdir/uboot-script-$version.cmd"
+	done
+}
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+kernel_allwinner() {
+	pkgdesc="Allwinner kernel with support for Pinetab LCD panel (from Early Adopter)"
+	depends="linux-postmarketos-allwinner>=5.14"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/uboot-script-pinetab.cmd \
+		"$srcdir"/boot.scr
+
+	# U-Boot
+	install -Dm644 "$srcdir"/boot.scr \
+		"$subpkgdir"/boot/boot.scr
+}
+
+kernel_allwinner_dev() {
+	pkgdesc="Allwinner kernel with support for old Pinetab LCD panel (pre Early Adopter)"
+	depends="linux-postmarketos-allwinner"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/uboot-script-pinetab-dev.cmd \
+		"$srcdir"/boot_dev.scr
+
+	# U-Boot
+	install -Dm644 "$srcdir"/boot_dev.scr \
+		"$subpkgdir"/boot/boot.scr
+}
+
+sway() {
+	install_if="$pkgname postmarketos-ui-sway"
+	install -D -m644 "$srcdir"/sway.conf \
+		"$subpkgdir"/etc/sway/config.d/pinetab
+}
+
+weston() {
+	install_if="$pkgname postmarketos-ui-weston"
+	install -Dm644 "$srcdir"/weston.ini \
+		"$subpkgdir"/etc/xdg/weston/weston.ini
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Alsa usecase manager config
+	install -Dm644 -t "$pkgdir"/usr/share/alsa/ucm2/PineTab \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/PineTab.conf
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/simple-card
+	ln -s /usr/share/alsa/ucm2/PineTab/PineTab.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/simple-card/PineTab.conf
+
+	# Pulseaudio config
+	install -Dm644 "$srcdir"/pulse-pinetab.conf \
+		"$pkgdir"/etc/pulse/daemon.conf.d/89-pinetab.conf
+
+	# Fix for the meta key on v1 keyboard dock, probably not needed on newer revisions
+	install -Dm644 "$srcdir"/99-pinetab-keyboard.hwdb \
+		"$pkgdir"/usr/lib/udev/hwdb.d/99-pinetab-keyboard.hwdb
+
+	# Prevent artifacts in GTK4 apps (pmaports#1069)
+	install -Dm755 "$srcdir"/gsk-renderer-gl.sh -t \
+		"$pkgdir"/etc/profile.d/
+}
+
+nonfree_firmware() {
+	pkgdesc="Bluetooth Firmware"
+	depends="linux-firmware-rtl_bt"
+	mkdir "$subpkgdir"
+}
+
+plasma_mobile() {
+	install_if="$pkgname=$pkgver-r$pkgrel kirigami2"
+	install -Dm644 "$srcdir"/kirigami-lowpower.sh "$subpkgdir"/etc/profile.d/kirigami-lowpower.sh
+}
+
+upower() {
+	install_if="$pkgname=$pkgver-r$pkgrel upower"
+	replaces="upower"
+
+	# Shutdown when PMIC reports critical battery level
+	install -Dm644 "$srcdir"/UPower.conf \
+		"$subpkgdir"/etc/UPower/UPower.conf
+}
+
+sha512sums="
+8d1ef04911f1cfa7eda8185f4f4d807af23105a7c8f23d8c18f02afeccd8ab124de70c2e2760c154a3128fe3793447039fb0abf37aa496f597d27051e275033e  99-pinetab-keyboard.hwdb
+bae3d7d431d1ceb3a2bb9071b90938da3a6a6a470cbb7855cd6e2aa92be0b0de3953ae7b3eee1ce56c98e641edfd6c0ce2560d46d6a0bab7ab3049d648131034  deviceinfo
+3f1422115c9a12f94b6fb7cc4e987f25ea331a9c7cbc34649470bc5557dfc85b79cbc4369e48f12f284ed1e20af6194d8bbb3c5e37227a7d9bc3e6670cd41aa9  gsk-renderer-gl.sh
+6bc22b369b2d9058b702ac7a7862abaefaf8179b43491868bdb008d181b59104f1ded89db1da51a810e1ccdc803a579b924a438674283a65afc3a9c4d2894caf  kirigami-lowpower.sh
+5c683f2cf27b2f982c8581251688834634957143334011861400d3eed27b6590f37055fe61c8af632552435dba581fa990a44c1e5689a3c8fe642fd095b740ce  phoc.ini
+9e71c61bfa72b60e749c4dc04f17eb59d25de822765e81e65c937d6be5236d3951a652b69a1ab973abe6add9f34705be5dbaa98bbfa25daf7504dd50b28524c2  sway.conf
+09950eee0c35f0c05a39025e5e8afe96cd2b78b78bc157fa229e581ab477ae675ed60108334a536241d96ef5a5b3c80807ce6463dad00fc6c1694bcce6029652  uboot-script.cmd
+a2fd8037c9a1af000f31c7005436d791525317f818c553d1e2f472b4df76c71d769ecbf67b369a478bea720a6215eaa9fb6a26ba218ac9410513e2345ebe7b4c  HiFi.conf
+7a19bfc3bf08c11bf34943f822fcae9de57dbdae4759281386e77f711c5d9f7a58fd4970166c4db751e9c29585291fe52f58bc622d80b835d6c645eb339a7263  PineTab.conf
+9c472065b19141dd4c7555869b955de2e679b36e597f9fa3bdac18d0e9460986b0e2fffe1e04751301305f1b6474c1375803afb7d6212eeae91b4905d0bf8ff8  pulse-pinetab.conf
+6374ef977eab14b71fa88057ebd52ca03035e387e5f41504598a990f24b2e92bccd2db476c545dc541000e08fccdecb6f1cd63e25b5835df706269e0384dacc7  weston.ini
+ed0e03f7e1c0348c06be9a7922414469245604ce813bbf0c8910ef211cb993bbb0d0d4615c9c961d50712415f85d6b73e0cf02780ac784666aac56e4889341e4  UPower.conf
+"

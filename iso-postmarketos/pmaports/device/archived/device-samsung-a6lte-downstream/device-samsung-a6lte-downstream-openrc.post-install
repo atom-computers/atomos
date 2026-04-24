@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rc-update add wlan0-up sysinit
+rc-update add hciattach-ttySAC0 default

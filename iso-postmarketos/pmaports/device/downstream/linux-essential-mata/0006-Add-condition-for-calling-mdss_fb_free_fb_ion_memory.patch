@@ -1,0 +1,36 @@
+From a324fdc2d86c1c4ca091cfa7ece2899e57c49c3f Mon Sep 17 00:00:00 2001
+From: TAKIZAWA Fumiya <takizawa.fumiya34@gmail.com>
+Date: Sat, 9 May 2020 23:17:52 +0900
+Subject: [PATCH 6/6] Add condition for calling mdss_fb_free_fb_ion_memory()
+
+Vendor code release memory when closing framebuffer device.
+It causes ENODEV and so on.
+
+eg.
+$ cat /dev/random > /dev/fb0
+ash: write error: No such device
+
+In order to prevent this behavior, add condition for calling mdss_fb_free_fb_ion_memory() in mdss_fb_release_all().
+---
+ drivers/video/fbdev/msm/mdss_fb.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/fbdev/msm/mdss_fb.c b/drivers/video/fbdev/msm/mdss_fb.c
+index acf6d8f77bc8..2c9578ff8cfa 100644
+--- a/drivers/video/fbdev/msm/mdss_fb.c
++++ b/drivers/video/fbdev/msm/mdss_fb.c
+@@ -2937,8 +2937,10 @@ static int mdss_fb_release_all(struct fb_info *info, bool release_all)
+ 			      mfd->index, ret, task->comm, current->tgid);
+ 			return ret;
+ 		}
+-		if (mfd->fb_ion_handle)
++		if (release_all && mfd->fb_ion_handle) {
++			printk("mdss_fb_release_all: release_ion_memory");
+ 			mdss_fb_free_fb_ion_memory(mfd);
++		}
+ 
+ 		atomic_set(&mfd->ioctl_ref_cnt, 0);
+ 	} else {
+-- 
+2.26.2
+

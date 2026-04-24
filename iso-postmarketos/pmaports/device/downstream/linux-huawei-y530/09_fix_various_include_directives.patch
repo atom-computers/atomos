@@ -1,0 +1,126 @@
+diff --git a/arch/arm/mach-msm/smd_init_dt.c b/arch/arm/mach-msm/smd_init_dt.c
+index 640656cb..046f4470 100644
+--- a/arch/arm/mach-msm/smd_init_dt.c
++++ b/arch/arm/mach-msm/smd_init_dt.c
+@@ -21,7 +21,7 @@
+ #include <linux/io.h>
+ 
+ #include <mach/msm_ipc_logging.h>
+-#include <smd_private.h>
++#include "smd_private.h"
+ 
+ #define MODULE_NAME "msm_smd"
+ #define IPC_LOG(level, x...) do { \
+diff --git a/drivers/input/touchscreen/synaptics_rmi_hw/rmi_f34.c b/drivers/input/touchscreen/synaptics_rmi_hw/rmi_f34.c
+index 29bf1449..82ef5870 100644
+--- a/drivers/input/touchscreen/synaptics_rmi_hw/rmi_f34.c
++++ b/drivers/input/touchscreen/synaptics_rmi_hw/rmi_f34.c
+@@ -30,7 +30,6 @@
+ #include <linux/hw_tp_config.h>
+ //#include <linux/hardware_self_adapt.h>
+ #include <asm/system.h>
+-#include <rmi_config.h>
+ #include <misc/app_info.h>
+ 
+ #define TP_FW_COB_FILE_NAME  "/tp/1191601.img"
+diff --git a/drivers/video/msm/mdss/dsi_host_v2.c b/drivers/video/msm/mdss/dsi_host_v2.c
+index 30698ec6..ac6d205b 100644
+--- a/drivers/video/msm/mdss/dsi_host_v2.c
++++ b/drivers/video/msm/mdss/dsi_host_v2.c
+@@ -21,14 +21,14 @@
+ #include <linux/iopoll.h>
+ #include <linux/interrupt.h>
+ #include <linux/of_device.h>
++#include <linux/hw_lcd_common.h>
+ 
+ #include "dsi_v2.h"
+ #include "dsi_io_v2.h"
+ #include "dsi_host_v2.h"
+ #include "mdss_debug.h"
+ #include "mdp3.h"
+-#include <mdss_dsi.h>
+-#include <linux/hw_lcd_common.h>
++#include "mdss_dsi.h"
+ 
+ #define DSI_POLL_SLEEP_US 1000
+ #define DSI_POLL_TIMEOUT_US 16000
+diff --git a/drivers/video/msm/mdss/hw_lcd_common.c b/drivers/video/msm/mdss/hw_lcd_common.c
+index b6835e0a..8888552a 100644
+--- a/drivers/video/msm/mdss/hw_lcd_common.c
++++ b/drivers/video/msm/mdss/hw_lcd_common.c
+@@ -69,7 +69,7 @@
+ #include<linux/module.h>
+ 	 
+ #include <linux/hw_lcd_common.h>
+-#include <mdss_dsi.h>
++#include "mdss_dsi.h"
+ #include <linux/of.h>
+ 
+ 
+diff --git a/drivers/video/msm/mdss/mdss_dsi_panel.c b/drivers/video/msm/mdss/mdss_dsi_panel.c
+index 4163b580..e2186fdc 100644
+--- a/drivers/video/msm/mdss/mdss_dsi_panel.c
++++ b/drivers/video/msm/mdss/mdss_dsi_panel.c
+@@ -25,7 +25,7 @@
+ #include "mdss_dsi.h"
+ #include "dsi_v2.h"
+ 
+-#include <hw_lcd_debug.h>
++#include "hw_lcd_debug.h"
+ #include <misc/app_info.h>
+ #include <linux/hw_lcd_common.h>
+ #ifdef CONFIG_FB_DISPLAY_INVERSION
+diff --git a/include/linux/hw_lcd_common.h b/include/linux/hw_lcd_common.h
+index 305830c1..26b887a4 100644
+--- a/include/linux/hw_lcd_common.h
++++ b/include/linux/hw_lcd_common.h
+@@ -29,8 +29,8 @@
+ #ifndef HW_LCD_COMMON_H
+ #define HW_LCD_COMMON_H
+ 
+-#include "dsi_v2.h"
+-#include "mdss_dsi.h"
++#include "../../drivers/video/msm/mdss/dsi_v2.h"
++#include "../../drivers/video/msm/mdss/mdss_dsi.h"
+ 
+ /* Move from the every LCD file ,those are common */
+ /* Add dynamic log */
+diff --git a/sound/soc/codecs/msm8x10-wcd-tables.c b/sound/soc/codecs/msm8x10-wcd-tables.c
+index 7e0263d4..9167dd83 100644
+--- a/sound/soc/codecs/msm8x10-wcd-tables.c
++++ b/sound/soc/codecs/msm8x10-wcd-tables.c
+@@ -10,7 +10,7 @@
+  * GNU General Public License for more details.
+  */
+ 
+-#include <msm8x10_wcd_registers.h>
++#include "msm8x10_wcd_registers.h"
+ #include "msm8x10-wcd.h"
+ 
+ const u8 msm8x10_wcd_reg_readable[MSM8X10_WCD_CACHE_SIZE] = {
+diff --git a/sound/soc/msm/msm8x10.c b/sound/soc/msm/msm8x10.c
+index 5e666f0f..e69d0fef 100644
+--- a/sound/soc/msm/msm8x10.c
++++ b/sound/soc/msm/msm8x10.c
+@@ -26,7 +26,7 @@
+ #include <sound/jack.h>
+ #include <asm/mach-types.h>
+ #include <mach/socinfo.h>
+-#include <qdsp6v2/msm-pcm-routing-v2.h>
++#include "qdsp6v2/msm-pcm-routing-v2.h"
+ #include <sound/q6afe-v2.h>
+ #include <linux/module.h>
+ #include <mach/gpiomux.h>
+diff --git a/sound/soc/msm/qdsp6v2/rtac.c b/sound/soc/msm/qdsp6v2/rtac.c
+index 701dfef6..8d2e1d41 100644
+--- a/sound/soc/msm/qdsp6v2/rtac.c
++++ b/sound/soc/msm/qdsp6v2/rtac.c
+@@ -25,7 +25,7 @@
+ #include <sound/q6asm-v2.h>
+ #include <sound/q6afe-v2.h>
+ #include <sound/apr_audio-v2.h>
+-#include <q6voice.h>
++#include "q6voice.h"
+ #include "audio_acdb.h"
+ 
+ 

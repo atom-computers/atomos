@@ -1,0 +1,22 @@
+From 91b2569e0aa7632f228d2591e3365430cd83b7a7 Mon Sep 17 00:00:00 2001
+From: Alexandros Feuerstein <32029275+afeuerstein@users.noreply.github.com>
+Date: Sun, 8 Aug 2021 20:57:59 +0200
+Subject: [PATCH] Update touchpanel_common_driver.c
+
+---
+ drivers/oneplus/input/touchscreen/touchpanel_common_driver.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/oneplus/input/touchscreen/touchpanel_common_driver.c b/drivers/oneplus/input/touchscreen/touchpanel_common_driver.c
+index 4d7fbedf0fd4..8a24c6906d60 100644
+--- a/drivers/oneplus/input/touchscreen/touchpanel_common_driver.c
++++ b/drivers/oneplus/input/touchscreen/touchpanel_common_driver.c
+@@ -4156,7 +4156,7 @@ static int init_input_device(struct touchpanel_data *ts)
+ 	set_bit(EV_ABS, ts->input_dev->evbit);
+ 	set_bit(EV_KEY, ts->input_dev->evbit);
+ 	set_bit(ABS_MT_TOUCH_MAJOR, ts->input_dev->absbit);
+-	set_bit(ABS_MT_WIDTH_MAJOR, ts->input_dev->absbit);
++	//set_bit(ABS_MT_WIDTH_MAJOR, ts->input_dev->absbit);
+ 	set_bit(ABS_MT_POSITION_X, ts->input_dev->absbit);
+ 	set_bit(ABS_MT_POSITION_Y, ts->input_dev->absbit);
+ 	set_bit(INPUT_PROP_DIRECT, ts->input_dev->propbit);

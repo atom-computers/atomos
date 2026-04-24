@@ -1,0 +1,101 @@
+# Reference: https://wiki.postmarketos.org/wiki/Lenovo_Tab2_A10-30L_(lenovo-achilles)
+# Kernel config extracted from recovery (https://gitlab.com/aleiepure/lenovo_achilles_kernel)
+
+pkgname=linux-lenovo-achilles
+pkgver=3.10.49
+pkgrel=1
+pkgdesc="Lenovo Tab2 A10-30L kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="lenovo-achilles"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	gcc6
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="lenovo_achilles_kernel"
+_commit="e123f2de60d1c980ec4ecdb266bf030bcfdb065e"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/aleiepure/$_repository/-/archive/$_commit.tar.gz
+	$_config
+	01-fix_return_address.patch
+	02-fix_hfi_packetization.patch
+	03-fix_blank_display.patch
+	04-fix_netfilter_makefile.patch
+	05-fix_yylloc.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		modules
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -o "$_outdir/arch/$_carch/boot"/dt.img \
+		"$_outdir/arch/$_carch/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		modules_install
+
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+93677bc7a789665e83e1cc8b0d0ed98fcd3e6336f147c8cf05fceaa5fe7371485bc9cba42552e2a8ba5b22599d2961e44dc301b7e442ffb39ef55b2270d9868c  linux-lenovo-achilles-e123f2de60d1c980ec4ecdb266bf030bcfdb065e.tar.gz
+99b3a1b84a9403c600882e61d1176becb4b7bd72383601512a822526784043524350ffba8b97d65d4740ec2f9e507dc1f9c89c632477d3032bcb1f63dcca7614  config-lenovo-achilles.armv7
+02df3e4071c7870938422f68da54f997557634acb6ac57fddc30f9437d5993d0b197d53a7c99536d0e92c54d563c3881a455f0b14e529d43638f0c52f404a0f5  01-fix_return_address.patch
+ce59712aa8ee0fd748ad3b63d20955500544d8852b985e6d3958adcd8039ac9f8e56e282f9238af06ab1d99ceb750003c4fc73eaba580a7f1545d69e1d0b0b2a  02-fix_hfi_packetization.patch
+34f6f12772c91cd9536d85c0b728ed4b6be623e912bc09b6ea8188d42a6cae1867e8fc716bc17bf2b4bd1632bccfe1971ef1bc2c9a225dd34c37196f1d6e1dac  03-fix_blank_display.patch
+75dfd14bccd38740603e65733c780ebfa77d730d3eb0d0779d294104e815b420b1145cd541350c77c27e4938a76663ea7145d2fcb0087e2a23416a0532894173  04-fix_netfilter_makefile.patch
+13032010c1ce7e9dd05fa97c91ace4a78635f261f7756b572b9a452b2ac96dfd481a1f49c06022b61c4415bebe71e3c564179e3294110534e2c94a8c52c994a0  05-fix_yylloc.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

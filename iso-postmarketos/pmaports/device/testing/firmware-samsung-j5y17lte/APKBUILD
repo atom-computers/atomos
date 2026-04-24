@@ -1,0 +1,19 @@
+maintainer=""
+pkgname=firmware-samsung-j5y17lte
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for Samsung Galaxy j5 (2017)"
+url="https://github.com/fw-dumps/samsung_a6lte_dump"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+depends="linux-firmware-brcm"
+
+source="brcmfmac43455-sdio.txt"
+
+package() {
+	install -Dm644 "$srcdir/brcmfmac43455-sdio.txt" -t "$pkgdir/lib/firmware/brcm/"
+}
+sha512sums="
+39fa144666c0b10d4edad3dcdadf97ce52612beff5234fde6cccbf827999548ca91121ad16c4ad4cca9707b70ff3ade19f8db71cf041ecc0a57a7df26bb761db  brcmfmac43455-sdio.txt
+"

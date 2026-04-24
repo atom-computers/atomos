@@ -1,0 +1,23 @@
+maintainer="Nickolay Goppen <setotau@mainlining.org>"
+pkgname=alsa-ucm-conf-qcom-sdm660
+pkgver=1.2.15_git20260401
+pkgrel=0
+pkgdesc="ALSA UCM configuration for SDM660 devices"
+url="https://github.com/sdm660-mainline/alsa-ucm-conf"
+arch="aarch64"
+license="BSD-3-Clause"
+provides="alsa-ucm-conf"
+provider_priority=1
+_commit="c80c3b48a1bfee7519bf3510bd7db93d9e6fd57d"
+source="$pkgname-$_commit.tar.gz::https://github.com/sdm660-mainline/alsa-ucm-conf/archive/$_commit.tar.gz"
+options="!check"
+
+package() {
+	# install audio config files
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2
+	cp -r "$srcdir/alsa-ucm-conf-$_commit"/ucm2 "$pkgdir"/usr/share/alsa/
+}
+
+sha512sums="
+4b6fb29ebdd2589fc425560648eef0c42c9d190014497cddea52341ed9c74b1c0b4a3227438ae3e4f17d59b2655b9659706561e1a4ff618ac9faa857484aa8db  alsa-ucm-conf-qcom-sdm660-c80c3b48a1bfee7519bf3510bd7db93d9e6fd57d.tar.gz
+"

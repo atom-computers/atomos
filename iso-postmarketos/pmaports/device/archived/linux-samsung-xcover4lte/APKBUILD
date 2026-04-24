@@ -1,0 +1,61 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/xcover4lte_00_defconfig
+
+pkgname=linux-samsung-xcover4lte
+pkgver=3.18.91
+pkgrel=1
+pkgdesc="Samsung Galaxy Xcover 4 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-xcover4lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool-exynos linux-headers"
+
+# Source: backup of https://opensource.samsung.com/uploadSearch?searchValue=G390F (SM-G390F_EUR_PP_Opensource, version: G390FXXU4CSF9)
+_repository="android_kernel_samsung_xcover4lte"
+_commit="e4347897745d3e550d45ae2a8fc6c6bf82db722b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/spholz/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	02-swap-red-blue.patch
+	03-fix-wifi-fw-path.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Build dt image with exynos dtbtool
+	dtbTool-exynos --pagesize 2048 \
+		--platform 0x50a6 \
+		--subtype  0x217584da \
+		-o "arch/arm64/boot/dt.img" \
+		"arch/arm64/boot/dts/exynos7570-xcover4lte_eur_open_04.dtb"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+	install -Dm644 "$builddir/arch/arm64/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+085f36365fc105a880520b79eaaff621ef491a3e1721f5425cb3f4d27e003497193f5e69a404dc7816d20a5075a912d9c0835c576127137d33c120bee3d931ca  linux-samsung-xcover4lte-e4347897745d3e550d45ae2a8fc6c6bf82db722b.tar.gz
+7d261f49fb6798ff66c8ea8dffb5bf6d8f65801920a906a1060600446736cc726af9eb6af7e38177081012aeda3a4751bc938af09d6e22eb9d21a954525eb726  config-samsung-xcover4lte.aarch64
+8b46920d7e81edfaeb3a66c10f6eb0c2a409bce9a210fd8ca4e58a7c0207aef28c732826ff806e339b28c737054316c8204fda91feb37eb692a78b873f328e1a  01-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+94f397f127d14e5649b21587e819e65104d92c54dd2035e6cfd3706c31918f4252bdea1328084e41946e47873711419e813fdb0652926a854b1139371d468835  02-swap-red-blue.patch
+e28f88cb51e91748fb609ab2ee9bf354d147f8edb5c9c60685443d9aaed28a8f0bf42db6cbae9b6623b5c1773f81c2181ef8ab04f37cd7a6882d5e4fc043a92c  03-fix-wifi-fw-path.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+"

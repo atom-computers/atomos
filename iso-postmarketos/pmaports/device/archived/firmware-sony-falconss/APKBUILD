@@ -1,0 +1,26 @@
+# Archived: Kernel does not build anymore
+pkgname=firmware-sony-falconss
+pkgver=1
+pkgrel=0
+_commit="06718622b21c54666c76d89876d3e5f9aac9109b"
+pkgdesc="Firmware files for Sony Xperia E1"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan"
+source="$pkgname-$_commit.tar.gz::https://github.com/exkc/android_vendor_sony_falconss_pmos/archive/$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/android_vendor_sony_falconss_pmos-$_commit"
+
+package() {
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07
+		wcnss.b08 wcnss.b09 wcnss.mdt"
+	for _i in $_files; do
+		install -D -m644 wifi/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="
+ee6651686db0332f6aad8fe91acf7255ee4199b638bcc9d3b43dc3b35c2b3172193b506270f1ef7ff57df78d598fa218779b4e66a543c2bc768b0d720abc22b8  firmware-sony-falconss-06718622b21c54666c76d89876d3e5f9aac9109b.tar.gz
+"

@@ -1,0 +1,14 @@
+diff --git a/drivers/staging/samsung/sec_batt.c b/drivers/staging/samsung/sec_batt.c
+index 89960640..5de0b91e 100644
+--- a/drivers/staging/samsung/sec_batt.c
++++ b/drivers/staging/samsung/sec_batt.c
+@@ -20,9 +20,6 @@ EXPORT_SYMBOL(lpcharge);
+ 
+ static int sec_bat_is_lpm_check(char *str)
+ {
+-	if (strncmp(str, "charger", 7) == 0)
+-		lpcharge = 1;
+-
+ 	pr_info("%s: Low power charging mode: %d\n", __func__, lpcharge);
+ 
+ 	return lpcharge;

@@ -1,0 +1,19 @@
+disable_splash=0
+boot_delay=0
+gpu_mem=256
+gpu_mem_256=64
+dtoverlay=vc4-kms-v3d
+[pi0]
+kernel=vmlinuz-rpi
+initramfs initramfs
+[pi1]
+kernel=vmlinuz-rpi
+initramfs initramfs
+[pi2]
+kernel=vmlinuz-rpi
+initramfs initramfs
+[pi3]
+kernel=vmlinuz-rpi
+initramfs initramfs
+[all]
+include usercfg.txt

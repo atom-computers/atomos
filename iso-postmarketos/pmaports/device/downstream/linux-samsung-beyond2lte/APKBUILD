@@ -1,0 +1,65 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos9820-beyond2lte_defconfig
+
+pkgname=linux-samsung-beyond2lte
+pkgver=4.14.316
+pkgrel=0
+pkgdesc="Samsung Galaxy S10+ kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-beyond2lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+export CC="clang"
+export HOSTCC="clang"
+
+# Source
+_repository="android_kernel_samsung_exynos9820"
+_commit="7d08ec364a0659edcf90a8dae4453b21e4542311"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	remove-header-lkc.patch
+	fix-check-lxdialog.patch
+	selinux_include_generated_headers.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+
+sha512sums="
+8ac222f644a534204fd5ea5e657991214bfc069042b48620b956ce0c249af6639b9a18c20892481c8514d2cdd3c3bd967062a4d16ba53504fd76d1227a365d44  linux-samsung-beyond2lte-7d08ec364a0659edcf90a8dae4453b21e4542311.tar.gz
+88c92dc69a3564d8fb1460490fa7324761f7e1bc12e53e67c515de1ad624095cec321134b1f8359ed641cda7b06f13283c4574aa6ec6b6afde2e392ad6d51b9e  config-samsung-beyond2lte.aarch64
+1872a4d9963f128965ab46b329d448e6b776d373cf99f2b8e11d025aa3e10a0308da19beb715c6bdced0b2c6ef44c47a5c013554a19787a64f8ac58d34bc912f  remove-header-lkc.patch
+f6627992b6a9626fa2db1145f1babddfa5e865115842a967a466568659d28549aa09d29a069d66651ca16c4155b52342272c9499df5c9b58d405810213032609  fix-check-lxdialog.patch
+6ab9db01d35f7f5cc2c19ebe5f65a7dc479a1c68de587300cdde9a6c759d34610666c72f0f321cd450cf56c13df3b54a774e0f7ebdbf0f8608fbfd66b49d04e7  selinux_include_generated_headers.patch
+"

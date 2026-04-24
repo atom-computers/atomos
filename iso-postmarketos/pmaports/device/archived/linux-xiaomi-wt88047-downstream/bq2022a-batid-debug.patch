@@ -1,0 +1,12 @@
+Enable debug prints for bq2022a-batid. This is used for battery detection
+on xiaomi-wt88047. Similar code is used for mainline within the lk2nd bootloader.
+
+diff --git a/drivers/power/bq2022a-batid.c b/drivers/power/bq2022a-batid.c
+index c806eca2ce8..90d274482b4 100644
+--- a/drivers/power/bq2022a-batid.c
++++ b/drivers/power/bq2022a-batid.c
+@@ -1,3 +1,4 @@
++#define DEBUG
+ #define pr_fmt(fmt) "BQ2022A:%s: " fmt, __func__
+
+ #include <linux/init.h>

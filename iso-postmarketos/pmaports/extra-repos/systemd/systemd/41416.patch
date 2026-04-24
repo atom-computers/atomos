@@ -1,0 +1,44 @@
+From a353bb060e79137e8d2b26a5ec030c23080d7cb6 Mon Sep 17 00:00:00 2001
+From: Valentin David <me@valentindavid.com>
+Date: Mon, 30 Mar 2026 09:49:13 +0200
+Subject: [PATCH] sysupdate: Ignore resources that are not pending
+
+`updatectl enable --now` systematically fails because the update phase find
+resources that are not pending. So instead we should ignore them.
+
+Fixes #41254
+---
+ src/sysupdate/sysupdate-transfer.c | 6 ++++--
+ test/units/TEST-72-SYSUPDATE.sh    | 2 +-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/src/sysupdate/sysupdate-transfer.c b/src/sysupdate/sysupdate-transfer.c
+index 46f3129f5d993..35c0e05083bdf 100644
+--- a/src/sysupdate/sysupdate-transfer.c
++++ b/src/sysupdate/sysupdate-transfer.c
+@@ -1609,8 +1609,10 @@ int transfer_process_partial_and_pending_instance(Transfer *t, Instance *i) {
+ 
+         /* Does this instance already exist in the target but isn’t pending? */
+         existing = resource_find_instance(&t->target, i->metadata.version);
+-        if (existing && !existing->is_pending)
+-                return log_error_errno(SYNTHETIC_ERRNO(EINVAL), "Failed to acquire '%s', instance is already in the target but is not pending.", i->path);
++        if (existing && !existing->is_pending) {
++                log_info("Resource '%s' instance is already in the target but is not pending.", i->path);
++                return 0;
++        }
+ 
+         /* All we need to do is compute the temporary paths. We don’t need to do any of the other work in
+          * transfer_acquire_instance(). */
+diff --git a/test/units/TEST-72-SYSUPDATE.sh b/test/units/TEST-72-SYSUPDATE.sh
+index fc83a42e55d66..b929485bd5b6c 100755
+--- a/test/units/TEST-72-SYSUPDATE.sh
++++ b/test/units/TEST-72-SYSUPDATE.sh
+@@ -352,7 +352,7 @@ EOF
+     mkdir "$CONFIGDIR/optional.feature.d"
+     echo -e "[Feature]\nEnabled=true" > "$CONFIGDIR/optional.feature.d/enable.conf"
+     "$SYSUPDATE" --offline list v5 | grep "incomplete" >/dev/null
+-    update_now "monolithic"
++    update_now "$update_type"
+     "$SYSUPDATE" --offline list v5 | grep -v "incomplete" >/dev/null
+     verify_version "$blockdev" "$sector_size" v3 1
+     verify_version_current "$blockdev" "$sector_size" v5 2

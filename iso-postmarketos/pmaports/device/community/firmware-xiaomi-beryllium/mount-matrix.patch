@@ -1,0 +1,52 @@
+From e682cd17537df752cbe02be03e11333df06935f2 Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <git@dylanvanassche.be>
+Date: Tue, 10 Feb 2026 20:10:57 +0100
+Subject: [PATCH] beryllium: set mount matrix
+
+---
+ .../Xiaomi/beryllium/sensors/config/sdm845_bmi160_0.json    | 6 +++---
+ .../beryllium/sensors/registry/bmi160_0_platform.placement  | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/config/sdm845_bmi160_0.json b/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/config/sdm845_bmi160_0.json
+index 90b4704..87bdadf 100644
+--- a/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/config/sdm845_bmi160_0.json
++++ b/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/config/sdm845_bmi160_0.json
+@@ -201,7 +201,7 @@
+     ".placement":{
+       "owner": "sns_bmi160",
+       "0":{ "type": "flt", "ver": "0",
+-        "data": "0.0"
++        "data": "-1.0"
+       },
+       "1":{ "type": "flt", "ver": "0",
+         "data": "0.0"
+@@ -213,7 +213,7 @@
+         "data": "0.0"
+       },
+       "4":{ "type": "flt", "ver": "0",
+-        "data": "0.0"
++        "data": "-1.0"
+       },
+       "5":{ "type": "flt", "ver": "0",
+         "data": "0.0"
+@@ -225,7 +225,7 @@
+         "data": "0.0"
+       },
+       "8":{ "type": "flt", "ver": "0",
+-        "data": "0.0"
++        "data": "-1.0"
+       },
+       "9":{ "type": "flt", "ver": "0",
+         "data": "0.0"
+diff --git a/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/registry/bmi160_0_platform.placement b/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/registry/bmi160_0_platform.placement
+index 2072fdd..0b684c1 100755
+--- a/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/registry/bmi160_0_platform.placement
++++ b/usr/share/qcom/sdm845/Xiaomi/beryllium/sensors/registry/bmi160_0_platform.placement
+@@ -1 +1 @@
+-{"bmi160_0_platform.placement":{"owner":"sns_bmi160","0":{"type":"flt","ver":"0","data":"0.000000"},"1":{"type":"flt","ver":"0","data":"0.000000"},"2":{"type":"flt","ver":"0","data":"0.000000"},"3":{"type":"flt","ver":"0","data":"0.000000"},"4":{"type":"flt","ver":"0","data":"0.000000"},"5":{"type":"flt","ver":"0","data":"0.000000"},"6":{"type":"flt","ver":"0","data":"0.000000"},"7":{"type":"flt","ver":"0","data":"0.000000"},"8":{"type":"flt","ver":"0","data":"0.000000"},"9":{"type":"flt","ver":"0","data":"0.000000"},"10":{"type":"flt","ver":"0","data":"0.000000"},"11":{"type":"flt","ver":"0","data":"0.000000"}}}
+\ No newline at end of file
++{"bmi160_0_platform.placement":{"owner":"sns_bmi160","0":{"type":"flt","ver":"0","data":"-1.000000"},"1":{"type":"flt","ver":"0","data":"0.000000"},"2":{"type":"flt","ver":"0","data":"0.000000"},"3":{"type":"flt","ver":"0","data":"0.000000"},"4":{"type":"flt","ver":"0","data":"-1.000000"},"5":{"type":"flt","ver":"0","data":"0.000000"},"6":{"type":"flt","ver":"0","data":"0.000000"},"7":{"type":"flt","ver":"0","data":"0.000000"},"8":{"type":"flt","ver":"0","data":"-1.000000"},"9":{"type":"flt","ver":"0","data":"0.000000"},"10":{"type":"flt","ver":"0","data":"0.000000"},"11":{"type":"flt","ver":"0","data":"0.000000"}}}
+-- 
+GitLab
+

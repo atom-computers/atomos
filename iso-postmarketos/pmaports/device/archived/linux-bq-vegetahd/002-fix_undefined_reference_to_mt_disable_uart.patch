@@ -1,0 +1,28 @@
+Error:
+
+armv7-alpine-linux-musleabihf-ld: drivers/built-in.o: in function `bootup_finish':
+/home/pmos/build/src/android_kernel_bq_vegetahd-fc8ba1dc9fe42ee265d8dadcf6655a749a791ec1/drivers/misc/mediatek/mtprof/bootprof.c:111: undefined reference to `mt_disable_uart'
+
+C Inline functions can't be extern. Maybe
+diff --git a/kernel/printk.c b/kernel/printk.c
+index 5f62f1f9..c815ce3c 100644
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -275,7 +275,7 @@ static u32 log_buf_len = __LOG_BUF_LEN;
+ #ifdef CONFIG_MT_PRINTK_UART_CONSOLE
+
+ extern int mt_need_uart_console;
+-inline void mt_disable_uart()
++void mt_disable_uart()
+ {
+     if (mt_need_uart_console == 0) {
+         printk("<< printk console disable >>\n");
+@@ -284,7 +284,7 @@ inline void mt_disable_uart()
+         printk("<< printk console can't be disabled >>\n");
+     }
+ }
+-inline void mt_enable_uart()
++void mt_enable_uart()
+ {
+     if (mt_need_uart_console == 1) {
+         if (printk_disable_uart == 0)

@@ -1,0 +1,47 @@
+# Reference: https://postmarketos.org/uipkg
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Bart Ribbers <bribbers@disroot.org>"
+pkgname=postmarketos-ui-kodi
+pkgver=3
+pkgrel=0
+pkgdesc="(GBM) 10-foot UI useful on TV's"
+url="https://kodi.tv"
+arch="all !armhf !loongarch64" # kodi
+license="GPL-3.0-or-later"
+depends="
+	elogind
+	kodi
+	kodi-gbm
+	kodi-polkit
+	polkit-elogind
+	postmarketos-base-ui
+	postmarketos-base-ui-audio
+	postmarketos-base-ui-networkmanager
+	upower
+	"
+subpackages="$pkgname-openrc $pkgname-systemd"
+source="automount-media.rules kodi.service"
+options="!check pmb:drm pmb:systemd"
+
+package() {
+	install -Dm644 automount-media.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/99-automount-media.rules
+	install -Dm644 kodi.service \
+		-t "$pkgdir"/usr/lib/systemd/system/
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="
+		elogind-openrc
+		kodi-openrc
+		networkmanager-openrc
+		"
+
+	mkdir -p "$subpkgdir"
+}
+sha512sums="
+2f1d46ba553cfa129f343ac856d736532374a347329016e35235aa6173658c9db64b259363180207592e77bf1817011b7df6c966f002850c4b0b1ddea856ae27  automount-media.rules
+e7c33c889afb822ae20ebd09f3b9f8d130d1f89324006ab3a140fbf46ef7e774634d2ac13ac328c588266823e5eb52c7e0d6d6459f1f64052f9cea5a5fe9f54a  kodi.service
+"

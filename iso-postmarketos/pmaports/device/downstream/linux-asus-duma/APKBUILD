@@ -1,0 +1,58 @@
+# Kernel config based on: arch/arm/configs/elementalx_defconfig
+
+pkgname=linux-asus-duma
+pkgver=3.4.113
+pkgrel=7
+pkgdesc="ASUS MeMO Pad FHD 10 (ME302KL) kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="asus-duma"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="ElementalX-Kernel-for-ME302KL"
+_commit="b6a8f08e43a26771947556abfc697971eb67f06b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/yatto/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_fix_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+f47c0dfb34f9387ce9b7518fee6cae2fd91161cf1db0f0355bbc87fb201798d8c87f78779d3df4022a9bceeac8d9f0b111f7e63f25394e3f8cfbcd57a9da48c6  linux-asus-duma-b6a8f08e43a26771947556abfc697971eb67f06b.tar.gz
+6cb6370ef9c54e3b9933a4ba2a3435604315ee27767ca5f3436398a9265d54dcfda73420ca5cdc9c96b0d42547146f4a14f7d17c1d0c446747c8a60d39e6aad0  config-asus-duma.armhf
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

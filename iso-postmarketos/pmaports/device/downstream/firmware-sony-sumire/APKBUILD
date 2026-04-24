@@ -1,0 +1,60 @@
+pkgname=firmware-sony-sumire
+pkgver=1.1
+pkgrel=0
+pkgdesc="Sony Xperia Z5 Firmware"
+url="https://github.com/TheMuppets/proprietary_vendor_sony"
+arch="aarch64"
+license="proprietary"
+_commit="cf702d6d4b2ff72b3ea7c4635e83540857ddd770"
+options="!check !strip !tracedeps pmb:cross-native"
+
+# Source
+source="
+	fw_bcmdhd.bin::https://github.com/TheMuppets/proprietary_vendor_sony/raw/$_commit/sumire/proprietary/etc/firmware/wlan/bcmdhd/fw_bcmdhd.bin
+	wlan_macaddr0
+	wlan_txpower_2_4g
+	wlan_txpower_5g_low
+	wlan_txpower_5g_mid
+	wlan_txpower_5g_high
+	wlan_txpower_co1_2_4g
+	wlan_txpower_co1_5g_high
+	wlan_txpower_co1_5g_mid
+	wlan_txpower_co1_5g_low
+	bcmdhd.cal::https://raw.githubusercontent.com/sonyxperiadev/device-sony-sumire/master/rootdir/system/etc/wifi/bcmdhd.cal
+"
+package() {
+	# Wifi
+	mkdir -p "$pkgdir"/lib/firmware/postmarketos/bcmdhd/bcm4356/
+	install -Dm644 "$srcdir/fw_bcmdhd.bin" "$pkgdir/lib/firmware/postmarketos/bcmdhd/bcm4356/fw_bcm4356.bin"
+	install -D -m644 "$srcdir"/wlan_macaddr0 \
+		"$pkgdir"/etc/wlan_macaddr0
+	install -D -m644 "$srcdir"/wlan_txpower_2_4g \
+		"$pkgdir"/etc/wlan_txpower_2_4g
+	install -D -m644 "$srcdir"/wlan_txpower_5g_low \
+		"$pkgdir"/etc/wlan_txpower_5g_low
+	install -D -m644 "$srcdir"/wlan_txpower_5g_mid  \
+		"$pkgdir"/etc/wlan_txpower_5g_mid
+	install -D -m644 "$srcdir"/wlan_txpower_5g_high \
+		"$pkgdir"/etc/wlan_txpower_5g_high
+	install -D -m644 "$srcdir"/wlan_txpower_co1_2_4g \
+		"$pkgdir"/etc/wlan_txpower_co1_2_4g
+	install -D -m644 "$srcdir"/wlan_txpower_co1_5g_high \
+		"$pkgdir"/etc/wlan_txpower_co1_5g_high
+	install -D -m644 "$srcdir"/wlan_txpower_co1_5g_low \
+		"$pkgdir"/etc/wlan_txpower_co1_5g_low
+	install -D -m644 "$srcdir"/wlan_txpower_co1_5g_mid \
+		"$pkgdir"/etc/wlan_txpower_co1_5g_mid
+	install -D -m644 "$srcdir"/bcmdhd.cal \
+		"$pkgdir"/etc/wifi/bcmdhd.cal
+}
+sha512sums="aa8494299c95552e32ad78bdbe20b90a1c9d8757745ff0413565af5ff8af74566a8f5e280c83dc2d5897ecd6ebd53d91bbf3ff119af1eed077917d0c6588e87b  fw_bcmdhd.bin
+b4ab2443b7a2e661f1a2b02788336e8dcf9b0052559fc52848b42f039b03fb57cf600a094bc30fe02b366ac7c4d6ba389107ab946cb89fff9dcbe6181494fdd2  wlan_macaddr0
+764e4556b8d604280c860282198eb94a179f27992d986784408370d20452c5ccfa5fa36fb6395e0176db902e05fac56c03ca38171cc32892352d40475d8465c0  wlan_txpower_2_4g
+b398cca4ddb0c1c45bb2da734d7547fa3637e89be6257acdd57b22e7b94cdff51574af2edc37cd0a9cf196cc3d54c58d8ad21dd3e2cb8bfc03585e21f8c5b818  wlan_txpower_5g_low
+b398cca4ddb0c1c45bb2da734d7547fa3637e89be6257acdd57b22e7b94cdff51574af2edc37cd0a9cf196cc3d54c58d8ad21dd3e2cb8bfc03585e21f8c5b818  wlan_txpower_5g_mid
+b398cca4ddb0c1c45bb2da734d7547fa3637e89be6257acdd57b22e7b94cdff51574af2edc37cd0a9cf196cc3d54c58d8ad21dd3e2cb8bfc03585e21f8c5b818  wlan_txpower_5g_high
+783aa7d829249ae1521882ec48e9b7978818aca44046ca9f8dd96994873dc317c0723df4c5a72486312f40a007eae382149edc13e8ebecf3637cd1f388337a2e  wlan_txpower_co1_2_4g
+b398cca4ddb0c1c45bb2da734d7547fa3637e89be6257acdd57b22e7b94cdff51574af2edc37cd0a9cf196cc3d54c58d8ad21dd3e2cb8bfc03585e21f8c5b818  wlan_txpower_co1_5g_high
+b398cca4ddb0c1c45bb2da734d7547fa3637e89be6257acdd57b22e7b94cdff51574af2edc37cd0a9cf196cc3d54c58d8ad21dd3e2cb8bfc03585e21f8c5b818  wlan_txpower_co1_5g_mid
+b398cca4ddb0c1c45bb2da734d7547fa3637e89be6257acdd57b22e7b94cdff51574af2edc37cd0a9cf196cc3d54c58d8ad21dd3e2cb8bfc03585e21f8c5b818  wlan_txpower_co1_5g_low
+4ffaf1e9596876dc9e1c00c06f060439e671e0eb4103c9be9770adda7283ece16a80eb94dca6e62d4290103a758bf05c39075eb4242bc16ce6dc01d8191831aa  bcmdhd.cal"

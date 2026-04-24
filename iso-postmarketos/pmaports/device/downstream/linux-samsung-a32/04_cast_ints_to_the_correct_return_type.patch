@@ -1,0 +1,26 @@
+diff --git a/crypto/tcrypt_procfs.c b/crypto/tcrypt_procfs.c
+index 3606b8c31..464cd3092 100644
+--- a/crypto/tcrypt_procfs.c
++++ b/crypto/tcrypt_procfs.c
+@@ -972,7 +972,7 @@ static int crypto_test_show(struct seq_file *m, void *v)
+ 		case -ERANGE:
+ 			p = ERR_RANGE; break;
+ 		case -ENOENT:
+-			p = ENOENT; break;
++			p = (char *)ENOENT; break;
+ 		case -EOPNOTSUPP:
+ 			p = ERR_OPNOTSUPP; break;
+ 	}
+diff --git a/drivers/soc/mediatek/mtk-cmdq-helper.c b/drivers/soc/mediatek/mtk-cmdq-helper.c
+index 4472397a3..913f268d6 100644
+--- a/drivers/soc/mediatek/mtk-cmdq-helper.c
++++ b/drivers/soc/mediatek/mtk-cmdq-helper.c
+@@ -595,7 +595,7 @@ void *cmdq_pkt_get_curr_buf_va(struct cmdq_pkt *pkt)
+ 
+ 	if (unlikely(!pkt->avail_buf_size))
+ 		if (cmdq_pkt_add_cmd_buffer(pkt) < 0)
+-			return -ENOMEM;
++			return (void *)-ENOMEM;
+ 
+ 	buf = list_last_entry(&pkt->buf, typeof(*buf), list_entry);
+ 

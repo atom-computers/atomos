@@ -1,0 +1,89 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-oneplus-cheeseburger
+pkgdesc="OnePlus 5"
+pkgver=9
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	21-oneplus5-ts.rules
+	deviceinfo
+	kernel-cmdline.mainline.conf
+	modules-initfs.alpine
+	modules-initfs.mainline
+	phoc.ini
+"
+subpackages="
+	$pkgname-kernel-alpine:kernel_alpine
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+	$pkgname-plasma-mobile:plasma_mobile
+	$pkgname-plasma-mobile-udev:plasma_mobile_udev
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_alpine() {
+	# FIXME: msm-modem-uim-selection hangs boot for some 20 seconds when installed with non-free FW
+	pkgdesc="Upstream stable kernel, unpatched Alpine linux-stable"
+	depends="linux-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="Close to mainline kernel, plenty of working features and fixes"
+	depends="linux-postmarketos-qcom-msm8998 soc-qcom-msm8998"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for GPU, Wi-Fi, Bluetooth etc. (also needed for full disk encryption)"
+	depends="firmware-oneplus-msm8998"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	# some scaling tweaks
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+plasma_mobile() {
+	install_if="$pkgname postmarketos-ui-plasma-mobile"
+
+	mkdir $subpkgdir
+}
+
+plasma_mobile_udev() {
+	install_if="$pkgname-plasma-mobile=$pkgver-r$pkgrel udev"
+
+	# fix incorrect 180 degree touchscreen rotation due to PlaMo kwin_wayland bug
+	# https://invent.kde.org/teams/plasma-mobile/issues/-/issues/160
+	install -Dm644 "$srcdir"/21-oneplus5-ts.rules \
+		"$subpkgdir"/usr/lib/udev/rules.d/21-oneplus5-ts.rules
+}
+
+sha512sums="
+fcb37390af6f2a0aed381585eeec7d0dd30e0b291d97a6fa433ed4b5d3badb3298709972d382a44f555329f83aabdbb8c8affcfe3933072538c4ac8c3ff9aca8  21-oneplus5-ts.rules
+65d2cd37cb5d8646918ccd84c2531b58df4e528565e70af5a5f7a8fd8693b065422cfdbf9ae5f564799fc761620c00b17109e25e5350b47f24e0c3184ce3b88d  deviceinfo
+515b7a75cf7cfc9c3e9d122140a32fd14f84fe99456145686a93ed04de3977d07272ba4dc9b05d213461e62733530a0ea6def83c48621f5c0b2d10f2254ed359  kernel-cmdline.mainline.conf
+53472343462865f6b44897a079edc62dbbefe1b3ad0c7ceb02fa85a21d0162c0505321b516fc37a9fa7fcfe946cd17fd03a70b24bca302aa18773b576e5f14c9  modules-initfs.alpine
+bea8d7d4a622d8d455a4f06e7207b636e3f310eab5c0865da5cea56942846f90cb6b00a9f5f000ecf148dab5092d54ef47d9aa021719a4a5b9867792c9f6b7e7  modules-initfs.mainline
+2288f08a44aae5136c0c0c846501c2bd4bcb10f05454b40c6e4490d398385b8a7129216047b5eb7982ca6d62d3aa71f3e18bfb8661d0cd32c8a600685ca0da48  phoc.ini
+"

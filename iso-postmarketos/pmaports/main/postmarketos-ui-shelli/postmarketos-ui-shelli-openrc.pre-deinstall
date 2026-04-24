@@ -1,0 +1,9 @@
+#!/bin/sh
+
+rc-update del powerkey
+rc-update del largefont
+rc-update del ofono
+rc-update del ofono-auto-enable
+rc-update del smsd
+rc-update del calld
+rc-update del shelli

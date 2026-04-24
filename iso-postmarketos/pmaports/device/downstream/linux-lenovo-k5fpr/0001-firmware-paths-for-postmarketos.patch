@@ -1,0 +1,301 @@
+From c108465c38388505fa122b4b9fddbe2724d04c6f Mon Sep 17 00:00:00 2001
+From: arzamas-16 <arzamas-16@mail.ee>
+Date: Thu, 9 Sep 2021 23:59:45 +0300
+Subject: [PATCH] firmware paths for postmarketos
+
+Replace hardcoded paths for firmware so it could be loaded on postmarketOS.
+---
+ drivers/misc/mediatek/c2k_ccci/modem_sdio.h   |  2 +-
+ .../common/combo/core/include/wmt_conf.h      |  2 +-
+ .../common/combo/linux/stp_chrdev_ant.c       |  4 +-
+ .../common/conn_soc/core/include/wmt_conf.h   |  2 +-
+ .../connectivity/wlan/gen2/os/linux/gl_init.c |  4 +-
+ .../connectivity/wlan/gen2/os/linux/gl_kal.c  | 16 ++++----
+ .../connectivity/wlan/gen3/os/linux/gl_init.c |  2 +-
+ .../connectivity/wlan/gen3/os/linux/gl_kal.c  |  2 +-
+ drivers/misc/mediatek/dual_ccci/ccci_chrdev.c |  2 +-
+ .../fmradio/mt6627/pub/mt6627_fm_lib.c        | 28 ++++++-------
+ .../fmradio/mt6630/pub/mt6630_fm_lib.c        | 40 +++++++++----------
+ .../mediatek/include/mt-plat/mt_ccci_common.h |  2 +-
+ .../misc/mediatek/wmt_ccci/wmt_cfg_parser.h   |  2 +-
+ 13 files changed, 54 insertions(+), 54 deletions(-)
+
+diff --git a/drivers/misc/mediatek/c2k_ccci/modem_sdio.h b/drivers/misc/mediatek/c2k_ccci/modem_sdio.h
+index 3b206dcd..ca102ee7 100644
+--- a/drivers/misc/mediatek/c2k_ccci/modem_sdio.h
++++ b/drivers/misc/mediatek/c2k_ccci/modem_sdio.h
+@@ -379,7 +379,7 @@ enum {
+ /*Image type and header defination part*/
+ /*=================================================================================*/
+ 
+-#define C2K_IMG_PATH	"/vendor/firmware/modem_3_3g_n.img"
++#define C2K_IMG_PATH	"/lib/firmware/postmarketos/modem_3_3g_n.img"
+ 
+ enum {
+ 	MD_BOOTING = 0,
+diff --git a/drivers/misc/mediatek/connectivity/common/combo/core/include/wmt_conf.h b/drivers/misc/mediatek/connectivity/common/combo/core/include/wmt_conf.h
+index d5b54222..d6bca3fe 100644
+--- a/drivers/misc/mediatek/connectivity/common/combo/core/include/wmt_conf.h
++++ b/drivers/misc/mediatek/connectivity/common/combo/core/include/wmt_conf.h
+@@ -19,7 +19,7 @@
+ ********************************************************************************
+ */
+ #define CUST_CFG_WMT "WMT.cfg"
+-#define CUST_CFG_WMT_PREFIX "/vendor/firmware/"
++#define CUST_CFG_WMT_PREFIX "/lib/firmware/postmarketos/"
+ 
+ /*******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+diff --git a/drivers/misc/mediatek/connectivity/common/combo/linux/stp_chrdev_ant.c b/drivers/misc/mediatek/connectivity/common/combo/linux/stp_chrdev_ant.c
+index f0b6ef72..b5adf3c6 100644
+--- a/drivers/misc/mediatek/connectivity/common/combo/linux/stp_chrdev_ant.c
++++ b/drivers/misc/mediatek/connectivity/common/combo/linux/stp_chrdev_ant.c
+@@ -21,8 +21,8 @@ MODULE_LICENSE("Dual BSD/GPL");
+ #define ANT_DRIVER_NAME "mtk_stp_ANT_chrdev"
+ #define ANT_DEV_MAJOR 197	/* never used number */
+ static PINT8 ANT_BUILT_IN_PATCH_FILE_NAME;
+-static PINT8 ANT_BUILT_IN_PATCH_FILE_NAME_E1 = "/vendor/firmware/ANT_RAM_CODE_E1.BIN";
+-static PINT8 ANT_BUILT_IN_PATCH_FILE_NAME_E2 = "/vendor/firmware/ANT_RAM_CODE_E2.BIN";
++static PINT8 ANT_BUILT_IN_PATCH_FILE_NAME_E1 = "/lib/firmware/postmarketos/ANT_RAM_CODE_E1.BIN";
++static PINT8 ANT_BUILT_IN_PATCH_FILE_NAME_E2 = "/lib/firmware/postmarketos/ANT_RAM_CODE_E2.BIN";
+ 
+ #define PFX                         "[MTK-ANT] "
+ #define ANT_LOG_DBG                  3
+diff --git a/drivers/misc/mediatek/connectivity/common/conn_soc/core/include/wmt_conf.h b/drivers/misc/mediatek/connectivity/common/conn_soc/core/include/wmt_conf.h
+index 832d01bf..cf4ddd7a 100644
+--- a/drivers/misc/mediatek/connectivity/common/conn_soc/core/include/wmt_conf.h
++++ b/drivers/misc/mediatek/connectivity/common/conn_soc/core/include/wmt_conf.h
+@@ -31,7 +31,7 @@
+ ********************************************************************************
+ */
+ #define CUST_CFG_WMT "WMT_SOC.cfg"
+-#define CUST_CFG_WMT_PREFIX "/vendor/firmware/"
++#define CUST_CFG_WMT_PREFIX "/lib/firmware/postmarketos/"
+ 
+ /*******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+diff --git a/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_init.c b/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_init.c
+index 6dae1527..dc2b2ba2 100644
+--- a/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_init.c
++++ b/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_init.c
+@@ -2868,9 +2868,9 @@ static INT_32 wlanProbe(PVOID pvData)
+ 				} else if (kalReadToFile("/data/misc/wifi/wifi.cfg",
+ 						pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen) == 0) {
+ 					DBGLOG(INIT, LOUD, "CFG_FILE: Read /data/misc/wifi/wifi.cfg\n");
+-				} else if (kalReadToFile("/vendor/firmware/wifi.cfg",
++				} else if (kalReadToFile("/lib/firmware/postmarketos/wifi.cfg",
+ 						pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen) == 0) {
+-					DBGLOG(INIT, LOUD, "CFG_FILE: Read /vendor/firmware/wifi.cfg\n");
++					DBGLOG(INIT, LOUD, "CFG_FILE: Read /lib/firmware/postmarketos/wifi.cfg\n");
+ 				}
+ 
+ 				if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0)
+diff --git a/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_kal.c b/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_kal.c
+index 09da1ef5..16abbb78 100644
+--- a/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_kal.c
++++ b/drivers/misc/mediatek/connectivity/wlan/gen2/os/linux/gl_kal.c
+@@ -822,33 +822,33 @@ WLAN_STATUS kalFirmwareOpen(IN P_GLUE_INFO_T prGlueInfo)
+ 	case WMTHWVER_MT6620_E3:
+ 	case WMTHWVER_MT6620_E4:
+ 	case WMTHWVER_MT6620_E5:
+-		filp = filp_open("/vendor/firmware/" CFG_FW_FILENAME, O_RDONLY, 0);
++		filp = filp_open("/lib/firmware/postmarketos/" CFG_FW_FILENAME, O_RDONLY, 0);
+ 		break;
+ 
+ 	case WMTHWVER_MT6620_E6:
+ 	default:
+-		filp = filp_open("/vendor/firmware/" CFG_FW_FILENAME "_E6", O_RDONLY, 0);
++		filp = filp_open("/lib/firmware/postmarketos/" CFG_FW_FILENAME "_E6", O_RDONLY, 0);
+ 		break;
+ 	}
+ #elif defined(MT6628)
+-/* filp = filp_open("/vendor/firmware/"CFG_FW_FILENAME"_MT6628", O_RDONLY, 0); */
+-/* filp = filp_open("/vendor/firmware/"CFG_FW_FILENAME"_MT6582", O_RDONLY, 0); */
++/* filp = filp_open("/lib/firmware/postmarketos/"CFG_FW_FILENAME"_MT6628", O_RDONLY, 0); */
++/* filp = filp_open("/lib/firmware/postmarketos/"CFG_FW_FILENAME"_MT6582", O_RDONLY, 0); */
+ #if 0				/* new wifi ram code mechanism, waiting firmware ready, then we can enable these code */
+ 	kalMemZero(aucFilePath, sizeof(aucFilePath));
+-	kalMemCopy(aucFilePath, "/vendor/firmware/" CFG_FW_FILENAME "_AD", sizeof("/vendor/firmware/" CFG_FW_FILENAME "_AD"));
++	kalMemCopy(aucFilePath, "/lib/firmware/postmarketos/" CFG_FW_FILENAME "_AD", sizeof("/lib/firmware/postmarketos/" CFG_FW_FILENAME "_AD"));
+ 	filp = filp_open(aucFilePath, O_RDONLY, 0);
+ 	if (!IS_ERR(filp))
+ 		goto open_success;
+ #endif
+ 	kalMemZero(aucFilePath, sizeof(aucFilePath));
+-	kalMemCopy(aucFilePath, "/vendor/firmware/" CFG_FW_FILENAME "_", strlen("/vendor/firmware/" CFG_FW_FILENAME "_"));
+-	glGetChipInfo(prGlueInfo, &aucFilePath[strlen("/vendor/firmware/" CFG_FW_FILENAME "_")]);
++	kalMemCopy(aucFilePath, "/lib/firmware/postmarketos/" CFG_FW_FILENAME "_", strlen("/lib/firmware/postmarketos/" CFG_FW_FILENAME "_"));
++	glGetChipInfo(prGlueInfo, &aucFilePath[strlen("/lib/firmware/postmarketos/" CFG_FW_FILENAME "_")]);
+ 
+ 	DBGLOG(INIT, INFO, "open file: %s\n", aucFilePath);
+ 
+ 	filp = filp_open(aucFilePath, O_RDONLY, 0);
+ #else
+-	filp = filp_open("/vendor/firmware/" CFG_FW_FILENAME, O_RDONLY, 0);
++	filp = filp_open("/lib/firmware/postmarketos/" CFG_FW_FILENAME, O_RDONLY, 0);
+ #endif
+ 	if (IS_ERR(filp)) {
+ 		DBGLOG(INIT, ERROR, "Open FW image: %s failed\n", CFG_FW_FILENAME);
+diff --git a/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_init.c b/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_init.c
+index 8e6a4dd2..714c82f8 100644
+--- a/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_init.c
++++ b/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_init.c
+@@ -2641,7 +2641,7 @@ static INT_32 wlanProbe(PVOID pvData)
+ 				} else if (kalReadToFile("/data/misc/wifi/wifi.cfg", pucConfigBuf,
+ 							 WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen) == 0) {
+ 					/* ToDo:: Nothing */
+-				} else if (kalReadToFile("/vendor/firmware/wifi.cfg", pucConfigBuf,
++				} else if (kalReadToFile("/lib/firmware/postmarketos/wifi.cfg", pucConfigBuf,
+ 							 WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen) == 0) {
+ 					/* ToDo:: Nothing */
+ 				}
+diff --git a/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_kal.c b/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_kal.c
+index 57bf521b..80b13400 100644
+--- a/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_kal.c
++++ b/drivers/misc/mediatek/connectivity/wlan/gen3/os/linux/gl_kal.c
+@@ -889,7 +889,7 @@ static gid_t orgfsgid;
+ static mm_segment_t orgfs;
+ 
+ static PUINT_8 apucFwPath[] = {
+-	(PUINT_8) "/vendor/firmware/",
++	(PUINT_8) "/lib/firmware/postmarketos/",
+ 	NULL
+ };
+ 
+diff --git a/drivers/misc/mediatek/dual_ccci/ccci_chrdev.c b/drivers/misc/mediatek/dual_ccci/ccci_chrdev.c
+index 87504f94..11720e16 100644
+--- a/drivers/misc/mediatek/dual_ccci/ccci_chrdev.c
++++ b/drivers/misc/mediatek/dual_ccci/ccci_chrdev.c
+@@ -35,7 +35,7 @@ static unsigned int md_sbp_code_default;
+ #endif
+ 
+ #ifndef CONFIG_MODEM_FIRMWARE_PATH
+-#define CONFIG_MODEM_FIRMWARE_PATH "/vendor/firmware/"
++#define CONFIG_MODEM_FIRMWARE_PATH "/lib/firmware/postmarketos/"
+ #endif
+ 
+ static char *type_str[] = {[modem_invalid] = "invalid",
+diff --git a/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c b/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c
+index b8425402..672085fb 100644
+--- a/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c
++++ b/drivers/misc/mediatek/fmradio/mt6627/pub/mt6627_fm_lib.c
+@@ -24,22 +24,22 @@
+ #include "mt6627_fm_cust_cfg.h"
+ /* #include "mach/mt_gpio.h" */
+ 
+-/* #define MT6627_FM_PATCH_PATH "/vendor/firmware/mt6627/mt6627_fm_patch.bin" */
+-/* #define MT6627_FM_COEFF_PATH "/vendor/firmware/mt6627/mt6627_fm_coeff.bin" */
+-/* #define MT6627_FM_HWCOEFF_PATH "/vendor/firmware/mt6627/mt6627_fm_hwcoeff.bin" */
+-/* #define MT6627_FM_ROM_PATH "/vendor/firmware/mt6627/mt6627_fm_rom.bin" */
++/* #define MT6627_FM_PATCH_PATH "/lib/firmware/postmarketos/mt6627/mt6627_fm_patch.bin" */
++/* #define MT6627_FM_COEFF_PATH "/lib/firmware/postmarketos/mt6627/mt6627_fm_coeff.bin" */
++/* #define MT6627_FM_HWCOEFF_PATH "/lib/firmware/postmarketos/mt6627/mt6627_fm_hwcoeff.bin" */
++/* #define MT6627_FM_ROM_PATH "/lib/firmware/postmarketos/mt6627/mt6627_fm_rom.bin" */
+ 
+ static struct fm_patch_tbl mt6627_patch_tbl[5] = {
+-	{FM_ROM_V1, "/vendor/firmware/mt6627/mt6627_fm_v1_patch.bin",
+-	 "/vendor/firmware/mt6627/mt6627_fm_v1_coeff.bin", NULL, NULL},
+-	{FM_ROM_V2, "/vendor/firmware/mt6627/mt6627_fm_v2_patch.bin",
+-	 "/vendor/firmware/mt6627/mt6627_fm_v2_coeff.bin", NULL, NULL},
+-	{FM_ROM_V3, "/vendor/firmware/mt6627/mt6627_fm_v3_patch.bin",
+-	 "/vendor/firmware/mt6627/mt6627_fm_v3_coeff.bin", NULL, NULL},
+-	{FM_ROM_V4, "/vendor/firmware/mt6627/mt6627_fm_v4_patch.bin",
+-	 "/vendor/firmware/mt6627/mt6627_fm_v4_coeff.bin", NULL, NULL},
+-	{FM_ROM_V5, "/vendor/firmware/mt6627/mt6627_fm_v5_patch.bin",
+-	 "/vendor/firmware/mt6627/mt6627_fm_v5_coeff.bin", NULL, NULL},
++	{FM_ROM_V1, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v1_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v1_coeff.bin", NULL, NULL},
++	{FM_ROM_V2, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v2_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v2_coeff.bin", NULL, NULL},
++	{FM_ROM_V3, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v3_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v3_coeff.bin", NULL, NULL},
++	{FM_ROM_V4, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v4_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v4_coeff.bin", NULL, NULL},
++	{FM_ROM_V5, "/lib/firmware/postmarketos/mt6627/mt6627_fm_v5_patch.bin",
++	 "/lib/firmware/postmarketos/mt6627/mt6627_fm_v5_coeff.bin", NULL, NULL},
+ };
+ 
+ static struct fm_hw_info mt6627_hw_info = {
+diff --git a/drivers/misc/mediatek/fmradio/mt6630/pub/mt6630_fm_lib.c b/drivers/misc/mediatek/fmradio/mt6630/pub/mt6630_fm_lib.c
+index c0aedf2c..1b0472c8 100644
+--- a/drivers/misc/mediatek/fmradio/mt6630/pub/mt6630_fm_lib.c
++++ b/drivers/misc/mediatek/fmradio/mt6630/pub/mt6630_fm_lib.c
+@@ -23,29 +23,29 @@
+ #include "mt6630_fm_cust_cfg.h"
+ 
+ static struct fm_patch_tbl mt6630_patch_tbl[5] = {
+-	{FM_ROM_V1, "/vendor/firmware/mt6630_fm_v1_patch.bin",
+-	 "/vendor/firmware/mt6630_fm_v1_coeff.bin", NULL, NULL},
+-	{FM_ROM_V2, "/vendor/firmware/mt6630_fm_v2_patch.bin",
+-	 "/vendor/firmware/mt6630_fm_v2_coeff.bin", NULL, NULL},
+-	{FM_ROM_V3, "/vendor/firmware/mt6630_fm_v3_patch.bin",
+-	 "/vendor/firmware/mt6630_fm_v3_coeff.bin", NULL, NULL},
+-	{FM_ROM_V4, "/vendor/firmware/mt6630_fm_v4_patch.bin",
+-	 "/vendor/firmware/mt6630_fm_v4_coeff.bin", NULL, NULL},
+-	{FM_ROM_V5, "/vendor/firmware/mt6630_fm_v5_patch.bin",
+-	 "/vendor/firmware/mt6630_fm_v5_coeff.bin", NULL, NULL},
++	{FM_ROM_V1, "/lib/firmware/postmarketos/mt6630_fm_v1_patch.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v1_coeff.bin", NULL, NULL},
++	{FM_ROM_V2, "/lib/firmware/postmarketos/mt6630_fm_v2_patch.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v2_coeff.bin", NULL, NULL},
++	{FM_ROM_V3, "/lib/firmware/postmarketos/mt6630_fm_v3_patch.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v3_coeff.bin", NULL, NULL},
++	{FM_ROM_V4, "/lib/firmware/postmarketos/mt6630_fm_v4_patch.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v4_coeff.bin", NULL, NULL},
++	{FM_ROM_V5, "/lib/firmware/postmarketos/mt6630_fm_v5_patch.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v5_coeff.bin", NULL, NULL},
+ };
+ 
+ static struct fm_patch_tbl mt6630_patch_tbl_tx[5] = {
+-	{FM_ROM_V1, "/vendor/firmware/mt6630_fm_v1_patch_tx.bin",
+-	 "/vendor/firmware/mt6630_fm_v1_coeff_tx.bin", NULL, NULL},
+-	{FM_ROM_V2, "/vendor/firmware/mt6630_fm_v2_patch_tx.bin",
+-	 "/vendor/firmware/mt6630_fm_v2_coeff_tx.bin", NULL, NULL},
+-	{FM_ROM_V3, "/vendor/firmware/mt6630_fm_v3_patch_tx.bin",
+-	 "/vendor/firmware/mt6630_fm_v3_coeff_tx.bin", NULL, NULL},
+-	{FM_ROM_V4, "/vendor/firmware/mt6630_fm_v4_patch_tx.bin",
+-	 "/vendor/firmware/mt6630_fm_v4_coeff_tx.bin", NULL, NULL},
+-	{FM_ROM_V5, "/vendor/firmware/mt6630_fm_v5_patch_tx.bin",
+-	 "/vendor/firmware/mt6630_fm_v5_coeff_tx.bin", NULL, NULL},
++	{FM_ROM_V1, "/lib/firmware/postmarketos/mt6630_fm_v1_patch_tx.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v1_coeff_tx.bin", NULL, NULL},
++	{FM_ROM_V2, "/lib/firmware/postmarketos/mt6630_fm_v2_patch_tx.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v2_coeff_tx.bin", NULL, NULL},
++	{FM_ROM_V3, "/lib/firmware/postmarketos/mt6630_fm_v3_patch_tx.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v3_coeff_tx.bin", NULL, NULL},
++	{FM_ROM_V4, "/lib/firmware/postmarketos/mt6630_fm_v4_patch_tx.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v4_coeff_tx.bin", NULL, NULL},
++	{FM_ROM_V5, "/lib/firmware/postmarketos/mt6630_fm_v5_patch_tx.bin",
++	 "/lib/firmware/postmarketos/mt6630_fm_v5_coeff_tx.bin", NULL, NULL},
+ };
+ 
+ static struct fm_hw_info mt6630_hw_info = {
+diff --git a/drivers/misc/mediatek/include/mt-plat/mt_ccci_common.h b/drivers/misc/mediatek/include/mt-plat/mt_ccci_common.h
+index ee5e9714..c62f010b 100644
+--- a/drivers/misc/mediatek/include/mt-plat/mt_ccci_common.h
++++ b/drivers/misc/mediatek/include/mt-plat/mt_ccci_common.h
+@@ -61,7 +61,7 @@ typedef enum {
+ /* image name/path */
+ #define MOEDM_IMAGE_NAME			"modem.img"
+ #define DSP_IMAGE_NAME					"DSP_ROM"
+-#define CONFIG_MODEM_FIRMWARE_PATH		"/vendor/firmware/"
++#define CONFIG_MODEM_FIRMWARE_PATH		"/lib/firmware/postmarketos/"
+ #define CONFIG_MODEM_FIRMWARE_CIP_PATH	"/custom/etc/firmware/"
+ #define IMG_ERR_STR_LEN				 64
+ 
+diff --git a/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h b/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
+index 23d25e94..6f99948c 100644
+--- a/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
++++ b/drivers/misc/mediatek/wmt_ccci/wmt_cfg_parser.h
+@@ -78,7 +78,7 @@ do { \
+ #endif
+ 
+ #define WMT_CFG_FILE "WMT_SOC.cfg"
+-#define WMT_CFG_FILE_PREFIX "/vendor/firmware/"
++#define WMT_CFG_FILE_PREFIX "/lib/firmware/postmarketos/"
+ 
+ /*******************************************************************************
+ *                             D A T A   T Y P E S
+-- 
+2.20.1
+

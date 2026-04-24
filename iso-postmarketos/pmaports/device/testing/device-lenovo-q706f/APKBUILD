@@ -1,0 +1,110 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="chalkin Deng <chalkin@yeah.net>"
+pkgname=device-lenovo-q706f
+pkgdesc="Lenovo Xiaoxin Pad Pro 12.6 (Lenovo Tab P12 Pro)"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	bootmac
+	hexagonrpcd>=0.3.2-r3
+	linux-lenovo-q706f
+	make-dynpart-mappings
+	mesa-vulkan-freedreno
+	mkbootimg
+	postmarketos-base
+	qbootctl
+	swclock-offset
+"
+makedepends="devicepkg-dev"
+install="
+	$pkgname-nonfree-firmware-openrc.post-install
+	$pkgname-nonfree-firmware-openrc.post-upgrade
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	"
+source="
+	81-libssc-lenovo-q706f.rules
+	alsa-ucm-conf/q706f.conf
+	alsa-ucm-conf/HiFi.conf
+	deviceinfo
+	kernel-cmdline.conf
+	hexagonrpcd.confd
+	modules-initfs
+"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-openrc
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	# device-specific alsa ucm conf
+	install -Dm644 "$srcdir/q706f.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Lenovo/q706f/q706f.conf"
+
+	install -Dm644 "$srcdir/HiFi.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Lenovo/q706f/HiFi.conf"
+
+	mkdir -p "$pkgdir/usr/share/alsa/ucm2/conf.d/sm8250"
+	ln -s ../../Lenovo/q706f/q706f.conf \
+		"$pkgdir/usr/share/alsa/ucm2/conf.d/sm8250/Xiaoxin Pad Pro.conf"
+
+	install -Dm644 "$srcdir"/81-libssc-lenovo-q706f.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-lenovo-q706f.rules
+
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="Firmware for GPU, WiFi, etc."
+	depends="
+		firmware-lenovo-q706f-adreno
+		firmware-lenovo-q706f-adsp
+		firmware-lenovo-q706f-cdsp
+		firmware-lenovo-q706f-cirrus
+		firmware-lenovo-q706f-hexagonfs
+		firmware-lenovo-q706f-slpi
+		firmware-lenovo-q706f-venus
+		linux-firmware-ath11k
+		linux-firmware-qca
+		pd-mapper
+		tqftpserv
+		"
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware_openrc() {
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+	depends="openrc"
+
+	mkdir "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+1e0f02d47ea87d467c6e9d824d3b021c97ff29af8fcdf67ac1b75baa2b835f1dcdfc0c9f308a0bdeb3cdf07a8c1e26d66bff8d1337c9cfab1df94c26e9ccfb81  81-libssc-lenovo-q706f.rules
+7c97ffb7ae3e1fa2e62bdb3c504275db2c830cc1e5b57dd409ae14d020a1ff5f5cb922223c5dd776569cff52415afd26cba83b6acd76aef22a79ffdaf18dcfbd  q706f.conf
+1e93599051d6dfe96a07ca230df9c02ad78126c74ec2295098904d646a9df794378744174b877b4b7ca491fa06c336b0d733c421a81eab23c2bece577610b252  HiFi.conf
+646300f40eea96db51aeb7484926d7a463696149b7a318611f9542c0c41b8659dca2e74ce5a3511d4df793335e94580dbe9701e0225b6318c40110668049751e  deviceinfo
+2c251920d837bfef95f1ba5f768cd5365d2efce9f1b6454ceed574a16e04d29b7c8e866a9e811abd4699ce57c73962421a1859799f76c24c157b87b21f9039f3  kernel-cmdline.conf
+75b2087fa574fa39ef42fce17effb1330bd1318d945de3a91094a5a22812fcfe458821f1dd76e5f48a90c525e17169247520b848596107cc7f843cbcfcb5e1c7  hexagonrpcd.confd
+c0634ddd66ecfe4b39e8bff0b17ea141303d8827d7d498c2a9f19729566f0d5a3900c78ac8c71e8ef5d68e67c625d551e67c790ea01b103fcf38848e8aebfdf1  modules-initfs
+"

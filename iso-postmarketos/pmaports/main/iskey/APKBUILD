@@ -1,0 +1,34 @@
+maintainer="Casey Connolly <kcxt@postmarketos.org>"
+pkgname=iskey
+pkgver=1
+pkgrel=2
+pkgdesc="Tiny tool to check if a key is pressed"
+url="https://postmarketos.org"
+arch="all"
+license="GPL-2.0"
+makedepends="meson linux-headers libevdev-dev"
+options="!check"
+_commit="4bc43d2bbf424ca90e11b3ed0c56e925898a130d"
+source="https://gitlab.postmarketos.org/postmarketOS/buffybox/-/archive/$_commit/buffybox-$_commit.tar.gz"
+
+# We're only building the iskey utility
+builddir="$srcdir/buffybox-$_commit/iskey"
+
+build() {
+	abuild-meson . output
+	meson compile -C output
+}
+
+package() {
+	install -Dm755 output/iskey \
+		"$pkgdir"/usr/bin/iskey
+
+	# Make sure updates to this package trigger mkinitfs
+	touch iskey
+	install -Dm644 iskey \
+		"$pkgdir"/usr/share/mkinitfs-triggers/iskey
+}
+
+sha512sums="
+d255a04e1c0bb98af579d5bce4fad4e618d39c5d9b5cd78299fc9ae30e33132af0e9d899df5d1754acc8b1ca2ff790dda072b14d1e41993a588537b23ebea032  buffybox-4bc43d2bbf424ca90e11b3ed0c56e925898a130d.tar.gz
+"

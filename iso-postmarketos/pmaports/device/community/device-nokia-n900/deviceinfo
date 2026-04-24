@@ -1,0 +1,24 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Nokia N900"
+deviceinfo_manufacturer="Nokia"
+deviceinfo_codename="nokia-n900"
+deviceinfo_year="2009"
+deviceinfo_chassis="handset"
+deviceinfo_dtb="omap3-n900"
+deviceinfo_append_dtb="true"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_keymaps="us/rx51_us ch/rx51_ch it/rx51_it fi/rx51_fi se/rx51_se"
+deviceinfo_external_storage="true"
+deviceinfo_swap_size_recommended="1024"
+deviceinfo_drm="true"
+deviceinfo_zram_swap_algo="lzo-rle"
+
+# Bootloader related
+deviceinfo_flash_method="0xffff"
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_partition_type="msdos"

@@ -1,0 +1,28 @@
+maintainer="Richard Acayan <mailingradian@gmail.com>"
+pkgname=make-dynpart-mappings
+pkgver=10.2.4
+pkgrel=1
+pkgdesc="a command-line tool that uses the device mapper to make block devices based on dynamic partitions"
+url="https://gitlab.com/flamingradian/make-dynpart-mappings/"
+arch="all"
+license="GPL-3.0-only"
+depends="device-mapper-libs libblkid libmd"
+makedepends="gcc libmd-dev lvm2-dev util-linux-dev"
+source="https://gitlab.com/flamingradian/make-dynpart-mappings/-/archive/$pkgver/make-dynpart-mappings-$pkgver.tar.gz
+10-setup-dynamic-partitions.files
+"
+options="!check"
+
+build() {
+	make
+}
+
+package() {
+	install -Dm755 "$builddir/make-dynpart-mappings" "$pkgdir/usr/bin/make-dynpart-mappings"
+	install -Dm644 "$srcdir/10-setup-dynamic-partitions.files" "$pkgdir/usr/share/mkinitfs/files/10-setup-dynamic-partitions.files"
+}
+
+sha512sums="
+f4e080e39df18750bb1b833b36ef5a38b4063d5533cf72cb5363e069411cf6d127b843e4eaccb7039506e01c75807cf7c36dfc601d7fe63b7439e36f844ea0ea  make-dynpart-mappings-10.2.4.tar.gz
+c240f51e76efd049098e446fd0a78b4323b7b2c50e09bec69c51f666d56799862b878b3e2fa3c79ccf26bc1757aebb9826f46ab0a1d0ecd779f53d2153eadc9a  10-setup-dynamic-partitions.files
+"

@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=device-samsung-chagallwifi
+pkgdesc="Samsung Galaxy Tab S 10.5"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-samsung-chagall-mainline
+	linux-postmarketos-exynos5
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+5551c856269829f482a24f2205cae6f98121c934a51899eb1b9adcc21b8488e5983d2764230b40090ccd81d87717ea4c99fbe139464137f9335d0af5a83240a9  deviceinfo
+"

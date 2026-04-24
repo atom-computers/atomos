@@ -1,0 +1,25 @@
+From 09df703183035495012a3af494243d37b8f93b31 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 30 Jun 2025 16:36:08 +0200
+Subject: [PATCH] scan_dtb_path: free struct from scandir
+
+To not leak memory.
+---
+ dtbtool-exynos.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/dtbtool-exynos.c b/dtbtool-exynos.c
+index 017f6d3bc408..9bc10e1ce94b 100644
+--- a/dtbtool-exynos.c
++++ b/dtbtool-exynos.c
+@@ -154,6 +154,7 @@ next_f:
+ 		free(de[f]);
+ 		printf("%s\n", "");
+ 	}
++	free(de);
+ 
+ 	return 0;
+ }
+-- 
+2.50.0
+

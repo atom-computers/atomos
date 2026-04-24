@@ -1,0 +1,4 @@
+#
+# Extra options you want to pass to openrc-settingsd
+#
+OPENRC_SETTINGSD_OPTS="--ntp-service=chronyd"

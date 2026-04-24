@@ -1,0 +1,27 @@
+From f7c6e2b20191c4c146ebe47e31a1300f03f71a74 Mon Sep 17 00:00:00 2001
+From: "Sicelo A. Mhlongo" <absicsz@gmail.com>
+Date: Sat, 24 Jun 2023 22:58:57 +0200
+Subject: [PATCH 1/2] n900: dts: volume keys
+
+---
+ arch/arm/boot/dts/ti/omap/omap3-n900.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/ti/omap/omap3-n900.dts b/arch/arm/boot/dts/ti/omap/omap3-n900.dts
+index f9f9eca0c56c..a7b00122fa66 100644
+--- a/arch/arm/boot/dts/ti/omap/omap3-n900.dts
++++ b/arch/arm/boot/dts/ti/omap/omap3-n900.dts
+@@ -563,8 +563,8 @@ MATRIX_KEY(0x05, 0x08, KEY_F11)
+ 			 MATRIX_KEY(0x06, 0x00, KEY_U)
+ 
+ 			 MATRIX_KEY(0x07, 0x00, KEY_I)
+-			 MATRIX_KEY(0x07, 0x01, KEY_F7)
+-			 MATRIX_KEY(0x07, 0x02, KEY_F8)
++			 MATRIX_KEY(0x07, 0x01, KEY_VOLUMEUP)
++			 MATRIX_KEY(0x07, 0x02, KEY_VOLUMEDOWN)
+ 			 >;
+ };
+ 
+-- 
+2.40.1
+

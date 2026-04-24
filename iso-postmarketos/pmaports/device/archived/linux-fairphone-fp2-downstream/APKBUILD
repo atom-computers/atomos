@@ -1,0 +1,79 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_FP2_defconfig
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=linux-fairphone-fp2-downstream
+pkgver=3.4.0
+pkgrel=0
+pkgdesc="Fairphone 2 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="fairphone-fp2"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev dtbtool xz gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_fairphone_msm8974"
+_commit="284400aea4b9f8a3c97a34408f48d0971897ae02"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+	linux3.4-ptrace-fix-ptrace-defect-cause-by-a-merge-fail.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	0001-fix-video-argb-setting.patch
+	0003-Fix-includes.patch
+	0004-msm-fix-trace.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="
+6b440c5d087b790894606d4736af815204d9e6f682b7c1ba78f5852fa7aecd74cb276f4953d270f14c96d5418f4e2a83c5179c54d50e2e5afc9084f83ab54200  linux-fairphone-fp2-downstream-284400aea4b9f8a3c97a34408f48d0971897ae02.tar.gz
+a19a14847492ea383ddffa01f1b8344ca8084ad610b4290e24e5074619295bc5473db186f724211a35a7f0f445a2d0b35e730e7953a3b3ad2f4f70893f07139d  config-fairphone-fp2.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+5e81c20b0b30c1ab09bd59f1e1b77fcce945a27de8144c68617ddc5e8f10e1f6fa8b1e4cd5d63e43511d61dace46fb26b14a6227a667b9718d44c8b81dbe6100  linux3.4-vfs-Fix-proc-tid-fdinfo-fd-file-handling.patch
+13f82d1ca9b621f026f12f91bbe03d913be41ebed717e9c657e0f3a4d39c0201ba651a7352c2d27b98bb6641b77ccc1b3ee7d4a7c9e91ddb1e347adcb5c9a780  linux3.4-ptrace-fix-ptrace-defect-cause-by-a-merge-fail.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+a48336bbfead6ad0c84d2fce0c40a3f5530aebdff356a6835cceaf59a50a6f860d2f8027703a92927955fbb18857ba78788e010d017bf67730f069b36e96fe87  0001-fix-video-argb-setting.patch
+403d4999e98ddf73e083076c130a7c9de265096b7abeaabe1ba4305403202e651289a538d104cb37adf783fcecea009f3ed2b722d8640d8d3f12e6cbb8ebe97d  0003-Fix-includes.patch
+432099f87fbcd66fa801ecaedb06715754198761c709cbb40b0dc8ffef14a6d6d5f0df27823229b731b18438c705c60c0ce44728b192d8e0f20c285bf761b7f3  0004-msm-fix-trace.patch
+"

@@ -1,0 +1,29 @@
+maintainer=""
+pkgname=firmware-lg-c50
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for LG Leon LTE"
+url="https://github.com/jenneron/firmware_lg_c50"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="620db1e7d485d4daf858df10859d6f12079af9ca"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+builddir="$srcdir/firmware_lg_c50-$_commit"
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="LG Leon LTE WiFi/BT firmware"
+	install -Dm644 "$builddir"/WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+3adaf256d1593479926b5dbc39360faf852206932ad13d48cb4cc7a6519e5abf9876ee1f979df6ab4652d7b36490b96bd41865044c3911c5794b5d90b3e2d05f  firmware-lg-c50-620db1e7d485d4daf858df10859d6f12079af9ca.tar.gz
+"

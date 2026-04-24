@@ -1,0 +1,63 @@
+
+maintainer="Nikroks <nikroks@mainlining.org>"
+_flavor="postmarketos-qcom-sm7125"
+pkgname=linux-$_flavor
+pkgver=6.14.7
+pkgrel=0
+pkgdesc="Mainline Kernel fork for SM7125 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://github.com/sm7125-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bison
+	findutils
+	flex
+	postmarketos-installkernel
+	openssl-dev
+	perl
+	python3
+	"
+
+_tag="sm7125-$pkgver"
+
+source="
+	linux-$_tag.tar.gz::$url/archive/$_tag/linux-$_tag.tar.gz
+	config-$_flavor.$arch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+11c619335ee39c73f7a67d890f3fa1e4b80836e0223bb406f82dec1c81e154384b6093af48ce280e51d4927b14cf0f8f2736cb49ea56fd751981ac6b3c693d37  linux-sm7125-6.14.7.tar.gz
+efde0578e85dff8f09704c9dde7c35b8482c4429ade475eb0774a10062d7424de61920b42143daea76c8df732d8830bde168d98c9cf9652ec70dfb0bb63ec932  config-postmarketos-qcom-sm7125.aarch64
+"

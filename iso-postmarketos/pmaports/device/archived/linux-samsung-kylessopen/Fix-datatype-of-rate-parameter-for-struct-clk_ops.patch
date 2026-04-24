@@ -1,0 +1,56 @@
+From f5e476291f6b5d35fc4deacd73f6647300dd7ea5 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@lucaweiss.eu>
+Date: Mon, 16 Jun 2025 19:46:38 +0200
+Subject: [PATCH] Fix datatype of rate parameter for struct clk_ops
+
+Fixes the following compile error:
+
+  arch/arm/mach-msm/clock-voter.c:177:21: error: initialization of 'int (*)(struct clk *, unsigned int)' from incompatible pointer type 'int (*)(struct clk *, long unsigned int)' [-Wincompatible-pointer-types]
+
+Signed-off-by: Luca Weiss <luca@lucaweiss.eu>
+---
+ arch/arm/mach-msm/clock-pcom.c | 4 ++--
+ arch/arm/mach-msm/clock.h      | 6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/mach-msm/clock-pcom.c b/arch/arm/mach-msm/clock-pcom.c
+index 3edc4294..57467ea0 100755
+--- a/arch/arm/mach-msm/clock-pcom.c
++++ b/arch/arm/mach-msm/clock-pcom.c
+@@ -101,14 +101,14 @@ static int _pc_clk_set_rate(struct clk *clk, unsigned long rate)
+ 		return (int)id < 0 ? -EINVAL : 0;
+ }
+ 
+-static int pc_clk_set_min_rate(struct clk *clk, unsigned rate)
++static int pc_clk_set_min_rate(struct clk *clk, unsigned long rate)
+ {
+ 	int rc;
+ 	int id = to_pcom_clk(clk)->id;
+ 	bool ignore_error = (cpu_is_msm7x27() && id == P_EBI1_CLK &&
+ 				rate >= INT_MAX);
+ 
+-	rc = msm_proc_comm(PCOM_CLKCTL_RPC_MIN_RATE, &id, &rate);
++	rc = msm_proc_comm(PCOM_CLKCTL_RPC_MIN_RATE, &id, (unsigned *)&rate);
+ 	if (rc < 0)
+ 		return rc;
+ 	else if (ignore_error)
+diff --git a/arch/arm/mach-msm/clock.h b/arch/arm/mach-msm/clock.h
+index 3cc77b17..0f94d1cd 100755
+--- a/arch/arm/mach-msm/clock.h
++++ b/arch/arm/mach-msm/clock.h
+@@ -71,9 +71,9 @@ struct clk_ops {
+ 	int (*in_hwcg_mode)(struct clk *clk);
+ 	int (*handoff)(struct clk *clk);
+ 	int (*reset)(struct clk *clk, enum clk_reset_action action);
+-	int (*set_rate)(struct clk *clk, unsigned rate);
+-	int (*set_min_rate)(struct clk *clk, unsigned rate);
+-	int (*set_max_rate)(struct clk *clk, unsigned rate);
++	int (*set_rate)(struct clk *clk, unsigned long rate);
++	int (*set_min_rate)(struct clk *clk, unsigned long rate);
++	int (*set_max_rate)(struct clk *clk, unsigned long rate);
+ 	int (*set_flags)(struct clk *clk, unsigned flags);
+ 	unsigned long (*get_rate)(struct clk *clk);
+ 	int (*list_rate)(struct clk *clk, unsigned n);
+-- 
+2.49.0
+

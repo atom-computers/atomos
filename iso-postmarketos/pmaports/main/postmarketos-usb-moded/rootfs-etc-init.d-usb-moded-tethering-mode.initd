@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+
+description="USB Moded Tethering Mode"
+command="usb-moded-tethering-mode"
+command_args="up"
+
+stop() {
+    usb-moded-tethering-mode down
+}

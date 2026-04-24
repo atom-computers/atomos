@@ -1,0 +1,11 @@
+--- u-boot-2025.07/include/configs/rockchip-common.h	2025-07-07 22:48:28.000000000 +0700
++++ u-boot-2025.07-patched/include/configs/rockchip-common.h	2025-08-26 19:41:28.868853141 +0700
+@@ -14,7 +14,7 @@
+ #ifndef CONFIG_XPL_BUILD
+ 
+ #ifndef BOOT_TARGETS
+-#define BOOT_TARGETS	"mmc1 mmc0 nvme scsi usb pxe dhcp spi"
++#define BOOT_TARGETS	"mmc1 usb mmc0 nvme scsi pxe dhcp spi"
+ #endif
+ 
+ #ifdef CONFIG_ARM64

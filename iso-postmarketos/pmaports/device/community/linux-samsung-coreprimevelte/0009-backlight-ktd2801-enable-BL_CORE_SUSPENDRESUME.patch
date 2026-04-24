@@ -1,0 +1,35 @@
+From 809338abe1c7571df68443b4f5d5ce1b4951f718 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Duje=20Mihanovi=C4=87?= <duje@dujemihanovic.xyz>
+Date: Sat, 14 Mar 2026 16:03:38 +0100
+Subject: [PATCH 9/9] backlight: ktd2801: enable BL_CORE_SUSPENDRESUME
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Boards using this backlight chip do not power the backlight off on
+suspend. Enable BL_CORE_SUSPENDRESUME so the chip gets powered off by
+the backlight core on suspend.
+
+Tested on samsung-coreprimevelte.
+
+Cc: stable@vger.kernel.org # v6.19
+Signed-off-by: Duje Mihanović <duje@dujemihanovic.xyz>
+---
+ drivers/video/backlight/ktd2801-backlight.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/video/backlight/ktd2801-backlight.c b/drivers/video/backlight/ktd2801-backlight.c
+index 17eac1b3bce4..1b1307e03b20 100644
+--- a/drivers/video/backlight/ktd2801-backlight.c
++++ b/drivers/video/backlight/ktd2801-backlight.c
+@@ -53,6 +53,7 @@ static int ktd2801_update_status(struct backlight_device *bd)
+ }
+ 
+ static const struct backlight_ops ktd2801_backlight_ops = {
++	.options = BL_CORE_SUSPENDRESUME,
+ 	.update_status = ktd2801_update_status,
+ };
+ 
+-- 
+2.53.0
+

@@ -1,0 +1,51 @@
+boot_delay=0
+
+arm_control=0x200
+
+kernel=vmlinuz-rpi
+initramfs initramfs
+
+gpu_mem=256
+
+# uncomment line to enable serial on ttyS0
+# NOTE: This fixes the core_freq to 250Mh
+#enable_uart=1
+
+# to take advantage of your high speed sd card
+dtparam=sd_overclock=100
+
+# use drm backend ( for weston and wayland )
+dtoverlay=vc4-kms-v3d
+
+# have a properly sized image
+disable_overscan=1
+
+# for sound over HDMI
+hdmi_drive=2
+
+# rotate the HDMI display
+# 0 => no rotation
+# 1 => 90 degrees clockwise
+# 2 => 180 degrees clockwise
+# 3 => 270 degrees clockwise
+#display_hdmi_rotate=0
+
+# Uncomment some or all of these to enable the optional hardware interfaces
+#dtparam=i2c_arm=on
+#dtparam=i2s=on
+#dtparam=spi=on
+
+# Enable audio (loads snd_bcm2835)
+dtparam=audio=on
+
+# custom CVT mode for HDMI
+# see https://www.raspberrypi.org/documentation/configuration/config-txt/video.md
+#hdmi_group=2
+#hdmi_mode=87
+#hdmi_cvt 800 480 60 6 0 0 0
+
+# Automatically enable Bluetooth without having to use btattach
+# Note that the Pi's Bluetooth interface is connected via hardware UART;
+# if you intend to use it for other purposes (for example, serial debugging)
+# comment out the line below.
+dtparam=krnbt=on

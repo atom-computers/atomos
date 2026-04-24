@@ -1,0 +1,14 @@
+[Unit]
+Description=Indicator Network Backend
+PartOf=graphical-session.target
+PartOf=ayatana-indicators.target
+Wants=lomiri-indicator-network-secret-agent.service
+
+[Service]
+BusName=com.lomiri.connectivity1
+ExecStart=/usr/libexec/lomiri-indicator-network/lomiri-indicator-network-service
+Restart=on-failure
+
+[Install]
+Alias=dbus-com.lomiri.connectivity1.service
+WantedBy=lomiri-indicators.target

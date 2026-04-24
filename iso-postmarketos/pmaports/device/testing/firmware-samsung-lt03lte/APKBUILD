@@ -1,0 +1,29 @@
+maintainer="Vishwas Rajashekar <dev@vrajashkr.com>"
+pkgname=firmware-samsung-lt03lte
+pkgdesc="Firmware for Samsung Galaxy Note 10.1 2014 LTE"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+_cfg_commit="5a1eb40e80f9de6c6bad9d0cd1438339c41af3ad"
+_cfg_url="https://gitlab.com/Eisenbahnfan/exynos5-firmware/-/raw/$_cfg_commit"
+source="
+	30-touchscreen-firmware.files
+	maxtouch.cfg::$_cfg_url/mXT1664S_n.cfg
+"
+
+package() {
+	# Touchscreen
+	install -Dm644 "$srcdir/maxtouch.cfg" \
+		-t "$pkgdir/lib/firmware/postmarketos/"
+	install -Dm644 "$srcdir/30-touchscreen-firmware.files" \
+		-t "$pkgdir/usr/share/mkinitfs/files/"
+
+}
+
+sha512sums="
+d92d73d06d88371d8842cca02b9a396414d6f9e879c74afd8fd540c76a97edbd8655d903815a2aed508785b3fe96fa5798fbd1ceb918098b8b788555ba4267cf  30-touchscreen-firmware.files
+9644a57849ed208037acd65e7f2341aeef8a1298b69d63e631c381d1cf33b19f78bfefa29b3a6110ba9d55468701224605acdce4ac9ba2d36f2fe545f03a608d  maxtouch.cfg
+"

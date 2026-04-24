@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Create mount point and /efs mount point in fstab
+if ! grep -q /efs /etc/fstab; then
+	mkdir -p /efs
+	echo "/dev/disk/by-partlabel/EFS	/efs	auto	ro	0	0" >> /etc/fstab
+fi
+
+if ! grep -q /vendor /etc/fstab; then
+	mkdir -p /vendor
+	echo "/dev/disk/by-partlabel/VENDOR	/vendor 	auto	ro	0	0" >> /etc/fstab
+fi
+
+if ! grep -q /sdcard1 /etc/fstab; then
+	mkdir -p /sdcard1
+	echo "/dev/mmcblk1p1	/sdcard1 	auto	rw	0	0" >> /etc/fstab
+fi

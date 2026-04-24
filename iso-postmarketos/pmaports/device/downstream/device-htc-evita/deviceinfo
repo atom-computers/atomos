@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="HTC One XL"
+deviceinfo_manufacturer="HTC"
+deviceinfo_codename="htc-evita"
+deviceinfo_year="2012"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1280"
+deviceinfo_dev_touchscreen="/dev/input/event2"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_offset_base="0x80400000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01700000"
+deviceinfo_flash_offset_second="0x00f00000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_pagesize="2048"
+

@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+
+pkgname=linux-leeco-zl1
+pkgver=3.18.140
+pkgrel=2
+pkgdesc="LeEco Le Pro3 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="leeco-zl1"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_leeco_msm8996"
+_commit="d90c4da00221a7f3db81be68ff1ae52a3558a789"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+abc3572cafd4263b6c2d63a926699fda219b5d206854e1cf6e8d75831b1d8323a42a710a08dbd44d2e0aabd56b1c10e0c1fd03508a1cdc0fe9800f66d0cf6336  linux-leeco-zl1-d90c4da00221a7f3db81be68ff1ae52a3558a789.tar.gz
+729a46e13c63f606c837661336837a4862d7844b689edadac56b4f7044ab3804b914b83a5868ffd4a2d4f6cf428ce35385afee4b009a906b28bdc6a6116f77a3  config-leeco-zl1.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

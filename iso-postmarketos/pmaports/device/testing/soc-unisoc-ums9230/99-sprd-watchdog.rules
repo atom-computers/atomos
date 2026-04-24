@@ -1,0 +1,1 @@
+ACTION=="add", SUBSYSTEM=="rpmsg", ATTR{name}=="pm_ctl0", RUN+="/bin/sh -c 'echo -n watchdog on > /dev/$name'"

@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/fog-stock_defconfig
+maintainer="Statzar <azurestatzar@gmail.com>"
+pkgname=linux-xiaomi-fog
+pkgver=4.19.306
+pkgrel=0
+pkgdesc="Xiaomi Redmi 10C kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-fog"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	xz
+"
+
+# Source
+_repository="A14-fog"
+_commit="1e353e04e95bf0e4531a3b623e934a44aaeeb1f3"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/SourceLab081/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+6e7031306dedd70c726989ba34dc22e586b3d74ceeaa2777a942f6d8a2888b031aaf0930764aa22a046d26736753e9572461caa22da3922bc2b42b66c95689e7  linux-xiaomi-fog-1e353e04e95bf0e4531a3b623e934a44aaeeb1f3.tar.gz
+53f68d9a00b2855ea1122a6b8624631a68ec83065dcbf561ed746ccef75cfa92e8be844f0f461eedacb3c5ff4aa69155f9ad7ef19e3f8a6d0a2a958a90d9c1b3  config-xiaomi-fog.aarch64
+"

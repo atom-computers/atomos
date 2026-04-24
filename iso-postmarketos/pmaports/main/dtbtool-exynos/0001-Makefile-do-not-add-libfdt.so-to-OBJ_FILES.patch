@@ -1,0 +1,33 @@
+From 3131795b676e3e533f521449fa4f09d71573df20 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 30 Jun 2025 16:12:15 +0200
+Subject: [PATCH] Makefile: do not add libfdt.so to OBJ_FILES
+
+In clean target we remove obj files, and we should not remove system
+libraries. Instead add -lfdt to link to the library.
+---
+ Makefile | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index e548cb39c4d7..9f2a841ba7c8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,11 +1,11 @@
+-OBJ_FILES := dtbtool-exynos.o /usr/lib/libfdt.so
++OBJ_FILES := dtbtool-exynos.o
+ CFLAGS := -O2 -fomit-frame-pointer -Wall
+ 
+ all: dtbTool-exynos
+ 
+ dtbTool-exynos: $(OBJ_FILES)
+-	$(CC) $(CFLAGS) -o $@ $^
++	$(CC) $(CFLAGS) -o $@ $^ -lfdt
+ 	strip $@
+ 
+ clean:
+-	rm -f $(OBJ_FILES)
++	rm -f dtbTool-exynos $(OBJ_FILES)
+-- 
+2.50.0
+

@@ -1,0 +1,13 @@
+diff --git a/drivers/media/video/exynos/fimc-lite/fimc-lite-core.h b/drivers/media/video/exynos/fimc-lite/fimc-lite-core.h
+index 2c46c8b..a8a0a2e 100644
+--- a/drivers/media/video/exynos/fimc-lite/fimc-lite-core.h
++++ b/drivers/media/video/exynos/fimc-lite/fimc-lite-core.h
+@@ -295,7 +295,7 @@ static inline void user_to_drv(struct v4l2_ctrl *ctrl, s32 value)
+ 	ctrl->cur.val = ctrl->val = value;
+ }
+ 
+-inline struct flite_fmt const *find_flite_format(struct v4l2_mbus_framefmt *mf);
++struct flite_fmt const *find_flite_format(struct v4l2_mbus_framefmt *mf);
+ 
+ /*
+  * Add buf to the capture active buffers queue.

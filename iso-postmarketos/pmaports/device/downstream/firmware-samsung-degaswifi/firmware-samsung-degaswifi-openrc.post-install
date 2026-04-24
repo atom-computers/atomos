@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Enable sd8x-wlan init script
+rc-update add sd8887-init default

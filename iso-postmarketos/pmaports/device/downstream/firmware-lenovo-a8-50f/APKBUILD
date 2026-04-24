@@ -1,0 +1,28 @@
+pkgname=firmware-lenovo-a8-50f
+pkgver=1
+pkgrel=0
+_commit="6f772d60dd5650df133adf19ff32dfb6f17fc017"
+pkgdesc="Firmware for Lenovo TAB 2 A8-50F"
+url="https://github.com/Oreeeee/firmware-lenovo-a8-50f"
+arch="aarch64"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/firmware-lenovo-a8-50f-$_commit"
+
+_fileswifi="ROMv2_lm_patch_1_0_hdr.bin ROMv2_lm_patch_1_1_hdr.bin WIFI_RAM_CODE_6735 WMT_SOC.cfg"
+_filesfm="mt6627/mt6627_fm_v1_coeff.bin mt6627/mt6627_fm_v1_patch.bin mt6627/mt6627_fm_v2_coeff.bin mt6627/mt6627_fm_v2_patch.bin mt6627/mt6627_fm_v3_coeff.bin mt6627/mt6627_fm_v3_patch.bin mt6627/mt6627_fm_v4_coeff.bin mt6627/mt6627_fm_v4_patch.bin mt6627/mt6627_fm_v5_coeff.bin mt6627/mt6627_fm_v5_patch.bin"
+package() {
+	for _i in $_fileswifi; do
+		install -Dm644 "$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_filesfm; do
+		install -Dm644 "$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="
+0b50eb91c738f73850bff8c1465d50e229b736827db0d5027cc28516ef3cfb835505caca3daa02093b953603f75a8a99b0d5204b93e3e34b4dbffd7ea937eccb  firmware-lenovo-a8-50f-6f772d60dd5650df133adf19ff32dfb6f17fc017.tar.gz
+"

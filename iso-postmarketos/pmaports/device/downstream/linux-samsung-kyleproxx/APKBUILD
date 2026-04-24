@@ -1,0 +1,60 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/bcm21664_hawaii_ss_kylepro_rev00_lineage_defconfig
+
+pkgname=linux-samsung-kyleproxx
+pkgver=3.4.113
+pkgrel=2
+pkgdesc="Kernel fork for Samsung Galaxy Trend & Samsung Galaxy S Duos 2"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-kyleproxx"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions than GCC 9)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_kyleproxx"
+_commit="026cf3b3e97ec40aa1c0c52837a318725786f05a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Samsung-KYLEPROXX/$_repository/archive/$_commit.tar.gz
+	$_config
+	00_return_address.patch
+	02_screen_reset.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+b66ab7d8ed557ed095b059beb7b37d196a7290e6c8364560126a94f696718c4a61f99b1e21700d9a4b50c569243e4e2cbfc9fbd9d9517ca49cfa32f31525c27f  linux-samsung-kyleproxx-026cf3b3e97ec40aa1c0c52837a318725786f05a.tar.gz
+04b89ddacf9ad82ef18520a548727044ea8a5bc19ebd84db5ed1ed421825c10438ff6adeaa4d40a87a3b0f5e7834cc9f0e251fe9429cbc1b6bd57db256769da8  config-samsung-kyleproxx.armv7
+c40eaa11547f5bc2b1ff965506bdfe3015ff16e4b5ad9ccb3b8134ceafd1d32407c4ef2b213e02e036ce1e9bdcbfe768dff7d4b054bec77705a176c1f783b6f5  00_return_address.patch
+c0a59be648ef646650c83b5d135daa05aae300c7ad5056d49f1b3f9967c4d7f337b0ddb8ae319b11e43c17aaf5fc9dcc9724463d265c1d765dc85c86f612f4ea  02_screen_reset.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

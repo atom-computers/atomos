@@ -1,0 +1,6 @@
+# KEY_VOLUMEUP
+keycode 115 = Up
+# KEY_VOLUMEDOWN
+keycode 114 = Down
+# KEY_POWER
+keycode 116 = Return

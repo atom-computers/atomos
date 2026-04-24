@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-bananapi-bpi-m2-zero
+pkgdesc="Banana Pi BPI-M2 Zero"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-bananapi-bpi-m2-zero
+	postmarketos-base
+	u-boot-bananapi-bpi-m2-zero
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-load.conf
+"
+_pmb_recommends="
+	firmware-bananapi-bpi-m2-zero
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+77fbb473ec515616bad55051232bd729d1e94fd082b63f03514e4da4fe670afd2f071ba0e020a71fb4d43ddaec75149b65bbd980e9a7c7c0843b95994692f898  deviceinfo
+4dc0e51a571d082212128e9a5d0cfd1a8c572253e8cf8bfdb68d656b9dd05ef68568440c3360e05c466ede33ba20a53900b5908995a775668e70783735d3ddbd  modules-load.conf
+"

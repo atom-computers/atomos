@@ -1,0 +1,21 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="PINE64 PinePhone Don't be evil devkit"
+deviceinfo_manufacturer="PINE64"
+deviceinfo_codename="pine64-dontbeevil"
+deviceinfo_year="2019"
+deviceinfo_dtb_shortts="allwinner/sun50i-a64-dontbeevil"
+deviceinfo_dtb_longts="allwinner/sun50i-a64-dontbeevil-longts"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="720"
+deviceinfo_screen_height="1440"
+
+# Bootloader related
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_sd_embed_firmware="u-boot/pine64-lts/u-boot-sunxi-with-spl.bin:8"

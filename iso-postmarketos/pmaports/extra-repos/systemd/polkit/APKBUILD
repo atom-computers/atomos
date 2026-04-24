@@ -1,0 +1,111 @@
+# Forked from Alpine to rebuild with systemd support
+maintainer="Jane Rachinger <jane400+pmaports@postmarketos.org>"
+pkgname=polkit
+_pkgver=127
+pkgver=9999$_pkgver
+pkgrel=1
+pkgdesc="Application development toolkit for controlling system-wide privileges"
+url="https://github.com/polkit-org/polkit"
+arch="all"
+license="GPL-2.0-or-later"
+# pmb:strict: force zap after building this package so we don't still have
+#             systemd-stage0 installed
+# !check: needs a functioning dbus daemon
+# !pmb:crossdirect: otherwise we see lto1: fatal error: compiler does not support ZSTD LTO compression
+options="suid pmb:strict !check !pmb:crossdirect"
+makedepends="
+	dbus-dev
+	duktape-dev
+	systemd-stage0-dev
+	systemd-stage0-libs
+	expat-dev
+	glib-dev
+	gobject-introspection-dev
+	linux-pam-dev
+	meson
+	perl
+	"
+pkgusers="polkitd"
+pkggroups="polkitd"
+install="$pkgname.pre-install $pkgname.pre-upgrade"
+subpackages="
+	$pkgname-dev
+	$pkgname-libs
+	$pkgname-doc
+	$pkgname-lang
+	$pkgname-systemd
+	"
+source="https://github.com/polkit-org/polkit/archive/refs/tags/$_pkgver/polkit-$_pkgver.tar.gz
+	alpine-polkit.pam
+	"
+builddir="$srcdir/polkit-$_pkgver"
+# Not running 'systemctl preset' on polkit
+# Reasoning from fedora:
+#  # The implied (systemctl preset) will fail and complain, but the macro hides
+#  # and ignores the fact.  This is in fact what we want, polkit.service does not
+#  # have an [Install] section and it is always started on demand.
+# https://src.fedoraproject.org/rpms/polkit/blob/rawhide/f/polkit.spec
+
+# secfixes:
+#   0.120-r2:
+#     - CVE-2021-4034
+#   0.119-r0:
+#     - CVE-2021-3560
+
+build() {
+	msg 'Building with systemd'
+	_build systemd -Dsession_tracking="logind"
+}
+
+_build() {
+	local outdir="$1"
+	shift
+	abuild-meson \
+		-Db_lto=true \
+		-Dtests="$(want_check && echo true || echo false)" \
+		-Dman=true \
+		-Dpam_prefix=/etc/pam.d \
+		"$@" \
+		. "$outdir"
+	meson compile -C "$outdir"
+}
+
+check() {
+	meson test --print-errorlogs --no-rebuild -C systemd
+}
+
+package() {
+	depends="$pkgname-libs=$pkgver-r$pkgrel"
+	provides="$pkgname-elogind=$pkgver-r$pkgrel"
+	provider_priority=9999
+
+	DESTDIR="$pkgdir" meson install --no-rebuild -C systemd
+
+	cd "$pkgdir"
+
+	# Use our own polkit rules, upstream may change them
+	install -m644 "$srcdir"/alpine-polkit.pam etc/pam.d/polkit-1
+
+	# See polkit's configure script which tells us what permissions to set
+	chmod 4755 usr/lib/polkit-1/polkit-agent-helper-1
+	chmod 4755 usr/bin/pkexec
+}
+
+libs() {
+	provides="polkit-elogind-libs polkit-noelogind-libs"
+	provider_priority=9999
+
+	default_libs
+}
+
+dev() {
+	provides="polkit-elogind-dev polkit-noelogind-dev"
+	provider_priority=9999
+
+	default_dev
+}
+
+sha512sums="
+54b315f2ca05e957e7b9aafda16c1cddcc2266d6018c77dbf4cfe73b7d5b1569e6e07570884b9c5ecc4bdb3a29966169006aa727b089019d959208f2b53067e6  polkit-127.tar.gz
+f5102dc00d390b3a3c957b62e1712db778c7ffb7378f3d8e816c0757c11a308c5d5303e42595b0d6add9839247c773880cd34e56afacc89eb6efaadf9aae7826  alpine-polkit.pam
+"

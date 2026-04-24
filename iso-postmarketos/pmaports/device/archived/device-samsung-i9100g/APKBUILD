@@ -1,0 +1,39 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-i9100g
+pkgdesc="Samsung Galaxy SII (GT-I9100G)"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-i9100g
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	deviceinfo
+	modules-load.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi firmware"
+	depends="firmware-samsung-i9100"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+c0b887d197f51fea09973e88de14da6aae14dce69aebfe577828ca854a3e2be5b1244933af202d5c2d61efbe169a8bbc9f6e2c303b09d4ef74939f09632ae2ad  deviceinfo
+2a9b4212269ca367effb8c336cf8432498297988b3cb2b1ea4bef0ce4bcc1ed2975f8a798ef9b4c3131f7e2366e25c2c1abafe9302bee6679ed6440ba10c3d36  modules-load.conf
+"

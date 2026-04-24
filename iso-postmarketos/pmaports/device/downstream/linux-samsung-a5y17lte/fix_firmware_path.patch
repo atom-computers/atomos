@@ -1,0 +1,16 @@
+Add path for postmarket os firmware package
+
+diff --git a/drivers/base/firmware_class.c b/drivers/base/firmware_class.c
+index 68dba891b8e..dacb6c373b1 100644
+--- a/drivers/base/firmware_class.c
++++ b/drivers/base/firmware_class.c
+@@ -279,7 +279,8 @@ static const char * const fw_path[] = {
+ 	"/etc/firmware",
+ 	"/etc/firmware/wlan",
+ #endif /* CONFIG_QCOM_WIFI */
+-	"/lib/firmware"
++	"/lib/firmware",
++	"/lib/firmware/postmarketos"
+ };
+ 
+ /*

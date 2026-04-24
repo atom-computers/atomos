@@ -1,0 +1,11 @@
+[Unit]
+Description=Ayatana Indicator Session Service
+PartOf=graphical-session.target
+PartOf=ayatana-indicators.target lomiri-indicators.target
+
+[Service]
+ExecStart=/usr/libexec/ayatana-indicator-session/ayatana-indicator-session-service
+Restart=on-failure
+
+[Install]
+WantedBy=ayatana-indicators.target lomiri-indicators.target

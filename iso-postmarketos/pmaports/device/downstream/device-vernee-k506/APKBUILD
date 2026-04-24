@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-vernee-k506
+pkgdesc="Vernee Thor"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-vernee-k506 mkbootimg"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="SoC firmware (WiFi, BT, GPS, Modem, FM)"
+	depends="firmware-vernee-k506"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+a8ba9c3309716078b93aa42eba67ef0908dfea5ef2ec3d74048460bb161c036e86534e02d3a7ae5620b55b0df7448232f557ca9eabc57caa88609b1db5246f5e  deviceinfo
+d89b08ef9888faae6cb96a378421669e6119023307a3b5a109e18b7f9e2c70e1f8b240ba8f9b9d22d319fa28e416565d06074d34382f482c9b037b7ab3f4861c  kernel-cmdline.conf
+50d6784e6af1dce2e6ba18993f5c50ba88fc8a6521bfe15667dd5beddb4c948f59bb800e18b977fb86c93c37105010ce6c20f88405e73a03449ee3226aa14466  initfs-hook.sh
+"

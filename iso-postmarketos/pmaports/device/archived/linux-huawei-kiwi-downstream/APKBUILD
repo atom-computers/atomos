@@ -1,0 +1,71 @@
+# Archived: Downstream port, only for testing. Use mainline port (huawei-kiwi)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/kiwi-64_defconfig
+
+pkgname=linux-huawei-kiwi-downstream
+pkgver=3.10.108
+pkgrel=2
+pkgdesc="Huawei Honor 5X downstream kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="huawei-kiwi-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_huawei_kiwi"
+_commit="6f027fb1e3fdb54c0334b3ca87acd6f3d42e4f58"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	wlan_nv_template_builtin.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot/dt.img" "$_outdir/arch/$_carch/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$_outdir/arch/$_carch/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+sha512sums="
+ddbbc59dbf7a1cde1f66ecdc66b5e00a5633ed0ff33d0ae2b90b06eb16204abb0cbbe708f39a9b862f004f08411fb10aeb601f929a67511e2bc67ffa26574227  linux-huawei-kiwi-downstream-6f027fb1e3fdb54c0334b3ca87acd6f3d42e4f58.tar.gz
+75f4775aa76e08b16d5b41858244fac5bfd38bb44473a799112439acdb2bcbfcc19d718114f8937fbecfe5c76cd723ecbf45dcd511b933e84e5ec98bb91693a4  config-huawei-kiwi-downstream.aarch64
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+edebf62a38a558369eb914475bc341d1fedc1c0bbeb2989172f9f99a2bc57c231a995176702335cd754701449b145e0231c1f2860d9ea93e84f52916a64d8d98  wlan_nv_template_builtin.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

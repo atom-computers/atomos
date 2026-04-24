@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# This script restores the original state.
+
+# remove swclock-offset services
+rc-update -q del swclock-offset-boot boot
+rc-update -q del swclock-offset-shutdown shutdown
+
+# replace service osclock by hwclock
+rc-update -q del osclock boot
+rc-update -q add hwclock boot

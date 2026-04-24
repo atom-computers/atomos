@@ -1,0 +1,38 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-superior
+pkgdesc="Samsung Galaxy Premier"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-samsung-superior mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-load.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-samsung-superior"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+e8a6b5a43f8106679d64749ebbe374660b7eb92322ffd0af6481883cbb2468ab3cf8163b1d1aaf383aac7ba8b18e7b9c3a733b40f8c748f2c50a9450a1ccdb67  deviceinfo
+5b738a4737f36e0c47f88aee698805eac3a72c35389ffe4a8a3182b5830fdd783208fb459c79f2f17d13a5b1f322333ca4dcc416b4f94bc79c930ab3f0370d1d  kernel-cmdline.conf
+761387a44a2280589336a69b24a24bc33e81aebc441f4033ffd992820edee6b386cc817d7b8519cbf52467a56180ec6b9a88929ee54e73f01217107ef206cab4  modules-load.conf
+"

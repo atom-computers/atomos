@@ -1,0 +1,10 @@
+# This config is primarily to support setting a common wallpaper for pmOS UIs.
+# General i3 configuration should still be done in ~/.config/i3/
+exec --no-startup-id feh --no-fehbg --bg-fill /usr/share/wallpapers/postmarketos.jpg
+# Include configuration from $HOME and /etc/xdg. Device packages that need to
+# ship a custom config should use /etc/xdg
+include $HOME/.config/i3/config
+include /etc/xdg/i3/config
+# If a config is not available in $HOME, run the config wizard. This is a noop
+# if the config exists
+exec --no-startup-id i3-config-wizard

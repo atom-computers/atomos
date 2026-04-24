@@ -1,0 +1,43 @@
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index 857ae112..856486d2 100755
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -76,8 +76,9 @@ zinstall install: vmlinux
+ %.dtb: scripts
+ 	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
+ 
+-dtbs: scripts
+-	$(Q)$(MAKE) $(build)=$(boot)/dts dtbs
++PHONY += dtbs dtbs_install
++dtbs dtbs_install: prepare scripts
++	$(Q)$(MAKE) $(build)=$(boot)/dts $@
+ 
+ Image.gz-dtb: vmlinux scripts dtbs
+ 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+@@ -94,6 +95,7 @@ define archhelp
+   echo  '* Image.gz      - Compressed kernel image (arch/$(ARCH)/boot/Image.gz)'
+   echo  '  Image         - Uncompressed kernel image (arch/$(ARCH)/boot/Image)'
+   echo  '* dtbs          - Build device tree blobs for enabled boards'
++  echo  '  dtbs_install  - Install dtbs to $(INSTALL_DTBS_PATH)'
+   echo  '  install       - Install uncompressed kernel'
+   echo  '  zinstall      - Install compressed kernel'
+   echo  '                  Install using (your) ~/bin/installkernel or'
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index 9370074e..c972daa2 100755
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -7,7 +7,7 @@ dtb-$(CONFIG_SOC_EXYNOS8890) += exynos8890-evt1-smdk8890.dtb
+ # Device specific DTBs
+ dtb-$(CONFIG_DTB_J6LTE) += exynos7870-j6lte_cis_ser_00.dtb exynos7870-j6lte_cis_ser_02.dtb
+ 
+-targets += dtbs
++targets += dtbs dtbs_install
+ 
+ DTB_NAMES := $(subst $\",,$(CONFIG_BUILD_ARM64_APPENDED_DTB_IMAGE_NAMES))
+ ifneq ($(DTB_NAMES),)
+@@ -20,3 +20,5 @@ targets += $(DTB_LIST)
+ dtbs: $(addprefix $(obj)/, $(DTB_LIST))
+ 
+ clean-files := dts/*.dtb *.dtb
++
++dtbs_install: $(addsuffix _dtbinst_, $(dtb-y))

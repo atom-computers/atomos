@@ -1,0 +1,63 @@
+# Kernel config based on: arch/arm/configs/v3702_defconfig
+
+pkgname=linux-wiko-lenny3
+pkgver=3.18.19
+pkgrel=7
+pkgdesc="Wiko Lenny 3 Kernel"
+arch="armhf"
+_carch="arm"
+_flavor="wiko-lenny3"
+url="https://wikomobile.com"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_commit="297991396bbbe96f9f23e3ff1a2aa1984045479f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/linux-wiko-lenny3/archive/$_commit.tar.gz
+	$_config
+	00_disable_drvgen.patch
+	01_add_generated_cust_dtsi.patch
+	02_fix_various_include_directives.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+builddir="$srcdir/linux-wiko-lenny3-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+3ca55687464e092bb82da37bd89d6a9b0e79f80e452eb4d1c9bd278a170c473218301fc8559744188f1e1f3c51d0a7faf259f9ff238a22f0f48d64b987b7db9e  linux-wiko-lenny3-297991396bbbe96f9f23e3ff1a2aa1984045479f.tar.gz
+74ecd467ded8a641e901b1165efd6cc2f1547a2bbd5c9ec6772fefceaccf7a8431177775bfafa7a050ddc8f52c8701a01c6d796482b7725201cc0446a3d991c0  config-wiko-lenny3.armhf
+8a04940e6f5424df67a3cc4c75dd19be1c9b560859e9db0ae67b766d52982a46156b601698afb80f90b9b99f63ef74e1f6147902b43ec97c25d2b75ba2f8d2b3  00_disable_drvgen.patch
+adda36d779a79b2f840361a7df91028fdb86dd9aa7d2b431b8bd1fc674175d6c5bd098f7a6765cc4e3f7b3428ff7d35d9f5bac31cb7602ea270a6affe843a2e9  01_add_generated_cust_dtsi.patch
+42a7ef954d517f945bdbca16d92aff63b6b07260d666119dc96c33db577231f907c7968d9466bf163c397a37f4fb23a6886047b1eb821aa14687d43442c8e615  02_fix_various_include_directives.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

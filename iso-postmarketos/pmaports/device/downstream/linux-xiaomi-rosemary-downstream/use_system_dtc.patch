@@ -1,0 +1,16 @@
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index b442d12ff2fe..5fe57a7d5320 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -312,7 +312,7 @@ $(obj)/%.dtb.S: $(obj)/%.dtb
+ quiet_cmd_dtc = DTC     $@
+ cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
+ 	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
+-	$(srctree)/scripts/dtc/dtc_overlay -@ -O dtb -o $@ -b 0 \
++	dtc -@ -O dtb -o $@ -b 0 \
+ 		$(addprefix -i,$(dir $<) $(DTC_INCLUDE)) $(DTC_FLAGS) \
+ 		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
+ 	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
+-- 
+2.36.1
+

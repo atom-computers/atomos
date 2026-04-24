@@ -1,0 +1,47 @@
+diff --git a/ucm2/Qualcomm/sm8650/APS2/HiFi.conf b/ucm2/Qualcomm/sm8650/APS2/HiFi.conf
+index 5927698..aa932f8 100644
+--- a/ucm2/Qualcomm/sm8650/APS2/HiFi.conf
++++ b/ucm2/Qualcomm/sm8650/APS2/HiFi.conf
+@@ -54,42 +54,6 @@ SectionDevice."Headphones" {
+ 	}
+ }
+ 
+-SectionDevice."Headset" {
+-	Comment "Headset microphone"
+-
+-	ConflictingDevice [
+-		"Mic"
+-	]
+-
+-	Include.wcdmice.File "/codecs/wcd939x/HeadphoneMicEnableSeq.conf"
+-	Include.wcdmicd.File "/codecs/wcd939x/HeadphoneMicDisableSeq.conf"
+-	Include.txmhpe.File "/codecs/qcom-lpass/tx-macro/SoundwireMic1EnableSeq.conf"
+-	Include.txmhpd.File "/codecs/qcom-lpass/tx-macro/SoundwireMicDisableSeq.conf"
+-
+-	Value {
+-		CaptureChannels 1
+-		CapturePriority 200
+-		CapturePCM "hw:${CardId},2"
+-		CaptureMixerElem "ADC2"
+-		JackControl "Headset Jack"
+-	}
+-}
+-
+-SectionDevice."Mic" {
+-	Comment "Bottom Microphone"
+-
+-	Include.txmhpe.File "/codecs/qcom-lpass/tx-macro/SoundwireMic8EnableSeq.conf"
+-	Include.txmhpd.File "/codecs/qcom-lpass/tx-macro/SoundwireMicDisableSeq.conf"
+-
+-	Value {
+-		CaptureChannels 1
+-		CapturePriority 100
+-		CapturePCM "hw:${CardId},3"
+-		CaptureMixerElem "SMIC8"
+-	}
+-}
+-
+-
+ SectionDevice."HDMI0" {
+ 		Comment "DisplayPort 0 playback"
+ 

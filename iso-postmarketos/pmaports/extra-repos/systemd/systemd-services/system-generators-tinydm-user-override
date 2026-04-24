@@ -1,0 +1,34 @@
+#!/bin/sh
+# tinydm user override generator
+
+set -e
+
+# Generator arguments
+normal_dir="$1"
+early_dir="$2"
+late_dir="$3"
+
+user_file="/etc/default_user"
+service_name="tinydm.service"
+override_dir="$normal_dir/$service_name.d"
+
+# Read username
+if [ -f "$user_file" ]; then
+    username=$(cat "$user_file")
+    user_uid=$(id -u "$username" 2>/dev/null || echo "10000")
+    user_gid=$(id -g "$username" 2>/dev/null || echo "10000")
+else
+    # Fallback for mutable installs
+    user_uid="10000"
+    user_gid="10000"
+fi
+
+# Create override directory
+mkdir -p "$override_dir"
+
+# Generate override
+cat > "$override_dir/10-user.conf" << EOF
+[Service]
+User=$user_uid
+Group=$user_gid
+EOF

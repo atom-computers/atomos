@@ -1,0 +1,24 @@
+maintainer="exkc <exxxxkc@getgoogleoff.me>"
+pkgname=firmware-xiaomi-once
+pkgver=1
+pkgrel=0
+pkgdesc="Broadcom firmware for Xiaomi Mi Box 3"
+url="https://github.com/LibreELEC/brcmfmac_sdio-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="c70355f9ec6d015b91a5c3199aa08b433e2f7caf"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+_fwdir="/lib/firmware/postmarketos/brcm"
+builddir="$srcdir/brcmfmac_sdio-firmware-$_commit"
+
+package() {
+	install -Dm644 brcmfmac43455-sdio.bin "$pkgdir/$_fwdir"/brcmfmac43455-sdio.xiaomi,once.bin
+	install -Dm644 brcmfmac43455-sdio.txt "$pkgdir/$_fwdir"/brcmfmac43455-sdio.xiaomi,once.txt
+}
+
+sha512sums="
+e9d358d6942e361b9019a8d50c744826e2e6cb42326241e6b9f8b8fb50ac1567de8a9ef36204e7b39c935efd7b17a8c1e918243ba5813595b1652b870aff2ce6  firmware-xiaomi-once-c70355f9ec6d015b91a5c3199aa08b433e2f7caf.tar.gz
+"

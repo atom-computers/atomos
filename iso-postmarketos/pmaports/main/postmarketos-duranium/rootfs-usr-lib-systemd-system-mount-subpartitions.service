@@ -1,0 +1,16 @@
+[Unit]
+Description=Mount Subpartitions
+DefaultDependencies=no
+After=systemd-udev-settle.service
+Before=systemd-repart.service
+Before=initrd-root-device.target
+Before=systemd-veritysetup@.service
+Before=systemd-cryptsetup@.service
+OnFailure=emergency.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/duranium/mount-subpartitions
+
+[Install]
+WantedBy=initrd.target

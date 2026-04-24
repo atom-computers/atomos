@@ -1,0 +1,5 @@
+#!/bin/sh
+# Remove wlanarmani service from sysinit runlevel
+rc-update del wlanarmani sysinit || true
+# Enable openrc service to load wlan module for wifi functionality
+rc-update add wlanarmani default || true

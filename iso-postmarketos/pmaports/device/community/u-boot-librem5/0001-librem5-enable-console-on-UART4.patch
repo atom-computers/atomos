@@ -1,0 +1,25 @@
+From 5b08f60e47ecb6ac6174ae175f8ebb90a826dcb2 Mon Sep 17 00:00:00 2001
+From: Clayton Craft <clayton@craftyguy.net>
+Date: Mon, 31 Jan 2022 16:37:13 -0800
+Subject: [PATCH] librem5: enable console on UART4
+
+---
+ include/configs/librem5.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/librem5.h b/include/configs/librem5.h
+index 871e7ea650..2be761a86a 100644
+--- a/include/configs/librem5.h
++++ b/include/configs/librem5.h
+@@ -41,7 +41,7 @@
+ 
+ #define CONFIG_USBD_HS
+ 
+-#define CONSOLE_ON_UART1
++#define CONSOLE_ON_UART4
+ 
+ #ifdef CONSOLE_ON_UART1
+ #define CONFIG_MXC_UART_BASE		UART1_BASE_ADDR
+-- 
+2.35.2
+

@@ -1,0 +1,113 @@
+maintainer=""
+pkgname=firmware-oneplus-oneplus3t
+pkgver=2
+pkgrel=1
+pkgdesc="Firmware for OnePlus 3T"
+url="https://gitlab.com/DrGit/firmware-oneplus3"
+arch="aarch64"
+license="proprietary"
+makedepends="mtools pil-squasher qca-swiss-army-knife"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+replaces="linux-firmware-ath10k"
+_gpufw="https://github.com/TheMuppets/proprietary_vendor_oneplus/raw/lineage-17.1/oneplus3/proprietary/vendor/firmware"
+_files="adsp.b00
+	adsp.b01
+	adsp.b02
+	adsp.b03
+	adsp.b04
+	adsp.b05
+	adsp.b06
+	adsp.b08
+	adsp.b09
+	adsp.mdt
+	bdwlan30.bin
+	modem.b00
+	modem.b01
+	modem.b02
+	modem.b03
+	modem.b04
+	modem.b05
+	modem.b06
+	modem.b07
+	modem.b08
+	modem.b09
+	modem.b10
+	modem.b11
+	modem.b12
+	modem.b13
+	modem.b15
+	modem.b16
+	modem.b17
+	modem.b18
+	modem.b19
+	modem.b20
+	modem.mdt
+	mba.mbn
+	slpi.b00
+	slpi.b01
+	slpi.b02
+	slpi.b03
+	slpi.b04
+	slpi.b05
+	slpi.b06
+	slpi.b07
+	slpi.b08
+	slpi.b09
+	slpi.b10
+	slpi.b11
+	slpi.b12
+	slpi.b13
+	slpi.b14
+	slpi.mdt
+	venus.b00
+	venus.b01
+	venus.b02
+	venus.b03
+	venus.b04
+	venus.mdt
+"
+source="$pkgname-$pkgver-NON-HLOS.bin::$url/-/raw/master/oneplus3t/NON-HLOS.bin
+	$_gpufw/a530_zap-pro.elf
+	20-adreno-gpu-firmware.files
+	board-2.json
+"
+
+_mdtnames="adsp modem slpi venus"
+_mbns="a530_zap.mbn adsp.mbn mba.mbn modem.mbn slpi.mbn venus.mbn"
+
+unpack() {
+	# Extract blobs
+	for _i in $_files; do
+		mcopy -v -b -p -n -i $srcdir/$pkgname-$pkgver-NON-HLOS.bin ::image/$_i $_i
+	done
+}
+
+package() {
+	# Squash firmware segments into mbns
+	for _i in $_mdtnames; do
+		pil-squasher "$_i.mbn" "$_i.mdt"
+	done
+
+	# Move zap shader to the same directory as the other mbns
+	mv "$srcdir/a530_zap-pro.elf" "a530_zap.mbn"
+
+	# Install mbns
+	for _i in $_mbns; do
+		install -Dm644 $_i "$pkgdir/lib/firmware/qcom/msm8996/oneplus3t/$_i"
+	done
+
+	# Install 20-adreno-gpu-firmware.files
+	install -Dm644 "$srcdir/20-adreno-gpu-firmware.files" \
+		"$pkgdir/usr/share/mkinitfs/files/20-adreno-gpu-firmware.files"
+
+	# Create and install ath10k board file
+	ath10k-bdencoder -c board-2.json
+	install -Dm644 board-2.bin -t "$pkgdir/lib/firmware/ath10k/QCA6174/hw3.0"
+}
+
+sha512sums="
+3da90f51fc39c3db4f0f39c07eda318b0b1fc85f7fbb8f21bd31a3ae5c73a4b39ba630a9521a7c5ee844e14c24d084f5d42e4c2ffd2bdee541e50ec7b1629b14  firmware-oneplus-oneplus3t-2-NON-HLOS.bin
+237c82252f1ff44a454bed5f84a8dcf74e0f6ea6e5674e7d5aa32436fcf20d8c9df5c6edc4b4bc151e5fdce4694c1d14edc8ba0804ceb738f3fb67eff950aeff  a530_zap-pro.elf
+e3445fe6aa3e14cb45b593e5d7a1fb786f22f0b5bc82862b4776b17fe2a086950d6f59c310359d77605d1d0cba6beaaf0879939c5239d7dc6248a4b03dc75a4a  20-adreno-gpu-firmware.files
+8deca102436a21d97911f9a2a819ec52991a3089a7c08acc1c919791a6dc77e2ebb9902ada7be9370cb9160f0b8a83b3b402c034f6da97f0c3245a9577570d47  board-2.json
+"

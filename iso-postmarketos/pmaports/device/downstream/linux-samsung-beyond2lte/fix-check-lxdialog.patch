@@ -1,0 +1,35 @@
+diff --git a/scripts/kconfig/Makefile b/scripts/kconfig/Makefile
+index 844bc9da..911c6ba1 100644
+--- a/scripts/kconfig/Makefile
++++ b/scripts/kconfig/Makefile
+@@ -192,6 +192,8 @@ clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
+ clean-files     += mconf qconf gconf nconf
+ clean-files     += config.pot linux.pot
+ 
++HOSTLOADLIBES_mconf   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
++
+ # Check that we have the required ncurses stuff installed for lxdialog (menuconfig)
+ PHONY += $(obj)/dochecklxdialog
+ $(addprefix $(obj)/,$(lxdialog)): $(obj)/dochecklxdialog
+@@ -217,8 +219,6 @@ HOSTLOADLIBES_gconf	= `pkg-config --libs gtk+-2.0 gmodule-2.0 libglade-2.0`
+ HOSTCFLAGS_gconf.o	= `pkg-config --cflags gtk+-2.0 gmodule-2.0 libglade-2.0` \
+                           -Wno-missing-prototypes
+ 
+-HOSTLOADLIBES_mconf   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
+-
+ HOSTLOADLIBES_nconf	= $(shell \
+ 				pkg-config --libs menu panel ncurses 2>/dev/null \
+ 				|| echo "-lmenu -lpanel -lncurses"  )
+diff --git a/scripts/kconfig/lxdialog/check-lxdialog.sh b/scripts/kconfig/lxdialog/check-lxdialog.sh
+index 9d2a4c58..364eaecb 100644
+--- a/scripts/kconfig/lxdialog/check-lxdialog.sh
++++ b/scripts/kconfig/lxdialog/check-lxdialog.sh
+@@ -43,7 +43,7 @@ trap "rm -f $tmp" 0 1 2 3 15
+ check() {
+         $cc -x c - -o $tmp 2>/dev/null <<'EOF'
+ #include CURSES_LOC
+-main() {}
++int main() { return 0; }
+ EOF
+ 	if [ $? != 0 ]; then
+ 	    echo " *** Unable to find the ncurses libraries or the"       1>&2

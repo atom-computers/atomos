@@ -1,0 +1,47 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-lg-lenok-downstream
+pkgdesc="LG G Watch R (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-lg-lenok-adsp
+	firmware-lg-lenok-wifi
+	firmware-qcom-adreno-a330
+	linux-lg-lenok-downstream
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8226
+	"
+makedepends="devicepkg-dev"
+source="
+	90-android-touch-dev.rules
+	deviceinfo
+	fb_fix.sh
+	initfs-hook.sh
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 -t "$pkgdir"/etc/udev/rules.d \
+		"$srcdir"/90-android-touch-dev.rules
+	install -Dm644 -t "$pkgdir"/etc/profile.d \
+		"$srcdir"/fb_fix.sh
+}
+
+sha512sums="
+a36ba9017df3b4be233783096c303abafa873dcdf50f6357b82f3c5526fd161a1914dafe143377cb5982955108b987890638b51911d0dd339172554e39a82d9f  90-android-touch-dev.rules
+849ab87df71b34f07af178590d9ca5770d38b89fd883c5cf0db09d40e1bd6b66040df2ceb2ac73e0a5e7282c3773bfd3af1284da1e439aa2e34919414aecaa8c  deviceinfo
+1fc5a7609d8f79f74f29d55ce492dc6b77bb247da1b79abc1361e5e9072b5283816cef02c4cc283300031d708733c5fdbed94f539ae1c16b1dca96bf4d512234  fb_fix.sh
+d29105805adcd79d4f73c2f2c4483a2c627dc7b70acb77f43d085742ef930407c9b1423f7020c34f38e8a09f40cadd991b9acae23e936c90d6a4c0900250da22  initfs-hook.sh
+"

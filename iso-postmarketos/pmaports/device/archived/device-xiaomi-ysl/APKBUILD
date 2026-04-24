@@ -1,0 +1,36 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-ysl
+pkgdesc="Xiaomi Redmi S2/Y2"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-ysl
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8953
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+597f01e24d2555893bc9acfa21136d1e5031d82d96698e596937d977c9be4c6defe0cab9fde4bb89b3186af74a065e03beeb2efcac4e25964d7d41370402e594  deviceinfo
+b5e4f6dec04a9a7d7231a62d8b60e17a9a5265768eb80050225c0f57b8188ec108d8b7155ccb70ba95201906b653d19ef33a0ff04072da040b0242d7032b103d  modules-initfs
+"

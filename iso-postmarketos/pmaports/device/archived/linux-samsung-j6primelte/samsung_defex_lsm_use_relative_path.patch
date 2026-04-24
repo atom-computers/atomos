@@ -1,0 +1,14 @@
+diff -ur a/security/samsung/defex_lsm/cert/defex_cert.S b/security/samsung/defex_lsm/cert/defex_cert.S
+--- a/security/samsung/defex_lsm/cert/defex_cert.S	2021-01-30 00:06:40.000000000 +0100
++++ b/security/samsung/defex_lsm/cert/defex_cert.S	2021-08-16 22:07:20.313587993 +0200
+@@ -26,8 +26,8 @@
+ 
+ GLOBAL(defex_public_key_start)
+ #ifdef DEFEX_DEBUG_ENABLE
+-	.incbin "security/samsung/defex_lsm/cert/pubkey_eng.der"
++	.incbin "pubkey_eng.der"
+ #else
+-	.incbin "security/samsung/defex_lsm/cert/pubkey_user.der"
++	.incbin "pubkey_user.der"
+ #endif
+ GLOBAL(defex_public_key_end)

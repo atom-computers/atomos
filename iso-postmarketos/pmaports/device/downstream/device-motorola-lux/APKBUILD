@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-motorola-lux
+pkgdesc="Motorola Moto X Play"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-motorola-lux mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf initfs-hook.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+5d5cb7cf5bfd7821b1a1d4cb60ad00f60c9850fdad90c38f03aebe68b5005ad37688c6261daffa314a311fe198162ff70ab1374a5afe0b52f69fe79ec8678cd4  deviceinfo
+acef52c3fe7d34f38783fb28b4911e3b7b42bfdfe95104ff516669b2351743a7adbd60349ea1f2de50c5e4345a2d40dc3a988811966bde024a695f7bb26710a5  kernel-cmdline.conf
+1777c382a73b6e45ee6b4f34b1fd996ad1bae42801dec6de6742f9bf6bf0a0fb5648a7b51ac5b79b7df6d026deca3d4b14a13fae02938e845ed564a9a741c171  initfs-hook.sh
+"

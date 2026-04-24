@@ -1,0 +1,35 @@
+maintainer=""
+pkgname=unixbench
+pkgver=6.0.0
+pkgrel=1
+pkgdesc="The original BYTE UNIX benchmark suite"
+url="https://github.com/kdlucas/byte-unixbench"
+arch="all"
+license="GPL-2.0-or-later"
+depends="perl make"
+options="!check"
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/kdlucas/byte-unixbench/archive/v$pkgver.tar.gz
+	0001-Stop-using-native-CPU-optimizations.patch
+	0002-Specify-the-C-standard.patch
+	ubench
+"
+builddir="$srcdir/byte-unixbench-$pkgver/UnixBench"
+
+build() {
+	make
+}
+
+package() {
+	install -Dm775 "$srcdir"/ubench "$pkgdir"/usr/bin/ubench
+	install -Dm775 Run "$pkgdir"/usr/share/unixbench/Run
+
+	cp -a pgms testdir Makefile src "$pkgdir"/usr/share/unixbench
+}
+
+sha512sums="
+9f30091b4300cb01235b36679aa62b5c7034dc1ebbbfe345f30622cf46fb39431acd5e206a3b2422d2c0566bf3b807968f2b70689238e593003a6a190dd24e8c  unixbench-6.0.0.tar.gz
+e2e77e0607035b43c51e9df92f62340c6d11a2c2322a75539fd31d09da25f61d4177c26a1a49ddc4ceb44c2e5abfa60db31562e267ce835c56d9ebc7bc6d1c22  0001-Stop-using-native-CPU-optimizations.patch
+4165d0204c70eb0f27ef27a214d0284ad444c77c4607d717946d13037dd649a28d3b2158fcbf2520db8c2a2c7c0b134580bd6a513ffc82aaffed35d50a390a37  0002-Specify-the-C-standard.patch
+91590bfaac3b118ad9a7ec66200ecc7b5ff88b84f5e8552c6b30fcc4436669eb4467d6b9a89d0be8682903e88b843fc4e40e3c7f90406c398449edb187ad6771  ubench
+"

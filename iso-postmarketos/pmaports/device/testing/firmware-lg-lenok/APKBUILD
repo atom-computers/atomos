@@ -1,0 +1,56 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-lg-lenok
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for LG G Watch R"
+subpackages="
+	$pkgname-adsp
+	$pkgname-modem
+	$pkgname-wifi
+	"
+url="https://github.com/FairBlobs/lenok-firmware"
+arch="armv7"
+license="proprietary"
+_commit="429c7160ee4fc73bd9885f743521b54831d09549"
+builddir="$srcdir/lenok-firmware-$_commit"
+source="$pkgname-$_commit.tar.gz::https://github.com/FairBlobs/lenok-firmware/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pkgdesc="LG G Watch R - ADSP firmware"
+
+	cd "$builddir"
+	for _i in adsp.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+modem() {
+	pkgdesc="LG G Watch R - Modem firmware"
+
+	cd "$builddir"
+	for _i in modem.* mba.*; do
+		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+	done
+}
+
+wifi() {
+	pkgdesc="LG G Watch R - WiFi/Bluetooth firmware"
+
+	cd "$builddir"
+	install -Dm644 BCM4343A0.hcd \
+		"$subpkgdir"/lib/firmware/brcm/BCM4343A0.hcd
+	install -Dm644 brcmfmac43430a0-sdio.lg,lenok.bin \
+		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430a0-sdio.lg,lenok.bin
+	install -Dm644 brcmfmac43430a0-sdio.lg,lenok.txt \
+		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430a0-sdio.lg,lenok.txt
+}
+
+sha512sums="
+9cda4cbb7e6211a2e75dc4c0681b8e8f9af230b80805eb50e4f5fb126b5d7fa46d97dd9281f76f1b4f3ec3f04d9d3858eebf5dc1167cd206bddf372764ce5d92  firmware-lg-lenok-429c7160ee4fc73bd9885f743521b54831d09549.tar.gz
+"

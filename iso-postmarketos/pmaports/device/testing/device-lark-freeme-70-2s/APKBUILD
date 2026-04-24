@@ -1,0 +1,57 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jacek Pruciak <pmos@juniorjpdj.pl>"
+pkgname=device-lark-freeme-70-2s
+pkgdesc="Lark FreeMe 70.2S"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-allwinner
+	mesa-egl
+	postmarketos-base
+	u-boot-tools
+	u-boot-lark-freeme-70-2s
+	"
+makedepends="devicepkg-dev linux-postmarketos-allwinner u-boot-tools"
+source="
+	deviceinfo
+	u-boot-script.cmd
+	"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/u-boot-script.cmd \
+		"$srcdir"/boot.scr
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# U-Boot boot script
+	install -Dm644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware (rtl8188ctv)"
+	depends="linux-firmware-rtlwifi"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+6a9954ff513e838079dcd9a3eb815430d954b5f45a3640991ca146ae11d340bc6e8f617c3cb3fe79be10fc5bd7e117a3be3936fa045cad1807aaa34324c39eed  deviceinfo
+5b8c1d440867a3cee891168a156fb428b14dfeaf0b437da3e4dc1dd1408458bde98b4ce4682dfb0c5f9c5055a0e2c34cc78ba6160b6ca64281f9721d8d02dede  u-boot-script.cmd
+"

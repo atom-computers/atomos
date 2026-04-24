@@ -1,0 +1,88 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on the stock Android one
+
+pkgname=linux-samsung-a6lte-downstream
+pkgver=3.18.140
+pkgrel=1
+pkgdesc="Samsung Galaxy A6 2018 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a6lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	gcc4
+	openssl-dev
+	perl
+"
+
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="a6lte-kernel-source"
+_commit="981969320c1cdc214cf8a1a357fab642f401a5d1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/sleirsgoevy/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	zram-zs-create-pool-null.patch
+	decon-fb-colors.patch
+	firmware-paths-fix.patch
+	disable-boot-mode-check.patch
+	uncomment-rfcomm-in-makefile.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	fix-addrconf_rt_table-nullptr-deref.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="."
+
+prepare() {
+	export ANDROID_MAJOR_VERSION=q
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	export ANDROID_MAJOR_VERSION=q
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *a6lte*.dtb)
+}
+
+package() {
+	export ANDROID_MAJOR_VERSION=q
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+c2cc5190c480de4ac2d376827c5c56a542c6644d3dbeb47956d0b90c5570b246872ecedbf5655ac5564c9f61190d23567a4c496bb4235c46f6bd7a6d8addcc68  linux-samsung-a6lte-downstream-981969320c1cdc214cf8a1a357fab642f401a5d1.tar.gz
+0addfd309a996fb5a2f16b47dd71c8da25eac9d69cc6e82057b4c0a2a5ddcfc776da183b8d0c9fef5405a5230f8001230cc0deeb3778d4396f78991aefcde2b0  config-samsung-a6lte.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+3f65a690e48f913fcb980718fae4dc03c29a6dc86eecb1e2af644488ad415de326a61d840399fb69915cbc5d56d5586f2df2287b3e7323a2927ae73a3b1b1373  zram-zs-create-pool-null.patch
+5bd204239a5daff9f990757178398707ae5ec64f823ed9ec72a8d50ebe6d5f0a3cc9743e0d775094da4b3a7566f1ccceb56f39f3b0234d08ca05e537d86271ec  decon-fb-colors.patch
+e1409844c46869ffe6ac9e028c3f38868120b6fd38dcf52ca7c1fdb98e90d2717d72ed52f7f41d3b4a18862a5b7210b6921c5c635d91cbb2a5772b55d5f1b4fb  firmware-paths-fix.patch
+1e705ff6f256b93986adba4c1f296b2d47be48986490d6a1130fc57126a462b2adfb4f51d3717ef70e91d0b42eb54a33b0d29f85d0c0bb9bf1498bb80c1bb7c1  disable-boot-mode-check.patch
+cd41a79406341cb72b4d569b21b2af3bbba4fcedd891a73b3273d5e9561466d5b99c424ce29bac83650298fc51d53b5cb65037a644f622a7e287ec38d30af66f  uncomment-rfcomm-in-makefile.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+713bfcbcd6c78d554fc1e50746792b25dfde455c98cef483ad9b07044171fd064d266ffbc9338bb1aa42d921f583433b00f4586cf8b03c6d21468ca88bd60fed  fix-addrconf_rt_table-nullptr-deref.patch
+"

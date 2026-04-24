@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Anri Dellal <anridellal@gmail.com>"
+pkgname=device-nobby-230
+pkgdesc="Nobby 230"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="soc-sprd-audio-sc8830 msm-fb-refresher postmarketos-base linux-nobby-230 mkbootimg"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+0532fabe19931c90253e958b5756df91812cfd5c81a643923a36b2f730b8d749ad7d6062507aff59eddcfc24d36f8452a439f159ec53d4b9acede80205660175  deviceinfo
+41dd6dbff0ea7cfa308dc533b6c0b85cf280a89e23017e573e263f67e9802c77a0a795f3e163624f96ee7d404450b88d9aaaa599fb2ac4f136f36c18a42be1a4  kernel-cmdline.conf
+"

@@ -1,0 +1,13 @@
+diff --git a/arch/arm/mach-msm/smd_init_dt.c b/arch/arm/mach-msm/smd_init_dt.c
+index 1766a68bfa8..df88bf5b35c 100644
+--- a/arch/arm/mach-msm/smd_init_dt.c
++++ b/arch/arm/mach-msm/smd_init_dt.c
+@@ -21,7 +21,7 @@
+ #include <linux/io.h>
+ 
+ #include <mach/msm_ipc_logging.h>
+-#include <smd_private.h>
++#include "smd_private.h"
+ 
+ #define MODULE_NAME "msm_smd"
+ #define IPC_LOG(level, x...) do { \

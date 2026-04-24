@@ -1,0 +1,27 @@
+# Co-Maintainer: Jan Jasper de Kroon <jajadekroon@gmail.com>
+# Co-Maintainer: Quade Curry <qc8086@qc8086.com>
+maintainer="Sebastian Fleer <dev@dwurp.de>"
+pkgname=soc-rockchip-rk3399
+pkgdesc="Common package for Rockchip RK3399 devices"
+pkgver=1
+pkgrel=1
+url="https://postmarketos.org"
+license="BSD-3-Clause"
+arch="aarch64"
+options="!check !archcheck"
+subpackages="$pkgname-dptx"
+source="30-rockchip-dptx-firmware.files"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+dptx() {
+	install_if="$pkgname=$pkgver-r$pkgrel linux-firmware-rockchip"
+	install -Dm644 "$srcdir"/30-rockchip-dptx-firmware.files \
+		-t "$subpkgdir"/usr/share/mkinitfs/files
+}
+
+sha512sums="
+c999b242723c68fd92b080d6a5288df99331b9b3ab4504db07162b6e5b0af17a0a04dabfd00a479ab08a3b8dd4331c08f6e76295dab8da161bef9c3fa0485b16  30-rockchip-dptx-firmware.files
+"

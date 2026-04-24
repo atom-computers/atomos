@@ -1,0 +1,73 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/sparrow_userdebug_msm8226_defconfig
+
+pkgname=linux-asus-sparrow-downstream
+pkgver=3.10.40
+pkgrel=0
+pkgdesc="ASUS ZenWatch 2 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="asus-sparrow"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	linux-headers
+	openssl-dev
+	perl
+"
+
+# Source
+_commit="8ffc85d0e5dba485a52a4405a21d3a516f969420"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/z3ntu/android_kernel_asus_sparrow/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	asus_sw_ver.patch
+	fix_ifdef.patch
+	0001-mmc-card-not-access-RPMB-partition-for-normal-read-and-write.patch
+"
+builddir="$srcdir/android_kernel_asus_sparrow-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+206cb75e8180dd0efc42369e584a4cfa75d53f350e44c81b88b4335f54143faecf87863652162b3e816903dd1c6f377763cd0261b178d6f76cb080b22e68f0f3  linux-asus-sparrow-downstream-8ffc85d0e5dba485a52a4405a21d3a516f969420.tar.gz
+e9407e6b5c39b40513b68e9e77a1130ebc9c425f97ad502875f6cd4e32c16485d8d8bfc0fa421fb59fade804f36e77fd7524ce5039845ef8ab3566142da18237  config-asus-sparrow.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+95ec8dfeaf0cc3e834ed15ebe703d2fd45ca96fd650968d5200fddf397c11fe3be7e53d09f215a66e8733dcd5ab470a39a0cefe126c8536aba2fb212f1b6682f  asus_sw_ver.patch
+a8022af924c7421066a2e5dd8a5e136479d07eba26e40477fe557ba7492930f7e758ea7efabe95f4f078ab4d177bad3789947074582391015518330add7d6b7e  fix_ifdef.patch
+ed1c144529612e7e5320a00979095431135bd3a65271ca76b8b6ceecb26db11d11899a9104695387ffea64cc618f72c79d3caa41481fa11a8bd9b54fdf6fd1d7  0001-mmc-card-not-access-RPMB-partition-for-normal-read-and-write.patch
+"

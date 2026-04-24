@@ -1,0 +1,25 @@
+From c866f097c4684d183ceb9f5812924916377040d7 Mon Sep 17 00:00:00 2001
+From: Daniele Debernardi <drebrez@gmail.com>
+Date: Wed, 4 Nov 2020 01:50:15 +0100
+Subject: [PATCH] Fix decon_reg variable type
+
+---
+ drivers/video/fbdev/exynos/dpu/decon_reg.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/fbdev/exynos/dpu/decon_reg.c b/drivers/video/fbdev/exynos/dpu/decon_reg.c
+index 589d79f8fed8..226e601cc8a0 100644
+--- a/drivers/video/fbdev/exynos/dpu/decon_reg.c
++++ b/drivers/video/fbdev/exynos/dpu/decon_reg.c
+@@ -2588,7 +2588,7 @@ u32 decon_reg_get_height(u32 id, int dsi_mode)
+ 	return (FORMATTER_HEIGHT_GET(val));
+ }
+ 
+-const double decon_clocks_table[][CLK_ID_MAX] = {
++const unsigned long decon_clocks_table[][CLK_ID_MAX] = {
+ 	/* VCLK,  ECLK,  ACLK,  PCLK,  DISP_PLL,  resolution,            MIC_ratio, DSC count */
+ 	{    71,   168,   400,    66,        71, 1080 * 1920,     MIC_COMP_BYPASS,         0},
+ 	{    63,   168,   400,    66,        63, 1440 * 2560,  MIC_COMP_RATIO_1_2,         0},
+-- 
+2.50.0
+

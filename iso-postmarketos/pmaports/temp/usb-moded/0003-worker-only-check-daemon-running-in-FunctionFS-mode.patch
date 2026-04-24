@@ -1,0 +1,52 @@
+From 43b7967f133dfd49777734949ff2b19c25beb84a Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Sat, 10 May 2025 20:29:41 +0200
+Subject: [PATCH 3/5] [worker] only check daemon running in FunctionFS mode
+
+Daemons for operating USB gadgets in FunctionFS must be fully ready
+before enabling the gadget by the UDC. Daemons for other gadgets
+such as USB Ethernet (NCM) do not require such functionality, thus
+bypass this check to avoid timeouts waiting for the FunctionFS interface
+to become fully ready as these gadgets do not have such interface.
+
+Signed-off-by: Dylan Van Assche <me@dylanvanassche.be>
+---
+ src/usb_moded-worker.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/usb_moded-worker.c b/src/usb_moded-worker.c
+index 11662e9..f70bdc8 100644
+--- a/src/usb_moded-worker.c
++++ b/src/usb_moded-worker.c
+@@ -196,6 +196,10 @@ worker_get_ffs_device_state(void)
+ 
+     devstate_t state = DEVSTATE_UNKNOWN;
+     const modedata_t *data = worker_get_usb_mode_data();
++
++    if( data->ffs_daemon_mountpoint == NULL )
++        return DEVSTATE_UNMOUNTED;
++
+     gchar *path = g_strconcat("/dev/", data->ffs_daemon_mountpoint, "/ep0", NULL);
+ 
+     if( access(path, F_OK) == 0 )
+@@ -393,7 +397,7 @@ worker_run_command_down(void)
+     bool ack = false;
+     const modedata_t *data = worker_get_usb_mode_data();
+ 
+-    if( !worker_ffs_daemon_service_started && worker_ffs_daemon_stopped_p(0) ) {
++    if( data->ffs_daemon_mountpoint != NULL && !worker_ffs_daemon_service_started && worker_ffs_daemon_stopped_p(0) ) {
+         log_debug("FunctionFS daemon is not running");
+         goto SUCCESS;
+     }
+@@ -410,7 +414,7 @@ worker_run_command_down(void)
+     /* Have succesfully stopped FunctionFS daemon service */
+     worker_ffs_daemon_service_started = false;
+ 
+-    if( common_wait(worker_ffs_daemon_stop_delay, worker_ffs_daemon_stopped_p, 0) != WAIT_READY ) {
++    if( data->ffs_daemon_mountpoint != NULL && (common_wait(worker_ffs_daemon_stop_delay, worker_ffs_daemon_stopped_p, 0) != WAIT_READY) ) {
+         log_warning("failed to stop FunctionFS daemon; giving up");
+         goto FAILURE;
+     }
+-- 
+2.49.0
+

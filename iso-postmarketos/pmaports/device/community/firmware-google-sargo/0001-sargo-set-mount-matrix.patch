@@ -1,0 +1,43 @@
+From 21c36eefd5390fd80fc04eea0462ba49ca1457f7 Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <git@dylanvanassche.be>
+Date: Thu, 8 Jan 2026 16:25:00 +0100
+Subject: [PATCH] sargo: set mount matrix
+
+---
+ proprietary/vendor/etc/sensors/config/b4s4_bmi160.json | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/proprietary/vendor/etc/sensors/config/b4s4_bmi160.json b/proprietary/vendor/etc/sensors/config/b4s4_bmi160.json
+index aa47c9b..90a614e 100644
+--- a/proprietary/vendor/etc/sensors/config/b4s4_bmi160.json
++++ b/proprietary/vendor/etc/sensors/config/b4s4_bmi160.json
+@@ -236,7 +236,7 @@
+     ".placement":{
+       "owner": "sns_bmi160",
+       "0":{ "type": "flt", "ver": "0",
+-        "data": "0.0"
++        "data": "-1.0"
+       },
+       "1":{ "type": "flt", "ver": "0",
+         "data": "0.0"
+@@ -248,7 +248,7 @@
+         "data": "0.0"
+       },
+       "4":{ "type": "flt", "ver": "0",
+-        "data": "0.0"
++        "data": "-1.0"
+       },
+       "5":{ "type": "flt", "ver": "0",
+         "data": "0.0"
+@@ -260,7 +260,7 @@
+         "data": "0.0"
+       },
+       "8":{ "type": "flt", "ver": "0",
+-        "data": "0.0"
++        "data": "-1.0"
+       },
+       "9":{ "type": "flt", "ver": "0",
+         "data": "0.0"
+-- 
+2.52.0
+

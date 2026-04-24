@@ -1,0 +1,38 @@
+# Co-Maintainer: Ferass El Hafidi <funderscore@postmarketos.org>
+maintainer="Doni Halim <donihaalim@gmail.com>"
+pkgname=u-boot-amlogic-s905x2-tv
+pkgver=2024.01
+pkgrel=1
+pkgdesc="U-Boot for devices using the Amlogic S905X2 SoC"
+url="https://www.denx.de/wiki/U-Boot/"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+options="!check"
+depends="soc-amlogic-aarch64-boot"
+makedepends="$depends_dev bc dtc python3-dev swig bison flex openssl-dev
+	py3-setuptools linux-headers u-boot-tools"
+source="
+	https://ftp.denx.de/pub/u-boot/u-boot-${pkgver//_/-}.tar.bz2
+	gcc-12-u-boot-2020-fix-read-only-segment-has-dynamic-relocations-error.patch
+"
+builddir="$srcdir/u-boot-${pkgver//_/-}"
+
+prepare() {
+	default_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make u200_defconfig
+	make
+}
+
+package() {
+	install -Dm644 "$builddir/u-boot.bin" \
+		"$pkgdir/boot/u-boot.bin"
+}
+sha512sums="
+45bd093ba3bda23e43cdde83d8656c1ee1348ac2886ecff1fee475f101ac4965a5be6565408fa5b990c723f3fdc833edfca60a719f735a43040cd14a1b59a88b  u-boot-2024.01.tar.bz2
+e8d27471665a89a882d8add3c4446bec3e0fd84fb830381e00c71e159d528c129ae9f14469ac52ef3b2f40d144c10241ebb8004276a962b87c22751cb28ab96c  gcc-12-u-boot-2020-fix-read-only-segment-has-dynamic-relocations-error.patch
+"

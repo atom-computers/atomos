@@ -1,0 +1,3 @@
+usr/include/gmobile/
+usr/lib/*/libgmobile.*
+usr/lib/*/pkgconfig/gmobile.pc

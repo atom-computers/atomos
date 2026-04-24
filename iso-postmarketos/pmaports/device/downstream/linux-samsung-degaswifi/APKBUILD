@@ -1,0 +1,79 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/degaswifi_eur
+
+pkgname=linux-samsung-degaswifi
+pkgver=3.10.0
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab 4 7.0 WiFi kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-degaswifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl pxa-mkbootimg dtc linux-headers"
+
+# Source
+_repository="android_kernel_samsung_degas"
+_commit="4e681761018cab50d25f59dca5eba1e917b1722d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/vishalbala-nps/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	sd8887-ignore-cal-data.patch
+	fix-assembler-junk.patch
+	pm805_mixer_coefficient.patch
+	Backport-Memfd-Seals.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	# Hack to add modules as modules_install doesnt work for some reason
+	mkdir "$pkgdir"/lib
+	mkdir "$pkgdir"/lib/modules
+	mkdir "$pkgdir"/lib/modules/3.10.0-Downstream
+	install -Dm644 "$_outdir"/drivers/marvell/sd8887/mbtc_src/bt8xxx.ko -t "$pkgdir"/lib/modules/3.10.0-Downstream
+	install -Dm644 "$_outdir"/drivers/marvell/sd8887/wlan_src/mlan8887.ko -t "$pkgdir"/lib/modules/3.10.0-Downstream
+	install -Dm644 "$_outdir"/drivers/marvell/sd8887/wlan_src/sd8887.ko -t "$pkgdir"/lib/modules/3.10.0-Downstream
+	install -Dm644 "$_outdir"/drivers/marvell/security/mmp-geu/geu.ko -t "$pkgdir"/lib/modules/3.10.0-Downstream
+	install -Dm644 "$_outdir"/drivers/marvell/graphics/galcore_4x/galcore.ko -t "$pkgdir"/lib/modules/3.10.0-Downstream
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	pxa1088-dtbTool -p "$_outdir"/scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/dts/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot
+}
+
+sha512sums="
+cb10274bb00d15c0d2e3d7b41d00fc95ce8053afa6ea11d310c638f8776c77df3e3e02a2828455ab183397195fb6c1247671a15414d675f440a08ccaf89686a0  linux-samsung-degaswifi-4e681761018cab50d25f59dca5eba1e917b1722d.tar.gz
+d44a8d9d1ea18b6d4a076a004d249dcea623c92253dba35c1ae9ea072f34a8959614830a7c0dd076fa104683c48a387d2c22bb4bb2abae2be507598d6290dd6c  config-samsung-degaswifi.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+7245bc3f939878a26df2e98e8929e33e4eda03de4ac0021ac829782cc8f68995cb4f2176e504af7023b5779c13b87571d8d1682146c26cd23403a6342f80f3f8  sd8887-ignore-cal-data.patch
+341b1f6357d46b54e49afcc66b1d6052a954ec5be9b1cf5da47eed39ea3beff261d94c73d4b83532246b404f57abff1d0fa69db2f4c8cfb15b89f79aaab69bc8  fix-assembler-junk.patch
+d284e19cc542488f04a9f6c8e3f2daa7f5c78dc3f6d7885ffdcecbf1af69fdddfa92afd32234dd726ba2ab845befbc8ac91bc78e2f817aebc881b05ff9cd3a12  pm805_mixer_coefficient.patch
+51450f9af28dbcebeb067dd661ea1ff8c0585ab881ec9278ae34b25a9a6c3b5359a78f5a79311db9572cd2e7a752f05d356b57a4966b57bf9f1c4b7b09159156  Backport-Memfd-Seals.patch
+"

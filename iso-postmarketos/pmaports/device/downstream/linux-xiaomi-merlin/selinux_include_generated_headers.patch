@@ -1,0 +1,33 @@
+Arm64 has generated headers that other arches don't, didn't investigate why this
+is able to compile in downstream (our upstream). Possibly due to out-of-tree build.
+Note the hacky relative include. May not work in more complicated setups.
+
+diff --git a/scripts/selinux/genheaders/Makefile b/scripts/selinux/genheaders/Makefile
+index e8c533140..62475f060 100644
+--- a/scripts/selinux/genheaders/Makefile
++++ b/scripts/selinux/genheaders/Makefile
+@@ -2,6 +2,8 @@
+ hostprogs-y	:= genheaders
+ HOST_EXTRACFLAGS += \
+ 	-I$(srctree)/include/uapi -I$(srctree)/include \
+-	-I$(srctree)/security/selinux/include
++	-I$(srctree)/security/selinux/include \
++	-I./arch/$(ARCH)/include/generated/uapi \
++	-I$(srctree)/arch/$(ARCH)/include/uapi
+ 
+ always		:= $(hostprogs-y)
+diff --git a/scripts/selinux/mdp/Makefile b/scripts/selinux/mdp/Makefile
+index e9c92db7e..09e626fa4 100644
+--- a/scripts/selinux/mdp/Makefile
++++ b/scripts/selinux/mdp/Makefile
+@@ -2,7 +2,9 @@
+ hostprogs-y	:= mdp
+ HOST_EXTRACFLAGS += \
+ 	-I$(srctree)/include/uapi -I$(srctree)/include \
+-	-I$(srctree)/security/selinux/include
++	-I$(srctree)/security/selinux/include \
++	-I./arch/$(ARCH)/include/generated/uapi \
++	-I$(srctree)/arch/$(ARCH)/include/uapi
+ 
+ always		:= $(hostprogs-y)
+ clean-files	:= policy.* file_contexts

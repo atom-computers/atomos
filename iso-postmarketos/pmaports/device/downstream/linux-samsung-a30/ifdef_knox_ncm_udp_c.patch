@@ -1,0 +1,82 @@
+Subject: [PATCH] ifdef knox ncm udp.c
+---
+Index: net/ipv4/udp.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/net/ipv4/udp.c b/net/ipv4/udp.c
+--- a/net/ipv4/udp.c	(revision 5eeafe2bfcb93847b403fd92bd92f9d0a9f6341d)
++++ b/net/ipv4/udp.c	(date 1644158930000)
+@@ -113,9 +113,11 @@
+ #include <trace/events/skb.h>
+ #include <net/busy_poll.h>
+ #include "udp_impl.h"
++#ifdef CONFIG_KNOX_NCM
+ /* START_OF_KNOX_NPA */
+ #include <net/ncm.h>
+ /* END_OF_KNOX_NPA */
++#endif
+ 
+ struct udp_table udp_table __read_mostly;
+ EXPORT_SYMBOL(udp_table);
+@@ -1804,6 +1806,7 @@
+ 	if (sk) {
+ 		struct dst_entry *dst = skb_dst(skb);
+ 		int ret;
++#ifdef CONFIG_KNOX_NCM
+ 		/* START_OF_KNOX_NPA */
+ 		struct nf_conn *ct = NULL;
+ 		enum ip_conntrack_info ctinfo;
+@@ -1811,10 +1814,11 @@
+ 		char srcaddr[INET6_ADDRSTRLEN_NAP];
+ 		char dstaddr[INET6_ADDRSTRLEN_NAP];
+ 		/* END_OF_KNOX_NPA */
++#endif
+ 
+ 		if (unlikely(sk->sk_rx_dst != dst))
+ 			udp_sk_rx_dst_set(sk, dst);
+-
++#ifdef CONFIG_KNOX_NCM
+ 		/* START_OF_KNOX_NPA */
+ 		/* function to handle open flows with incoming udp packets */
+ 		if (check_ncm_flag()) {
+@@ -1866,6 +1870,7 @@
+ 				}
+ 			}
+ 		}
++#endif
+ 		// KNOX NPA - END
+ 
+ 		ret = udp_queue_rcv_skb(sk, skb);
+@@ -1885,12 +1890,14 @@
+ 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
+ 	if (sk) {
+ 		int ret;
++#ifdef CONFIG_KNOX_NCM
+ 		/* START_OF_KNOX_NPA */
+ 		struct nf_conn *ct = NULL;
+ 		enum ip_conntrack_info ctinfo;
+ 		struct nf_conntrack_tuple *tuple = NULL;
+ 		char srcaddr[INET6_ADDRSTRLEN_NAP];
+ 		char dstaddr[INET6_ADDRSTRLEN_NAP];
++#endif
+ 		/* END_OF_KNOX_NPA */
+ 
+ 		if (inet_get_convert_csum(sk) && uh->check && !IS_UDPLITE(sk))
+@@ -1898,6 +1905,7 @@
+ 						 inet_compute_pseudo);
+ 
+ 		/* START_OF_KNOX_NPA */
++#ifdef CONFIG_KNOX_NCM
+ 		/* function to handle open flows with incoming udp packets */
+ 		if (check_ncm_flag()) {
+ 			if ( (sk) && (sk->sk_protocol == IPPROTO_UDP) ) {
+@@ -1948,6 +1956,7 @@
+ 				}
+ 			}
+ 		}
++#endif
+ 		// KNOX NPA - END
+ 
+ 		ret = udp_queue_rcv_skb(sk, skb);

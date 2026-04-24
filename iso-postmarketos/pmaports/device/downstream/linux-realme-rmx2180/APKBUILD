@@ -1,0 +1,84 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/karashi_defconfig
+
+pkgname=linux-realme-rmx2180
+pkgver=4.9.190
+pkgrel=1
+pkgdesc="Realme C15 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="realme-rmx2180"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	binutils
+	bison
+	clang18
+	devicepkg-dev
+	dtc
+	findutils
+	flex
+	libfdt
+	openssl-dev
+	perl
+	python3
+"
+export CC="clang-18"
+export HOSTCC="clang-18"
+
+# Source
+_repository="realmeC11_realmeC12_realmeC15_AndroidQ-kernel-source"
+_commit="d82b312baf4f5a95df870c551a43e89cc2372f48"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/fantom3031/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-check-lxdialog.patch
+	0001-disable-cross-compile.patch
+	0002-Port-drvgen-scripts-to-Python3.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+
+	# fixes build error on aarch64:
+	# ../scripts/dtc/dtc_overlay: line 1: ELF: not found
+	rm "$builddir"/scripts/dtc/dtc_overlay
+	ln -s /usr/bin/dtc "$builddir"/scripts/dtc/dtc_overlay
+
+	local i
+	local makefiles="$(find . -type f -name Makefile)
+		$(find . -type f -name Kbuild)"
+	for i in $makefiles; do
+		sed -i 's/-Werror-/-W/g' "$i"
+		sed -i 's/-Werror//g' "$i"
+	done
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+}
+
+sha512sums="
+bb12c8694cbf5a811512966cb3d98b68e92f30b9ea51c33c3847bf9c45e9e1a0438cbd3b58013209ba21c7d4b6d519251e99f0dbd20f106ccbae2e51089261fa  linux-realme-rmx2180-d82b312baf4f5a95df870c551a43e89cc2372f48.tar.gz
+6e01dce27223c84c41d09b15b1ecd8c4e367ec60401317a1b647e50538b2fe72858be82dcc31d9c05a03a06f19f6cd5081d825b75d088eca943eac92faef3ef3  config-realme-rmx2180.aarch64
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+4dec1b5bc8fac48785d4c98dde36913e2124dcdafb0c79c4f45437afcb202cbda3367a64f4c36a42ca7b5d5cdc50c4b3423a0d65b167d59faa56db8c7ecdeb53  0001-disable-cross-compile.patch
+6e8e12268c0c5eff0e3d0964f26678929410138a8783c628953112e449400cf8660e83321cd9cebf34ac74dd008f32dd4b0b6bdfa7097083cbaa23920367f13e  0002-Port-drvgen-scripts-to-Python3.patch
+"

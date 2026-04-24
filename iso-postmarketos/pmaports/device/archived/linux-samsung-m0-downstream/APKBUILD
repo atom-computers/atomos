@@ -1,0 +1,72 @@
+# Archived: Downstream kernel, only for testing. Use linux-postmarketos-exynos4.
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_i9305_defconfig
+
+pkgname=linux-samsung-m0-downstream
+pkgver=3.0.101
+pkgrel=1
+pkgdesc="Samsung Galaxy S III kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-m0-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_samsung_smdk4412"
+_commit="fa8fa332fdec11744ffe0c742775cc22efe0d041"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.0-fix-piggy.lzma.S.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# the 'no-pic' flag is necessary to avoid the
+	# error 'Unknown symbol _GLOBAL_OFFSET_TABLE_ (err 0)' when loading the module
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CFLAGS_MODULE="-fno-pic" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 modules_install
+}
+
+sha512sums="
+d87dd54152980b30012fead62e639dde6ff0862d376790eac32800aeffd91482a220c7b1f233933a1879796dcaa3722e86c42a5f0e4df4168ae1f65362952779  linux-samsung-m0-downstream-fa8fa332fdec11744ffe0c742775cc22efe0d041.tar.gz
+2923f9ea030633e320799f92ba4c898f66864ed3aed214e321d95f5dadd8c5ebf1fc35bfea5aeffecc668992b1b1101ace301aa930f9d965f199a345e0687d6e  config-samsung-m0-downstream.armv7
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+3c098328e45db14cbeff6a515bb373129e0d0983884178f413c5a4206704b356ddecdf58557a04b828b391dbfef3cea0e98b47834aa97b86496aa2fce0013b92  linux3.0-fix-piggy.lzma.S.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

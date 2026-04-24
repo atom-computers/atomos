@@ -1,0 +1,47 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
+maintainer="Dang Huynh <dang.huynh@mainlining.org>"
+pkgname=device-pine64-pinetab2
+pkgdesc="Pine64 PineTab 2"
+pkgver=3
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	mesa-egl
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+_pmb_recommends="firmware-bestechnic-bes2600"
+subpackages="
+	$pkgname-kernel-v0:kernel_v0
+	$pkgname-kernel-v2:kernel_v2
+	"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_v0() {
+	pkgdesc="Kernel for PineTab 2 Dev Units"
+	depends="linux-pine64-pinetab2"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_v2() {
+	pkgdesc="Kernel for PineTab 2 Early Adopter"
+	depends="linux-pine64-pinetab2"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+79d1637fcdefe7bfda33e228ed9b4ea4929b53c54cd231ea59a9382a8db3297f5edfd37f856a9c738da135b8bea08d77c88786c744cff7a89227378a279f68c2  deviceinfo
+be000bde4e184f8d03ed4b1b66a99f18e711d8666d4e43df980221a3bfc6a91421cb6701e33b1083ac6c69d6302b737f76a2eddd989d88e5ee09c0da0d7474d7  kernel-cmdline.conf
+"

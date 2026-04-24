@@ -1,0 +1,23 @@
+maintainer=""
+pkgname=firmware-samsung-a6plte
+pkgver=1.1
+pkgrel=0
+pkgdesc="Firmware files for Samsung Galaxy A6+ (2018)"
+url="https://gitlab.com/ungeskriptet/firmware-samsung-a6plte"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="8b8be38058ed267ac31004358fcf0ac122e56389"
+_path="lib/firmware/postmarketos/wlan/prima"
+source="$pkgname-WCNSS_qcom_wlan_nv.bin::$url/-/raw/$_commit/$_path/WCNSS_qcom_wlan_nv.bin"
+
+package() {
+	install -Dm644 "$srcdir"/$pkgname-WCNSS_qcom_wlan_nv.bin \
+		"$pkgdir"/$_path/WCNSS_qcom_wlan_nv.bin
+}
+
+sha512sums="
+a77f0ce1d7d4e44c9dcb3f639ec326cf56be9ee323abd5292344a4b0507dce2bd63d489d6b1f0902321cffbb6b270b5af87c0acb3f9ffbce25fa6c41ad9d80fe  firmware-samsung-a6plte-WCNSS_qcom_wlan_nv.bin
+"

@@ -1,0 +1,12 @@
+diff -r -u -N android_kernel_samsung_golden-2662dc4f65ef3ad5eeb4222d3aad5dd418a04510/drivers/usb/gadget/ether.c tmp-kernel/drivers/usb/gadget/ether.c
+--- ./drivers/usb/gadget/ether.c	2018-04-19 15:50:23.962332146 +0100
++++ ./drivers/usb/gadget/ether.c	2018-04-19 15:45:50.823455075 +0100
+@@ -246,7 +246,7 @@
+ 		c->bmAttributes |= USB_CONFIG_ATT_WAKEUP;
+ 	}
+ 
+-	return rndis_bind_config(c, hostaddr);
++	return rndis_bind_config(c, hostaddr, device_desc.idVendor, device_desc.iManufacturer);
+ }
+ 
+ static struct usb_configuration rndis_config_driver = {

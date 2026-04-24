@@ -1,0 +1,50 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/pmos-a20_defconfig
+
+pkgname=linux-samsung-a20
+pkgver=4.4.250
+pkgrel=3
+pkgdesc="Samsung Galaxy A20 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a20"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl python3 gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel_samsung_a20"
+_commit="ce4a8678bd0e160c910d406463b6df4f6a5be813"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/arpio/$_repository/-/archive/$_commit/$_repository-$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="eea2e47941da0594b992bb5c2544c3337753d398d2b137128fccf5d4683f20200266127a3ff353371a44fb8a79199b8e95dcd5d2f609dae53ad39c092b4de79a  linux-samsung-a20-ce4a8678bd0e160c910d406463b6df4f6a5be813.tar.gz
+0c3ae2cb7b1a0d761dc73cb61ff37eb35e3cd28ce65da8335e6ac4692647783f6991808ed01e933e6aae882fa7d113bfc0acc43b492e62daa077b551dc2547ee  config-samsung-a20.aarch64"

@@ -1,0 +1,2 @@
+# DMC fw is required on newer GPUs to enable lower power states
+/lib/firmware/i915/*_dmc*

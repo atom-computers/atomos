@@ -1,0 +1,43 @@
+# This package gets installed in the native and foreign arch chroots.
+# It creates files like /usr/lib/arch-bin-masquerade/armhf/gcc, which
+# point in the native chroot to the armhf-cross-compiler, and in the
+# armhf chroot to /usr/bin/gcc. That way compilation works fine, even
+# when distcc gets the absolute path to the compiler passed (ccache does
+# that).
+maintainer=""
+pkgname=arch-bin-masquerade
+pkgver=2
+pkgrel=0
+pkgdesc="Wrappers for ccache + distcc (native and foreign chroots)"
+url="https://postmarketOS.org"
+arch="all"
+license="MIT"
+options="!check !tracedeps pmb:cross-native"
+
+package() {
+	# Architectures and binaries
+	_archs="x86_64 armhf armv7 aarch64"
+	_bins="c++ cc cpp g++ gcc"
+
+	# Iterate over architectures
+	for _arch in $_archs; do
+		# Create the arch-specific bin folder
+		_hostspec="$(arch_to_hostspec $_arch)"
+		_bindir="$pkgdir/usr/lib/arch-bin-masquerade/$_arch"
+		mkdir -p "$_bindir"
+		cd "$_bindir"
+
+		# Iterate over binaries and create wrappers
+		for _bin in $_bins; do
+			{
+				echo "#!/bin/sh"
+				if [ "$_arch" == "$CARCH" ]; then
+					echo "exec /usr/bin/${_bin} \"\$@\""
+				else
+					echo "exec /usr/bin/${_hostspec}-${_bin} \"\$@\""
+				fi
+			} > "$_bin"
+			chmod +x "$_bin"
+		done
+	done
+}

@@ -1,0 +1,356 @@
+From a60fae40dea9618d00f5c88485cd4a417075cfae Mon Sep 17 00:00:00 2001
+From: Robert Eckelmann <longnoserob@gmail.com>
+Date: Fri, 26 Dec 2025 15:41:14 +0900
+Subject: [PATCH 3/3] dts/marvell/mmp-dell-ariel: add framebuffer
+
+Signed-off-by: Robert Eckelmann <longnoserob@gmail.com>
+---
+ arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts | 198 ++++++++++++------
+ arch/arm/boot/dts/marvell/mmp3.dtsi           |  13 +-
+ 2 files changed, 139 insertions(+), 72 deletions(-)
+
+diff --git a/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts b/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
+index 28a67cc8976c..e2c3125eb39f 100644
+--- a/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
++++ b/arch/arm/boot/dts/marvell/mmp3-dell-ariel.dts
+@@ -8,6 +8,7 @@
+ /dts-v1/;
+ #include "mmp3.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/leds/common.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -30,23 +31,36 @@ memory@0 {
+ 		reg = <0x0 0x80000000>;
+ 		device_type = "memory";
+ 	};
++	
++	framebuffer@78000000 {
++		compatible = "marvell,mmp2-framebuffer",
++			     "marvell,armada-framebuffer";
++		
++		//size Full-HD in 32bpp times 2 (2 outputs)
++		reg = <0x78000000 (1920 * 1080 * 4 * 2 )>;
++		width = <1920>;
++		height = <1080>;
++		stride = <(1920 * 4)>;
++		format = "r8g8b8";
++		clocks = <&soc_clocks MMP2_CLK_DISP0_LCDC>,
++			 <&soc_clocks MMP2_CLK_DISP0>;
++		display = <&dvi1_in>;
++	};
+ 
+ 	reserved-memory {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		ranges;
+ 
+-		display_reserved: framebuffer {
+-			compatible = "marvell,mmp2-framebuffer",
+-				     "marvell,armada-framebuffer";
+-			size = <0x04000000>;
+-			alignment = <0x04000000>;
+-			no-map;
++		framebuffer_region@78000000 {
++		reg = <0x78000000 (1920 * 1080 * 4 * 2)>;
++		no-map;
+ 		};
+ 	};
+ 
+ 	dvi-connector-0 {
+ 		compatible = "dvi-connector";
++		lebel = "DVI-I";
+ 		ddc-i2c-bus = <&twsi5>;
+ 		hpd-gpios = <&gpio 62 GPIO_ACTIVE_LOW>;
+ 		digital;
+@@ -61,6 +75,7 @@ dvi0_in: endpoint {
+ 
+ 	dvi-connector-1 {
+ 		compatible = "dvi-connector";
++		label = "DVI-D";
+ 		ddc-i2c-bus = <&twsi6>;
+ 		hpd-gpios = <&gpio 59 GPIO_ACTIVE_LOW>;
+ 		digital;
+@@ -71,22 +86,29 @@ dvi1_in: endpoint {
+ 			};
+ 		};
+ 	};
++	
++	ec_input_spi: spi {
++		compatible = "spi-gpio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		num-chipselects = <0>;
++		sck-gpios = <&gpio 55 GPIO_ACTIVE_HIGH>;
++		miso-gpios = <&gpio 57 GPIO_ACTIVE_HIGH>;
++		mosi-gpios = <&gpio 58 GPIO_ACTIVE_HIGH>;
++	};
++};
+ 
+-	sound-card {
+-		compatible = "audio-graph-card";
+-		label = "Dell Ariel";
+-		dais = <&sspa0_dai>;
+-		routing = "Headphones", "HPL",
+-			  "Headphones", "HPR",
+-			  "Speaker External", "SPKLN",
+-			  "Speaker External", "SPKLP",
+-			  "Speaker External", "SPKRN",
+-			  "Speaker External", "SPKRP",
+-			  "MIC1N", "Mic Jack",
+-			  "MIC1P", "Mic Jack";
+-		widgets = "Headphone", "Headphones",
+-			  "Speaker", "Speaker External",
+-			  "Microphone", "Mic Jack";
++&ec_input_spi {
++	status = "okay";
++	cs-gpios = <&gpio 56 GPIO_ACTIVE_LOW>;
++
++	power-button@0 {
++		reg = <0>;
++		interrupt-parent = <&gpio>;
++		interrupts = <60 IRQ_TYPE_EDGE_RISING>;
++		compatible = "dell,wyse-ariel-ec-input", "ene,kb3930-input";
++		spi-max-frequency = <33000000>;
+ 	};
+ };
+ 
+@@ -157,6 +179,14 @@ vcpu: buck1 {
+ 			regulator-boot-on;
+ 			regulator-always-on;
+ 		};
++
++		vgpu: buck2 {
++			regulator-name = "vdd_1v8_gpu";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-boot-on;
++			regulator-always-on;
++		};
+ 	};
+ };
+ 
+@@ -186,19 +216,6 @@ encoder_out: endpoint {
+ 			};
+ 		};
+ 	};
+-
+-	audio-codec@30 {
+-		compatible = "marvell,88ce156";
+-		reg = <0x30>;
+-
+-		port {
+-			ce156_0: endpoint {
+-				mclk-fs = <256>;
+-				clocks = <&audio_clk 0>;
+-				remote-endpoint = <&sspa0_0>;
+-			};
+-		};
+-	};
+ };
+ 
+ &twsi4 {
+@@ -234,6 +251,10 @@ &hdmi0_out {
+ 	remote-endpoint = <&dvi1_in>;
+ };
+ 
++&pdma {
++	status = "okay";
++};
++
+ &ssp1 {
+ 	status = "okay";
+ 	cs-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+@@ -246,21 +267,6 @@ firmware-flash@0 {
+ 	};
+ };
+ 
+-&ssp2 {
+-	status = "okay";
+-	cs-gpios = <&gpio 56 GPIO_ACTIVE_LOW>;
+-	//pinctrl-names = "default";
+-	//pinctrl-0 = <&ssp2_pins>;
+-
+-	power-button@0 {
+-		reg = <0>;
+-		interrupt-parent = <&gpio>;
+-		interrupts = <60 IRQ_TYPE_EDGE_RISING>;
+-		compatible = "dell,wyse-ariel-ec-input", "ene,kb3930-input";
+-		spi-max-frequency = <33000000>;
+-	};
+-};
+-
+ &asram {
+ 	status = "okay";
+ };
+@@ -269,30 +275,88 @@ &adma0 {
+ 	status = "okay";
+ };
+ 
+-&audio_clk {
++&gpu_2d {
+ 	status = "okay";
+ };
+ 
+-&sspa0 {
++&gpu_3d {
+ 	status = "okay";
+-	dmas = <&adma0 0>, <&adma0 1>;
+-	dma-names = "tx", "rx";
+-
+-	sspa0_dai: port {
+-		sspa0_0: endpoint {
+-			remote-endpoint = <&ce156_0>;
+-			frame-master;
+-			bitclock-master;
+-			dai-format = "i2s";
++};
++
++&pinctrl {
++	twsi3_pins: twsi3-pins {
++		pins = <&gpio 71>, <&gpio 72>;
++		function = "twsi3";
++		slew-rate = <1>;
++	};
++	
++	twsi4_pins: twsi4-pins {
++		pins = "twsi4_scl", "twsi4_sda";
++		function = "twsi4";
++		slew-rate = <1>;
++	};
++
++	twsi5_pins: twsi5-pins {
++		pins = <&gpio 41>, <&gpio 42>;
++		function = "twsi5";
++		slew-rate = <1>;
++	};
++
++	twsi6_pins: twsi6-pins {
++		pins = <&gpio 47>, <&gpio 48>;
++		function = "twsi6";
++		slew-rate = <1>;
++	};
++
++	lcd0_pins: lcd0-pins {
++		lcd-fclk-pins {
++			pins = <&gpio 74>;
++			function = "lcd";
++			slew-rate = <1>;
++		};
++
++		lcd-lclk-pins {
++			pins = <&gpio 75>;
++			function = "lcd";
++			slew-rate = <1>;
++		};
++
++		lcd-pclk-pins {
++			pins = <&gpio 76>;
++			function = "lcd";
++			bias-pull-up;
++			slew-rate = <3>;
++		};
++
++		lcd-dena-pins {
++			pins = <&gpio 77>;
++			function = "lcd";
++			slew-rate = <1>;
++		};
++
++		lcd-data-pins {
++			pins = <&gpio 100>, <&gpio 101>, <&gpio 78>, <&gpio 79>,
++			       <&gpio 80>, <&gpio 81>, <&gpio 82>, <&gpio 83>,
++			       <&gpio 84>, <&gpio 85>, <&gpio 86>, <&gpio 87>,
++			       <&gpio 88>, <&gpio 89>, <&gpio 90>, <&gpio 91>,
++			       <&gpio 92>, <&gpio 93>, <&gpio 94>, <&gpio 95>,
++			       <&gpio 96>, <&gpio 97>, <&gpio 98>, <&gpio 99>;
++			function = "lcd";
++			slew-rate = <1>;
+ 		};
+ 	};
+-};
+ 
+-&gpu_2d {
+-	status = "okay";
+-};
++	ssp1_pins: ssp1-pins {
++	        pins = <&gpio 45>, <&gpio 44>, <&gpio 43>;
++	        function = "ssp1";
++	        slew-rate = <2>;
++	        bias-pull-up;
++	};
+ 
+-&gpu_3d {
+-	status = "okay";
++	ssp2_pins: ssp2-pins {
++	        pins = <&gpio 58>, <&gpio 57>, <&gpio 55>;
++	        function = "ssp2";
++	        slew-rate = <2>;
++	        bias-pull-up;
++	};
+ };
+-
+diff --git a/arch/arm/boot/dts/marvell/mmp3.dtsi b/arch/arm/boot/dts/marvell/mmp3.dtsi
+index 03f987888c01..ff7c8c3008a1 100644
+--- a/arch/arm/boot/dts/marvell/mmp3.dtsi
++++ b/arch/arm/boot/dts/marvell/mmp3.dtsi
+@@ -47,7 +47,7 @@ axi@d4200000 {
+ 			ranges;
+ 
+ 			lcd0: lcdc@d420b000 {
+-				compatible = "marvell,mmp3-lcd", "marvell,armada-lcdc";
++				compatible = "marvell,mmp3-lcd", "marvell,armada-lcd";
+ 				reg = <0xd420b000 0x1000>;
+ 				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+ 				clocks = <&soc_clocks MMP2_CLK_DISP0_LCDC>,
+@@ -55,8 +55,6 @@ lcd0: lcdc@d420b000 {
+ 					 <&soc_clocks MMP2_CLK_DISP0>,
+ 					 <&soc_clocks MMP2_CLK_DISP1>,
+ 					 <&soc_clocks MMP3_CLK_PLL3>;
+-				clock-names = "periph", "vctcxo",
+-					      "disp0", "disp1", "pll3";
+ 				status = "disabled";
+ 
+ 				ports {
+@@ -365,9 +363,11 @@ gpu_3d: gpu@d420d000 {
+ 				interrupts = <0>;
+ 				status = "disabled";
+ 				clocks = <&soc_clocks MMP3_CLK_GPU_3D>,
++					 <&soc_clocks MMP3_CLK_GPU_BUS>,
+ 					 <&soc_clocks MMP3_CLK_GPU_BUS>;
+-				clock-names = "core", "bus";
++				clock-names = "core", "bus","shader";
+ 				power-domains = <&soc_clocks MMP2_POWER_DOMAIN_GPU>;
++				power-domain-names = "gpu";
+ 			};
+ 
+ 			gpu_2d: gpu@d420f000 {
+@@ -380,11 +380,14 @@ gpu_2d: gpu@d420f000 {
+ 					 <&soc_clocks MMP3_CLK_GPU_BUS>;
+ 				clock-names = "core", "bus";
+ 				power-domains = <&soc_clocks MMP2_POWER_DOMAIN_GPU>;
++				power-domain-names = "gpu";
+ 			};
+ 
+ 			rng@d4292c00 {
+ 				compatible = "marvell,mmp2-rng";
+ 				reg = <0xd4292c00 8>;
++				// as we are missing the driver in mainline:
++				status="disabled";
+ 			};
+ 
+ 			adma0: dma-controller@c0ffd800 {
+@@ -455,7 +458,7 @@ apb@d4000000 {
+ 			reg = <0xd4000000 0x00200000>;
+ 			ranges;
+ 
+-			dma-controller@d4000000 {
++			pdma: dma-controller@d4000000 {
+ 				compatible = "marvell,pdma-1.0";
+ 				reg = <0xd4000000 0x10000>;
+ 				interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+2.52.0
+

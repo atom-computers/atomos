@@ -1,0 +1,106 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos9610-a51xx_defconfig
+maintainer="Hendra Manudinata <hendra@manoedinata.com>"
+pkgname=linux-samsung-a51
+pkgver=4.14.113
+pkgrel=0
+pkgdesc="Samsung Galaxy A51 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a51"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	android-tools
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	findutils
+	flex
+	linux-headers
+	openssl-dev
+	perl
+"
+
+# Compiler: clang
+export CC="clang"
+export HOSTCC="clang"
+
+# Source
+_repository="android_kernel_samsung_a51"
+_commit="c8dd4c096e0ba7b7cbdb6eb2ea6c7affd006198b"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/manoedinata/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-SQUASH-HACK-DECON-framebuffer-fixes-for-Linux.patch
+	0001-fbdev-exynos-dpu20-Remove-one-of-samsung-debug-log.patch
+	0001-drivers-soc-cal-if-Prevent-optimization-of-structs-o.patch
+	0001-usb-u_ether-Force-setting-random-MAC-address.patch
+	exynos9611.cfg
+	a51.cfg
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+
+	# Remove -Werror from all makefiles
+	local i
+	local makefiles="$(find . -type f -name Makefile)
+	    $(find . -type f -name Kbuild)"
+	for i in $makefiles; do
+	    sed -i 's/-Werror-/-W/g' "$i"
+	    sed -i 's/-Werror//g' "$i"
+	done
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	# Generate DTB & DTBO
+	## DTB (apply configuration)
+	dtbdir="$_outdir"/arch/$_carch/boot/dts/exynos
+	mkdtboimg cfg_create \
+		"$pkgdir"/boot/dtbs/exynos9610.dtb \
+		"$srcdir"/exynos9611.cfg \
+		-d "$dtbdir"
+
+	## DTBO (create an image and apply configuration)
+	dtbodir="$_outdir"/arch/$_carch/boot/dts/samsung
+	mkdtboimg create "$pkgdir"/boot/dtbo.img --page_size=4096 \
+		"$dtbodir"/exynos9611-a51_eur_open_00.dtbo \
+		"$dtbodir"/exynos9611-a51_eur_open_01.dtbo \
+		"$dtbodir"/exynos9611-a51_eur_open_03.dtbo \
+		"$dtbodir"/exynos9611-a51_eur_open_07.dtbo
+	mkdtboimg cfg_create \
+		"$pkgdir"/boot/dtbo.img \
+		"$srcdir"/a51.cfg \
+		-d "$dtbodir"
+}
+
+sha512sums="
+0a3d794884411d0aca00672c6e7f8c1ba6e028d4e49cfea80cff552679651c5e3bf7e667f59c572fa406e6c704ad683762a7f656366084b0ea7cbc92cc422cdc  linux-samsung-a51-c8dd4c096e0ba7b7cbdb6eb2ea6c7affd006198b.tar.gz
+bf942d4ed1422cc84225697440ef0a8ccbbff623c3c947aa2870736793d7561786239fdd51aed5a222af8c5f560b8cea46d5d34213512c1378e0c20f55fd4b56  config-samsung-a51.aarch64
+ba1bf397e6ae63ff53aad715940d664fcbd0273ddbd9554c01171133f07627eadab2f174c408ebe4f25b92fcf66f1a3292b9928643e8599e7b1c28decbbed323  0001-SQUASH-HACK-DECON-framebuffer-fixes-for-Linux.patch
+93d43ca0d218729e60bd3256585a13ed6057881654147c2b84cab0423a5f8969c9566367b89226ddd153e7efa8f29878d0b7fc7c438ff02893bac15de1d41418  0001-fbdev-exynos-dpu20-Remove-one-of-samsung-debug-log.patch
+95b1d4d44eac376df3bc4bdb324035dae0c982c5938caaa4c3915aa78429898efd2b53b3e781cccb37b47dd2240bd0ce0b4ccf3c81a92e7c684790c68336d3a2  0001-drivers-soc-cal-if-Prevent-optimization-of-structs-o.patch
+8bb1aeeb094e6d0c7d1393ebf95f0f88642a164cb37fa75bc8098133000f5cd978844c28f5ba519ae31dcb89680426d18938e12e3f2137f5d55a9c6428f2ddba  0001-usb-u_ether-Force-setting-random-MAC-address.patch
+b9919a1010caf6cce9dbee0d3afa8e0b3c0794299d29d778d1ed822b6719a11c2b3ed08808ec5a641fe4a44a635370c0d85451fafdc62396a562fcaf02e5a9b6  exynos9611.cfg
+d1894ffd3c53d0e84678c4d566a833360525d916241cb69f35f9e8e195c0ff163ad2441562f092088726209e1533cb19f23e642e64fd89f31372a742c7d7d5b3  a51.cfg
+"

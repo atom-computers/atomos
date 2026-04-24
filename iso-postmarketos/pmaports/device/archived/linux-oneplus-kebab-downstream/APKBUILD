@@ -1,0 +1,98 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: extracted from LineageOS. a similar (working) config can be found at arch/arm64/configs/vendor/kona-perf_defconfig
+
+pkgname=linux-oneplus-kebab-downstream
+pkgver=4.19.110
+pkgrel=0
+pkgdesc="OnePlus 8T kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="oneplus-kebab"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	android-tools
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtc
+	flex
+	linux-headers
+	openssl-dev
+	perl
+	xz
+"
+# Source
+_repository="android_kernel_oneplus_sm8250"
+_commit="0c1bed1067131a0bd3e56c1cbdd3473606c5a48a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+	Remove-gcc-python-wrapper.patch
+	Remove-dangerous-flags.patch
+	Remove-inline-from-external-functions.patch
+	Suppress-error-about-static-buffer-overflow.patch
+	Fix-dangerous-relocation.patch
+	Fix-touchscreen-driver.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" DTC_EXT="/usr/bin/dtc" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		V=1
+}
+
+package() {
+	downstreamkernel_package \
+		"$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	dtbodir="$builddir/$_outdir/arch/arm64/boot/dts/vendor/qcom"
+	mkdtboimg create "$pkgdir/boot/dtbo.img" --page_size=4096 \
+		"$dtbodir/kebab-overlay.dtbo" \
+		"$dtbodir/instantnoodle-overlay-dvt.dtbo" \
+		"$dtbodir/instantnoodle-overlay-evt1.dtbo" \
+		"$dtbodir/instantnoodle-overlay-t0.dtbo" \
+		"$dtbodir/instantnoodlep-overlay-dvt.dtbo" \
+		"$dtbodir/instantnoodlep-overlay-evb.dtbo" \
+		"$dtbodir/instantnoodlep-overlay-evt1.dtbo" \
+		"$dtbodir/instantnoodlep-overlay-t0.dtbo" \
+		"$dtbodir/instantnoodlev-overlay-dvt.dtbo" \
+		"$dtbodir/instantnoodlev-overlay-evt1.dtbo" \
+		"$dtbodir/instantnoodlev-overlay-t0.dtbo"
+
+	install -Dm644 "$_outdir/arch/arm64/boot/Image-dtb" \
+		"$pkgdir/boot/vmlinuz"
+
+	make O="$_outdir" \
+		ARCH="$_carch" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir" \
+		modules_install
+
+}
+
+sha512sums="
+146dc2c324e3985a3347419e624db61aec26e121729c768fbabea56852153cf9d81eb4f070524631e78ea5f8987cd52fd9f356e777f3a557bc91008cab11013c  linux-oneplus-kebab-downstream-0c1bed1067131a0bd3e56c1cbdd3473606c5a48a.tar.gz
+762886bef26e96de73e4a2287d4085006b79ef1dbc930107b8444f49ad0b6a91d6a380c9e002606cfe9b42d26f4244c31904e61ec4e7498d6619ac06481f80cc  config-oneplus-kebab.aarch64
+27827877040007fc1c4c719f7e2e19e5c272d44972415cfc53feba0313d87e4074f8204bdb13cbc5fe21ea61bf595314b68f10c081e7b7bac3c888b60f008acf  linux4.17-gcc10-extern_YYLOC_global_declaration.patch
+359f619b7aac5bab061311f0806018ed04ce96a2233584a507b14c50ce616dfbc1681dd465ca3f0182165a6fc6c7b87435615bd1bd93efe174b95deba071f5fc  Remove-gcc-python-wrapper.patch
+74a98e0719e5f7f0741eb5760c2f8e4bdce7cfc2880d5c203bcaa0140ad8ca5ca1484b543230227406ec197c5da3e7b2c652a21816237473a762a7031c1faf84  Remove-dangerous-flags.patch
+aba7ae12986a2df81c6993f369390c6b3f5586fa70ab747e03d59aaf08cb79482a44eab723aed4469e98cadea0f70912f4e67caaf67cc279e1dc85e485b93a0f  Remove-inline-from-external-functions.patch
+4e7a73a1c6e8424a34d317899525ca3d783de1a5e65cc0ecdf6334bbb233d165b476107e599cbd86868ed91a5a60d2ef0eff975861d61cb2c403b572314b4a94  Suppress-error-about-static-buffer-overflow.patch
+39007dd285b502633c7bbf398acd6841a14fb6f5e0a3ad8570d31be77763b537b2352401701d67c53d36ddbf4068ee32446bf3b4ef9aa20c39f052ca491d2be4  Fix-dangerous-relocation.patch
+56abd497ce82b40b8669476bd6522813e832944e5a96362fc162c5acd97eeab642778c5d3e70ca7aeac1ce61781cb700d63157da244dff04ab4863887e32bef0  Fix-touchscreen-driver.patch
+"

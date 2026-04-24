@@ -1,0 +1,37 @@
+
+maintainer="Yassine Oudjana (Tooniis) <y.oudjana@protonmail.com>"
+pkgname=u-boot-grandpplte
+pkgver=2023.01
+pkgrel=0
+pkgdesc="U-Boot for Samsung Galaxy Grand Prime+"
+url="https://gitlab.com/mt6735-mainline/u-boot/"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+makedepends="$depends_dev bc dtc python3-dev swig bison flex openssl-dev
+	py3-setuptools u-boot-tools vboot-utils"
+options="!check"
+
+_tag=v${pkgver//_/-}-mt6735
+source="u-boot-$_tag.tar.gz::$url/-/archive/$_tag/u-boot-$_tag.tar.gz"
+builddir="$srcdir/u-boot-$_tag"
+
+prepare() {
+	default_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH=arm grandpplte_defconfig
+	make ARCH=arm CC="${CC:-gcc}"
+}
+
+package() {
+	mkdir -p "$pkgdir/usr/share/u-boot/grandpplte/"
+
+	install -Dm644 "$builddir/u-boot.bin" \
+		"$pkgdir/usr/share/u-boot/grandpplte/"
+}
+sha512sums="
+8a8d63b6d04d4018c94dd083908988209cce61b279c782886bae639f51a9821b2918a15d87c73da6e4c42a43aa0ed7360cbfc3e8092b117d7f9334f747dfa75d  u-boot-v2023.01-mt6735.tar.gz
+"

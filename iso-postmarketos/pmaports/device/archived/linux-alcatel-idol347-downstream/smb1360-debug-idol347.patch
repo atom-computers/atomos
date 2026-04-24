@@ -1,0 +1,49 @@
+diff --git a/drivers/power/idol347/smb1360-charger-fg.c b/drivers/power/idol347/smb1360-charger-fg.c
+index bc8859cd9a2..e223a5aea9e 100644
+--- a/drivers/power/idol347/smb1360-charger-fg.c
++++ b/drivers/power/idol347/smb1360-charger-fg.c
+@@ -9,6 +9,7 @@
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  */
++#define DEBUG
+ #define pr_fmt(fmt) "SMB:%s: " fmt, __func__
+ 
+ #include <linux/i2c.h>
+@@ -472,7 +473,7 @@ static int __smb1360_write(struct smb1360_chip *chip, int reg,
+ 			val, reg, ret);
+ 		return ret;
+ 	}
+-	//pr_debug("Writing 0x%02x=0x%02x\n", reg, val);
++	pr_debug("Writing 0x%02x=0x%02x\n", reg, val);
+ 	return 0;
+ }
+ 
+@@ -967,6 +968,10 @@ static enum power_supply_property smb1360_battery_properties[] = {
+ };
+ 
+ static int smb1360_get_prop_batt_present(struct smb1360_chip *chip)
++/* Disable pr_debug() for read routines, those spam too much */
++#pragma push_macro("pr_debug")
++#undef pr_debug
++#define pr_debug(fmt, ...)
+ {
+ 	return chip->batt_present;
+ }
+@@ -1223,6 +1228,7 @@ static int smb1360_get_prop_current_now(struct smb1360_chip *chip)
+ }
+ 
+ static int smb1360_set_minimum_usb_current(struct smb1360_chip *chip)
++#pragma pop_macro("pr_debug")
+ {
+ 	int rc = 0;
+ 
+@@ -2577,7 +2583,7 @@ static irqreturn_t smb1360_stat_handler(int irq, void *dev_id)
+ 		handlers[i].prev_val = handlers[i].val;
+ 	}
+ 
+-	pr_debug("handler count = %d\n", handler_count);
++	//pr_debug("handler count = %d\n", handler_count);
+ 	if (handler_count)
+ 		power_supply_changed(&chip->batt_psy);
+ 

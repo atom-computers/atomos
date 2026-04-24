@@ -1,0 +1,1 @@
+d /var/lib/gdm-greeter 0755 gdm-greeter gdm -

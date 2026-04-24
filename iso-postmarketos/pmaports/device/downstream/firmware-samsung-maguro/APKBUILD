@@ -1,0 +1,18 @@
+pkgname=firmware-samsung-maguro
+pkgver=1
+pkgrel=2
+_commit="1b5aede175101b44c58d296c833efda46e1b86de"
+pkgdesc="Google Galaxy Nexus (GSM) Firmware"
+url="https://postmarketos.org"
+arch="armv7"
+license="proprietary"
+depends="firmware-aosp-broadcom-wlan"
+source="$pkgname-$_commit-bcmdhd.cal::https://github.com/LineageOS/android_device_samsung_tuna/raw/$_commit/bcmdhd.cal"
+options="!strip !check !archcheck !spdx !tracedeps"
+
+package() {
+	install -Dm644 "$srcdir/$pkgname-$_commit-bcmdhd.cal" \
+		"$pkgdir"/lib/firmware/postmarketos/bcmdhd/bcm4330/bcmdhd.cal
+}
+
+sha512sums="64ba565246847cd4296713e554a37d5f2238c7d3b3545612de3ae00073364fc2c8c610cdd3291254526555658f464351a9c08ed8cbe1a733a8e0665bbab98094  firmware-samsung-maguro-1b5aede175101b44c58d296c833efda46e1b86de-bcmdhd.cal"

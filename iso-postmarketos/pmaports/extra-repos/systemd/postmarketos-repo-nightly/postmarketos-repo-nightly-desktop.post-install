@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cat >&2 <<-EOF
+To upgrade to nightly packages, you still have to run apk upgrade -Ua
+EOF

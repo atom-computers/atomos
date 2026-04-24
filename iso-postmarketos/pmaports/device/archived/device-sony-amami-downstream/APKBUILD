@@ -1,0 +1,42 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-amami-downstream
+pkgver=3
+pkgrel=0
+pkgdesc="Sony Xperia Z1 Compact (Downstream)"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	firmware-sony-rhine
+	linux-sony-amami-downstream
+	mdss-fb-init-hack
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	90-android-touch-dev.rules
+	deviceinfo
+	fb.modes
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/etc/udev/rules.d/90-android-touch-dev.rules
+	install -D -m644 "$srcdir"/fb.modes \
+		"$pkgdir"/etc/fb.modes
+}
+
+sha512sums="
+8b6034c0338ab4c7d648f47983aad6da07e427e7dba47baabf85a1b3ddeeda47c8d7fbcd547a302c9a759b2943ee30d3e82c3b368d8582833a058e4671638a9e  90-android-touch-dev.rules
+44c6cd84fbc7850912e5be2d34efb7e18fc35f2143dd205840e00c4a1c6b3c42909c33d2aedde8a598bc3c2b306f047000078e5fb88344f2017ebaeb6a0b68d6  deviceinfo
+4dc5b6a2d9de6b97e4033b14771b8a6afe922afcd0bc4c97481cfad775726109dd0570058b94b2cd805691343076e7d4d886218787ba883cc31dd1e6e3abb0af  fb.modes
+"

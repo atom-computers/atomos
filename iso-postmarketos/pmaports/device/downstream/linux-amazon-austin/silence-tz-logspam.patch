@@ -1,0 +1,22 @@
+diff --git a/drivers/misc/mediatek/trustzone/tz_secure_clock.c b/drivers/misc/mediatek/trustzone/tz_secure_clock.c
+index 19311916..4094b26d 100644
+--- a/drivers/misc/mediatek/trustzone/tz_secure_clock.c
++++ b/drivers/misc/mediatek/trustzone/tz_secure_clock.c
+@@ -184,7 +184,7 @@ if (err) {
+ }
+ 
+ rtc_tm_to_time(&tm, &time_count);
+-#if 1
++#if 0
+ pr_notice("securetime increase result: %d %d %d %d %d %d %d\n", tm.tm_yday, tm.tm_year, tm.tm_mon
+ 	, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+ #endif	
+@@ -194,7 +194,7 @@ ret = KREE_TeeServiceCall(session, TZCMD_SECURETIME_INC_CURRENT_COUNTER, paramTy
+ if (ret != TZ_RESULT_SUCCESS)
+ 	pr_err("ServiceCall error %d\n", ret);
+ 
+-#if 1
++#if 0
+ pr_notice("securetime increase result: %d %d %d %d %d %d %d\n", ((struct TM_GB *) shm_p)->tm_yday
+ 	, ((struct TM_GB *) shm_p)->tm_year, ((struct TM_GB *) shm_p)->tm_mon, ((struct TM_GB *) shm_p)->tm_mday
+ 	, ((struct TM_GB *) shm_p)->tm_hour, ((struct TM_GB *) shm_p)->tm_min, ((struct TM_GB *) shm_p)->tm_sec);

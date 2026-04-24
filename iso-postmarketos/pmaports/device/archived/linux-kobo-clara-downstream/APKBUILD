@@ -1,0 +1,67 @@
+# Archived: Mainline kernel is mature, only interesting for EPDC optimization
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/imx_v7_kobo_defconfig
+
+pkgname=linux-kobo-clara-downstream
+pkgver=4.1.15
+pkgrel=0
+pkgdesc="Kobo Clara HD kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="kobo-clara"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-nftables"
+makedepends="
+	bash
+	devicepkg-dev
+	lzop
+"
+
+# Source
+_repository="Kobo-Reader"
+_commit="b912467581644d7b8b22cefc1e1bfc3231264979"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.bz2::https://github.com/kobolabs/$_repository/raw/$_commit/hw/imx6sll-clara/kernel.tar.bz2
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	fix-device-tree.patch
+	fbdev-mxc-epdc-replace-blob-by-source-functions.patch
+"
+builddir="$srcdir/kernel"
+_outdir="out"
+
+prepare() {
+	REPLACE_GCCH=0
+	default_prepare
+	. downstreamkernel_prepare
+	find "$builddir/arch/arm" -name "*.S" -type f -exec sed -i '/^[[:blank:]]*\.section/s/#alloc,[[:blank:]]*#execinstr/"ax"/;/^[[:blank:]]*\.section/s/#alloc/"a"/' \{\} \;
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" \
+		CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$(( pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	make modules_install dtbs_install \
+		O="$_outdir" ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+}
+
+sha512sums="
+0c937767d7700eb2fde8caadc67ed2dda73969dbff8806c3811e2d05d423b51bc8219643d9ff6f09fc02787a9cbac6b4ee8cf75ea6e39cceba6a067b6370329d  linux-kobo-clara-downstream-b912467581644d7b8b22cefc1e1bfc3231264979.tar.bz2
+abc6e18adfca4b472f79e5877f8b6b4651a9ee01c0c5213e48007119e034d76e41ae193192065824fcd0c36adf8e024f14c17f50748c19c92c5335586dd47ba6  config-kobo-clara.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+8e6cc43ec5b3eb02e79d47841c3ada628e1ccfaece08a2a0c88542021f14603c99108bb1d4cd865b1dd3d62d3f7ae65b018bc778fb8dc9292e89e736c9b92a9d  fix-device-tree.patch
+55217b0c69ecf7ff5ed9b58535e973e1527e07a4cd09b90aef99bcbcfd2d38ac8d06c2a04576cd572172cb3fbef270a1a495fc42a3ab2047f6d95d97d38d98e4  fbdev-mxc-epdc-replace-blob-by-source-functions.patch
+"

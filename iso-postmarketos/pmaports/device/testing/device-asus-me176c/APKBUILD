@@ -1,0 +1,90 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-asus-me176c
+pkgdesc="ASUS MeMO Pad 7 (ME176C(X))"
+pkgver=8
+pkgrel=1
+_commit=3155254999ac36c3051a2118c415de25a072c0f6
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	$pkgname-factory
+	alsa-ucm-conf
+	intel-ucode
+	linux-stable
+	linux-firmware-none
+	postmarketos-base
+	sof-firmware
+	"
+makedepends="devicepkg-dev meson eudev-dev"
+source="https://github.com/me176c-dev/linux-me176c/archive/$_commit.tar.gz
+	deviceinfo
+	modules-initfs
+	phoc.ini
+	sof-workaround.conf
+	"
+subpackages="
+	$pkgname-factory
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+	$pkgname-vulkan
+	$pkgname-libva
+	"
+builddir="$srcdir/linux-me176c-$_commit"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	cd factory
+	abuild-meson . output \
+		-Dsystemd=false \
+		-Dopenrc=true
+	meson compile ${JOBS:+-j ${JOBS}} -C output
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/sof-workaround.conf \
+		"$pkgdir"/usr/lib/modprobe.d/sof-workaround.conf
+}
+
+factory() {
+	pkgdesc="WiFi/BT MAC address loader"
+	depends="bluez-btmgmt"
+	cd "$builddir"/factory
+	DESTDIR="$subpkgdir" meson install -C output
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/Bluetooth firmware"
+	depends="firmware-asus-me176c"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+vulkan() {
+	install_if="$pkgname vulkan-loader"
+	depends="mesa-vulkan-intel"
+	mkdir "$subpkgdir"
+}
+
+libva() {
+	install_if="$pkgname libva"
+	depends="libva-intel-driver"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+75243e3d0bc9a352465683ec8cf8b83566e4131bb7fae0f388267a62bdbf4691c955ed034b30df550f921b771080688123ae8db144b72f786bf1677ef1d83f57  3155254999ac36c3051a2118c415de25a072c0f6.tar.gz
+43be6ec21a3a5279be3be536426c9830f3ba5e3f8f29205beb9d8e7086478de8b6e0846aaa117c4a4fecd5f2bc3b899a612c354c5ce5cabd8acfcd1c2da3f693  deviceinfo
+9e9998420a23ae5ff955e0c860913ace9b2228ddd4bb041b3fe86df4611572ed3303e9d483797b1381696094a99cb5f82b3812fe3287025607224bc6e138cbc5  modules-initfs
+3823556d741a352fc7f43567d7218255a27c45c2c5d4d4bdf23f4d26ce2828c5a1c642519b84fef7f59756c990e6a199d72e6ba0c277939b08a40526c3ff3714  phoc.ini
+3d0dd014ac7c2700c4ceb7adf549b96dd0eaa7e75bc4ebee7aab23dc31679edc822e9f6ab0e51a1500459e7f04683c00b5a5c600aa2e13a61697e415ad4a019d  sof-workaround.conf
+"

@@ -1,0 +1,13 @@
+diff --git a/meson.build b/meson.build
+index 26d130b1a..3722f7ffd 100644
+--- a/meson.build
++++ b/meson.build
+@@ -136,7 +136,7 @@ if logind_provider == 'systemd'
+     ])
+   systemd_x_server = systemd_multiseat_x.found()? systemd_multiseat_x.path() : '/lib/systemd/systemd-multi-seat-x'
+ 
+-  have_userdb = libsystemd_dep.version().version_compare('>= 257')
++  have_userdb = false
+ 
+   # Our range is documented at https://systemd.io/UIDS-GIDS/
+   greeter_uid_min = systemd_dep.get_variable('greeter_uid_min', default_value: '60578')

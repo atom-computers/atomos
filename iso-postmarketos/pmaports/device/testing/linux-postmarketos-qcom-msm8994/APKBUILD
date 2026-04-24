@@ -1,0 +1,64 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Petr Vorel <petr.vorel@gmail.com>"
+_flavor="postmarketos-qcom-msm8994"
+pkgname=linux-$_flavor
+pkgver=6.16
+pkgrel=0
+pkgdesc="Mainline kernel for Qualcomm MSM8994/MSM8992 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	pmb:kconfigcheck-zram
+	"
+makedepends="
+	bison
+	findutils
+	flex
+	openssl-dev
+	perl
+	python3
+	postmarketos-installkernel
+"
+
+_tag=${pkgver//_/-}
+source="
+	https://git.kernel.org/torvalds/t/linux-$_tag.tar.gz
+	config-$_flavor.$arch
+	0001-arm64-dts-qcom-msm8994-huawei-angler-Add-regulators.patch
+"
+builddir="$srcdir/linux-${_tag#v}"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+9b6ff9b707d9e9b3d1a20ad1b65efd029911856a6f7890af4755b702c67ccb85c3ce4c4efe739fd3435e45d8f5bdd7ae7c0131c35fbf1c409034134dfedad1bd  linux-6.16.tar.gz
+1866d8e9d5a4a854db7f5d8c4bc74dbdac1a57418e2d4eab25ef97b96d135a95d30b621b3db8836209d67ece464f692f4074b179bbeaa35633d8717cc47185da  config-postmarketos-qcom-msm8994.aarch64
+c2561ffe00687a1fc2ea4a1dec8e132c9c47f522a587cb9d7511a0de9378abe8a5a08428a21822cff8d103c5e61c116182d5adb52e334d69bfc425579bb52f32  0001-arm64-dts-qcom-msm8994-huawei-angler-Add-regulators.patch
+"

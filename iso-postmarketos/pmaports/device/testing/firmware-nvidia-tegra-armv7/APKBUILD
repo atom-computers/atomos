@@ -1,0 +1,29 @@
+# Co-Maintainer: Ion Agorria
+# Co-Maintainer: Anton Bambura <jenneron@protonmail.com>
+# Co-Maintainer: Maxim Schwalm <maxim.schwalm@gmail.com>
+# Co-Maintainer: Robert Eckelmann <longnoserob@postmarketos.org>
+maintainer="Svyatoslav Ryhel <clamor95@gmail.com>"
+pkgname=firmware-nvidia-tegra-armv7
+pkgver=5
+pkgrel=0
+pkgdesc="Firmware files for Tegra devices supported by GRATE project"
+url="https://gitlab.com/grate-driver/firmware"
+arch="armv7"
+license="proprietary"
+makedepends="coreutils"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+# source
+_commit="00988ea994efa39550cc19f3b225874a32f1c3e0"
+_repo="firmware"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$_repo-$_commit.tar.gz"
+
+builddir="$srcdir/$_repo-$_commit"
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+f5319c7f125aef008317b2ae3021fd5ee8bda9a825d18f65e424c4f52458e4a999594f284b14c19f103c47cf5f958243f910f891d1dc468df8a13a34cc0b2617  firmware-nvidia-tegra-armv7-00988ea994efa39550cc19f3b225874a32f1c3e0.tar.gz
+"

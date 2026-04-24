@@ -1,0 +1,39 @@
+From 5618e8729c065e73a424dbc3cbf05dfa043ebd2d Mon Sep 17 00:00:00 2001
+From: Pangwalla <pangwalla@protonmail.com>
+Date: Wed, 1 Mar 2023 20:41:44 -0500
+Subject: [PATCH] remove inline usb driver
+
+---
+ drivers/net/usb/ax_main.c | 2 +-
+ drivers/net/usb/ax_main.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/usb/ax_main.c b/drivers/net/usb/ax_main.c
+index 1d686c767954..837636ed1c35 100644
+--- a/drivers/net/usb/ax_main.c
++++ b/drivers/net/usb/ax_main.c
+@@ -937,7 +937,7 @@ inline void *__rx_buf_align(void *data)
+ 	return (void *)ALIGN((uintptr_t)data, RX_ALIGN);
+ }
+ 
+-inline void *__tx_buf_align(void *data, u8 tx_align_len)
++void *__tx_buf_align(void *data, u8 tx_align_len)
+ {
+ 	return (void *)ALIGN((uintptr_t)data, tx_align_len);
+ }
+diff --git a/drivers/net/usb/ax_main.h b/drivers/net/usb/ax_main.h
+index 44a64b562088..47c1c04b4c2c 100644
+--- a/drivers/net/usb/ax_main.h
++++ b/drivers/net/usb/ax_main.h
+@@ -530,7 +530,7 @@ int ax_get_mac_pass(struct ax_device *axdev, u8 *mac);
+ void ax_set_tx_qlen(struct ax_device *dev);
+ 
+ inline void *__rx_buf_align(void *data);
+-inline void *__tx_buf_align(void *data, u8 tx_align_len);
++void *__tx_buf_align(void *data, u8 tx_align_len);
+ inline struct net_device_stats *ax_get_stats(struct net_device *dev);
+ void ax_write_bulk_callback(struct urb *urb);
+ 
+-- 
+2.39.2
+

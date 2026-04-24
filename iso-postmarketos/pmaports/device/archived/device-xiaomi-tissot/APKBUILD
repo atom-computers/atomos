@@ -1,0 +1,38 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+# Reference: <https://postmarketos.org/devicepkg>
+
+pkgname=device-xiaomi-tissot
+pkgdesc="Xiaomi Mi A1"
+pkgver=12
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-tissot
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	qbootctl
+	soc-qcom-msm8953
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+7a7b9605b57ddc221d07334f17c1ccb19a3614597523dae49f06afae8b2d01705092bdaaa547a97d881c9a1c586ae53dab4b9cddfa2bad8c0ee12ad83637d281  deviceinfo
+4284d7c184f364d81a06de962808cb240b713cda11381ddcec5acdfbb4d4962922b64b2f2675ab463961c0510352211ec439a6b9e4ebdc47bf73980133e9626a  modules-initfs
+"

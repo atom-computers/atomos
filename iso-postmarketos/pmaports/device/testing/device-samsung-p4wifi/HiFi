@@ -1,0 +1,120 @@
+SectionVerb {
+        EnableSequence [
+                cdev "hw:wm8994aif1"
+
+                # Must reset all input/outputs else the mixer goes into a bad
+                # state where things randomly don't work.
+                cset "name='Headphone Switch' 0"
+                cset "name='Speaker Switch' 0"
+                cset "name='IN1L Switch' 0"
+                cset "name='IN1R Switch' 0"
+
+                cset "name='DAC1R Mixer AIF1.1 Switch' 1"
+                cset "name='DAC1L Mixer AIF1.1 Switch' 1"
+                cset "name='DAC1 Switch' 1"
+
+                cset "name='Left Headphone Mux' DAC"
+                cset "name='Right Headphone Mux' DAC"
+        ]
+
+        Value {
+                PlaybackPCM "hw:wm8994aif1,0"
+                CapturePCM "hw:wm8994aif1,0"
+        }
+}
+
+SectionDevice."Speaker" {
+        Comment "Speaker"
+
+        EnableSequence [
+                cdev "hw:wm8994aif1"
+
+                cset "name='SPKR DAC1 Switch' 1"
+                cset "name='SPKL DAC1 Switch' 1"
+                cset "name='Speaker Switch' 1"
+                cset "name='Speaker Boost Volume' 5"
+                cset "name='Speaker Mixer Volume' 5"
+
+                exec "echo enable Speaker"
+        ]
+
+        Value {
+                PlaybackChannels "2"
+        }
+}
+
+SectionDevice."SpeakerMic" {
+        Comment "Speaker and Microphone"
+
+        EnableSequence [
+                cdev "hw:wm8994aif1"
+
+                cset "name='SPKR DAC1 Switch' 1"
+                cset "name='SPKL DAC1 Switch' 1"
+                cset "name='Speaker Switch' 1"
+                cset "name='Speaker Boost Volume' 5"
+                cset "name='Speaker Mixer Volume' 5"
+
+                cset "name='MIXINL IN1L Switch' 1"
+                cset "name='IN1L PGA IN1LP Switch' 1"
+                cset "name='IN1L PGA IN1LN Switch' 1"
+                cset "name='AIF1ADCL Source' 0"
+                cset "name='AIF1ADCR Source' 0"
+                cset "name='AIF1ADC1L Mixer ADC/DMIC Switch' 1"
+                cset "name='DAC1L Mixer AIF1.1 Switch' 1"
+                cset "name='DAC1R Mixer AIF1.1 Switch' 1"
+
+                cset "name='AIF1ADC1 HPF Switch' 1"
+
+                # Mute the mic by default.
+                cset "name='IN1L Switch' 0"
+
+                exec "echo enable Speaker and Microphone"
+        ]
+
+        Value {
+                PlaybackChannels "2"
+        }
+}
+
+SectionDevice."Headphone" {
+        Comment "Headphone"
+
+        EnableSequence [
+                cdev "hw:wm8994aif1"
+                cset "name='Headphone Switch' 1"
+
+                exec "echo enable Headphone"
+        ]
+
+        Value {
+                PlaybackChannels "2"
+        }
+}
+
+SectionDevice."Headset" {
+        Comment "Headset"
+
+        EnableSequence [
+                cdev "hw:wm8994aif1"
+                cset "name='Headphone Switch' 1"
+
+                cset "name='MIXINR IN1R Switch' 1"
+                cset "name='IN1R PGA IN1RN Switch' 1"
+                cset "name='IN1R PGA IN1RP Switch' 1"
+                cset "name='AIF1ADCL Source' 1"
+                cset "name='AIF1ADCR Source' 1"
+                cset "name='AIF1ADC1R Mixer ADC/DMIC Switch' 1"
+                cset "name='DAC1L Mixer AIF1.1 Switch' 1"
+                cset "name='DAC1R Mixer AIF1.1 Switch' 1"
+
+                # Mute the mic by default.
+                cset "name='IN1R Switch' 0"
+
+                exec "echo enable Headset"
+        ]
+
+        Value {
+                PlaybackChannels "2"
+        }
+}

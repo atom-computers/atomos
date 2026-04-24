@@ -1,0 +1,30 @@
+From a0cb8c6463e5945e6f5c03db1e7db06f90a73160 Mon Sep 17 00:00:00 2001
+From: Zhuowei Zhang <linux@worthdoingbadly.com>
+Date: Sat, 7 Mar 2020 22:07:45 -0500
+Subject: [PATCH] thermal: fix build error
+
+When building in-tree, I get:
+
+```
+drivers/thermal/thermal_core.c:42:10: fatal error: ../base/base.h: No such file or directory
+```
+---
+ drivers/thermal/thermal_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
+index 3ac29325ccbf..bb33c55b6592 100644
+--- a/drivers/thermal/thermal_core.c
++++ b/drivers/thermal/thermal_core.c
+@@ -39,7 +39,7 @@
+ #include <net/genetlink.h>
+ #include <linux/suspend.h>
+ #include <linux/kobject.h>
+-#include <../base/base.h>
++#include "../base/base.h"
+ 
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/thermal.h>
+-- 
+2.20.1
+

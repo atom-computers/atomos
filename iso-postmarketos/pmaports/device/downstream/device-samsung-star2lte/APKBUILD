@@ -1,0 +1,73 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-star2lte
+pkgdesc="Samsung Galaxy S9+"
+pkgver=3
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-star2lte
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	initfs-hook.sh
+	hciattach
+	10-hciattach.rules
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-nonfree-firmware-openrc:nonfree_firmware_openrc
+	$pkgname-nonfree-firmware-udev:nonfree_firmware_udev
+	$pkgname-x11
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# hciattach service for Bluetooth
+	install -Dm755 "$srcdir"/hciattach \
+		-t "$pkgdir"/etc/init.d
+	install -Dm644 "$srcdir"/10-hciattach.rules \
+		-t "$pkgdir"/usr/lib/udev/rules.d
+}
+
+nonfree_firmware() {
+	pkgdesc="$pkgdesc (WiFi and BT firmware)"
+	depends="firmware-samsung-crownlte bluez-deprecated"
+
+	mkdir -p "$subpkgdir"
+}
+
+nonfree_firmware_openrc() {
+	default_openrc
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel openrc"
+}
+
+nonfree_firmware_udev() {
+	default_udev
+	install_if="$pkgname-nonfree-firmware=$pkgver-r$pkgrel udev"
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	depends="xf86-input-evdev"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+5301f1a71e0e0d68323bd127bc6b6f4d4e18f36284b2a8f3d8002b55a8f64b8818e13b71f0b812800cd237c9d68b295bc1e76dff2463c64109a9df32034f5736  deviceinfo
+cec13a1cb076a249eb94d11fb122b1f6b0c3e9558a2ed3c8da3e73a8e2db633131ec8ce838e62da8f53b5500dcb77c6f4adf3c1d2f1cda6fd23cb2ca1ccf6abc  initfs-hook.sh
+70c4d3b7af9e58729b5caca87c6c0032675c4adfd3852b0e3fc1f866675d503c4f08d3edaf1b1949bf15344840222c1a7ba00384c290fa5e1b7742e1198855a8  hciattach
+58f72bb12532ce23782389bf9e9eb8eb8afe004dd46d11d48b21b6da6a84660846f79d528d9968a1c1be57716577035fd0da59b3fcda4f197599e92f243dbb45  10-hciattach.rules
+"

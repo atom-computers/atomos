@@ -1,0 +1,40 @@
+--- a/drivers/usb/gadget/function/f_fs.c
++++ b/drivers/usb/gadget/function/f_fs.c
+@@ -4295,7 +4295,7 @@
+ 	return data;
+ }
+ 
+-DECLARE_USB_FUNCTION_INIT(ffs, ffs_alloc_inst, ffs_alloc);
++DECLARE_USB_FUNCTION(ffs, ffs_alloc_inst, ffs_alloc);
+ 
+ static int ffs_init(void)
+ {
+@@ -4303,7 +4303,7 @@
+ 	if (IS_ERR_OR_NULL(ffs_ipc_log))
+ 		ffs_ipc_log =  NULL;
+ 
+-	return 0;
++	usb_function_register(&ffsusb_func);
+ }
+ module_init(ffs_init);
+ 
+@@ -4327,6 +4327,8 @@
+ 		ipc_log_context_destroy(ffs_ipc_log);
+ 		ffs_ipc_log = NULL;
+ 	}
++
++	usb_function_unregister(&ffsusb_func);
+ }
+ module_exit(ffs_exit);
+ 
+--- a/drivers/usb/gadget/function/f_qc_rndis.c
++++ b/drivers/usb/gadget/function/f_qc_rndis.c
+@@ -1528,7 +1528,7 @@
+ 	return rndis_ipa_params.skip_ep_cfg;
+ }
+ 
+-DECLARE_USB_FUNCTION_INIT(rndis_bam, qcrndis_alloc_inst, qcrndis_alloc);
++DECLARE_USB_FUNCTION(rndis_bam, qcrndis_alloc_inst, qcrndis_alloc);
+ 
+ static int __init usb_qcrndis_init(void)
+ {

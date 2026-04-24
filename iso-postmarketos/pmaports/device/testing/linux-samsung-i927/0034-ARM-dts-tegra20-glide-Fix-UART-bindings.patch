@@ -1,0 +1,128 @@
+From 59831748951e92720700af72cf75f185e96afb8d Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Sat, 23 Feb 2019 21:03:21 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: Fix UART bindings
+
+Old UART bindings were broken. This commit also fixes
+Bluetooth and GPS (you will need a userspace tool to use it).
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 87 ++++++++++++++++-------------
+ 1 file changed, 49 insertions(+), 38 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index f2b1805fc8cf..751c67924310 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -4,44 +4,6 @@
+ #include <dt-bindings/input/input.h>
+ #include "tegra20.dtsi"
+ 
+-// GPS
+-&uarta {
+-	status = "okay";
+-
+-	gnss {
+-		// Actual chip is unknown
+-		// (I don't want to teardown this thing)
+-		compatible = "wi2wi,w2sg0084i";
+-
+-		sirf,onoff-gpios = <&gpio TEGRA_GPIO(N, 6) GPIO_ACTIVE_HIGH>;
+-		// reset GPIO: B2
+-		// Also depends on this, but no way to specify it
+-		clocks = <&tegra_car TEGRA20_CLK_BLINK>;
+-	};
+-
+-};
+-
+-// Debug console
+-&uartb {
+-	status = "okay";
+-};
+-
+-// Bluetooth
+-&uartc {
+-	status = "okay";
+-
+-	bluetooth {
+-		// can be changed to 4330 in linux v5.0
+-		compatible = "brcm,bcm43438-bt";
+-		max-speed = <921600>;
+-		shutdown-gpios = <&gpio TEGRA_GPIO(J, 5) GPIO_ACTIVE_HIGH>;
+-		device-wakeup-gpios = <&gpio TEGRA_GPIO(S, 1) GPIO_ACTIVE_HIGH>;
+-		host-wakeup-gpios = <&gpio TEGRA_GPIO(S, 2) GPIO_ACTIVE_HIGH>;
+-		clock-names = "lpo";
+-		clocks = <&tegra_car TEGRA20_CLK_BLINK>;
+-	};
+-};
+-
+ / {
+ 	model = "Samsung SGH-I927 Captivate Glide";
+ 	compatible = "samsung,i927", "nvidia,tegra20";
+@@ -50,6 +12,8 @@
+ 		rtc0 = "/i2c@7000d000/max8907@3c";
+ 		rtc1 = "/rtc@7000e000";
+ 		serial0 = &uartb;
++		serial1 = &uarta;
++		serial2 = &uartc;
+ 	};
+ 
+ 	chosen {
+@@ -478,6 +442,53 @@
+ 		status = "okay";
+ 	};
+ 
++	// GPS
++	serial@70006000 {
++		compatible = "nvidia,tegra20-hsuart";
++		status = "okay";
++
++		/*
++		 * Wakeup GPIO is needed for kernel driver to work,
++		 * but we don't have one... There's GPIO_GPS_CNTL in
++		 * original kernel, but it's not used.
++		 */
++#if 0
++		gnss {
++			// Actual chip is unknown
++			// (I don't want to teardown this thing)
++			compatible = "wi2wi,w2sg0084i";
++
++			sirf,onoff-gpios = <&gpio TEGRA_GPIO(N, 6) GPIO_ACTIVE_HIGH>;
++			// reset GPIO: B2
++			// Also depends on this, but no way to specify it
++			clocks = <&tegra_car TEGRA20_CLK_BLINK>;
++		};
++#endif
++	};
++
++	// Debug console
++	serial@70006040 {
++		status = "okay";
++	};
++
++	// Bluetooth
++	serial@70006200 {
++		compatible = "nvidia,tegra20-hsuart";
++		status = "okay";
++
++		bluetooth {
++			// can be changed to 4330 in linux v5.0
++			compatible = "brcm,bcm43438-bt";
++			max-speed = <921600>;
++			shutdown-gpios = <&gpio TEGRA_GPIO(W, 1) GPIO_ACTIVE_HIGH>;
++			device-wakeup-gpios = <&gpio TEGRA_GPIO(S, 1) GPIO_ACTIVE_HIGH>;
++			host-wakeup-gpios = <&gpio TEGRA_GPIO(S, 2) GPIO_ACTIVE_HIGH>;
++			clocks = <&tegra_car TEGRA20_CLK_UARTC>;
++			clock-names = "uartc";
++
++		};
++	};
++
+ 	serial@70006040 {
+ 		status = "okay";
+ 	};
+-- 
+2.22.0
+

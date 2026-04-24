@@ -1,0 +1,5 @@
+[Desktop Entry]
+Exec=/usr/libexec/postmarketos/set-plasma-wallpaper.sh
+Name=Set postmarketOS wallpaper for Plasma
+Terminal=False
+Type=Application

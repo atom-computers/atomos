@@ -1,0 +1,26 @@
+pkgname=firmware-motorola-channel
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Motorola Channel G7 Play"
+url="https://gitlab.com/jetremblay/firmware-motorola-channel"
+subpackages="$pkgname-wcnss"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="b63367b99fc3782d4e326a84527f950436d97bf4"
+source="https://gitlab.com/jetremblay/firmware-motorola-channel/-/archive/$_commit/firmware-motorola-channel-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+wcnss() {
+	pkgdesc="Motorola Moto G7 Play WiFi firmware"
+	install -Dm644 "$builddir"/wcnss.* -t "$subpkgdir/$_fwdir"
+	install -Dm644 "$builddir"/wlan/prima/WCNSS_* -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+sha512sums="cfe2b52ebb3be71c41bc7f859a40cd72649087bf1390c4adfbcb4a3c09ec66db57750c97646c00e5ef1d1513fe02f8f8fd38a99480e80a3ac2b09496e49929d6  firmware-motorola-channel-b63367b99fc3782d4e326a84527f950436d97bf4.tar.gz"

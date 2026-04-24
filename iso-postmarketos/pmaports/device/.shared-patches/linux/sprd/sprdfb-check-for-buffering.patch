@@ -1,0 +1,24 @@
+sprdfb_check_var() has two problems:
+I) it is not buffering-aware, which all Spreadtrum devices use;
+II) it checks values that are already in yres_virtual, not those that we
+are trying to overwrite.
+Those problems stop X11 and charging-sdl from working properly.
+X11 error:
+(EE) FBDEV(0): FBIOPUT_VSCREENINFO: Invalid argument
+This patch fixes first problem, however, the correct way is fixing
+the second one, as this might have less side effects.
+
+diff --git a/drivers/video/sprdfb/sprdfb_main.c b/drivers/video/sprdfb/sprdfb_main.c
+index 43876285..751616a1 100644
+--- a/drivers/video/sprdfb/sprdfb_main.c
++++ b/drivers/video/sprdfb/sprdfb_main.c
+@@ -531,7 +531,8 @@ static int sprdfb_check_var(struct fb_var_screeninfo *var, struct fb_info *fb)
+ 	if ((var->xres != fb->var.xres) ||
+ 		(var->yres != fb->var.yres) ||
+ 		(var->xres_virtual != fb->var.xres_virtual) ||
+-		(var->yres_virtual != fb->var.yres_virtual) ||
++		// (var->yres_virtual != fb->var.yres_virtual) ||
++	    	(fb->var.yres_virtual % var->yres_virtual != 0) ||
+ 		(var->xoffset != fb->var.xoffset) ||
+ #ifndef BIT_PER_PIXEL_SURPPORT
+ 		(var->bits_per_pixel != fb->var.bits_per_pixel) ||

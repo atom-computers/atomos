@@ -1,0 +1,81 @@
+From f566cb65cbc249efb1f0b41636890974b6c1c453 Mon Sep 17 00:00:00 2001
+From: Shreeya Patel <shreeya.patel@collabora.com>
+Date: Mon, 17 Jul 2023 14:02:21 +0530
+Subject: [PATCH 03/21] iio: light: ltrf216a: Return floating point values
+
+For better precision of input light intesity, return floating point
+values through sysfs instead of integer.
+
+Signed-off-by: Shreeya Patel <shreeya.patel@collabora.com>
+(cherry picked from commit 13b313070846439805525ddb9f76dbf2b8de4300)
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+---
+ drivers/iio/light/ltrf216a.c | 39 ++++++++++++------------------------
+ 1 file changed, 13 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/iio/light/ltrf216a.c b/drivers/iio/light/ltrf216a.c
+index dbec1e7cfeb8..a88f5d5beeb0 100644
+--- a/drivers/iio/light/ltrf216a.c
++++ b/drivers/iio/light/ltrf216a.c
+@@ -239,32 +239,13 @@ static int ltrf216a_read_data(struct ltrf216a_data *data, u8 addr)
+ 	return get_unaligned_le24(&buf[0]);
+ }
+ 
+-static int ltrf216a_get_lux(struct ltrf216a_data *data)
+-{
+-	int ret, greendata;
+-	u64 lux;
+-
+-	ret = ltrf216a_set_power_state(data, true);
+-	if (ret)
+-		return ret;
+-
+-	greendata = ltrf216a_read_data(data, LTRF216A_ALS_DATA_0);
+-	if (greendata < 0)
+-		return greendata;
+-
+-	ltrf216a_set_power_state(data, false);
+-
+-	lux = greendata * data->info->lux_multiplier * LTRF216A_WIN_FAC;
+-
+-	return lux;
+-}
+-
+ static int ltrf216a_read_raw(struct iio_dev *indio_dev,
+ 			     struct iio_chan_spec const *chan, int *val,
+ 			     int *val2, long mask)
+ {
+ 	struct ltrf216a_data *data = iio_priv(indio_dev);
+-	int ret;
++	int ret, greendata;
++	u64 lux, div;
+ 
+ 	switch (mask) {
+ 	case IIO_CHAN_INFO_RAW:
+@@ -281,12 +262,18 @@ static int ltrf216a_read_raw(struct iio_dev *indio_dev,
+ 		return IIO_VAL_INT;
+ 	case IIO_CHAN_INFO_PROCESSED:
+ 		mutex_lock(&data->lock);
+-		ret = ltrf216a_get_lux(data);
+-		mutex_unlock(&data->lock);
+-		if (ret < 0)
++		ret = ltrf216a_set_power_state(data, true);
++		if (ret)
+ 			return ret;
+-		*val = ret;
+-		*val2 = data->als_gain_fac * data->int_time_fac;
++		greendata = ltrf216a_read_data(data, LTRF216A_ALS_DATA_0);
++		if (greendata < 0)
++			return greendata;
++		ltrf216a_set_power_state(data, false);
++		lux = greendata * 45 * LTRF216A_WIN_FAC;
++		div = data->als_gain_fac * data->int_time_fac;
++		mutex_unlock(&data->lock);
++		*val = lux;
++		*val2 = div;
+ 		return IIO_VAL_FRACTIONAL;
+ 	case IIO_CHAN_INFO_INT_TIME:
+ 		mutex_lock(&data->lock);
+-- 
+2.48.1
+

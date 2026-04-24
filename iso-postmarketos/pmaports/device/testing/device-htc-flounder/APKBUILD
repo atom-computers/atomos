@@ -1,0 +1,36 @@
+maintainer=""
+pkgname=device-htc-flounder
+pkgdesc="Google Nexus 9"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-htc-flounder
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Google Nexus 9 firmware"
+	depends="linux-firmware-brcm linux-firmware-nvidia firmware-htc-flounder"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+11f71c65004fc8efbc8a343cd9c576c19b230bc4e1a133855fd96e0546d13f9c603ab5085ca0c96b790d98207ec3031d3d40724a9f7ae90d020fb4bb891e3e84  deviceinfo
+976e9979e8ab47f59bda9520a42025a0c99505a106456c4aa6bf5d5f675a2ea2489cf85fdd6b53ff5b17079a491b99c9f6da38addc23ff2a483f40e187294184  kernel-cmdline.conf
+"

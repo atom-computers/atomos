@@ -1,0 +1,45 @@
+From 788a8f664a92e775fa61f03dfe312e4a482c5242 Mon Sep 17 00:00:00 2001
+From: JuniorJPDJ <git@juniorjpdj.pl>
+Date: Sun, 28 Mar 2021 03:07:12 +0200
+Subject: [PATCH] configs: add lark-freeme-70-2s
+
+---
+ configs/lark-freeme-70-2s_defconfig | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 configs/lark-freeme-70-2s_defconfig
+
+diff --git a/configs/lark-freeme-70-2s_defconfig b/configs/lark-freeme-70-2s_defconfig
+new file mode 100644
+index 0000000000..c6687f632a
+--- /dev/null
++++ b/configs/lark-freeme-70-2s_defconfig
+@@ -0,0 +1,26 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_SPL=y
++CONFIG_MACH_SUN4I=y
++CONFIG_DRAM_CLK=360
++CONFIG_DRAM_EMR1=4
++CONFIG_MMC0_CD_PIN="PH1"
++CONFIG_USB0_VBUS_DET="PH5"
++CONFIG_USB0_VBUS_PIN="PB9"
++CONFIG_USB0_ID_DET="PH4"
++# CONFIG_VIDEO_HDMI is not set
++CONFIG_VIDEO_LCD_MODE="x:800,y:480,depth:18,pclk_khz:33000,le:87,ri:40,up:31,lo:13,hs:1,vs:1,sync:3,vmode:0"
++CONFIG_VIDEO_LCD_POWER="PH8"
++CONFIG_VIDEO_LCD_BL_EN="PH7"
++CONFIG_VIDEO_LCD_BL_PWM="PB2"
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_SPL_TEXT_BASE=0x60
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SPL_I2C_SUPPORT=y
++CONFIG_DEFAULT_DEVICE_TREE="sun4i-a10-lark-freeme-70-2s"
++CONFIG_USB_MUSB_HOST=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_KEYBOARD=y
++CONFIG_USB_STORAGE=y
++CONFIG_SYS_USB_EVENT_POLL_VIA_INT_QUEUE=y
+-- 
+2.31.0
+

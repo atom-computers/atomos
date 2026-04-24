@@ -1,0 +1,24 @@
+maintainer=""
+pkgname=ldpath
+pkgver=0.1
+pkgrel=0
+pkgdesc="Utility to add or remove paths from musl dynamic linker config file"
+url="https://postmarketos.org/"
+arch="noarch"
+license="MIT"
+source="
+	ldpath.sh
+	ldpath_test.sh
+	"
+
+check() {
+	sh ldpath_test.sh
+}
+
+package() {
+	install -Dm755 "$srcdir/ldpath.sh" \
+		"$pkgdir/usr/bin/ldpath"
+}
+
+sha512sums="0bf8a3bcbb314f54653921d1757b35dc582997a4c058033a390c8b8a520f44541ba1791775ef5a63706da1b8cb86018bb9c7c7effce1c4ea65a2d33896e583ff  ldpath.sh
+e9ac37e88bc8fb6def9d550a58da0cc8c62dc14c49d6119e95560ff7d4c36eeb6dbbbce8006de6a170f6833b3ca54c80a2f173f67fefad4bf0927dc0a3d692b7  ldpath_test.sh"

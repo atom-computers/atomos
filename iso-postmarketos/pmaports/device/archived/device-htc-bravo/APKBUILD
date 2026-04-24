@@ -1,0 +1,37 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-htc-bravo
+pkgver=2
+pkgrel=0
+pkgdesc="HTC Desire"
+url="https://postmarketos.org"
+arch="armhf"
+license="MIT"
+depends="postmarketos-base linux-htc-bravo mkbootimg"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	initfs-hook.sh
+	90-android-touch-dev.rules
+	pointercal
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/etc/udev/rules.d/90-android-touch-dev.rules
+	install -D -m644 "$srcdir"/pointercal \
+		"$pkgdir"/etc/pointercal
+}
+
+sha512sums="
+f0cb0ced4d76dbe3a60e9062cf0e78cb5b936287c4078869c47fcfcc2980e7449e07c3c23e25fd6d7b992adec5bf57c1e46e02f0a48740a9aba814b50e784528  deviceinfo
+3ce2d134aa59677e25a160b5985c552fbf048b237169bbeb85e2b8824f734627064b51c097036db10eee0254064d45d804d17372dffcd1ba246938968fe1e225  initfs-hook.sh
+f0f69ab3b5b3fed11ec5049f37c71c4e9dcf87dc1f238199a3917dd61957d46783a8798d63d400cc5d3983987e750e3fec6d7117561ad5005f28131ae4821d66  90-android-touch-dev.rules
+d3de411b31de4bf4336dfac530e6af3392620ef6276ad143ebe0e417d543bfc7f5c9fcab8dab9342798e2c03281275c97e25bd01e97c350a2596f52795a37cef  pointercal
+"

@@ -1,0 +1,15 @@
+./lib/firmware/focaltech_ts_fw_huaxing.bin
+./lib/firmware/novatek_ts_tianma_fw.bin
+./lib/firmware/qcom/sm7125/miatoll/a615_zap.mbn
+./lib/firmware/qcom/sm7125/miatoll/adsp.mbn
+./lib/firmware/qcom/sm7125/miatoll/cdsp.mbn
+./lib/firmware/qcom/sm7125/miatoll/ipa_fws.mbn
+./lib/firmware/qcom/sm7125/miatoll/modem.mbn
+./lib/firmware/qcom/sm7125/miatoll/venus.mbn
+./lib/firmware/qcom/sm7125/miatoll/wlanmdsp.mbn
+./lib/firmware/qcom/sm7125/miatoll/adspr.jsn
+./lib/firmware/qcom/sm7125/miatoll/adsps.jsn
+./lib/firmware/qcom/sm7125/miatoll/adspua.jsn
+./lib/firmware/qcom/sm7125/miatoll/cdspr.jsn
+./lib/firmware/qcom/sm7125/miatoll/modemr.jsn
+./lib/firmware/qcom/sm7125/miatoll/modemuw.jsn

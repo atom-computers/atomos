@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rc-update add modemmanager default
+rc-update add tinydm default
+
+tinydm-set-session -s /usr/share/wayland-sessions/plasma-mobile.desktop

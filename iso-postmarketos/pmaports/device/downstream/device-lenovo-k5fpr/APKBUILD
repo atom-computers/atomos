@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lenovo-k5fpr
+pkgdesc="Lenovo K4 Note"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-lenovo-k5fpr
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+ec1b06f0eddfce11dbb4eb7cf5d7723b17cf23f44e3f4d1bb2a8f6c31fe78ad3661f2b6deabef0dd169a8536b111c564799473e973215ada31718d09fc83048b  deviceinfo
+d89b08ef9888faae6cb96a378421669e6119023307a3b5a109e18b7f9e2c70e1f8b240ba8f9b9d22d319fa28e416565d06074d34382f482c9b037b7ab3f4861c  kernel-cmdline.conf
+"

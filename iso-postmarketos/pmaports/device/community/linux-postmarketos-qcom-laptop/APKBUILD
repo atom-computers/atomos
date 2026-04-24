@@ -1,0 +1,90 @@
+# Co-Maintainer: Casey Connolly <kcxt@postmarketos.org>
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=linux-postmarketos-qcom-laptop
+pkgver=6.18
+pkgrel=2
+# Commit from branch @ https://gitlab.com/Linaro/arm64-laptops/linux/-/tree/qcom-laptops-v$pkgver
+_commit="d56d61d11040033212de5d04b580c40bcd15bb96"
+pkgdesc="Generic kernel for Qualcomm laptops"
+arch="aarch64"
+_carch="arm64"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip
+	!check
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-immutable
+	pmb:kconfigcheck-uefi
+	pmb:kconfigcheck-virt
+"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	elfutils-dev
+	findutils
+	flex
+	git
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	python3
+	zstd
+"
+replaces="linux-lenovo-21bx"
+
+# Source
+_repository="linux"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/Linaro/arm64-laptops/$_repository/-/archive/$_commit/linux-$_commit.tar.gz
+	config-postmarketos-qcom-laptop.aarch64
+
+	0001-Revert-arm64-dts-qcom-sc8280xp-x13s-Enable-Venus.patch
+	0002-Revert-arm64-dts-qcom-sc8280xp-el2-Add-venus-video-f.patch
+"
+builddir="$srcdir/linux-$_commit"
+_defconfig="defconfig"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+ee927fa388b56262d622aec68885d26ca7ba5d7b8755c20a53ded4e5550836468f36eaf412e3030d3aeef077d3967d62fe947d78258b35a949d4fad36bb7b52c  linux-postmarketos-qcom-laptop-d56d61d11040033212de5d04b580c40bcd15bb96.tar.gz
+5edfcd24330f5776a6ce5688d545057945d64a0eedc6d5fb182bffd87653fbe26748da0552deb993cf69b62659ddb0cb5f1762741f0bb5b02a736978f70c1347  config-postmarketos-qcom-laptop.aarch64
+2b19d581081846312ca7a12921a0e3cae31998a28023c33ee6992fa81054a0894e9157e8857dc78374c8fa85d84f7506cad8aced301b5187dbb75af0f8876195  0001-Revert-arm64-dts-qcom-sc8280xp-x13s-Enable-Venus.patch
+bf108235bf6d8bf6c6846777736b923a757a2d644b4bd07e36b681bb55fbc30339c13f6423c831d38721647a354b864fcf629f2be4071bfe7167b82784f7bcb3  0002-Revert-arm64-dts-qcom-sc8280xp-el2-Add-venus-video-f.patch
+"

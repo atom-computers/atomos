@@ -1,0 +1,25 @@
+From 1bedb739a7daf530d9b0005421b7326fba9afc45 Mon Sep 17 00:00:00 2001
+From: Tadeo Kondrak <me@tadeo.ca>
+Date: Thu, 28 Mar 2019 00:01:40 -0600
+Subject: [PATCH 1/2] don't hardcode cross_compile in makefile
+
+---
+ Makefile | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index c51a0863..778b2490 100644
+--- a/Makefile
++++ b/Makefile
+@@ -194,8 +194,6 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
+ export KBUILD_BUILDHOST := $(SUBARCH)
+ ARCH		?= $(SUBARCH)
+ CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+-ARCH		:= arm
+-CROSS_COMPILE	:= arm-eabi-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+-- 
+2.19.2
+

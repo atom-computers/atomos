@@ -1,0 +1,64 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/ford_defconfig
+
+pkgname=linux-amazon-ford
+pkgver=3.10.108
+pkgrel=1
+pkgdesc="Amazon Fire 7 (2015) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-ford"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	xz
+"
+
+# Source
+_repository="kernel_amazon_mt8127-common"
+_commit="4045305775d6bbbfaf45fd4f33109937a1eb4057"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/cm14-mt8127/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	Kernel3.4.108_Touchpanel_Driver_Remove_ScaleAndSwapXY.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+41c27a17cd9e4b6d1695815e966f8a276b8d55a8ac48093ed21fd06f77825fb346ba077d9c3715b03776ac98b073981410c48fcdbe43b22afc9bc08a743b95ce  linux-amazon-ford-4045305775d6bbbfaf45fd4f33109937a1eb4057.tar.gz
+2ed424b65681e9c1c3f51a76eeedc28a557dfec5d151a7303b56b393b3a2a519912353f32c88f36f648d22e06742898a08fae0a1184fe023f61c5eda5ffa7189  config-amazon-ford.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+90710c217bb05f50b652586e99b4190ee34b9a73b492f09ca58e56d08a77c52e2128031ac1f7e0dedd00bf63ae5379f1644268c45be8695311bb54f880bfaccf  Kernel3.4.108_Touchpanel_Driver_Remove_ScaleAndSwapXY.patch
+"

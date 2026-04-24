@@ -1,0 +1,64 @@
+# Co-Maintainer: Ingo Reitz <9l@9lo.re>
+# Co-Maintainer: WeirdTreeThing <bradyn127@protonmail.com>
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+pkgname=device-google-trogdor
+pkgdesc="Google Trogdor Chromebooks"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-postmarketos-qcom-sc7180
+	postmarketos-base
+	postmarketos-cros-common
+	soc-qcom-sc7180
+"
+
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	99-google-trogdor-accel.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/99-google-trogdor-accel.rules\
+			"$pkgdir"/usr/lib/udev/rules.d/99-google-trogdor-accel.rules
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT, Modem, GPU, Venus firmware"
+	depends="
+		linux-firmware-qcom
+		linux-firmware-qca
+		linux-firmware-ath10k
+		firmware-google-trogdor
+		soc-qcom-sc7180-nonfree-firmware
+		msm-cros-efs-loader
+	"
+	mkdir "$subpkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="eudev-hwids"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+40911658bfc9b70dd96c70b71ddbece4f08d0e618f0ad7816e48ce66f683dc11ffe7d57d16822228f206e0576db7832d96b66659b3a72f3f4aa7959dd8cb82e5  deviceinfo
+14b67d4842a2f1cc637c56ca50a1f6d4a18a4e0524ce4cd9cdd9d0becbf7c4d9dcb9be33251c31bf6e8c452c1a08d6c113b231980593a6b418d731f09ea8f9f4  kernel-cmdline.conf
+558623af5a636401af3f99ec963b8cee6eaf8b59b52c9c7ce45d41693663d340305e0733857e44398053ce0ecc24f0d48b478bf591cca5feb3982a58cdf6a761  modules-initfs
+c9e0be258575e2af67509b55d373a5e4da00ba338e6ff30859926e20aabe60a0ea657002e5b47bd579b55ff3be75a772c1f63d3adc05feb0a0d23c1fc52292b8  99-google-trogdor-accel.rules
+"

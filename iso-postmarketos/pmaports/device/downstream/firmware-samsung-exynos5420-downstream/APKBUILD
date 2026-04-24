@@ -1,0 +1,35 @@
+pkgname=firmware-samsung-exynos5420-downstream
+pkgver=1.0
+pkgrel=0
+pkgdesc="Firmware for Samsung's devices based on Exynos 5420"
+url="https://github.com/exynos5420/android_vendor_samsung_universal5420-common"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+_universal5420_commit="8f5241f7637477d3ecae65c67b9315d343257fad"
+_universal5420_files="
+	mfc_fw.bin
+	srp_vliw.bin
+	srp_cga.bin
+	srp_data.bin
+	bcm4350_V0301.0609.hcd
+"
+
+for _i in $_universal5420_files; do
+	source="$source $pkgname-$_universal5420_commit-$_i::$url/raw/$_universal5420_commit/proprietary/vendor/firmware/$_i";
+done
+
+package() {
+	for file in $_universal5420_files; do
+		install -Dm644 "$srcdir/$pkgname-$_universal5420_commit-$file" \
+			"$pkgdir/lib/firmware/postmarketos/$file"
+	done
+}
+sha512sums="
+30d97ab6fdd3013aa653e52bf3e0558dff34aa9e9ce6bf75b141c8f871503187e6a3cb2cd46b577cdb74a6f07bc1fa0c2701566ffda217b9417014d784a50c38  firmware-samsung-exynos5420-downstream-8f5241f7637477d3ecae65c67b9315d343257fad-mfc_fw.bin
+be70d92fee2da7c9f681cba178ea7e5edefc95a49f31479ce79753e52b393c18a42b817d530480b23b36a97293e85fb9967478a3aa19bbde3d208b05ed0fda07  firmware-samsung-exynos5420-downstream-8f5241f7637477d3ecae65c67b9315d343257fad-srp_vliw.bin
+c7ef64c1a13ba73b3bdeef456bf210809297ef6218a5b32c5fb3dac36501e743f9f704b1bf0bcc4336ae2206570780278ba33b8689ff8674ee941a65a592e1ee  firmware-samsung-exynos5420-downstream-8f5241f7637477d3ecae65c67b9315d343257fad-srp_cga.bin
+615ff7e324701c748a215effc8c3162f934fb9f13cce403946c5a6e6a1ab340ef2ff9dddaa588d8e11f7555e9331c8e7960fef774419e17cf687e39f867a60d4  firmware-samsung-exynos5420-downstream-8f5241f7637477d3ecae65c67b9315d343257fad-srp_data.bin
+2a5c682c520d7a35343abc0caccc1809fa022184a5684fd5fd579da6126273dbbb1441ec4f178f6295eb6360cccddbab070bc969924f1341839cd4c296222d8c  firmware-samsung-exynos5420-downstream-8f5241f7637477d3ecae65c67b9315d343257fad-bcm4350_V0301.0609.hcd
+"

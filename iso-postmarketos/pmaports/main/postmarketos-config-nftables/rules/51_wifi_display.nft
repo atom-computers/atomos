@@ -1,0 +1,10 @@
+#!/usr/sbin/nft -f
+
+table inet filter {
+	chain input {
+
+		# allow DNS from wlan*
+		iifname "p2p-wlan*" tcp dport 7236 accept comment "Accept Wi-Fi Display Protocol over TCP on p2p-wlan*"
+
+	}
+}

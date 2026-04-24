@@ -1,0 +1,32 @@
+From 0b1bcc5b931e6c30514ce96b2ce388ddd392052a Mon Sep 17 00:00:00 2001
+From: Clayton Craft <clayton@craftyguy.net>
+Date: Wed, 9 Feb 2022 12:49:19 -0800
+Subject: [PATCH] udev/cameras: use correct path for modprobe on Alpine Linux
+
+---
+ debian/librem5-base-defaults.librem5-cameras.udev | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/debian/librem5-base-defaults.librem5-cameras.udev b/debian/librem5-base-defaults.librem5-cameras.udev
+index b7f96f2..c986e62 100644
+--- a/debian/librem5-base-defaults.librem5-cameras.udev
++++ b/debian/librem5-base-defaults.librem5-cameras.udev
+@@ -1,9 +1,9 @@
+ # Load and unload camera modules on camera killswitch changes
+-ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}=="1", RUN+="/usr/sbin/modprobe imx7_media_csi", RUN+="/usr/sbin/modprobe imx8mq_mipi_csi2"
+-ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}!="1", RUN+="/usr/sbin/rmmod imx7_media_csi", RUN+="/usr/sbin/rmmod imx8mq_mipi_csi2"
++ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}=="1", RUN+="/sbin/modprobe imx7_media_csi", RUN+="/sbin/modprobe imx8mq_mipi_csi2"
++ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}!="1", RUN+="/sbin/rmmod imx7_media_csi", RUN+="/sbin/rmmod imx8mq_mipi_csi2"
+ 
+-ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}=="1", RUN+="/usr/sbin/modprobe s5k3l6xx"
+-ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}!="1", RUN+="/usr/sbin/rmmod s5k3l6xx"
++ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}=="1", RUN+="/sbin/modprobe s5k3l6xx"
++ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}!="1", RUN+="/sbin/rmmod s5k3l6xx"
+ 
+-ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}=="1", RUN+="/usr/sbin/modprobe hi846"
+-ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}!="1", RUN+="/usr/sbin/rmmod hi846"
++ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}=="1", RUN+="/sbin/modprobe hi846"
++ACTION=="change", SUBSYSTEM=="rfkill", ENV{RFKILL_NAME}=="camera-hks", ENV{RFKILL_STATE}!="1", RUN+="/sbin/rmmod hi846"
+-- 
+2.35.1
+

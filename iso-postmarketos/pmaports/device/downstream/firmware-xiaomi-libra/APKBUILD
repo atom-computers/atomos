@@ -1,0 +1,32 @@
+pkgname=firmware-xiaomi-libra
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for Xiaomi Mi 4c"
+url="https://github.com/aostanin/xiaomi-libra-firmware"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !tracedeps pmb:cross-native"
+
+# Source
+_files="bdwlan30.bin otp30.bin qwlan30.bin utf30.bin"
+_files_qca_cld="WCNSS_cfg.dat WCNSS_qcom_cfg.ini"
+_commit="cc05d180e715fd368cda2f2c7d7f09c290b3f2cc"
+source="$pkgname-$_commit.tar.gz::https://github.com/aostanin/xiaomi-libra-firmware/archive/$_commit.tar.gz"
+
+package() {
+	cd "$srcdir"
+
+	# /lib/firmware/postmarketos
+	for _i in $_files; do
+		install -D -m644 "xiaomi-libra-firmware-$_commit/firmware/image/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/$_i"
+	done
+
+	# /lib/firmware/postmarketos/wlan/qca_cld
+	for _i in $_files_qca_cld; do
+		install -D -m644 "xiaomi-libra-firmware-$_commit/etc/firmware/wlan/qca_cld/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/wlan/qca_cld/$_i"
+	done
+}
+
+sha512sums="d352bec1d3fee83f7eeea06509dad0bebbe82c6ba794b080f925736b68adfc13e36e53992476b676bd94fedefbdd08bf19e05c8af212bd9b0e761bd89dcace80  firmware-xiaomi-libra-cc05d180e715fd368cda2f2c7d7f09c290b3f2cc.tar.gz"

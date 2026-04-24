@@ -1,0 +1,88 @@
+Subject: [PATCH] ifdef knox ncm sock.c
+---
+Index: net/core/sock.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/net/core/sock.c b/net/core/sock.c
+--- a/net/core/sock.c	(revision 5eeafe2bfcb93847b403fd92bd92f9d0a9f6341d)
++++ b/net/core/sock.c	(date 1644158930000)
+@@ -148,11 +148,13 @@
+ 
+ #include <net/busy_poll.h>
+ 
++#ifdef CONFIG_KNOX_NCM
+ /* START_OF_KNOX_NPA */
+ #include <linux/sched.h>
+ #include <linux/pid.h>
+ #include <net/ncm.h>
+ /* END_OF_KNOX_NPA */
++#endif
+ 
+ static DEFINE_MUTEX(proto_list_mutex);
+ static LIST_HEAD(proto_list);
+@@ -671,6 +673,7 @@
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_KNOX_NCM
+ /* START_OF_KNOX_NPA */
+ /** The function sets the domain name associated with the socket. **/
+ static int sock_set_domain_name(struct sock *sk, char __user *optval,
+@@ -758,7 +761,7 @@
+ out:
+ 	return ret;
+ }
+-
++#endif
+ /* END_OF_KNOX_NPA */
+ 
+ static inline void sock_valbool_flag(struct sock *sk, int bit, int valbool)
+@@ -808,7 +811,7 @@
+ 
+ 	if (optname == SO_BINDTODEVICE)
+ 		return sock_setbindtodevice(sk, optval, optlen);
+-
++#ifdef CONFIG_KNOX_NCM
+     /* START_OF_KNOX_NPA */
+     if (optname == SO_SET_DOMAIN_NAME)
+         return sock_set_domain_name(sk, optval, optlen);
+@@ -817,6 +820,7 @@
+ 	if (optname == SO_SET_DNS_PID)
+ 		return sock_set_dns_pid(sk, optval, optlen);
+     /* END_OF_KNOX_NPA */
++#endif
+ 
+ 	if (optlen < sizeof(int))
+ 		return -EINVAL;
+@@ -1567,7 +1571,7 @@
+ 		      struct proto *prot, int kern)
+ {
+ 	struct sock *sk;
+-
++#ifdef CONFIG_KNOX_NCM
+ 	/* START_OF_KNOX_NPA */
+ 	struct pid *pid_struct = NULL;
+ 	struct task_struct *task = NULL;
+@@ -1578,10 +1582,11 @@
+ 	int parent_returnValue = -1;
+ 	char full_parent_process_name[PROCESS_NAME_LEN_NAP] = {0};
+ 	/* END_OF_KNOX_NPA */
+-
++#endif
+ 	sk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);
+ 	if (sk) {
+ 		sk->sk_family = family;
++#ifdef CONFIG_KNOX_NCM
+ 		/* START_OF_KNOX_NPA */
+ 		/* assign values to members of sock structure when npa flag is present */
+ 		sk->knox_uid = current->cred->uid.val;
+@@ -1624,6 +1629,7 @@
+ 				}
+ 			}
+ 		}
++#endif
+ 		/* END_OF_KNOX_NPA */
+ 		/*
+ 		 * See comment in struct sock definition to understand

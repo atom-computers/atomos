@@ -1,0 +1,585 @@
+commit a4cfff73c0f9a90e2d820720b07abb47011829f2
+Author: Alexey Min <alexey.min@gmail.com>
+Date:   Sat May 2 06:11:41 2020 +0300
+
+    port driver generator scripts to py3
+
+diff --git a/scripts/drvgen/drvgen.mk b/scripts/drvgen/drvgen.mk
+index 17f5f7b7273..617c3eb632c 100644
+--- a/scripts/drvgen/drvgen.mk
++++ b/scripts/drvgen/drvgen.mk
+@@ -91,7 +91,7 @@ $(DTB_OVERLAY_IMAGE_TAGERT) : PRIVATE_MKIMAGE_CFG:=$(srctree)/scripts/odmdtbo.cf
+ $(DTB_OVERLAY_IMAGE_TAGERT) : $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ) dtbs $(PRIVATE_MKIMAGE_TOOL) $(PRIVATE_MKIMAGE_CFG) $(PRIVATE_MULTIPLE_DTB_OVERLAY_HDR)
+ 	@echo Singing the generated overlay dtbo.
+ 	cat $(PRIVATE_DTB_OVERLAY_OBJ) > $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ) || (rm -f $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ); false)
+-	python $(PRIVATE_MULTIPLE_DTB_OVERLAY_HDR) $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ) $(PRIVATE_MULTIPLE_DTB_OVERLAY_IMG)
++	python3 $(PRIVATE_MULTIPLE_DTB_OVERLAY_HDR) $(PRIVATE_MULTIPLE_DTB_OVERLAY_OBJ) $(PRIVATE_MULTIPLE_DTB_OVERLAY_IMG)
+ 	# Not needed, requires glibc
+ 
+ .PHONY: odmdtboimage dtbs
+diff --git a/scripts/multiple_dtbo.py b/scripts/multiple_dtbo.py
+index 1d8e872443e..6bc0d7a14de 100644
+--- a/scripts/multiple_dtbo.py
++++ b/scripts/multiple_dtbo.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -52,12 +52,15 @@ def write_header(output_file, input_file, dtb_list):
+ 		head[8 + i] = struct.pack('I', offset)
+ 		i = i + 1
+ 
+-	with open(output_file, 'w') as fo:
++	with open(output_file, 'wb') as fo:
+ 		for item in head:
+-			fo.write("%s" % item)
+-		with open(input_file, 'r') as fi:
+-			for line in fi.readlines():
+-				fo.write(line)
++			#fo.write("%s" % item)
++			fo.write(item)
++		with open(input_file, 'rb') as fi:
++			#for line in fi.readlines():
++			#	fo.write(line)
++			rawbytes = fi.read()
++			fo.write(rawbytes)
+ 			fi.close
+ 		fo.close
+ 
+diff --git a/tools/dct/DrvGen.py b/tools/dct/DrvGen.py
+index ebc280c69c0..7c771580601 100755
+--- a/tools/dct/DrvGen.py
++++ b/tools/dct/DrvGen.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -35,9 +35,10 @@ from obj.ChipObj import MT6750S
+ 
+ from utility.util import LogLevel
+ from utility.util import log
++from utility.util import cmp
+ 
+ def usage():
+-    print '''
++    print('''
+ usage: DrvGen [dws_path] [file_path] [log_path] [paras]...
+ 
+ options and arguments:
+@@ -46,7 +47,7 @@ dws_path    :    dws file path
+ file_path   :    where you want to put generated files
+ log_path    :    where to store the log files
+ paras        :    parameter for generate wanted file
+-'''
++''')
+ 
+ def is_oldDws(path, gen_spec):
+     if not os.path.exists(path):
+@@ -55,7 +56,7 @@ def is_oldDws(path, gen_spec):
+ 
+     try:
+         root = xml.dom.minidom.parse(dws_path)
+-    except Exception, e:
++    except Exception as e:
+         log(LogLevel.warn, '%s is not xml format, try to use old DCT!' %(dws_path))
+         if len(gen_spec) == 0:
+             log(LogLevel.warn, 'Please use old DCT UI to gen all files!')
+diff --git a/tools/dct/obj/ChipObj.py b/tools/dct/obj/ChipObj.py
+index 2592931ba8f..c5b18c2b0d4 100755
+--- a/tools/dct/obj/ChipObj.py
++++ b/tools/dct/obj/ChipObj.py
+@@ -16,26 +16,27 @@ import os, sys
+ import collections
+ import xml.dom.minidom
+ 
+-from GpioObj import GpioObj
+-from GpioObj import GpioObj_whitney
+-from GpioObj import GpioObj_MT6759
+-from EintObj import EintObj
+-from EintObj import EintObj_MT6750S
+-from AdcObj import AdcObj
+-from ClkObj import ClkObj
+-from ClkObj import ClkObj_Everest
+-from ClkObj import ClkObj_Olympus
+-from ClkObj import ClkObj_Rushmore
+-from I2cObj import I2cObj
+-from I2cObj import I2cObj_MT6759
+-from PmicObj import PmicObj
+-from Md1EintObj import Md1EintObj
+-from PowerObj import PowerObj
+-from KpdObj import KpdObj
+-from ModuleObj import ModuleObj
++from .GpioObj import GpioObj
++from .GpioObj import GpioObj_whitney
++from .GpioObj import GpioObj_MT6759
++from .EintObj import EintObj
++from .EintObj import EintObj_MT6750S
++from .AdcObj import AdcObj
++from .ClkObj import ClkObj
++from .ClkObj import ClkObj_Everest
++from .ClkObj import ClkObj_Olympus
++from .ClkObj import ClkObj_Rushmore
++from .I2cObj import I2cObj
++from .I2cObj import I2cObj_MT6759
++from .PmicObj import PmicObj
++from .Md1EintObj import Md1EintObj
++from .PowerObj import PowerObj
++from .KpdObj import KpdObj
++from .ModuleObj import ModuleObj
+ 
+ from utility.util import log
+ from utility.util import LogLevel
++from utility.util import cmp
+ 
+ para_map = {'adc':['adc_h', 'adc_dtsi'],\
+             'clk':['clk_buf_h', 'clk_buf_dtsi'],\
+diff --git a/tools/dct/obj/ClkObj.py b/tools/dct/obj/ClkObj.py
+index d13a81bb6aa..41913fd4a46 100755
+--- a/tools/dct/obj/ClkObj.py
++++ b/tools/dct/obj/ClkObj.py
+@@ -15,15 +15,16 @@
+ import os
+ import re
+ import string
+-import ConfigParser
++import configparser
+ 
+ import xml.dom.minidom
+ 
+-from ModuleObj import ModuleObj
++from .ModuleObj import ModuleObj
+ from data.ClkData import ClkData
+ from utility.util import log
+ from utility.util import LogLevel
+ from utility.util import sorted_key
++from utility.util import cmp
+ 
+ DEFAULT_AUTOK = 'AutoK'
+ class ClkObj(ModuleObj):
+@@ -61,17 +62,17 @@ class ClkObj(ModuleObj):
+         return True
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_figPath())
+ 
+-        count = string.atoi(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
++        count = int(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
+         self.__count = count
+ 
+         ops = cp.options('CLK_BUF')
+         for op in ops:
+             if op == 'clk_buf_count':
+-                self.__count = string.atoi(cp.get('CLK_BUF', op))
+-                ClkData._count = string.atoi(cp.get('CLK_BUF', op))
++                self.__count = int(cp.get('CLK_BUF', op))
++                ClkData._count = int(cp.get('CLK_BUF', op))
+                 continue
+ 
+             value = cp.get('CLK_BUF', op)
+@@ -79,8 +80,8 @@ class ClkObj(ModuleObj):
+ 
+             data = ClkData()
+             data.set_curList(var_list[2:])
+-            data.set_defVarName(string.atoi(var_list[0]))
+-            data.set_defCurrent(string.atoi(var_list[1]))
++            data.set_defVarName(int(var_list[0]))
++            data.set_defCurrent(int(var_list[1]))
+ 
+             key = op[16:].upper()
+             ModuleObj.set_data(self, key, data)
+@@ -358,10 +359,10 @@ class ClkObj_Rushmore(ClkObj):
+         ClkObj.parse(self, node)
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_figPath())
+ 
+-        count = string.atoi(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
++        count = int(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
+         self.__count = count
+ 
+     def read(self, node):
+diff --git a/tools/dct/obj/EintObj.py b/tools/dct/obj/EintObj.py
+index 5f80678e35a..7a8ccd6d6a8 100755
+--- a/tools/dct/obj/EintObj.py
++++ b/tools/dct/obj/EintObj.py
+@@ -16,7 +16,7 @@ import re
+ import os
+ import string
+ 
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+ from data.EintData import EintData
+@@ -24,6 +24,7 @@ from data.GpioData import GpioData
+ from utility.util import log
+ from utility.util import LogLevel
+ from utility.util import compare
++from utility.util import cmp
+ 
+ from obj.ModuleObj import ModuleObj
+ from obj.GpioObj import GpioObj
+@@ -84,7 +85,7 @@ class EintObj(ModuleObj):
+         ModuleObj.gen_spec(self, para)
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_figPath())
+ 
+         ops = cp.options('GPIO')
+diff --git a/tools/dct/obj/GpioObj.py b/tools/dct/obj/GpioObj.py
+index 94f1f83a1ab..fc48ca20646 100755
+--- a/tools/dct/obj/GpioObj.py
++++ b/tools/dct/obj/GpioObj.py
+@@ -16,18 +16,19 @@ import re
+ import os
+ import sys
+ import string
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+ 
+ from data.GpioData import GpioData
+ from data.EintData import EintData
+-from ModuleObj import ModuleObj
+-import ChipObj
++from .ModuleObj import ModuleObj
++import obj.ChipObj
+ from utility.util import compare
+ from utility.util import sorted_key
+ from utility.util import log
+ from utility.util import LogLevel
++from utility.util import cmp
+ 
+ class GpioObj(ModuleObj):
+     def __init__(self):
+@@ -40,7 +41,7 @@ class GpioObj(ModuleObj):
+         self.__drvCur = False
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_cmpPath())
+ 
+         # get GPIO_FREQ section
+@@ -70,7 +71,7 @@ class GpioObj(ModuleObj):
+             GpioData._modeMap[op] = temp
+ 
+             data = GpioData()
+-            data.set_smtNum(string.atoi(list[len(list)-1]))
++            data.set_smtNum(int(list[len(list)-1]))
+             ModuleObj.set_data(self, op.lower(), data)
+ 
+     def read(self, node):
+@@ -78,7 +79,7 @@ class GpioObj(ModuleObj):
+         for node in nodes:
+             if node.nodeType == xml.dom.Node.ELEMENT_NODE:
+                 if cmp(node.nodeName, 'count') == 0:
+-                    GpioData._count = string.atoi(node.childNodes[0].nodeValue)
++                    GpioData._count = int(node.childNodes[0].nodeValue)
+                     continue
+ 
+                 eintNode = node.getElementsByTagName('eint_mode')
+@@ -97,7 +98,7 @@ class GpioObj(ModuleObj):
+                 iesNode = node.getElementsByTagName('ies')
+                 drvCurNode = node.getElementsByTagName('drv_cur')
+ 
+-                num = string.atoi(node.nodeName[4:])
++                num = int(node.nodeName[4:])
+                 if num >= len(ModuleObj.get_data(self)):
+                     break
+                 data = ModuleObj.get_data(self)[node.nodeName]
+@@ -109,7 +110,7 @@ class GpioObj(ModuleObj):
+                     data.set_eintMode(flag)
+ 
+                 if len(defmNode):
+-                    data.set_defMode(string.atoi(defmNode[0].childNodes[0].nodeValue))
++                    data.set_defMode(int(defmNode[0].childNodes[0].nodeValue))
+ 
+                 if len(modsNode):
+                     str = modsNode[0].childNodes[0].nodeValue
+diff --git a/tools/dct/obj/I2cObj.py b/tools/dct/obj/I2cObj.py
+index 289c57ca98b..a7f643751de 100755
+--- a/tools/dct/obj/I2cObj.py
++++ b/tools/dct/obj/I2cObj.py
+@@ -15,14 +15,15 @@
+ import re
+ import string
+ import xml.dom.minidom
+-import ConfigParser
++import configparser
+ 
+-from ModuleObj import ModuleObj
++from .ModuleObj import ModuleObj
+ #from utility import util
+ from utility.util import sorted_key
++from utility.util import cmp
+ from data.I2cData import I2cData
+ from data.I2cData import BusData
+-import ChipObj
++import obj.ChipObj
+ 
+ class I2cObj(ModuleObj):
+     _busList = []
+@@ -33,11 +34,11 @@ class I2cObj(ModuleObj):
+         #self.__bBusEnable = True
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_figPath())
+ 
+-        I2cData._i2c_count = string.atoi(cp.get('I2C', 'I2C_COUNT'))
+-        I2cData._channel_count = string.atoi(cp.get('I2C', 'CHANNEL_COUNT'))
++        I2cData._i2c_count = int(cp.get('I2C', 'I2C_COUNT'))
++        I2cData._channel_count = int(cp.get('I2C', 'CHANNEL_COUNT'))
+ 
+         if cp.has_option('Chip Type', 'I2C_BUS'):
+             flag = cp.get('Chip Type', 'I2C_BUS')
+@@ -128,7 +129,7 @@ class I2cObj(ModuleObj):
+ 
+ 
+             if self._bBusEnable:
+-                gen_str += '''\tclock-frequency = <%d>;\n''' %(string.atoi(self._busList[i].get_speed()) * 1000)
++                gen_str += '''\tclock-frequency = <%d>;\n''' %(int(self._busList[i].get_speed()) * 1000)
+                 temp_str = ''
+ 
+                 if cmp(self._busList[i].get_enable(), 'false') == 0:
+@@ -175,7 +176,7 @@ class I2cObj_MT6759(I2cObj):
+ 
+ 
+             if self._bBusEnable:
+-                gen_str += '''\tclock-frequency = <%d>;\n''' %(string.atoi(self._busList[i].get_speed()) * 1000)
++                gen_str += '''\tclock-frequency = <%d>;\n''' %(int(self._busList[i].get_speed()) * 1000)
+                 temp_str = ''
+ 
+                 if cmp(self._busList[i].get_enable(), 'false') == 0:
+diff --git a/tools/dct/obj/KpdObj.py b/tools/dct/obj/KpdObj.py
+index 6dae46f2572..0897e51cc7a 100755
+--- a/tools/dct/obj/KpdObj.py
++++ b/tools/dct/obj/KpdObj.py
+@@ -14,12 +14,13 @@
+ 
+ import re
+ import string
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+-from ModuleObj import ModuleObj
++from .ModuleObj import ModuleObj
+ from utility.util import LogLevel
+ from utility.util import log
++from utility.util import cmp
+ from data.KpdData import KpdData
+ 
+ class KpdObj(ModuleObj):
+@@ -29,20 +30,20 @@ class KpdObj(ModuleObj):
+ 
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_cmpPath())
+ 
+         ops = cp.options('Key_definition')
+         for op in ops:
+-            KpdData._keyValueMap[op.upper()] = string.atoi(cp.get('Key_definition', op))
++            KpdData._keyValueMap[op.upper()] = int(cp.get('Key_definition', op))
+ 
+         KpdData._keyValueMap['NC'] = 0
+ 
+         cp.read(ModuleObj.get_figPath())
+         if cp.has_option('KEYPAD_EXTEND_TYPE', 'KEY_ROW'):
+-            KpdData.set_row_ext(string.atoi(cp.get('KEYPAD_EXTEND_TYPE', 'KEY_ROW')))
++            KpdData.set_row_ext(int(cp.get('KEYPAD_EXTEND_TYPE', 'KEY_ROW')))
+         if cp.has_option('KEYPAD_EXTEND_TYPE', 'KEY_COLUMN'):
+-            KpdData.set_col_ext(string.atoi(cp.get('KEYPAD_EXTEND_TYPE', 'KEY_COLUMN')))
++            KpdData.set_col_ext(int(cp.get('KEYPAD_EXTEND_TYPE', 'KEY_COLUMN')))
+ 
+         return True
+ 
+@@ -51,11 +52,11 @@ class KpdObj(ModuleObj):
+         for node in nodes:
+             if node.nodeType == xml.dom.Node.ELEMENT_NODE:
+                 if node.nodeName == 'row':
+-                    row = string.atoi(node.childNodes[0].nodeValue)
++                    row = int(node.childNodes[0].nodeValue)
+                     KpdData.set_row(row)
+ 
+                 if node.nodeName == 'column':
+-                    col = string.atoi(node.childNodes[0].nodeValue)
++                    col = int(node.childNodes[0].nodeValue)
+                     KpdData.set_col(col)
+ 
+                 if node.nodeName == 'keyMatrix':
+@@ -94,7 +95,7 @@ class KpdObj(ModuleObj):
+                     KpdData._modeKeys['FACTORY'] = keys[2]
+ 
+                 if node.nodeName == 'pwrKeyEint_gpioNum':
+-                    num = string.atoi(node.childNodes[0].nodeValue)
++                    num = int(node.childNodes[0].nodeValue)
+                     KpdData.set_gpioNum(num)
+ 
+                 if node.nodeName == 'pwrKeyUtility':
+@@ -127,7 +128,7 @@ class KpdObj(ModuleObj):
+                     KpdData.set_gpioDinHigh(flag)
+ 
+                 if node.nodeName == 'pressPeriod':
+-                    time = string.atoi(node.childNodes[0].nodeValue)
++                    time = int(node.childNodes[0].nodeValue)
+                     KpdData.set_pressTime(time)
+ 
+                 if node.nodeName == 'keyType':
+diff --git a/tools/dct/obj/Md1EintObj.py b/tools/dct/obj/Md1EintObj.py
+index 7b4ef25c8c6..450abab9c87 100755
+--- a/tools/dct/obj/Md1EintObj.py
++++ b/tools/dct/obj/Md1EintObj.py
+@@ -12,13 +12,14 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ # See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ 
+-import ConfigParser
++import configparser
+ import string
+ import xml.dom.minidom
+ 
+ from utility import util
+ from utility.util import sorted_key
+-from ModuleObj import ModuleObj
++from utility.util import cmp
++from .ModuleObj import ModuleObj
+ from data.Md1EintData import Md1EintData
+ from utility.util import LogLevel
+ 
+@@ -30,7 +31,7 @@ class Md1EintObj(ModuleObj):
+ 
+     def get_cfgInfo(self):
+         # ConfigParser accept ":" and "=", so SRC_PIN will be treated specially
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_figPath())
+ 
+         if cp.has_option('Chip Type', 'MD1_EINT_SRC_PIN'):
+@@ -166,7 +167,7 @@ class Md1EintObj(ModuleObj):
+                 type = 8
+ 
+             gen_str += '''\t\tinterrupts = <%s %d>;\n''' %(num, type)
+-            gen_str += '''\t\tdebounce = <%s %d>;\n''' %(num, (string.atoi(value.get_debounceTime()))*1000)
++            gen_str += '''\t\tdebounce = <%s %d>;\n''' %(num, (int(value.get_debounceTime()))*1000)
+             gen_str += '''\t\tdedicated = <%s %d>;\n''' %(num, int(value.get_dedicatedEn()))
+             if self.__bSrcPinEnable:
+                 gen_str += '''\t\tsrc_pin = <%s %s>;\n''' %(num, self.__srcPin[value.get_srcPin()])
+diff --git a/tools/dct/obj/PmicObj.py b/tools/dct/obj/PmicObj.py
+index 0bafe8f4d4a..83c2f28bc7d 100755
+--- a/tools/dct/obj/PmicObj.py
++++ b/tools/dct/obj/PmicObj.py
+@@ -14,13 +14,14 @@
+ 
+ import sys, os
+ import re
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+-from ModuleObj import ModuleObj
++from .ModuleObj import ModuleObj
+ from data.PmicData import PmicData
+ 
+ from utility.util import log
++from utility.util import cmp
+ from utility.util import LogLevel
+ from utility.util import compare
+ from utility.util import sorted_key
+@@ -39,7 +40,7 @@ class PmicObj(ModuleObj):
+ 
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_cmpPath())
+ 
+         PmicData._var_list = cp.options('APPLICATION')
+diff --git a/tools/dct/obj/PowerObj.py b/tools/dct/obj/PowerObj.py
+index 6cff9bf5d8f..885bf173b07 100755
+--- a/tools/dct/obj/PowerObj.py
++++ b/tools/dct/obj/PowerObj.py
+@@ -15,15 +15,16 @@
+ import sys,os
+ import re
+ import string
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+-import ChipObj
++import obj.ChipObj
+ from data.PowerData import PowerData
+ from utility.util import log
++from utility.util import cmp
+ from utility.util import LogLevel
+ from utility.util import sorted_key
+-from ModuleObj import ModuleObj
++from .ModuleObj import ModuleObj
+ 
+ class PowerObj(ModuleObj):
+     def __init__(self):
+@@ -31,7 +32,7 @@ class PowerObj(ModuleObj):
+         self.__list = {}
+ 
+     def getCfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.ConfigParser(allow_no_value=True, strict=False)
+         cp.read(ModuleObj.get_figPath())
+ 
+         self.__list = cp.options('POWER')
+@@ -75,7 +76,7 @@ class PowerObj(ModuleObj):
+             value = ModuleObj.get_data(self)[key]
+             if value.get_varName() == '':
+                 continue
+-            idx = string.atoi(key[5:])
++            idx = int(key[5:])
+             name = self.__list[idx]
+             gen_str += '''#define GPIO_%s\t\tGPIO_%s\n''' %(name.upper(), value.get_varName())
+ 
+diff --git a/tools/dct/utility/util.py b/tools/dct/utility/util.py
+index 8c0b16e17fb..619771e45a9 100755
+--- a/tools/dct/utility/util.py
++++ b/tools/dct/utility/util.py
+@@ -27,11 +27,11 @@ class LogLevel:
+ 
+ def log(level, msg):
+     if level == LogLevel.info:
+-        print LEVEL_INFO + msg
++        print(LEVEL_INFO + msg)
+     elif level == LogLevel.warn:
+-        print LEVEL_WARN + msg
++        print(LEVEL_WARN + msg)
+     elif level == LogLevel.error:
+-        print LEVEL_ERROR + msg
++        print(LEVEL_ERROR + msg)
+ 
+ def compare(value):
+     lst = re.findall(r'\d+', value)
+@@ -44,4 +44,11 @@ def compare(value):
+ def sorted_key(lst):
+     return sorted(lst, key=compare)
+ 
++def cmp(a, b):
++	if a == b:
++		return 0
++	if a < b:
++		return -1
++	if a > b:
++		return 1
+ 

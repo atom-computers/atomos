@@ -1,0 +1,67 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/vendor/spes-perf_defconfig
+
+pkgname=linux-xiaomi-spes
+pkgver=4.19.325
+pkgrel=1
+pkgdesc="Xiaomi Redmi Note 11 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-spes"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	xz
+	python3
+	linux-headers
+	clang
+"
+
+# Source
+_repository="kernel_xiaomi_spes"
+_commit="ae003d9abaa184f767e16e641e9d0eeb1ffcbef2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/muralivijay/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="clang" HOSTCC="clang" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make O="$_outdir" modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+}
+
+sha512sums="
+fb7336c515fc753b99f3816b9d7b9f20497d91d27fb91d7d011cc91c8c33f2833570b882f90edd878e96f15d44d34374fe38fbea245ae54cad34b4b73cb71e41  linux-xiaomi-spes-ae003d9abaa184f767e16e641e9d0eeb1ffcbef2.tar.gz
+d3fdf9b32e1416935a99a39f3eae2f7e3e727e7f1d519f47f83c7a554e178a5d0757032a185fddfde93c57f64e3d4183acf0e043b06c2c81e67017f58f68513b  config-xiaomi-spes.aarch64
+"

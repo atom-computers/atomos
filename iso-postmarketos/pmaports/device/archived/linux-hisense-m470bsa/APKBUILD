@@ -1,0 +1,67 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/m470_v2_dopa1_defconfig
+
+pkgname=linux-hisense-m470bsa
+pkgver=3.1.10
+pkgrel=4
+pkgdesc="Hisense Sero 7 Pro kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="hisense-m470bsa"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6 xz"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_hisense_m470bsa"
+_commit="7af4a85198eb80cdb6964bd0550f6f5ea722274c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/dolorespark/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CFLAGS_MODULE=-fno-pic modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	echo "--[ Installing modules ]--"
+	install -Dm644 "$builddir/drivers/net/wireless/bcmdhd/bcmdhd.ko" \
+		"$pkgdir/lib/modules/3.1.10-postmarketos/bcmdhd.ko"
+	install -Dm644 "$builddir/drivers/net/usb/raw_ip_net.ko" \
+		"$pkgdir/lib/modules/3.1.10-postmarketos/raw_ip_net.ko"
+	install -Dm644 "$builddir/net/mac80211/mac80211.ko" \
+		"$pkgdir/lib/modules/3.1.10-postmarketos/mac80211.ko"
+	install -Dm644 "$builddir/net/wireless/cfg80211.ko" \
+		"$pkgdir/lib/modules/3.1.10-postmarketos/cfg80211.ko"
+	install -Dm644 "$builddir/net/wireless/lib80211.ko" \
+		"$pkgdir/lib/modules/3.1.10-postmarketos/lib80211.ko"
+	install -Dm644 "$builddir/drivers/scsi/scsi_wait_scan.ko" \
+		"$pkgdir/lib/modules/3.1.10-postmarketos/scsi_wait_scan.ko"
+}
+
+sha512sums="e9089411df58f64e0cb1ff8c2027cc4262f6bc1bc3bedebcc69d8417c99ab24d1520f2668287ed79bd84f45bfd660dee5199271504ce574beb8d9c7d089ae651  linux-hisense-m470bsa-7af4a85198eb80cdb6964bd0550f6f5ea722274c.tar.gz
+1b6271a78e9717c0476d9994b8214d763c680b01d92b958e349e42eb54fed60bd220830edd88813e1ee49c869c6faf36601de62caa38b8e38d639545066d9a46  config-hisense-m470bsa.armv7"

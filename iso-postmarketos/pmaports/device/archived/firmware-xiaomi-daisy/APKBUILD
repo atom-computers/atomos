@@ -1,0 +1,25 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-daisy
+pkgver=2
+pkgrel=2
+pkgdesc="Firmware files for Xiaomi Mi A2 Lite"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+_repository="firmware-xiaomi-daisy"
+_commit="9ae200b57743088f83a6f2b02a6b7ce4596a77d6"
+source="$pkgname-$_commit.tar.gz::https://github.com/alikates/firmware-xiaomi-daisy/archive/$_commit.tar.gz"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/firmware-xiaomi-daisy-$_commit/gpu"
+
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/daisy"
+
+package() {
+	# GPU firmwares
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+0778b0c4a7e836c9e0cef842dda2fd9d5eba4693cd875a605413267690d48d9b7ea86b1ece0471e55e5c49d1b3645bee1aa735ba164d0120bdfc94ffffa7e16b  firmware-xiaomi-daisy-9ae200b57743088f83a6f2b02a6b7ce4596a77d6.tar.gz
+"

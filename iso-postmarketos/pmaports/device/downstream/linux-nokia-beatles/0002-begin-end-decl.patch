@@ -1,0 +1,40 @@
+diff --git a/scripts/elf.h b/scripts/elf.h
+index 2b06377790ab..2bb00580272d 100644
+--- a/scripts/elf.h
++++ b/scripts/elf.h
+@@ -25,8 +25,6 @@
+ #include <features.h>
+ #endif
+ 
+-__BEGIN_DECLS
+-
+ /* Standard ELF types.  */
+ 
+ #include <stdint.h>
+@@ -2798,6 +2796,4 @@ typedef Elf32_Addr Elf32_Conflict;
+ #define R_M32R_NUM		256	/* Keep this the last entry. */
+ 
+ 
+-__END_DECLS
+-
+ #endif	/* elf.h */
+diff --git a/scripts/mod/elf.h b/scripts/mod/elf.h
+index 2b06377790ab..2bb00580272d 100644
+--- a/scripts/mod/elf.h
++++ b/scripts/mod/elf.h
+@@ -25,8 +25,6 @@
+ #include <features.h>
+ #endif
+ 
+-__BEGIN_DECLS
+-
+ /* Standard ELF types.  */
+ 
+ #include <stdint.h>
+@@ -2798,6 +2796,4 @@ typedef Elf32_Addr Elf32_Conflict;
+ #define R_M32R_NUM		256	/* Keep this the last entry. */
+ 
+ 
+-__END_DECLS
+-
+ #endif	/* elf.h */

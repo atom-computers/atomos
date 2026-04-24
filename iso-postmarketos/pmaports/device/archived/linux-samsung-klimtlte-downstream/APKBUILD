@@ -1,0 +1,62 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/lineageos_klimtlte_defconfig
+maintainer="Henrik Grimler <henrik@grimler.se>"
+pkgname=linux-samsung-klimtlte-downstream
+pkgver=3.4.113
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab S 8.4 LTE kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-klimtlte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz"
+
+# Source
+_repository="android_kernel_samsung_exynos5420"
+_commit="c1a203cee565eb20a9b5bc2daf1c1b650a420fe5"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/exynos5420/$_repository/archive/$_commit.tar.gz
+	$_config
+	01-netfilter-symbols.patch
+	02-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+	03-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+38bb1af78097f32ec594d3c7dd393c1fe449c4c892b567b1558a999143049e1bc2fa7375ecd54477be97066534e0dd875c01453e4658b4ae3f91e346e0b3b6ea  linux-samsung-klimtlte-downstream-c1a203cee565eb20a9b5bc2daf1c1b650a420fe5.tar.gz
+896fadb4d8a1da5f9d7406b174c5adb6cd5e431342fa0d84b05fefcb6bdc251d48a848615d543548a0f6ef46e682b3bb53e159b94f406cdff09ffb5cbd3d7906  config-samsung-klimtlte.armv7
+5214a850d496bed9e17575bd0b52e9e4415bcbd5a89863f924c5bfed848f684c0a95e8d10c9ef93c0e00149f034cf5e897d1b268be35676a600b3ee6e1917501  01-netfilter-symbols.patch
+5fad0940e90da71277b70b6e72fbb75fcc5e12625e65f827ae896d448628b252b3312539f9c184b26ffe5ca3b343a56b388ea6addb7fe446c7d1ae2aefb4b51e  02-usb_gadget-set-random-rndis-host-MAC-address-to-prev.patch
+a3df24c8d9116a3ad3559aac5ce126049e9123df633990ec72facd64ef538ed773e3ac0da233f2e04d99164d590340d598cfb3da3bbea502cf7c2cd3ef08cf24  03-drivers-psmouse-add-guard-for-Finger-Sensing-Pad-cod.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+7488e1b2714bb5771375684b4e27c0e773720da57f6d7b9a74225bfd2b21493f9e20ee219e7c6f8cfb57cda7b17f86fa2bc35a1b26471b1d7cee3f5b5ab6562a  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

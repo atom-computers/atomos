@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-lynx-r1
+pkgdesc="Lynx R1"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a650
+	firmware-lynx-r1-adreno
+	firmware-lynx-r1-adsp
+	firmware-lynx-r1-cdsp
+	firmware-lynx-r1-cvpss
+	firmware-lynx-r1-slpi
+	firmware-lynx-r1-venus
+	linux-lynx-r1
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+be4daa796cdef9551a1acbdebae9f26269c3a5494ebc08b78145211a8d2be618e9771475020fa2315e4f748dfecc4754703abd3fac338619ceca041006748fb1  deviceinfo
+a0e00bd913b562af6f81b407e3571360356a46d2c7a2fef0f45d1685ba2b2a248600beba97b6324766e58bc6438b22d4b0c0a3aae0f1d347154b86468e785120  kernel-cmdline.conf
+"

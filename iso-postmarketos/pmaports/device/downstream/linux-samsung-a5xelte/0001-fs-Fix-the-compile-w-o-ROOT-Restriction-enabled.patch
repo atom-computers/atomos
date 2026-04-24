@@ -1,0 +1,34 @@
+This patch was found at https://github.com/LineageOS/android_kernel_samsung_universal7580
+From ac118d424b82200b42290ca855f97804dcf8e897 Mon Sep 17 00:00:00 2001
+From: Apavayan Sinha <info@apavayan.com>
+Date: Tue, 21 Feb 2017 07:47:04 +0530
+Subject: [PATCH] fs: Fix the compile w/o ROOT Restriction enabled
+
+Change-Id: I2cb687617eb1228ad7f62da25449afeb11cdf701
+---
+ fs/exec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/exec.c b/fs/exec.c
+index cb5f418b67b..c4bb850a17a 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1876,7 +1876,6 @@ SYSCALL_DEFINE3(execve,
+ 				return -EACCES;
+ 			}
+ 		}
+-#endif	// End of CONFIG_SEC_RESTRICT_FORK
+ #ifdef CONFIG_RKP_KDP
+ 		if(CHECK_ROOT_UID(current) && rkp_cred_enable) {
+ 			if(rkp_restrict_fork()){
+@@ -1888,6 +1887,7 @@ SYSCALL_DEFINE3(execve,
+ 			}
+ 		}
+ #endif
++#endif	// End of CONFIG_SEC_RESTRICT_FORK
+ 		error = do_execve(path->name, argv, envp);
+ 		putname(path);
+ 	}
+-- 
+2.32.0
+

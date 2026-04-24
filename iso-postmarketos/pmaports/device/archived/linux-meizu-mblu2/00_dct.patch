@@ -1,0 +1,552 @@
+diff --git a/tools/dct/DrvGen.py b/tools/dct/DrvGen.py
+index 6e35484..dbc8162 100755
+--- a/tools/dct/DrvGen.py
++++ b/tools/dct/DrvGen.py
+@@ -1,17 +1,6 @@
+-#! /usr/bin/python2
+-# -*- coding: utf-8 -*-
+-
+-# Copyright (C) 2016 MediaTek Inc.
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License version 2 as
+-# published by the Free Software Foundation.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+-# See http://www.gnu.org/licenses/gpl-2.0.html for more details.
++#! /usr/bin/python3
+ 
++from __future__ import print_function
+ import os, sys
+ import getopt
+ import traceback
+@@ -37,7 +26,7 @@ from utility.util import LogLevel
+ from utility.util import log
+ 
+ def usage():
+-    print '''
++    print('''
+ usage: DrvGen [dws_path] [file_path] [log_path] [paras]...
+ 
+ options and arguments:
+@@ -46,7 +35,7 @@ dws_path    :    dws file path
+ file_path   :    where you want to put generated files
+ log_path    :    where to store the log files
+ paras        :    parameter for generate wanted file
+-'''
++''')
+ 
+ def is_oldDws(path, gen_spec):
+     if not os.path.exists(path):
+@@ -55,7 +44,7 @@ def is_oldDws(path, gen_spec):
+ 
+     try:
+         root = xml.dom.minidom.parse(dws_path)
+-    except Exception, e:
++    except Exception as e:
+         log(LogLevel.warn, '%s is not xml format, try to use old DCT!' %(dws_path))
+         if len(gen_spec) == 0:
+             log(LogLevel.warn, 'Please use old DCT UI to gen all files!')
+@@ -164,4 +153,3 @@ if __name__ == '__main__':
+         sys.exit(-1)
+ 
+     sys.exit(0)
+-
+diff --git a/tools/dct/data/ClkData.py b/tools/dct/data/ClkData.py
+index e68c8c9..59baafd 100755
+--- a/tools/dct/data/ClkData.py
++++ b/tools/dct/data/ClkData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/EintData.py b/tools/dct/data/EintData.py
+index a52da97..5bab5a4 100755
+--- a/tools/dct/data/EintData.py
++++ b/tools/dct/data/EintData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/GpioData.py b/tools/dct/data/GpioData.py
+index e62aafc..59759be 100755
+--- a/tools/dct/data/GpioData.py
++++ b/tools/dct/data/GpioData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/I2cData.py b/tools/dct/data/I2cData.py
+index 6bb1d72..59c66ec 100755
+--- a/tools/dct/data/I2cData.py
++++ b/tools/dct/data/I2cData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/KpdData.py b/tools/dct/data/KpdData.py
+index e0f4c98..732121a 100755
+--- a/tools/dct/data/KpdData.py
++++ b/tools/dct/data/KpdData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/Md1EintData.py b/tools/dct/data/Md1EintData.py
+index e66fa09..21fabfe 100755
+--- a/tools/dct/data/Md1EintData.py
++++ b/tools/dct/data/Md1EintData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/PmicData.py b/tools/dct/data/PmicData.py
+index 8674ca8..0b103b7 100755
+--- a/tools/dct/data/PmicData.py
++++ b/tools/dct/data/PmicData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/PowerData.py b/tools/dct/data/PowerData.py
+index d8b4413..6362785 100755
+--- a/tools/dct/data/PowerData.py
++++ b/tools/dct/data/PowerData.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/data/__init__.py b/tools/dct/data/__init__.py
+index c7d47bb..01dc261 100755
+--- a/tools/dct/data/__init__.py
++++ b/tools/dct/data/__init__.py
+@@ -1,3 +1,4 @@
++#! /usr/bin/python3
+ # Copyright (C) 2016 MediaTek Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff --git a/tools/dct/obj/AdcObj.py b/tools/dct/obj/AdcObj.py
+index f982027..de67b14 100755
+--- a/tools/dct/obj/AdcObj.py
++++ b/tools/dct/obj/AdcObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/obj/ChipObj.py b/tools/dct/obj/ChipObj.py
+index 2592931..9f8db2f 100755
+--- a/tools/dct/obj/ChipObj.py
++++ b/tools/dct/obj/ChipObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -16,23 +16,23 @@ import os, sys
+ import collections
+ import xml.dom.minidom
+ 
+-from GpioObj import GpioObj
+-from GpioObj import GpioObj_whitney
+-from GpioObj import GpioObj_MT6759
+-from EintObj import EintObj
+-from EintObj import EintObj_MT6750S
+-from AdcObj import AdcObj
+-from ClkObj import ClkObj
+-from ClkObj import ClkObj_Everest
+-from ClkObj import ClkObj_Olympus
+-from ClkObj import ClkObj_Rushmore
+-from I2cObj import I2cObj
+-from I2cObj import I2cObj_MT6759
+-from PmicObj import PmicObj
+-from Md1EintObj import Md1EintObj
+-from PowerObj import PowerObj
+-from KpdObj import KpdObj
+-from ModuleObj import ModuleObj
++from obj.GpioObj import GpioObj
++from obj.GpioObj import GpioObj_whitney
++from obj.GpioObj import GpioObj_MT6759
++from obj.EintObj import EintObj
++from obj.EintObj import EintObj_MT6750S
++from obj.AdcObj import AdcObj
++from obj.ClkObj import ClkObj
++from obj.ClkObj import ClkObj_Everest
++from obj.ClkObj import ClkObj_Olympus
++from obj.ClkObj import ClkObj_Rushmore
++from obj.I2cObj import I2cObj
++from obj.I2cObj import I2cObj_MT6759
++from obj.PmicObj import PmicObj
++from obj.Md1EintObj import Md1EintObj
++from obj.PowerObj import PowerObj
++from obj.KpdObj import KpdObj
++from obj.ModuleObj import ModuleObj
+ 
+ from utility.util import log
+ from utility.util import LogLevel
+diff --git a/tools/dct/obj/ClkObj.py b/tools/dct/obj/ClkObj.py
+index d13a81b..78e1db8 100755
+--- a/tools/dct/obj/ClkObj.py
++++ b/tools/dct/obj/ClkObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -15,11 +15,11 @@
+ import os
+ import re
+ import string
+-import ConfigParser
++import configparser
+ 
+ import xml.dom.minidom
+ 
+-from ModuleObj import ModuleObj
++from obj.ModuleObj import ModuleObj
+ from data.ClkData import ClkData
+ from utility.util import log
+ from utility.util import LogLevel
+@@ -61,7 +61,7 @@ class ClkObj(ModuleObj):
+         return True
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_figPath())
+ 
+         count = string.atoi(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
+@@ -358,7 +358,7 @@ class ClkObj_Rushmore(ClkObj):
+         ClkObj.parse(self, node)
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_figPath())
+ 
+         count = string.atoi(cp.get('CLK_BUF', 'CLK_BUF_COUNT'))
+diff --git a/tools/dct/obj/EintObj.py b/tools/dct/obj/EintObj.py
+index 5f80678..ab5abbb 100755
+--- a/tools/dct/obj/EintObj.py
++++ b/tools/dct/obj/EintObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -16,7 +16,7 @@ import re
+ import os
+ import string
+ 
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+ from data.EintData import EintData
+@@ -84,7 +84,7 @@ class EintObj(ModuleObj):
+         ModuleObj.gen_spec(self, para)
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_figPath())
+ 
+         ops = cp.options('GPIO')
+diff --git a/tools/dct/obj/GpioObj.py b/tools/dct/obj/GpioObj.py
+index 94f1f83..4c472b7 100755
+--- a/tools/dct/obj/GpioObj.py
++++ b/tools/dct/obj/GpioObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -16,14 +16,14 @@ import re
+ import os
+ import sys
+ import string
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+ 
+ from data.GpioData import GpioData
+ from data.EintData import EintData
+-from ModuleObj import ModuleObj
+-import ChipObj
++from obj.ModuleObj import ModuleObj
++import obj.ChipObj
+ from utility.util import compare
+ from utility.util import sorted_key
+ from utility.util import log
+@@ -40,7 +40,7 @@ class GpioObj(ModuleObj):
+         self.__drvCur = False
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_cmpPath())
+ 
+         # get GPIO_FREQ section
+diff --git a/tools/dct/obj/I2cObj.py b/tools/dct/obj/I2cObj.py
+index 289c57c..a5ed354 100755
+--- a/tools/dct/obj/I2cObj.py
++++ b/tools/dct/obj/I2cObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -15,14 +15,14 @@
+ import re
+ import string
+ import xml.dom.minidom
+-import ConfigParser
++import configparser
+ 
+-from ModuleObj import ModuleObj
++from obj.ModuleObj import ModuleObj
+ #from utility import util
+ from utility.util import sorted_key
+ from data.I2cData import I2cData
+ from data.I2cData import BusData
+-import ChipObj
++import obj.ChipObj
+ 
+ class I2cObj(ModuleObj):
+     _busList = []
+@@ -33,7 +33,7 @@ class I2cObj(ModuleObj):
+         #self.__bBusEnable = True
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_figPath())
+ 
+         I2cData._i2c_count = string.atoi(cp.get('I2C', 'I2C_COUNT'))
+diff --git a/tools/dct/obj/KpdObj.py b/tools/dct/obj/KpdObj.py
+index 6dae46f..7cad551 100755
+--- a/tools/dct/obj/KpdObj.py
++++ b/tools/dct/obj/KpdObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -14,10 +14,10 @@
+ 
+ import re
+ import string
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+-from ModuleObj import ModuleObj
++from obj.ModuleObj import ModuleObj
+ from utility.util import LogLevel
+ from utility.util import log
+ from data.KpdData import KpdData
+@@ -29,7 +29,7 @@ class KpdObj(ModuleObj):
+ 
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_cmpPath())
+ 
+         ops = cp.options('Key_definition')
+diff --git a/tools/dct/obj/Md1EintObj.py b/tools/dct/obj/Md1EintObj.py
+index 7b4ef25..c123661 100755
+--- a/tools/dct/obj/Md1EintObj.py
++++ b/tools/dct/obj/Md1EintObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -12,13 +12,13 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ # See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ 
+-import ConfigParser
++import configparser
+ import string
+ import xml.dom.minidom
+ 
+ from utility import util
+ from utility.util import sorted_key
+-from ModuleObj import ModuleObj
++from obj.ModuleObj import ModuleObj
+ from data.Md1EintData import Md1EintData
+ from utility.util import LogLevel
+ 
+@@ -29,8 +29,8 @@ class Md1EintObj(ModuleObj):
+         self.__bSrcPinEnable = True
+ 
+     def get_cfgInfo(self):
+-        # ConfigParser accept ":" and "=", so SRC_PIN will be treated specially
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        # configparser accept ":" and "=", so SRC_PIN will be treated specially
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_figPath())
+ 
+         if cp.has_option('Chip Type', 'MD1_EINT_SRC_PIN'):
+diff --git a/tools/dct/obj/ModuleObj.py b/tools/dct/obj/ModuleObj.py
+index 687e26f..c26860b 100755
+--- a/tools/dct/obj/ModuleObj.py
++++ b/tools/dct/obj/ModuleObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+diff --git a/tools/dct/obj/PmicObj.py b/tools/dct/obj/PmicObj.py
+index 0bafe8f..4cabae9 100755
+--- a/tools/dct/obj/PmicObj.py
++++ b/tools/dct/obj/PmicObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -14,10 +14,10 @@
+ 
+ import sys, os
+ import re
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+-from ModuleObj import ModuleObj
++from obj.ModuleObj import ModuleObj
+ from data.PmicData import PmicData
+ 
+ from utility.util import log
+@@ -39,7 +39,7 @@ class PmicObj(ModuleObj):
+ 
+ 
+     def get_cfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_cmpPath())
+ 
+         PmicData._var_list = cp.options('APPLICATION')
+diff --git a/tools/dct/obj/PowerObj.py b/tools/dct/obj/PowerObj.py
+index 6cff9bf..8660c8a 100755
+--- a/tools/dct/obj/PowerObj.py
++++ b/tools/dct/obj/PowerObj.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -15,15 +15,15 @@
+ import sys,os
+ import re
+ import string
+-import ConfigParser
++import configparser
+ import xml.dom.minidom
+ 
+-import ChipObj
++import obj.ChipObj
+ from data.PowerData import PowerData
+ from utility.util import log
+ from utility.util import LogLevel
+ from utility.util import sorted_key
+-from ModuleObj import ModuleObj
++from obj.ModuleObj import ModuleObj
+ 
+ class PowerObj(ModuleObj):
+     def __init__(self):
+@@ -31,7 +31,7 @@ class PowerObj(ModuleObj):
+         self.__list = {}
+ 
+     def getCfgInfo(self):
+-        cp = ConfigParser.ConfigParser(allow_no_value=True)
++        cp = configparser.configparser(allow_no_value=True)
+         cp.read(ModuleObj.get_figPath())
+ 
+         self.__list = cp.options('POWER')
+diff --git a/tools/dct/obj/__init__.py b/tools/dct/obj/__init__.py
+index c7d47bb..01dc261 100755
+--- a/tools/dct/obj/__init__.py
++++ b/tools/dct/obj/__init__.py
+@@ -1,3 +1,4 @@
++#! /usr/bin/python3
+ # Copyright (C) 2016 MediaTek Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff --git a/tools/dct/utility/__init__.py b/tools/dct/utility/__init__.py
+index c7d47bb..01dc261 100755
+--- a/tools/dct/utility/__init__.py
++++ b/tools/dct/utility/__init__.py
+@@ -1,3 +1,4 @@
++#! /usr/bin/python3
+ # Copyright (C) 2016 MediaTek Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff --git a/tools/dct/utility/util.py b/tools/dct/utility/util.py
+index 8c0b16e..45fdbf0 100755
+--- a/tools/dct/utility/util.py
++++ b/tools/dct/utility/util.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.
+@@ -27,11 +27,11 @@ class LogLevel:
+ 
+ def log(level, msg):
+     if level == LogLevel.info:
+-        print LEVEL_INFO + msg
++        print(LEVEL_INFO + msg)
+     elif level == LogLevel.warn:
+-        print LEVEL_WARN + msg
++        print(LEVEL_WARN + msg)
+     elif level == LogLevel.error:
+-        print LEVEL_ERROR + msg
++        print(LEVEL_ERROR + msg)
+ 
+ def compare(value):
+     lst = re.findall(r'\d+', value)
+diff --git a/tools/dct/utility/version.py b/tools/dct/utility/version.py
+index 71fb988..6101d28 100755
+--- a/tools/dct/utility/version.py
++++ b/tools/dct/utility/version.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/python
++#! /usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Copyright (C) 2016 MediaTek Inc.

@@ -1,0 +1,25 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-rosy
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware files for Xiaomi Redmi 5"
+url="https://gitlab.com/barni2000/$pkgname"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="69c6d964bc0034bd93292286ac101c23fc804d72"
+
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/rosy"
+
+package() {
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="
+e1f0cd1383ba95cef08236dc470e4be05852387152be7772488f423f5a2e9ec1f7b27203ebf1e3bcb98b3998387b510546ebdcb81b0137a180912c67b850cc07  firmware-xiaomi-rosy-69c6d964bc0034bd93292286ac101c23fc804d72.tar.gz
+"

@@ -1,0 +1,51 @@
+# Based on firmware-oneplus-msm8998 package
+maintainer="Dzmitry Sankouski <dsankouski@gmail.com>"
+pkgname=firmware-xiaomi-sagit
+pkgver=1
+pkgrel=2
+_commit="d7e0c59ed28700a8662c6a364d99740c26ebf58a"
+pkgdesc="Firmware for Xiaomi Mi 6"
+url="https://github.com/dsankouski/firmware-mainline-xiaomi-mi6.git"
+replaces="linux-firmware-ath10k"
+arch="aarch64"
+depends="firmware-qcom-adreno-a530 linux-firmware-qca soc-qcom-msm8998-nonfree-firmware"
+license="proprietary"
+options="!check !archcheck !strip !tracedeps"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/dsankouski/firmware-mainline-xiaomi-mi6/archive/$_commit.tar.gz
+	30-gpu-firmware.files
+	firmware.files
+"
+subpackages="
+	$pkgname-initramfs:firmware_initramfs
+	$pkgname-openrc
+	"
+builddir="$srcdir/firmware-mainline-xiaomi-mi6-$_commit"
+
+package() {
+	while IFS="" read -r fw; do
+		install -Dm644 "$fw" "$pkgdir/lib/firmware/$fw"
+	done < "$srcdir"/firmware.files
+}
+
+firmware_initramfs() {
+	pkgdesc="Files to be included in the initramfs to support osk-sdl"
+	depends="$pkgname mesa-egl mesa-gbm"
+	install_if="$pkgname"
+
+	install -Dm644 "$srcdir"/30-gpu-firmware.files \
+		"$subpkgdir"/usr/share/mkinitfs/files/30-gpu-firmware.files
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+a6576fd2d3849c139809d9cfe8987e16790f36443bb6f6c3427d883c6f9fc3ab5a5500d6d323a30b5d430bfa2aabcedb16ed9a99a6c609d07bce992ca52f1e64  firmware-xiaomi-sagit-d7e0c59ed28700a8662c6a364d99740c26ebf58a.tar.gz
+ede0bdec767249ac2f252fb6da7ad8b0c7a44f73c4482211f105ca5e08686598051e09b467bcf0641793d3ea3bcc64386ab628dac87227dc48e6054cc7ca558f  30-gpu-firmware.files
+55418aeb509328bed592c09a9798f3f5a6bd69c833ebf4f0f611d5afcaf1bf424c3be2016bf34638f55b5978c7e7fb50759b39db69bc887c7dce79efa7920707  firmware.files
+"

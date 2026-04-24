@@ -1,0 +1,13 @@
+diff --git a/drivers/input/touchscreen/ist30xxc/ist30xxc.c b/drivers/input/touchscreen/ist30xxc/ist30xxc.c
+index 6732c409..db81baa3 100755
+--- a/drivers/input/touchscreen/ist30xxc/ist30xxc.c
++++ b/drivers/input/touchscreen/ist30xxc/ist30xxc.c
+@@ -1446,7 +1446,7 @@ static int ist30xx_probe(struct i2c_client *client,
+ 	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR,
+ 			0, data->pdata->max_w, 0, 0);
+ #if IST30XX_JIG_MODE
+-	input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, 0, 0, 0);
++	//input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, 0, 0, 0);
+ #endif
+ 
+ #if IST30XX_USE_KEY

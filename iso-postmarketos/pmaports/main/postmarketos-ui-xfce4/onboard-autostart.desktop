@@ -1,0 +1,9 @@
+# This custom autostart file omits the 3 secs startup delay
+# implemented in /etc/xdg/autostart/onboard-autostart.desktop
+[Desktop Entry]
+Type=Application
+Name=Onboard
+Comment=Flexible onscreen keyboard
+Icon=onboard
+Exec=onboard
+X-XFCE-Autostart-Override=true

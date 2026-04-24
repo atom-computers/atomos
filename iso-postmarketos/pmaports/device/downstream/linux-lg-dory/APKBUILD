@@ -1,0 +1,85 @@
+# APKBUILD based on linux-vanilla aport. Changes:
+# - disabled module installation
+# - add !check !tracedeps
+# - package: just install zimage-dtb and kernel.release
+#
+# Kernel config based on: arch/arm/configs/dory_defconfig
+# Changes:
+# - apply patches to compile with gcc6
+# - enable devtmpfs (needed for udev -> touch support in weston)
+# - enabled CONFIG_VT (needed for weston to work)
+# - disable ANDROID_PARANOID_NETWORK (removes network restrictions)
+
+_flavor=lg-dory
+_hash="6924014484d3406e3d2da384efc20e40e8a5ae80"
+_config="config-$_flavor.armhf"
+
+pkgname=linux-$_flavor
+pkgver=3.10.40
+case $pkgver in
+	*.*.*)  _kernver=${pkgver%.*};;
+	*.*) _kernver=$pkgver;;
+esac
+pkgrel=10
+arch="armhf"
+pkgdesc="Kernel for LG G Watch"
+url="https://android.googlesource.com/kernel/msm/+/android-msm-dory-3.10-marshmallow-mr1-wear-release"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+options="!strip !check !tracedeps pmb:cross-native"
+source="
+	$pkgname-$_hash.tar.gz::https://github.com/android/kernel_msm/archive/$_hash.tar.gz
+	$_config
+	00_fix_return_address.patch
+	01_avoid_rpmb_read_during_boot.patch
+	02_fix_mdss_fb_refresh_rate.patch
+	03_fix_mdss_fb_memory_allocation.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+"
+license="GPL2"
+
+_abi_release=$pkgver
+_carch="arm"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+builddir="$srcdir/kernel_msm-$_hash"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-Alpine"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/arm/boot/zImage-dtb" \
+		"$pkgdir/boot/vmlinuz"
+
+	install -D "$builddir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+adc1e7852bebf3c11af87cfe9c994025e1415468be707664a25df33507d33de62125ab367dbc3f57ff84213ea479c2e8870d45603bc96df641b1bf853216201a  linux-lg-dory-6924014484d3406e3d2da384efc20e40e8a5ae80.tar.gz
+7ce090cb7b7471facbbf71efbf8c5c3b4477f9d7759a89ff9ff24754cbb257c53a14c28eead9dcece480d523fd262be04b1fcf6908fb3bc7a5e9e81190c47a38  config-lg-dory.armhf
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+760fdff79df31754ebed59839f34fc8c5a61750471614ac93a01b1e13b2535e7ca1f879c0cad3e83ad92946586c91679ba853eac4fe454d7e948317c84d81941  01_avoid_rpmb_read_during_boot.patch
+26b599d6b0c435d9e0b80f578c1cc0714d60f532a98efbbcb0e313f5c5dcd2c8619afa5776091d14ea65e268a1f128b378fe30ba1743e1428f3300b505a9861c  02_fix_mdss_fb_refresh_rate.patch
+5208c3f33099e22516e00ab90234784918157d0712a8a9cf81418a7ea1c136601cb54f83d490577f2cadb6ed94ac6c6f242e7b310fb5f09222de568e416c6731  03_fix_mdss_fb_memory_allocation.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+66ab793bb1fa50a07f10e2cdb0f49ea05a787c6b1fe5358e69a76e43295ac5be3b68cdf6a882e868bfe6969cac981c5545587cd57eee4b5cec26078ae0ecaa1c  linux3.0-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+"

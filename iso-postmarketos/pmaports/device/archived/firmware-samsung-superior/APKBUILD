@@ -1,0 +1,22 @@
+# Archived: Kernel does not build anymore
+pkgname=firmware-samsung-superior
+pkgver=1
+pkgrel=0
+_commit="53ad8adcfe42835acd6d8b9fc222717929e67811"
+pkgdesc="Samsung Galaxy Premier firmware"
+url="https://github.com/Begggs/proprietary_vendor_samsung_superior"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/Begggs/proprietary_vendor_samsung_superior/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/proprietary_vendor_samsung_superior-$_commit"
+
+package() {
+	# Wifi
+	for _i in bcmdhd_sta.bin_b2 nvram_net.txt; do
+		install -Dm644 system/etc/wifi/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="f9ce4d7f82c80bc6b981fe211556e55aa4dd531a0eb014ce952e1596b186a2171819121b7914019ce5c3071201395fcd61f8e563fc4da6351b0c2f94eddf9203  firmware-samsung-superior-53ad8adcfe42835acd6d8b9fc222717929e67811.tar.gz"

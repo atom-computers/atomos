@@ -1,0 +1,81 @@
+# Archived: Downstream port, only for testing. Use mainline port (bq-paella)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/picmt_defconfig
+
+pkgname=linux-bq-paella-downstream
+pkgver=3.10.49
+pkgrel=4
+pkgdesc="BQ Aquaris X5 downstream kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="bq-paella-downstream"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc4 linux-headers"
+
+# Compiler: GCC 4 (Last kernel version built with gcc4.8.x)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="aquaris-X5"
+_commit="f727041ed84edbe41169f612430ec23fe0754a7e"
+_smb_tag="v5.11.7-msm8916"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/JonnyMe/$_repository/archive/$_commit.tar.gz
+	$_config
+	cpr-dump.patch
+	gpio-debug.patch
+	memshare-debug.patch
+	remove-gcc-wrapper.patch
+	smb1360-debug.patch
+	smb1360-dump.patch
+	smb1360-dump-$_smb_tag.c::https://raw.githubusercontent.com/msm8916-mainline/linux/$_smb_tag/drivers/power/supply/smb1360-dump.c
+	smb1360-like-mainline.patch
+	picmt-smb1360-like-mainline.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	cp "$srcdir/smb1360-dump-$_smb_tag.c" drivers/power/smb1360-dump.c
+
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="$CC" HOSTCC="$HOSTCC" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+409acfb8f8951e3b0d1a11160d2f21e5f4f7de932187ab35828df84b6a3532a9711eceae82105bc93785a0fff1483b994c51ceb4cb60ec34943db137a4091480  linux-bq-paella-downstream-f727041ed84edbe41169f612430ec23fe0754a7e.tar.gz
+c3a94a33b7724649613cc21af9872fab21c6af7b080379c40b525fe7de922ea03c7a260a9ebab80e7abcf7c69695cfbf016ab9723b25f2cf3d23b1051923fe12  config-bq-paella-downstream.armv7
+f040a1d7169b9ddb5baabb7de1838441e8608894dc6dc61ececb1acb4fe9851289934b37d74afb61addc01d7a1e4f1d2413f5e542c2a4aeb0c01f680797d37c6  cpr-dump.patch
+e9f809b6659375cd7e854821f9925faa263d287c06e44071017cd4afb32f79c47e63760c9c95b4f0c15b79b6b1af4a36911861104a7b56dea2195baf9e4f4685  gpio-debug.patch
+56083a8b290a7b1b1ffc9c8e3333db6d786a20d6e91ee400e895ecee8d31cccc75d809be13bcfe5cfb7d5b53a687b25281e8fd454cf420468ded3f77dcea9897  memshare-debug.patch
+4a09fdcf99a4716a4ced11b7d74b7867423e5f6fa6c62674e57f496a10647c0b704fd5f91c46711e363337b54d3b7917b6c685230568eab44b6303bd285a2b61  remove-gcc-wrapper.patch
+3507cd892cf7a07d924c457de746aae232230489ce1810bd8c97fb45817ddf952afd9605243aee63772a6572afa65f2914f307e183aa24fef1c33f98bec036bc  smb1360-debug.patch
+f16eddac1bee293d659eeb5c8c38bf7e62badcc0b5cb45fa6644832d8501c9c26c48d87afe0147f845860bbe3ac4da82ee75b43849d71e9b866aa25f13c5c498  smb1360-dump.patch
+f61902474ab221a85a8910dcfbc48736e323a6bbc83896f778bb87d356464679c62ddf1c583e660a5c3c790dba420cce6cb9ca59b720234846dac7e80aa47368  smb1360-dump-v5.11.7-msm8916.c
+2fe3899a925efae3f7845ae2a9c9a0198595b2311616dbc8bf754da69634cf730cf766d6378ea9d6096a1b9f165c7c7104e7e12a7020cf09c31b48d49117ba83  smb1360-like-mainline.patch
+996756d20ed2051acdcb3a936016b4ef551690486108fa253f0cc9a85effeb20d77a2fb95edc9ee542ac0622f75ac374be2b65fde1d39423f565416d094732ee  picmt-smb1360-like-mainline.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

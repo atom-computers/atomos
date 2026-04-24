@@ -1,0 +1,54 @@
+From 5891c9c0ef408034de2c01df1e483d5b0aaf7041 Mon Sep 17 00:00:00 2001
+From: Sergey Larin <cerg2010cerg2010@mail.ru>
+Date: Fri, 28 Jun 2019 22:51:59 +0300
+Subject: [PATCH] ARM: dts: tegra20-glide: Uncomment SII9234/MHL nodes
+
+This chip should work well with proper Xorg configuration, and it looks like
+this speeds up booting time significantly.
+
+Signed-off-by: Sergey Larin <cerg2010cerg2010@mail.ru>
+---
+ arch/arm/boot/dts/tegra20-glide.dts | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-glide.dts b/arch/arm/boot/dts/tegra20-glide.dts
+index ef5145ce16ac..6a85ab96b763 100644
+--- a/arch/arm/boot/dts/tegra20-glide.dts
++++ b/arch/arm/boot/dts/tegra20-glide.dts
+@@ -46,7 +46,7 @@
+ 				nvidia,panel = <&panel>;
+ 			};
+ 		};
+-#if 0
++
+ 		hdmi@54280000 {
+ 			status = "okay";
+ 
+@@ -63,7 +63,6 @@
+ 				};
+ 			};
+ 		};
+-#endif
+ 	};
+ 
+ 	pinmux@70000014 {
+@@ -966,7 +965,7 @@
+ 		i2c-gpio,delay-us = <5>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-#if 0
++
+ 		sii9234@39 {
+ 			compatible = "sil,sii9234";
+ 			reg = <0x39>;
+@@ -984,7 +983,6 @@
+ 				};
+ 			};
+ 		};
+-#endif
+ 	};
+ 
+ 	i2c@15 {
+-- 
+2.22.0
+

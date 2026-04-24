@@ -1,0 +1,30 @@
+maintainer="Oliver Smith <ollieparanoid@postmarketos.org>"
+pkgname=hello-world-rust
+pkgver=0.1.1
+pkgrel=1
+pkgdesc="Small test program for (cross) compiling rust"
+url="https://gitlab.com/ollieparanoid/hello-world-rust/"
+arch="all"
+license="Unlicense"
+makedepends="cargo"
+source="https://gitlab.com/ollieparanoid/hello-world-rust/-/archive/$pkgver/hello-world-rust-$pkgver.tar.bz2"
+
+[ "$CARCH" = "riscv64" ] && options="$options textrels"
+
+build() {
+	export CROSSDIRECT_DEBUG=1
+	cargo build --release --locked --verbose --verbose
+}
+
+check() {
+	printf 'Hello, world!\n' > expected
+	target/release/hello_world_rust > real
+	diff -q expected real
+}
+
+package() {
+	install -Dm755 target/release/hello_world_rust \
+		-t "$pkgdir"/usr/bin/
+}
+
+sha512sums="b755b02529e6ad40a969d5d563bc28be1202c8008661b72335c8c9e6f06bc5f0220fa047f5444b552815df5184c3ab86eb2f6a4f70701962fa0d4bc9a25ab259  hello-world-rust-0.1.1.tar.bz2"

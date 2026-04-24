@@ -1,0 +1,7 @@
+meson_gxbb_wdt
+meson_wdt
+meson_drm
+meson_dw_hdmi
+dw_hdmi 
+drm_display_helper
+display_connector

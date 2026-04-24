@@ -1,0 +1,24 @@
+[Unit]
+Description=Qualcomm GNSS Modem Setup
+# These commands need to run after qrtr is up, MM seems to be late enough that
+# this is the case.
+# Ideally there would be a /dev or sysfs path we could add
+# a ConditionPathExists= on...
+After=ModemManager.service
+Requires=ModemManager.service
+# Give up after 5 minutes
+StartLimitInterval=300
+StartLimitBurst=10
+
+[Service]
+ExecStart=qmicli -d qrtr://0 --loc-set-engine-lock=mt
+ExecStart=qmicli -d qrtr://0 --loc-set-nmea-types=all
+Type=oneshot
+# Apparently starting after MM isn't always enough time for the location service
+# to be up
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target
+

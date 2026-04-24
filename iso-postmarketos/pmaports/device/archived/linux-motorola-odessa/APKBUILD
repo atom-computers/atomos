@@ -1,0 +1,74 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/vendor/odessa_defconfig
+
+pkgname=linux-motorola-odessa
+pkgver=4.14.117
+pkgrel=1
+pkgdesc="Motorola Moto G9 Plus kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-odessa"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	linux-headers
+	linux-pam
+	perl
+"
+
+# Source
+_repository="android_kernel_motorola_sm6150"
+_commit="b228c78f7fdab52fd42893afd6f6838e1e31cd6f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/sm6150-motorola/$_repository/archive/$_commit.tar.gz
+	$_config
+	0006-Suppress-error-about-static-buffer-overflow.patch
+	dsi-staging-fix-duplicate-static.patch
+	fix_ipa_buf_size_mismatch.patch
+	net-phy-micrel-Use-strlcpy-for-ethtool-get_strings.patch
+	remove_bootloader_cmdline_opts.patch
+	use-rgba8888-color-mode.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	#Install Kernel Modules
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+
+
+sha512sums="
+cef3e5b5f73fbec135ba99e838a303df56ea24a21337a7ffcefcc0b92c113083f942cc15bfdecdf786b41d24dfe77f9215aa14e23c56fe938356fe03058c1213  linux-motorola-odessa-b228c78f7fdab52fd42893afd6f6838e1e31cd6f.tar.gz
+ea6596cd86fd740c79f65c67050f8f492c2720ad3f74436656b35500bf272d0436f4f1082a010151fb8f45cd085272b9ec837b60e116623e4fb150f69055123a  config-motorola-odessa.aarch64
+3835f7e4fca12aaba82fe21cc9632f0e569a8c4405231d137aea4f2640190d919e1a44612082decfbaaa41faa3c6a3ff0442086afb81d59c984a5697fdb9cac9  0006-Suppress-error-about-static-buffer-overflow.patch
+45cd1dded5c56c93aa80a016ec9a96098633d6b38a02f2614cc0d96737409c24230d22eaaf8a244ce5d2eef07fb34cddcb06aea87e4b7805138cb5ac8c62f7cf  dsi-staging-fix-duplicate-static.patch
+592d87cbb9532e0311a9d23bc10bdbae9859709993e7b88a7202cd7023e8cc3fcdaa1810a2171771222df2ead44b8de048cb5b10b5088f44607d7c7c5b15da1b  fix_ipa_buf_size_mismatch.patch
+b081e9bfb3eb3f024486de2952d4b0dc6c81facb31ddf4456b386fb5c043a3a11cefe1636dece5cf0ea655746ed35a79c8318cabba8661e39c580e6faed97ba7  net-phy-micrel-Use-strlcpy-for-ethtool-get_strings.patch
+9ce867c4254b537ef5d2485780c26b72da8a3a8767ba71557f3b48d6c550e0e14c8c3e575b31bf65d2878f08a8a4926e48a1c2f1be534bf80a7a57f58313b0fd  remove_bootloader_cmdline_opts.patch
+d64746ff65de81cc894e33cd8f9b3bf0a5ee9e979d95f67a50a4c0bc7072aa459632841db4b64b68cfc01fa3503d2e8122d03f177932a5f0fbe0ddad5db3bb4d  use-rgba8888-color-mode.patch
+"

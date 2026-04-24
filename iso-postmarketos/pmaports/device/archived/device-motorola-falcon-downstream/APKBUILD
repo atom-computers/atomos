@@ -1,0 +1,35 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-motorola-falcon-downstream
+pkgdesc="Moto G (2013) (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-motorola-falcon
+	linux-motorola-falcon-downstream
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+c4e1d926710feffc378d26544835a18f5d0bf6405de29bbefe15e4c0fd45878b35d7caa55aca0e1c5a9faf489c12464a4d9cf503cad9a0dd515cb81f7447e44c  deviceinfo
+041616fe111ac217376660feb5a9e57550f585f59033e84d4550679ac150cdb827da17d9cdb65580b23e11170ed751f8e1d77c2830a16bb9e5aadea9a83f0320  kernel-cmdline.conf
+"

@@ -1,0 +1,62 @@
+# Archived: Kernel does not build anymore
+# Kernel config based on: arch/arm/configs/cm_a5_defconfig
+
+pkgname=linux-htc-a5ul
+pkgver=3.4.0
+pkgrel=7
+pkgdesc="HTC Desire 816 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="htc-a5ul"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev lz4 dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_htc_msm8974"
+_commit="2115207f50d4c2e4bad1f1fc1498109f57b6ebc7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/bigsuperprojects/$_repository/archive/$_commit.tar.gz
+	$_config
+	0003-Fix-CC-error.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Generate master DTB
+	dtbTool -s 2048 -p "scripts/dtc/" -o "arch/arm/boot/dt.img" "arch/arm/boot/"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+
+	# We need the dtb file
+	install -Dm644 "$builddir/arch/arm/boot/dt.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="0d7df2eff49cb40fa5f5353b2c63bdb0f4dd9f654ac0f09ab2547f2e47b62659f011e9b5c1e4cf00307c8017e654980ad3065133964d5359a41af8704463522a  linux-htc-a5ul-2115207f50d4c2e4bad1f1fc1498109f57b6ebc7.tar.gz
+43f19d836cfcc68ec29b0d32339d78bbcbe825647f6bd2cdedb3f7ad6c586f4db183719833170a7c1f091ced64e2e811c1465f0e28ecde14ec453127ea3190e9  config-htc-a5ul.armhf
+4d328283b2c4e55624703f204f804d9a40e5aa504d7c7198365536c47793d598271a63e864596c7b54ed8f60e74862ec6b4859a948c2c2ed2158f15cb148a94d  0003-Fix-CC-error.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch"

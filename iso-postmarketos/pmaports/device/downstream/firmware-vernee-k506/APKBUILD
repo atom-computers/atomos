@@ -1,0 +1,31 @@
+pkgname=firmware-vernee-k506
+pkgver=1
+pkgrel=0
+_commit="9797317852a993db514ab4e7d6d04d3573b275b5"
+pkgdesc="Vernee Thor Firmware"
+url="https://github.com/MediatekAndroidDevelopers/android_vendor_vernee_thor_k506"
+arch="aarch64"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/MediatekAndroidDevelopers/android_vendor_vernee_thor_k506/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/android_vendor_vernee_thor_k506-$_commit"
+
+_fileswifi="ROMv2_lm_patch_1_0_hdr.bin ROMv2_lm_patch_1_1_hdr.bin WIFI_RAM_CODE_6735 WMT_SOC.cfg"
+_filesfm="mt6627_fm_v1_coeff.bin mt6627_fm_v1_patch.bin mt6627_fm_v2_coeff.bin mt6627_fm_v2_patch.bin mt6627_fm_v3_coeff.bin mt6627_fm_v3_patch.bin mt6627_fm_v4_coeff.bin mt6627_fm_v4_patch.bin mt6627_fm_v5_coeff.bin mt6627_fm_v5_patch.bin"
+_filesothers="catcher_filter_1_lwg_n.bin dsp_1_lwg_n.bin modem_1_lwg_n.img"
+package() {
+	for _i in $_fileswifi; do
+		install -Dm644 vendor/firmware/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_filesfm; do
+		install -Dm644 vendor/firmware/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_filesothers; do
+		install -Dm644 vendor/firmware/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="11000ad1ca211413e4a22a1454df08984894d5d7f616aba9f91c3cb6817bb2340503789dd9c7f2acd5ee1c154e1e9cf5ff8e42170fcfc926c8f79b3464441904  firmware-vernee-k506-9797317852a993db514ab4e7d6d04d3573b275b5.tar.gz"

@@ -1,0 +1,35 @@
+diff --git a/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h b/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h
+index a4c5e52d7..c8cdba4d3 100644
+--- a/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h
++++ b/drivers/media/platform/msm/camera_oppo/cam_utils/cam_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM camera
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/media/platform/msm/camera_oppo/cam_utils/
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE cam_trace
+ 
+diff --git a/drivers/platform/msm/ipa/ipa_clients/rndis_ipa_trace.h b/drivers/platform/msm/ipa/ipa_clients/rndis_ipa_trace.h
+index bf66c1e20..9f603e93a 100644
+--- a/drivers/platform/msm/ipa/ipa_clients/rndis_ipa_trace.h
++++ b/drivers/platform/msm/ipa/ipa_clients/rndis_ipa_trace.h
+@@ -77,5 +77,5 @@ TRACE_EVENT(
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/platform/msm/ipa/ipa_clients/ 
+ #include <trace/define_trace.h>
+diff --git a/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h b/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
+index b67899ba8..7081c9c6b 100644
+--- a/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
++++ b/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
+@@ -149,5 +149,5 @@ TRACE_EVENT(
+ 
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/platform/msm/ipa/ipa_v3/ 
+ #include <trace/define_trace.h>

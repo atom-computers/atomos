@@ -1,0 +1,26 @@
+From 3bbf12d4f99a8507806127601802fc8bdd3e7537 Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Wed, 25 Jun 2025 14:30:18 +0700
+Subject: [PATCH 2/7] zram: Set zstd as the default compressor
+
+Signed-off-by: Hendra Manudinata <manoedinata@daunscape.tech>
+---
+ drivers/block/zram/zram_drv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
+index d2fc884d..ffee217a 100644
+--- a/drivers/block/zram/zram_drv.c
++++ b/drivers/block/zram/zram_drv.c
+@@ -38,7 +38,7 @@
+ /* Globals */
+ static int zram_major;
+ static struct zram *zram_devices;
+-static const char *default_compressor = "lzo";
++static const char *default_compressor = "zstd";
+ 
+ /* Module params (documentation at end) */
+ static unsigned int num_devices = 1;
+-- 
+2.43.0
+

@@ -1,0 +1,3 @@
+vo=x11
+profile=sw-fast
+ytdl-format="bestvideo[height<=?720]+bestaudio/best"

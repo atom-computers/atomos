@@ -1,0 +1,13 @@
+[Unit]
+Description=Telnet Debug Shell (initramfs)
+DefaultDependencies=no
+After=initramfs-unudhcpd.service
+ConditionPathExists=/run/usb-gadget-iface
+
+[Service]
+Type=simple
+# FIXME: network addresses should be configurable, perhaps via cmdline param
+ExecStart=/usr/sbin/telnetd -b 172.16.42.1:23 -F -l /bin/sh
+
+[Install]
+WantedBy=emergency.target

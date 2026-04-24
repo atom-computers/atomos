@@ -1,0 +1,59 @@
+From a10e5377d29c4083f92ef01ea23d4e6cd6662265 Mon Sep 17 00:00:00 2001
+From: Oreeeee <oree3ee@gmail.com>
+Date: Sat, 18 Oct 2025 04:05:34 +0200
+Subject: [PATCH 3/3] Remove mmap capability from mt_soc_pcm_dl1 audio driver
+
+Fixes kernel panic when initializing audio.
+This does not make the audio functional, but fixes booting into
+the desktop. The issue was caused due to dummy mmap devices
+being added for some reason.
+
+See biscuit-remove-dummy-audio-mmap.patch in amazon-biscuit kernel
+for more details.
+---
+ .../soc/mediatek/mt_soc_audio_v3/mt_soc_pcm_dl1.c | 15 +--------------
+ 1 file changed, 1 insertion(+), 14 deletions(-)
+
+diff --git a/sound/soc/mediatek/mt_soc_audio_v3/mt_soc_pcm_dl1.c b/sound/soc/mediatek/mt_soc_audio_v3/mt_soc_pcm_dl1.c
+index eca5f516..49b4b354 100755
+--- a/sound/soc/mediatek/mt_soc_audio_v3/mt_soc_pcm_dl1.c
++++ b/sound/soc/mediatek/mt_soc_audio_v3/mt_soc_pcm_dl1.c
+@@ -145,10 +145,7 @@ static bool mPrepareDone = false;
+ 
+ static struct snd_pcm_hardware mtk_pcm_dl1_hardware =
+ {
+-    .info = (SNDRV_PCM_INFO_MMAP |
+-    SNDRV_PCM_INFO_INTERLEAVED |
+-    SNDRV_PCM_INFO_RESUME |
+-    SNDRV_PCM_INFO_MMAP_VALID),
++    .info = (SNDRV_PCM_INFO_INTERLEAVED | SNDRV_PCM_INFO_RESUME),
+     .formats =      SND_SOC_ADV_MT_FMTS,
+     .rates =           SOC_HIGH_USE_RATE,
+     .rate_min =     SOC_HIGH_USE_RATE_MIN,
+@@ -649,15 +646,6 @@ static int mtk_pcm_silence(struct snd_pcm_substream *substream,
+     return 0; /* do nothing */
+ }
+ 
+-static void *dummy_page[2];
+-
+-static struct page *mtk_pcm_page(struct snd_pcm_substream *substream,
+-                                 unsigned long offset)
+-{
+-    PRINTK_AUDDRV("%s \n", __func__);
+-    return virt_to_page(dummy_page[substream->stream]); /* the same page */
+-}
+-
+ static struct snd_pcm_ops mtk_afe_ops =
+ {
+     .open =     mtk_pcm_dl1_open,
+@@ -670,7 +658,6 @@ static struct snd_pcm_ops mtk_afe_ops =
+     .pointer =  mtk_pcm_pointer,
+     .copy =     mtk_pcm_copy,
+     .silence =  mtk_pcm_silence,
+-    .page =     mtk_pcm_page,
+ };
+ 
+ static struct snd_soc_platform_driver mtk_soc_platform =
+-- 
+2.51.0
+

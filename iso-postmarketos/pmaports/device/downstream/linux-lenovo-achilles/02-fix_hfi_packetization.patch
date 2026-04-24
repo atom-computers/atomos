@@ -1,0 +1,13 @@
+diff --git a/drivers/media/platform/msm/vidc/hfi_packetization.c b/drivers/media/platform/msm/vidc/hfi_packetization.c
+index 758331eb..d58ee53d 100644
+--- a/drivers/media/platform/msm/vidc/hfi_packetization.c
++++ b/drivers/media/platform/msm/vidc/hfi_packetization.c
+@@ -324,7 +324,7 @@ int create_pkt_cmd_sys_ping(struct hfi_cmd_sys_ping_packet *pkt)
+ 	return rc;
+ }
+ 
+-inline int create_pkt_cmd_sys_session_init(
++static inline int create_pkt_cmd_sys_session_init(
+ 		struct hfi_cmd_sys_session_init_packet *pkt,
+ 		struct hal_session *session,
+ 		u32 session_domain, u32 session_codec)

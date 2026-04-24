@@ -1,0 +1,81 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Quade Curry <qc8086@qc8086.com>"
+pkgname=device-pine64-pinebookpro
+pkgdesc="PINE64 Pinebook Pro"
+pkgver=18
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf>=1.2.7
+	linux-postmarketos-rockchip>=5.14
+	nvme-cli
+	postmarketos-base>=25-r1
+	soc-rockchip-rk3399
+	u-boot-pinebookpro
+	iw
+	"
+makedepends="devicepkg-dev"
+install="
+	$pkgname-elogind.post-install
+	$pkgname-elogind.post-upgrade
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware $pkgname-elogind $pkgname-openrc"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	nvme-powersave.initd
+	wlan-powersave-off.start
+	enable-s2idle.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m755 "$srcdir"/nvme-powersave.initd \
+		"$pkgdir"/etc/init.d/nvme-powersave
+
+	install -D -m755 "$srcdir"/wlan-powersave-off.start \
+		"$pkgdir"/etc/local.d/wlan-powersave-off.start
+}
+
+elogind() {
+	install_if="$pkgname=$pkgver-r$pkgrel elogind"
+	install -D -m644 "$srcdir"/enable-s2idle.conf \
+		"$subpkgdir"/usr/lib/elogind/sleep.conf.d/enable-s2idle.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi, Bluetooth and video-out firmware"
+	depends="linux-firmware-brcm linux-firmware-rockchip"
+	mkdir "$subpkgdir"
+	# Workaround for kernel load brcm43455 firmware bug
+	# details: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/4285
+	mkdir -p "$subpkgdir"/lib/firmware/brcm
+	ln -s brcmfmac43455-sdio.AW-CM256SM.txt.zst "$subpkgdir"/lib/firmware/brcm/brcmfmac43456-sdio.pine64,pinebook-pro.txt.zst
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="eudev-hwids openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+1d35423407898d56f23520ee41e37191257cc5ecad7c62d990f143dbd7a5c410f4826706c868f86c734c285e25c0e8d0b161422e1529533608fc07953c436691  deviceinfo
+84df486ec8fb3c5a0c032fe42e210a6fbfa9c5a1a8cdf548fb70bb023815dc625a08ded0fc6e2ea9f6aad28d2b7a3bf40659c3d417bbbce9ee67d8d225210be6  kernel-cmdline.conf
+6e3d97855a1f898db46b87ae1eb190d23d841fcb72332fcac4d11cd27c8f7d50eb8fd73007ed0447f106d19ff2e0fc1f34da1baf890e1465135dd692d65df2ba  modules-initfs
+2abfa31fa56028339efc6d2b6cb838f310990d7110ac4dd996bc4cfcf90f0a8770e70f28f77f7b6929d110e494bc33731302f16b9717729f991c2732be0731d5  nvme-powersave.initd
+0fd7580e197e409978c219726af627cabe347404ee826e32892b61f3da1775b0fd81f8ed5e9a0f0bfaad87faa434d7a73ddaebf475ed0ad8fdcef6690cd692d3  wlan-powersave-off.start
+811af9c79151f41e25916c0f0bb130e82ebfb7d4d5b63413a3fed6700f829c1c017a12e85da230ed2f47a6bd49ed2bf5da19bbc4576ce485a48a2d3808a3a691  enable-s2idle.conf
+"

@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Google Pixel 3a XL"
+deviceinfo_manufacturer="Google"
+deviceinfo_codename="google-bonito"
+deviceinfo_dtb_sdc="qcom/sdm670-google-bonito-sdc"
+deviceinfo_dtb_tianma="qcom/sdm670-google-bonito-tianma"
+deviceinfo_append_dtb="true"
+deviceinfo_year="2019"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_screen_width="1080"
+deviceinfo_screen_height="2160"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00000000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_sparse="true"
+deviceinfo_boot_filesystem="fat32"
+
+# Reported to be necessary to boot sometimes on Android 9 bootloaders
+deviceinfo_flash_fastboot_partition_vbmeta="vbmeta"
+
+# Google Inc. Nexus/Pixel Device (tether)
+deviceinfo_usb_idVendor="0x18d1"
+deviceinfo_usb_idProduct="0x4ee3"
+
+# Additional features
+deviceinfo_flash_kernel_on_update="true"
+deviceinfo_drm="true"
+deviceinfo_super_partitions="/dev/mmcblk0p68 /dev/mmcblk0p69"

@@ -1,0 +1,37 @@
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+pkgname=firmware-xiaomi-jasmine_sprout
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware files for Xiaomi Mi A2"
+url="https://gitlab.com/m.01001101.01010110/$pkgname"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+makedepends="qca-swiss-army-knife"
+
+_commit="b23003b2a8fa8f71374c72d69cfdbfd048e63c33"
+_muppets_commit="c7757f14a4eea2276d3ee6f6055621deff0ed32e"
+
+source="
+	$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$pkgname-$_commit.tar.gz
+	$pkgname-$_muppets_commit.tar.gz::https://github.com/TheMuppets/proprietary_vendor_xiaomi_wayne-common/archive/$_muppets_commit.tar.gz
+"
+
+builddir="src"
+_fwdir="/lib/firmware"
+
+package() {
+	ath10k-fwencoder --create \
+		--features=wowlan,no-nwifi-decap-4addr-padding,allows-mesh-bcast,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel  \
+		--set-wmi-op-version=tlv --set-htt-op-version=tlv \
+		--set-fw-api=5
+	install -Dm644 firmware-5.bin -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 $pkgname-$_commit/board-2.bin -t "$pkgdir/$_fwdir/ath10k/WCN3990/hw1.0/"
+	install -Dm644 proprietary_vendor_xiaomi_wayne-common-$_muppets_commit/proprietary/vendor/firmware/a512_zap.elf "$pkgdir/$_fwdir/postmarketos/a512_zap.mbn"
+}
+
+
+sha512sums="
+02ec26bae153c1bdcc4194bfb80aad1dd24fa8e82b7b0a3d59d5cf6389a81e0415f7394176291b3005ea4542f3793b314fb492d7263292311a431049f5e6ae6c  firmware-xiaomi-jasmine_sprout-b23003b2a8fa8f71374c72d69cfdbfd048e63c33.tar.gz
+012dca09032ed9a06b51b93769d5ed0c15146adc68ee8dc09a84958064314adbb621413494e399c0f8be443f939db22deaaca94fb29cfa7ad9223aa7745d77f7  firmware-xiaomi-jasmine_sprout-c7757f14a4eea2276d3ee6f6055621deff0ed32e.tar.gz
+"

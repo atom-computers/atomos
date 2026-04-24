@@ -1,0 +1,26 @@
+# Archived: Downstream port, only for testing. Use mainline port (xiaomi-wt88047)!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-wt88047-downstream
+pkgdesc="Xiaomi Redmi 2 (Downstream)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-xiaomi-wt88047-downstream mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+2d2dcd2de6fad478f2b8de985801d7b0df2961c413dbc944cbacb8a1ecc831d7b9fb70a70805835d5bfe7654a00499689ed4491a817582b12921ed30578f55d6  deviceinfo
+dab3b1355109640d4680c7824b35a4be006b3f2430cce2aba104a1e1364e01e731c5ad3c1b818f2ebd3c788913a3fddd988303f2e530dba7f24901330845a81a  kernel-cmdline.conf
+"

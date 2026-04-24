@@ -1,0 +1,64 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+
+pkgname=linux-lg-lenok-downstream
+pkgver=3.10.105
+pkgrel=0
+pkgdesc="LG G Watch R kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="lg-lenok"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6 linux-headers"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="kernel_lge_bass-lenok"
+_commit="7044f08636f6b8407bb00404a2e27ae0ce859f1e"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/pmsourcedump/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	02_mdss_fb_refresh_rate.patch
+	fix_slow_boot_emmc_timeout.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+ae4dbdf716cf446e9788c5e1d847ff45cca60831b6199568c9a46d6319824e57515f63eabf5250ceffee5f543c1de0813a1fb48e559c2f7d51cfc73a809ee934  linux-lg-lenok-downstream-7044f08636f6b8407bb00404a2e27ae0ce859f1e.tar.gz
+69d66b11cb1e1fed50ecd7ebb618a487d14727d1a13702c12b73febb03d2f73207a8a0881b44c2917d749d6a817b7742e9783de98024e194af8a45d4d5c91866  config-lg-lenok.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+a8c955bf718f155011e980f3d0948be98e1fee5649f418299a4851780543019daf7afa406aa7b0829375645107e4e6fbf241026b0cabe2b2ac895a47df83d2d8  02_mdss_fb_refresh_rate.patch
+e4d2a3ee6807659fe2bbbbdea4f9b4934b04ed1714ccdfea14dead5c8bc46cd9ebb93a98e2ff350382b0aa09bc4a6a00884f2b920082fdd6ab3a758a20b8e224  fix_slow_boot_emmc_timeout.patch
+"

@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=device-kobo-clara
+pkgdesc="Kobo Clara HD"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-imx-ereader
+	kobo-epdc-extractor
+	perl
+	postmarketos-base
+	u-boot-kobo-clara
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+e880ffb83f2f684aad126ee5d8d19d34c3c8a802491b8d5c46a51d048922086f32560cce6a8b261602cb90cec86cfd71bd966ae5ea2c1243e363866f6b88a687  deviceinfo
+b4ab1b5ce58c0c46e655cfe898ff28897abae0e0ba2d927613f7ce2b21fb3fdb3ffaa8b5b260daa9baebef49f71e3c068932fe255ffa420d6ecc9c9e99c67aca  kernel-cmdline.conf
+fd37d287493470ab4ee03e8c53205804a239a59c9f9dff2b602878af918b894761f54ccc3d92a283e9e61344b68f6897f197dd6100be82f5db26cb946eac653f  modules-initfs
+"

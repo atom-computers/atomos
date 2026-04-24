@@ -1,0 +1,15 @@
+[Unit]
+Description=USB Gadget Network Setup (initramfs)
+DefaultDependencies=no
+After=systemd-modules-load.service sys-kernel-config.mount modprobe@libcomposite.service
+Requires=sys-kernel-config.mount modprobe@libcomposite.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/duranium/usb-gadget-setup
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=emergency.target

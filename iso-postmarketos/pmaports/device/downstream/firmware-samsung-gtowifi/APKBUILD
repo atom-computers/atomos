@@ -1,0 +1,30 @@
+pkgname=firmware-samsung-gtowifi
+pkgver=0.1
+pkgrel=0
+pkgdesc="Proprietary firmware for gtowifi"
+_repository="gtowifi-blobs"
+url="https://github.com/oatm22/$_repository"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+_commit="fc7bc44a7dd8630ddc6ca10b28c2396ebb3249fd"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+subpackages="$pkgname-wifi"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+wifi() {
+	mkdir -p "$subpkgdir"
+	depends="wcnss-wlan"
+	install -Dm644 "$srcdir"/$_repository-$_commit/wcnss.* -t \
+		"$subpkgdir"/lib/firmware/postmarketos/
+	install -Dm644 "$srcdir"/$_repository-$_commit/wlan/prima/* -t \
+		"$subpkgdir"/lib/firmware/postmarketos/wlan/prima
+}
+sha512sums="
+a3b0a28473b78666198cd721a870d9d269f454e41e51a9fafb2adcb6d24786df49e2fe7bf12cff2f14c5328c21680e475ba10cdf5a7accd7781b3347587edda7  firmware-samsung-gtowifi-fc7bc44a7dd8630ddc6ca10b28c2396ebb3249fd.tar.gz
+"

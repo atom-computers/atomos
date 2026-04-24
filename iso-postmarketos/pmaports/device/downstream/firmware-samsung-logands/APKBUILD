@@ -1,0 +1,23 @@
+pkgname=firmware-samsung-logands
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Samsung Galaxy Ace 3 Duos Firmware"
+_commit="68312770176a592d41ff3521a1d942b4ae8cb70a"
+url="https://github.com/Wesley09/android_vendor_samsung_logands"
+arch="armv7"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::https://github.com/Wesley09/android_vendor_samsung_logands/archive/$_commit.tar.gz"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/android_vendor_samsung_logands-$_commit"
+
+package() {
+	# WiFi
+	for _i in bcmdhd_sta.bin nvram_net.txt; do
+		install -Dm644 proprietary/etc/wifi/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+}
+sha512sums="
+6472af9d5e33512fdf1112496410d872f0adde2e232a4e12a483762a8ef11f14b695bb2be7409a81d57d8247a6cb38d6d0369c3ed2eceb31d959ca2274612bcd  firmware-samsung-logands-68312770176a592d41ff3521a1d942b4ae8cb70a.tar.gz
+"

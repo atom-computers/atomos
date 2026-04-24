@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+
+description="Initialize adsp audio subsystem"
+
+start()
+{
+	ebegin "Enabling audio subsystem"
+	echo 1 > /sys/kernel/boot_adsp/boot
+}

@@ -1,0 +1,310 @@
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-base
+pkgver=57
+pkgrel=0
+pkgdesc="Meta package for minimal postmarketOS base"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+makedepends="postmarketos-initramfs"
+# Several of these dependencies come from alpine - base, as the upstream
+# recommendation to not depend on openrc has been to copy them here:
+# https: // gitlab.alpinelinux.org/alpine/aports/-/merge_requests/71686#note_435428
+depends="
+	apk-tools
+	busybox
+	devicepkg-utils>=0.2.0
+	eudev
+	merge-usr
+	mount
+	musl-utils
+	openssh-server-pam
+	postmarketos-keys
+	postmarketos-ramdisk
+	postmarketos-zram
+	sudo-virt
+	umount
+	util-linux-login
+	"
+_pmb_recommends="sudo-rs"
+install="$pkgname.post-install $pkgname.post-upgrade"
+triggers="$pkgname.trigger=/usr/share/deviceinfo"
+subpackages="
+	$pkgname-core
+	$pkgname-doas
+	$pkgname-fwupd
+	$pkgname-grub
+	$pkgname-mesa
+	$pkgname-nftables
+	$pkgname-nftables-openrc:nftables_openrc
+	$pkgname-nosplash
+	$pkgname-openrc
+	$pkgname-ssh
+	$pkgname-sudo
+	$pkgname-sudo-rs:sudo_rs
+	postmarketos-release:release
+	postmarketos-baselayout:baselayout
+	"
+options="!check"
+# Every postmarketos installation with pmbootstrap <= 3.3.2 has
+# alpine-base in /etc/apk/world. But for multiple reasons, we do not
+# want to depend on it. So have a versioned provides that conflicts
+# with it. See the commit that introduced this message for more details
+# THE LINE BELOW MUST NOT BE REMOVED UNTIL WE ARE READY TO DEPEND ON
+# alpine-base AGAIN
+provides="alpine-base=1000-r0"
+
+_source440="
+	etc/sudoers
+	etc/doas.d/10-postmarketos.conf
+	"
+_source600="
+	etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+	"
+_source644="
+	etc/conf.d/swapfile
+	etc/conf.d/syslog
+	etc/fstab
+	etc/issue
+	etc/motd
+	etc/update-grub.conf
+	usr/lib/apk/config
+	usr/lib/os-release
+	usr/lib/kernel-cmdline.d/00-base.conf
+	usr/lib/kernel-cmdline.d/90-nosplash.conf
+	usr/lib/sysctl.d/90-disable-rp-filter.conf
+	usr/lib/sysctl.d/90-steam.conf
+	usr/lib/udev/rules.d/20-imagis-input.rules
+	usr/lib/udev/rules.d/20-tm2-touchkey-input.rules
+	usr/lib/udev/rules.d/20-tm2-touchkey-leds.rules
+	usr/lib/udev/rules.d/20-zinitix-input.rules
+	usr/lib/udev/udev.conf
+	usr/share/mkinitfs/files/postmarketos-base.files
+	"
+_source755="
+	etc/init.d/deferred-initcalls
+	etc/init.d/swapfile
+	etc/init.d/tmpfs
+	usr/bin/swapfile
+	"
+
+# Avoid filename based checksum conflicts by including the whole path:
+# https://gitlab.alpinelinux.org/alpine/abuild/-/issues/10013
+flatpath() {
+	local i
+	for i in $@; do
+		echo "rootfs-$i" | sed s./.-.g
+	done
+}
+
+source="$(flatpath $_source440 $_source600 $_source644 $_source755)"
+
+prepare() {
+	default_prepare
+
+	# setterm -powersave on -blank 5
+	echo -ne "\033[9;5]" >> rootfs-etc-issue
+}
+
+package() {
+	# These packages are provided by subpackages in this APKBUILD, and they
+	# may not exist when this is evaluated at the top level. They're moved
+	# into this function to work around it.
+	depends="
+		$depends
+		postmarketos-base-init
+		postmarketos-baselayout
+		postmarketos-release
+		"
+
+	local i
+	for i in $_source440; do
+		install -Dm440 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source600; do
+		install -Dm600 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source644; do
+		install -Dm644 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+	for i in $_source755; do
+		install -Dm755 "$srcdir/$(flatpath "$i")" "$pkgdir/$i"
+	done
+}
+
+core() {
+	# This is needed for backwards compatibility with installs that got
+	# the alpine-baselayout-core package in world:
+	# https://gitlab.postmarketos.org/postmarketOS/pmbootstrap/-/merge_requests/2680
+	# as if alpine-baselayout-core is removed, the symlinks will disappear.
+	pkgdesc="Minimal structure for compatibility reasons"
+	depends=""
+	replaces="alpine-baselayout"
+	provides="alpine-baselayout-core=$pkgver-r$pkgrel"
+
+	mkdir -p "$subpkgdir"
+	cd "$subpkgdir"
+	install -m 0755 -d usr/bin usr/lib usr/sbin
+	ln -s usr/bin "$subpkgdir"/bin
+	ln -s usr/lib "$subpkgdir"/lib
+	ln -s usr/sbin "$subpkgdir"/sbin
+}
+
+doas() {
+	pkgdesc="doas configuration"
+	install_if="$pkgname=$pkgver-r$pkgrel doas"
+
+	amove etc/doas.d/10-postmarketos.conf
+}
+
+fwupd() {
+	pkgdesc="fwupd configuration"
+	install_if="$pkgname=$pkgver-r$pkgrel systemd-boot fwupd"
+	depends="fwupd-efi"
+
+	mkdir -p "$subpkgdir"
+}
+
+grub() {
+	install_if="$pkgname=$pkgver-r$pkgrel grub"
+
+	amove etc/update-grub.conf
+}
+
+mesa() {
+	replaces=""
+	depends="mesa-dri-gallium mesa-gles"
+	install_if="$pkgname=$pkgver-r$pkgrel mesa"
+	mkdir "$subpkgdir"
+}
+
+nftables() {
+	install_if="$pkgname=$pkgver-r$pkgrel nftables"
+	depends="postmarketos-config-nftables"
+
+	mkdir "$subpkgdir"
+}
+
+nftables_openrc() {
+	install_if="$pkgname-openrc=$pkgver-r$pkgrel nftables"
+	depends="nftables-openrc openrc"
+	install="$subpkgname.post-install"
+
+	mkdir -p "$subpkgdir"
+}
+
+nosplash() {
+	pkgdesc="Config to disable splash screen"
+
+	amove usr/lib/kernel-cmdline.d/90-nosplash.conf
+}
+
+ssh() {
+	install_if="$pkgname=$pkgver-r$pkgrel openssh-server-pam"
+	# Config file moved from there
+	replaces="postmarketos-base-ui"
+
+	amove etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+}
+
+sudo() {
+	pkgdesc="sudo configuration"
+	install_if="$pkgname=$pkgver-r$pkgrel sudo"
+	replaces="sudo"
+	replaces_priority=100  # leave plenty for alpine
+
+	install -Dm644 "$pkgdir"/etc/sudoers \
+		-t "$subpkgdir"/etc/
+}
+
+sudo_rs() {
+	pkgdesc="sudo-rs configuration"
+	install_if="$pkgname=$pkgver-r$pkgrel sudo-rs"
+	replaces="sudo-rs"
+	replaces_priority=100 # leave plenty for alpine
+
+	amove etc/sudoers
+	# sudo-rs requires all listed directories in sudoers to exist at runtime
+	mkdir -p "$subpkgdir"/etc/sudoers.d
+}
+
+openrc() {
+	provides="$pkgname-init"
+	provider_priority=10
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	replaces="
+		busybox-openrc
+		eudev
+		openrc
+		"
+	depends="
+		!systemd
+		alpine-conf
+		busybox-mdev-openrc
+		busybox-openrc
+		eudev-openrc
+		logbookd
+		logbookd-openrc
+		openrc
+		openrc-user-pam
+		openssh-server-common-openrc
+		postmarketos-zram-openrc
+		udev-init-scripts-openrc
+		"
+
+	amove etc/conf.d/swapfile
+	amove etc/conf.d/syslog
+	amove etc/init.d/deferred-initcalls
+	amove etc/init.d/swapfile
+	amove etc/init.d/tmpfs
+}
+
+baselayout() {
+	depends="alpine-baselayout"
+	replaces="alpine-baselayout alpine-baselayout-data postmarketos-base postmarketos-base-systemd<44"
+
+	amove etc/fstab
+	amove etc/motd
+}
+
+release() {
+	replaces="alpine-release  postmarketos-base"
+	pkgdesc="postmarketOS release data"
+	depends="alpine-release"
+
+	amove usr/lib/os-release
+	amove etc/issue
+
+	# /etc/os-release should be a relative symlink, see:
+	# https://www.man7.org/linux/man-pages/man5/os-release.5.html
+	ln -s ../usr/lib/os-release "$subpkgdir"/etc/os-release
+}
+
+sha512sums="
+f6286745fd130dd17f9a1bbc305a5bda0b3e07add8b997e4f4b98a14fc77028a56be4829b91cc1008e8084ae0e3cd78994daa4f3e14e17b7f00f95f8ce8f78da  rootfs-etc-sudoers
+49cff0dbf37fc3c3ca30709be3bc4bbac9b2c05d1f88356922c6ab849e1fe893da7eca92b42a4095cfa00fe475470a711a93bfa60f1cedfde9c890a6dcc61de9  rootfs-etc-doas.d-10-postmarketos.conf
+1d2975e7e2745020f88fac639021cc9a47b477fb0390c3e146a070d98faab32c3f1c7bd1121f45a26be97301ab65c736ae0a4905d28a7251919a1994895f9c8d  rootfs-etc-ssh-sshd_config.d-50-postmarketos-ui-policy.conf
+e0d2d48b82a03239a4c0a00acaf83e00d397c23a8d7c71053d4e2a383357c22dcedef9e81b0e12a1d7514e1fdbe0bb3eb82613d18b29034a7ce5447f13c84a53  rootfs-etc-conf.d-swapfile
+e4576c58c35f80bedddb1e89e186f37d31a186d3e9eb046581b8c5d7b7d435e18924539e851d3e67dc0ede80f9d44d16bd9ef52e73350d3f13224edc31d73a34  rootfs-etc-conf.d-syslog
+9b8d0493bb64457fe176fea801e0771d3c5279302c61559824bf81b3d2b66d2c1e076f4aaac65f55389005acb18c27e44bed858c2bdbad37d74199f07c86c354  rootfs-etc-fstab
+45bd0742a64a9d3c4a88e152b97edcf3fa1edca28884f9ea69e7c4c365f1e41ef9056dbe204545de7d4b2ba92e1e5872b2a929c2dcc1dd468e627cc3f090b8e6  rootfs-etc-issue
+01403df3b5a2be0dd70387a3c32cf24a77bc097679fbefca585082a0970b7d756723c33687be3809351b5e31c85947db84861118bfeced8f5f865fe2452555ec  rootfs-etc-motd
+4c7e378a66f61b5ab601d8886d5d9a7f6444564e792481d9926dfda0e3ccaca92196b1e7d29d20de5394b916b321f2176b056676aec0d73a1fdfafab55725c70  rootfs-etc-update-grub.conf
+224d58717f7f95851c91914753f4aefaf8964a2e62350ed898783c295c509cdadd85c325ee00baceb21ff2763ca2f4c7b1478a5638eb7d86836f91336b739376  rootfs-usr-lib-apk-config
+6593a61cb4cbb5d557bdd0f98ce09bf91a6e076cfe0023fe3f495e17044c8d586708328a0fae52b58b3ff008a347b1f63a222a2a4d4f3f4d95777531f8a5c1a8  rootfs-usr-lib-os-release
+2c251920d837bfef95f1ba5f768cd5365d2efce9f1b6454ceed574a16e04d29b7c8e866a9e811abd4699ce57c73962421a1859799f76c24c157b87b21f9039f3  rootfs-usr-lib-kernel-cmdline.d-00-base.conf
+4508cf512fa53236779c70e163fd2f13de8c8e8a53d0ee1a8b4214c12c88979f087614bec9b543662162b3665f4d3412d69fb2de1646342bf4cc5ec076b311cd  rootfs-usr-lib-kernel-cmdline.d-90-nosplash.conf
+b70ee1b39b5f33c9a3e6bf4259158519691c82c8cefb700d4df49eb749a2cce208082e00d4905b9eea2c4f75b6da62f73931931c92157b4132adb35dcf0e0a6f  rootfs-usr-lib-sysctl.d-90-disable-rp-filter.conf
+6b16fd00756926c6fdc6f01960f59c854c90920dd9c0e67c19506a90fd26ac887a8dbfd5b1ec2712fff91f0369ddc5b91d56041360018d4d0c4d78e49733b644  rootfs-usr-lib-sysctl.d-90-steam.conf
+560d30c08856714f4bec805ca95fad767330d6fb3760096ffebdf35cad42d4ebea7dd2f5ee2e4d88596743e6717ca6ac2339d4d753feb3ca28e0090c585bf81e  rootfs-usr-lib-udev-rules.d-20-imagis-input.rules
+b61c6116f972df08f460494cf3b511b7cb4046a65bb3bd840cddb5ca98518c4514dc5f8a9330bc9ac630e5adbfecc839cbd21f70cac5000a30fd2daeab0f02d7  rootfs-usr-lib-udev-rules.d-20-tm2-touchkey-input.rules
+de4d8f258cb2ce654be15abe0188caa6ca9cc163fd45350f2025e7e9d043878e3f1202ef9033b1b15d7e18c4b40c3b19db387ee050a3baf03c4bd4293f4721e3  rootfs-usr-lib-udev-rules.d-20-tm2-touchkey-leds.rules
+7396c2adc7808a995162cd20c0e8b327675eb5e616e936e65887a4581eb4d134f9911202bb269e0541643d0c1cb6955bf590bc4df8bafc6ecf2bf7fc63385e3c  rootfs-usr-lib-udev-rules.d-20-zinitix-input.rules
+720dfd3f929ffe92c087cc96f5b2bdd19c6f6cf4b6fb0b4b6fc9fbad26132968c26b70d6e9909818d2c13543912d095f79252e944a2441b804eeb1e4a6030fd8  rootfs-usr-lib-udev-udev.conf
+d89a7e4b9d601431c62c11f83c9c72fdb90384d9100ee5fc4aff25dda0836fd3bf9e48c0536615be791374459eb8fbaf36d27358d4402ce768a9b9a32bed4f93  rootfs-usr-share-mkinitfs-files-postmarketos-base.files
+3c049c5e6fbe3079ac333f416cbaf5d3890a7941b79d68741bfc861ee94358fba6d8b72614fe99ab84563f9208613037c6702a7d0fc5a6dfa9d0518b5a13b0cb  rootfs-etc-init.d-deferred-initcalls
+42d6bce78b6e3c118dcbd9228b138661a05f8f321f17457e8df8f2398c0b780399d8d056f0a7c50d91557ac8698ab37dde61ec1a13fd69a7b3faad092f126580  rootfs-etc-init.d-swapfile
+0cd9a0b8490028d854b65d0648aaf84e4703921b8b7797517dd65ffaa1ec9e225487007dcccd42c249a9f2470e5adacf95760536c9508138b14de7252de38473  rootfs-etc-init.d-tmpfs
+23df2632e8ef372dccd6b9abac61441dd0ee447ccc7428fba495e28f1b697ebc415f7580dbb9a39d22d162a175d7264b47bdf9f66552347e35d9d0bb7828647d  rootfs-usr-bin-swapfile
+"

@@ -1,0 +1,35 @@
+maintainer="Ingo Reitz <9l@9lo.re>"
+pkgname=device-google-raven
+pkgdesc="Google Pixel 6 Pro"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	android-tools
+	linux-postmarketos-gs101
+	postmarketos-base
+	soc-google-gs101
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+a3dc5636deba8c125245dec99d68788409a25fbba079807f58c5a9afd6d2d36577a7ee072681e64e79d046600f07ca33f5d353e12b8488b02a2fe19f5e108cf5  deviceinfo
+9ed1246237067259c1e533bbbda28de56836a8ebe2fe9dc079f038552062be6b7daf9e2f46261d293d7eb58fa2d3d52d516f98c309f6adcd01d910a0e436cfcf  kernel-cmdline.conf
+a5171dc7a4221a5a63c02820bac1e372c557cee72db9f777099f67eb272595fad6019f876cb47dd1bf455eeb3a45a74f215f2e8c44a6e1bf7cf3d7d9f49d98ad  modules-initfs
+"

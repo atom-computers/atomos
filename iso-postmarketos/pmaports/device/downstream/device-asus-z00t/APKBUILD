@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-asus-z00t
+pkgdesc="Zenfone 2 Laser/Selfie (1080p)"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-asus-z00t mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-udev
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	90-touchscreen.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/90-touchscreen.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-touchscreen.rules
+}
+
+nonfree_firmware() {
+	pkgdesc="All non-free firmwares from a device image. Includes firmware for wifi, modem and camera among others."
+	depends="firmware-asus-z00t"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+fe85d9977c3f452dc058a534dbf2de6e2d243d82747625abae19bca2a252e455f132e6e9ea602ca9c33c11cbb40017e7a70c40b6c5d7f68b052b6ca0167e1196  deviceinfo
+e35df06ef935ec26f3e4525bb5f6021d6d33c5af77ed63bc58fa5b8bcd7d46cd08c8ef57d6afb52a47228fc16b4860d0eae74a321bb489defc89d909bb4a4225  kernel-cmdline.conf
+5bcf314aa8e77db9d9673a93886906bd15e8c3c57f8d0c4343977d2ce8d017af5608a3d13cd2cbacf155e3ecf632ccab6ff6f3b0c95eb4a2a3b35686a3c842db  90-touchscreen.rules
+"

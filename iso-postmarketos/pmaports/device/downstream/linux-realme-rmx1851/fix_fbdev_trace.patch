@@ -1,0 +1,28 @@
+diff --git a/drivers/video/fbdev/msm/mdss_debug.h b/drivers/video/fbdev/msm/mdss_debug.h
+index 64df339b4..c600095f4 100644
+--- a/drivers/video/fbdev/msm/mdss_debug.h
++++ b/drivers/video/fbdev/msm/mdss_debug.h
+@@ -78,8 +78,8 @@ struct vbif_debug_bus {
+ #define MDSS_XLOG_IOMMU(...) mdss_xlog(__func__, __LINE__, MDSS_XLOG_IOMMU, \
+ 		##__VA_ARGS__, DATA_LIMITER)
+ 
+-#define ATRACE_END(name) trace_tracing_mark_write(current->tgid, name, 0)
+-#define ATRACE_BEGIN(name) trace_tracing_mark_write(current->tgid, name, 1)
++#define ATRACE_END(name) trace_tracing_mark_write_mdss(current->tgid, name, 0)
++#define ATRACE_BEGIN(name) trace_tracing_mark_write_mdss(current->tgid, name, 1) 
+ #define ATRACE_FUNC() ATRACE_BEGIN(__func__)
+ 
+ #define ATRACE_INT(name, value) \
+diff --git a/drivers/video/fbdev/msm/mdss_mdp_trace.h b/drivers/video/fbdev/msm/mdss_mdp_trace.h
+index 35a126ba3..4a03d26b8 100644
+--- a/drivers/video/fbdev/msm/mdss_mdp_trace.h
++++ b/drivers/video/fbdev/msm/mdss_mdp_trace.h
+@@ -428,7 +428,7 @@ TRACE_EVENT(mdp_cmd_wait_pingpong,
+ 			__entry->kickoff_cnt)
+ );
+ 
+-TRACE_EVENT(tracing_mark_write,
++TRACE_EVENT(tracing_mark_write_mdss,
+ 	TP_PROTO(int pid, const char *name, bool trace_begin),
+ 	TP_ARGS(pid, name, trace_begin),
+ 	TP_STRUCT__entry(

@@ -1,0 +1,31 @@
+maintainer="Alexey Minnekhanov <alexeymin@minlexx.ru>"
+pkgname=firmware-sony-ninges
+pkgver=2
+pkgrel=1
+pkgdesc="Firmware for Sony Xperia XA2/Plus/Ultra & 10/10 Plus"
+url="postmarketos.org"
+arch="aarch64"
+license="BSD-3-Clause"
+options="!check !archcheck !strip !tracedeps pmb:cross-native"
+depends="
+	firmware-qcom-adreno-a530
+	linux-firmware-qca
+	rsync
+"
+subpackages="$pkgname-openrc"
+source="copy-firmware.initd"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	install -Dm755 "$srcdir/copy-firmware.initd" "$subpkgdir/etc/init.d/copy-firmware"
+}
+
+sha512sums="
+53a6f039264547a2f5972c45a9b4c468867a0dc2f2eaea0f085d323643a8cd2f308fa840cd30502c0511441754ca1ee2f7a242135e37e73b9123a5e4162e2da6  copy-firmware.initd
+"

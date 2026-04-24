@@ -1,0 +1,43 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-on7
+pkgdesc="Samsung Galaxy On7 (2015)"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	postmarketos-base
+	mkbootimg
+	linux-postmarketos-qcom-msm8916
+	soc-qcom-msm8916
+	soc-qcom-msm8916-rproc
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader firmware-samsung-on7-wcnss-nv"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+fb1394b1fa5c3fc855ed25d844120766f089d0fd8d2c1b2499526cb5fe354439ae4f76592422a9e589f70b7ed1ec1d3538ba23fb819572f9919715363a3bf62c  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+2ec94ab06240419953494aede92263232e07745b8406923d39849c1a4b32bd135f4411243755e5f892d201e39dca10e8aa7b175b6c63361be094f6ba086a518f  modules-initfs
+"

@@ -1,0 +1,31 @@
+From 8722cd082aff5d3afae4ea7f7d631dd76d616aff Mon Sep 17 00:00:00 2001
+From: bjorn3 <17426603+bjorn3@users.noreply.github.com>
+Date: Wed, 22 Jun 2022 13:01:01 +0200
+Subject: [PATCH] Fix signature mismatch for msm_pm_boot_init
+
+This previously caused msm_pm_boot_init to incorrectly get handled as
+__init function when it needs to be an __devinit function as it is
+called by msm_pm_boot_probe, which is an __devinit function.
+---
+ arch/arm/mach-msm/pm-boot.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-msm/pm-boot.h b/arch/arm/mach-msm/pm-boot.h
+index 2d5110d306..8b5f69e423 100644
+--- a/arch/arm/mach-msm/pm-boot.h
++++ b/arch/arm/mach-msm/pm-boot.h
+@@ -31,9 +31,9 @@ struct msm_pm_boot_platform_data {
+ };
+ 
+ #ifdef CONFIG_PM
+-int __init msm_pm_boot_init(struct msm_pm_boot_platform_data *pdata);
++int __devinit msm_pm_boot_init(struct msm_pm_boot_platform_data *pdata);
+ #else
+-static inline int __init msm_pm_boot_init(
++static inline int __devinit msm_pm_boot_init(
+ 		struct msm_pm_boot_platform_data *pdata)
+ {
+ 	return 0;
+-- 
+2.26.2.7.g19db9cfb68
+

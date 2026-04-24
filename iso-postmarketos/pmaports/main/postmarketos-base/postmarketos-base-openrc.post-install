@@ -1,0 +1,27 @@
+#!/bin/sh -e
+
+# Enable eudev service
+rc-update add udev sysinit
+rc-update add udev-trigger sysinit
+rc-update add udev-settle sysinit
+rc-update add udev-postmount default
+
+# Enable other OpenRC services
+for service in devfs dmesg; do
+	rc-update -q add $service sysinit
+done
+for service in hwclock modules sysctl hostname bootmisc logbookd tmpfs; do
+	rc-update -q add $service boot
+done
+for service in sshd swapfile local postmarketos-zram-swap; do
+	rc-update -q add $service default
+done
+for service in mount-ro killprocs savecache; do
+	rc-update -q add $service shutdown
+done
+
+# Prime swclock with a reasonable date/time on first boot
+mkdir -p /run/openrc
+touch /run/openrc/shutdowntime
+
+exit 0

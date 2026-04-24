@@ -1,0 +1,4 @@
+#!/bin/sh
+# Enable pi-bluetooth init script
+rc-update add bluetooth default
+rc-update add pi-bluetooth default

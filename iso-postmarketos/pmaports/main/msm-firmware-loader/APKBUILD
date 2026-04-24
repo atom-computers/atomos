@@ -1,0 +1,49 @@
+maintainer=""
+pkgname=msm-firmware-loader
+pkgver=1.8.0
+pkgrel=2
+pkgdesc="Set of init services to automatically load firmware from device partitions"
+url="https://postmarketos.org/"
+subpackages="$pkgname-openrc $pkgname-systemd $pkgname-wcnss"
+arch="armhf armv7 aarch64"
+license="MIT"
+source="
+	https://gitlab.postmarketos.org/postmarketOS/msm-firmware-loader/-/archive/$pkgver/msm-firmware-loader-$pkgver.tar.gz
+"
+options="!check"
+
+package() {
+	install -Dm755 msm-firmware-loader.sh \
+		"$pkgdir/usr/sbin/msm-firmware-loader.sh"
+	install -Dm755 msm-firmware-loader-unpack.sh \
+		"$pkgdir/usr/sbin/msm-firmware-loader-unpack.sh"
+
+	install -Dm755 msm-firmware-loader.initd \
+		"$pkgdir/etc/init.d/msm-firmware-loader"
+	install -Dm755 msm-firmware-loader-unpack.initd \
+		"$pkgdir/etc/init.d/msm-firmware-loader-unpack"
+
+	install -Dm644 msm-firmware-loader.service \
+		"$pkgdir/usr/lib/systemd/system/msm-firmware-loader.service"
+	install -Dm644 msm-firmware-loader-unpack.service \
+		"$pkgdir/usr/lib/systemd/system/msm-firmware-loader-unpack.service"
+}
+
+openrc() {
+	install="$subpkgname.post-install"
+	depends="openrc"
+	default_openrc
+}
+
+wcnss() {
+	pkgdesc="Use WiFi/BT firmware from stock firmware partition using $pkgname"
+	provides="firmware-qcom-msm8916-wcnss=$pkgver-r$pkgrel"
+	depends="$pkgname"
+
+	# empty package, just some magic
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+c87e9e45fa47b046eb056e1830b32f081a9100bd937e683794aa95913d93e39bdc8911e599b8ab6a368c42b0bf56d9a29c4f0e6ba31b7fb31747c43eb6053bbd  msm-firmware-loader-1.8.0.tar.gz
+"

@@ -1,0 +1,53 @@
+From cc641d66eef1e8c67ac36d099d23cee52ca83836 Mon Sep 17 00:00:00 2001
+From: Henkate <robertpopescu95@yahoo.com>
+Date: Mon, 30 Oct 2017 21:46:29 +0200
+Subject: [PATCH] drivers/hwbfm: Disable huawei Bootfail Monitor
+
+* Ive tried to disable configs in defconfig and also removing the driver entirely, but i keep getting build errors after solving an error.
+* I dont know if there is a simpler/better way to disable this since i lack C++ knowledge and its been a long time since ive did something in C++ ( i learnt some basic C++ at high school, but not advanced).
+* Now the phone doesnt reboot anymore and in dmesg appears:
+
+3,1093,2579384,-;func: bfm_init line: 2616, BFMR is disabled!
+
+* This driver is causing the phone to reboot to erecovery.
+* According to dmesg, the driver doesnt see that the phone booted succesfully, and after 30 mins since boot it reboots to erecovery.
+
+<3>[340, hwboot_time][ 1806.180155] hwboot_timer:update timer [long and short]!
+<3>[340, hwboot_time][ 1806.180170] hwboot_timer: 30 minutes timer expired! boot fail!
+<6>[340, hwboot_time][ 1806.180177] >>>>enter func: boot_fail_err, line: 1346.
+<6>[340, hwboot_time][ 1806.180183]  boot_stage = 0x0300000f
+
+<3>[12505, bfm_process_upp][ 1806.182136] get_ats_1_secs:ats_tmp=1504886599626
+<3>[12505, bfm_process_upp][ 1806.182145] func: try_to_recovery line: 1210, boot_fail_stage:300000f NATIVE_STAGE_START: 4000000 boot_fail_no: 3000005 suggested_recovery_method: 0
+<3>[12505, bfm_process_upp][ 1806.182151] func: try_to_recovery line: 1218, File: ../../../../../../kernel/huawei/msm8953/drivers/hwbfm/bfr/core/bfr_core.c Line: 1218 bfr_read_recovery_record
+<3>[12505, bfm_process_upp][ 1806.249175] func: try_to_recovery line: 1229, File: ../../../../../../kernel/huawei/msm8953/drivers/hwbfm/bfr/core/bfr_core.c Line: 1229 bfr_select_recovery_method
+<6>[12505, bfm_process_upp][ 1806.249193] >>>>enter func: bfr_select_recovery_method, line: 425.
+<3>[12505, bfm_process_upp][ 1806.249200] func: bfm_is_bottom_layer_boofail line: 402, cur_boot_fail_no: 0x03000001, bootstage in bootfail errno: 3
+<3>[12505, bfm_process_upp][ 1806.249206] func: bfm_is_bottom_layer_boofail line: 402, cur_boot_fail_no: 0x03000001, bootstage in bootfail errno: 3
+<3>[12505, bfm_process_upp][ 1806.249213] func: bfm_is_bottom_layer_boofail line: 402, cur_boot_fail_no: 0x03000005, bootstage in bootfail errno: 3
+<3>[12505, bfm_process_upp][ 1806.249219] func: bfm_is_bottom_layer_boofail line: 402, cur_boot_fail_no: 0x03000004, bootstage in bootfail errno: 3
+<3>[12505, bfm_process_upp][ 1806.249224] func: bfm_is_bottom_layer_boofail line: 402, cur_boot_fail_no: 0x03000004, bootstage in bootfail errno: 3
+<3>[12505, bfm_process_upp][ 1806.249231] func: bfm_is_bottom_layer_boofail line: 402, cur_boot_fail_no: 0x03000005, bootstage in bootfail errno: 3
+<3>[12505, bfm_process_upp][ 1806.249238] func: bfr_select_recovery_method line: 460, bf_total_times:6 bf_bottom_layer_times: 6 bf_app_times: 0
+<3>[12505, bfm_process_upp][ 1806.249245] func: bfr_select_recovery_method line: 552, [APP has no boot fail] FRM_GOTO_ERECOVERY_DOWNLOAD_RECOVERY
+<3>[12505, bfm_process_upp][ 1806.249252] func: try_to_recovery line: 1239, File: ../../../../../../kernel/huawei/msm8953/drivers/hwbfm/bfr/core/bfr_core.c Line: 1239 bfr_create_recovery_record
+<3>[12505, bfm_process_upp][ 1806.266430] func: try_to_recovery line: 1256, File: ../../../../../../kernel/huawei/msm8953/drivers/hwbfm/bfr/core/bfr_core.c Line: 1256 bfr_run_recovery_method
+
+Change-Id: Ib9e99d6eaf47486143db6fd692f030ccbc63b2cc
+---
+ drivers/hwbfm/main/bfmr_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/hwbfm/main/bfmr_main.c b/drivers/hwbfm/main/bfmr_main.c
+index 31921b0cc36..f81f86f343b 100644
+--- a/drivers/hwbfm/main/bfmr_main.c
++++ b/drivers/hwbfm/main/bfmr_main.c
+@@ -64,7 +64,7 @@ static int __init early_parse_bfmr_enable_flag(char *p)
+     {
+         if (0 == strncmp(p, "1", strlen("1")))
+         {
+-            s_is_bfmr_enabled = 1;
++            s_is_bfmr_enabled = 0;
+         }
+         else
+         {

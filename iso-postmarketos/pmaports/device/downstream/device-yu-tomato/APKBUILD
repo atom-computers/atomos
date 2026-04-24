@@ -1,0 +1,25 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="xeon zolt <xeon.harsh@gmail.com>"
+pkgname=device-yu-tomato
+pkgdesc="YU Yureka"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-yu-tomato mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+sha512sums="
+378fc07faca02bdc7774cf593f077481e2664458f5932db935cb67c8a48a3c99b30b96ffc03c69cc9084a6f4a17c07d5baff9cdeca778952c1626f12d78c679c  deviceinfo
+ec1e45dbc0edc93c8bd286348544607bdf431de66111b71194fe673a6e7fbafac3706e53dd45ce11e741366098627b5c4c56ffdb0f021a1362944ca49082e8d5  kernel-cmdline.conf
+"

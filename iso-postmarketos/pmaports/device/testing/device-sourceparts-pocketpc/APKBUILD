@@ -1,0 +1,46 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-sourceparts-pocketpc
+pkgdesc="Source Parts Pocket P.C."
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-sourceparts-pocketpc
+	postmarketos-base
+	u-boot-sourceparts-pocketpc
+	u-boot-tools
+"
+makedepends="devicepkg-dev u-boot-tools"
+source="
+	deviceinfo
+	uboot-script.cmd
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+	mkimage \
+		-A arm \
+		-O linux \
+		-T script \
+		-C none \
+		-a 0 \
+		-e 0 \
+		-n postmarketos \
+		-d "$srcdir"/uboot-script.cmd \
+		"$srcdir"/boot.scr
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+}
+
+sha512sums="
+464078c18c5dbf9a1aed1ece90ff99122a476160c29006c37bee8e776b5ec37b0455f52da5a6c03f6371a3d93cd5c5a7247d77a2e5391e3f5de8edd2c6308e8e  deviceinfo
+fef3c97c335eed2636f94cf2a207f7225b89bf00c159744897f41e900d7f9c8df5fc66964c2bc04726a4a5397da2b414377eeccfb4a2e6a6f0361156140357d4  uboot-script.cmd
+"

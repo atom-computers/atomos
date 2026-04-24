@@ -1,0 +1,80 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/pxa1908_xcover3lte_eur_defconfig
+
+pkgname=linux-samsung-xcover3lte
+pkgver=3.14.27
+pkgrel=1
+pkgdesc="Samsung Galaxy Xcover 3 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-xcover3lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl pxa-mkbootimg dtc gcc4"
+
+# Source
+_repository="android_kernel_samsung_xcover3lte"
+_commit="95e23fde08b29e88b8ba48082e51f5834680a179"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/xcover3/$_repository/archive/$_commit.tar.gz
+	$_config
+	kernel-use-the-gnu89-standard-explicitly.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	module-build-fix.patch
+	uinput-1-breaks.patch
+	uinput-2-ui_get_sysname.patch
+	uinput-3-dev-setup.patch
+	place-cpu_setup-in-text.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" CFLAGS_MODULE="-fno-pic" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" modules
+}
+
+package() {
+	KERNEL_IMAGE_NAME="Image.gz" downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	pxa1908-dtbTool -p "$_outdir"/scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/dts/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+
+	# Modules
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="
+3c09cca096d7dbc2c2aad4fc1a6d6c603e1179d59322cbf8d34837c96fba5fe6721ea5d76b5a1e331f98735f5cb92606ddb3629d2f62d1559a8abfa0a04564c9  linux-samsung-xcover3lte-95e23fde08b29e88b8ba48082e51f5834680a179.tar.gz
+a1e2afef1ac9293a4ef83a04e4056bb13682993f1f1dc74e94872bdaeb6432e6386dc223e0056f49e223f5e9b44b14225459d3839957109981fbb9eb8b06bd4e  config-samsung-xcover3lte.aarch64
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+c45d985ad4ea3c216199ae92eb3d228308abc35e7d06dd9f35abc0bdb13f3dbeab3f882dee4f96b7c19f575764ab1da5b3d5ff28ba7714e976a7c75617d1ac26  module-build-fix.patch
+47ec0cb51db35f95c870cd295d022c68cec837e3bb2f1c72f3faa49a9caf62eca9e9f64c67bb5183440d0ffd71ade45fa3daafc39b88665d2bce178c5189e74e  uinput-1-breaks.patch
+97874d0bd27b67187d0dbc54d59b21c2e841d490d9bd16ac0672d86b462747a47cd27e5e66675ff3b1ebe80cc1c955e8a481bf9b28347d0042fdd9422293b860  uinput-2-ui_get_sysname.patch
+3c32141290a8c57abf2bdb7b904503d5cca035e58beed65877d3086afeeae518a392231b8e717ece0980c4f0b60349ac46598789c1eda1826bd6321b547d8137  uinput-3-dev-setup.patch
+ef361f4729efeb6442bdd028798a3ba8f34901cbcbedc318ae0788e23e7c897897587cee82f334d2ec5d7954a73d409bd25f1742d53ba704dd2b672a5de80f26  place-cpu_setup-in-text.patch
+"

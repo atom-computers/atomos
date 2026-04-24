@@ -1,0 +1,10 @@
+--- a/tools/Makefile.am
++++ b/tools/Makefile.am
+@@ -2,6 +2,7 @@ NULL =
+ 
+ AM_CFLAGS = \
+ 	-I$(top_srcdir)/include \
++	-std=gnu99 \
+ 	$(NULL)
+ 
+ bin_PROGRAMS = \

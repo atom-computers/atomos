@@ -1,0 +1,28 @@
+maintainer="Neil Armstrong <neil.armstrong@linaro.org>"
+pkgname=alsa-ucm-conf-ayaneo-pocket-s2
+pkgver=1.2.6_git20260121
+pkgrel=0
+pkgdesc="ALSA UCM configuration for Ayaneo Pocket S2"
+url="https://github.com/sunflower2333/alsa-ucm-conf"
+arch="aarch64"
+license="BSD-3-Clause"
+provides="alsa-ucm-conf"
+provider_priority=1
+_commit="2dbd6af885107dd4693e621772157a9e99f4c04a"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/sunflower2333/alsa-ucm-conf/archive/$_commit.tar.gz
+	ucm2-qcom-sm8650-aps-remove-capture.patch
+"
+builddir="$srcdir/alsa-ucm-conf-$_commit"
+options="!check"
+
+package() {
+	# install audio config files
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2
+	cp -r "$srcdir/alsa-ucm-conf-$_commit"/ucm2 "$pkgdir"/usr/share/alsa/
+}
+
+sha512sums="
+cf45ed130d1148761b2b7646cb4e073e724598ec33d3ee75b47598aaa17800ad3f7cf38dc5ff76a825e64efdddd9a3b7631f571a0eb326e6c650d9d6220571d0  alsa-ucm-conf-ayaneo-pocket-s2-2dbd6af885107dd4693e621772157a9e99f4c04a.tar.gz
+d240ac698f3f8b46e2ca5b624a9527ae600f3844db20d973a463eb6b1f42a3961398097591aa6327c26fd391a151d9ca0b58ebfd571730d24d0022a876d695a2  ucm2-qcom-sm8650-aps-remove-capture.patch
+"

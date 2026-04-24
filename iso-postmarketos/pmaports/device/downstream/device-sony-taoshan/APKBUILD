@@ -1,0 +1,46 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-taoshan
+pkgdesc="Sony Xperia L"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armhf"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-taoshan mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	sony-taoshan-screen-enlightener
+	fb.modes
+	40-boot-logo.files
+	50-screen-enlightener.files
+	initfs-hook.sh
+	logo.rle
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm544 "$srcdir"/fb.modes "$pkgdir"/etc/fb.modes
+	install -Dm755 "$srcdir"/sony-taoshan-screen-enlightener "$pkgdir"/usr/sbin/sony-taoshan-screen-enlightener
+	install -Dm644 "$srcdir"/40-boot-logo.files  "$pkgdir"/usr/share/mkinitfs/files/40-boot-logo.files
+	install -Dm644 "$srcdir"/50-screen-enlightener.files "$pkgdir"/usr/share/mkinitfs/files/50-screen-enlightener.files
+	install -Dm644 "$srcdir"/logo.rle "$pkgdir"/
+}
+
+
+sha512sums="
+653298aca6e30bfd96917874f83bc521243e590bc4316b726480c5a35487d6e35ea9b55f73a2ef3d2c3d46220b351f1bcce5878b67ed8af01d2f5562dcfae702  deviceinfo
+55c4af39c2c88a0b5f1515585bb48486d0b42e7d99481ef27ca73884f89d5f8e9086cba59ca773ff316e489dbc57f5a97371278d44ed2412a417b12d8a59fccf  kernel-cmdline.conf
+fff18ea9ccdabd2d6290755d716cb5444f54ce350f3ddd6ae0f23b78539b64d92b9e81a804b290c4c89bca318cfaa5930658ca62dc60cb0ad60033d516ab6aed  sony-taoshan-screen-enlightener
+72b830759c11c1d15387bff6cd9556ddac6aafa168f86ed3d3cb461f67f1492ff0b779b4c4141b6ce62a3ae02e8073bda6e19cfcf73b18b11aac99dbec8099f4  fb.modes
+153f8549244ed2c053aee3f2560df241f7c133f24032d889a2fce112015773fc32d3d081a9e09755536232462a3668dc8798851f2f6a48a16f66cfdd85d317a4  40-boot-logo.files
+c47c000a34d3d0129d7dc626cbcefa736e5ecb822a9e9b4af48ce1f5a1365a6c8b611995bc82d94f2b8bca546c2e17539757b6e2b26d3d5c0aae5c5515f647f1  50-screen-enlightener.files
+b540a85692feb0fb37f9f52f3b12b8cca6ad32469b7359464411b2d06ab896938466eef18e81fcc97a88f0aa1837cefd442389db14bc8d34c009b774c4915de4  initfs-hook.sh
+2dde30d3f7450c9e0ce375580ed5ece68ced09cff81ef11c1700c6263db63d4bb1eeca6b2f01b226426525674384643a74c26bbfb6ad8e1b41a43d959b5d1817  logo.rle
+"

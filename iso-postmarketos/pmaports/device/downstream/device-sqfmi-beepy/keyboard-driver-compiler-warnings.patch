@@ -1,0 +1,21 @@
+diff --git a/beepberry-keyboard-driver/src/params_iface.c b/beepberry-keyboard-driver/src/params_iface.c
+index 1d77ef6..9f752ad 100644
+--- a/beepberry-keyboard-driver/src/params_iface.c
++++ b/beepberry-keyboard-driver/src/params_iface.c
+@@ -386,6 +386,8 @@ module_param_cb(shutdown_grace, &shutdown_grace_param_ops, &shutdown_grace_setti
+ MODULE_PARM_DESC(shutdown_grace_setting, "Set delay in seconds from shutdown signal to poweroff");
+
+ // Path to Sharp DRM device
++// Unused Function
++/*
+ static int sharp_path_param_set(const char *val, const struct kernel_param *kp)
+ {
+ 	char *stripped_val;
+@@ -400,6 +402,7 @@ static int sharp_path_param_set(const char *val, const struct kernel_param *kp)
+ 		? param_set_charp(stripped_val, kp)
+ 		: -EINVAL;
+ }
++*/
+
+ static const struct kernel_param_ops sharp_path_param_ops = {
+ 	.set = param_set_charp,

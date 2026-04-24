@@ -1,0 +1,29 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-coreprimevelte)!
+# This kernel is used only for bringing up new features, thus archived
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-coreprimevelte-downstream
+pkgdesc="Samsung Galaxy Core Prime VE LTE downstream"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="mkbootimg linux-samsung-coreprimevelte-downstream postmarketos-base pxa-mkbootimg u-boot-tools"
+makedepends="devicepkg-dev"
+_pmb_recommends="firmware-samsung-pxa1908-downstream"
+source="deviceinfo 90-coreprimevelte.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm444 $startdir/90-coreprimevelte.conf $pkgdir/etc/sysctl.d/90-coreprimevelte.conf
+}
+
+sha512sums="
+b3f72b86a59ca3843bfe15a4d3c4c765e65dffd0befcc89338c125c2857d50e3d77bb83ebb82d4558959b8efb93de457e9d02d44f0968a28e6f4ab255671e313  deviceinfo
+4854cc57b86e1199dbc165110514e672dabf45044fe9f7ebbde5b2b24768fb5497273b5f38612cf2dfeffc9bf0648c725114b4fa01165bf7fb02f7d741ee5806  90-coreprimevelte.conf
+"

@@ -1,0 +1,25 @@
+From 0d44f1f185538803b9e2948d0d57dd63070ff2aa Mon Sep 17 00:00:00 2001
+From: Aerotinge <wang.wander@gmail.com>
+Date: Fri, 30 Mar 2018 01:13:15 +0800
+Subject: [PATCH] This fixes "/bin/sh: arm-eabi-ld: not found" error
+
+---
+ Makefile | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 74635840ae22..084f0b03b3fe 100644
+--- a/Makefile
++++ b/Makefile
+@@ -194,8 +194,6 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
+ export KBUILD_BUILDHOST := $(SUBARCH)
+ ARCH		?= $(SUBARCH)
+ CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+-ARCH		:= arm
+-CROSS_COMPILE	:= arm-eabi-
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+-- 
+2.14.1
+

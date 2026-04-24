@@ -1,0 +1,65 @@
+# Co-Maintainer: Nikita Travkin <nikita@trvn.ru>
+
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Yang Xiwen <forbidden405@outlook.com>"
+pkgname=device-zhihe-generic
+pkgdesc="A generic device package for various MSM8916-based dongles(namely zhihe)"
+pkgver=7
+pkgrel=0
+url="https://postmarketos.org"
+license="GPL"
+arch="aarch64"
+options="!check !archcheck"
+provides="device-generic-zhihe=$pkgver-r$pkgrel"
+depends="
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8916
+	soc-qcom-msm8916-rproc
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-kernel-ufi001c:kernel_ufi001c
+	$pkgname-kernel-uf896:kernel_uf896
+	$pkgname-kernel-uz801:kernel_uz801
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT/Modem/Video firmware"
+	depends="msm-firmware-loader
+		 firmware-qcom-msm8916-venus"
+	mkdir "$subpkgdir"
+}
+
+kernel_ufi001c() {
+	pkgdesc="UFI103S / UFI-001C(B) / UFI003"
+	depends="linux-postmarketos-qcom-msm8916"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_uf896() {
+	pkgdesc="UF896"
+	depends="linux-postmarketos-qcom-msm8916"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_uz801() {
+	pkgdesc="UZ801 V3.0"
+	depends="linux-postmarketos-qcom-msm8916"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+c8540cfb5f2e9bf9d5b2736762ef7dceb2243e8a4d439f4ca9382c670818dd4641ea3559dc0054901a37070a05576f6dccb279f4de4e36513af00cf41c17a7b3  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+"

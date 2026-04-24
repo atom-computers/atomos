@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_tbx704_defconfig
+
+pkgname=linux-lenovo-tb-x704f
+pkgver=3.18.140
+pkgrel=1
+pkgdesc="Lenovo TAB4 10 Plus kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lenovo-tb-x704f"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_lenovo_msm8953"
+_commit="331772c6dd08d087cfa2e50ad69185f11bc5f47d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/lenovo-devs/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		EXTRA_CFLAGS="-mstrict-align"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+e02f23ab9b85c6f9ff68f155afb36311effc5a24bfdc7aa5126f968b2b29af4c6fb71a5fb1570eb99507aa665e1486a26ba2cd6d9cdb768cb423294ae467f745  linux-lenovo-tb-x704f-331772c6dd08d087cfa2e50ad69185f11bc5f47d.tar.gz
+940969d266e21f8ecd407c34095cb4adad7401130ab022bacc6cf88b5f5d5bc02cb9fa9e4d15707c2de0ce9674947b1405b698a77c44bb6040480772bd614af3  config-lenovo-tb-x704f.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

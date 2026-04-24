@@ -1,0 +1,54 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
+pkgname=device-samsung-kona
+replaces="device-samsung-n5110"
+pkgdesc="Samsung Galaxy Note 8.0 (Wi-Fi)"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	linux-postmarketos-exynos4
+	mkbootimg
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+_pmb_recommends="
+	firmware-samsung-midas-bluetooth
+	firmware-samsung-midas-wifi
+	linux-firmware-s5p-mfc
+	"
+source="
+	deviceinfo
+	asound.state
+	Kona_WM1811/hifi.conf
+	Kona_WM1811/Kona_WM1811.conf
+	Kona_WM1811/lp.conf
+	"
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -D -m644 "$srcdir"/asound.state \
+		"$pkgdir"/var/lib/alsa/asound.state
+
+	install -D -m644 "$srcdir"/Kona_WM1811.conf \
+		"$pkgdir"/usr/share/alsa/ucm/Kona_WM1811/Kona_WM1811.conf
+
+	install -D -m644 "$srcdir"/hifi.conf \
+		"$pkgdir"/usr/share/alsa/ucm/Kona_WM1811/hifi.conf
+
+	install -D -m644 "$srcdir"/lp.conf \
+		"$pkgdir"/usr/share/alsa/ucm/Kona_WM1811/lp.conf
+}
+
+sha512sums="
+b6310c8455099d9e9d433edc22f34d84398f5a95b365daa2095ac8da0a6de2b9b41b0f01b689300c8ee5d7ba5c67b9851c705e3796c9a7e62fb4a14660ef9d12  deviceinfo
+dbbe2516c347708f72ef2e8fb6a110e6b18234c72f7173940a9a3727c6fd357b449df7c0a5ba223d2571b90249714d811307c3155b8d76974ecb1fe92c5abe98  asound.state
+1edafcded27093f6d71b2459e92e59390dfbea50c866612f7b78943dd4b96057649b2ffa677956a2b160956c5d12e8eff76ace7ec91134bafba2b632b461c660  hifi.conf
+f885a785caabd7e1d2ccf456a6ad4fa90bf01f76ba94c902a0d55268a8eddbad4b591db524a2359f1b676929d426e892db4597189e91fcd8df06bc54e3555b92  Kona_WM1811.conf
+3e0afbb20975be711613a5787635cd4b2b58e2232387e4d6f6910a7b45467fefc57cb4160f00a52db73089fa9523560e1360b045242235eac1cdb6e6f813b06b  lp.conf
+"

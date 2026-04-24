@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="HMD Global Nokia 1"
+deviceinfo_manufacturer="HMD Global"
+deviceinfo_codename="nokia-ant"
+deviceinfo_year="2019"
+deviceinfo_dtb="mt6739"
+deviceinfo_arch="armv7"
+
+# Device related
+deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
+
+# Bootloader related
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_header_version="2"
+deviceinfo_flash_offset_dtb="0x04000000"
+deviceinfo_flash_offset_base="0x40000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x05000000"
+deviceinfo_flash_offset_second="0xc0000000"
+deviceinfo_flash_offset_tags="0x04000000"
+deviceinfo_mkinitfs_postprocess="/usr/share/mkinitfs/generate_signed_boot.sh"
+
+# usb_idVendor=0x18d1
+# 4EE7 - adb only - fallback
+# 2d00 - USB accessory configuration
+# 2d01 - USB accessory configuration, with adb
+# 2d02 - audio accessory configuration
+# 2d03 - audio accessory configuration, with adb
+# 2d04 - USB and audio accessory configuration
+# 2d05 - USB and audio accessory configuration, with adb
+# usb_idProduct=0x2d05
+

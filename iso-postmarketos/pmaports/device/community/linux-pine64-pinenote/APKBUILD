@@ -1,0 +1,89 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/pinenote_defconfig
+maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
+pkgname=linux-pine64-pinenote
+pkgver=6.19.11
+_kernver=${pkgver%.*}
+pkgrel=0
+pkgdesc="Pine64 PineNote close to mainline fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="pine64-pinenote"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+	xz
+	zstd
+"
+
+# Source
+_config="config-$_flavor.$arch"
+_commit="526524233b7156b194cf6f0869d2059dfa4c90e9"
+source="
+	https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kernver.tar.xz
+	$pkgname-$_kernver-$_commit.patch::https://ayakael.net/forge/linux-pinenote/compare/$_commit..v$_kernver.patch
+	enable-ultra-suspend.patch
+	$_config
+"
+# get patch releases
+if [ "${pkgver/*.}" -ne 0 ]; then
+	source="$source $pkgname-$pkgver.patch.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/patch-$pkgver.xz"
+fi
+builddir="$srcdir"/linux-$_kernver
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+	else
+		echo "WARNING: CONFIG_EFI_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+01b29c7f4e5bc0c9802794c2cd027fece825f90417be229a71e60eefce530010d5d301749c54ae744e9d4a483518e769e2bb7e6e9209687681ad7fff11c3ed86  linux-6.19.tar.xz
+468c7d0ab2463adc8b9a56448ddd0819d56a5914b99baa921e2989ec1fdc5c414c02ef72e55691acc9b75ddd1afff5c17953fc2d2e1ed81210e5f7c40cd01765  linux-pine64-pinenote-6.19-526524233b7156b194cf6f0869d2059dfa4c90e9.patch
+665bdc843912a22bc9f1840bf89195f6cccabd2b8ca3313f3c61b5503c84f98395e3de0d28bc31cbc9f1b4be4a41a483db156fad353506bb5be7abdc22e46501  enable-ultra-suspend.patch
+e173cb7e305ee0a13833bdb5600b1e37f3405c4de1914e18001e80dc665a42e8ca43018e5e9f66269f82d85ecc77d316d67a8f45acc6aec55b357b95ba784c7d  config-pine64-pinenote.aarch64
+c68361a19d04529226beb12cdd3a764bdcf481dbad342d5626d83412a00857588942308e880a92fceac31c79fe6f389bcf7b1f171e7c57b0110ec2babc0e24ae  linux-pine64-pinenote-6.19.11.patch.xz
+"

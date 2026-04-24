@@ -1,0 +1,22 @@
+# Archived: unmaintained port, only for testing. Use generic/mainline port (qcom-msm8953)
+pkgname=firmware-xiaomi-mido
+pkgver=3
+pkgrel=1
+pkgdesc="Firmware for Xiaomi Redmi Note 4X"
+url="https://github.com/Kiciuk/proprietary_firmware_mido"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="bc001cbb255a0ded2b58af07b93f712cd9322483"
+source="https://github.com/Kiciuk/proprietary_firmware_mido/archive/$_commit.zip"
+builddir="$srcdir/proprietary_firmware_mido-$_commit/apnhlos"
+
+_fwdir="/lib/firmware/qcom/msm8953/xiaomi/mido"
+
+package() {
+	# GPU firmware
+	install -Dm644 a506_zap.mdt -t "$pkgdir/$_fwdir"
+	install -Dm644 a506_zap.b02 -t "$pkgdir/$_fwdir"
+}
+
+sha512sums="09a671286f1bc2389763432b42be30d2a7b52717cc2f2cb1dc0e144d3ade84fadcfd3971b5dec7bbc04750fac93be0ef2bba81bbd6740ce3da396899c03f0a1c  bc001cbb255a0ded2b58af07b93f712cd9322483.zip"

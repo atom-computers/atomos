@@ -1,0 +1,29 @@
+#!/stage1/busybox sh
+
+# Samsung kernels come with their own initramfs, which extract and load another
+# initramfs. Usually that depends on the recovery key combination being pressed
+# or not. For simplicity, we always boot the recovery image (from the recovery
+# partition) here.
+
+_PATH="$PATH"
+export PATH=/stage1
+
+busybox cd /
+busybox date >>boot.txt
+exec >>boot.txt 2>&1
+busybox rm init
+busybox mount -t proc proc /proc
+busybox mount -t sysfs sysfs /sys
+
+# always use the "isorec"-style lzop compressed initramfs
+# from the recovery partition
+load_image=/stage1/isorec.cpio
+busybox lzop -dc /dev/block/mmcblk0p6 > ${load_image}
+busybox cpio -i < ${load_image}
+
+busybox umount /sys
+busybox umount /proc
+busybox date >>boot.txt
+busybox rm -fr /stage1 /dev/*
+export PATH="${_PATH}"
+exec /init

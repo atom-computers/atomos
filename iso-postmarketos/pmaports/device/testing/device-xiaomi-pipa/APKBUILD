@@ -1,0 +1,90 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="bluebunny <kalorin.bok084@passinbox.com>"
+pkgname=device-xiaomi-pipa
+pkgdesc="Xiaomi Pad 6"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	hexagonrpcd
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-qbootctl
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-csot:kernel_csot
+	$pkgname-kernel-tianma:kernel_tianma
+"
+_pmb_recommends="
+	firmware-xiaomi-pipa-adreno
+	firmware-xiaomi-pipa-adsp
+	firmware-xiaomi-pipa-awinic
+	firmware-xiaomi-pipa-cdsp
+	firmware-xiaomi-pipa-hexagonfs
+	firmware-xiaomi-pipa-novatek
+	firmware-xiaomi-pipa-nuvolta
+	firmware-xiaomi-pipa-slpi
+	firmware-xiaomi-pipa-venus
+	linux-firmware-qca
+	linux-firmware-qcom
+"
+source="
+	81-libssc-xiaomi-pipa.rules
+	HiFi.conf
+	deviceinfo
+	hexagonrpcd-sdsp.conf
+	modules-initfs
+	pipa.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-xiaomi-pipa.rules -t \
+		"$pkgdir/usr/lib/udev/rules.d/"
+
+	install -Dm644 "$srcdir"/hexagonrpcd-sdsp.conf -t \
+		"$pkgdir/usr/share/hexagonrpcd/"
+
+	install -Dm644 "$srcdir"/pipa.conf -t \
+		"$pkgdir/usr/share/alsa/ucm2/Xiaomi/pipa/"
+
+	install -Dm644 "$srcdir"/HiFi.conf -t \
+		"$pkgdir/usr/share/alsa/ucm2/Xiaomi/pipa/"
+
+	mkdir -p "$pkgdir/usr/share/alsa/ucm2/conf.d/sm8250"
+	ln -s ../../Xiaomi/pipa/pipa.conf \
+		"$pkgdir/usr/share/alsa/ucm2/conf.d/sm8250/Xiaomi Pad 6.conf"
+}
+
+kernel_csot() {
+	pkgdesc="Stable kernel with CSOT panel"
+	depends="linux-xiaomi-pipa"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_tianma() {
+	pkgdesc="Stable kernel with Tianma panel"
+	depends="linux-xiaomi-pipa"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+d0e8f2e378130130ac72703aed957f7638e2dd75acf4aa421e1b4592c6cb6d296b652db0d9c242be4e56326760ce18d28c1e36ae553d0b7a7f91e12ab0353f22  81-libssc-xiaomi-pipa.rules
+1c8cef1f2de5fd7e734796dfffc684255b047bdb07a0965676a4d8d512aee4963ce91aeabf8627ce3aea72aeade776a3529f205badd2ed27ba072cadc38f9918  HiFi.conf
+e3f770914b5bd73af1cf6e4cee8e3a217d180730fc2b219a72729ce84ecb0df5c96fbcb9697fc3b8483b012bed14b238382ac445e6a1ce327568574136dcfe1c  deviceinfo
+7f9d9760791639fdd5606070d6a3bd9a5e2d8fdadff0af380b847c7eaf28131000f4909b99e866eafb77272a4fe20ed0c35d5a4f64bb7d16e2dbf82612aa8b22  hexagonrpcd-sdsp.conf
+514de5c7686457c665e4e8218a196882e7d69b44287474494c3d17d5e60e14a29af5e992d966728bef2d46a771e07f34a892c9e372c651ba340b1b6bbae341f4  modules-initfs
+007908c49db107dd8289a96049ed4d77a55c7846e21f76fa7f97306df953ccdec7d821cbc7732a3ff7c532285175ebf0d6a4e3f224740ac002b23f3608cbf76d  pipa.conf
+"

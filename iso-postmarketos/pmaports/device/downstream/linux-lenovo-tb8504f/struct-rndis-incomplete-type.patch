@@ -1,0 +1,15 @@
+Include needed header to fix invalid application of `sizeof' to incomplete type
+---
+diff --git a/drivers/usb/gadget/function/u_ether.c b/drivers/usb/gadget/function/u_ether.c
+index fbf3cd19ee63..a575ff81f6f7 100644
+--- a/drivers/usb/gadget/function/u_ether.c
++++ b/drivers/usb/gadget/function/u_ether.c
+@@ -28,6 +28,7 @@
+ #include <linux/notifier.h>
+ #include <linux/cpufreq.h>
+ #include "u_ether.h"
++#include "rndis.h"
+ 
+ 
+ /*
+

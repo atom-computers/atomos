@@ -1,0 +1,82 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/a3y17ltexc_00_defconfig
+
+pkgname=linux-samsung-a3y17lte
+pkgver=3.18.14
+pkgrel=3
+pkgdesc="Samsung Galaxy A3 (2017) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a3y17lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool-exynos"
+
+# Source
+_repository="SM-A320FL-kernel"
+_commit="5414dbfa9f5e114366ff0cc2ffeb9725f3c6b8c3"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mimi89999/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	01-fix-recursive-Kconfig.patch
+	02-fix-vmm-blob-include.patch
+	03-disable-knox.patch
+	04-fix-firmware-make.patch
+	05-add-dts-make.patch
+	06-fix-video-argb-setting.patch
+	07-fix-usb-gadget-random-mac.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+
+	# Fix for proc.S build error
+	sed -i '189s/#.*//' arch/arm64/mm/proc.S
+
+	# Neutralizing FIPS integrity checks, just returning 0
+	echo "int main() { return 0; }" > scripts/fips_crypto_utils.c
+
+	# Silence FIPS hmac script
+	echo "exit 0" > scripts/fips_crypto_hmac.sh
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		KCFLAGS="-Wno-error -w -fno-pie -fno-stack-protector -std=gnu89 -fcommon" \
+		CONFIG_FIPS=n
+
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *a3y17lte*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+71cb4a24bc1aaeaeafd5e00159e560f487eb851a099f652fcb2e9709e6aea4f2e1b95830be13c865c2fab1fad54c9ba209d72068806cef64713e1e12e3d9fb70  linux-samsung-a3y17lte-5414dbfa9f5e114366ff0cc2ffeb9725f3c6b8c3.tar.gz
+773cfc48bac93381f1b7fa5e191cead49fc0fad923022b2e28532f4b43ac67ef6a6760613c3693226ed9ab67146f30cf3e0e578e0657c901c9af48f75de6881c  config-samsung-a3y17lte.aarch64
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+07dac7460696ee67d192ec03a39a6b70991b848c878fb71975cac54be9dddd26c68f8cc6b92db150b06e916c11c1cff4f6f213686ab1cda1318f56db081d9ba1  01-fix-recursive-Kconfig.patch
+23bf8ef0ad38b38ffa9ddfdee76a32c43b021169c6db6f5b733fd6434169f7c7bb27cdb1232be89475f34f9053211d943e13f5fba565c928256b92b18d636130  02-fix-vmm-blob-include.patch
+8f3939d3f0f91f7b21e12b63e0c650ea6d147f988e927ff7785fbfffa4578ea0a59acbb76f74a680d887cfb89b29a1caa2e62df93062b6bcfba291282b621f82  03-disable-knox.patch
+66af05562023bebc8334db8236655960e306aa4e2ce216129a077a762bcf951b8c2c286e1c3f45c6478296769e3b6a70f88256e909a9c48f2539bfc056ecf312  04-fix-firmware-make.patch
+436f028e28760c2c93c63333ecd78d4d03291264cb2e108f66d75d5f2e44df9b0cba90ecfd762df3aab7ff131eddc13ba033332a6384680bff85424cfe95c4c2  05-add-dts-make.patch
+9e532d0051756831e12948a5584f331528be58bcddbfab1e1df0217760d035f81b1ac7361b8e81190d4901761572680965b4dd8ef30492c5f94fc330089ce0b3  06-fix-video-argb-setting.patch
+0d56ba508408dc31961ad688f7fd960b0008851fd5729088658095417781b99962740e0c64d162a26f8389e4b4dc88e291252e7935e896fc70bf73c23150caea  07-fix-usb-gadget-random-mac.patch
+"

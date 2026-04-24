@@ -1,0 +1,46 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Andreas Kemnade <andreas@kemnade.info>"
+pkgname=device-epson-embt2ws
+pkgdesc="Epson Moverio BT-200"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-epson-embt2ws
+	postmarketos-base
+	u-boot-epson-embt2ws
+	u-boot-tools
+"
+_pmb_recommends="linux-firmware-ti-connectivity"
+makedepends="
+	devicepkg-dev
+	u-boot-tools
+"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	sdboot.cmd
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	mkimage -A arm -O linux -T script -n postmarketOS \
+		-d "$srcdir"/sdboot.cmd "$srcdir/sdboot.scr"
+	install -Dm644 "$srcdir/sdboot.scr" "$pkgdir/boot/sdboot.scr"
+}
+
+sha512sums="
+2afeb8e1a52d68265f1dee541983f47b0ec5a07c4a9a3f545464142a1346653760a1b6c13db1fa8011252bf392c8978e2db0169d946fc5e757166094a9878983  deviceinfo
+156346ca9c8cd36fa4e8ce44ae20efbb58eb9c8bc9a24164c2e1472026967247cdf306b82cd9d442c8f58becd85c482ab6624d7dd6814193ce9be48a6693cb8a  kernel-cmdline.conf
+e6d26536578432bd1d9123d3b3eb621e39d5475e5ce9086c42fae213be6fa05d56bd6b42d08f6f5afccffe5b01ca940239c11b8046e0be1a5962ac95a0b0dfa4  modules-initfs
+2c3a39107dd6c061d001d11211b816fc0e1fb060e0bcbf0fcf057d7910a7dcc4d1d06c6b0572ee0d616f1d06679ca48872395f62c1f44f5460cceefbbd2b5050  sdboot.cmd
+"

@@ -226,8 +226,19 @@ export TARGET_PKG_CONFIG_ALLOW_CROSS=1
 export PKG_CONFIG_SYSROOT_DIR="$SYSROOT"
 export PKG_CONFIG_PATH="$PC_PATH"
 export PKG_CONFIG_LIBDIR="$PC_PATH"
-export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static -C link-arg=-Wl,--dynamic-linker,${MUSL_DYNAMIC_LINKER} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
-export LIBRARY_PATH="${LIBRARY_PATH:-}${LIBRARY_PATH:+:}${SYSROOT}/usr/lib:${SYSROOT}/lib"
+# Intentionally no process-wide `export RUSTFLAGS=...` / `export LIBRARY_PATH=...`
+# here. Those leak into HOST-triple build-script compilation (quote,
+# proc-macro2, libc, target-lexicon, syn, ...) that cargo runs for the
+# aarch64-unknown-linux-gnu triple inside the container. With LIBRARY_PATH
+# pointing at the pmOS musl sysroot, the host linker resolves `-lc` to
+# musl libc (once musl-dev is present, pulled transitively by
+# libadwaita-dev / webkit2gtk-6.0-dev), and rustc's glibc-built libstd
+# references the LFS64 compat aliases (open64/stat64/fstat64/mmap64/
+# lseek64/openat64/readdir64/lstat64/gnu_get_libc_version) that musl
+# does NOT provide, and host-triple builds fail with "undefined reference
+# to open64" etc. The musl-target link flags now live in
+# CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS in build_host() and
+# build_container() below, which cargo only applies to the musl target.
 
 find_container_engine() {
     if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
@@ -281,6 +292,17 @@ build_host() {
     )
     if [ "$overview_linker" = "rust-lld" ]; then
         host_env+=("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS=-Clink-self-contained=yes -C target-feature=-crt-static -C link-arg=--dynamic-linker=${MUSL_DYNAMIC_LINKER} -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/${PKGCONF_TRIPLE}${gcc_native_flags}${debug_flags}")
+    else
+        # gcc/cc linker path: scope musl-specific link flags to the target
+        # triple ONLY via CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS.
+        # --sysroot=${SYSROOT} is required to prevent gcc from appending
+        # Debian's /lib/aarch64-linux-gnu to the library search path (native
+        # aarch64 ELF link on aarch64 Ubuntu), which would otherwise
+        # resolve DT_NEEDED entries of pmOS libs (libgtk-4.so ->
+        # libfontconfig.so.1, libmount.so.1, libstdc++.so.6, ...) to
+        # Debian glibc copies whose GLIBC_2.17/2.34/2.36-versioned symbols
+        # the musl binary cannot satisfy.
+        host_env+=("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS=-C target-feature=-crt-static -C link-arg=--sysroot=${SYSROOT} -C link-arg=-Wl,--dynamic-linker,${MUSL_DYNAMIC_LINKER} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/${PKGCONF_TRIPLE}${gcc_native_flags}${debug_flags}")
     fi
     echo "Building overview chat UI via host cargo (target: $TARGET_TRIPLE)..."
     env "${host_env[@]}" cargo build \
@@ -362,24 +384,37 @@ if [ -n "${PMB_WORK_OVERRIDE:-}" ] && [ -n "${PROFILE_NAME:-}" ]; then
             OVERVIEW_DEBUG_FLAGS=" -C debuginfo=2 -C force-frame-pointers=yes -C strip=none"
         fi
         export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="${OVERVIEW_LINKER}"
+        GCC_NATIVE_FLAGS=""
         if [ "${OVERVIEW_LINKER}" = "rust-lld" ]; then
-            GCC_NATIVE_FLAGS=""
             for d in /usr/lib/gcc-cross/aarch64-linux-gnu/* /usr/lib/gcc/aarch64-linux-gnu/*; do
                 [ -d "$d" ] || continue
                 GCC_NATIVE_FLAGS="${GCC_NATIVE_FLAGS} -L native=${d}"
             done
             export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -C target-feature=-crt-static -C link-arg=--dynamic-linker=/lib/ld-musl-aarch64.so.1 -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/'"$PKGCONF_TRIPLE"'${GCC_NATIVE_FLAGS}${OVERVIEW_DEBUG_FLAGS}"
         else
-            export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static"
-            if command -v ld.lld >/dev/null 2>&1 || command -v ld64.lld >/dev/null 2>&1; then
-                export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-fuse-ld=lld"
-            fi
-            export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,--dynamic-linker,/lib/ld-musl-aarch64.so.1"
-            export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib"
-            export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib"
-            export RUSTFLAGS="${RUSTFLAGS}${OVERVIEW_DEBUG_FLAGS}"
+            # gcc/cc linker path: scope musl-specific link flags to the
+            # target triple ONLY via CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS.
+            # Do NOT export plain RUSTFLAGS and do NOT export LIBRARY_PATH:
+            # those also apply when cargo compiles build-dependencies (quote,
+            # proc-macro2, libc, target-lexicon, ...) for the HOST triple
+            # (aarch64-unknown-linux-gnu inside the container). In that
+            # case the host linker picks up the pmOS musl sysroot via
+            # LIBRARY_PATH, and -lc resolves to musl instead of the
+            # container glibc. Rust'"'"'s glibc-built libstd references
+            # LFS64 compat aliases (open64/stat64/fstat64/mmap64/lseek64/
+            # openat64/readdir64/lstat64/gnu_get_libc_version) that musl
+            # does not provide, and the link fails with "undefined
+            # reference to open64" etc.
+            #
+            # --sysroot=${SYSROOT} is required to prevent gcc from appending
+            # Debian'"'"'s /lib/aarch64-linux-gnu to the library search
+            # path (native aarch64 ELF link on aarch64 Ubuntu host), which
+            # would otherwise resolve DT_NEEDED entries of pmOS libs
+            # (libgtk-4.so -> libfontconfig.so.1, libmount.so.1,
+            # libstdc++.so.6, ...) to Debian glibc copies whose GLIBC_2.17
+            # /2.34/2.36-versioned symbols the musl binary cannot satisfy.
+            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=-crt-static -C link-arg=--sysroot=${SYSROOT} -C link-arg=-Wl,--dynamic-linker,/lib/ld-musl-aarch64.so.1 -C link-arg=-Wl,-rpath-link,${SYSROOT}/usr/lib -C link-arg=-Wl,-rpath-link,${SYSROOT}/lib -L native=${SYSROOT}/usr/lib -L native=${SYSROOT}/lib -L native=${SYSROOT}/usr/lib/'"$PKGCONF_TRIPLE"'${GCC_NATIVE_FLAGS}${OVERVIEW_DEBUG_FLAGS}"
         fi
-        export LIBRARY_PATH="${LIBRARY_PATH:-}${LIBRARY_PATH:+:}${SYSROOT}/usr/lib:${SYSROOT}/lib"
     fi
 fi
 cargo build \

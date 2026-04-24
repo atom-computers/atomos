@@ -1,0 +1,45 @@
+pkgname=firmware-lge-h815
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for LGE H815"
+url="https://github.com/TheMuppets/proprietary_vendor_lge"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_files="fw_bcmdhd.bin fw_bcmdhd_apsta.bin fw_bcmdhd_mfg.bin venus.b00 venus.b01 venus.b02 venus.b03 venus.b04 venus.mbn venus.mdt"
+_files_prima="bcmdhd.cal"
+_commit="957cdd465a9f6203e7e4c38ef2842cdb56b099df"
+_commit_prima="d61f2184deb753700dc033be00d6244a7a70c349"
+_url="https://github.com/TheMuppets/proprietary_vendor_lge/raw/$_commit/h815/proprietary/etc/firmware"
+_url_prima="https://github.com/LineageOS/android_device_lge_g4-common/raw/$_commit_prima/wifi"
+for _i in $_files; do
+	source="$source $pkgname-$_commit-$_i::$_url/$_i"
+done
+for _i in $_files_prima; do
+	source="$source $pkgname-$_commit-$_i::$_url_prima/$_i"
+done
+
+package() {
+	for _i in $_files; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files_prima; do
+		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+}
+
+sha512sums="1ae99bb2b17c6933a41241f56af12cfe743d5503f80180c4a7825bba87d236fd146d9efc43391b1966c738e51a5cc01469c3f68eb7bab2f56842a5e0efda5d7f  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-fw_bcmdhd.bin
+f01d86a17d7e490d63d558dca1b3c77a7c391a1def0a8ff0a5b1551c9e3dbf3606fdee91b6770f4f67830cf5317f0f1e8ea08e14606ec0cd058e1ba765bc9e82  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-fw_bcmdhd_apsta.bin
+8f20f57451c14bf5c14ab664815092ea2a2212960793a2ff2883b089b0146114ce9b14e70a366a7029df6f1a1976637af0d88ddb73a3b9803dbc25bf38725676  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-fw_bcmdhd_mfg.bin
+eaf671ce41b40cd48c60984f1e95af0dab94e0981823b8018d8feea65b7321846d1eaf7fd6d1aedfab4dbcfd13e5a6a745d41910e789dc2cfa63d567c3ed31e1  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-venus.b00
+f84d751cfa5c23139e99ae954ef8e8f3aa32e404fcae5f1f7b02d4c1f5aaeaa3e1d2b0cd166748c21cb2bf4908e1cc87d0277cf657a03a79bc96d79f3640a1a7  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-venus.b01
+c21147e89bad12c2f5539d5bcf320ec8f15be1e199915f30335c8e6a1ddbc2b083062454dee57a3de7c8c9493d33ce22dc41c6120c4d27b7bfe461ce2de2f9da  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-venus.b02
+9a32c7d976b80124eccb50d5f4b13ca3edd3e19c6d19688e54722832b6bc52bcfbeb55028b77c783cd5802268fc92f070ce4af421d99b5a7b382790f4e850bbf  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-venus.b03
+3c3544528b44d39b205ac38944db67adb1d4a6e393256fdfa6958e580d09aa8a01196190d6cf64bd0fd8cdbf0399a8e8e87b5a7a62c6cd6b4b32db6d5390df26  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-venus.b04
+9678c12579a5620baf4a828be5d37c079a21eada5e768eebb5843f2a012a1d546d56252b31b9c1fb740175700349627dd61550d1eef33690927c2d04fd2e21f1  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-venus.mbn
+92fd5fe38eb8a1637fd54984fad61cdf8ef4d5dd5e83606f3fb9511b461fe2d0a9a339a28ff7f65e1654447cf0f422100cee2c266a2e9b4d6c09a01b527d3cc5  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-venus.mdt
+2177d939f5320f07cbab0767660616fe492c3a7779caa7eb4c3c9c975870f8c9f119694524a6d3f00ddd9dbeb2b9c3d0c38f8c772c3d54916313f243c23db670  firmware-lge-h815-957cdd465a9f6203e7e4c38ef2842cdb56b099df-bcmdhd.cal"

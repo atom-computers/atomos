@@ -1,0 +1,31 @@
+
+maintainer="He Yangxuan <yangxuan8282@gmail.com>"
+pkgname=bluetooth-raspberry-pi
+pkgver=1
+pkgrel=2
+pkgdesc="Service and udev rule for built-in bluetooth on Raspberry Pi zero w, 3B, 3B plus"
+url="https://github.com/RPi-Distro/bluez-firmware"
+arch="armhf aarch64"
+license="MIT"
+depends="bluez bluez-deprecated"
+subpackages="$pkgname-openrc $pkgname-udev"
+source="pi-bluetooth.openrc 50-bluetooth-hci-auto-poweron.rules"
+options="!check !archcheck"
+
+package() {
+	cd "$srcdir"
+	install -Dm644 50-bluetooth-hci-auto-poweron.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/50-bluetooth-hci-auto-poweron.rules
+	install -Dm755 pi-bluetooth.openrc \
+		"$pkgdir"/etc/init.d/pi-bluetooth
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+
+	default_openrc
+}
+
+sha512sums="34a50554466dd6096cbee9b14fc0d77b268b731cd45981e69394343dad25d6006dbe44bee30700d71b80c593d38699dfc870983ae7d862b9c09afb39c5d3b383  pi-bluetooth.openrc
+511281ae8cbebd4390836ba83049a7fb793121d60ebd6c436bf36330e0aab738a827daf7fd6721cc71681e72b7ddaa581814264cc3bf759f07148fe5b657b981  50-bluetooth-hci-auto-poweron.rules"

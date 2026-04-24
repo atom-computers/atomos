@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+# Copyright 2023 Casey Connolly
+# SPDX-License-Identifier: GPL-3.0-or-later
+name="kill-pbsplash"
+description="Stop the splash animation"
+
+command="/usr/bin/killall"
+command_args="pbsplash"
+
+depend() {
+        before display-manager
+}

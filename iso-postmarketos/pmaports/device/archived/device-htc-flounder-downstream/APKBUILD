@@ -1,0 +1,31 @@
+# Archived: Downstream port, only for testing. Use mainline port (htc-flounder)!
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-htc-flounder-downstream
+pkgdesc="Google Nexus 9"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="gpl-v3"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-htc-flounder-downstream mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+package() {
+	devicepkg_package $startdir $pkgname
+
+}
+nonfree_firmware() {
+	pkgdesc="Firmware"
+	depends="linux-firmware-brcm linux-firmware-cypress firmware-htc-flounder-downstream"
+	mkdir "$subpkgdir"
+}
+sha512sums="
+fc86b19b073ddd6c24c24f45a87a1cef653db4f30eb03e13505b299ef55ae379572f68849fcab84b0eed9a060f4c1d8cab6056ac5fe0aaad697d505dc4226017  deviceinfo
+1cf6aa0cadb5032ed15ae0f0bbf4ff5d8848e01e10b87e803db82efa3a86edf0a97e01bef376178fc3414791a88a8a0dbde823aa515937edfe762ad375266eea  kernel-cmdline.conf
+"

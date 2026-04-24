@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/k2_ul_defconfig
+
+pkgname=linux-htc-k2ul
+pkgver=3.4.10
+pkgrel=6
+pkgdesc="HTC One SV kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="htc-k2ul"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc4"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+# How to get the original version:
+# 1. Go to HTCDev.com, log in and go to the kernel source page
+# 2. Select the One SV, EU region and the v4.1.2 Android version
+# 3. Download the kernel with the 2.14.401.6 description
+_repository="k2ul-jb-3.4.10-cl157896-2"
+_commit="6ac3629384fac88beef65fd841f5135f9f832624"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Hacker1245/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	timeconst.pl-Eliminate-Perl-warning.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	fix_return_address.patch
+	no-hardcoded-CROSS_COMPILE.patch
+	fix_otg_errors.patch
+	fix_kgsl_error.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+de02e36c7c19c886cc1f16b5a3a4464542a905e85cc3a531bd27b4944ee1ada01aad6e5fe8fd0346b991c923144154fbce8d86b17f69e69d05549440129b2fc9  linux-htc-k2ul-6ac3629384fac88beef65fd841f5135f9f832624.tar.gz
+b86b532bb8570964081e4d9901f6c49ffe612816af21ba64fd042fbd553727c1a4f498d15a8a2c078617a98ee5cf213b20720100c93f8e8f4cad640deb6bc725  config-htc-k2ul.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+1fcfb5f06a2bfdcc55d53054ca80d1b989599a39a5379d057a0724fc405187d74da4309a650e70b9c79d39444e81923cfc5c9199ed8c0a77c83dcd7998446bb7  timeconst.pl-Eliminate-Perl-warning.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+b0a73e261b6dedfe6135a17d25e9e989958b4ae379ba31abbf9b0e05f50f3082c4f5d4ff4fb848e8d283acbf68c54014ac8cfcc57d4e1be2d456e715237b661c  fix_return_address.patch
+555033f2ef3e23d84a552e92a6307bf292f91146ee4d8a03b2485f9b5028c2aa3f7ced6ef268acaca7d12649f4bfa7f8fccca39394097f63a5ff2134b912e9e2  no-hardcoded-CROSS_COMPILE.patch
+f6229e37304d127cd39bbbd6f0e11100ca8c6b44f1e66b125aba06d7d5ae96d380273e55a7a8fec46af324979523e032de9151d92e181da9242fb5aaf0dba769  fix_otg_errors.patch
+c84d3eb75628ee37ad5d16f858bdbf7b9fc2ff1336e5d91559ecdc4d198127b25929c3b264a50f526fafd3722aa39fb2d87fedcfb3a134f2ddd355650a65a4bd  fix_kgsl_error.patch
+"

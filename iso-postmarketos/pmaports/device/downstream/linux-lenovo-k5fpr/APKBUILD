@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/k5fpr_defconfig
+
+pkgname=linux-lenovo-k5fpr
+pkgver=3.18.140
+pkgrel=1
+pkgdesc="Lenovo K4 Note kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="lenovo-k5fpr"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	gcc6
+	openssl-dev
+	perl
+	python3
+"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+
+# Source
+_repository="android_kernel_lenovo_k5fpr"
+_commit="41a555ec0bc654d3303f02d50627732f3ea8e65a"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/EncryptedCicada/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	0001-firmware-paths-for-postmarketos.patch
+	python3dct.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+1cb5e39becc8e31288620d37753e6a3df2465032161524afa0103a8b34d60d10db45fc0939fbc0f0507c3e689db0f763bbb7cf2f0a1fc1fbe2e230e9de9c39c2  linux-lenovo-k5fpr-41a555ec0bc654d3303f02d50627732f3ea8e65a.tar.gz
+d9dd218d7439f58e7846715189a4715cac2f6c0547324220baaa67400d0f4458a6a35b8a4213891b129c502dd018385bd9e786bc45d47bba4a377b421288d01b  config-lenovo-k5fpr.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+749a2971d7b9d8a5bd4dc16a8d12bf8faf7012a5c10d5f939da8e7149b10ea1ac7e001cd5bb3ebff4c2781640dbd891c19e0f09901f722f41f63a956f83f75cb  0001-firmware-paths-for-postmarketos.patch
+a2990a27436d3ffe40f1fd1e388486727042cc5fa5be23b19dad623a18731c94c07ac4a89be1e59e6214593d2b03d38702b60a7475807e8cda0811c4e5d50a9b  python3dct.patch
+"

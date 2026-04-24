@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-sumire
+pkgdesc="Sony Xperia Z5"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-sumire mkbootimg mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	90-android-touch-dev.rules
+"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-udev
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+}
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-sony-sumire"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+69c910ce06ae73ad3d71e71b67558a129edf1027505fa43c3f4efbbb1d4274f3494beec791160a3785a53076f79ab14a38d0c2fcb1ed038f1942ddc55095b0ea  deviceinfo
+1b71d67ea4f1d1ed83f3926cb43b72ab2da62b1b44dda3dd9c0f7faa8c8b2e91fc548db16352e0a2632493b72b437e5194cae2d233463c269e1cfe9e0daf1fac  kernel-cmdline.conf
+8b6034c0338ab4c7d648f47983aad6da07e427e7dba47baabf85a1b3ddeeda47c8d7fbcd547a302c9a759b2943ee30d3e82c3b368d8582833a058e4671638a9e  90-android-touch-dev.rules
+"

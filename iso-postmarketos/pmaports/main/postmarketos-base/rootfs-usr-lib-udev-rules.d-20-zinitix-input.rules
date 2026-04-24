@@ -1,0 +1,8 @@
+# map touchkey on Zinitix-TS to KEY_MENU and KEY_BACK
+SUBSYSTEM=="input", KERNEL=="event*", DRIVERS=="Zinitix-TS", \
+ENV{KEYBOARD_KEY_00}="menu", ENV{KEYBOARD_KEY_01}="back", RUN{builtin}+="keyboard"
+
+# prevent from getting woken up by capacitive back/menu buttons on
+# certain Android devices (mostly Samsung)
+SUBSYSTEM=="input", KERNEL=="event*", DRIVERS=="Zinitix-TS", \
+ENV{GM_WAKEUP_KEY_139}="0", ENV{GM_WAKEUP_KEY_158}="0"

@@ -1,0 +1,61 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/skipjack-perf_defconfig
+
+pkgname=linux-mobvoi-skipjack
+pkgver=3.18.24
+pkgrel=0
+pkgdesc="Mobvoi Ticwatch C2 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="mobvoi-skipjack"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_commit="a3099f57d3d213992f2b123503b18d91975c7875"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/aosp-mirror/kernel_msm/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+
+	touchscreen-disable-extlibs.patch
+"
+builddir="$srcdir/kernel_msm-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+c829f18294b0fa257bfcb527ff1db2258f315e2e2e3686d37e9a1b78ab179603913f5c2127974e41ce68f033dbd0e9da0e1f9358f6d8b6a21b08bd26a43323ab  linux-mobvoi-skipjack-a3099f57d3d213992f2b123503b18d91975c7875.tar.gz
+555faef812338b20752f42f39e364defd6a6b46b5f9ae0b8f2301bee6ab6427a0558b80f3bd13e8a2c86a32a6c99f71c5a4e37aa745574e97ffbbb907b02e303  config-mobvoi-skipjack.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+dfc8d43166e57c8aa5419fb59823ed3dfaf6fa0a751c1d0b172984d24203c521a4373cc4054a115a9d46cfb89e7505fc66e164510ce9b98701f68a24253f1a1c  touchscreen-disable-extlibs.patch
+"

@@ -1,0 +1,36 @@
+From e82cf98ab31abdd6505dda1470098eaff4df51d0 Mon Sep 17 00:00:00 2001
+From: Jasper Korten <jja2000@gmail.com>
+Date: Mon, 31 Jul 2023 23:18:02 +0200
+Subject: [PATCH] arm64: dts: nvidia: tegra210-smaug: Add touch -screen node
+
+---
+ arch/arm64/boot/dts/nvidia/tegra210-smaug.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts b/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts
+index c7126b7e4592..490b20d88651 100644
+--- a/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts
++++ b/arch/arm64/boot/dts/nvidia/tegra210-smaug.dts
+@@ -1357,6 +1357,19 @@ bluetooth {
+ 		};
+ 	};
+ 
++	i2c@7000c000 {
++               status = "okay";
++               clock-frequency = <1000000>;
++
++               touchscreen@20 {
++                               compatible = "hid-over-i2c";
++                               reg = <0x20>;
++                               hid-descr-addr = <0x0020>;
++                               interrupt-parent = <&gpio>;
++                               interrupts = <TEGRA_GPIO(X, 1) IRQ_TYPE_EDGE_FALLING>;
++               };
++    };
++
+ 	i2c@7000c400 {
+ 		status = "okay";
+ 		clock-frequency = <1000000>;
+-- 
+2.41.0
+

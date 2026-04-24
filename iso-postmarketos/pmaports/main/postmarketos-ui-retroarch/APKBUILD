@@ -1,0 +1,39 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Sandelinos <postmarketos@sandelinos.me>"
+pkgname=postmarketos-ui-retroarch
+pkgver=1
+pkgrel=0
+pkgdesc="RetroArch in KMS mode"
+url="https://www.retroarch.com"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	autologin
+	elogind
+	polkit-elogind
+	retroarch
+	"
+subpackages="$pkgname-openrc"
+source="
+	retroarch.initd
+	postmarketos-ui-retroarch.sh
+	"
+options="!check pmb:drm"
+
+package() {
+	install -Dm755 retroarch.initd "$pkgdir/etc/init.d/retroarch"
+	install -Dm755 postmarketos-ui-retroarch.sh "$pkgdir/usr/bin/postmarketos-ui-retroarch"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="elogind-openrc"
+
+	default_openrc
+}
+
+sha512sums="
+07b2177325734bdb8358265c48f6849ba39e9801b2b1a871d7242259f4d456ff974eed126a6e5775bca87bf5286422db0afd4a2fa0b96a170f18682edd60a0cd  retroarch.initd
+317299beaf517274f5027c59c4903301abfa531043184dab8824d74cab22c4e2cd573b56492195caf9f151f6ad41da1dd3a4a561d986d8e8034b7e459c859983  postmarketos-ui-retroarch.sh
+"

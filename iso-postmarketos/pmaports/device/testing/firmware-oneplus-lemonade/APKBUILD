@@ -1,0 +1,40 @@
+maintainer=""
+pkgname=firmware-oneplus-lemonade
+pkgver=2
+pkgrel=0
+_commit="338eca8f58f48a4ef60721c4eb65d0d950a6b394"
+pkgdesc="Firmware files for OnePlus lemonade and lemonadep"
+url="https://gitlab.com/sm8350-mainline/firmware-oneplus-lemonade"
+arch="aarch64"
+# TODO: Use firmware-qcom-adreno-a660 which provides a660_gmu.bin
+depends="linux-firmware-qcom linux-firmware-qca"
+license="proprietary"
+source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/firmware-oneplus-lemonade.tar.gz 10-remoteproc-firmware.files 20-bluetooth-firmware.files 30-gpu-firmware.files 40-touchscreen-firmware.files"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/firmware-oneplus-lemonade-$_commit"
+#subpackages="$pkgname-initramfs:firmware_initramfs"
+
+package() {
+	_files="a660_zap.mbn a660_gmu.bin adsp.mbn cdsp.mbn hpbtfw10.tlv hpnv10.bin ipa_fws.mbn mcfg_hw.mbn modem.mbn slpi.mbn FW_S3908_SAMSUNG.img"
+	for _i in $_files; do
+		install -Dm644 "$_i" "$pkgdir/lib/firmware/qcom/sm8350/OnePlus/lemonade/$_i"
+	done
+
+	_files_qca="hpbtfw10.tlv hpnv10.bin"
+	for _i in $_files_qca; do
+		install -Dm644 "$_i" "$pkgdir/lib/firmware/qca/$_i"
+	done
+
+	install -Dm644 "$srcdir/10-remoteproc-firmware.files" "$pkgdir/usr/share/mkinitfs/files/10-remoteproc-firmware.files"
+	install -Dm644 "$srcdir/20-bluetooth-firmware.files" "$pkgdir/usr/share/mkinitfs/files/20-bluetooth-firmware.files"
+	install -Dm644 "$srcdir/30-gpu-firmware.files" "$pkgdir/usr/share/mkinitfs/files/30-gpu-firmware.files"
+	install -Dm644 "$srcdir/40-touchscreen-firmware.files" "$pkgdir/usr/share/mkinitfs/files/40-touchscreen-firmware.files"
+}
+
+sha512sums="
+eb579c78d2cacc5263d60333eed0f5307b42f35b1d3f06f1f4de034bfe61492e91898905322e799e8e7646d72e796560f3ffabb48f3cd15d118777bb17195e5c  firmware-oneplus-lemonade-338eca8f58f48a4ef60721c4eb65d0d950a6b394.tar.gz
+945fe55fa474ac9c1c2bb457aa144f876e69a0c0b92ab8994b1ad7c55d4a4cee163c950b156403c6528ab7f2001608afbfb94a688307feb1494555c84114e920  10-remoteproc-firmware.files
+5ecca04bab9c49597c92c29f1e395cede1add41fb5b414d149caaa0258332d90cac4e85375cd50175a8e1c3b109808f501ff28425dbbada9f333f6338c3f5379  20-bluetooth-firmware.files
+f23b9a7d3aa784f765960170b75fb35c5a4b5e291acac37dae9663272645b76ca27a89d4d8576e09da63c46d3f8e482aeda1d0e118d3159584b4e877bb42a52e  30-gpu-firmware.files
+48091de1cab6337ec93f1c1e3b960356777c9638dc1cf0786c236589e99e5cac1d61ccd3160239df76a67dfe376417c4925639058961fd3f9e5e00f4007528f8  40-touchscreen-firmware.files
+"

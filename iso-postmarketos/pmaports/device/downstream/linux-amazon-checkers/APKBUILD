@@ -1,0 +1,112 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/checkers_defconfig
+maintainer="User0 <user0thenyancat@proton.me>"
+pkgname=linux-amazon-checkers
+pkgver=4.9.77
+pkgrel=2
+pkgdesc="Amazon Echo Show 5 1st Generation kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-checkers"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	dtc
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+"
+
+_repository="linux-downstream"
+_repository_firmware_wifi="firmware-amazon-checkers"
+_commit="846c2e61fec7d94feed35e58812bb8b97eb59aab"
+_commit_firmware_wifi="ba66f7a1535bda706f67d5becd8d3148523e5eec"
+_config="config-$_flavor.$arch"
+
+# NOTE: despite the github namespace, this is *NOT* a mainline kernel!
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/checkers-mainline/$_repository/archive/$_commit.tar.gz
+	$pkgname-wifi-$_commit_firmware_wifi.tar.gz::https://github.com/user0-07161/$_repository_firmware_wifi/archive/$_commit_firmware_wifi.tar.gz
+	$_config
+	0001-Remove-redundant-YYLOC-global-declaration.patch
+	0002-Fix-solaris-style-flag.patch
+	0003-Add-missing-kconfig-files.patch
+	0004-Include-Wi-Fi-Firmware.patch
+	0005-Add-modinst-Makefile.patch
+	fix-check-lxdialog.patch
+	fix-check-lxdialog-makefile.patch
+	remove-dummy-audio-mmap.patch
+	remove-mno-thumb-interwork.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+export CC=clang
+export LD=ld.lld
+export AR=llvm-ar
+export NM=llvm-nm
+export STRIP=llvm-strip
+export OBJCOPY=llvm-objcopy
+export OBJDUMP=llvm-objdump
+export READELF=llvm-readelf
+export HOSTCC=clang
+export HOSTCXX=clang++
+export HOSTAR=llvm-ar
+export HOSTLD=ld.lld
+
+prepare() {
+	default_prepare
+
+	mkdir -p "$builddir/drivers/net/wireless/wifimtk"
+	cp -rv "$srcdir/$_repository_firmware_wifi-$_commit_firmware_wifi"/* \
+		"$builddir/drivers/net/wireless/wifimtk/"
+	ln -sf "$builddir/drivers/net/wireless/wifimtk/config/checkers.config" \
+		"$builddir/drivers/net/wireless/wifimtk/.config"
+
+	# Replace x86_64 dtc_overlay binary
+	rm "$builddir"/scripts/dtc/dtc_overlay
+	ln -s /usr/bin/dtc "$builddir"/scripts/dtc/dtc_overlay
+
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" INSTALL_MOD_STRIP=1 \
+		modules_install
+}
+
+sha512sums="
+68dd148b050277f66ec243e6a129257f1b23b841009258e2be50e0a46208765595f6b4db2b726b243f203c20bddb5e52461e97d2252010b0cb82f07b402fa8ed  linux-amazon-checkers-846c2e61fec7d94feed35e58812bb8b97eb59aab.tar.gz
+f5c87f01a171f69fd8fe1ad93fb896ad9e54be09d18b798ad3692a13409c97e6e0e903ce1a7db78ae7b95ab8f9c3b263f48a53b1b6828972afeac7569f3801e8  linux-amazon-checkers-wifi-ba66f7a1535bda706f67d5becd8d3148523e5eec.tar.gz
+50f138cf442006ac522e02caf536fad4a69e612bceb507cf03378e950e8287079702d870286b2c915779eee8f70dcb7200dbcb1101ac25f7564a3e25ce67e26f  config-amazon-checkers.armv7
+3fa90b7883d66e85e2f7a2d8011643f1a378169269fd8b172185e1179b6862789caadc500fc930f7b32498770d1f0145cf25dfe10022f99db60918bca01ef7e8  0001-Remove-redundant-YYLOC-global-declaration.patch
+491879bc492820e608b3604daca24f26187f6e552ec47d358d205118179f89594f9cbb1480ad0d5c7a94126dfe523fd6e1bbb594821431967ee59f6908ebeeea  0002-Fix-solaris-style-flag.patch
+0f7c76b206144d78a0f8fb18979f363c008bebbac96e075824c69651d52a2c06c8e5db5060b61033517e4c78d54cb9c446dfa03e1ddfac9e5fb44a6bfdf42265  0003-Add-missing-kconfig-files.patch
+ad4fce05db2247c9353afe63f54cfaac54bd96266ffc6572e0e0dfeefe090b90e08ee44e0825e59ee3615b72adcbb4373b6c4e81b2989f170f24394a6d23668c  0004-Include-Wi-Fi-Firmware.patch
+2a58983f0f9f955c5219358fa88f1b68cf832e2df4982d40a5e6cbd0cd40470a60f7b1e93c77de15b6a5e9d591ac9f6b329afd04422277b19dfa9f7ce5f26127  0005-Add-modinst-Makefile.patch
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
+e6f11b7a87c68ad0d9bb85361fe0d99f957e2bcba6c86d314b9ef558b526a7dfd8efcbe7698b686c396ef31f98ae33bd097736ea20f65612755838acb94a03bf  remove-dummy-audio-mmap.patch
+e7f4f35229580ff87572cc8c98fe4d79689c18690fb5c0a0f91de9d8159e7dc0043d3e3e27b788fa421dd682c0bde3ffbfb8ec36663e018c34e5a030ec4a7e6e  remove-mno-thumb-interwork.patch
+"

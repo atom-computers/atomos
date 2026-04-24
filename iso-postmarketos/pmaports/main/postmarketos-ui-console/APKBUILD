@@ -1,0 +1,28 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=postmarketos-ui-console
+pkgver=0.1
+pkgrel=10
+pkgdesc="Console environment, with no graphical/touch UI"
+url="https://postmarketos.org/"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+	dnsmasq
+	postmarketos-base-ui
+	postmarketos-base-ui-networkmanager
+	wireless-tools
+	"
+options="!check pmb:systemd" # No testsuite
+subpackages="$pkgname-openrc:_openrc"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+_openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="networkmanager-openrc openrc"
+	mkdir -p "$subpkgdir"
+}

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Create mount point and /csa mount point in fstab
+if [ -z "$(grep /csa /etc/fstab)" ]; then
+	mkdir -p /csa
+	echo "/dev/disk/by-partlabel/csa	/csa	ext4	data=journal,nofail	0	2" >> /etc/fstab
+fi

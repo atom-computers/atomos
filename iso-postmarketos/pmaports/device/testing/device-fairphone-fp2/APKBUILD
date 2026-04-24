@@ -1,0 +1,53 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=device-fairphone-fp2
+pkgdesc="Fairphone 2"
+pkgver=13
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-fairphone-fp2-adsp
+	firmware-fairphone-fp2-modem
+	firmware-fairphone-fp2-wcnss
+	firmware-qcom-adreno-a330
+	linux-postmarketos-qcom-msm8974
+	lk2nd-msm8974
+	mesa-egl
+	mkbootimg
+	msm-modem
+	msm-modem-uim-selection
+	postmarketos-base
+	soc-qcom-msm8974
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	phoc.ini
+"
+subpackages="$pkgname-phosh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+6f99dc1ee22cecfd6b6e24672715bd5f603d496334b38d2967a00a83671e2fa87068e880c43a210ae9382b40c9191c4416ba849aef7ae24d814a59c24b67cc4f  deviceinfo
+f02c01e4ccb1f1ffdcd2d4bd416258835236da069625d30cd3987c6b5c8a05975c9610edf38a6a8400fa2a93621dc7342b270085e33cfe24c45bb407e8cd3103  kernel-cmdline.conf
+1a99953420a4068c6205dd90015e895909d39011dcc72fd73ac6880920fe4b95fe54377b9d4864a2d4fac56c4334e0c896ba8cc92dea61f93e9384de0998a910  modules-initfs
+cef2fd633cddbcf4ac9b4d2fa6bf3a1e3e8d810a2ea8050767fe649d289db753662821d5e41e2c8d20fb9c765c1babcb6a4d95e4c9345f5ea32d1b1d2b1e5126  phoc.ini
+"

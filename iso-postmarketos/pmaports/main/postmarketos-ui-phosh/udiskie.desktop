@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=udiskie
+Comment=udisks2 frontend
+# Note: notifications from udiskie are disabled because Phosh sends its own
+# notifications on drive connect/disconnect
+Exec=/usr/bin/udiskie -N
+Terminal=false
+Type=Application
+X-GNOME-AutoRestart=true

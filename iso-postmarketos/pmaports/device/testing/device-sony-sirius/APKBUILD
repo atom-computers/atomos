@@ -1,0 +1,66 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-sony-sirius
+pkgver=6
+pkgrel=0
+pkgdesc="Sony Xperia Z2 device package"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	linux-postmarketos-qcom-msm8974
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8974
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-udev
+	$pkgname-x11
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	99-touch.rules
+	modules-load.conf
+	brcmfmac4339-sdio.txt
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/99-touch.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/99-touch.rules
+	install -D -m644 "$srcdir"/brcmfmac4339-sdio.txt \
+		"$pkgdir"/usr/lib/firmware/brcm/brcmfmac4339-sdio.txt
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	depends="
+		libinput
+		xf86-input-libinput
+	"
+	mkdir "$subpkgdir"
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi/GPU firmware"
+	depends="linux-firmware-brcm linux-firmware-cypress firmware-qcom-adreno-a330"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+37e78903eb72b99cec9020585b85224be39bca49aaab797b63a73ede74fc8db3c81109da7c564cd39f164f77f0d2a1703ebb4a7dcdcb0793c9055482c0715107  deviceinfo
+48518cc782d7ec0dd469c5301975546a794fea49bd642436b1cdf65335d9a9e092ed6ba75a9c7fb95e85326c49499226c7e43ec820752793b8178c8635640635  kernel-cmdline.conf
+a6580d63105978aac1ee13098bdee1d98528dba671889199ba79264c40750807fecd3d526471fb77abd55fa0fec21c8fea1d0fd6d4fb5afd2b306bc98ef1a0d7  modules-initfs
+ec5e26e60a77e74befabf5cc3f85a2636ce07261e725c0a051999d321ddec056f307001ba659c91e403770ac99d38b3160fd46e235c467fefc03d0901452314d  99-touch.rules
+35a5dbd90eef6c567822f1a805c6adf620bb9c6c9c2e1755407409c2fab044baa40dda9e526c45108b4a2bbf43e0ad67e3dd90c35f6a6c6e29ec5930f2d1c4a7  modules-load.conf
+b99a1bc0d430a261b6ab0b5ea12f2e996ab24ece6fe40ff57357697f4db976394c655a7c7a63e7c985f6356126a6b1d920eb0077817cb65ae18250f404282a68  brcmfmac4339-sdio.txt
+"

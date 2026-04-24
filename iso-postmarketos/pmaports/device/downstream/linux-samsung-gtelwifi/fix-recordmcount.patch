@@ -1,0 +1,37 @@
+This patch fixes the `R_METAG_NONE` error.
+Found at: https://lore.kernel.org/patchwork/patch/696647/
+
+The error message:
+recordmcount.c: In function 'do_file':
+scripts/recordmcount.c:351:28: error: 'R_METAG_ADDR32' undeclared (first use in this function)
+  351 |  case EM_METAG:  reltype = R_METAG_ADDR32;
+      |                            ^~~~~~~~~~~~~~
+scripts/recordmcount.c:351:28: note: each undeclared identifier is reported only once for each function it appears in
+scripts/recordmcount.c:353:20: error: 'R_METAG_NONE' undeclared (first use in this function); did you mean 'R_MIPS_NONE'?
+  353 |     rel_type_nop = R_METAG_NONE;
+      |                    ^~~~~~~~~~~~
+      |                    R_MIPS_NONE
+
+
+diff --git a/scripts/recordmcount.c b/scripts/recordmcount.c
+index e1675927..42396a7 100644
+--- a/scripts/recordmcount.c
++++ b/scripts/recordmcount.c
+@@ -33,10 +33,17 @@
+ #include <string.h>
+ #include <unistd.h>
+
++/*
++ * glibc synced up and added the metag number but didn't add the relocations.
++ * Work around this in a crude manner for now.
++ */
+ #ifndef EM_METAG
+-/* Remove this when these make it to the standard system elf.h. */
+ #define EM_METAG      174
++#endif
++#ifndef R_METAG_ADDR32
+ #define R_METAG_ADDR32                   2
++#endif
++#ifndef R_METAG_NONE
+ #define R_METAG_NONE                     3
+ #endif

@@ -1,0 +1,54 @@
+# Archived: Kernel sources have disappeared, does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/suez_defconfig
+maintainer="Hadi Charara <hadicharara@ymail.com>"
+pkgname=linux-amazon-suez
+pkgver=3.18.19
+pkgrel=3
+pkgdesc="Amazon Fire HD 10 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="amazon-suez"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl gcc6"
+
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_amazon_suez"
+_commit="675c2bedfab1575365d8fda8a5dd986a8cc2101d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/hadicharara/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="c9ab203deb69e4a0a7c7c2397e9f55c0adc033a05d9613bd33a06782669f56d9fa56989e4b7b4cdf15fd6f48d5950471832ca18dccad503cbb2018d59ff32d2f  linux-amazon-suez-675c2bedfab1575365d8fda8a5dd986a8cc2101d.tar.gz
+a5b350d972b72b3570acd87fcfa6a4188ef9c8e82cf1666eee11ece41ba757c89372809056aef9f9a049a8dfa4c140b9ae52eb641fa545d787fab42aaf9823c3  config-amazon-suez.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch"

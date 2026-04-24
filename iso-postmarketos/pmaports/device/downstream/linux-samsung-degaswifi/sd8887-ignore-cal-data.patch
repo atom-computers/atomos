@@ -1,0 +1,16 @@
+diff -urpN a/drivers/marvell/sd8887/wlan_src/mlinux/moal_main.c b/drivers/marvell/sd8887/wlan_src/mlinux/moal_main.c
+--- a/drivers/marvell/sd8887/wlan_src/mlinux/moal_main.c	2023-09-26 15:05:09.380870758 +0530
++++ b/drivers/marvell/sd8887/wlan_src/mlinux/moal_main.c	2023-09-26 15:04:05.268067749 +0530
+@@ -2290,12 +2290,6 @@ woal_init_fw_dpc(moal_handle *handle)
+ 				goto done;
+ 			}
+ 		}
+-	} else if (!cal_data_cfg) {
+-		if (handle->card_type == CARD_TYPE_SD8887) {
+-			PRINTM(MERROR, "Please add cal_data_cfg for 8887\n");
+-			ret = MLAN_STATUS_FAILURE;
+-			goto done;
+-		}
+ 	}
+ 	if (handle->user_data) {
+ 		param.pcal_data_buf = (t_u8 *)handle->user_data->data;

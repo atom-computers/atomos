@@ -1,0 +1,47 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-lg-c50
+pkgdesc="LG Leon LTE"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf modules-initfs phoc.ini"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		firmware-qcom-msm8916-wcnss firmware-lg-c50-wcnss-nv
+		firmware-qcom-msm8916-venus"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+110eaddf46fb3a2220b89e0a13cf9fa4b994b227213def786a1d35ec449bce5223f441a7075a73bdbe8607ad61deaa97471e56948a8b74e8c77480681342d61b  deviceinfo
+37e1e5f8839b624ab3eb850a24ed4daeb61a651257a1fb593f49cb869323e5d1b339c831a18eb26a9d7bd0a618ea9eb2bb9bf3882133af5f2606a878e6d39c67  kernel-cmdline.conf
+11cd680cf30411fdb5d3036cdcd8bebfb8a7999a7386e837235b03377d521c7e5bf150da35da95aad56b4878c7af6637c738f099fe139a268dfb8a566f48b5dd  modules-initfs
+1a87b0303bb77bbe98a4100934da9a6e9533e5cefe985a73ec29bd50e1588d9a9ac9f5a126b450eecfa83fe6289013825a76fe699fce2bd3afbdc90cd83cf8d9  phoc.ini
+"

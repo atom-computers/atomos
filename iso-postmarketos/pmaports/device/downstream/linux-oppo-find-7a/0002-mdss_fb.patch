@@ -1,0 +1,393 @@
+--- a/drivers/video/msm/mdss/mdss_fb.c.orig	2019-06-08 13:45:24.053712000 +0200
++++ b/drivers/video/msm/mdss/mdss_fb.c	2019-06-10 22:37:30.194743429 +0200
+@@ -310,6 +310,20 @@ static ssize_t mdss_fb_get_type(struct d
+ 	return ret;
+ }
+ 
++static int mdss_fb_get_panel_xres(struct mdss_panel_info *pinfo)
++{
++	struct mdss_panel_data *pdata;
++	int xres;
++
++	pdata = container_of(pinfo, struct mdss_panel_data, panel_info);
++
++	xres = pinfo->xres;
++	if (pdata->next && pdata->next->active)
++		xres += mdss_fb_get_panel_xres(&pdata->next->panel_info);
++
++	return xres;
++}
++
+ static void mdss_fb_parse_dt(struct msm_fb_data_type *mfd)
+ {
+ 	u32 data[2] = {0};
+@@ -1156,6 +1170,8 @@ static int mdss_fb_blank_unblank(struct
+ 	}
+ 
+ 	if (mfd->mdp.on_fnc) {
++		struct mdss_panel_info *panel_info = mfd->panel_info;
++		struct fb_var_screeninfo *var = &mfd->fbi->var;
+ 		ret = mfd->mdp.on_fnc(mfd);
+ 		if (ret) {
+ 			mdss_fb_stop_disp_thread(mfd);
+@@ -1168,6 +1184,12 @@ static int mdss_fb_blank_unblank(struct
+ 		mfd->update.type = NOTIFY_TYPE_UPDATE;
+ 		mfd->update.is_suspend = 0;
+ 		mutex_unlock(&mfd->update.lock);
++		/*
++		 * Panel info can change depending in the information
++		 * programmed in the controller.
++		 * Update this info in the upstream structs.
++		 */
++		mdss_panelinfo_to_fb_var(panel_info, var);
+ 
+ 		/* Start the work thread to signal idle time */
+ 		if (mfd->idle_time)
+@@ -1687,6 +1709,7 @@ static int mdss_fb_register(struct msm_f
+ {
+ 	int ret = -ENODEV;
+ 	int bpp;
++	char panel_name[20];
+ 	struct mdss_panel_info *panel_info = mfd->panel_info;
+ 	struct fb_info *fbi = mfd->fbi;
+ 	struct fb_fix_screeninfo *fix;
+@@ -1827,9 +1850,7 @@ static int mdss_fb_register(struct msm_f
+ 		return ret;
+ 	}
+ 
+-	var->xres = panel_info->xres;
+-	if (mfd->split_display)
+-		var->xres *= 2;
++	mdss_panelinfo_to_fb_var(panel_info, var);
+ 
+ 	fix->type = panel_info->is_3d_panel;
+ 	if (mfd->mdp.fb_stride)
+@@ -1838,21 +1859,9 @@ static int mdss_fb_register(struct msm_f
+ 	else
+ 		fix->line_length = var->xres * bpp;
+ 
+-	var->yres = panel_info->yres;
+-	if (panel_info->physical_width)
+-		var->width = panel_info->physical_width;
+-	if (panel_info->physical_height)
+-		var->height = panel_info->physical_height;
+ 	var->xres_virtual = var->xres;
+ 	var->yres_virtual = panel_info->yres * mfd->fb_page;
+ 	var->bits_per_pixel = bpp * 8;	/* FrameBuffer color depth */
+-	var->upper_margin = panel_info->lcdc.v_back_porch;
+-	var->lower_margin = panel_info->lcdc.v_front_porch;
+-	var->vsync_len = panel_info->lcdc.v_pulse_width;
+-	var->left_margin = panel_info->lcdc.h_back_porch;
+-	var->right_margin = panel_info->lcdc.h_front_porch;
+-	var->hsync_len = panel_info->lcdc.h_pulse_width;
+-	var->pixclock = panel_info->clk_rate / 1000;
+ 
+ 	/*
+ 	 * Populate smem length here for uspace to get the
+@@ -1915,6 +1924,8 @@ static int mdss_fb_register(struct msm_f
+ 		return -EPERM;
+ 	}
+ 
++	snprintf(panel_name, ARRAY_SIZE(panel_name), "mdss_panel_fb%d",
++		mfd->index);
+ 	pr_info("FrameBuffer[%d] %dx%d registered successfully!\n", mfd->index,
+ 					fbi->var.xres, fbi->var.yres);
+ 
+@@ -2598,9 +2609,59 @@ static void mdss_fb_var_to_panelinfo(str
+ 	pinfo->lcdc.h_front_porch = var->right_margin;
+ 	pinfo->lcdc.h_back_porch = var->left_margin;
+ 	pinfo->lcdc.h_pulse_width = var->hsync_len;
+-	pinfo->clk_rate = var->pixclock;
++	/*
++	 * if greater than 1M, then rate would fall below 1mhz which is not
++	 * even supported. In this case it means clock rate is actually
++	 * passed directly in hz.
++	 */
++	if (var->pixclock > SZ_1M)
++		pinfo->clk_rate = var->pixclock;
++	else
++		pinfo->clk_rate = PICOS2KHZ(var->pixclock) * 1000;
+ }
+ 
++void mdss_panelinfo_to_fb_var(struct mdss_panel_info *pinfo,
++						struct fb_var_screeninfo *var)
++{
++	u32 frame_rate;
++
++	var->xres = mdss_fb_get_panel_xres(pinfo);
++	var->yres = pinfo->yres;
++	var->lower_margin = pinfo->lcdc.v_front_porch -
++		pinfo->prg_fet;
++	var->upper_margin = pinfo->lcdc.v_back_porch +
++		pinfo->prg_fet;
++	var->vsync_len = pinfo->lcdc.v_pulse_width;
++	var->right_margin = pinfo->lcdc.h_front_porch;
++	var->left_margin = pinfo->lcdc.h_back_porch;
++	var->hsync_len = pinfo->lcdc.h_pulse_width;
++
++	frame_rate = mdss_panel_get_framerate(pinfo,
++					FPS_RESOLUTION_HZ);
++	if (frame_rate) {
++		unsigned long clk_rate, h_total, v_total;
++
++		h_total = var->xres + var->left_margin
++			+ var->right_margin + var->hsync_len;
++		v_total = var->yres + var->lower_margin
++			+ var->upper_margin + var->vsync_len;
++		clk_rate = h_total * v_total * frame_rate;
++		var->pixclock = KHZ2PICOS(clk_rate / 1000);
++	} else if (pinfo->clk_rate) {
++		var->pixclock = KHZ2PICOS(
++				(unsigned long int) pinfo->clk_rate / 1000);
++	}
++
++	if (pinfo->physical_width)
++		var->width = pinfo->physical_width;
++	if (pinfo->physical_height)
++		var->height = pinfo->physical_height;
++
++	pr_debug("ScreenInfo: res=%dx%d [%d, %d] [%d, %d]\n",
++		var->xres, var->yres, var->left_margin,
++		var->right_margin, var->upper_margin,
++		var->lower_margin);
++}
+ /**
+  * __mdss_fb_perform_commit() - process a frame to display
+  * @mfd:	Framebuffer data structure for display
+@@ -3329,6 +3390,7 @@ int mdss_register_panel(struct platform_
+ 		goto mdss_notfound;
+ 	}
+ 
++	pdata->active = true;
+ 	fb_pdev = of_find_device_by_node(node);
+ 	if (fb_pdev) {
+ 		rc = mdss_fb_register_extra_panel(fb_pdev, pdata);
+--- a/drivers/video/msm/mdss/mdss_fb.h.orig	2019-06-08 13:45:24.053712000 +0200
++++ b/drivers/video/msm/mdss/mdss_fb.h	2019-06-09 23:22:43.940850298 +0200
+@@ -309,4 +309,6 @@ struct sync_fence *mdss_fb_sync_get_fenc
+ int mdss_fb_register_mdp_instance(struct msm_mdp_interface *mdp);
+ int mdss_fb_dcm(struct msm_fb_data_type *mfd, int req_state);
+ int mdss_fb_suspres_panel(struct device *dev, void *data);
++void mdss_panelinfo_to_fb_var(struct mdss_panel_info *pinfo,
++												struct fb_var_screeninfo *var);
+ #endif /* MDSS_FB_H */
+--- a/drivers/video/msm/mdss/mdss_panel.h.orig	2019-06-08 13:45:24.061712000 +0200
++++ b/drivers/video/msm/mdss/mdss_panel.h	2019-06-10 15:44:12.295557101 +0200
+@@ -18,12 +18,20 @@
+ #include <linux/types.h>
+ #include <linux/of_device.h>
+ 
++#define KHZ_TO_HZ 1000
++
+ /* panel id type */
+ struct panel_id {
+ 	u16 id;
+ 	u16 type;
+ };
+ 
++enum fps_resolution {
++	FPS_RESOLUTION_DEFAULT,
++	FPS_RESOLUTION_HZ,
++	FPS_RESOLUTION_KHZ,
++};
++
+ #define DEFAULT_FRAME_RATE	60
+ #define MDSS_DSI_RST_SEQ_LEN	10
+ 
+@@ -352,7 +360,7 @@ struct mdss_panel_info {
+ 	u32 min_height;
+ 	u32 min_fps;
+ 	u32 max_fps;
+-
++	u32 prg_fet;
+ 	u32 cont_splash_enabled;
+ 	u32 partial_update_enabled;
+ 	struct ion_handle *splash_ihdl;
+@@ -393,7 +401,7 @@ struct mdss_panel_data {
+ 	 * and teardown.
+ 	 */
+ 	int (*event_handler) (struct mdss_panel_data *pdata, int e, void *arg);
+-
++	bool active;
+ 	struct mdss_panel_data *next;
+ };
+ 
+@@ -401,12 +409,17 @@ struct mdss_panel_data {
+  * mdss_get_panel_framerate() - get panel frame rate based on panel information
+  * @panel_info:	Pointer to panel info containing all panel information
+  */
+-static inline u32 mdss_panel_get_framerate(struct mdss_panel_info *panel_info)
++static inline u32 mdss_panel_get_framerate(struct mdss_panel_info *panel_info,
++										   u32 flags)
+ {
+ 	u32 frame_rate, pixel_total;
++	u64 rate;
+ 
+-	if (panel_info == NULL)
++	if (panel_info == NULL) {
+ 		return DEFAULT_FRAME_RATE;
++		goto end;
++	}
++
+ 
+ 	switch (panel_info->type) {
+ 	case MIPI_VIDEO_PANEL:
+@@ -428,13 +441,25 @@ static inline u32 mdss_panel_get_framera
+ 			  panel_info->lcdc.v_front_porch +
+ 			  panel_info->lcdc.v_pulse_width +
+ 			  panel_info->yres);
+-		if (pixel_total)
+-			frame_rate = panel_info->clk_rate / pixel_total;
+-		else
++		if (pixel_total) {
++			rate = panel_info->clk_rate * KHZ_TO_HZ;
++			do_div(rate, pixel_total);
++			frame_rate = (u32)rate;
++		} else {
+ 			frame_rate = DEFAULT_FRAME_RATE;
+-
++		}
+ 		break;
+ 	}
++
++end:
++	if (flags == FPS_RESOLUTION_KHZ) {
++		if (!(frame_rate / KHZ_TO_HZ))
++			frame_rate *= KHZ_TO_HZ;
++	} else if (flags == FPS_RESOLUTION_HZ) {
++		if (frame_rate / KHZ_TO_HZ)
++			frame_rate /= KHZ_TO_HZ;
++	}
++
+ 	return frame_rate;
+ }
+ 
+--- a/drivers/video/msm/mdss/mdss_dsi.c.orig	2019-06-08 13:45:24.049712000 +0200
++++ b/drivers/video/msm/mdss/mdss_dsi.c	2019-06-10 00:49:41.148334433 +0200
+@@ -1582,7 +1582,8 @@ int dsi_panel_device_register(struct dev
+ 	ctrl_pdata->shared_pdata.broadcast_enable = of_property_read_bool(
+ 		pan_node, "qcom,mdss-dsi-panel-broadcast-mode");
+ 
+-	pinfo->panel_max_fps = mdss_panel_get_framerate(pinfo);
++	pinfo->panel_max_fps = mdss_panel_get_framerate(pinfo,
++							FPS_RESOLUTION_HZ);
+ 	pinfo->panel_max_vtotal = mdss_panel_get_vtotal(pinfo);
+ 	ctrl_pdata->disp_en_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+ 		"qcom,platform-enable-gpio", 0);
+--- a/drivers/video/msm/mdss/mdss_mdp_ctl.c.orig	2019-06-08 13:45:24.057712000 +0200
++++ b/drivers/video/msm/mdss/mdss_mdp_ctl.c	2019-06-10 22:41:26.524149757 +0200
+@@ -344,7 +344,8 @@ int mdss_mdp_perf_calc_pipe(struct mdss_
+ 			fps = pinfo->panel_max_fps;
+ 			v_total = pinfo->panel_max_vtotal;
+ 		} else {
+-			fps = mdss_panel_get_framerate(pinfo);
++			fps = mdss_panel_get_framerate(pinfo,
++						FPS_RESOLUTION_HZ);
+ 			v_total = mdss_panel_get_vtotal(pinfo);
+ 		}
+ 		xres = pinfo->xres;
+@@ -470,7 +471,8 @@ static void mdss_mdp_perf_calc_mixer(str
+ 				fps = pinfo->panel_max_fps;
+ 				v_total = pinfo->panel_max_vtotal;
+ 			} else {
+-				fps = mdss_panel_get_framerate(pinfo);
++				fps = mdss_panel_get_framerate(pinfo,
++							FPS_RESOLUTION_HZ);
+ 				v_total = mdss_panel_get_vtotal(pinfo);
+ 			}
+ 
+@@ -595,9 +597,12 @@ static u32 mdss_mdp_get_vbp_factor(struc
+ 		return 0;
+ 
+ 	pinfo = &ctl->panel_data->panel_info;
+-	fps = mdss_panel_get_framerate(pinfo);
++	fps = mdss_panel_get_framerate(pinfo,
++				FPS_RESOLUTION_HZ);
+ 	v_total = mdss_panel_get_vtotal(pinfo);
+ 	vbp = pinfo->lcdc.v_back_porch + pinfo->lcdc.v_pulse_width;
++	vbp += pinfo->prg_fet;
++	
+ 	vbp_fac = (vbp) ? fps * v_total / vbp : 0;
+ 	pr_debug("vbp_fac=%d vbp=%d v_total=%d\n", vbp_fac, vbp, v_total);
+ 
+@@ -1740,7 +1745,7 @@ int mdss_mdp_ctl_intf_event(struct mdss_
+ 		if (pdata->event_handler)
+ 			rc = pdata->event_handler(pdata, event, arg);
+ 		pdata = pdata->next;
+-	} while (rc == 0 && pdata);
++	} while (rc == 0 && pdata && pdata->active);
+ 
+ 	return rc;
+ }
+--- a/drivers/video/msm/mdss/mdss_mdp_overlay.c.orig	2019-06-08 13:45:24.057712000 +0200
++++ b/drivers/video/msm/mdss/mdss_mdp_overlay.c	2019-06-10 22:10:05.072953787 +0200
+@@ -2266,6 +2266,7 @@ static ssize_t dynamic_fps_sysfs_wta_dfp
+ 		mutex_unlock(&mdp5_data->dfps_lock);
+ 		return rc;
+ 	}
++	pdata->panel_info.prg_fet = 0;
+ 	pdata->panel_info.new_fps = dfps;
+ 	mutex_unlock(&mdp5_data->dfps_lock);
+ 	return count;
+@@ -2790,7 +2791,8 @@ static int mdss_fb_get_metadata(struct m
+ 	switch (metadata->op) {
+ 	case metadata_op_frame_rate:
+ 		metadata->data.panel_frame_rate =
+-			mdss_panel_get_framerate(mfd->panel_info);
++			mdss_panel_get_framerate(mfd->panel_info,
++								FPS_RESOLUTION_DEFAULT);
+ 		break;
+ 	case metadata_op_get_caps:
+ 		ret = mdss_fb_get_hw_caps(mfd, &metadata->data.caps);
+@@ -3325,7 +3327,8 @@ static int mdss_mdp_overlay_off(struct m
+ 	 * As a last resort signal the timeline if vsync doesn't arrive.
+ 	 */
+ 	if (mdp5_data->retire_cnt) {
+-		u32 fps = mdss_panel_get_framerate(mfd->panel_info);
++		u32 fps = mdss_panel_get_framerate(mfd->panel_info,
++							 FPS_RESOLUTION_HZ);
+ 		u32 vsync_time = 1000 / (fps ? : DEFAULT_FRAME_RATE);
+ 
+ 		msleep(vsync_time);
+--- a/drivers/video/msm/mdss/mdss_mdp_intf_video.c.orig	2019-06-08 13:45:24.057712000 +0200
++++ b/drivers/video/msm/mdss/mdss_mdp_intf_video.c	2019-06-10 21:53:02.826870697 +0200
+@@ -329,7 +329,7 @@ static int mdss_mdp_video_stop(struct md
+ 		/* wait for at least one VSYNC on HDMI intf for proper TG OFF */
+ 		if (MDSS_INTF_HDMI == ctx->intf_type) {
+ 			frame_rate = mdss_panel_get_framerate
+-					(&(ctl->panel_data->panel_info));
++					(&(ctl->panel_data->panel_info), FPS_RESOLUTION_HZ);
+ 			if (!(frame_rate >= 24 && frame_rate <= 240))
+ 				frame_rate = 24;
+ 			msleep((1000/frame_rate) + 1);
+@@ -531,7 +531,7 @@ static int mdss_mdp_video_vfp_fps_update
+ 
+ 	vsync_period = mdss_panel_get_vtotal(&pdata->panel_info);
+ 	hsync_period = mdss_panel_get_htotal(&pdata->panel_info, true);
+-	curr_fps = mdss_panel_get_framerate(&pdata->panel_info);
++	curr_fps = mdss_panel_get_framerate(&pdata->panel_info, FPS_RESOLUTION_HZ);
+ 
+ 	if (curr_fps > new_fps) {
+ 		add_v_lines = mult_frac(vsync_period,
+@@ -887,6 +887,9 @@ int mdss_mdp_video_start(struct mdss_mdp
+ 			pinfo->bpp);
+ 	itp.vsync_pulse_width = pinfo->lcdc.v_pulse_width;
+ 
++	pinfo->prg_fet = 0;
++	pr_debug("programmable fetch is not supported\n");
++	
+ 	if (mdss_mdp_video_timegen_setup(ctl, &itp)) {
+ 		pr_err("unable to get timing parameters\n");
+ 		return -EINVAL;
+--- a/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c.orig	2019-06-08 13:45:24.057712000 +0200
++++ b/drivers/video/msm/mdss/mdss_mdp_intf_cmd.c	2019-06-10 15:10:56.025186537 +0200
+@@ -836,7 +836,8 @@ int mdss_mdp_cmd_stop(struct mdss_mdp_ct
+ 	}
+ 	spin_unlock_irqrestore(&ctx->clk_lock, flags);
+ 
+-	hz = mdss_panel_get_framerate(&ctl->panel_data->panel_info);
++	hz = mdss_panel_get_framerate(&ctl->panel_data->panel_info,
++								FPS_RESOLUTION_HZ);
+ 
+ 	if (need_wait) {
+ 		if (wait_for_completion_timeout(&ctx->stop_comp,

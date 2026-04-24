@@ -1,0 +1,21 @@
+{
+  "name" : "$device",
+  "parent-name": "default",
+  "profiles" : [
+    {
+      "name" : "full",
+      "feedbacks" : [
+        {
+          "event-name" : "test-dummy-0",
+          "type"       : "Dummy",
+          "duration"   : 16
+        },
+        {
+          "event-name" : "test-dummy-2",
+          "type"       : "Dummy",
+          "duration"   : 32
+        }
+      ]
+    }
+  ]
+}

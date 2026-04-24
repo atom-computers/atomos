@@ -1,0 +1,194 @@
+#!/bin/sh
+# shellcheck disable=SC3043
+#
+# This is meant to be called by an apk trigger. By splitting the logic out
+# into a new script, one can easily modify/test/debug this logic without having
+# to rebuild the package that installs it.
+
+# NOTE: this variable, when set, is also used to indicate test mode
+SYSTEMD_APK_ROOT="${SYSTEMD_APK_ROOT:-}"
+UNIT_LIST_PATH="$SYSTEMD_APK_ROOT/var/lib/systemd-apk/installed.units"
+
+remove_unit_symlinks() {
+	local unit_path="$1"
+	local search_dir
+	local found_broken
+
+	# Determine which config directory to search
+	case "$unit_path" in
+		*/systemd/system/*)
+			search_dir="$SYSTEMD_APK_ROOT/etc/systemd/system"
+			;;
+		*/systemd/user/*)
+			search_dir="$SYSTEMD_APK_ROOT/etc/systemd/user"
+			;;
+		*)
+			return
+			;;
+	esac
+
+	[ -d "$search_dir" ] || return 0
+
+	# Keep removing broken symlinks until none remain
+	while true; do
+		found_broken=false
+		symlinks=$(busybox find "$search_dir" -type l)
+
+		while IFS= read -r symlink; do
+			[ -z "$symlink" ] && continue
+			target=$(readlink "$symlink")
+			# Resolve relative paths to absolute paths
+			if [ "${target#/}" = "$target" ]; then
+				# Relative path - resolve from symlink directory
+				abs_target=$(cd "$(dirname "$symlink")" && realpath "$target" 2>/dev/null)
+			else
+				# Already absolute
+				abs_target="$target"
+			fi
+
+			if [ "$abs_target" = "$unit_path" ]; then
+				echo "Removing dangling symlink: $symlink -> $target"
+				rm -vf "$symlink"
+				found_broken=true
+			fi
+		done <<-EOF
+		$symlinks
+		EOF
+		[ "$found_broken" = "false" ] && break
+	done
+}
+
+parse_diff_output() {
+	local diff_output="$1"
+	local added_var="$2"
+	local removed_var="$3"
+	# Note: use an underscore here to reduce the chances that $added_var and
+	# $removed_car are set to the variable names here:
+	local _added_paths=""
+	local _removed_paths=""
+
+	# Using heredoc to process lines and avoid a subshell, see SC2031
+	while IFS= read -r line; do
+		line_without_prefix=${line#?}
+		path=${line_without_prefix%% *}
+		case "$line" in
+			*'type=dir'*)
+				# Skip directories
+				continue;;
+			-[!-]*)
+				_removed_paths="$_removed_paths $path"
+				;;
+			+[!+]*)
+				_added_paths="$_added_paths $path"
+				;;
+			*)
+	            ;;
+		esac
+	done <<-EOF
+	$diff_output
+	EOF
+
+    # Set results in caller's variables
+    if [ -n "$added_var" ]; then eval "$added_var=\"$_added_paths\""; fi
+    if [ -n "$removed_var" ]; then eval "$removed_var=\"$_removed_paths\""; fi
+}
+
+run_systemctl() {
+	local args="$*"
+
+	if [ -n "$SYSTEMD_APK_ROOT" ]; then
+		# Print what we'd run, when in 'test' mode
+		echo "systemctl $args"
+	else
+		# shellcheck disable=SC2086
+		systemctl $args
+	fi
+}
+
+trigger_systemd_presets() {
+	local added_paths="$1"
+	local removed_paths="$2"
+	local system_units_to_preset=""
+	local user_units_to_preset=""
+
+	# Process added paths for presets, skip if also removed (modified files)
+	for path in $added_paths; do
+	    if echo " $removed_paths " | grep -qF " $path "; then
+	        continue
+	    fi
+
+		case "$path" in
+			*/systemd/system/*)
+				if [ -f "$path" ] && grep -qE "^\[Install\]" "$path" 2>/dev/null; then
+					system_units_to_preset="$system_units_to_preset $(basename "$path")"
+				fi
+				;;
+			*/systemd/user/*)
+				if [ -f "$path" ] && grep -qE "^\[Install\]" "$path" 2>/dev/null; then
+					user_units_to_preset="$user_units_to_preset $(basename "$path")"
+				fi
+				;;
+		esac
+	done
+
+	# Apply presets to newly added units
+	if [ -n "$system_units_to_preset" ]; then
+		echo "Applying presets to new system units..."
+		for unit in $system_units_to_preset; do
+		    run_systemctl --no-reload preset "$unit"
+		done
+	else
+		echo "No new system units to preset"
+	fi
+
+	if [ -n "$user_units_to_preset" ]; then
+		echo "Applying presets to new user units..."
+		for unit in $user_units_to_preset; do
+			run_systemctl --no-reload preset --global "$unit"
+		done
+	else
+		echo "No new user units to preset"
+	fi
+
+}
+
+handle_unit_changes() {
+	mkdir -p "$(dirname "$UNIT_LIST_PATH")"
+
+	local current_units="${UNIT_LIST_PATH}.new"
+	local removed_paths=""
+	local added_paths=""
+
+	# Create current state
+	treescan /usr/lib/systemd/system > "$current_units"
+	treescan /usr/lib/systemd/user >> "$current_units"
+
+	# Ensure previous state file exists (create empty if missing)
+	[ -f "$UNIT_LIST_PATH" ] || touch "$UNIT_LIST_PATH"
+
+	diff_output=$(busybox diff "$UNIT_LIST_PATH" "$current_units")
+	parse_diff_output "$diff_output" "added_paths" "removed_paths"
+
+	# Clean up symlinks for truly removed units (removed but not re-added)
+	for path in $removed_paths; do
+		echo " $added_paths " | grep -qF " $path " && continue
+
+		case "$path" in
+			*/systemd/system/*|*/systemd/user/*)
+				remove_unit_symlinks "$path"
+				;;
+		esac
+	done
+
+	trigger_systemd_presets "$added_paths" "$removed_paths"
+
+	# Update stored state
+	mv "$current_units" "$UNIT_LIST_PATH"
+}
+
+# If is set, then we're unit testing the trigger and don't actually want to run the rest of the stuff below
+if [ -z "$SYSTEMD_APK_ROOT" ]; then
+	handle_unit_changes
+	exit 0
+fi
+

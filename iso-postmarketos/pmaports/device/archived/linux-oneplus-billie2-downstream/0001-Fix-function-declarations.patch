@@ -1,0 +1,63 @@
+From 857d33abc880163966fcbbfc05da69bd681ea161 Mon Sep 17 00:00:00 2001
+From: Iskren Chernev <me@iskren.info>
+Date: Thu, 18 Feb 2021 14:59:40 +0200
+Subject: [PATCH 1/6] Fix function declarations
+
+- Functions without args, should be declared f(void) [for clang]
+- Add missing return type [for gcc]
+- Add static to a few places [for gcc]
+
+Signed-off-by: Iskren Chernev <me@iskren.info>
+---
+ drivers/oneplus/coretech/control_center/control_center.c  | 2 +-
+ drivers/oneplus/coretech/memplus/core/memplus_core.c      | 4 ++--
+ drivers/power/oneplus/charger_ic/oneplus_battery_pmi632.c | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/oneplus/coretech/control_center/control_center.c b/drivers/oneplus/coretech/control_center/control_center.c
+index 1d9c22cea1ea4..9d49af5d2e278 100644
+--- a/drivers/oneplus/coretech/control_center/control_center.c
++++ b/drivers/oneplus/coretech/control_center/control_center.c
+@@ -295,7 +295,7 @@ static struct list_head cc_pending_list;
+ static DEFINE_SPINLOCK(cc_async_lock);
+ static struct workqueue_struct *cc_wq;
+ 
+-extern cc_cal_next_freq_with_extra_util(
++extern unsigned cc_cal_next_freq_with_extra_util(
+ 	struct cpufreq_policy *pol, unsigned int next_freq);
+ extern void clk_get_ddr_freq(u64* val);
+ static void cc_queue_rq(struct cc_command *cc);
+diff --git a/drivers/oneplus/coretech/memplus/core/memplus_core.c b/drivers/oneplus/coretech/memplus/core/memplus_core.c
+index 1f351cacca2f1..9bd0d155587b6 100755
+--- a/drivers/oneplus/coretech/memplus/core/memplus_core.c
++++ b/drivers/oneplus/coretech/memplus/core/memplus_core.c
+@@ -128,11 +128,11 @@ static inline bool current_is_gcd(void)
+ 	return current == gc_tsk;
+ }
+ 
+-bool ctech_current_is_swapind() {
++static bool ctech_current_is_swapind(void) {
+ 	return current == swapind_tsk;
+ }
+ 
+-bool ctech_memplus_check_isolate_page(struct page*page)
++static bool ctech_memplus_check_isolate_page(struct page*page)
+ {
+ 	return (memplus_enabled() && (!PageSwapCache(page) || PageWillneed(page)));
+ }
+diff --git a/drivers/power/oneplus/charger_ic/oneplus_battery_pmi632.c b/drivers/power/oneplus/charger_ic/oneplus_battery_pmi632.c
+index 4ccd81bd8aa38..6a00d21ad76e4 100755
+--- a/drivers/power/oneplus/charger_ic/oneplus_battery_pmi632.c
++++ b/drivers/power/oneplus/charger_ic/oneplus_battery_pmi632.c
+@@ -14099,7 +14099,7 @@ static int oneplus_chg_get_charger_subtype(void)
+ 	return CHARGER_SUBTYPE_DEFAULT;
+ }
+ 
+-static int oneplus_set_qc_config()
++static int oneplus_set_qc_config(void)
+ {
+ 	return 0;
+ }
+-- 
+2.30.1
+

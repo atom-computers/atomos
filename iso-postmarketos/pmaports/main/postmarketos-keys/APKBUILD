@@ -1,0 +1,26 @@
+maintainer=""
+pkgname=postmarketos-keys
+pkgver=1
+pkgrel=1
+pkgdesc="Public keys for the postmarketOS repositories"
+url="https://postmarketos.org/"
+arch="noarch"
+license="MIT"
+source="
+	build.postmarketos.org.rsa.pub
+"
+options="!check" # No testsuite
+
+package() {
+	# Install the key in the key directory for apk
+	install -Dm644 "$srcdir"/build.postmarketos.org.rsa.pub \
+		"$pkgdir"/etc/apk/keys/build.postmarketos.org.rsa.pub
+
+	# Store a copy of the key in /usr/share/apk/keys as backup
+	install -Dm644 "$srcdir"/build.postmarketos.org.rsa.pub \
+		"$pkgdir"/usr/share/apk/keys/build.postmarketos.org.rsa.pub
+}
+
+sha512sums="
+0996bd5e5e140096c116fdfeed8083f8993ecbaa2f7e4e097e738277106a13b49c8bda4a408fed10f3369aa8af8cc655deafa34ddd86d9c4a83aeb70d81de024  build.postmarketos.org.rsa.pub
+"

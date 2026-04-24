@@ -1,0 +1,27 @@
+# Automatically generated aport, do not edit!
+# Generator: pmbootstrap aportgen grub-efi-x86
+
+maintainer=""
+pkgname=grub-efi-x86
+pkgver=2.12
+pkgrel=9
+
+_arch="x86"
+_mirror="http://dl-4.alpinelinux.org/alpine/"
+
+pkgdesc="GRUB $_arch EFI files for every architecture"
+url="https://www.gnu.org/software/grub/"
+license="GPL-3.0-or-later"
+arch="x86_64"
+source="grub-efi-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/grub-efi-$pkgver-r$pkgrel.apk"
+
+package() {
+	mkdir -p "$pkgdir"
+	cd "$pkgdir"
+	tar -xf "$srcdir/grub-efi-$pkgver-r$pkgrel-$_arch-edge.apk"
+	rm .PKGINFO .SIGN.*
+}
+
+sha512sums="
+ef8dd1fde9db54c71dd5024be62d09bf4f19dbdd2faf9772780373816050f23c594c6eefdc367f5b8cd93e97ae2f10dbd73cf7979377b72deb77acf8a3e37f71  grub-efi-2.12-r9-x86-edge.apk
+"

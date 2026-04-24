@@ -1,0 +1,82 @@
+author	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>	2015-05-15 02:00:07 +0300
+committer	John Stultz <john.stultz@linaro.org>	2017-05-12 12:39:37 -0700
+commit	4d4d7186492648fe2517178b983fcd5a55e3d575 (patch)
+tree	fea85da4e2e33bac4712d8c0ab66a0d0624920f8
+parent	b3c0228dd8468ab9a9da3b70b2a011ffb855091b (diff)
+download	flo-4d4d7186492648fe2517178b983fcd5a55e3d575.tar.gz
+drivers: platform: Configure dma operations at probe time
+Configuring DMA ops at probe time will allow deferring device probe when
+the IOMMU isn't available yet.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Diffstat
+-rw-r--r--	drivers/base/platform.c	9	
+		
+-rw-r--r--	drivers/of/platform.c	7	
+		
+2 files changed, 12 insertions, 4 deletions
+diff --git a/drivers/base/platform.c b/drivers/base/platform.c
+index c245683..1526298 100644
+--- a/drivers/base/platform.c
++++ b/drivers/base/platform.c
+@@ -572,6 +572,10 @@ static int platform_drv_probe(struct device *_dev)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	ret = of_dma_configure_ops(_dev, _dev->of_node);
++	if (ret < 0)
++		goto done;
++
+ 	ret = dev_pm_domain_attach(_dev, true);
+ 	if (ret != -EPROBE_DEFER) {
+ 		if (drv->probe) {
+@@ -584,6 +588,10 @@ static int platform_drv_probe(struct device *_dev)
+ 		}
+ 	}
+ 
++	if (ret)
++		of_dma_deconfigure(_dev);
++
++done:
+ 	if (drv->prevent_deferred_probe && ret == -EPROBE_DEFER) {
+ 		dev_warn(_dev, "probe deferral not supported\n");
+ 		ret = -ENXIO;
+@@ -606,6 +614,7 @@ static int platform_drv_remove(struct device *_dev)
+ 	if (drv->remove)
+ 		ret = drv->remove(dev);
+ 	dev_pm_domain_detach(_dev, true);
++	of_dma_deconfigure(_dev);
+ 
+ 	return ret;
+ }
+diff --git a/drivers/of/platform.c b/drivers/of/platform.c
+index a2d27bc..967f6ce 100644
+--- a/drivers/of/platform.c
++++ b/drivers/of/platform.c
+@@ -187,11 +187,9 @@ static struct platform_device *of_platform_device_create_pdata(
+ 	dev->dev.bus = &platform_bus_type;
+ 	dev->dev.platform_data = platform_data;
+ 	of_dma_configure_masks(&dev->dev, dev->dev.of_node);
+-	of_dma_configure_ops(&dev->dev, dev->dev.of_node);
+ 	of_msi_configure(&dev->dev, dev->dev.of_node);
+ 
+ 	if (of_device_add(dev) != 0) {
+-		of_dma_deconfigure(&dev->dev);
+ 		platform_device_put(dev);
+ 		goto err_clear_flag;
+ 	}
+@@ -540,11 +538,12 @@ static int of_platform_device_destroy(struct device *dev, void *data)
+ 	if (dev->bus == &platform_bus_type)
+ 		platform_device_unregister(to_platform_device(dev));
+ #ifdef CONFIG_ARM_AMBA
+-	else if (dev->bus == &amba_bustype)
++	else if (dev->bus == &amba_bustype) {
+ 		amba_device_unregister(to_amba_device(dev));
++		of_dma_deconfigure(dev);
++	}
+ #endif
+ 
+-	of_dma_deconfigure(dev);
+ 	of_node_clear_flag(dev->of_node, OF_POPULATED);
+ 	of_node_clear_flag(dev->of_node, OF_POPULATED_BUS);
+ 	return 0;

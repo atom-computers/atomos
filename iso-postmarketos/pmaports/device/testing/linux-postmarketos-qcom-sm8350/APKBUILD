@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer=""
+_flavor="postmarketos-qcom-sm8350"
+pkgname=linux-$_flavor
+pkgver=6.7
+pkgrel=2
+pkgdesc="Mainline kernel fork for SM8350"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/sm8350-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+"
+makedepends="
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	installkernel
+	openssl-dev
+	perl
+"
+
+_commit="ffb1b0db511df03829fa0c9682f2412c0db7f717"
+_config="config-$_flavor.$arch"
+
+# Source
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/sm8350-mainline/linux/-/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_commit"
+#_outdir=".output"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+	#cp -r "$builddir"/arch/arm64/boot/dts/qcom \
+	#	"$pkgdir"/boot/qcom
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+69e66fcf50d336709aa8957a7a9f493dc3ba24e8ed806ba1aca7f324ccc4dc89ad83f574b2b052c2a1ed329f4a5f6b377449629e92ce5440495b22e2e4d41ff2  linux-postmarketos-qcom-sm8350-ffb1b0db511df03829fa0c9682f2412c0db7f717.tar.gz
+3a9b07b0db408c1b8a1804e8e20356b69a0397b64f0b23ffd11d13094143fcae386cdd6d1d76e51fd2c5b60518c3445db82963b313ecbd893a31ed117cc41fef  config-postmarketos-qcom-sm8350.aarch64
+"

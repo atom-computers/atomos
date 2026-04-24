@@ -1,0 +1,11 @@
+--- linux-3.18-samsung-mod/net/bluetooth/Makefile	2023-12-21 03:06:56.384146361 +0300
++++ linux-3.18-samsung/net/bluetooth/Makefile	2023-12-25 05:41:55.756105376 +0300
+@@ -3,7 +3,7 @@
+ #
+ 
+ obj-$(CONFIG_BT)	+= bluetooth.o
++obj-$(CONFIG_BT_RFCOMM)	+= rfcomm/
+-#obj-$(CONFIG_BT_RFCOMM)	+= rfcomm/
+ #obj-$(CONFIG_BT_BNEP)	+= bnep/
+ obj-$(CONFIG_BT_CMTP)	+= cmtp/
+ #obj-$(CONFIG_BT_HIDP)	+= hidp/

@@ -1,0 +1,29 @@
+From 688680a7c1e384f0be191111963a16945203475f Mon Sep 17 00:00:00 2001
+From: Clayton Craft <clayton@craftyguy.net>
+Date: Tue, 6 Jan 2026 10:31:02 -0800
+Subject: [PATCH 1/2] Revert "arm64: dts: qcom: sc8280xp-x13s: Enable Venus"
+
+This reverts commit 67f09c4f518f256f7dcd98811d724d1ca000ab67.
+---
+ arch/arm64/boot/dts/qcom/sc8280xp-lenovo-thinkpad-x13s.dts | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sc8280xp-lenovo-thinkpad-x13s.dts b/arch/arm64/boot/dts/qcom/sc8280xp-lenovo-thinkpad-x13s.dts
+index 61d3e2ebbb298..637430719e6d7 100644
+--- a/arch/arm64/boot/dts/qcom/sc8280xp-lenovo-thinkpad-x13s.dts
++++ b/arch/arm64/boot/dts/qcom/sc8280xp-lenovo-thinkpad-x13s.dts
+@@ -1480,11 +1480,6 @@ &vamacro {
+ 	status = "okay";
+ };
+ 
+-&venus {
+-	firmware-name = "qcom/sc8280xp/LENOVO/21BX/qcvss8280.mbn";
+-	status = "okay";
+-};
+-
+ &wsamacro {
+ 	status = "okay";
+ };
+-- 
+2.52.0
+

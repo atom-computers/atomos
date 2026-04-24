@@ -1,0 +1,26 @@
+ACTION!="add", GOTO="rpmsg_end"
+SUBSYSTEM!="rpmsg", GOTO="rpmsg_end"
+
+ATTRS{rpmsg_name}=="?*", ENV{RPMSG_PREFIX}="$attr{rpmsg_name}", GOTO="rpmsg_path"
+
+GOTO="rpmsg_end"
+
+LABEL="rpmsg_path"
+
+ATTRS{sbuf_channel_name}=="?*", ENV{RPMSG_PATH}="$env{RPMSG_PREFIX}/$attr{sbuf_channel_name}", GOTO="rpmsg_symlink"
+
+ENV{RPMSG_PATH}="$env{RPMSG_PREFIX}"
+
+LABEL="rpmsg_symlink"
+
+KERNEL=="rpmsg_ctrl[0-9]*", SYMLINK+="rpmsg/$env{RPMSG_PATH}/ctrl", GOTO="rpmsg_export"
+KERNEL=="rpmsg[0-9]*", ATTR{name}=="?*", SYMLINK+="rpmsg/$env{RPMSG_PATH}/$attr{name}"
+
+GOTO="rpmsg_end"
+
+LABEL="rpmsg_export"
+
+ENV{RPMSG_PATH}=="pmsys/pm_ctl", RUN+="/usr/sbin/rpmsgexport /dev/$name pm_ctl0 -1 -1"
+ENV{RPMSG_PATH}=="pmsys/pm_gnss", RUN+="/usr/sbin/rpmsgexport /dev/$name gnss_pipe0 -1 -1"
+
+LABEL="rpmsg_end"

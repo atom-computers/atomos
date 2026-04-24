@@ -1,0 +1,37 @@
+From f477ca8aa702f428eebad3966b164d9ffb0e1839 Mon Sep 17 00:00:00 2001
+From: Hendra Manudinata <manoedinata@daunscape.tech>
+Date: Tue, 24 Jun 2025 22:44:53 +0700
+Subject: [PATCH 7/7] drivers: samsung: scsc: Skip mount point check
+
+We probably won't be able to do this check on postmarketOS, so let's
+say that the path will be always exist.
+
+Signed-off-by: Hendra Manudinata <manoedinata@daunscape.tech>
+---
+ drivers/misc/samsung/scsc/mx140_file.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/misc/samsung/scsc/mx140_file.c b/drivers/misc/samsung/scsc/mx140_file.c
+index 0bc345ca..601e4bd6 100644
+--- a/drivers/misc/samsung/scsc/mx140_file.c
++++ b/drivers/misc/samsung/scsc/mx140_file.c
+@@ -488,6 +488,8 @@ int mx140_basedir_file(struct scsc_mx *mx)
+ 	/* Set to kernel segment. */
+ 	set_fs(get_ds());
+ 
++/* HACK: Skip mount point check (postmarketOS) */
++#if 0
+ 	/* If /system isn't present, assume platform isn't ready yet */
+ 	r = vfs_stat("/system", &stat);
+ 	if (r != 0) {
+@@ -507,6 +509,7 @@ int mx140_basedir_file(struct scsc_mx *mx)
+ 		r = -EAGAIN;
+ 		goto done;
+ 	}
++#endif
+ 
+ 	/* Search for SCSC FW under the mountpoints */
+ 
+-- 
+2.43.0
+

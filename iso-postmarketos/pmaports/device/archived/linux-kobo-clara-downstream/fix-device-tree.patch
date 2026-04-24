@@ -1,0 +1,34 @@
+From 9df7c717b72507bf8d69715d30944f5bdaf639e8 Mon Sep 17 00:00:00 2001
+From: Martijn Braam <martijn@brixit.nl>
+Date: Sat, 29 Jun 2019 15:03:28 +0200
+Subject: [PATCH] Fix vendor kernel
+
+---
+ arch/arm/boot/dts/Makefile           | 2 +-
+ arch/arm/boot/dts/imx6sll-e80k02.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index b4adfdd12385..c80053cffe5a 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -400,7 +400,7 @@ dtb-$(CONFIG_SOC_IMX6UL) += \
+ dtb-$(CONFIG_SOC_IMX6SLL) += \
+ 	imx6sll-lpddr2-ntx.dtb \
+ 	imx6sll-e80k02.dtb \
+-	imx6sll-e80k02-sy7636.dtb \
++	imx6sll-e60k02-sy7636.dtb \
+ 	imx6sll-e70q02.dtb \
+ 	imx6sll-t05r02.dtb \
+ 	imx6sll-e60qm2.dtb \
+diff --git a/arch/arm/boot/dts/imx6sll-e80k02.dts b/arch/arm/boot/dts/imx6sll-e80k02.dts
+index 9bda463ffcbd..ecd12d2cd4b1 100644
+--- a/arch/arm/boot/dts/imx6sll-e80k02.dts
++++ b/arch/arm/boot/dts/imx6sll-e80k02.dts
+@@ -1,5 +1,5 @@
+ 
+-#include "imx6sll-e80k02-base.dts"
++#include "imx6sll-e60k02-base.dts"
+ 
+ &i2c2 {
+ 	tps6518x@68 {

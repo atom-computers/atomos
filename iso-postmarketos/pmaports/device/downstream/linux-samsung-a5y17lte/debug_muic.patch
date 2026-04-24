@@ -1,0 +1,203 @@
+This patch allows to configure kernel with MUIC debug possibility.
+Allows to dump MUIC registers via sysfs and more.
+To configure kernel with muic debug enabled, set SAMSUNG_MUIC, and DEBUG_MUIC options
+
+diff --git a/drivers/muic/Kconfig b/drivers/muic/Kconfig
+index 66873fc853d..1741eee5a14 100755
+--- a/drivers/muic/Kconfig
++++ b/drivers/muic/Kconfig
+@@ -12,6 +12,13 @@ config USE_MUIC
+ 	  If you say yes here you will get support for
+ 	  the MUIC device driver.
+ 
++config DEBUG_MUIC
++	bool "Enable MUIC debug"
++	depends on SAMSUNG_MUIC
++	default n
++	help
++	  If you say yes here you will get debug info from your muic.
++
+ config USE_SAFEOUT
+ 	bool "Using SAFEOUT device driver"
+ 	depends on I2C
+diff --git a/drivers/muic/s2mm001.c b/drivers/muic/s2mm001.c
+index 15107098f4b..cf43d5f8bfa 100755
+--- a/drivers/muic/s2mm001.c
++++ b/drivers/muic/s2mm001.c
+@@ -37,9 +37,9 @@
+ #include <linux/muic/muic_notifier.h>
+ #endif /* CONFIG_MUIC_NOTIFIER */
+ 
+-#define DEBUG_MUIC
++#define CONFIG_DEBUG_MUIC
+ 
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 
+ #define MAX_LOG 25
+ #define READ 0
+@@ -164,7 +164,7 @@ static int s2mm001_i2c_read_byte(const struct i2c_client *client, u8 command)
+ 		retry++;
+ 	}
+ 
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	s2mm001_reg_log(command, ret, retry << 1 | READ);
+ #endif
+ 	return ret;
+@@ -187,7 +187,7 @@ static int s2mm001_i2c_write_byte(const struct i2c_client *client,
+ 		ret = i2c_smbus_write_byte_data(client, command, value);
+ 		retry++;
+ 	}
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	s2mm001_reg_log(command, value, retry << 1 | WRITE);
+ #endif
+ 	return ret;
+@@ -490,7 +490,7 @@ static ssize_t s2mm001_muic_show_usb_state(struct device *dev,
+ 	return 0;
+ }
+ 
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ static ssize_t s2mm001_muic_show_mansw1(struct device *dev,
+ 					   struct device_attribute *attr,
+ 					   char *buf)
+@@ -729,7 +729,7 @@ static DEVICE_ATTR(uart_sel, 0664, s2mm001_muic_show_uart_sel,
+ static DEVICE_ATTR(usb_sel, 0664,
+ 		s2mm001_muic_show_usb_sel, s2mm001_muic_set_usb_sel);
+ static DEVICE_ATTR(adc, 0664, s2mm001_muic_show_adc, NULL);
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ static DEVICE_ATTR(mansw1, 0664, s2mm001_muic_show_mansw1, NULL);
+ static DEVICE_ATTR(mansw2, 0664, s2mm001_muic_show_mansw2, NULL);
+ static DEVICE_ATTR(dump_registers, 0664, s2mm001_muic_show_registers, NULL);
+@@ -755,7 +755,7 @@ static struct attribute *s2mm001_muic_attributes[] = {
+ 	&dev_attr_uart_sel.attr,
+ 	&dev_attr_usb_sel.attr,
+ 	&dev_attr_adc.attr,
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	&dev_attr_mansw1.attr,
+ 	&dev_attr_mansw2.attr,
+ 	&dev_attr_dump_registers.attr,
+diff --git a/drivers/muic/s2mu004-muic.c b/drivers/muic/s2mu004-muic.c
+index 577a3e87c76..1a4c98ff3c3 100755
+--- a/drivers/muic/s2mu004-muic.c
++++ b/drivers/muic/s2mu004-muic.c
+@@ -97,7 +97,7 @@ static int s2mu004_i2c_write_byte(struct i2c_client *client,
+ static bool s2mu004_get_ccic_cable_state(struct s2mu004_muic_data *muic_data);
+ #endif
+ 
+-#if defined(DEBUG_MUIC)
++#if defined(CONFIG_DEBUG_MUIC)
+ #define MAX_LOG 25
+ #define READ 0
+ #define WRITE 1
+@@ -186,7 +186,7 @@ static int s2mu004_i2c_read_byte(struct i2c_client *client, u8 command)
+ 		retry++;
+ 	}
+ 
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	s2mu004_reg_log(command, ret, retry << 1 | READ);
+ #endif
+ 	return ret;
+@@ -211,7 +211,7 @@ static int s2mu004_i2c_write_byte(struct i2c_client *client,
+ 		ret = s2mu004_write_reg(client, command, value);
+ 		retry++;
+ 	}
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	s2mu004_reg_log(command, value, retry << 1 | WRITE);
+ #endif
+ 	return ret;
+@@ -698,7 +698,7 @@ static ssize_t s2mu004_muic_show_usb_state(struct device *dev,
+ 	return 0;
+ }
+ 
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ static ssize_t s2mu004_muic_show_mansw(struct device *dev,
+ 					   struct device_attribute *attr,
+ 					   char *buf)
+@@ -1159,7 +1159,7 @@ static ssize_t muic_store_afc_set_voltage(struct device *dev,
+ static DEVICE_ATTR(uart_en, 0664, s2mu004_muic_show_uart_en,
+ 					s2mu004_muic_set_uart_en);
+ static DEVICE_ATTR(adc, 0664, s2mu004_muic_show_adc, NULL);
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ static DEVICE_ATTR(mansw, 0664, s2mu004_muic_show_mansw, NULL);
+ static DEVICE_ATTR(dump_registers, 0664, s2mu004_muic_show_registers, NULL);
+ static DEVICE_ATTR(int_status, 0664, s2mu004_muic_show_interrupt_status, NULL);
+@@ -1192,7 +1192,7 @@ static DEVICE_ATTR(afc_set_voltage, 0220,
+ static struct attribute *s2mu004_muic_attributes[] = {
+ 	&dev_attr_uart_en.attr,
+ 	&dev_attr_adc.attr,
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	&dev_attr_mansw.attr,
+ 	&dev_attr_dump_registers.attr,
+ 	&dev_attr_int_status.attr,
+diff --git a/drivers/muic/s2mu005-muic.c b/drivers/muic/s2mu005-muic.c
+index c3b89b3612d..b53f54cd3d8 100755
+--- a/drivers/muic/s2mu005-muic.c
++++ b/drivers/muic/s2mu005-muic.c
+@@ -54,10 +54,10 @@ static void s2mu005_muic_handle_detach(struct s2mu005_muic_data *muic_data);
+ static int set_manual_sw(struct s2mu005_muic_data *muic_data, bool on);
+ 
+ /*
+-#define DEBUG_MUIC
++#define CONFIG_DEBUG_MUIC
+ */
+ 
+-#if defined(DEBUG_MUIC)
++#if defined(CONFIG_DEBUG_MUIC)
+ #define MAX_LOG 25
+ #define READ 0
+ #define WRITE 1
+@@ -150,7 +150,7 @@ static int s2mu005_i2c_read_byte(struct i2c_client *client, u8 command)
+ 		retry++;
+ 	}
+ 
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	s2mu005_reg_log(command, ret, retry << 1 | READ);
+ #endif
+ 	return ret;
+@@ -175,7 +175,7 @@ static int s2mu005_i2c_write_byte(struct i2c_client *client,
+ 		ret = s2mu005_write_reg(client, command, value);
+ 		retry++;
+ 	}
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	s2mu005_reg_log(command, value, retry << 1 | WRITE);
+ #endif
+ 	return ret;
+@@ -463,7 +463,7 @@ static ssize_t s2mu005_muic_show_usb_state(struct device *dev,
+ 	return 0;
+ }
+ 
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ static ssize_t s2mu005_muic_show_mansw(struct device *dev,
+ 					   struct device_attribute *attr,
+ 					   char *buf)
+@@ -686,7 +686,7 @@ static ssize_t s2mu005_muic_set_apo_factory(struct device *dev,
+ static DEVICE_ATTR(uart_en, 0664, s2mu005_muic_show_uart_en,
+ 					s2mu005_muic_set_uart_en);
+ static DEVICE_ATTR(adc, 0664, s2mu005_muic_show_adc, NULL);
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ static DEVICE_ATTR(mansw, 0664, s2mu005_muic_show_mansw, NULL);
+ static DEVICE_ATTR(dump_registers, 0664, s2mu005_muic_show_registers, NULL);
+ static DEVICE_ATTR(int_status, 0664, s2mu005_muic_show_interrupt_status, NULL);
+@@ -709,7 +709,7 @@ static DEVICE_ATTR(usb_en, 0664,
+ static struct attribute *s2mu005_muic_attributes[] = {
+ 	&dev_attr_uart_en.attr,
+ 	&dev_attr_adc.attr,
+-#ifdef DEBUG_MUIC
++#ifdef CONFIG_DEBUG_MUIC
+ 	&dev_attr_mansw.attr,
+ 	&dev_attr_dump_registers.attr,
+ 	&dev_attr_int_status.attr,

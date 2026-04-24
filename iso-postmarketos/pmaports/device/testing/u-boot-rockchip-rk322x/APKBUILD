@@ -1,0 +1,68 @@
+maintainer="leap123 <leap123@canaglie.org>"
+pkgname=u-boot-rockchip-rk322x
+pkgver=2025.07
+pkgrel=0
+_ddr_ver=1.11
+_trust_ver=51.1.0-333-gc9d95d1
+_miniloader_ver=2.56
+pkgdesc="u-boot bootloader for rk3228/rk3229"
+url="https://gitlab.denx.de/u-boot/u-boot"
+arch="armv7"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+options="!check"
+
+makedepends="
+	bc
+	bison
+	dtc
+	flex
+	gnutls-dev
+	libfdt
+	make
+	openssl-dev
+	py3-elftools
+	py3-setuptools
+	python3-dev
+	swig
+"
+_rkbin_commit="84f2356cf510319665874daf29df9ad8a94ac7e4"
+builddir="$srcdir"/u-boot-$pkgver
+source="
+	https://ftp.denx.de/pub/u-boot/u-boot-${pkgver//_/-}.tar.bz2
+	https://github.com/ilmich/rkbin/raw/$_rkbin_commit/rk32/rk322x_ddr_330MHz_v$_ddr_ver.bin
+	https://github.com/ilmich/rkbin/raw/$_rkbin_commit/rk32/rk3228_tee_ta-$_trust_ver.bin
+	https://github.com/ilmich/rkbin/raw/$_rkbin_commit/rk32/rk322x_miniloader_v$_miniloader_ver.bin
+	update-u-boot
+	0001-rk322x-defconfig-dts.patch
+	0002-rockchip-boot-order-usb.patch
+"
+
+build() {
+	export ROCKCHIP_TPL="$srcdir"/rk322x_ddr_330MHz_v$_ddr_ver.bin
+	export TEE="$srcdir"/rk3228_tee_ta-$_trust_ver.bin
+
+	make box-rk322x_defconfig
+	make
+
+	# make idbloader.img
+	tools/mkimage -n rk322x -T rksd -d "$ROCKCHIP_TPL:$srcdir"/rk322x_miniloader_v$_miniloader_ver.bin "$builddir"/idbloader.img
+}
+
+package() {
+	install -D -m755 "$srcdir"/update-u-boot "$pkgdir"/usr/sbin/update-u-boot
+	install -Dm644 \
+		"$builddir"/idbloader.img \
+		"$builddir"/u-boot.itb \
+		-t "$pkgdir"/usr/share/u-boot/rockchip-rk322x
+}
+
+sha512sums="
+0d9a4906aaee134c6b6c496aaf7f54c653ede8e878f851e877ec7876e26cd14e356cd29112849295deeb72bee6b4d292151fb4d9db23d23608350c3fe567d955  u-boot-2025.07.tar.bz2
+016e52d227a3648a29af71d07472bf1d4c5082aacb7716caf64033f55f711646e787bdfb049291d3259ea70c140dd2af587770776277de1dbcc540c9635e95dd  rk322x_ddr_330MHz_v1.11.bin
+ec6024ee74b501d97640527496ae530eb4d115b59a0303b6deb7c954f85881e5e1731e6a4694bf899e078a79fae82a3f8f436cff6eb521ee5f083ab138138fe7  rk3228_tee_ta-51.1.0-333-gc9d95d1.bin
+11179b97856dbe6543e8fd7b5d9a2c7e954ad7d4d15d0315b933de8afc00f2249cd938ed53d8868591491cd1f6dd17edd8fc01f6b1377dc0071972cac9e1a661  rk322x_miniloader_v2.56.bin
+2a01a6d0dedca464a25a9a02e58572857bf8aafa9bbf5a18f42e0bec1d9d452ab3347ad4f8ceea9df2cac55bd25eb0bdaae1967de6446fc7336afcbc6abeb4b5  update-u-boot
+d749ef1c9ffb454efe66848ca820472c695631673327e81eb4091ba06ba862971566e9d566c456b06dd8630ce7138e91cf1f3dffd00d143db6acbdaa7c8d09c8  0001-rk322x-defconfig-dts.patch
+9316278dfd60a35d4126160430b2f21ab8a4ae5c90883134dcf884325726e0a0a973f8a78dbcc1a4c515590bba33eb5b83df81930fba1ad390b9dd0ce89bf81b  0002-rockchip-boot-order-usb.patch
+"

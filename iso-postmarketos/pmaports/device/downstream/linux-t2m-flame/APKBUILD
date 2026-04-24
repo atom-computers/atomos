@@ -1,0 +1,82 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/msm8610_defconfig
+
+pkgname=linux-t2m-flame
+pkgver=3.4.0
+pkgrel=17
+pkgdesc="T2M Flame kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="t2m-flame"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="codeaurora_kernel_msm"
+_commit="03396c93577aafae7ca3603de1c74eafd30e7d54"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/mozilla-b2g/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.4-fix-piggy.gzip.S.patch
+	00_fix_return_address.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_add-missing-dtbs.patch
+	04_fix-fb-imgtype.patch
+	05_fix-mdp3-ctrl-off.patch
+	06_fix-clock.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		CONFIG_NO_ERROR_ON_MISMATCH=y DTC_FLAGS="-p 1024"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" firmware_install
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool -s 2048 -p scripts/dtc/ -o "$_outdir/arch/$_carch/boot"/dt.img "$_outdir/arch/$_carch/boot/"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img "$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+f16194d7bf254201290cff2b6eddc8bb8944e28e78d57f64f1feba54be053845873c27b385db286ca50f020102a2bcd5dc53454d5c0526ceb99f970a694f0a17  linux-t2m-flame-03396c93577aafae7ca3603de1c74eafd30e7d54.tar.gz
+d2a2a6f1a89e31b8bd3fdfc5e5a80b5b012428dba631b5715df03233dcd94c67720e370f463dfb0c8929877fa74b9916329eefc26ca56bc6a205d9cb901ba630  config-t2m-flame.armhf
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+080745ca4ecaa804ee1df26ea81975ca93b74372e0c08322a6c481e97807495ae6ceb6cc77653afa24f9f2df45da8ebf8e5de6b06037fbb08e0279877ce42188  linux3.4-fix-piggy.gzip.S.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+ee53d221cad0970316f16ff52927b9a133a2297b61a61976bd75c07b735b4c87d0a7e6b37d9a849460ec57f6da097801c9ae110b95f33756ca23a148ef86a1d2  03_add-missing-dtbs.patch
+8b7615530d6c423ffb1bd3e99a28c045f5586fac9e586dea11d68e5d41dea1b161e2bba915547db94fb1f1fecc2e98c23b3aa7b2736255616440371c827fcab2  04_fix-fb-imgtype.patch
+f239137a5664515016190effa9f6385b18b599bad48892cb7337723438c0d3d6dc10a719c0733ccb27a93198ceef9daf332146be2e906c591caab92f53869ae4  05_fix-mdp3-ctrl-off.patch
+4b0dc5d425c9a6191a8cd3896ffd9adacdb5706a3b31e38f434ec131880fdb75e1717abb54f042c032c512575a1cec2eb63fff9ec87198d2e5f47260f04c721c  06_fix-clock.patch
+"

@@ -1,0 +1,32 @@
+From 62de193d8150578bf040bfee65db4bf0cf834cee Mon Sep 17 00:00:00 2001
+From: Johannes Schauer Marin Rodrigues <josch@mister-muffin.de>
+Date: Sat, 21 Dec 2024 17:54:09 +0100
+Subject: [PATCH] Revert "drm/bridge: synopsys: dw-mipi-dsi: enable EoTp by
+ default"
+
+This reverts commit d97e71e449373efbd2403f1d7a32d416599f32ac.
+---
+ drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c b/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
+index 0fb02e4e7f4e..c4e9d96933dc 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
+@@ -722,12 +722,7 @@ static void dw_mipi_dsi_dpi_config(struct dw_mipi_dsi *dsi,
+ 
+ static void dw_mipi_dsi_packet_handler_config(struct dw_mipi_dsi *dsi)
+ {
+-	u32 val = CRC_RX_EN | ECC_RX_EN | BTA_EN | EOTP_TX_EN;
+-
+-	if (dsi->mode_flags & MIPI_DSI_MODE_NO_EOT_PACKET)
+-		val &= ~EOTP_TX_EN;
+-
+-	dsi_write(dsi, DSI_PCKHDL_CFG, val);
++	dsi_write(dsi, DSI_PCKHDL_CFG, CRC_RX_EN | ECC_RX_EN | BTA_EN);
+ }
+ 
+ static void dw_mipi_dsi_video_packet_config(struct dw_mipi_dsi *dsi,
+-- 
+2.39.5
+

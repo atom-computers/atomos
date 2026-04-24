@@ -1,0 +1,58 @@
+maintainer="Affe Null <affenull2345@gmail.com>"
+pkgname=firmware-jolla-c2
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for the Jolla C2"
+url="https://git.abscue.de/linux-mainlining/sailfish-os/device-bsp-s19mps"
+arch="aarch64"
+license="proprietary"
+subpackages="$pkgname-boot $pkgname-wcn"
+makedepends="python3"
+options="!check !archcheck !strip !spdx !tracedeps pmb:cross-native"
+
+_commit="fe6e8d0f5bc55878e6fe659a3ca6cb33141a0690"
+source="
+	$url/-/archive/$_commit/device-bsp-s19mps-$_commit.tar.gz
+	https://storage.abscue.de/private/zImage/sprd-prebuilts-jolla-c2.tar.gz
+"
+builddir="$srcdir/device-bsp-s19mps-$_commit"
+
+build() {
+	python3 convert_ini.py marlin3 bt_config_rf ../prebuilts/odm/firmware/bt_configure_rf.ini bt_config_rf.bin
+	python3 convert_ini.py marlin3 bt_config_pskey ../prebuilts/odm/firmware/bt_configure_pskey.ini bt_config_pskey.bin
+	python3 convert_ini.py marlin3 wifi_board_config ../prebuilts/odm/firmware/wifi_board_config.ini wifi_board_config.bin
+	python3 convert_bootcode.py ../prebuilts/vendor/etc/modem_sp_info.xml pm_bootcode.bin
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+boot() {
+	pkgdesc="Jolla C2 boot-related firmware"
+	cd "$srcdir/prebuilts/"
+
+	_fwdir="$subpkgdir"/boot
+	install -Dm644 boot/fdl1-sign.bin -t "$_fwdir"
+	install -Dm644 boot/lk.bin -t "$_fwdir"
+	install -Dm644 boot/u-boot-spl-16k-ufs-sign.bin -t "$_fwdir"
+}
+
+wcn() {
+	pkgdesc="Jolla C2 WiFi, Bluetooth and GNSS firmware"
+	_fwdir="$subpkgdir"/lib/firmware/postmarketos/sprd
+
+	cd "$srcdir/prebuilts/"
+	install -Dm644 odm/firmware/wcnmodem.bin -t "$_fwdir"
+	install -Dm644 odm/firmware/gnssmodem.bin -t "$_fwdir"
+	install -Dm644 "$builddir"/bt_config_rf.bin -t "$_fwdir"
+	install -Dm644 "$builddir"/bt_config_pskey.bin -t "$_fwdir"
+	install -Dm644 "$builddir"/wifi_board_config.bin -t "$_fwdir"
+	install -Dm644 "$builddir"/pm_bootcode.bin -t "$_fwdir"
+}
+
+sha512sums="
+4d2fd435685a1713763197cafe92dea4313b1f4e9eca2cf7a6ca64a5ef4e56e2448c87404d1416e2d8e7555c26af805c446b8ccc9e3201f3d2d53e9babfa0307  device-bsp-s19mps-fe6e8d0f5bc55878e6fe659a3ca6cb33141a0690.tar.gz
+a7c244dd4757f5da8db11dc028812302170e833d4a5ec0252ae1154240db6ddbcadb4a2835c7edf04003eb7012359227c78c3c36398f672f9f1a1fe619a8a3f5  sprd-prebuilts-jolla-c2.tar.gz
+"

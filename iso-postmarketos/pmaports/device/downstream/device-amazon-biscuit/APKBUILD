@@ -1,0 +1,81 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-amazon-biscuit
+pkgdesc="Amazon Echo Dot (2nd gen)"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-amazon-biscuit
+	mtk-mkimage
+	mkbootimg
+	postmarketos-base
+	alsa-ucm-conf
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	asound.conf
+	99-biscuit-hp-switch.rules
+	pulse-daemon-biscuit.conf
+	pulse-default-biscuit.pa
+	ucm2/init.conf
+	ucm2/HiFi.conf
+	ucm2/mt8163_biscuit.conf
+	led.start
+	led.stop
+"
+
+subpackages="
+	$pkgname-pulseaudio:pulseaudio
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm755 "$srcdir"/led.start "$pkgdir"/etc/local.d/led.start
+	install -Dm755 "$srcdir"/led.stop "$pkgdir"/etc/local.d/led.stop
+
+	# ALSA configs
+	install -Dm644 "$srcdir"/asound.conf "$pkgdir"/etc/asound.conf
+	install -Dm644 -t "$pkgdir"/usr/share/alsa/ucm2/MediaTek/mt8163_biscuit/ \
+		"$srcdir"/init.conf \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/mt8163_biscuit.conf
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/mt-snd-card/
+	ln -s ../../MediaTek/mt8163_biscuit/mt8163_biscuit.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/mt-snd-card/mt-snd-card.conf
+
+	# Speaker/HP switch rule
+	install -Dm644 "$srcdir"/99-biscuit-hp-switch.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/99-biscuit-hp-switch.rules
+}
+
+pulseaudio() {
+	pkgdesc="PulseAudio Configuration Files"
+	install_if="$pkgname=$pkgver-r$pkgrel pulseaudio"
+	install -Dm644 "$srcdir"/pulse-daemon-biscuit.conf \
+		"$subpkgdir"/etc/pulse/daemon.conf.d/daemon-biscuit.conf
+	install -Dm644 "$srcdir"/pulse-default-biscuit.pa \
+		"$subpkgdir"/etc/pulse/default.pa.d/default-biscuit.pa
+}
+
+sha512sums="
+6754ebf7acc1e48cc3eee90e2c63396ef9f3b8595fe248c1a32dbcea61b10f771578806f4e74108b39210f6014043fb9488787430fe942de039113eecab39507  deviceinfo
+947bcd8b3bdbce202671da84af94269cfc63d30e34a8983d7fad7607ba6b064427c72ebe4275a2b5fa3f5a551521dc79030ed1e62ab5f11071a59468ed40998e  kernel-cmdline.conf
+dd379fea44560b3b89dc19521096fd8c019ad69f0d06072ae3b9a591db4178d9268fc38ed2e7371d86c4ff5845c857ca0af6932abe205ea38492cf8dd39fd770  asound.conf
+68cb37bbd1d8c653a7a20fc641b6041e2b2f60825e77f7ef79856d5624c2a41a5bddfdeaba07dec955e91c024e15d3663e30456df1c73571295183942e486fec  99-biscuit-hp-switch.rules
+acc93ffeaa7dc8e57af7432dba2aee5ec339166064d898d0db1c1d8f0ad887fb6ab986168d145b739cabd04e15f59484ec037487511cc1f0a0e31ab94e6189f7  pulse-daemon-biscuit.conf
+d66d6f2129f8aef4449137a1506fb3b3a1275c98502238537ac4dd0c174145706bac971e7e100d3599c9b8aa9c62319c302884d39aad5ba99c9bdcbe1e54bc23  pulse-default-biscuit.pa
+5f46b2f7f9dbbd445b6a70f8ad7e4753bd105e802a05b8693f38283f6705ce233f4173db3cdd945eaf54caaa08f8d9b8a35266186ad72edcdd34e37901121104  init.conf
+e92f07b643ce6e26259038a7b3b1f4a2ac7e6113717b0384fe4cb33946bf6a0e45e6609a5baf7ab2de8c941159e7f11610101609647e817165b07fca72be6e51  HiFi.conf
+c93349fc1fb797ecc8bc7756837c970aa83c7d8cf281e5afd8f0a243ea2f3c7772a3f383a3deeecfb140954bbedb34d00b3ae0172ae7814b14af0fcac71355a5  mt8163_biscuit.conf
+a72f042f5afdb4d47d22c46906cee4d84a23584bc719bfec99678251a6e7784fdfb67c284ecafd11721f7c90783a93283957c43ad845a1ff586b0610234523a3  led.start
+d10a06899a48a090042047a9b4917604a0d408701f6e15fc559a5f8444d61f91a3b6c201cbdb227ae0f19d1dff3424e40c41e32e2e91f37b9a69f6e0bd67eb30  led.stop
+"

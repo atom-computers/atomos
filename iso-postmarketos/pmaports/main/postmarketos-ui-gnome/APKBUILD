@@ -1,0 +1,44 @@
+# Reference: https://postmarketos.org/uipkg
+# Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
+# Co-Maintainer: Achill Gilgenast <achill@achill.org>
+maintainer="Newbyte <newbyte@postmarketos.org>"
+pkgname=postmarketos-ui-gnome
+pkgver=4
+pkgrel=3
+pkgdesc="(Wayland) Gnome Shell"
+url="https://gnome.org/"
+# armhf blocked by gnome-shell -> gjs -> mozjs102
+arch="noarch !armhf"
+license="GPL-3.0-or-later"
+depends="
+	!gnome-settings-daemon-mobile
+	!gnome-shell-mobile
+	!gnome-shell-mobile-schemas
+	!mutter-mobile
+	!mutter-mobile-schemas
+	gdm
+	gnome
+	postmarketos-base-ui-gnome
+	xdg-desktop-portal-gnome
+	"
+_pmb_recommends="
+	gnome-calendar
+	gnome-disk-utility
+	gnome-extensions-app
+	gnome-system-monitor
+	snapshot
+	"
+subpackages="$pkgname-openrc"
+options="!check pmb:systemd"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="gdm-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}

@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+description="Set up media controller pipeline"
+
+depend()
+{
+	after modules
+}
+
+start()
+{
+	media-ctl --set-v4l2 "'s5p-mipi-csis.1':0[fmt:VYUY8_2X8/1600x1200]"
+	media-ctl --set-v4l2 "'s5p-mipi-csis.1':1[fmt:VYUY8_2X8/1600x1200]"
+	media-ctl --set-v4l2 "'FIMC.0':0[fmt:VYUY8_2X8/1600x1200]"
+}

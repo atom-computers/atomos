@@ -1,0 +1,65 @@
+# Archived: unmaintained kernel package, only for testing. Use mainline kernel (linux-postmarketos-qcom-msm8956)
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lineageos_kenzo_defconfig
+
+pkgname=linux-xiaomi-kenzo-downstream
+pkgver=3.10.105
+pkgrel=0
+pkgdesc="Xiaomi Redmi Note 3 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-kenzo"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_xiaomi_msm8956"
+_commit="92430f1a110b9b49e69fb1d3bde81c0f048d0282"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	01_fix_gcc6_errors.patch
+	02_fix_msm_dba.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	msg "Combine DTB and Image.gz"
+	msg "(Because QCOM's custom Makefile builds into the wrong direcotry)"
+	cat "$builddir/arch/$_carch/boot/Image.gz" \
+		"$builddir/arch/arm/boot/dts/kenzo-msm8956-mtp.dtb" \
+		> "$builddir/arch/$_carch/boot/Image.gz-dtb"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+c2d57468544d9b96e7f55d8358419fecdbbb75ae02e08fb3e008a882750855966d989a79e058888bcdd5542f322fd26ac217cd73c316768183b496f108089b43  linux-xiaomi-kenzo-downstream-92430f1a110b9b49e69fb1d3bde81c0f048d0282.tar.gz
+412fd5ab87a01b5a525f4bb31c6541c27c95ed81dbc889a49d15a75493b43114b77db265ce8bede25e094fe0e7deb551edb741b99255441a0e5278f2f608b7de  config-xiaomi-kenzo.aarch64
+972e98523d6ef06342e69a09e979bdd86904cf7f9a843b519b37791e531b680182564a2ab537c94629c3589f4e775b2c39de04c64e210a0f8b6f10745c3596f1  01_fix_gcc6_errors.patch
+7e765cb696fa8c3dfbc305b05cbf1fad85fb9572613d5391e945341dae5974a745f4906c795dc841e5562b19ab77d5257f9741e514af2c2573aa4bb8b262ce51  02_fix_msm_dba.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+"

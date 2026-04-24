@@ -1,0 +1,107 @@
+maintainer="Richard Acayan <mailingradian@gmail.com>"
+pkgname=firmware-google-sargo
+pkgver=220505.008
+pkgrel=10
+pkgdesc="Proprietary firmware blobs from the Google Pixel 3a factory image"
+url="https://github.com/TheMuppets/proprietary_vendor_google_sargo"
+arch="aarch64"
+license="proprietary"
+makedepends="pil-squasher sscregistrygen zstd"
+_commit="c631f0f2aa24ea60cfb505d327cd4ae56ca27f16"
+_modemfw_commit="34bbe2c27f35537f13747c9eba67ece6ae141806"
+_device_android_commit="a1cd8bf2603569b8b3b450b9d7b5b595eb549df0"
+source="
+	https://github.com/TheMuppets/proprietary_vendor_google_sargo/archive/$_commit.tar.gz
+	https://gitlab.com/flamingradian/firmware-google-sargo-modem/-/archive/$_modemfw_commit/firmware-google-sargo-modem-$_modemfw_commit.tar.gz
+	https://raw.githubusercontent.com/LineageOS/android_device_google_bonito/$_device_android_commit/acdbdata/OEM/sdm670-intcodec-s4-snd-card/Global_cal.acdb
+	0001-sargo-set-mount-matrix.patch
+"
+builddir="$srcdir/proprietary_vendor_google_sargo-$_commit"
+options="!check !archcheck !strip !tracedeps textrels pmb:cross-native"
+_modemfw_dir="$srcdir/firmware-google-sargo-modem-$_modemfw_commit"
+subpackages="
+	$pkgname-hexagon-nn:hexagon_nn
+"
+
+build() {
+	pil-squasher a615_zap.mbn proprietary/vendor/firmware/a615_zap.mdt
+	pil-squasher ipa_fws.mbn proprietary/vendor/firmware/ipa_fws.mdt
+
+	# This is an OEM device. The SoC ID for SDM670 is 336.
+	mkdir sensors-registry
+	sscregistrygen -p OEM -s 336 proprietary/vendor/etc/sensors/config sensors-registry/
+
+	# Compress kernel-loaded firmware
+	zstd a615_zap.mbn
+	zstd ipa_fws.mbn
+
+	zstd proprietary/vendor/firmware/adsp.mbn
+	zstd proprietary/vendor/firmware/cdsp.mbn
+	zstd proprietary/vendor/firmware/venus.mbn
+	zstd proprietary/vendor/firmware/wlanmdsp.mbn
+
+	zstd "$_modemfw_dir"/modemfw/mba.mbn
+	zstd "$_modemfw_dir"/modemfw/modem.mbn
+}
+
+package() {
+	install -Dm644 "$builddir"/a615_zap.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/a615_zap.mbn.zst
+	install -Dm644 "$builddir"/ipa_fws.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/ipa_fws.mbn.zst
+
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/adsp.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/adsp.mbn.zst
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/adspr.jsn \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/adspr.jsn
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/adspua.jsn \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/adspua.jsn
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/cdsp.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/cdsp.mbn.zst
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/cdspr.jsn \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/cdspr.jsn
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/modemuw.jsn \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/modemuw.jsn
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/venus.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/venus.mbn.zst
+	install -Dm644 "$builddir"/proprietary/vendor/firmware/wlanmdsp.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/wlanmdsp.mbn.zst
+
+	install -Dm644 "$_modemfw_dir"/modemfw/mba.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/mba.mbn.zst
+	install -Dm644 "$_modemfw_dir"/modemfw/modem.mbn.zst \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/modem.mbn.zst
+	install -Dm644 "$_modemfw_dir"/modemfw/modemr.jsn \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/modemr.jsn
+
+	mkdir -p "$pkgdir"/usr/share/qcom/sdm670/Google/sargo/sensors/
+	cp -r "$builddir"/sensors-registry \
+	      "$pkgdir"/usr/share/qcom/sdm670/Google/sargo/sensors/registry
+	ln -s sargo "$pkgdir"/usr/share/qcom/sdm670/Google/bonito
+	ln -s sargo "$pkgdir"/usr/share/qcom/sdm670/Google/b4s4-sdm670
+
+	install -Dm644 "$srcdir"/Global_cal.acdb \
+		       "$pkgdir"/lib/firmware/qcom/sdm670/sargo/Global_cal.acdb
+}
+
+hexagon_nn() {
+	pkgdesc="Proprietary firmware blobs from the Google Pixel 3a factory image (AI acceleration on CDSP)"
+
+	install -Dm644 "$builddir"/proprietary/vendor/dsp/cdsp/fastrpc_shell_3 \
+		       "$subpkgdir"/usr/share/qcom/sdm670/Google/sargo/dsp/cdsp/fastrpc_shell_3
+	install -Dm644 "$builddir"/proprietary/vendor/lib/rfsa/adsp/libhexagon_nn_skel.so \
+		       "$subpkgdir"/usr/share/qcom/sdm670/Google/sargo/dsp/cdsp/libhexagon_nn_skel.so
+	install -Dm644 "$builddir"/proprietary/vendor/lib/rfsa/adsp/libhexagon_nn_skel.so \
+		       "$subpkgdir"/usr/share/qcom/sdm670/Google/sargo/dsp/cdsp/testsig-0xaff19744.so
+	install -Dm644 "$builddir"/proprietary/vendor/lib/rfsa/adsp/libhexagon_nn_skel.so \
+		       "$subpkgdir"/usr/share/qcom/sdm670/Google/sargo/dsp/cdsp/testsig.so
+
+	touch "$subpkgdir"/usr/share/qcom/sdm670/Google/sargo/dsp/cdsp/oemconfig.so
+}
+
+sha512sums="
+fbbb852405bd521efa4add32136b25f5d07b0671953b05ec66f7b04b6de483269b1e57500f1a723b6b00abb7b9b405e01d14552c686c5c6ffbdb4d0c14f98af0  c631f0f2aa24ea60cfb505d327cd4ae56ca27f16.tar.gz
+53a71c7d51d6277375076dcf7d89c2189ba67272238a8efa89f712238c2474ee777c3b0d749e8e28eeaa8e6bfbbd6eb56949481029d5ca3505cac321ce8963ef  firmware-google-sargo-modem-34bbe2c27f35537f13747c9eba67ece6ae141806.tar.gz
+dc2418dd0a45e0a5ed2e31771f5039d085527e30af9541d4469de7a52071f6a9133d87e00f7697f1379ac1dc201c4f4e8f5031a2eaf27ae5831d35bc06b61578  Global_cal.acdb
+035251fa69d544bf8c39b0ebfbd193f792387d1b063b0a070e33054952db07471287ab56c5e07805f2189671baa2316d387bfa7d682ccfc2ff91dc647a9302e7  0001-sargo-set-mount-matrix.patch
+"

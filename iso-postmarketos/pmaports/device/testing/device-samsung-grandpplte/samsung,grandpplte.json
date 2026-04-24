@@ -1,0 +1,27 @@
+{
+	"name" : "default",
+	"parent-theme": "default",
+	"profiles": [
+		{
+			"name": "full",
+			 "feedbacks": [
+				{
+				  "event-name" : "button-pressed",
+				  "type"       : "VibraRumble",
+				  "duration"   : 40
+				},
+				{
+				  "event-name" : "button-released",
+				  "type"       : "VibraRumble",
+				  "duration"   : 40
+				},
+				{
+				  "event-name" : "window-close",
+				  "type"       : "VibraRumble",
+				  "duration"   : 50
+				}
+			]	
+		}
+	]
+}
+

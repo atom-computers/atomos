@@ -1,0 +1,43 @@
+Replace Solaris-style section flags with GNU equivalent.
+
+The regular version in shared-patches doesn't apply cleanly to this kernel tree,
+so a separate patch is needed.
+diff --git a/arch/arm/boot/compressed/big-endian.S b/arch/arm/boot/compressed/big-endian.S
+index 25ab26f1c6f..f22428e275f 100644
+--- a/arch/arm/boot/compressed/big-endian.S
++++ b/arch/arm/boot/compressed/big-endian.S
+@@ -5,7 +5,7 @@
+  *  Author: Nicolas Pitre
+  */
+ 
+-	.section ".start", #alloc, #execinstr
++	.section ".start", "ax"
+ 
+ 	mrc	p15, 0, r0, c1, c0, 0	@ read control reg
+ 	orr	r0, r0, #(1 << 7)	@ enable big endian mode
+diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+index caddb9d35b7..3ba2ca1b202 100644
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -112,7 +112,7 @@
+ #endif
+ 		.endm
+ 
+-		.section ".start", #alloc, #execinstr
++		.section ".start", "ax"
+ /*
+  * sort out different calling conventions
+  */
+diff --git a/arch/arm/mm/proc-v7.S b/arch/arm/mm/proc-v7.S
+index f649f1c589e..3ec865c11c9 100644
+--- a/arch/arm/mm/proc-v7.S
++++ b/arch/arm/mm/proc-v7.S
+@@ -477,7 +477,7 @@ cpu_elf_name:
+ 	.size	cpu_elf_name, . - cpu_elf_name
+ 	.align
+ 
+-	.section ".proc.info.init", #alloc, #execinstr
++	.section ".proc.info.init", "ax"
+ 
+ 	.type   __v7_ca9mp_proc_info, #object
+ __v7_ca9mp_proc_info:

@@ -1,0 +1,60 @@
+# Kernel config based on: arch/arm/configs/cyanogen_vivo_defconfig
+
+pkgname=linux-htc-vivo
+pkgver=3.0.101
+pkgrel=7
+pkgdesc="Incredible S kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="htc-vivo"
+url="https://kernel.org"
+license="GPL2"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz gcc6"
+
+# Compiler: this kernel was only tested with GCC6. Feel free to make a merge
+# request if you find out that it is booting working with newer GCCs as
+# well. See <https://postmarketos.org/vendorkernel> for instructions.
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="T.E.S.C.O-kernel_vivo"
+_commit="da3fd71eec35410f38808712d0edc0c5a6a42dda"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/szezso/$_repository/archive/$_commit.tar.gz
+	$_config
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_use-static-inline-in-ftrace.h.patch
+	04-fix-redefinition-of-unregister_con_driver.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="
+17164b38f2ff8683d8e304a6f8b768f3d1851d65105505aa80d98769dbf132508db427cd55aa4da76a4650bd7ea108f674fec87fa432e553f0c27e029db312e8  linux-htc-vivo-da3fd71eec35410f38808712d0edc0c5a6a42dda.tar.gz
+2a4caeee07935f1def0802dfca4a5eda1a4d7af040c187be70d7aeb45ab037ef6865eb6b2ae2bc03fab8cf340d660d93321866a99e23706ceb1fea622528737a  config-htc-vivo.armhf
+7be03a9e78b7ac330a54b1f00509caa0621a95c0c55901878ad757f9dd69cc05ba2c8b5ea987063ae1224f92c4d090d515fa5d369e7755181a4871b0d0f82881  02_gpu-msm-fix-gcc5-compile.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  03_use-static-inline-in-ftrace.h.patch
+1005df312b50f9c657fbc75192a2a228da35ed63f838ae259cd5ffdd62de9d11d9e1bd6d704ed1a6fe473f77dc906902d17b4b7e9896ad6e5416b3cb8f369007  04-fix-redefinition-of-unregister_con_driver.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+"

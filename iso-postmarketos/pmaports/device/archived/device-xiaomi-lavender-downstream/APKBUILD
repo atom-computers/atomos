@@ -1,0 +1,27 @@
+# Archived: Downstream port, only for testing. Use mainline port (xiaomi-lavender)!
+# This kernel is mostly used for bringing up new features on mainline, thus archived
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-lavender-downstream
+pkgdesc="Xiaomi Redmi Note 7 downstream"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="linux-xiaomi-lavender-downstream mkbootimg msm-fb-refresher postmarketos-base"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+3b235062cd3bc9883c636d227fbcbc1a8c01a8e8539ee8f0fedb0313314d45ba65bcf550a12686d1cd9c6b746838e4c5f9484f3e3ebb2fdc57efccfa194911e5  deviceinfo
+3081e7be4e701b7787cabf91fb1e9964be97c555ab9e5d8210da500689f78624f41f261cf7ab51c6a058ab25e2380660a0779d54b16725bfbc690044be8d48e1  kernel-cmdline.conf
+"

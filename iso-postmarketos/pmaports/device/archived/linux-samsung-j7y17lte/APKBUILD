@@ -1,0 +1,85 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on the stock Android one
+pkgname=linux-samsung-j7y17lte
+pkgver=3.18.140
+pkgrel=0
+pkgdesc="Samsung Galaxy J7 2017 kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j7y17lte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	dtbtool-exynos
+	flex
+	gcc4
+	openssl-dev
+	perl
+"
+
+if [ "${CC:0:5}" != "gcc4-" ]; then
+	CC="gcc4-$CC"
+	HOSTCC="gcc4-gcc"
+	CROSS_COMPILE="gcc4-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="linux-3.18.140-kernel-source"
+_commit="6fa3aaf35a35ee3acadacf158a364acc47ab6653"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://gitlab.com/j7-pro-unofficial-development/$_repository/-/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	zram-zs-create-pool-null.patch
+	decon-fb-colors.patch
+	proc_S-remove-text-init-line.patch
+	disable-fimc-is2.patch
+	disable-charging-bootmode.patch
+	fix-usb-gadget-random-mac.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="."
+
+prepare() {
+	export ANDROID_MAJOR_VERSION=q
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	export ANDROID_MAJOR_VERSION=q
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *j7y17lte*.dtb)
+}
+
+package() {
+	export ANDROID_MAJOR_VERSION=q
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+f124bce4d5e2108c07b54f575f452ee61e530e195869611e0059b7824bf60a75911847efc83deb16ddf03c082301bc92b688b9806a9efadbfb0a6b94c58dc631  linux-samsung-j7y17lte-6fa3aaf35a35ee3acadacf158a364acc47ab6653.tar.gz
+247232a8c876a33bb0c608277e748e9b4f64035c2508e3153f83847b7a6db3bcbcdb62d2efa911d8d1146b0d7c598eb723c5176c6502078b67e869be50f93aa7  config-samsung-j7y17lte.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+3f65a690e48f913fcb980718fae4dc03c29a6dc86eecb1e2af644488ad415de326a61d840399fb69915cbc5d56d5586f2df2287b3e7323a2927ae73a3b1b1373  zram-zs-create-pool-null.patch
+5bd204239a5daff9f990757178398707ae5ec64f823ed9ec72a8d50ebe6d5f0a3cc9743e0d775094da4b3a7566f1ccceb56f39f3b0234d08ca05e537d86271ec  decon-fb-colors.patch
+99946ae80a642bb3daa34f55156c3803a813d60cc3863da422925f0a9a9564db66d3065633944080982b89d6448be40195687af68bfe65a34d870cd2eeba0aec  proc_S-remove-text-init-line.patch
+f429f40a8195e81d1c3ef86a5736bb29e09f3daaa2f415b9a992fb4dc8011c961c7b48fc97e08c3180ebacf8c2b97a5560022a9340eb44464e8ef98f3758e19e  disable-fimc-is2.patch
+32e51c6171bcb72b15f5f11a9c9b3279e03e630f2ea6d14b66fbfdd8a8c1587bdb7e88698197e9a81e05c47dba08d13c1ff4a5e4692d14b042f07dd2006c1cc0  disable-charging-bootmode.patch
+0d56ba508408dc31961ad688f7fd960b0008851fd5729088658095417781b99962740e0c64d162a26f8389e4b4dc88e291252e7935e896fc70bf73c23150caea  fix-usb-gadget-random-mac.patch
+"

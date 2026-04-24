@@ -1,0 +1,9 @@
+/dts-v1/;
+/ {
+	memory {
+		/* We expect the bootloader to fill in the size */
+		reg = <0 0 0 0>;
+	};
+
+	chosen { };
+};

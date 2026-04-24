@@ -1,0 +1,44 @@
+diff --git a/Makefile b/Makefile
+index 849aba7c4..5dc9bfc70 100644
+--- a/Makefile
++++ b/Makefile
+@@ -15,6 +15,8 @@ NAME = Blurry Fish Butt
+ # o Look for make include files relative to root of kernel src
+ MAKEFLAGS += -rR --include-dir=$(CURDIR)
+ 
++export ANDROID_MAJOR_VERSION=o
++
+ # Avoid funny character set dependencies
+ unexport LC_ALL
+ LC_COLLATE=C
+@@ -256,7 +258,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ export KBUILD_BUILDHOST := $(SUBARCH)
+ ARCH		?= $(SUBARCH)
+-CROSS_COMPILE	?=$(srctree)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
++CROSS_COMPILE	?=
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+@@ -302,7 +304,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
+ 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
+ 	  else echo sh; fi ; fi)
+ 
+-HOSTCC       = gcc
++HOSTCC       = ccache gcc
+ HOSTCXX      = g++
+ HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
+ HOSTCXXFLAGS = -O2
+diff --git a/firmware/Makefile b/firmware/Makefile
+index be4d8f834..dfed7f0b0 100644
+--- a/firmware/Makefile
++++ b/firmware/Makefile
+@@ -171,7 +171,7 @@ fw-shipped-$(CONFIG_TOUCHSCREEN_IST3038H) += tsp_imagis/ist3038h_a40.fw tsp_imag
+ fw-shipped-$(CONFIG_TOUCHSCREEN_HIMAX_INCELL) += tsp_himax/hx83112a_m20lte.fw tsp_himax/hx83102d_a20e.fw tsp_himax/hx83102d_a20e_al.fw
+ fw-shipped-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET) += tsp_himax/hx83102p_gta4s.fw
+ 
+-TSPFIRMWARE_DIRECTORY = firmware/tsp_zinitix
++TSPFIRMWARE_DIRECTORY = $(srctree)/firmware/tsp_zinitix
+ ifeq ($(shell test -d $(TSPFIRMWARE_DIRECTORY) && echo yes),yes)
+ fw-shipped-$(CONFIG_TOUCHSCREEN_ZINITIX_ZT75XX) += tsp_zinitix/zt7538_xcover4s.fw
+ fw-shipped-$(CONFIG_TOUCHSCREEN_ZINITIX_ZT75XX_TCLM) += tsp_zinitix/zt7548_a6.fw tsp_zinitix/zt7548_feel2.fw tsp_zinitix/zt7548_a40.fw tsp_zinitix/zt7548_a20.fw tsp_zinitix/zt7548_a40s.fw tsp_zinitix/zt7548_m10s.fw

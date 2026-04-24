@@ -1,0 +1,41 @@
+# Co-Maintainer: Joel Selvaraj <foss@joelselvaraj.com>
+# Co-Maintainer: Casey Connolly <kcxt@postmarketos.org>
+maintainer="Victoria Brekenfeld <postmarketos@drakulix.de>"
+pkgname=firmware-google-blueline
+pkgver=1
+pkgrel=1
+pkgdesc="Firmware for Google Pixel 3 (blueline)"
+url="https://gitlab.com/phodina/firmware-google-blueline"
+# Suggested by Caleb as it has working Wifi
+url="https://gitlab.com/sdm845-mainline/firmware-google-pixel3"
+arch="aarch64"
+depends="linux-firmware-qcom linux-firmware-ath10k"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="7deb5f8e0b0499a80ea85dfc7941351c77e7738c"
+
+source="firmware-google-blueline-$_commit.tar.gz::https://gitlab.com/phodina/firmware-google-blueline/-/archive/$_commit/firmware-google-blueline-$_commit.tar.gz
+	firmware.files"
+
+builddir="$srcdir/firmware-google-blueline-$_commit"
+
+package() {
+
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		install -Dm644 "$_i" "$pkgdir/$_i"
+	done < "$srcdir/firmware.files"
+
+	# TODO: Do we need these? If so put them into correct paths and into
+	# NFC/Secure Element firmware
+	#install -Dm644 misc/pn557.bin "$pkgdir/lib/firmware/postmarketos/"
+	# Haptic driver firmware
+	#install -Dm644 misc/cs40l20.bin "$pkgdir/lib/firmware/postmarketos/"
+	# Haptic driver firmware
+	#install -Dm644 misc/drv2624.bin "$pkgdir/lib/firmware/postmarketos/"
+}
+
+sha512sums="
+a556672e5c463a6421c97da679819e8a7d327194d56f7c02eac03dbbb9d34117331a8bdcb71e0e9fd6b965129ae0788db76d8c34c436a26bf5e030e57d01fab7  firmware-google-blueline-7deb5f8e0b0499a80ea85dfc7941351c77e7738c.tar.gz
+4fb96f0cda7cac67bb31afdb86fbc6d587d51318fc0b377f37af794423e185bdcba5304670cc53bd618cf8839db6cc1ed7a1d84ba149df817bc2e345b2787694  firmware.files
+"

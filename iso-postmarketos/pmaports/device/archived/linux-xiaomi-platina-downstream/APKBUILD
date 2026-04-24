@@ -1,0 +1,77 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/platina_defconfig
+maintainer="Molly Sophia <mollysophia379@gmail.com>"
+pkgname=linux-xiaomi-platina-downstream
+pkgver=4.4.296
+pkgrel=0
+pkgdesc="Xiaomi Mi 8 Lite kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-platina"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev openssl-dev gcc6"
+
+# Compile with gcc6, kernel does not boot when built with newer versions
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+_repourl="https://github.com/LineageOS"
+_repository="android_kernel_xiaomi_sdm660"
+_commit="82e44f01405d6fcccef53c5d2c95cf2fbbda9075"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::$_repourl/$_repository/archive/$_commit.tar.gz
+	$_config
+	0001-Use-relative-includes.patch
+	0002-Fix-TRACE_INCLUDE_PATH-paths.patch
+	0003-Add-config-option-to-fix-bootloader-cmdline-args.patch
+	0005-Adds-and-sets-BGRA-as-default.patch
+	0006-mdss-panel-to-fb-var.patch
+	0008-Revert-tty-check-before-stopping-kthread.patch
+	0009-Revert-tty-move-tty_port-workqueue-to-be-a-kthread.patch
+	0010-Revert-tty-add-tty_port_set_policy-function.patch
+	0011-Revert-msm_serial_hs-make-the-Bluetooth-tty-thread-R.patch
+	fix-macro-declare_usb_function.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" $_carch $_flavor
+	# External modules install
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_PATH="$pkgdir" modules_install
+}
+
+sha512sums="
+1e7f7ef9629aa72544c76ab941c79a283639dc744e4b88034d6b5787dbbb00073cc65ef846fa8a6c1f70168a595c267b7497d1e9ab4243ef1dd0f06e62ce06ab  linux-xiaomi-platina-downstream-82e44f01405d6fcccef53c5d2c95cf2fbbda9075.tar.gz
+9cd764f6b25de99f044876a076d546cc989ab13a72484c3e54ef187b99760d9e7b2847a05bca3cb3bd274044f374c750ef33781d4d6599792350d0dee2f33e3f  config-xiaomi-platina.aarch64
+9f1b27e523675ecaafd0ffd884e3e8d0fe9b0bf78b09b5fe044a5d5c9888a86fb0007aa9d90118f0b022a4ace62c5be236097df3bb67a3207a24a766d0907c33  0001-Use-relative-includes.patch
+a8713d22404a5e2c0d2add3deb4cb033e972bd1983e10f1557d4de640c1329af50be2bfd92dc3cf76df711a6b4a422b920da76c2d6c4435e3624c85f7d07ae52  0002-Fix-TRACE_INCLUDE_PATH-paths.patch
+9ce867c4254b537ef5d2485780c26b72da8a3a8767ba71557f3b48d6c550e0e14c8c3e575b31bf65d2878f08a8a4926e48a1c2f1be534bf80a7a57f58313b0fd  0003-Add-config-option-to-fix-bootloader-cmdline-args.patch
+f2a97a9500b6155a11f2341a8fd4b083ceb25a17d656c7975e34b9f3d8bacb495ae687f823db5fd07ddee27b2d95021f193bfadb5274185334255cda12bc85ce  0005-Adds-and-sets-BGRA-as-default.patch
+d5b868c64b8ebddcf74cb3aa478f30f0897af1e14e4fc42d977921104a6c568cc0bf36fc8a3b0f538cd3ca2ebf59244fdf23186a903259e5acc14d1c4ef4ccc3  0006-mdss-panel-to-fb-var.patch
+1a8cb6ed2cc9b81815160ec990c16385cbe94d71e1607c5968c24a5fa653128fc3e25dfdac861b03faa163d612251814d4c59f4c083258c0d9964c74504c462d  0008-Revert-tty-check-before-stopping-kthread.patch
+892a5414647ba609741382bea12de9e2731481fd109bc8febcf77210e1a8d672f22588b5086f27ec32d87b9aea1b0ab1a9e0556f7bd11ddcdfd6ab8b6a1904b0  0009-Revert-tty-move-tty_port-workqueue-to-be-a-kthread.patch
+94d8c6a9009fca6484d12cef0698b6e219a09bd82b9ed20eb109467f141514aa9f418988470e658ab340710fb910337645cc772ebe2e59547d329e0c35c9a2a6  0010-Revert-tty-add-tty_port_set_policy-function.patch
+89401939fbedfe4719de4706a09702504a92e171806788e597513b7dfca763f4a345895f963b300840fa126c628b43dc3836cf5b3958667b1e6993c1ef0e973e  0011-Revert-msm_serial_hs-make-the-Bluetooth-tty-thread-R.patch
+8b3934e3c4115e81ac40a3c8022f3134cd89133f7569557ca857b4fd514078c4898b2ba3427986936d029874903711d04d7757d5a87bcb89137073128e51e8f5  fix-macro-declare_usb_function.patch
+"

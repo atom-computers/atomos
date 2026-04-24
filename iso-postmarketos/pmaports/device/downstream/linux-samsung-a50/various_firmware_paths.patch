@@ -1,0 +1,65 @@
+diff --git a/arch/arm64/boot/dts/exynos/exynos9610-erd9610.dts b/arch/arm64/boot/dts/exynos/exynos9610-erd9610.dts
+index 4e72536ac..771e51778 100644
+--- a/arch/arm64/boot/dts/exynos/exynos9610-erd9610.dts
++++ b/arch/arm64/boot/dts/exynos/exynos9610-erd9610.dts
+@@ -27,7 +27,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ram root=/dev/ram0 clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=samsungexynos9610 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/vendor/firmware ecd_setup=disable reserve-fimc=0xffffff80fa000000 pmic_info=0x3";
++		bootargs = "console=ram root=/dev/ram0 clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=samsungexynos9610 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/usr/lib/firmware/postmarketos/vendor-firmware ecd_setup=disable reserve-fimc=0xffffff80fa000000 pmic_info=0x3";
+ 		linux,initrd-start = <0x84000000>;
+ 		linux,initrd-end = <0x841FFFFF>;
+ 	};
+diff --git a/arch/arm64/boot/dts/exynos/exynos9610-universal9610.dts b/arch/arm64/boot/dts/exynos/exynos9610-universal9610.dts
+index eadc27822..356a342fe 100644
+--- a/arch/arm64/boot/dts/exynos/exynos9610-universal9610.dts
++++ b/arch/arm64/boot/dts/exynos/exynos9610-universal9610.dts
+@@ -37,7 +37,7 @@
+ 			};
+ 
+ 			chosen {
+-				bootargs = "console=ram skip_initramfs rootwait ro init=/init clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=exynos9610 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/vendor/firmware ecd_setup=disable reserve-fimc=0xffffff80fa000000 pmic_info=0x3";
++				bootargs = "console=ram skip_initramfs rootwait ro init=/init clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=exynos9610 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/usr/lib/firmware/postmarketos/vendor-firmware ecd_setup=disable reserve-fimc=0xffffff80fa000000 pmic_info=0x3";
+ 				linux,initrd-start = <0x84000000>;
+ 				linux,initrd-end = <0x841FFFFF>;
+ 			};
+diff --git a/arch/arm64/boot/dts/exynos/exynos9611-universal9611.dts b/arch/arm64/boot/dts/exynos/exynos9611-universal9611.dts
+index 51e7ee21e..a8cdf52a6 100644
+--- a/arch/arm64/boot/dts/exynos/exynos9611-universal9611.dts
++++ b/arch/arm64/boot/dts/exynos/exynos9611-universal9611.dts
+@@ -36,7 +36,7 @@
+ 			};
+ 
+ 			chosen {
+-				bootargs = "console=ram skip_initramfs rootwait ro init=/init clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=exynos9611 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/vendor/firmware ecd_setup=disable reserve-fimc=0xffffff80fa000000 pmic_info=0x3";
++				bootargs = "console=ram skip_initramfs rootwait ro init=/init clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=exynos9611 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/usr/lib/firmware/postmarketos/vendor-firmware ecd_setup=disable reserve-fimc=0xffffff80fa000000 pmic_info=0x3";
+ 				linux,initrd-start = <0x84000000>;
+ 				linux,initrd-end = <0x841FFFFF>;
+ 			};
+diff --git a/arch/arm64/boot/dts/samsung/exynos9610-voguelte_common.dtsi b/arch/arm64/boot/dts/samsung/exynos9610-voguelte_common.dtsi
+index c2fc98e8c..131a219cb 100644
+--- a/arch/arm64/boot/dts/samsung/exynos9610-voguelte_common.dtsi
++++ b/arch/arm64/boot/dts/samsung/exynos9610-voguelte_common.dtsi
+@@ -51,7 +51,7 @@
+ 			};
+ 
+ 			chosen {
+-				bootargs = "console=ram skip_initramfs rootwait ro init=/init clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=exynos9610 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/vendor/firmware ecd_setup=disable reserve-fimc=0xffffff80f9fe0000 pmic_info=0x3 epx_activate=true";
++				bootargs = "console=ram skip_initramfs rootwait ro init=/init clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=exynos9610 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/usr/lib/firmware/postmarketos/vendor-firmware ecd_setup=disable reserve-fimc=0xffffff80f9fe0000 pmic_info=0x3 epx_activate=true";
+ 				linux,initrd-start = <0x84000000>;
+ 				linux,initrd-end = <0x841FFFFF>;
+ 			};
+diff --git a/drivers/sensorhub/ssp_firmware.c b/drivers/sensorhub/ssp_firmware.c
+index 41233bbe0..a829771b2 100644
+--- a/drivers/sensorhub/ssp_firmware.c
++++ b/drivers/sensorhub/ssp_firmware.c
+@@ -32,7 +32,7 @@ enum fw_type {
+ };
+ 
+ //#define SUPPORT_SPU_FW
+-#define UPDATE_BIN_PATH	   "/vendor/firmware/shub.bin"
++#define UPDATE_BIN_PATH	   "/usr/lib/firmware/postmarketos/vendor-firmware/shub.bin"
+ #define UPDATE_BIN_FW_NAME "shub.bin"
+ 
+ #ifdef SUPPORT_SPU_FW

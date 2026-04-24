@@ -1,0 +1,13 @@
+diff --git a/drivers/platform/msm/ipa/ipa_v3/ipa.c b/drivers/platform/msm/ipa/ipa_v3/ipa.c
+index ce536940a3bc..ea9f19880eb5 100644
+--- a/drivers/platform/msm/ipa/ipa_v3/ipa.c
++++ b/drivers/platform/msm/ipa/ipa_v3/ipa.c
+@@ -5934,7 +5934,7 @@ static ssize_t ipa3_write(struct file *file, const char __user *buf,
+ 	if (sizeof(dbg_buff) < count + 1)
+ 		return -EFAULT;
+ 
+-	missing = copy_from_user(dbg_buff, buf, count);
++	missing = copy_from_user(dbg_buff, buf, sizeof(buf));
+ 
+ 	if (missing) {
+ 		IPAERR("Unable to copy data from user\n");

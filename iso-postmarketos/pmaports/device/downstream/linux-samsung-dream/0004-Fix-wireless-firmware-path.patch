@@ -1,0 +1,34 @@
+From 59c9643809d98c6d9f458a57c8fecdd891bc22d9 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 23 Jun 2025 16:19:45 +0200
+Subject: [PATCH] Fix wireless firmware path
+
+---
+ drivers/net/wireless/bcmdhd4361/dhd.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd4361/dhd.h b/drivers/net/wireless/bcmdhd4361/dhd.h
+index df9f668aa1c8..77cdb50b49bb 100644
+--- a/drivers/net/wireless/bcmdhd4361/dhd.h
++++ b/drivers/net/wireless/bcmdhd4361/dhd.h
+@@ -376,7 +376,7 @@ enum dhd_op_flags {
+ #if defined(CUSTOMER_HW4) && defined(PLATFORM_SLP)
+ #define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/bcmdhd_clm.blob"
+ #else
+-#define CONFIG_BCMDHD_CLM_PATH "/etc/wifi/bcmdhd_clm.blob"
++#define CONFIG_BCMDHD_CLM_PATH "/lib/firmware/postmarketos/bcmdhd_clm.blob"
+ #endif /* CUSTOMER_HW4 && PLATFORM_SLP */
+ #endif /* CONFIG_BCMDHD_CLM_PATH */
+ #define WL_CCODE_NULL_COUNTRY  "#n"
+@@ -2369,7 +2369,7 @@ extern char fw_path2[MOD_PARAM_PATHLEN];
+ #elif (ANDROID_PLATFORM_VERSION == 7)
+ #define VENDOR_PATH "/system"
+ #elif (ANDROID_PLATFORM_VERSION >= 8)
+-#define VENDOR_PATH "/vendor"
++#define VENDOR_PATH ""
+ #endif /* ANDROID_PLATFORM_VERSION < 7 */
+ #else
+ #define VENDOR_PATH ""
+-- 
+2.50.0
+

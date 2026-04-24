@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-w7
+pkgdesc="LG Optimus L90"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-lg-w7
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+95821390aa5d1eea2ab5468b0c68984a9beb6101a82270d6c387407f6e97fced633144b57c35670a36f3426f885392beda1278ffd825832e1db913ad4ed968ae  deviceinfo
+7203789386337fc4c255bb3d1fef2906add1f41ee1973ab8ddf9fe5776a1464a32c48e7f9987e0d618d1243030082e57731abe401fb38f332ba5e400a248de64  kernel-cmdline.conf
+"

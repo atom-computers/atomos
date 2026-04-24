@@ -1,0 +1,13 @@
+[Unit]
+Description=Stop pbsplash
+Before=display-manager.service emergency.service rescue.service shutdown-splash.service
+
+[Service]
+RemainAfterExit=yes
+# Prevent systemd from sending final TERM/KILL signals on shutdown/reboot
+SurviveFinalKillSignal=yes
+ExecStart=-/usr/bin/killall pbsplash
+Type=oneshot
+
+[Install]
+WantedBy=graphical.target emergency.target rescue.target halt.target shutdown.target reboot.target

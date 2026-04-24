@@ -1,0 +1,43 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-honami
+pkgdesc="Sony Xperia Z1"
+pkgver=5
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-honami msm-fb-refresher mkbootimg"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-udev
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	90-android-touch-dev.rules
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/90-android-touch-dev.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/90-android-touch-dev.rules
+}
+
+nonfree_firmware() {
+	depends="firmware-sony-rhine"
+	pkgdesc="Wifi firmware"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+a9fc1a7f62017b1c0b119a60fa23e2ece639bbf30c2a7f7029484eebe550b734819e75c789cd45e38cc8f03900db2fd5d7614dec1ca2f9858db2e8245a0d3cd1  deviceinfo
+94b474da990a48717f07c8e59826330dc5a76fdd99f43516e0b4b4b45025e7672288f94d27ca331ed1a77b4e5730f5901e35f9d9604613e4e1998eca58dec390  kernel-cmdline.conf
+1651ac9eda3c97fafe55abe0f0ae429e04f73edcbf2c56aa3259f81837f7adde348bcb385daed05c30cfc61415455a459a917ed3acccbfd9b7a1caa32a851d40  90-android-touch-dev.rules
+"

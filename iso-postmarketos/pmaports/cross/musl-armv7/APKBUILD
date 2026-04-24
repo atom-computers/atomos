@@ -1,0 +1,63 @@
+# Automatically generated aport, do not edit!
+# Generator: pmbootstrap aportgen musl-armv7
+
+# Stub for apkbuild-lint
+if [ -z "$(type -t arch_to_hostspec)" ]; then
+	arch_to_hostspec() { :; }
+fi
+
+maintainer=""
+pkgname=musl-armv7
+pkgver=1.2.6
+pkgrel=2
+arch="x86_64"
+subpackages="musl-dev-armv7:package_dev"
+
+_arch="armv7"
+_mirror="http://dl-4.alpinelinux.org/alpine/"
+
+url="https://musl-libc.org"
+license="MIT"
+options="!check !strip"
+pkgdesc="the musl library (lib c) implementation for $_arch"
+
+_target="$(arch_to_hostspec $_arch)"
+
+source="
+	musl-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-$pkgver-r$pkgrel.apk
+	musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk::$_mirror/edge/main/$_arch/musl-dev-$pkgver-r$pkgrel.apk
+"
+
+package() {
+	mkdir -p "$pkgdir/usr/$_target"
+	cd "$pkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+}
+package_dev() {
+	mkdir -p "$subpkgdir/usr/$_target"
+	cd "$subpkgdir/usr/$_target"
+	# Use 'busybox tar' to avoid 'tar: Child returned status 141'
+	# on some machines (builds.sr.ht, gitlab-ci). See pmaports#26.
+	busybox tar -xf $srcdir/musl-dev-$pkgver-r$pkgrel-$_arch-edge.apk
+	rm .PKGINFO .SIGN.*
+
+	# symlink everything from /usr/$_target/usr/*
+	# to /usr/$_target/* so the cross-compiler gcc does not fail
+	# to build.
+	for _dir in include lib; do
+		mkdir -p "$subpkgdir/usr/$_target/$_dir"
+		cd "$subpkgdir/usr/$_target/usr/$_dir"
+		for i in *; do
+			cd "$subpkgdir/usr/$_target/$_dir"
+			ln -s /usr/$_target/usr/$_dir/$i $i
+		done
+	done
+}
+
+sha512sums="
+a5847eb6b71a52d8b348e8ef09953bf9df858f3d3a141a75bba8db7525a83b3143e7ead4b00bdddffad0a21af6a9c01e4d4c8bb27aa8d69ce13dceb58eb43309  musl-1.2.6-r2-armv7-edge.apk
+01ed9d094bee237e8794678572769ec456709e9f58511be2e301f495518ab82f86ceedc2ad03727fe43925c5e3a5a0f18a1d7b244f57107c3f7593edd14e84c4  musl-dev-1.2.6-r2-armv7-edge.apk
+"

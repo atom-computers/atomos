@@ -1,0 +1,42 @@
+# Archived: Kernel does not build anymore
+pkgname=firmware-mobvoi-skipjack
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for mobvoi-skipjack (Ticwatch C2+)"
+url="https://github.com/ptrcnull/firmware-mobvoi-skipjack"
+arch="armv7"
+license="proprietary"
+subpackages="$pkgname-modem $pkgname-venus $pkgname-wcnss"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+_commit="02d507b1c0d138dc8e57c9ac36e8b9c51f32c635"
+source="$url/archive/$_commit.tar.gz"
+builddir="$srcdir/firmware-mobvoi-skipjack-$_commit"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+modem() {
+	pkgdesc="Ticwatch C2+ (mobvoi-skipjack) modem firmware"
+	install -Dm644 "$builddir"/modem.* -t "$subpkgdir/$_fwdir"
+}
+
+venus() {
+	pkgdesc="Ticwatch C2+ (mobvoi-skipjack) GPU firmware"
+	install -Dm644 "$builddir"/venus.* -t "$subpkgdir/$_fwdir"
+}
+
+wcnss() {
+	depends="wcnss-wlan"
+	pkgdesc="Ticwatch C2+ (mobvoi-skipjack) WiFi/BT firmware"
+	install -Dm644 "$builddir"/wcnss.* -t "$subpkgdir/$_fwdir"
+	install -Dm644 "$builddir"/wlan/prima/WCNSS_* -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="
+c73dddb4748d69abe30a43a839bce81867c91fe7511f04f53861195a5615c283ab932108c9a65e37935aa35586b020e342a85a189057bdbb98ef1dcd9a03cde7  02d507b1c0d138dc8e57c9ac36e8b9c51f32c635.tar.gz
+"

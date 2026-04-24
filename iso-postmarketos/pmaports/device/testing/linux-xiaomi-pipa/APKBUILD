@@ -1,0 +1,105 @@
+maintainer="bluebunny <kalorin.bok084@passinbox.com>"
+_flavor="xiaomi-pipa"
+pkgname=linux-$_flavor
+pkgver=6.19.12
+pkgrel=0
+pkgdesc="Stable kernel for Xiaomi Pad 6"
+arch="aarch64"
+_carch="arm64"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-immutable
+	pmb:kconfigcheck-rust
+"
+makedepends="
+	bison
+	clang
+	clang-libclang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	sed
+	zstd
+"
+
+source="
+	linux-$pkgver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$pkgver.tar.xz
+	config-$_flavor.aarch64
+
+	0001-arm64-dts-qcom-sm8250-xiaomi-pipa-Add-device-tree-fo.patch
+	0002-power-supply-Add-driver-for-Qualcomm-PMIC-fuel-gauge.patch
+	0003-Input-Add-nt36523-touchscreen-driver.patch
+	0004-drm-Add-drm-notifier-support.patch
+	0005-drm-dsi-emit-panel-turn-on-off-signal-to-touchscreen.patch
+	0006-drm-msm-dsi-change-sync-mode-to-sync-on-DSI0-rather-.patch
+	0007-drm-msm-dsi-support-DSC-configurations-with-slice_pe.patch
+	0008-drm-panel-Add-support-for-Novatek-NT36532-panel.patch
+	0009-drivers-media-i2c-ov13b10-add-device-tree-support-an.patch
+	0010-ASoC-codecs-aw88261-add-hacks-for-xiaomi-pipa.patch
+	0011-ASoC-qcom-sm8250-Add-tdm-support.patch
+"
+builddir="$srcdir/linux-$pkgver"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	make modules_install zinstall dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	install -D "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+11660fb73f0be12e6c1a7244c20a95d8ae3562928b42200fc71a50d5e2d2b2e13103fb865ca6023d08578c16b24a71faf22dde0811e623518d9cc8c8b46d3a68  linux-6.19.12.tar.xz
+7bb2e30857420ec372ca8d7293ef17e18ca8c1fabbff55a0aacd6664f8ed4aa5c6ece290353c809d93df22530fd2414fcf70e2a6cf9d16270c4f7029c2771572  config-xiaomi-pipa.aarch64
+269371a23a80491221ae5e012bc1dd2362d4b15b7a6855abb9382b8a064a03cf21f7868006c12549f9a445187d38f0b22342da61bb184744980caf0dce9b23b6  0001-arm64-dts-qcom-sm8250-xiaomi-pipa-Add-device-tree-fo.patch
+b0c3a5918e889b633ead50cc015985286eb48a4999d214320ea67ca26ef3e2b81080547eb89509f23167b6517fc18f36fd020541714c64ce4e7b25959b047e35  0002-power-supply-Add-driver-for-Qualcomm-PMIC-fuel-gauge.patch
+b2b561618e61f4f5da6e078ce4bd8f781508864185ed5d05a6e115ca585c4acae7d93c45d0e524ab512375c7c6f96eb6aff932edeb63fad46aa72cca0c620784  0003-Input-Add-nt36523-touchscreen-driver.patch
+e33f6da08c5707acdbb241cdd8eb25884be0408a3eed450ce37077c41c368e000e49e1b3af03e07ac8458931f7f1f9a5ef61cb5e214a0aae7f7ca48dc5a86925  0004-drm-Add-drm-notifier-support.patch
+54cbb95123b51976255e84be8901fdc5245ee563e2e4a2de53ed058d4c235547406aa3b5d258eb6f876b9c6dd8548e0e5b91e3309d8e968e7af94c0145129e97  0005-drm-dsi-emit-panel-turn-on-off-signal-to-touchscreen.patch
+0281aea87fe9e442e7d47fe6d6d954df9c5dcb9ed683774c5d4619da0d8dac092b93836946dda141b25db71696d8e5244fe0e14161986814b9927171ab39d1ea  0006-drm-msm-dsi-change-sync-mode-to-sync-on-DSI0-rather-.patch
+fa11ce5b211e7b2f7e4bbc81730e68eb2054c25bff6fd168a377602fb42cf9f8e9382d829f85086c1b1f1d1a43159592294ead9c677176137d54fb4c9a51365b  0007-drm-msm-dsi-support-DSC-configurations-with-slice_pe.patch
+b39d83dc782db15e649ec0b923afe9038c6b861a9b2ca930345910ac13dbe94f922f0fb223dc2ab37ed5ba719db97043c6f604cfd1abbbb398ea67a83a3ca468  0008-drm-panel-Add-support-for-Novatek-NT36532-panel.patch
+be2d3d3234ca7fc02a8aa99e423e29e294a494cc52463250ec8df4249dca91605c7070a12fa041e912871a4df04728b061effb5a36e92ecb195e9829acc245a6  0009-drivers-media-i2c-ov13b10-add-device-tree-support-an.patch
+19a1416770cbfd248326fa58d9f6a709210859ba662cfdd7666f7b62cc517c88ff8ed60cf82bc32af75409cc6d47a98aaf467582c793b7ccab4cd69f2616c8cf  0010-ASoC-codecs-aw88261-add-hacks-for-xiaomi-pipa.patch
+7c662b37d6c0ccb90f6d3c82850f70d2df7b22e3eff44ec66a73023a08e0a5b3c81832a956135fe3a4b546f06b0cb63327a002f822a23faa98da2453886267c1  0011-ASoC-qcom-sm8250-Add-tdm-support.patch
+"

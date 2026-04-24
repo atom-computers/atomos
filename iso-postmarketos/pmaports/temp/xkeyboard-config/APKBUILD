@@ -1,0 +1,47 @@
+# Temporary fork for N900 and BlackBerry KEY2
+# * https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config/-/merge_requests/840
+# * https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config/-/merge_requests/856
+maintainer="Paul Sajna <sajattack@postmarketos.org>"
+pkgname=xkeyboard-config
+_pkgver=2.46
+pkgver=9999$_pkgver
+pkgrel=0
+pkgdesc="X keyboard configuration files"
+url="https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config"
+arch="aarch64 armv7"
+license="MIT"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
+depends_dev="$pkgname"
+makedepends="gettext meson perl libxslt"
+checkdepends="gawk"
+source="
+	https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config/-/archive/xkeyboard-config-$_pkgver/xkeyboard-config-xkeyboard-config-$_pkgver.tar.gz
+	0001-re-nokia.patch
+	0002-add-symbols-for-BlackBerry-KEY2-keypad.patch
+	"
+builddir="$srcdir"/xkeyboard-config-xkeyboard-config-$_pkgver
+
+build() {
+	abuild-meson . output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	# apk bug: can't migrate directory -> symlink
+	# https://gitlab.alpinelinux.org/alpine/apk-tools/-/issues/11110
+	rm "$pkgdir"/usr/share/X11/xkb/
+	mv "$pkgdir"/usr/share/xkeyboard-config-2/ "$pkgdir"/usr/share/X11/xkb/
+	ln -s X11/xkb "$pkgdir"/usr/share/xkeyboard-config-2
+}
+
+sha512sums="
+1bf0bd78dd9a8df9f9a1f0fcf949d4d80d281c8beb7395b68040ff46259879471772e373b132dd3caade7565e513d908a19238a8549f9cacfe1f956b48958535  xkeyboard-config-xkeyboard-config-2.46.tar.gz
+88c44ba723dc97fdaba04076fc49ff09c01384b689e93c9b1ab2b7c4547ea88cb64fbd2f203094abe149d4c1ff6efe38529ddf37f97fbbc3a22a714966289775  0001-re-nokia.patch
+5aaf4b72badd86e2a371300eac0eaa741c2f7d221f794fbcd7ab8bd4a626f0a80402993bc45af50760723885079b2836972bc927b99260491e6b2ff9e36b0019  0002-add-symbols-for-BlackBerry-KEY2-keypad.patch
+"

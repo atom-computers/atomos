@@ -1,0 +1,22 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="PINE64 A64-LTS"
+deviceinfo_manufacturer="PINE64"
+deviceinfo_codename="pine64-a64lts"
+deviceinfo_year="2017"
+deviceinfo_dtb="allwinner/sun50i-a64-pine64-lts"
+deviceinfo_arch="aarch64"
+deviceinfo_disable_dhcpd="true"
+
+# Device related
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1024"
+deviceinfo_screen_height="600"
+deviceinfo_getty="ttyS0;115200"
+
+# Bootloader related
+deviceinfo_generate_legacy_uboot_initfs="true"
+deviceinfo_sd_embed_firmware="u-boot/pine64-lts/u-boot-sunxi-with-spl.bin:8"

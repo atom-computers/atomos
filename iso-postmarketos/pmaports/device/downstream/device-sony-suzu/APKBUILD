@@ -1,0 +1,26 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-suzu
+pkgdesc="Sony Xperia X"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base linux-sony-suzu mkbootimg msm-fb-refresher"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+
+sha512sums="
+70b3799173042a1793614e6f0aad5db85bd56bdf9cf0777d27140989230bf20c4b81c4f4729b8328d6770206bc8efe3f543a0c66e751f0db0939b0f27222d851  deviceinfo
+34c878a146ada781655835db2e729bb425904dfbff47176e6a8a174fb98cfd45ed95efeeec51ccf99350024e14e8834e58020f18e6994767fac314b49f822d61  kernel-cmdline.conf
+"

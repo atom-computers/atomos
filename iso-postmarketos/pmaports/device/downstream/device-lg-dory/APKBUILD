@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lg-dory
+pkgver=4
+pkgrel=0
+pkgdesc="LG G Watch"
+url="https://postmarketos.org"
+arch="armhf"
+license="MIT"
+depends="
+	linux-lg-dory
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-udev
+"
+source="
+	90-touchscreen-dev.rules
+	deviceinfo
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 -t "$pkgdir"/usr/lib/udev/rules.d \
+		"$srcdir"/90-touchscreen-dev.rules
+}
+
+sha512sums="
+f52a0bfab7e0067c0837662b5297e6c6d3433a1fc1cbdfaf3000227452d88980b99ac196541fda3bd57fd789580cb4ef96299b24e1bdb277f21f42418fcf17fa  90-touchscreen-dev.rules
+9dd6c1e8b155765c88474790e062e9e8ccfa5265815dc1763d2729b1667b5a351da3fd557ab6ed938d1195133ae2c7933b5b4794eee68144616ea5d20ea6f063  deviceinfo
+"

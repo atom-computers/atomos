@@ -1,0 +1,25 @@
+From b2a755b671d88c34402290d7d769232e01aed350 Mon Sep 17 00:00:00 2001
+From: Ariadne Conill <ariadne@ariadne.space>
+Date: Fri, 25 Jul 2025 01:44:20 -0700
+Subject: [PATCH] Enable -Wtrampolines by default.
+
+---
+ gcc/common.opt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gcc/common.opt b/gcc/common.opt
+index bea1adc0940..e65a575d9f8 100644
+--- a/gcc/common.opt
++++ b/gcc/common.opt
+@@ -829,7 +829,7 @@ Common Var(warn_tautological_compare) Warning LangEnabledBy(C ObjC C++ ObjC++,Wa
+ Warn if a comparison always evaluates to true or false.
+ 
+ Wtrampolines
+-Common Var(warn_trampolines) Warning
++Common Var(warn_trampolines) Init(1) Warning
+ Warn whenever a trampoline is generated.
+ 
+ Wtrivial-auto-var-init
+-- 
+2.50.1
+

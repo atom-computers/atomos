@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Victor Pavlov (vipaoL) <vipaolmail@gmail.com>
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=device-qcom-msm8953
+pkgdesc="Generic device package for various Qualcomm MSM8953/SDM450/SDM632-based devices"
+pkgver=13
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-qcom-msm8953
+	linux-postmarketos-qcom-msm8953
+	lk2nd-msm8953
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	qbootctl
+	soc-qcom-msm8953
+	soc-qcom-msm8953-modem
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-udev
+	device-xiaomi-daisy-fake-goodix:xiaomi_daisy_fake_goodix
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	90-device-xiaomi-daisy.rules
+	61-gmobile-wakeup-lenovo-cd18781y.hwdb
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 61-gmobile-wakeup-lenovo-cd18781y.hwdb \
+		-t "$pkgdir/usr/lib/udev/hwdb.d/"
+	install -Dm644 "$srcdir"/90-device-xiaomi-daisy.rules \
+		-t "$pkgdir/usr/lib/udev/rules.d/"
+}
+
+udev() {
+	pkgdesc="$pkgdesc (udev rules)"
+	install_if="$pkgname=$pkgver-r$pkgrel udev"
+
+	# default_udev isn't used here to allow also installing a udev rule in the
+	# xiaomi_daisy_fake_goodix function
+	amove usr/lib/udev/hwdb.d/61-gmobile-wakeup-lenovo-cd18781y.hwdb
+}
+
+xiaomi_daisy_fake_goodix() {
+	pkgdesc="Calibration data for replacement goodix touch controllers"
+
+	amove usr/lib/udev/rules.d/90-device-xiaomi-daisy.rules
+}
+
+sha512sums="
+fd541b7a48170fce536967ff96ffe5f30ed151490ea8eb618ae2e6b7fd51986e4e7c4229f805d4ae07f22ca58146045085162b1d49866630350f55f0038cc69c  deviceinfo
+97e88eaa9b8e7989a20d2572479fe5d1fe0284de862da11c91b1f347099d5704673837db01a6b0c289fee0a2d7236f64fba31fd6001475f957c23203e34fd6fb  kernel-cmdline.conf
+29986b499f4b45e5112cb650685e9778bbfe6812fe2833d1eccca949323d69714b350ad3b1eaa3c9838f54088c95e7774c58937859685232f06fa18e8eb7fc5b  modules-initfs
+a2608b01b7b6e2dade694af355ff4f0f26cad49cf54bc332c77eb75d19fdc985f7f996fedb72753de447be0391deabf5fcea52406791d1e6e0d165703b63f145  90-device-xiaomi-daisy.rules
+17af1dabd211ec942bd8cbe63743c874ef87f0613ae08b8de3f77bdb87962eae402eee2b6604d6040700d4e7ae1b898cb67c1b01f2b86db23af31435953eaa51  61-gmobile-wakeup-lenovo-cd18781y.hwdb
+"

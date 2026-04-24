@@ -1,0 +1,81 @@
+# Archived: Downstream port, only for testing. Use mainline port (samsung-j7xelte)!
+# Reference: <https://postmarketos.org/vendorkernel>
+pkgname=linux-samsung-j7xelte-downstream
+pkgver=3.18.14
+pkgrel=0
+pkgdesc="Samsung Galaxy J7 (2016) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-j7xelte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool-exynos"
+
+# Source
+_repository="android_kernel_samsung_exynos7870"
+_commit="6a08243a47caf497bf07d34baacbf7e822344b24"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/jcadduono/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	01-fix-dtb.patch
+	02-fix-video-argb-setting.patch
+	03-Makefile-ignore-bundled-toolchain.patch
+	linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+	0002-fix-usb-gadget-random-mac.patch
+	disable-charging-bootmode.patch
+"
+
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	dtbTool-exynos -o "$_outdir/arch/$_carch/boot"/dt.img \
+		$(find "$_outdir/arch/$_carch/boot/dts/" -name *j7xelte*.dtb)
+}
+
+package() {
+	make modules_install firmware_install \
+		O="$_outdir" \
+		ARCH="$_carch" \
+		CC="${CC:-gcc}" \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1
+
+	install -D "$_outdir/include/config/kernel.release" \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	install -Dm644 "$_outdir/arch/arm64/boot/Image" "$pkgdir/boot/vmlinuz"
+
+	install -Dm644 "$_outdir/arch/$_carch/boot"/dt.img \
+		"$pkgdir"/boot/dt.img
+}
+
+sha512sums="
+e6602a988b66a632114b431743a170fca15f069f3eb5f743d2859bf9d0de020faaeabbf3a9b574a2f3b1167efb04a42c7d818ecff2e730d268d24966e73b16c4  linux-samsung-j7xelte-6a08243a47caf497bf07d34baacbf7e822344b24.tar.gz
+48c3c78a9ce6e03f2a4c739607897c82235e2a96bbd17d336ceed437b8140d9c88461163739dc42b3f6a7226e18788d7c7b57b6064d04737163ab93f198b235a  config-samsung-j7xelte.aarch64
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+1ea1501b7b7f1ab3ef4c54a74c01183c96b0403b0a57e3f7c37f299c5c338b86ef5e281a7273b97e87dae5a8d49ffa8a7a3e55d433e34fb53d97fbffdc631d55  01-fix-dtb.patch
+3156b7badd136700ba6332a6d20844ed00452d0a89eda81c32a7d008f61bec1a694d6afbddc35e1f5ffbd400d1119e176361b7e9647ea7edd4310f2cf4ba5caa  02-fix-video-argb-setting.patch
+3cb0cf7888eeb9ac8e17f11cb8db6343e2e16185010f263b2c5cb335cbc87d001b1fd2c4aa2f81b65fd1093f24000c8a1b8e856e362c2b574cad0b5afcfed8aa  03-Makefile-ignore-bundled-toolchain.patch
+75545ccd0082a119b9ad95fcef3523c939a5c946f8f3a5c3dde15cee1502f6c1011050a0ad5359426f018bb7ceea1c97a28c7665941bc89f365c8d11065ce0f6  linux3.7to4.5-ARM64-remove-Sun-Solaris-style-flag-on-section.patch
+0b1836f86020e9e7701f0cf0819149a8f079b69eab87ef301ded7753cda77207a6fff00103dbd5c2a5f60493b46d060ead5967ea800e55ae29fc651b49aab41a  0002-fix-usb-gadget-random-mac.patch
+32e51c6171bcb72b15f5f11a9c9b3279e03e630f2ea6d14b66fbfdd8a8c1587bdb7e88698197e9a81e05c47dba08d13c1ff4a5e4692d14b042f07dd2006c1cc0  disable-charging-bootmode.patch
+"

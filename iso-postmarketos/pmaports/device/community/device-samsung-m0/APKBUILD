@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Newbyte <newbyte@disroot.org>"
+pkgname=device-samsung-m0
+pkgdesc="Samsung Galaxy S III"
+pkgver=11
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	linux-postmarketos-exynos4
+	mkbootimg
+	postmarketos-base
+	soc-samsung-exynos4412-cameraflash
+	"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="
+	deviceinfo
+	ucm/Midas.conf
+	ucm/HiFi.conf
+	modules-load.conf
+	"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	_midas_audio_dir="$pkgdir/usr/share/alsa/ucm2/conf.d/Midas"
+
+	# Alsa UCM configs
+	install -Dm644 "$srcdir"/Midas.conf \
+		-t "$_midas_audio_dir"
+	install -Dm644 "$srcdir"/HiFi.conf \
+		-t "$_midas_audio_dir"
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi, Bluetooth, MFC firmware"
+	depends="
+		firmware-samsung-midas-bluetooth
+		firmware-samsung-midas-wifi
+		linux-firmware-s5p-mfc
+		"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+fb46c4de7e2bf3bd94b7012dac1420c354acefff826c3bad295659202476332f6cecd0e3316e4e92e3cc567b116c2ab30dc8e8f79773f72bccb7ca0ee1c52c39  deviceinfo
+caa81e8ab6753c0ca24c22fb6742288765dfbf2469b8b8c35c5789edfcee546ef1c3b14ad6e540c417f434258399300f17d312b58157635eafab134587ef94cc  Midas.conf
+21f64c9104ec5780fffde8ba7ce57583592469694d07dd5e2de4173d7c9f99ba57fb28bb5bcfbbce921be9c4ead9d31980e948533162fe12424c2037145debb1  HiFi.conf
+56a2bdffc273cb0a581192e65378ff50e71c7bc8a696af7d5e7c165a53c005aae104c4514c68afb668454c5a94ce78bd509f8a40e3401d67e16636b1ed81d051  modules-load.conf
+"

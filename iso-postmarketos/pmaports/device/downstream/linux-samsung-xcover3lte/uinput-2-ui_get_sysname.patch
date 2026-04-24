@@ -1,0 +1,153 @@
+From e3480a61fca72d40d6dc4baaf37e94fcbfa95e19 Mon Sep 17 00:00:00 2001
+From: Benjamin Tissoires <benjamin.tissoires@redhat.com>
+Date: Thu, 30 Jan 2014 17:20:24 -0800
+Subject: Input: uinput - add UI_GET_SYSNAME ioctl to retrieve the sysfs path
+
+uinput is used in the xorg-integration-tests suite and in the wayland
+test suite. These automated tests suites create many virtual input
+devices and then hook something to read these newly created devices.
+
+Currently, uinput does not provide the created input device, which means
+that we rely on an heuristic to guess which input node was created.
+The problem is that is heuristic is subjected to races between different
+uinput devices or even with physical devices. Having a way to retrieve
+the sysfs path allows us to find without any doubts the event node.
+
+Signed-off-by: Benjamin Tissoires <benjamin.tissoires@redhat.com>
+Reviewed-by: David Herrmann <dh.herrmann@gmail.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+---
+ drivers/input/misc/uinput.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ include/linux/uinput.h      |  2 ++
+ include/uapi/linux/uinput.h | 13 ++++++++++++-
+ 3 files changed, 57 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/input/misc/uinput.c b/drivers/input/misc/uinput.c
+index d8ae08d12abff..8569362475004 100644
+--- a/drivers/input/misc/uinput.c
++++ b/drivers/input/misc/uinput.c
+@@ -20,6 +20,8 @@
+  * Author: Aristeu Sergio Rozanski Filho <aris@cathedrallabs.org>
+  *
+  * Changes/Revisions:
++ *	0.4	01/09/2014 (Benjamin Tissoires <benjamin.tissoires@redhat.com>)
++ *		- add UI_GET_SYSNAME ioctl
+  *	0.3	09/04/2006 (Anssi Hannula <anssi.hannula@gmail.com>)
+  *		- updated ff support for the changes in kernel interface
+  *		- added MODULE_VERSION
+@@ -670,6 +672,31 @@ static int uinput_ff_upload_from_user(const char __user *buffer,
+ 	__ret;						\
+ })
+ 
++static int uinput_str_to_user(void __user *dest, const char *str,
++			      unsigned int maxlen)
++{
++	char __user *p = dest;
++	int len, ret;
++
++	if (!str)
++		return -ENOENT;
++
++	if (maxlen == 0)
++		return -EINVAL;
++
++	len = strlen(str) + 1;
++	if (len > maxlen)
++		len = maxlen;
++
++	ret = copy_to_user(p, str, len);
++	if (ret)
++		return -EFAULT;
++
++	/* force terminating '\0' */
++	ret = put_user(0, p + len - 1);
++	return ret ? -EFAULT : len;
++}
++
+ static long uinput_ioctl_handler(struct file *file, unsigned int cmd,
+ 				 unsigned long arg, void __user *p)
+ {
+@@ -679,6 +706,8 @@ static long uinput_ioctl_handler(struct file *file, unsigned int cmd,
+ 	struct uinput_ff_erase  ff_erase;
+ 	struct uinput_request   *req;
+ 	char			*phys;
++	const char		*name;
++	unsigned int		size;
+ 
+ 	retval = mutex_lock_interruptible(&udev->mutex);
+ 	if (retval)
+@@ -831,6 +860,20 @@ static long uinput_ioctl_handler(struct file *file, unsigned int cmd,
+ 			goto out;
+ 	}
+ 
++	size = _IOC_SIZE(cmd);
++
++	/* Now check variable-length commands */
++	switch (cmd & ~IOCSIZE_MASK) {
++	case UI_GET_SYSNAME(0):
++		if (udev->state != UIST_CREATED) {
++			retval = -ENOENT;
++			goto out;
++		}
++		name = dev_name(&udev->dev->dev);
++		retval = uinput_str_to_user(p, name, size);
++		goto out;
++	}
++
+ 	retval = -EINVAL;
+  out:
+ 	mutex_unlock(&udev->mutex);
+diff --git a/include/linux/uinput.h b/include/linux/uinput.h
+index 0a4487d3fb1ee..0994c0d01a092 100644
+--- a/include/linux/uinput.h
++++ b/include/linux/uinput.h
+@@ -20,6 +20,8 @@
+  * Author: Aristeu Sergio Rozanski Filho <aris@cathedrallabs.org>
+  *
+  * Changes/Revisions:
++ *	0.4	01/09/2014 (Benjamin Tissoires <benjamin.tissoires@redhat.com>)
++ *		- add UI_GET_SYSNAME ioctl
+  *	0.3	24/05/2006 (Anssi Hannula <anssi.hannulagmail.com>)
+  *		- update ff support for the changes in kernel interface
+  *		- add UINPUT_VERSION
+diff --git a/include/uapi/linux/uinput.h b/include/uapi/linux/uinput.h
+index fe46431593f9a..0389b489bbba0 100644
+--- a/include/uapi/linux/uinput.h
++++ b/include/uapi/linux/uinput.h
+@@ -20,6 +20,8 @@
+  * Author: Aristeu Sergio Rozanski Filho <aris@cathedrallabs.org>
+  *
+  * Changes/Revisions:
++ *	0.4	01/09/2014 (Benjamin Tissoires <benjamin.tissoires@redhat.com>)
++ *		- add UI_GET_SYSNAME ioctl
+  *	0.3	24/05/2006 (Anssi Hannula <anssi.hannulagmail.com>)
+  *		- update ff support for the changes in kernel interface
+  *		- add UINPUT_VERSION
+@@ -35,7 +37,7 @@
+ #include <linux/types.h>
+ #include <linux/input.h>
+ 
+-#define UINPUT_VERSION		3
++#define UINPUT_VERSION		4
+ 
+ 
+ struct uinput_ff_upload {
+@@ -73,6 +75,15 @@ struct uinput_ff_erase {
+ #define UI_BEGIN_FF_ERASE	_IOWR(UINPUT_IOCTL_BASE, 202, struct uinput_ff_erase)
+ #define UI_END_FF_ERASE		_IOW(UINPUT_IOCTL_BASE, 203, struct uinput_ff_erase)
+ 
++/**
++ * UI_GET_SYSNAME - get the sysfs name of the created uinput device
++ *
++ * @return the sysfs name of the created virtual input device.
++ * The complete sysfs path is then /sys/devices/virtual/input/--NAME--
++ * Usually, it is in the form "inputN"
++ */
++#define UI_GET_SYSNAME(len)	_IOC(_IOC_READ, UINPUT_IOCTL_BASE, 300, len)
++
+ /*
+  * To write a force-feedback-capable driver, the upload_effect
+  * and erase_effect callbacks in input_dev must be implemented.
+-- 
+cgit 
+

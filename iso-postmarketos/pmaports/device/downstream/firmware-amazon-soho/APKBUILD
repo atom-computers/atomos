@@ -1,0 +1,25 @@
+maintainer="Jack_Kekzoz <J__A__K@hotmail.com>"
+pkgname=firmware-amazon-soho
+pkgver=1
+pkgrel=0
+pkgdesc="Amazon Kindle Fire HD 3rd generation Firmware"
+url="https://github.com/kekzoz/vendor_amazon_soho"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+# Source
+_commit="3f60222270e568487fa432d525346cfcd01f8182"
+_repository="vendor_amazon_soho"
+_url="https://github.com/kekzoz"
+source="$_repository-$_commit.tar.gz::$_url/$_repository/archive/$_commit.tar.gz"
+
+package() {
+	# Wifi
+	install -Dm644 "$srcdir/$_repository-$_commit/bcmdhd.cal" \
+		"$pkgdir/lib/firmware/postmarketos/bcmdhd.cal"
+	install -Dm644 "$srcdir/$_repository-$_commit/fw_bcm4330.bin" \
+		"$pkgdir/lib/firmware/postmarketos/fw_bcm4330.bin"
+}
+
+sha512sums="eb15e552d2708306ab3674841e9bef1514d0ac1a2257987416e1caa8c8f5716145a541150a55b9c6d24855eb79b8d06d50cc74fb4d9b0f8cac6b1e44d10e878c  vendor_amazon_soho-3f60222270e568487fa432d525346cfcd01f8182.tar.gz"

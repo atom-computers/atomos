@@ -1,0 +1,27 @@
+maintainer=""
+pkgname=firmware-lenovo-a6010
+pkgver=1
+pkgrel=3
+pkgdesc="Firmware for Lenovo A6010"
+url="https://github.com/jenneron/vendor_lenovo_a6010"
+subpackages="$pkgname-wcnss-nv:wcnss_nv"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+_commit="bb6c522d1cb2de2ae29a5b7ff23b1f9b8f58a96a"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+wcnss_nv() {
+	pkgdesc="Lenovo A6010 WiFi/BT firmware configuration"
+	cd "$srcdir/vendor_lenovo_a6010-$_commit"
+	install -Dm644 WCNSS_qcom_wlan_nv.bin -t "$subpkgdir/$_fwdir"/wlan/prima
+}
+
+sha512sums="42d4bdcd51c112c1a2bd854ace9cc1e94bd9eaf8ffda6a92ddc92c2b9bf4f60ee088b79a529fe9bc2ecb9a6cddbebac83083dbe1265338ddcd3ebf79e903cde1  firmware-lenovo-a6010-bb6c522d1cb2de2ae29a5b7ff23b1f9b8f58a96a.tar.gz"

@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
+pkgname=device-clockworkpi-uconsole-radxa-cm5
+pkgdesc="Clockwork Tech ClockworkPi uConsole Radxa CM5"
+pkgver=7
+_commit=2e8040ec92f85e3d43caf3e44557cb0659db4531
+_dtso_commit=c2204834e1d7d0acfd64e1b7874d432bc142f1a4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
+depends="
+	linux-clockworkpi-uconsole-radxa-cm5
+	postmarketos-base
+	u-boot-clockworkpi-uconsole-radxa-cm5
+"
+makedepends="
+	devicepkg-dev
+	"
+subpackages="
+	$pkgname-openrc
+	$pkgname-x11
+"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	modules-load.conf
+	modprobe.conf
+	partition-table.txt
+	xorg.conf
+"
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+x11() {
+	install_if="$pkgname xorg-server"
+	install -Dm644 "$srcdir"/xorg.conf \
+		"$subpkgdir"/etc/X11/xorg.conf.d/10-monitor.conf
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+openrc() {
+	depends=openrc
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+1c39895682e8c28ad80a7fe7d62e23fc34510502efd09c85117812e882c6fe4094191852346162550fcbcfb10d4a5b07db85f5671d016ff62bbe16f90cfb85c2  deviceinfo
+fa6332b91b62572528b1f919370382d67f521b0a65c3c9f416df67545ebae7b01f31729340a42e656b5589cdbde676ec8fe0eb9537a34e02ec20f5309bf43b12  kernel-cmdline.conf
+85d573bfd51ac4aa502336452b0384af77b6ec095f5c4760e8f287b8452b3ccb4521051bc01c53fa0856440d52231f535f3f0258d62ad578161ad464344413e9  modules-initfs
+642cdb1b4ac02b8c3ab7b72f4eeef615ac4911b42bcd845b54305f0ff64c07b86f4a807a97d395cb6c0cd0a5f5eed15e68d9e4ccb69db8e38fb65c8be4acaeeb  modules-load.conf
+a5324ed5118168b846d359dc2c8e76ccdc624003d157a28e4c9728ddedd9b52c6deb95af9c3a9d94faf52413f2f830dc45ec6c0093458d27149ef17de5dceef5  modprobe.conf
+da2656ecb5f1a88c3b85a973adae0a11e48d4cb32ea7465076827a883e0f74fde4500c03edd4de66a6bf0af2da196f2210a02a1297f360d77bd70af4c21ae5dd  partition-table.txt
+939cb4ca50e0f54258dd92bdfbf91e6fa7b33b386022d058ba0d4b4e4f6d855cba9f5fffda0652f18c8b9b95d5dbbfc766e0931f0de53841f96d9d8975bf27e7  xorg.conf
+"

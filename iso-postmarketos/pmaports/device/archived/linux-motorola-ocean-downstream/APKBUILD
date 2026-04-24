@@ -1,0 +1,48 @@
+# Archived: Downstream port, only for testing. Use mainline port (motorola-ocean)!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/ocean_defconfig
+
+pkgname=linux-motorola-ocean-downstream
+pkgver=4.9.206
+pkgrel=1
+pkgdesc="Motorola Moto G7 Power kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="motorola-ocean"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtc"
+
+# Source
+_repository="android_kernel_motorola_sdm632"
+_commit="8f94fe92fabc32ead1a726545adcc16d4d233058"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/erfanoabdi/$_repository/archive/$_commit.tar.gz
+	$_config
+	disable_skip_initramfs.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	DTC_EXT="dtc" make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+20ff9ba981b3818df07ffc7421357e19e12cd50d5fb7b9b2bcc7aaa8bf82dbf8d60b92f91142dc10aa12b253a7a8403f7bbb8096cbbbacf3624646b8fd951c72  linux-motorola-ocean-downstream-8f94fe92fabc32ead1a726545adcc16d4d233058.tar.gz
+4238c3feec82d1944a2e4c13cedd6856efa6425a2258502fb8b3b2590ad15ceb970c557f078b4210f435f9d3e93c0e56122735622c4d05bfaaa52bf71b412858  config-motorola-ocean.aarch64
+186ab6850d93497cb54b97bb36c884d8b75140b7f37ce2971725364376fb1f0975b92ccf7fb01e438a13dd17552642463ff6f945fa09b5f9ba9ac72f344a42d8  disable_skip_initramfs.patch
+"

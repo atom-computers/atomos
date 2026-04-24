@@ -1,0 +1,66 @@
+pkgname=firmware-oppo-find-7a
+pkgver=0.1
+pkgrel=5
+_commit="412fbe0922125a4d5ff884626c3274a15bd36dff"
+_commit_android_image="68f5bc5447b781ecfd7712c32cac96041374a8be"
+_commit_oppo_fw="31144f275f8542c73c624c4920fc72b6b8b2a860"
+pkgdesc="Firmware for Oppo Find 7a"
+url="https://postmarketos.org/"
+arch="armv7"
+license="proprietary"
+depends="wcnss-wlan adsp-audio"
+makedepends="mtools"
+source="$pkgname-$_commit.tar.gz::https://github.com/TheMuppets/proprietary_vendor_oppo/archive/$_commit.tar.gz
+	android-$_commit_android_image.tar.gz::https://github.com/LineageOS/android_device_oppo_msm8974-common/archive/$_commit_android_image.tar.gz
+	oppo-fw-$_commit_oppo_fw.tar.gz::https://github.com/pmsourcedump/firmware-oppo-find-7a/archive/$_commit_oppo_fw.tar.gz"
+options="!strip !archcheck !check !spdx !tracedeps pmb:cross-native"
+builddir="$srcdir/proprietary_vendor_oppo-$_commit"
+
+_files1="a330_pm4.fw a330_pfp.fw venus.b00 venus.b01 venus.b02 venus.b03 venus.b04 venus.mbn venus.mdt"
+_files2="cpp_firmware_v1_2_0.fw"
+_files3="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+_files4="adsp.b00 adsp.b01 adsp.b02 adsp.b03 adsp.b04 adsp.b05 adsp.b06 adsp.b07 adsp.b08 adsp.b09 adsp.b10 adsp.b11 adsp.b12 adsp.mdt cmnlib.b00 cmnlib.b01 cmnlib.b02 cmnlib.b03 cmnlib.mdt isdbtmm.b00 isdbtmm.b01 isdbtmm.b02 isdbtmm.b03 isdbtmm.mdt mba.b00 mba.mdt mc_v2.b00 mc_v2.b01 mc_v2.b02 mc_v2.b03 mc_v2.mdt modem.b00 modem.b01 modem.b02 modem.b03 modem.b06 modem.b08 modem.b09 modem.b11 modem.b12 modem.b13 modem.b14 modem.b15 modem.b16 modem.b17 modem.b18 modem.b19 modem.b22 modem.b23 modem.b24 modem.b25 modem.mdt playread.b00 playread.b01 playread.b02 playread.b03 playread.mdt tqs.b00 tqs.b01 tqs.b02 tqs.b03 tqs.mdt wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b06 wcnss.b07 wcnss.b08 wcnss.b09 wcnss.mdt widevine.b00 widevine.b01 widevine.b02 widevine.b03 widevine.mdt"
+_files5="keymaste.b00 keymaste.b01 keymaste.b02 keymaste.b03 keymaste.mdt"
+
+build() {
+	for _i in $_files4 $_files5; do
+		mcopy -v -b -p -n -i "$srcdir"/firmware-oppo-find-7a-"$_commit_oppo_fw"/NON-HLOS.bin ::image/"$_i" "$srcdir"/"$_i"
+	done
+}
+
+package() {
+	for _i in $_files1; do
+		install -Dm644 msm8974-common/proprietary/vendor/firmware/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+	for _i in $_files2; do
+		install -Dm644 find7/proprietary/vendor/firmware/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+	cd "$srcdir"/android_device_oppo_msm8974-common-"$_commit_android_image"
+	for _i in $_files3; do
+		install -Dm644 wifi/"$_i" \
+			"$pkgdir"/lib/firmware/postmarketos/wlan/prima/"$_i"
+	done
+
+	cd "$srcdir"
+	for _i in $_files4; do
+		install -Dm644 "$_i" "$pkgdir"/lib/firmware/postmarketos/"$_i"
+	done
+
+
+	install -Dm644 keymaste.b00 "$pkgdir"/lib/firmware/postmarketos/keymaster/keymaster.b00
+	install -Dm644 keymaste.b01 "$pkgdir"/lib/firmware/postmarketos/keymaster/keymaster.b01
+	install -Dm644 keymaste.b02 "$pkgdir"/lib/firmware/postmarketos/keymaster/keymaster.b02
+	install -Dm644 keymaste.b03 "$pkgdir"/lib/firmware/postmarketos/keymaster/keymaster.b03
+	install -Dm644 keymaste.mdt "$pkgdir"/lib/firmware/postmarketos/keymaster/keymaster.mdt
+
+	cd "$pkgdir"/lib/firmware/postmarketos
+	ln -s . qcom
+}
+
+
+sha512sums="45caf96c4e9630a3cf68a59d2ded456803f6cc3c7e167613bc3afb733bd19bd9d82425717eba1f3e504e1584c02ba0aa3328a5514d1a043febbff2d4eecf8094  firmware-oppo-find-7a-412fbe0922125a4d5ff884626c3274a15bd36dff.tar.gz
+b2d71d4ebb43e5e0ba262bdeb304227ee468a14328c0155a697e284c999559c2086ddc12b1bf543aef81ba7b267788b0dd1207078903a54a5551b1c589d1af0e  android-68f5bc5447b781ecfd7712c32cac96041374a8be.tar.gz
+1efd1188d80db4b3ac0189169d925478c468d0df60b094e6b09629acb180cf985ea659f24b9c111d8c8318f9a63bbaa0f782e036ca015c1d94c0c0fd064e6298  oppo-fw-31144f275f8542c73c624c4920fc72b6b8b2a860.tar.gz"

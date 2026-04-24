@@ -1,0 +1,18 @@
+Tests: build-test
+Depends:
+ build-essential,
+ libfeedback-dev,
+ pkg-config,
+Restrictions: allow-stderr, superficial
+
+Test-Command: python3 -c 'import gi; from gi.repository import Lfb'
+Depends:
+ gir1.2-lfb-0.0,
+ python3,
+ python3-gi,
+Restrictions: allow-stderr, superficial
+
+Test-Command: fbd-theme-validate /usr/share/feedbackd/themes/default.json
+Depends:
+ feedbackd
+Restrictions: superficial

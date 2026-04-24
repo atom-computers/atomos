@@ -1,0 +1,26 @@
+From b0697e74f6d7bee079ed125ad1a4c5df2726a5d5 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Mon, 30 Jun 2025 11:37:29 +0200
+Subject: [PATCH] Makefile: ignore bundled toolchain
+
+Use the gcc from the system instead.
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index c33b77b1d537..6a4a89798185 100644
+--- a/Makefile
++++ b/Makefile
+@@ -194,7 +194,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ export KBUILD_BUILDHOST := $(SUBARCH)
+ ARCH		?=arm
+-CROSS_COMPILE	?=../PLATFORM/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin/arm-eabi-
++CROSS_COMPILE	?=
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+-- 
+2.50.0
+

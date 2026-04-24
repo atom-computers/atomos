@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-only
+upower_batt="/org/freedesktop/UPower/devices/battery_bq27200_0"
+upower_data=$(upower -i "$upower_batt" 2> /dev/null)
+capacity=$(echo "$upower_data" | awk '/percentage/ {print $NF}')
+state=$(echo "$upower_data" | awk '/state/ {print $NF}')
+echo "$capacity"
+echo "$capacity"
+
+if [ "$state" = "charging" ] || [ "$state" = "fully-charged" ]; then
+        echo "#0099FF"
+else
+        echo "#FFFFFF"
+fi

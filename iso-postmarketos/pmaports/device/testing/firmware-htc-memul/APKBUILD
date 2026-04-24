@@ -1,0 +1,72 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-htc-memul
+pkgver=1
+pkgrel=2
+pkgdesc="Firmware for HTC One Mini 2"
+subpackages="
+	$pkgname-adsp
+	$pkgname-modem
+	$pkgname-wcnss
+	"
+url="https://github.com/FairBlobs/memul-firmware"
+arch="armv7"
+license="proprietary"
+makedepends="pil-squasher"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+# Sources
+_fw_commit="d89bafbb77277ccc600a34a2b7533be5bf6b278f"
+source="$pkgname-$_fw_commit.tar.gz::https://github.com/FairBlobs/memul-firmware/archive/$_fw_commit.tar.gz"
+
+_dt_commit="38db7981457b45d5e834d05bfff49afbea01c25e"
+_wififiles="WCNSS_cfg.dat WCNSS_qcom_cfg.ini WCNSS_qcom_wlan_nv.bin"
+for _i in $_wififiles; do
+	source="$source $pkgname-$_dt_commit-$_i::https://raw.githubusercontent.com/nightcore500/android_device_htc_memul/$_dt_commit/wifi/$_i";
+done
+builddir="$srcdir/memul-firmware-$_fw_commit"
+
+build() {
+	for i in adsp.mdt mba.mdt modem.mdt; do
+		pil-squasher "$(basename "$i" .mdt)".mbn "$i"
+	done
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pkgdesc="HTC One Mini 2 - ADSP firmware"
+
+	install -Dm644 "$builddir"/adsp.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+}
+
+modem() {
+	pkgdesc="HTC One Mini 2 - Modem firmware"
+
+	install -Dm644 "$builddir"/mba.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+	install -Dm644 "$builddir"/modem.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+}
+
+wcnss() {
+	pkgdesc="HTC One Mini 2 - WCNSS firmware"
+
+	# Squashing wcnss firmware leads to incomplete .mbn, so keep installing
+	# the original .mdt + .b0* files
+	install -Dm644 "$builddir"/wcnss.* -t \
+		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+	cd "$builddir"
+	for _i in $_wififiles; do
+		install -Dm644 "$srcdir/$pkgname-$_dt_commit-$_i" \
+			"$subpkgdir/lib/firmware/postmarketos/wlan/prima/$_i"
+	done
+}
+
+sha512sums="f55a0639b2857754e456268d3497e8b81b5cf29ae0794f52d0e6b1b1248e0352a0dadda9edace9cbb24b68ca06c9341875d78d23aa1823a72d3adf4bc62eead2  firmware-htc-memul-d89bafbb77277ccc600a34a2b7533be5bf6b278f.tar.gz
+fb92214f928143228c0683934342ceff11f19bec0581684e98e155262bed03f51c21a21881ec03316f917c127b607a2943efea4847b908f1c02864a1e507fb50  firmware-htc-memul-38db7981457b45d5e834d05bfff49afbea01c25e-WCNSS_cfg.dat
+925b9d768d17277135aa4446d37996b0b577ec303569bb2c4f83a3c4a75114e0488dacf6bcbd789f584a376f0192ba19720f2ca4e5d438e4227d437d1fd7bd9e  firmware-htc-memul-38db7981457b45d5e834d05bfff49afbea01c25e-WCNSS_qcom_cfg.ini
+0dd92b6f97731e84c0aaa01b0cc1651ada0fa55d279ec436128266a76b52ddb1d45961956f06e0cfd59ac96832e4bc68458999400a40998d0e1fb176a4010391  firmware-htc-memul-38db7981457b45d5e834d05bfff49afbea01c25e-WCNSS_qcom_wlan_nv.bin"

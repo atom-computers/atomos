@@ -1,0 +1,9 @@
+[sm.puri.phosh]
+# disable filtering apps based on 'adaptive' tag
+app-filter-mode=[]
+favorites=['org.gnome.Calls.desktop', 'sm.puri.Chatty.desktop', 'org.gnome.Contacts.desktop', 'firefox-esr.desktop']
+
+[mobi.phosh.osk.Terminal]
+# Add arrow keys to the default, which is "mobi.phosh.osk.Terminal" here:
+# https://gitlab.gnome.org/World/Phosh/stevia/-/blob/main/data/mobi.phosh.osk.gschema.xml
+shortcuts=['<ctrl>', '<alt>', 'Left', 'Up', 'Down', 'Right', '<ctrl>r', 'Home', 'End', '<ctrl>w', '<alt>b',  '<alt>f', '<ctrl>v', '<ctrl>c', '<ctrl><shift>v', '<ctrl><shift>c', 'Menu']

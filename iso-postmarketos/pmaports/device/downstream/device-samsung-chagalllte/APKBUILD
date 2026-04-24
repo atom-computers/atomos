@@ -1,0 +1,63 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-chagalllte
+pkgdesc="Samsung Galaxy Tab S 10.5 LTE"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	linux-samsung-chagalllte
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-pulseaudio:pulseaudio
+"
+source="
+	deviceinfo
+	device-samsung-chagalllte-pulseaudio.post-install
+	pulse-daemon-set-300ms-buffer.conf
+	ucm2/adonisuniv_wm5102.conf
+	ucm2/HiFi.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/Samsung/adonisuniv_wm5102/
+	install -Dm644 -t "$pkgdir"/usr/share/alsa/ucm2/Samsung/adonisuniv_wm5102/ \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/adonisuniv_wm5102.conf
+
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/AdonisUniv_Soun/
+	ln -s ../../Samsung/adonisuniv_wm5102/adonisuniv_wm5102.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/AdonisUniv_Soun/AdonisUniv_Soun.conf
+}
+
+pulseaudio() {
+	pkgdesc="PulseAudio configuration fix"
+	install_if="$pkgname=$pkgver-r$pkgrel pulseaudio"
+
+	install -Dm644 "$srcdir"/pulse-daemon-set-300ms-buffer.conf \
+		"$subpkgdir"/etc/pulse/daemon.conf.d/set-300ms-buffer.conf
+
+	install="$subpkgname.post-install"
+}
+
+sha512sums="
+c15760d2d3a8af0f1ac733dc46ad019442db274aa619e8743fc232a5490c3fa43fca48b43fa54e4b75777c7a93a2d3ab2c603a41a6c4480622328ebf0415fdca  deviceinfo
+f10e0dc26fe9935aad593a0a155a871b94fe13660630ca444002c4a9ceb90e1d2413dda44df7e52d4271d72a902e1375ac069241b63b7c293c180ed1ff0cd51c  device-samsung-chagalllte-pulseaudio.post-install
+72b29bc7944f9ffc69b8edba136761ac8e471ae14646479333378f5c3a29b7254bcd1891aa81ecae9b2fc19a2e87765f8e02152d7ac471ee4243d4ac00de431e  pulse-daemon-set-300ms-buffer.conf
+415c369fa358e224a2cdb3fbc9d373728489e8715a91aa09c4b319d4f6629e4d55e0bf4ef4908e644e1356141da3ed3d0d042cf1571070b687238ba80d02d2b0  adonisuniv_wm5102.conf
+95dc0e60f0ec216ac1de7feaadf661bb9b5e3fc8319dd01732d4c9fc0e0633fb12971eb7954dd575bd89fe3a482fbeeb856711455df91511ad9046ae8f6df49d  HiFi.conf
+"

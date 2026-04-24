@@ -1,0 +1,45 @@
+From da83e93d50ff2dd71f6c8a86d657c2e4793f80dd Mon Sep 17 00:00:00 2001
+From: Adrian Chelaru <che.adrian@yahoo.com>
+Date: Wed, 8 Feb 2023 16:45:22 +0000
+Subject: [PATCH 5/5] Backport ARM wire up memfd_create syscall
+
+---
+ arch/arm/include/asm/unistd.h | 2 +-
+ arch/arm/kernel/calls.S       | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/unistd.h b/arch/arm/include/asm/unistd.h
+index 512cd147..f5e64a31 100644
+--- a/arch/arm/include/asm/unistd.h
++++ b/arch/arm/include/asm/unistd.h
+@@ -404,7 +404,7 @@
+ #define __NR_setns			(__NR_SYSCALL_BASE+375)
+ #define __NR_process_vm_readv		(__NR_SYSCALL_BASE+376)
+ #define __NR_process_vm_writev		(__NR_SYSCALL_BASE+377)
+-
++#define __NR_memfd_create               (__NR_SYSCALL_BASE+385)
+ /*
+  * The following SWIs are ARM private.
+  */
+diff --git a/arch/arm/kernel/calls.S b/arch/arm/kernel/calls.S
+index 463ff4a0..2ee871e2 100644
+--- a/arch/arm/kernel/calls.S
++++ b/arch/arm/kernel/calls.S
+@@ -387,6 +387,14 @@
+ /* 375 */	CALL(sys_setns)
+ 		CALL(sys_process_vm_readv)
+ 		CALL(sys_process_vm_writev)
++		CALL(sys_ni_syscall)
++               CALL(sys_ni_syscall)
++/* 380 */      CALL(sys_ni_syscall)
++               CALL(sys_ni_syscall)
++               CALL(sys_ni_syscall)
++               CALL(sys_ni_syscall)
++               CALL(sys_ni_syscall)
++/* 385 */      CALL(sys_memfd_create)
+ #ifndef syscalls_counted
+ .equ syscalls_padding, ((NR_syscalls + 3) & ~3) - NR_syscalls
+ #define syscalls_counted
+-- 
+2.38.3
+

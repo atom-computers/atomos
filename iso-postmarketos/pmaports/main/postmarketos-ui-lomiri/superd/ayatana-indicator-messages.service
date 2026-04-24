@@ -1,0 +1,11 @@
+[Unit]
+Description=Ayatana Indicator Messages Service
+PartOf=graphical-session.target
+PartOf=ayatana-indicators.target lomiri-indicators.target
+
+[Service]
+ExecStart=/usr/libexec/ayatana-indicator-messages/ayatana-indicator-messages-service
+Restart=on-failure
+
+[Install]
+WantedBy=ayatana-indicators.target lomiri-indicators.target

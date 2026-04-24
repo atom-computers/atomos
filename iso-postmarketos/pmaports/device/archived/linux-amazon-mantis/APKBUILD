@@ -1,0 +1,58 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/mantis_defconfig
+
+pkgname=linux-amazon-mantis
+pkgver=4.4.120
+pkgrel=1
+pkgdesc="Amazon Fire TV Stick 4K kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-mantis"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_amazon_mt8695"
+_commit="c7417cdf58515404e688f5d440fc1acd2a4e24a6"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LOSMantis/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc8-fix-put-user.patch
+	linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+sha512sums="
+6c99abda10ed7033247b1ac74f0c8b09726d53cd3f12d5a73eb455d5e50557396421faecbe37ee56f5221dc72a6c9f293d4741bbd8f46242c05ec1adc89cc142  linux-amazon-mantis-c7417cdf58515404e688f5d440fc1acd2a4e24a6.tar.gz
+e063e702e7034570b663a32fc2d105fb190d7f5d182110578f643c424f48bb88e88119a4b1da09db8588c900a8e1cab5cf4c81c267817e48ee4e96c8ddad0dda  config-amazon-mantis.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+eaf2e61fcb508cdd239b8fed209d2a09ecac77287f6b46d003918fdf1c6fa2ee63f7390f3ff7c49029b8ed6cbcdd81c7e9a4b1ece9f5060b6fc84e322bd47f41  linux4.2-gcc10-extern_YYLOC_global_declaration.patch
+"

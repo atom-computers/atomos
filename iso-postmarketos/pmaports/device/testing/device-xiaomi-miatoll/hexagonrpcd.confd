@@ -1,0 +1,2 @@
+# Miatoll specific hexagonrpcd firmware directory
+hexagonrpcd_fw_dir="/usr/share/qcom/sm7125/Xiaomi/miatoll"

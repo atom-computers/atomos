@@ -1,0 +1,44 @@
+diff --git a/kernel/asusdebug.c b/kernel/asusdebug.c
+index aee6355934f7..b1c782d700e5 100755
+--- a/kernel/asusdebug.c
++++ b/kernel/asusdebug.c
+@@ -245,7 +245,7 @@ void print_all_thread_info(void)
+     g_iPtr = 0;
+     memset(g_phonehang_log, 0, PHONE_HANG_LOG_SIZE);
+ 
+-    save_log("PhoneHang-%04d%02d%02d-%02d%02d%02d.txt  ---  ASUS_SW_VER : %s----------------------------------------------\r\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ASUS_SW_VER);
++    save_log("PhoneHang-%04d%02d%02d-%02d%02d%02d.txt  -------------------------------------------------\r\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+     save_log(" pID----ppID----NAME----------------SumTime---vruntime--SPri-NPri-State----------PmpCnt-Binder----Waiting\r\n");
+ 
+     for_each_process(pts)
+@@ -521,7 +521,7 @@ void save_all_thread_info(void)
+     g_iPtr = 0;
+     memset(g_phonehang_log, 0, PHONE_HANG_LOG_SIZE);
+ 
+-    save_log("ASUSSlowg-%04d%02d%02d-%02d%02d%02d.txt  ---  ASUS_SW_VER : %s----------------------------------------------\r\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ASUS_SW_VER);
++    save_log("ASUSSlowg-%04d%02d%02d-%02d%02d%02d.txt  -------------------------------------------------\r\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+     save_log(" pID----ppID----NAME----------------SumTime---vruntime--SPri-NPri-State----------PmpCnt-binder----Waiting\r\n");
+ 
+     if(ptis_head != NULL)
+@@ -1230,7 +1230,7 @@ static void do_write_event_worker(struct work_struct *work)
+                 if (g_hfileEvtlog < 0)
+                     printk("[adbg] 1. open %s failed during renaming old one, err:%d\n", ASUS_EVTLOG_PATH"ASUSEvtlog.txt", g_hfileEvtlog);
+             }    
+-            sprintf(buffer, "\n\n---------------System Boot----%s---------\n", ASUS_SW_VER);
++            sprintf(buffer, "\n\n---------------System Boot-------------\n");
+ 
+             sys_write(g_hfileEvtlog, buffer, strlen(buffer));
+             sys_close(g_hfileEvtlog);
+diff --git a/kernel/printk.c b/kernel/printk.c
+index eec2f2a61804..56144bff4406 100755
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -1019,7 +1019,7 @@ void printk_buffer_rebase(void)
+ 	asus_global.kernel_log_size = log_buf_len;
+ 
+ 	memset( asus_global.kernel_version, 0, sizeof(asus_global.kernel_version));
+-	strncpy(asus_global.kernel_version, ASUS_SW_VER, sizeof(asus_global.kernel_version));
++	//strncpy(asus_global.kernel_version, ASUS_SW_VER, sizeof(asus_global.kernel_version));
+ 
+ 	memcpy(log_buf, __log_buf, __LOG_BUF_LEN);
+ 

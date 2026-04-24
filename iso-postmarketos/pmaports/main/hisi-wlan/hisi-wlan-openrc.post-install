@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Enable hisi-wlan init script
+rc-update add hisi-wlan default

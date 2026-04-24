@@ -1,0 +1,124 @@
+# Forked from Alpine to cross compile for x86_64 systems that have x86 EFI
+maintainer=""
+pkgname=systemd-boot-x86
+_pkgname=systemd-boot  # for monitoring
+pkgver=260.1
+pkgrel=0
+pkgdesc="systemd's EFI boot manager for x86 EFI on x86_64."
+url="https://systemd.io/"
+arch="x86_64" # x86 32-bit only makes sense on x86 64-bit
+license="LGPL-2.1-or-later"
+makedepends="
+	bash
+	coreutils
+	gcc-x86
+	gperf
+	libcap-dev
+	meson
+	musl-dev-x86
+	py3-elftools
+	py3-jinja2
+	util-linux-dev
+"
+source="
+	systemd-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/tags/v$pkgver.tar.gz
+	0001-meson-disable-libintl-check-if-pam-is-disabled.patch
+	cross-x86.meson
+	"
+# check: no tests
+# archcheck: provides platform-specific EFI binary
+options="!check !archcheck"
+subpackages="
+	systemd-x86-efistub:efistub
+"
+builddir="$srcdir/systemd-$pkgver"
+
+build() {
+	abuild-meson  \
+		-Dlibc="musl" \
+		-Dsbat-distro="alpine" \
+		-Dsbat-distro-summary="Alpine Linux" \
+		-Dsbat-distro-pkgname="$pkgname" \
+		-Dsbat-distro-version="$pkgver" \
+		-Dsbat-distro-url="https://alpinelinux.org/" \
+		-Dadm-group=false \
+		-Danalyze=false \
+		-Dbacklight=false \
+		-Dbinfmt=false \
+		-Dbootloader=enabled \
+		-Dcompat-mutable-uid-boundaries=false \
+		-Dcoredump=false \
+		-Ddns-over-tls=false \
+		-Defi=true \
+		-Denvironment-d=false \
+		-Dfexecve=false \
+		-Dfirstboot=false \
+		-Dfirst-boot-full-preset=false \
+		-Dgshadow=false \
+		-Dhibernate=false \
+		-Dhomed=disabled \
+		-Dhostnamed=false \
+		-Dhwdb=false \
+		-Didn=false \
+		-Dima=false \
+		-Dimportd=disabled \
+		-Dinitrd=false \
+		-Dkernel-install=false \
+		-Dldconfig=false \
+		-Dlocaled=false \
+		-Dlogind=false \
+		-Dmachined=false \
+		-Dnetworkd=false \
+		-Dnss-myhostname=false \
+		-Dnss-mymachines=disabled \
+		-Dnss-resolve=disabled \
+		-Dnss-systemd=false \
+		-Doomd=false \
+		-Dpolkit=disabled \
+		-Dportabled=false \
+		-Dpstore=false \
+		-Dquotacheck=false \
+		-Drandomseed=false \
+		-Dremote=disabled \
+		-Drepart=disabled \
+		-Dresolve=false \
+		-Drfkill=false \
+		-Dsmack=false \
+		-Dstoragetm=false \
+		-Dsysext=false \
+		-Dsysupdate=disabled \
+		-Dsysusers=false \
+		-Dtimedated=false \
+		-Dtimesyncd=false \
+		-Dtmpfiles=false \
+		-Dtpm=false \
+		-Dukify=disabled \
+		-Durlify=false \
+		-Duserdb=false \
+		-Dutmp=false \
+		-Dvconsole=false \
+		-Dvmspawn=disabled \
+		-Dwheel-group=false \
+		-Dxdg-autostart=false \
+		-Dlibmount=disabled \
+		--cross-file "$srcdir"/cross-x86.meson \
+		. output
+	meson compile -C output systemd-boot
+}
+
+package() {
+	find "$builddir/output/src/boot/" -name 'systemd*.efi' -exec \
+		install -Dm 644 {} -t "$pkgdir/usr/lib/systemd/boot/efi" \;
+}
+
+efistub() {
+	pkgdesc="systemd's EFI boot stub for x86 EFI on x86_64."
+	find "$builddir/output/src/boot/" -name '*.stub' -exec \
+	 install -Dm 644 {} -t "$subpkgdir/usr/lib/systemd/boot/efi" \;
+}
+
+sha512sums="
+9f975dce6861853a817a7ceab18a24449a85d1bda6939b3a5173430c02a4d8a9a2b34ebb8cce1c51db9b0ff9078fcc65da7b0f44e3bdcbbe013b9e04bb6f0ff9  systemd-260.1.tar.gz
+8ecb5e25c0d8b01c406fa3084b0910d517cabbf12894958b4d3d77462cb0924f0a52fe2bf1aa39af29b16fd78fe080a6a99daa18015c6059fb2e52c971d83ba9  0001-meson-disable-libintl-check-if-pam-is-disabled.patch
+ad54e2c7e7a21bfa9b5f9e8db1b6af6a6d78a3e5dfe2dafcec77488f6224865ab4d4c8a8c8ee1c54c99d1741361e9fb3a51e5d36bcbc7a1c3fdcc4d0c1672132  cross-x86.meson
+"

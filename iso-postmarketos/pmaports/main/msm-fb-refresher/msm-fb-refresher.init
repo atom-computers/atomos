@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+
+command="/usr/sbin/msm-fb-refresher"
+command_args="--loop"
+supervisor="supervise-daemon"
+
+depend() {
+	after bootmisc
+}

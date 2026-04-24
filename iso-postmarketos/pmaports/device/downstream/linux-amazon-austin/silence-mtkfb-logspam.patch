@@ -1,0 +1,13 @@
+diff --git a/drivers/misc/mediatek/video/mt8127/mtkfb.c b/drivers/misc/mediatek/video/mt8127/mtkfb.c
+index 50bfbcd0..238f09d2 100644
+--- a/drivers/misc/mediatek/video/mt8127/mtkfb.c
++++ b/drivers/misc/mediatek/video/mt8127/mtkfb.c
+@@ -63,6 +63,8 @@
+ 
+ //#undef pr_info
+ //#define pr_info printk
++#undef pr_info
++#define pr_info(fmt, args...) do {} while (0)
+ 
+ unsigned int EnableVSyncLog = 0;
+ 

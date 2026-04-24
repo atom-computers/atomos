@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rc-update add eg25-manager default
+rc-update -qq del gpsd || true
+rc-update -qq del gpsd_pinephone || true

@@ -1,0 +1,82 @@
+maintainer="Eric Anderson <ejona86@gmail.com>"
+pkgname=firmware-asus-flo
+pkgver=0
+pkgrel=4
+pkgdesc="Firmware for asus-flo"
+url="https://developers.google.com/android/drivers#flomob30x"
+arch="armv7"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+# AOSP sources
+_version_broadcom="23c0a6c8"
+_version_qcom=43963492
+_url_aosp="https://dl.google.com/dl/android/aosp"
+source="
+	$_url_aosp/broadcom-flo-mob30x-$_version_broadcom.tgz
+	$_url_aosp/qcom-flo-mob30x-$_version_qcom.tgz
+"
+
+# Other sources
+_files="WCNSS_qcom_cfg.ini WCNSS_cfg.dat WCNSS_qcom_wlan_nv_flo.bin"
+_commit_other="42b685b6cd77540048e15012278ef290f94194a7"
+_url_other="https://github.com/LineageOS/android_device_asus_flo/raw/$_commit_other/wifi"
+for _i in $_files; do
+	source="$source $pkgname-$_commit_other-$_i::$_url_other/$_i";
+done
+
+package() {
+	cd "$srcdir"
+	tail -n +276 $srcdir/extract-broadcom-flo.sh | tar zx
+	tail -n +315 $srcdir/extract-qcom-flo.sh | tar zx
+
+	# bcm2089x
+	_files="bcm2079x-b5_firmware.ncd bcm2079x-b5_pre_firmware.ncd"
+	for _i in $_files; do
+		install -Dm644 "vendor/broadcom/flo/proprietary/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/$_i";
+	done
+
+	# keymaster
+	_files="keymaster.b00 keymaster.b01 keymaster.b02 keymaster.b03
+		keymaster.mdt"
+	for _i in $_files; do
+		install -Dm644 "vendor/qcom/flo/proprietary/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/keymaster/$_i";
+	done
+
+	# discretix
+	_files="dxhdcp2.b00  dxhdcp2.b01  dxhdcp2.b02 dxhdcp2.b03
+		dxhdcp2.mdt"
+	for _i in $_files; do
+		install -Dm644 "vendor/qcom/flo/proprietary/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/discretix/$_i";
+	done
+
+	# prima
+	install -Dm644 "$pkgname-$_commit_other-WCNSS_qcom_wlan_nv_flo.bin" \
+		"$pkgdir/lib/firmware/postmarketos/wlan/prima/WCNSS_qcom_wlan_nv.bin"
+	for _i in WCNSS_qcom_cfg.ini WCNSS_cfg.dat; do
+		install -Dm644 "$pkgname-$_commit_other-$_i" \
+			"$pkgdir/lib/firmware/postmarketos/wlan/prima/$_i";
+	done
+
+	# qualcomm
+	_files="wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05 wcnss.mdt
+		a300_pfp.fw a300_pm4.fw dsps.b00 dsps.b01 dsps.b02 dsps.b03
+		dsps.b04 dsps.b05 dsps.mdt gss.b00 gss.b02 gss.b04 gss.b06
+		gss.b08 gss.b10 gss.mdt gss.b01 gss.b03 gss.b05 gss.b07 gss.b09
+		gss.b11 q6.b00 q6.b01 q6.b03 q6.b04 q6.b05 q6.b06 q6.mdt
+		tzapps.b00 tzapps.b01 tzapps.b02 tzapps.b03 tzapps.mdt
+		vidc_1080p.fw vidc.b00 vidc.b01 vidc.b02 vidc.b03 vidcfw.elf
+		vidc.mdt"
+	for _i in $_files; do
+		install -Dm644 "vendor/qcom/flo/proprietary/$_i" \
+			"$pkgdir/lib/firmware/postmarketos/$_i";
+	done
+}
+sha512sums="e18fe860185e2efe2b9b0d1ed17e7ba40c687fdf08667db1358fb8c68cc8632f36942ddccee975eecbc9f0e0a9b5b97abddb837dbd07653298609de09fe5bfce  broadcom-flo-mob30x-23c0a6c8.tgz
+0e36c52300f8e290d6f2c28f7f676fee326cbf843aa00090d50e14f6810856b78cc116c8ca73b2b3d62311faff5ab5f2ef0dcf73929c36f7f6bc9e76460e8f1c  qcom-flo-mob30x-43963492.tgz
+df8bbc08774c1d8b479955e11e88964a172638934b98aeff3a1a76eeb2a6981f4ab9ef1c5e8abb050812ca2e99f21f661485c0c052f2103c76eccc19857f3f47  firmware-asus-flo-42b685b6cd77540048e15012278ef290f94194a7-WCNSS_qcom_cfg.ini
+d9ec98e8fa795383678dc8ffd388d8a5fe2a475559c5996f551f02766bc3397e74c100548dcb06e2a65515c76cf28eac6f156aa805cf81ea3c580c859f4bd0f1  firmware-asus-flo-42b685b6cd77540048e15012278ef290f94194a7-WCNSS_cfg.dat
+d734e76a83960e0d6fbc11816417459ec17a72196cde727f7aeba509601965637234101cb17fa168f1cb128f1b63499cb68fe7acdef280654f25d0847a59960a  firmware-asus-flo-42b685b6cd77540048e15012278ef290f94194a7-WCNSS_qcom_wlan_nv_flo.bin"

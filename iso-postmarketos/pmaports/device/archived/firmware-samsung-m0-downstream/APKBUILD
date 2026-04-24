@@ -1,0 +1,31 @@
+# Archived: Only used by archived downstream kernel
+pkgname=firmware-samsung-m0-downstream
+pkgver=3
+pkgrel=0
+pkgdesc="Samsung Galaxy S III Firmware (For use with downstream port)"
+_commit="fdd8c44568a148c22fbf008de822ff4e27992da1"
+url="https://github.com/TheMuppets/proprietary_vendor_samsung"
+arch="armv7"
+license="proprietary"
+source="
+	$url/raw/$_commit/smdk4412-common/proprietary/bin/bcm4334.hcd
+	bcm4334_nvram_net.txt::$url/raw/$_commit/smdk4412-common/proprietary/etc/wifi/nvram_net.txt
+	$url/raw/$_commit/smdk4412-common/proprietary/etc/wifi/bcmdhd_sta.bin_b2
+"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+package() {
+	mkdir -p "$pkgdir"/lib/firmware/postmarketos
+	install -m644 "$srcdir"/bcm4334.hcd -t \
+		"$pkgdir"/lib/firmware/postmarketos
+	install -m644 "$srcdir"/bcm4334_nvram_net.txt \
+		"$pkgdir"/lib/firmware/postmarketos/nvram_net.txt
+	install -m644 "$srcdir"/bcmdhd_sta.bin_b2 -t \
+		"$pkgdir"/lib/firmware/postmarketos
+}
+
+sha512sums="
+cbed1dc60829161c7ac9649dcae67fc45204c1a25e8de320ad3bc4e9d5cae573fb8a4745f91355fa96d2d3d4124a9e707341fc5bd1b22705cb2efb16831e029f  bcm4334.hcd
+f6a936c526ace433b0268f2e35205776e17496fb14852deaf21f07e68ff16ac99963ab94c93094a58019bf514f11a415c1a0fc4a9e4cd523047ffefd9c6c55d8  bcm4334_nvram_net.txt
+4f29f977acfa48437bb427ad49a03021bc98af9623575ecfb3e994a6ebcaa99899e843550b4080a0e16bca2076a0a9bd1788c1ff543e36687c2b3196b56e6099  bcmdhd_sta.bin_b2
+"

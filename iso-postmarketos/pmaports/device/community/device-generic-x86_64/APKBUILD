@@ -1,0 +1,88 @@
+# Co-Maintainer: Oliver Smith <ollieparanoid@postmarketos.org>
+# Co-Maintainer: Ferass El Hafidi <funderscore@postmarketos.org>
+maintainer="Clayton Craft <clayton@craftyguy.net>"
+pkgname=device-generic-x86_64
+pkgdesc="Generic x86_64 system, with EFI"
+pkgver=24
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	hwdata
+	postmarketos-base
+	systemd-boot
+	systemd-boot-x86
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	30-gpu-i915-firmware.files
+"
+install="$pkgname.post-install $pkgname.post-upgrade"
+subpackages="
+	$pkgname-intel
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+"
+_pmb_recommends="
+	firmware-ath6kl
+	firmware-b43xx
+	linux-firmware
+	oem-amd
+	oem-intel
+	oem-nvidia
+"
+provides="device-tablet-x64uefi=$pkgver-r$pkgrel device-tablet-x86uefi=$pkgver-r$pkgrel"
+replaces="device-tablet-x64uefi device-tablet-x86uefi"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+intel() {
+	pkgdesc="Intel-specific configuration"
+	install_if="$pkgname=$pkgver-r$pkgrel oem-intel"
+
+	install -Dm644 "$srcdir"/30-gpu-i915-firmware.files \
+		-t "$subpkgdir"/usr/share/mkinitfs/files/
+}
+
+kernel_mainline() {
+	pkgdesc="postmarketOS Mainline kernel"
+	depends="linux-postmarketos-mainline"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Alpine Stable kernel"
+	provides="device-tablet-x64uefi-kernel-edge=$pkgver-r$pkgrel device-tablet-x86uefi-kernel-edge=$pkgver-r$pkgrel $pkgname-kernel-edge=$pkgver-r$pkgrel"
+	replaces="device-tablet-x64uefi-kernel-edge device-tablet-x86uefi-kernel-edge $pkgname-kernel-edge"
+	depends="linux-stable"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="Alpine LTS kernel"
+	provides="device-tablet-x64uefi-kernel-lts=$pkgver-r$pkgrel device-tablet-x86uefi-kernel-lts=$pkgver-r$pkgrel"
+	replaces="device-tablet-x64uefi-kernel-lts device-tablet-x86uefi-kernel-lts"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+a88e80ef4cb33935bdc663c0b8be10e5be92aefcab3376c348c6dfe04c61c59e6a37520d9d658336aff54d5aefed310d21701bc9c48e39a35403565ad990c01f  deviceinfo
+9449922b5167d5c54cfea3b9bb58c4fa3f50d1974464b897a1e6a618bbb80377ec1348fb145fa95f4ba58f645b7e50f1f89feefcaa90de18679a1d73ed92b154  kernel-cmdline.conf
+45dcda9a8edbe5af3446d8d7922ea13f341c3d060afd3b74f43d213e122d0ca79c21962f76e7261cc680baa08982c9e86fd6f34bb0851768085a04801a0ce5ee  modules-initfs
+9599a10679a43929e4ed2ea22269a0716219163817574d48db4dc1cb21a0fcf17ea54d77d5fd8efd034905c421ecb3eaa600a72927d683983ce48d1159329881  30-gpu-i915-firmware.files
+"

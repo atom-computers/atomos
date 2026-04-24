@@ -1,0 +1,226 @@
+This patch fixes "No valid dtbs found"
+as described in:
+https://wiki.postmarketos.org/wiki/QCDT#Fixing_.22No_valid_dtbs_found.22
+
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev02.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev02.dts
+index 56ffac7d..9c10cae1 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev02.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev02.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 2 0x20000>;
++        qcom,msm-id = <8830 2 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+@@ -388,7 +389,7 @@
+ 				pin-name = "lcd_3v3_en";
+ 				pin-type = <EXT_PIN_GPIO>;
+ 				pin-gpio = <&d_gpio_gpio 152 GPIO_ACTIVE_HIGH>;
+-			};				
++			};
+ 		};
+ 		gen_panel: gen-panel {};
+ 	};
+@@ -421,7 +422,7 @@
+ 		rustproof_por_src_flag = <1>;
+ 	};
+ 
+-	
++
+ 	sprd-hotplug {
+ 		log_enable = <0>;
+ 	};
+@@ -670,4 +671,3 @@
+ 	clock-names = "clk_gpu_axi","clk_gpu","clk_153m6","clk_208m","clk_256m","clk_312m","clk_384m","clk_384m";
+ 	clocks = <&clk_gpu_axi>,<&clk_gpu>,<&clk_153m6>,<&clk_208m>,<&clk_256m>,<&clk_312m>,<&clk_384m>,<&clk_384m>;
+ };
+-
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev03.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev03.dts
+index 1e012662..33126012 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev03.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev03.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 3 0x20000>;
++        qcom,msm-id = <8830 3 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+@@ -388,7 +389,7 @@
+ 				pin-name = "lcd_3v3_en";
+ 				pin-type = <EXT_PIN_GPIO>;
+ 				pin-gpio = <&d_gpio_gpio 152 GPIO_ACTIVE_HIGH>;
+-			};				
++			};
+ 		};
+ 		gen_panel: gen-panel {};
+ 	};
+@@ -420,7 +421,7 @@
+ 	sprd-rustproof {
+ 		rustproof_por_src_flag = <1>;
+ 	};
+-	
++
+ 	sprd-hotplug {
+ 		log_enable = <0>;
+ 	};
+@@ -669,4 +670,3 @@
+ 	clock-names = "clk_gpu_axi","clk_gpu","clk_153m6","clk_208m","clk_256m","clk_312m","clk_384m","clk_384m";
+ 	clocks = <&clk_gpu_axi>,<&clk_gpu>,<&clk_153m6>,<&clk_208m>,<&clk_256m>,<&clk_312m>,<&clk_384m>,<&clk_384m>;
+ };
+-
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev04.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev04.dts
+index 0f2d80d1..904ae705 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev04.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev04.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 4 0x20000>;
++        qcom,msm-id = <8830 4 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+@@ -388,7 +389,7 @@
+ 				pin-name = "lcd_3v3_en";
+ 				pin-type = <EXT_PIN_GPIO>;
+ 				pin-gpio = <&d_gpio_gpio 152 GPIO_ACTIVE_HIGH>;
+-			};				
++			};
+ 		};
+ 		gen_panel: gen-panel {};
+ 	};
+@@ -420,7 +421,7 @@
+ 	sprd-rustproof {
+ 		rustproof_por_src_flag = <1>;
+ 	};
+-	
++
+ 	sprd-hotplug {
+ 		log_enable = <0>;
+ 	};
+@@ -669,4 +670,3 @@
+ 	clock-names = "clk_gpu_axi","clk_gpu","clk_153m6","clk_208m","clk_256m","clk_312m","clk_384m","clk_384m";
+ 	clocks = <&clk_gpu_axi>,<&clk_gpu>,<&clk_153m6>,<&clk_208m>,<&clk_256m>,<&clk_312m>,<&clk_384m>,<&clk_384m>;
+ };
+-
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev05.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev05.dts
+index 670be258..53787821 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev05.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev05.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 5 0x20000>;
++        qcom,msm-id = <8830 5 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+@@ -388,7 +389,7 @@
+ 				pin-name = "lcd_3v3_en";
+ 				pin-type = <EXT_PIN_GPIO>;
+ 				pin-gpio = <&d_gpio_gpio 152 GPIO_ACTIVE_HIGH>;
+-			};				
++			};
+ 		};
+ 		gen_panel: gen-panel {};
+ 	};
+@@ -421,7 +422,7 @@
+ 		rustproof_por_src_flag = <1>;
+ 	};
+ 
+-	
++
+ 	sprd-hotplug {
+ 		log_enable = <0>;
+ 	};
+@@ -670,4 +671,3 @@
+ 	clock-names = "clk_gpu_axi","clk_gpu","clk_153m6","clk_208m","clk_256m","clk_312m","clk_384m","clk_384m";
+ 	clocks = <&clk_gpu_axi>,<&clk_gpu>,<&clk_153m6>,<&clk_208m>,<&clk_256m>,<&clk_312m>,<&clk_384m>,<&clk_384m>;
+ };
+-
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev06.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev06.dts
+index 28314e6e..7228cbd9 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev06.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev06.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 6 0x20000>;
++        qcom,msm-id = <8830 6 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+@@ -388,7 +389,7 @@
+ 				pin-name = "lcd_3v3_en";
+ 				pin-type = <EXT_PIN_GPIO>;
+ 				pin-gpio = <&d_gpio_gpio 152 GPIO_ACTIVE_HIGH>;
+-			};				
++			};
+ 		};
+ 		gen_panel: gen-panel {};
+ 	};
+@@ -421,7 +422,7 @@
+ 		rustproof_por_src_flag = <1>;
+ 	};
+ 
+-	
++
+ 	sprd-hotplug {
+ 		log_enable = <0>;
+ 	};
+@@ -665,5 +666,3 @@
+ 	 spi-max-frequency = <19200000>;
+ 	};
+ };
+-
+-
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev09.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev09.dts
+index 6cbb373e..d97b035e 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev09.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev09.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 9 0x20000>;
++        qcom,msm-id = <8830 9 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+@@ -661,4 +662,3 @@
+ 	 spi-max-frequency = <19200000>;
+ 	};
+ };
+-
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev10.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev10.dts
+index 7758d647..0cf7c90c 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev10.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev10.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 10 0x20000>;
++        qcom,msm-id = <8830 10 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;
+@@ -661,4 +662,3 @@
+ 	 spi-max-frequency = <19200000>;
+ 	};
+ };
+-
+diff --git a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev11.dts b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev11.dts
+index 96319452..a7a9b08e 100755
+--- a/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev11.dts
++++ b/arch/arm/boot/dts/sprd-scx35_gtelwifi_rev11.dts
+@@ -28,6 +28,7 @@
+ / {
+ 	model = "Spreadtrum SP7730G board";
+         sprd,sc-id = <8830 11 0x20000>;
++        qcom,msm-id = <8830 11 0x20000>;
+ 	chosen {
+ 		bootargs = "init=/init root=/dev/ram0 rw";
+ 		linux,initrd-start = <0x85500000>;

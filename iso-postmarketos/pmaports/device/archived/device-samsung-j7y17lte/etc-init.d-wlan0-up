@@ -1,0 +1,8 @@
+#!/sbin/openrc-run
+
+description="Hack to fix wlan0 EINVAL if rfkilled on boot"
+
+start () {
+	ifconfig wlan0 up
+	ifconfig wlan0 down
+}

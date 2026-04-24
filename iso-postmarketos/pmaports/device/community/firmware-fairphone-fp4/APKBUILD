@@ -1,0 +1,140 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-fairphone-fp4
+pkgver=20240313
+pkgrel=3
+pkgdesc="Firmware for Fairphone 4"
+subpackages="
+	$pkgname-adreno
+	$pkgname-adsp
+	$pkgname-audio
+	$pkgname-bluetooth
+	$pkgname-cdsp
+	$pkgname-hexagonfs
+	$pkgname-ipa
+	$pkgname-modem
+	$pkgname-venus
+	$pkgname-wlan
+	"
+url="https://github.com/FairBlobs/FP4-firmware"
+arch="aarch64"
+license="proprietary"
+makedepends="pil-squasher"
+options="!check !strip !archcheck !tracedeps textrels pmb:cross-native"
+_commit="222756885ff5eb24ee89684ef8cfe860a45a54ec"
+source="https://github.com/FairBlobs/FP4-firmware/archive/$_commit/FP4-firmware-$_commit.tar.gz"
+builddir="$srcdir/FP4-firmware-$_commit"
+
+build() {
+	for i in *.mdt; do
+		pil-squasher "$(basename "$i" .mdt)".mbn "$i"
+	done
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+adreno() {
+	pkgdesc="Fairphone 4 adreno firmware"
+
+	# TODO: replace with firmware-qcom-adreno-a619 when released to linux-firmware.
+	# The parent device package currently depends on a630-sqe
+	install -Dm644 "$builddir"/a619_gmu.bin -t \
+		"$subpkgdir/lib/firmware/qcom/"
+	install -Dm644 "$builddir"/a615_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+}
+
+adsp() {
+	pkgdesc="Fairphone 4 adsp firmware"
+
+	install -Dm644 "$builddir"/adsp.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+	install -Dm644 "$builddir"/adsp*.jsn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+}
+
+audio() {
+	pkgdesc="Fairphone 4 audio amplifier firmware"
+
+	# TODO: Should get a proper device-specific location long-term
+	install -Dm644 "$builddir"/aw882xx_monitor.bin -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+	install -Dm644 "$builddir"/aw882xx_spk_reg_l.bin -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+	install -Dm644 "$builddir"/aw882xx_spk_reg_r.bin -t \
+		"$subpkgdir/lib/firmware/postmarketos/"
+}
+
+bluetooth() {
+	pkgdesc="Fairphone 4 bluetooth firmware"
+
+	install -Dm644 "$builddir"/apbtfw11.tlv -t \
+		"$subpkgdir/lib/firmware/qca/"
+	install -Dm644 "$builddir"/apnv11.bin -t \
+		"$subpkgdir/lib/firmware/qca/"
+}
+
+cdsp() {
+	pkgdesc="Fairphone 4 cdsp firmware"
+
+	install -Dm644 "$builddir"/cdsp.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+	install -Dm644 "$builddir"/cdsp*.jsn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+}
+
+hexagonfs() {
+	pkgdesc="Fairphone 4 hexagonfs files"
+
+	mkdir -p "$subpkgdir"/usr/share/qcom/sm7225/Fairphone/
+	cp -r "$builddir"/hexagonfs/ \
+		"$subpkgdir"/usr/share/qcom/sm7225/Fairphone/fp4
+
+	# Remove files that we don't need - for now
+	rm -r "$subpkgdir"/usr/share/qcom/sm7225/Fairphone/fp4/acdb/
+	rm -r "$subpkgdir"/usr/share/qcom/sm7225/Fairphone/fp4/dsp/
+
+	find "$subpkgdir/usr/share/qcom/sm7225/Fairphone/fp4/" \
+		-type f -exec chmod 0644 {} \;
+}
+
+ipa() {
+	pkgdesc="Fairphone 4 ipa firmware"
+
+	install -Dm644 "$builddir"/lagoon_ipa_fws.mbn \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/ipa_fws.mbn"
+}
+
+modem() {
+	pkgdesc="Fairphone 4 modem firmware"
+
+	install -Dm644 "$builddir"/modem.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+	install -Dm644 "$builddir"/modem*.jsn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+
+	cp -r "$builddir"/modem_pr/ \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+	find "$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/" \
+		-type f -exec chmod 0644 {} \;
+}
+
+venus() {
+	pkgdesc="Fairphone 4 venus firmware"
+
+	install -Dm644 "$builddir"/venus.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+}
+
+wlan() {
+	pkgdesc="Fairphone 4 wlan firmware"
+
+	install -Dm644 "$builddir"/wlanmdsp.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm7225/fairphone4/"
+}
+
+sha512sums="
+b6836a8770c089615698ec26d397530c75086457c309d7220265da1203f2b06c4021d5a872244ad1e5a4a19d0d8192c13ae2051538e24d1df5292480daa6309d  FP4-firmware-222756885ff5eb24ee89684ef8cfe860a45a54ec.tar.gz
+"

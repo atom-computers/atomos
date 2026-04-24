@@ -1,0 +1,29 @@
+From f994379fff7e7208559d3cdb195b6751155f5d79 Mon Sep 17 00:00:00 2001
+From: Iskren Chernev <me@iskren.info>
+Date: Mon, 22 Feb 2021 19:22:17 +0200
+Subject: [PATCH 4/6] Fix reading after array end
+
+Signed-off-by: Iskren Chernev <me@iskren.info>
+---
+ .../oneplus_touchscreen/ilitek/ilitek9882n/ili9882n_qcom.c      | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/input/touchscreen/oneplus_touchscreen/ilitek/ilitek9882n/ili9882n_qcom.c b/drivers/input/touchscreen/oneplus_touchscreen/ilitek/ilitek9882n/ili9882n_qcom.c
+index 31d1eee8f1f86..7c6054e60bfaf 100755
+--- a/drivers/input/touchscreen/oneplus_touchscreen/ilitek/ilitek9882n/ili9882n_qcom.c
++++ b/drivers/input/touchscreen/oneplus_touchscreen/ilitek/ilitek9882n/ili9882n_qcom.c
+@@ -258,10 +258,10 @@ static int ili_spi_pll_clk_wakeup(void)
+ 	wdata[1] = wlen >> 8;
+ 	wdata[2] = wlen & 0xff;
+ 	index = 3;
+-	wlen += index;
+ 
+ 	ipio_memcpy(&wdata[index], wakeup, wlen, wlen);
+ 
++	wlen += index;
+ 	ILI_INFO("Write dummy to wake up spi pll clk\n");
+ 	if (ilits->spi_write_then_read(ilits->spi, wdata, wlen, NULL, 0) < 0) {
+ 		ILI_INFO("spi slave write error\n");
+-- 
+2.30.1
+

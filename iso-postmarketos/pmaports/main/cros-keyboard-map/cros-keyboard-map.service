@@ -1,0 +1,12 @@
+[Unit]
+Description=Generate keyboard mapping for Chrome OS devices
+Before=keyd.service
+
+[Service]
+Type=oneshot
+Environment=INVERT=
+EnvironmentFile=/etc/cros-keyboard-map
+ExecStart=/usr/bin/pmos-generate-cros-keymap $INVERT --file /tmp/cros-keymap/keyd.conf
+
+[Install]
+WantedBy=multi-user.target

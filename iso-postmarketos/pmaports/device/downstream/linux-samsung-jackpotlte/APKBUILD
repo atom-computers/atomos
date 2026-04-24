@@ -1,0 +1,59 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/exynos7885-jackpotlte_defconfig
+
+pkgname=linux-samsung-jackpotlte
+pkgver=4.4.177
+pkgrel=2
+pkgdesc="Samsung Galaxy A8 (2018) kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-jackpotlte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl dtbtool-exynos"
+
+# Source
+_repository="Universal7885_native_linux"
+_commit="494009fa0b85ef8c6cc8678da8d9c85014c17205"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/VDavid003/$_repository/archive/$_commit.tar.gz
+	kernel-define-android-version.patch
+	fix-read-only-segment-has-dynamic-relocations-error.patch
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+
+	# Needed for the SoC's power management. When booting without it, the kernel is
+	# unusably slow and glitchy.
+	objcopy -I binary -O ihex firmware/exynos7885_acpm_fvp.fw firmware/exynos7885_acpm_fvp.fw.ihex
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	dtbTool-exynos --pagesize 2048 --platform 0x50a6 --subtype 0x217584da \
+		-o "$_outdir/arch/arm64/boot/dtb.img" $(find "$_outdir/arch/arm64/boot/dts/exynos/" -name *jackpotlte_eur*.dtb)
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	# Master DTB (deviceinfo_bootimg_qcdt)
+	install -Dm644 "$_outdir/arch/arm64/boot/dtb.img" \
+		"$pkgdir/boot/dt.img"
+}
+
+sha512sums="63d0a2161f926999b32cbb8eb69dbe69864752f53619d4f046181f5187bb57bd3f0b11ac46dd469c8596efd075d2a422db4bc3fc94e07785ed61c8cbb3b9d6b0  linux-samsung-jackpotlte-494009fa0b85ef8c6cc8678da8d9c85014c17205.tar.gz
+f3161f62a6ba0de56342b1410e509dce8320e43f788ae2670ebd59d93e5504aab77a913eecdebae33ff9135228869c5fd0559211c511f503fdc25f2fbab48351  kernel-define-android-version.patch
+763b7bb86f7b0d381771c292f531f81e33826438e7d3e866e3b295295415366a68f55a0b9ed6afd1a2a1ffc4204537cbc14a55af8b500e2c087cc4ef7f25b059  fix-read-only-segment-has-dynamic-relocations-error.patch
+199f3f82c2c85ad3689a37f311267a956d8fe5ad0d70e26feb869278e3d159699530f943541694ab70478169d4657aa1ec67c86616cc5692674943d0e3955acc  config-samsung-jackpotlte.aarch64"

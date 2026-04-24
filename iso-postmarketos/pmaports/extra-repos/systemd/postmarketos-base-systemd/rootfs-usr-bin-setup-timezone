@@ -1,0 +1,19 @@
+#!/bin/sh -e
+# Stub that implements a simplified version of Alpine's setup-timezone, so
+# pmbootstrap can call it during "pmbootstrap install" without having a
+# dependency on alpine-conf, which in turn depends on openrc.
+
+if [ "$#" != "2" ] || [ "$1" != "-i" ]; then
+	echo "setup-timezone stub from postmarketos-base-systemd"
+	echo "usage: setup-timezone -i TIMEZONE"
+	exit 1
+fi
+
+TZ_FILE="/usr/share/zoneinfo/$2"
+
+if ! [ -e "$TZ_FILE" ]; then
+	echo "ERROR: not found: $TZ_FILE"
+	exit 1
+fi
+
+ln -sf "$TZ_FILE" /etc/localtime

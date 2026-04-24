@@ -1,0 +1,67 @@
+maintainer="Luca Weiss <luca@lucaweiss.eu>"
+pkgname=firmware-oneplus-bacon
+pkgver=2
+_commit="a4b0ec447d9ae6d1025fc43b6d7f495298a71b61"
+pkgrel=0
+pkgdesc="Firmware for OnePlus One"
+url="https://github.com/FairBlobs/bacon-firmware"
+arch="armv7"
+license="proprietary"
+makedepends="pil-squasher"
+subpackages="
+	$pkgname-adsp
+	$pkgname-modem
+	$pkgname-wcnss
+	"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="https://github.com/FairBlobs/bacon-firmware/archive/$_commit/bacon-firmware-$_commit.tar.gz"
+builddir="$srcdir/bacon-firmware-$_commit"
+
+build() {
+	for i in *.mdt; do
+		pil-squasher "$(basename "$i" .mdt)".mbn "$i"
+	done
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+adsp() {
+	pkgdesc="OnePlus One adsp firmware"
+
+	install -Dm644 "$builddir"/adsp.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+
+	mkdir -p "$subpkgdir/lib/firmware/postmarketos"
+	ln -s ../qcom/msm8974/oneplus/bacon/adsp.mbn \
+		"$subpkgdir/lib/firmware/postmarketos/adsp.mdt"
+}
+
+modem() {
+	pkgdesc="OnePlus One modem firmware"
+
+	install -Dm644 "$builddir"/mba.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+	install -Dm644 "$builddir"/modem.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+}
+
+wcnss() {
+	pkgdesc="OnePlus One wcnss firmware"
+
+	install -Dm644 "$builddir"/wcnss.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+	install -Dm644 "$builddir"/WCNSS_qcom_wlan_nv.bin -t \
+		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+
+	mkdir -p "$subpkgdir/lib/firmware/postmarketos/wlan/prima"
+	ln -s ../qcom/msm8974/oneplus/bacon/wcnss.mbn \
+		"$subpkgdir/lib/firmware/postmarketos/wcnss.mdt"
+	ln -s ../../../qcom/msm8974/oneplus/bacon/WCNSS_qcom_wlan_nv.bin \
+		"$subpkgdir/lib/firmware/postmarketos/wlan/prima/WCNSS_qcom_wlan_nv.bin"
+}
+
+sha512sums="
+f0236721ba435244dd7581f70b7b413888c3faeaaca7185c87a85ae2d82ea88c73231d753a59053ab53b3fa8529b7d9d52017334546f9ab26a1c0d38767a7b40  bacon-firmware-a4b0ec447d9ae6d1025fc43b6d7f495298a71b61.tar.gz
+"

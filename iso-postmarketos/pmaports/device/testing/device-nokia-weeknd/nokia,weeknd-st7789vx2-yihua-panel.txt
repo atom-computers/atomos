@@ -1,0 +1,23 @@
+# Based on the downstream device tree, which is assumed to be:
+# Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 and
+# only version 2 as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+command 0x11 # exit sleep mode
+delay 120
+command 0x36 0x00
+command 0x3a 0x05
+command 0x35 0x00
+command 0xd0 0xa7 0xa1
+command 0xd0 0xa4 0xa1
+command 0x13
+command 0x38
+command 0x20
+command 0x29 # display on

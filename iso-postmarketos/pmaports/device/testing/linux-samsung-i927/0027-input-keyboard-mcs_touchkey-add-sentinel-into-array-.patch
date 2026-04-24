@@ -1,0 +1,30 @@
+From 869e15f976c669fbf6fcc8b4faeb7b43a4580686 Mon Sep 17 00:00:00 2001
+From: Seung-Woo Kim <sw0312.kim@samsung.com>
+Date: Thu, 4 Dec 2014 20:19:30 +0900
+Subject: [PATCH] input: keyboard: mcs_touchkey: add sentinel into array of
+ of_device_id
+
+Without sentinel, of_match_node() to array causes out-of-bound
+memory access. So this patch adds sentinel into array.
+
+Change-Id: Icfe3d8c2fdb0faa006f413e7c080b6d713eab08c
+Signed-off-by: Seung-Woo Kim <sw0312.kim@samsung.com>
+---
+ drivers/input/keyboard/mcs_touchkey.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/input/keyboard/mcs_touchkey.c b/drivers/input/keyboard/mcs_touchkey.c
+index b5e2a8a2d3d1..cd26a5560449 100644
+--- a/drivers/input/keyboard/mcs_touchkey.c
++++ b/drivers/input/keyboard/mcs_touchkey.c
+@@ -317,6 +317,7 @@ MODULE_DEVICE_TABLE(i2c, mcs_touchkey_id);
+ static struct of_device_id mcs_touchkey_dt_match[] = {
+ 	{ .compatible = "mcs5000_touchkey", },
+ 	{ .compatible = "mcs5080_touchkey", },
++	{ },
+ };
+ 
+ static struct i2c_driver mcs_touchkey_driver = {
+-- 
+2.22.0
+

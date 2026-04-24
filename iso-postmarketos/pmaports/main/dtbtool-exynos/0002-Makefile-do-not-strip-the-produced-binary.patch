@@ -1,0 +1,26 @@
+From 0143ed5c784df0baf69f1aee6a3ba0fb45457de6 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Thu, 3 Jul 2025 18:58:22 +0200
+Subject: [PATCH] Makefile: do not strip the produced binary
+
+Typically distro packagers will handle this. For local builds it might
+be benefical to still have the debug symbols.
+---
+ Makefile | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 9f2a841ba7c8..55c726bb232f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,6 @@ all: dtbTool-exynos
+ 
+ dtbTool-exynos: $(OBJ_FILES)
+ 	$(CC) $(CFLAGS) -o $@ $^ -lfdt
+-	strip $@
+ 
+ clean:
+ 	rm -f dtbTool-exynos $(OBJ_FILES)
+-- 
+2.50.0
+

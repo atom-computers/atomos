@@ -1,0 +1,33 @@
+tools/include/tools/be_byteshift.h:5:10: fatal error: linux/types.h: No such file or directory
+diff --git a/tools/include/tools/be_byteshift.h b/tools/include/tools/be_byteshift.h
+index dbc6f1e3..cd041f3d 100644
+--- a/tools/include/tools/be_byteshift.h
++++ b/tools/include/tools/be_byteshift.h
+@@ -1,11 +1,7 @@
+ #ifndef _TOOLS_BE_BYTESHIFT_H
+ #define _TOOLS_BE_BYTESHIFT_H
+ 
+-#ifdef __linux__
+-#include <linux/types.h>
+-#else
+ #include "linux_types.h"
+-#endif
+ 
+ static inline __u16 __get_unaligned_be16(const __u8 *p)
+ {
+diff --git a/tools/include/tools/le_byteshift.h b/tools/include/tools/le_byteshift.h
+index 56d0af0a..0badd9b3 100644
+--- a/tools/include/tools/le_byteshift.h
++++ b/tools/include/tools/le_byteshift.h
+@@ -1,11 +1,7 @@
+ #ifndef _TOOLS_LE_BYTESHIFT_H
+ #define _TOOLS_LE_BYTESHIFT_H
+ 
+-#ifdef __linux__
+-#include <linux/types.h>
+-#else
+ #include "linux_types.h"
+-#endif
+ 
+ static inline __u16 __get_unaligned_le16(const __u8 *p)
+ {

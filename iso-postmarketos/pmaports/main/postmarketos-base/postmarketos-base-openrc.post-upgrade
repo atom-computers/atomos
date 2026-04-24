@@ -1,0 +1,60 @@
+#!/bin/sh
+# WARNING: do not symlink this file to postmarketos-base.post-install!
+# Otherwise it will enable services, as listed in that file. And we don't want
+# this to happen during upgrade, especially not automatically enabling the sshd
+# service! (build.postmarketos.org#85)
+
+# The old version of the package is passed in as the second argument
+OLD_VER="$2"
+NEW_VER="$1"
+old_ver_less() {
+    [ "$OLD_VER" != "$1" -a "$(echo -e "$1\n$OLD_VER" | sort -V | head -n1)" = "$OLD_VER" ]
+}
+
+# postmarketos-base version 30 moved us to logbookd but we forgot to disable
+# syslog... The easiest way to solve this is to just do the upgrade again, sorry
+# to anyone who manually disabled logbookd again...
+if old_ver_less "31-r1"; then
+    echo "## postmarketos-base migrating to logbookd ##"
+    echo "## The initial upgrade didn't disable syslog, we're doing that now ##"
+    echo "## If you want to keep using syslog, undo the following changes ##"
+    set -x
+    rc-update add logbookd boot
+    rc-update del syslog boot
+    set +x
+fi
+
+# Fixup old pmOS installations that run setup-timezone without "-i" option
+# and those later installations that run with it, but have missing
+# https://gitlab.alpinelinux.org/alpine/alpine-conf/-/merge_requests/157
+# See https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/2168 for context
+# This is probably safe to remove after a couple of releases of the alpine-conf
+# fix having been merged
+[ -L /etc/localtime ] || exit 0
+localtime="$(readlink /etc/localtime)"
+restart="yes"
+case "$localtime" in
+    //usr/share/zoneinfo/*) localtime=${localtime#/*} ;;
+    //etc/zoneinfo*) localtime="/usr/share/zoneinfo/${localtime#//etc/zoneinfo/*}" ;;
+    /etc/zoneinfo/*) localtime="/usr/share/zoneinfo/${localtime#/etc/zoneinfo/*}" ;;
+    *) restart="no" ;;
+esac
+ln -sf "$localtime" /etc/localtime
+rm -rf /etc/zoneinfo
+[ "$restart" = "yes" ] && service -qq openrc-settingsd restart
+
+# Fixup old pmOS /etc/fstab installations that had too little options,
+# had a wrong type for fat32 and fat16, and missed some options for vfat when
+# kernels did not use default configs. See pmb!2304
+# This should be safe to remove after some releases, probably v25.06
+sed -i -e "s% /boot \(fat32\|fat16\) defaults 0 0$% /boot vfat umask=0077,nodev,nosuid,noexec,nosymfollow,codepage=437,iocharset=ascii 0 0%g" /etc/fstab
+sed -i -e "s% /boot ext2 defaults 0 0$% /boot ext2 nodev,nosuid,noexec 0 0%g" /etc/fstab
+
+# To turn pmos-zram-swap into a no-op, set: deviceinfo_zram_swap_pct="0"
+rc-update -q add postmarketos-zram-swap default
+# We once enabled tmpfs in default, when it needs bootmisc: pma#2473
+rc-update -qq del tmpfs default || true
+# To disable mounting /tmp as tmpfs deviceinfo_tmp_as_tmpfs_size="0"
+rc-update -q add tmpfs boot
+
+exit 0

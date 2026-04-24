@@ -1,0 +1,63 @@
+From 48dec0cc97937dc39b622dcf469672ce7bc21c00 Mon Sep 17 00:00:00 2001
+From: Shinjo Park <peremen@gmail.com>
+Date: Tue, 28 Jun 2022 23:26:29 +0200
+Subject: [PATCH 3/4] mmc: Block access of RPMB partitions for normal read and
+ write
+
+---
+ drivers/mmc/card/block.c | 13 +++++++++++++
+ drivers/mmc/card/queue.c |  2 +-
+ drivers/mmc/card/queue.h |  2 ++
+ 3 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index 366d3528..0927a7b1 100644
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -894,6 +894,19 @@ static inline void mmc_blk_reset_success(struct mmc_blk_data *md, int type)
+ 	md->reset_done &= ~type;
+ }
+ 
++int mmc_access_rpmb(struct mmc_queue *mq)
++{
++	struct mmc_blk_data *md = mq->data;
++	/*
++	 * If this is a RPMB partition access, return ture
++	 */
++	if (md && md->part_type == EXT_CSD_PART_CONFIG_ACC_RPMB)
++		return true;
++
++	return false;
++}
++EXPORT_SYMBOL_GPL(mmc_access_rpmb);
++
+ static int mmc_blk_issue_discard_rq(struct mmc_queue *mq, struct request *req)
+ {
+ 	struct mmc_blk_data *md = mq->data;
+diff --git a/drivers/mmc/card/queue.c b/drivers/mmc/card/queue.c
+index 9447a0e9..645519fe 100644
+--- a/drivers/mmc/card/queue.c
++++ b/drivers/mmc/card/queue.c
+@@ -37,7 +37,7 @@ static int mmc_prep_request(struct request_queue *q, struct request *req)
+ 		return BLKPREP_KILL;
+ 	}
+ 
+-	if (mq && mmc_card_removed(mq->card))
++	if (mq && (mmc_card_removed(mq->card) || mmc_access_rpmb(mq)))
+ 		return BLKPREP_KILL;
+ 
+ 	req->cmd_flags |= REQ_DONTPREP;
+diff --git a/drivers/mmc/card/queue.h b/drivers/mmc/card/queue.h
+index 5752d500..99e6521e 100644
+--- a/drivers/mmc/card/queue.h
++++ b/drivers/mmc/card/queue.h
+@@ -73,4 +73,6 @@ extern void mmc_queue_bounce_post(struct mmc_queue_req *);
+ extern int mmc_packed_init(struct mmc_queue *, struct mmc_card *);
+ extern void mmc_packed_clean(struct mmc_queue *);
+ 
++extern int mmc_access_rpmb(struct mmc_queue *);
++
+ #endif
+-- 
+2.34.1
+

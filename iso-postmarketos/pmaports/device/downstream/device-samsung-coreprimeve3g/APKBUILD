@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-coreprimeve3g
+pkgdesc="Samsung Galaxy Core Prime"
+pkgver=2
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-samsung-coreprimeve3g
+	mkbootimg
+	postmarketos-base
+	dtbtool-sprd
+	postmarketos-base-downstream
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+_pmb_recommends="firmware-samsung-coreprimeve3g"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname firmware-samsung-coreprimeve3g
+}
+
+
+sha512sums="
+4c38580c20a2e42693b11c12bbc88eaf8341c4af5288b4e225253a62ad5252dcc7f9681762ce8f3cb98833a7ae599f60050e452de6a5308b37d16e5d249f1e2d  deviceinfo
+cb0731b5e71b427024bb47cd70aa48d3be409a89aa476f3fd4dea8e5b42ef87371a65bbe836bca7da04c0384178ad293b44da8a88557ad04fc57857bef502050  kernel-cmdline.conf
+"

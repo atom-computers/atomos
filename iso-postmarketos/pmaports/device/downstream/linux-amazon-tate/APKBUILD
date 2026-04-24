@@ -1,0 +1,74 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/android_tate_defconfig
+
+pkgname=linux-amazon-tate
+pkgver=3.0.72
+pkgrel=0
+pkgdesc="Amazon Kindle Fire HD (2nd Generation) kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="amazon-tate"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="bash bc bison devicepkg-dev flex openssl-dev perl xz gcc6"
+
+# Compiler: GCC 6 (doesn't boot when compiled with newer versions)
+if [ "${CC:0:5}" != "gcc6-" ]; then
+	CC="gcc6-$CC"
+	HOSTCC="gcc6-gcc"
+	CROSS_COMPILE="gcc6-$CROSS_COMPILE"
+fi
+
+# Source
+_repository="android_kernel_amazon_bowser-common"
+_commit="1364d678a9f79abb6ab9310669700e6fabb51a24"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.0-fix-piggy.lzma.S.patch
+	linux3.0-fix-piggy.lzo.S.patch
+	tate-fix-sun-solaris-style-flag-on-section.patch
+	revert_sysfs_readdir_lseek_race_fix.patch
+	ifdef-audio-dep-hdmi.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		CFLAGS_MODULE=-fno-pic \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	make modules_install \
+		O="$_outdir" ARCH="$_carch" \
+		CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir"
+}
+
+sha512sums="
+4a50a9beb3238adaf19b222e66216ce4ddee930d21f8d80ad43bcd557a7ba169687d3cb61479a7d2e79f898c9416a4fe520e0d681f46bb4370956c16cc36a47c  linux-amazon-tate-1364d678a9f79abb6ab9310669700e6fabb51a24.tar.gz
+f5fb6d2f80b635f813151c03014e628467a3f17e5958043155d270078d2146a28b6c055bf8f61d28d04e37857d8219c9e8381145320c65240e8ae67126d374fa  config-amazon-tate.armv7
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+3c098328e45db14cbeff6a515bb373129e0d0983884178f413c5a4206704b356ddecdf58557a04b828b391dbfef3cea0e98b47834aa97b86496aa2fce0013b92  linux3.0-fix-piggy.lzma.S.patch
+8837c884060d87232ba3fa9fce0e815d7ddf33c82ad49260426fe83754baa2f4d92a36a17561083ac8b3674564b7433b3141cacc63b520deec52bbcc1d92d5c9  linux3.0-fix-piggy.lzo.S.patch
+2027d4a68d9537b9d487572c8de6a68e9608087156b4fbc185cd6bd9df2dd4147d9f0e517fd50e653c4d73584df3977d739561446ee00c9409015ffa138f732b  tate-fix-sun-solaris-style-flag-on-section.patch
+03a694cf3a6659afc6439df3cfff3c37b6bdcce05cd6286b97c8fc1892a8c3985bfce64e574a23ba79de8bd614f4b5b57fb9dd18b8640ef8786f533e5c88530d  revert_sysfs_readdir_lseek_race_fix.patch
+d4e6b179e3fc875c4aa5ac204c3cb9d14c85fa66b0d5ded55a10ab3f342f953083635a575fbc5092b66e5994a037b670b68cdb5217356db10eae587d306738aa  ifdef-audio-dep-hdmi.patch
+"

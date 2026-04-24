@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-a6lte
+pkgdesc="Samsung Galaxy A6 2018"
+pkgver=10
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-utils
+	bootmac
+	dtbtool-exynos
+	firmware-samsung-a6lte
+	linux-postmarketos-exynos7870
+	mesa-dri-simpledrm
+	mkbootimg
+	postmarketos-base
+	samsungipcd
+	util-linux
+"
+replaces="
+	lightdm
+"
+makedepends="devicepkg-dev"
+install="$pkgname.post-install"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	etc-conf.d-samsungipcd
+	etc-lightdm-lightdm.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 etc-conf.d-samsungipcd "$pkgdir"/etc/conf.d/samsungipcd
+	install -Dm644 etc-lightdm-lightdm.conf "$pkgdir"/etc/lightdm/lightdm.conf
+}
+
+sha512sums="
+74fef0e3ad6ca726e03db64cc13ff8d7be8c1405990a2336ee337498f8cd4787cb7b529003984bed897e9e6f6381ef69867a5de7d2ed596e8c8c3ec729084489  deviceinfo
+6263b6dab9ea670bd1af22feff8fb7ce9d143ed5ab99223bcef9da76bb0947c89e62dbf7004e1a307e2b71df48de84ea95cad258d88a44cedb37e347c56db8d2  kernel-cmdline.conf
+3e5bb764529010d2b6b1f2759a7799f665d140aebcee2dd63433e68cd4282e09b5d3b34fb7c21e737595b406501e7f02ece4592651c60e4c2b9419de4aedb438  etc-conf.d-samsungipcd
+861270c6bc0b2a3e6cd389c21c8c895e62de8cf8bec6fcf23c178f8cbaae855d62b0ee98692671ab4f518d84cb43dd0b2fe46f5a609f65af6a6c06e0fdbb6d0c  etc-lightdm-lightdm.conf
+"

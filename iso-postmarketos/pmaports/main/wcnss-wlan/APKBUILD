@@ -1,0 +1,24 @@
+maintainer="Attila Szollosi <ata2001@airmail.cc>"
+pkgname=wcnss-wlan
+pkgver=2
+pkgrel=3
+pkgdesc="Init script for enabling wcnss wlan driver (downstream Android kernels)"
+url="https://gitlab.postmarketos.org/postmarketOS/pmaports"
+arch="noarch"
+license="GPL-3.0-or-later"
+source="$pkgname.initd"
+subpackages="$pkgname-openrc"
+options="!check" # No tests
+
+package() {
+	install -Dm755 "$srcdir"/$pkgname.initd "$pkgdir"/etc/init.d/wcnss-wlan
+}
+
+openrc() {
+	install="$subpkgname.post-install"
+	default_openrc
+}
+
+sha512sums="
+8bf30e5cdf71dc3e2f4ec5b426abd87036dd8748207ec133c3898c966fa33770f18f852f64a9011f20780c411364fd573a1fa7adba8f4491326026f8d85dd018  wcnss-wlan.initd
+"

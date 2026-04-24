@@ -1,0 +1,167 @@
+diff --git a/drivers/gpu/msm/adreno_trace.h b/drivers/gpu/msm/adreno_trace.h
+index 74c4c4e6e1fa..313f2bb0b117 100644
+--- a/drivers/gpu/msm/adreno_trace.h
++++ b/drivers/gpu/msm/adreno_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm/
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE adreno_trace
+
+diff --git a/drivers/gpu/msm/kgsl_trace.h b/drivers/gpu/msm/kgsl_trace.h
+index 6438c6e65b97..088534fe7e4c 100644
+--- a/drivers/gpu/msm/kgsl_trace.h
++++ b/drivers/gpu/msm/kgsl_trace.h
+@@ -17,7 +17,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM kgsl
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/gpu/msm/
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE kgsl_trace
+
+diff --git a/drivers/net/ethernet/msm/rndis_ipa_trace.h b/drivers/net/ethernet/msm/rndis_ipa_trace.h
+index c0fc573799f2..1e8dd9a7f282 100644
+--- a/drivers/net/ethernet/msm/rndis_ipa_trace.h
++++ b/drivers/net/ethernet/msm/rndis_ipa_trace.h
+@@ -77,5 +77,5 @@ TRACE_EVENT(
+
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/net/ethernet/msm/
+ #include <trace/define_trace.h>
+diff --git a/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h b/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h
+index a03a49a33f97..218d3e965943 100644
+--- a/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h
++++ b/drivers/platform/msm/ipa/ipa_v2/ipa_trace.h
+@@ -148,5 +148,5 @@ TRACE_EVENT(
+
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/platform/msm/ipa/ipa_v2/
+ #include <trace/define_trace.h>
+diff --git a/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h b/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
+index b67899ba894e..9e341ab1d203 100644
+--- a/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
++++ b/drivers/platform/msm/ipa/ipa_v3/ipa_trace.h
+@@ -149,5 +149,5 @@ TRACE_EVENT(
+
+ /* This part must be outside protection */
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/platform/msm/ipa/ipa_v3/
+ #include <trace/define_trace.h>
+diff --git a/drivers/soc/qcom/tracer_pkt_private.h b/drivers/soc/qcom/tracer_pkt_private.h
+index fc760e6b68d1..5573aec2fe83 100644
+--- a/drivers/soc/qcom/tracer_pkt_private.h
++++ b/drivers/soc/qcom/tracer_pkt_private.h
+@@ -15,7 +15,7 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM tracer_pkt
+ #undef TRACE_INCLUDE_PATH
+-#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_PATH ../../drivers/soc/qcom/
+ #undef TRACE_INCLUDE_FILE
+ #define TRACE_INCLUDE_FILE tracer_pkt_private
+ diff --git a/drivers/nfc/pn548/pn548.c b/drivers/nfc/pn548/pn548.c
+ index dca56a309437..b5f1462e34c2 100644
+ --- a/drivers/nfc/pn548/pn548.c
+ +++ b/drivers/nfc/pn548/pn548.c
+ @@ -40,7 +40,7 @@
+  #include <linux/wakelock.h>
+  #include <linux/kthread.h>
+
+ -#include <pn548.h>
+ +#include "pn548.h"
+
+  #define MAX_BUFFER_SIZE 512
+  #define _A1_PN66T_
+diff --git a/include/trace/events/msm_cam.h b/include/trace/events/msm_cam.h
+index 9a5dd158b4b8..4c1b4659e91e 100644
+--- a/include/trace/events/msm_cam.h
++++ b/include/trace/events/msm_cam.h
+@@ -16,7 +16,7 @@
+ #if !defined(_TRACE_MSM_VFE_H) || defined(TRACE_HEADER_MULTI_READ)
+ #define _TRACE_MSM_VFE_H
+
+-#include "msm_isp.h"
++#include "../../uapi/media/msm_isp.h"
+ #include <linux/types.h>
+ #include <linux/tracepoint.h>
+
+diff --git a/sound/soc/msm/apq8096-auto.c b/sound/soc/msm/apq8096-auto.c
+index 2ae78f75c340..62dd641aa79f 100644
+--- a/sound/soc/msm/apq8096-auto.c
++++ b/sound/soc/msm/apq8096-auto.c
+@@ -33,7 +33,7 @@
+ #include <sound/q6core.h>
+ #include <sound/pcm_params.h>
+ #include <sound/info.h>
+-#include <device_event.h>
++#include "device_event.h"
+ #include "qdsp6v2/msm-pcm-routing-v2.h"
+
+ #define DRV_NAME "apq8096-auto-asoc-snd"
+diff --git a/sound/soc/msm/apq8096-i2c.c b/sound/soc/msm/apq8096-i2c.c
+index 8bcda764af09..8d50c6d79605 100644
+--- a/sound/soc/msm/apq8096-i2c.c
++++ b/sound/soc/msm/apq8096-i2c.c
+@@ -31,7 +31,7 @@
+ #include <sound/q6core.h>
+ #include <sound/pcm_params.h>
+ #include <sound/info.h>
+-#include <device_event.h>
++#include "device_event.h"
+ #include "qdsp6v2/msm-pcm-routing-v2.h"
+ #include "../codecs/wcd9xxx-common.h"
+ #include "../codecs/wcd9330.h"
+diff --git a/sound/soc/msm/mdm9650.c b/sound/soc/msm/mdm9650.c
+index ee469f10b78a..9c4c90e84134 100644
+--- a/sound/soc/msm/mdm9650.c
++++ b/sound/soc/msm/mdm9650.c
+@@ -26,7 +26,7 @@
+ #include <sound/q6afe-v2.h>
+ #include <sound/info.h>
+ #include <sound/pcm_params.h>
+-#include <device_event.h>
++#include "device_event.h"
+ #include <soc/qcom/socinfo.h>
+ #include <qdsp6v2/msm-pcm-routing-v2.h>
+ #include <sound/q6core.h>
+diff --git a/sound/soc/msm/msm8996.c b/sound/soc/msm/msm8996.c
+index 1e051b12065a..c135f7b6b86c 100644
+--- a/sound/soc/msm/msm8996.c
++++ b/sound/soc/msm/msm8996.c
+@@ -31,7 +31,7 @@
+ #include <sound/q6core.h>
+ #include <sound/pcm_params.h>
+ #include <sound/info.h>
+-#include <device_event.h>
++#include "device_event.h"
+ #include "qdsp6v2/msm-pcm-routing-v2.h"
+ #include "../codecs/wcd9xxx-common.h"
+ #include "../codecs/wcd9330.h"
+
+diff --git a/drivers/platform/msm/mhi/mhi_ssr.c b/drivers/platform/msm/mhi/mhi_ssr.c
+index f4f2e427972f..1c3f305c2144 100644
+--- a/drivers/platform/msm/mhi/mhi_ssr.c
++++ b/drivers/platform/msm/mhi/mhi_ssr.c
+@@ -11,8 +11,8 @@
+  */
+
+ #include <linux/pm_runtime.h>
+-#include <mhi_sys.h>
+-#include <mhi.h>
++#include "mhi_sys.h"
++#include "mhi.h"
+ #include <soc/qcom/subsystem_restart.h>
+ #include <soc/qcom/subsystem_notif.h>
+ #include <linux/esoc_client.h>
+--
+2.24.1

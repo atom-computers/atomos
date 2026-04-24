@@ -1,0 +1,34 @@
+From 9eb681bb5e4166553fee08c2ff2aebae76f0e727 Mon Sep 17 00:00:00 2001
+From: Zhuowei Zhang <linux@worthdoingbadly.com>
+Date: Sat, 8 Dec 2018 00:42:49 -0800
+Subject: [PATCH] init: ignore dm= parameter
+
+The commit "CHROMIUM: dm: boot time specification of dm="
+(a058da83727d9f3df84c956d9b29d775a2a9d45f) added a new boot
+parameter for specifying dm partitions. This breaks postmarketOS's
+root partition mounting.
+
+Change the boot parameter to something the bootloader doesn't know
+about.
+
+Thanks to opendata26 for figuring this out.
+---
+ init/do_mounts_dm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init/do_mounts_dm.c b/init/do_mounts_dm.c
+index 7760705faffe..628b6a0c66d8 100644
+--- a/init/do_mounts_dm.c
++++ b/init/do_mounts_dm.c
+@@ -459,7 +459,7 @@ static void __init dm_setup_drives(void)
+ 	dm_setup_cleanup(devices);
+ }
+ 
+-__setup("dm=", dm_setup);
++__setup("dm_IGNORE=", dm_setup);
+ 
+ void __init dm_run_setup(void)
+ {
+-- 
+2.17.1
+

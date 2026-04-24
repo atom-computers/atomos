@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy Tab A7 Lite"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="samsung-gta7litewifi"
+deviceinfo_year="2021"
+deviceinfo_dtb="mediatek/mt6765"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="800"
+deviceinfo_screen_height="1340"
+
+# Bootloader related
+deviceinfo_flash_method="mtkclient"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="2048"
+deviceinfo_header_version="2"
+deviceinfo_flash_offset_dtb="0x07808000"
+deviceinfo_flash_offset_base="0x40078000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x11a88000"
+deviceinfo_flash_offset_second="0xbff88000"
+deviceinfo_flash_offset_tags="0x07808000"

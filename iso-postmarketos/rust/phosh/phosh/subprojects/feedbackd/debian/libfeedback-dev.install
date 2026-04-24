@@ -1,0 +1,5 @@
+/usr/include
+/usr/share/gir-1.0/
+/usr/share/vala/
+/usr/lib/*/libfeedback-*.so
+/usr/lib/*/pkgconfig/libfeedback-*.pc

@@ -1,0 +1,13 @@
+/bin
+/boot
+/dev
+/etc
+/lib
+/proc
+/run
+/sbin
+/sys
+/sysroot
+/tmp
+/usr
+/hooks-cleanup

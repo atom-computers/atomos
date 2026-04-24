@@ -1,0 +1,70 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-raspberry-pi
+pkgdesc="Raspberry Pi"
+pkgver=6
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armhf"
+options="!check !archcheck"
+depends="
+	linux-rpi
+	postmarketos-base
+	raspberrypi-bootloader
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-openrc
+	$pkgname-sway
+	$pkgname-phosh
+	$pkgname-udev
+"
+source="deviceinfo
+	kernel-cmdline.conf
+	config.txt
+	usercfg.txt
+	95-vchiq-permissions.rules
+	start-even-without-input.sh"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/config.txt "$pkgdir"/boot/config.txt
+	install -Dm644 "$srcdir"/usercfg.txt "$pkgdir"/boot/usercfg.txt
+	install -Dm644 "$srcdir"/95-vchiq-permissions.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/95-vchiq-permissions.rules
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sway() {
+	install_if="$pkgname postmarketos-ui-sway"
+	depends="$pkgname"
+	install -Dm644 "$srcdir"/start-even-without-input.sh "$pkgdir"/etc/profile.d/start-even-without-input.sh
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname postmarketos-ui-phosh"
+	depends="$pkgname"
+	install -Dm644 "$srcdir"/start-even-without-input.sh "$pkgdir"/etc/profile.d/start-even-without-input.sh
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+7896c2d163a16395c35e114a48885d2c52e5fe98ebed074e0e53d4aefad0dfbc8a30ba3f9cd796087d0d8f3695cae707cc8b90a35a387c09d4dac56ebf543656  deviceinfo
+d60c4e19dc92b0847f5667a1655a9cf95931b5be6630673fe987ff42f9ac94f19ce59ccf0e34960a686753549bd62677c0f5a6c15e1a4a842b99bda5825d62be  kernel-cmdline.conf
+2f146944f5b30a1a065b3002e965cb74edbcb3b50dcfb448b9b0e8c379e9e7aa1f732a48b0539208cd8185234ce8011a1737961a04ebaee28e8a7dad224347ce  config.txt
+e94c810f973eb6b6d0fb3687ea1d70612ba00e9c5d6b3608390a161e077c5591fd9d232c37b42443c05ed28bb639ca1754422ff35899c5e33d7fc266e0e1ad05  usercfg.txt
+7e5505cb07d5b4a81bd28443d508336b5c547356538f1c06f91ed93ad0d7d456d4f74f1d24df5a2e08c17e74f0a66607352ac4874e967e9a91dfec9522d2d58d  95-vchiq-permissions.rules
+5e91a9efbaa0c734492472b0d1bb1798ec75587f3cf0ccbc31489b2e1ee6c6713e78397e67cdce3616af967bb3cbf57b49a137879106a3eec4a4a4e3d74f0610  start-even-without-input.sh
+"

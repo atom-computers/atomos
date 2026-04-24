@@ -1,0 +1,87 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on make defconfig
+
+pkgname=linux-samsung-a53x
+pkgver=5.10.6
+pkgrel=2
+pkgdesc="Samsung Galaxy A53 5G kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-a53x"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	findutils flex
+	openssl-dev
+	perl
+	python3
+	xz
+	llvm
+	lld
+	linux-headers
+"
+
+# Source
+_repository="android_kernel_samsung_a53x_xy"
+_commit="b155b4e2fcf8ee5aa6f5f71d2133eef9f3ec5e4d"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Gabriel2392/$_repository/archive/$_commit.tar.gz
+"
+builddir="$srcdir/android_kernel_samsung_a53x_xy-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+
+	local i
+	local makefiles="$(find $builddir -type f -name Makefile)
+		$(find . -type f -name Kbuild)"
+	for i in $makefiles; do
+		sed -i 's/-Werror-/-W/g' "$i"
+		sed -i 's/-Werror//g' "$i"
+		sed -i 's/=strict-prototypes//g' $i
+		sed -i 's/=implicit-function-declaration//g' $i
+		sed -i 's/=implicit-int//g' $i
+		sed -i 's/=return-type//g' $i
+		sed -i 's/=date-time//g' $i
+		sed -i 's/=unknown-warning-option//g' $i
+	done
+	make PLATFORM_VERSION=12 ANDROID_MAJOR_VERSION=s \
+		ARCH=$_carch TARGET_SOC=s5e8825 LLVM=1 \
+		s5e8825-a53xxx_defconfig
+	echo "CONFIG_SECTION_MISMATCH_WARN_ONLY=y" >> $builddir/.config
+}
+
+build() {
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+5fbd9a05f5d913c4b78f115cfb64ec131cf620a2b593fd2a560c356f4fb617c5659caabaee93a3a2376f547825db92901818fca553b8461285cdfbdb3eb126f4  linux-samsung-a53x-b155b4e2fcf8ee5aa6f5f71d2133eef9f3ec5e4d.tar.gz
+"

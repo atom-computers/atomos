@@ -1,0 +1,14 @@
+diff --git a/fs/stat.c b/fs/stat.c
+index 88b36c7..17b7a1b 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -58,7 +58,7 @@
+ int vfs_fstat(unsigned int fd, struct kstat *stat)
+ {
+ 	int fput_needed;
+-	struct file *f = fget_light(fd, &fput_needed);
++	struct file *f = fget_raw_light(fd, &fput_needed);
+ 	int error = -EBADF;
+ 
+ 	if (f) {
+

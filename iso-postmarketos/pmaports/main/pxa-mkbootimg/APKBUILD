@@ -1,0 +1,25 @@
+maintainer="András El Koulali <deak311andris@gmail.com>"
+pkgname=pxa-mkbootimg
+pkgver=2020.05.19
+pkgrel=0
+pkgdesc="mkbootimg for the PXA1908 and 1088 chipsets"
+url="https://github.com/osm0sis/pxa-mkbootimg"
+arch="all"
+license="unknown"
+makedepends="gcc make"
+source="$pkgname-$pkgver.tar.gz::https://github.com/osm0sis/pxa-mkbootimg/archive/$pkgver.tar.gz"
+# no tests
+options="!check"
+
+build() {
+	make
+}
+
+package() {
+	install -Dm755 "$builddir"/pxa-mkbootimg "$pkgdir"/usr/bin/pxa-mkbootimg
+	install -m755 "$builddir"/pxa-unpackbootimg "$pkgdir"/usr/bin/pxa-unpackbootimg
+	install -m755 "$builddir"/pxa1908-dtbTool "$pkgdir"/usr/bin/pxa1908-dtbTool
+	install -m755 "$builddir"/pxa1088-dtbTool "$pkgdir"/usr/bin/pxa1088-dtbTool
+}
+
+sha512sums="da7e7441d135e108d446eb4f2775ec252ada352b55d3c3f701bb22081d9a2fafe9d532b89950b84d91be7e9fe8c69b056f1f1db7d47d287dec149dec44574aa7  pxa-mkbootimg-2020.05.19.tar.gz"

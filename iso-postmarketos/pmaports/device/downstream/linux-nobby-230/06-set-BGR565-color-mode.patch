@@ -1,0 +1,13 @@
+diff --git a/drivers/video/sprdfb/sprdfb_main.c b/drivers/video/sprdfb/sprdfb_main.c
+index cdb8c0c..6538bab 100644
+--- a/drivers/video/sprdfb/sprdfb_main.c
++++ b/drivers/video/sprdfb/sprdfb_main.c
+@@ -38,7 +38,7 @@ enum{
+ 	SPRD_IN_DATA_TYPE_LIMIT
+ };
+ 
+-#define SPRDFB_IN_DATA_TYPE SPRD_IN_DATA_TYPE_ABGR888
++#define SPRDFB_IN_DATA_TYPE SPRD_IN_DATA_TYPE_BGR565
+ 
+ #ifdef CONFIG_FB_TRIPLE_FRAMEBUFFER
+ #define FRAMEBUFFER_NR		(3)

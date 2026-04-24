@@ -1,0 +1,84 @@
+# Archived: Downstream port, only for testing. Use mainline port!
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/fusion3_yuga_defconfig
+# - enable devtmpfs (needed for udev -> touch support in weston)
+# - set CONFIG_USB_ETH=y and CONFIG_USB_ETH_RNDIS=y (needed for ethernet over USB (rndis))
+# - disable ANDROID_PARANOID_NETWORK (removes network restrictions)
+
+pkgname=linux-sony-yuga-downstream
+pkgver=3.4.0
+pkgrel=0
+pkgdesc="Sony Xperia Z kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="sony-yuga"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_sony_apq8064"
+_commit="f164c6d1016cb34ac90c053acbebe6e47fdd400f"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	gcc10-extern_YYLOC_global_declaration.patch
+	kernel-use-the-gnu89-standard-explicitly.patch
+	linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+	linux3.0-fix-piggy.lzo.S.patch
+	00_fix_return_address.patch
+	psmouse_base.patch
+	kgsl_iommu_sync_lock.patch
+	02_reduce_lzo_compression.patch
+	proc_fdinfo.patch
+	fix-video-argb-setting.patch
+	fix_wlan_prima_bin_dir.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+}
+
+
+sha512sums="
+a20ab3f27b43999287ebef5ee150b1652ebc4996a2670079ff86a9ca07bd69555dbd1efb564ff767fb2bf22673dd609817aaded4731b09383d74c68887f545f4  linux-sony-yuga-downstream-f164c6d1016cb34ac90c053acbebe6e47fdd400f.tar.gz
+fe95616bd546c072d9d03f8c24da4e533bec1408bb1bf17f779faa3ad2d8cdbf8b4dcb7302dae37d8f695ee0c112ce43e7a7b6add5550b8896fd1e59dcc79441  config-sony-yuga.armv7
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+2b48f1bf0e3f70703d2cdafc47d5e615cc7c56c70bec56b2e3297d3fa4a7a1321d649a8679614553dde8fe52ff1051dae38d5990e3744c9ca986d92187dcdbeb  gcc10-extern_YYLOC_global_declaration.patch
+ad0182a483791fc88e058838bc331b2f04a75ba291e763767babdb815efadfc3b4fda97e69e2e3f00a426cabea088e35297a92bd287592597d1e309be68ee92c  kernel-use-the-gnu89-standard-explicitly.patch
+9e3b067fa1b19ad02500c4fce1b6142051df3845c508e615788beb650c4f953683107ac2d80670c4e3df38f532e0e91060d2d13ec04c9ec985abd2dfa82e900b  linux3.4-ARM-8933-1-replace-Sun-Solaris-style-flag-on-section.patch
+8837c884060d87232ba3fa9fce0e815d7ddf33c82ad49260426fe83754baa2f4d92a36a17561083ac8b3674564b7433b3141cacc63b520deec52bbcc1d92d5c9  linux3.0-fix-piggy.lzo.S.patch
+ea1d3b5a234fa565e3c1a792de48f4fc4e6023d281d303c8e319c7ef28edc5739ab0e4dea0139a41f0a5c7d03e27921ccaa214fd0ac5c72245a094ce60128864  00_fix_return_address.patch
+f7e31cfe422696922aec52002e56c58103183966edee3bb8e1995d33f8d37b07c32280a8ecc213874e358a6ff367418556a4542fba7e3c17e4b8e82e05c3a543  psmouse_base.patch
+448bad436377a22c93ac401b9aecb504fe8e84b9511a3dd28f3cc125f3725cc1168ef03dee9f8f1085a9fbb7910b9e75cd25a382ccce626b427c8e27f7c17ffc  kgsl_iommu_sync_lock.patch
+ef5b912c26fea4ab882592bdf7487942c64b123de8d25d08d976f29743f311742ee2f773bf2d110ddb5095f254dbb0bd4487c5cfce77311929082599199e7ebd  02_reduce_lzo_compression.patch
+93f7870b2063d4ddb1f35dc4de4b213d83e0f54f59511b3050e880763f2374b3816ac0c879de76fe8a0b61d62c1753c5dda7326961164a8fcbfc8a9232309569  proc_fdinfo.patch
+375434953b582eb2911a976abe03f86822f469f4fa2463d880b83a35f2209e3dfb0b6bb931f2330df831ee2122da4e73e927499e94ed61fa1bd188778a8c17b7  fix-video-argb-setting.patch
+452805663c8159b0794758443526066da06adc8f8cc528a96abc4389b572fd524cdb1c8bc5d73f87b70f06d4eaecf5f366c6587fc8fe8908b4fb422f439c0321  fix_wlan_prima_bin_dir.patch
+"

@@ -1,0 +1,21 @@
+From 43d2ec95dcbcabd4a48b0f5bede37c61e09fe4f4 Mon Sep 17 00:00:00 2001
+From: "elel@3wh.net" <elel@3wh.net>
+Date: Thu, 27 Dec 2018 08:06:28 +0000
+Subject: [PATCH 4/5] Remove loopy symlink
+
+---
+ drivers/gpu/arm/mali400/ump/arch/arch-release | 1 -
+ 1 file changed, 1 deletion(-)
+ delete mode 120000 drivers/gpu/arm/mali400/ump/arch/arch-release
+
+diff --git a/drivers/gpu/arm/mali400/ump/arch/arch-release b/drivers/gpu/arm/mali400/ump/arch/arch-release
+deleted file mode 120000
+index 58ffbe7dd66b..000000000000
+--- a/drivers/gpu/arm/mali400/ump/arch/arch-release
++++ /dev/null
+@@ -1 +0,0 @@
+-arch-release
+\ No newline at end of file
+-- 
+2.20.1
+

@@ -1,0 +1,34 @@
+Change SMB1360 configuration to match what we use for the mainline driver.
+This makes it easier to compare the registers programmed by the downstream driver
+with the mainline driver.
+
+qcom,config-hard-thresholds enables an ugly hack that requires monitoring the
+battery temperature from the kernel (instead of letting the hardware do its job).
+The mainline kernel does not implement this, so disable it on downstream as well.
+
+diff --git a/arch/arm/boot/dts/qcom/msm8916-wt88047.dts b/arch/arm/boot/dts/qcom/msm8916-wt88047.dts
+index a72332b4e35..289a1c8202a 100644
+--- a/arch/arm/boot/dts/qcom/msm8916-wt88047.dts
++++ b/arch/arm/boot/dts/qcom/msm8916-wt88047.dts
+@@ -35,18 +35,19 @@
+ 			qcom,fg-batt-capacity-mah = <2200>;
+ 			qcom,fg-cc-soc-coeff = <0x8373>;
+ 			qcom,fg-delta-soc = <1>;
++			qcom,fg-soc-min = <15>;
+ 			qcom,fg-cutoff-voltage-mv = <3400>;
+ 			qcom,fg-iterm-ma = <150>;
+ 			qcom,fg-ibatt-standby-ma = <200>;
+ 			qcom,fg-cc-to-cv-mv = <4328>;
+-			qcom,fg-auto-recharge-soc = <99>;
++			qcom,fg-auto-recharge-soc = <95>;
+ 			qcom,warm-recharge-thresh-mv = <200>;
+ 			qcom,thermistor-c1-coeff = <0x85d2>;
+ 			qcom,float-voltage-mv = <4350>;
+ 			qcom,iterm-ma = <100>;
++			qcom,charging-timeout = <192>;
+ 			qcom,otg-batt-curr-limit = <950>;
+ 			qcom,thermal-mitigation = <1500 700 600 0>;
+-			qcom,config-hard-thresholds;
+ 			qcom,hot-bat-decidegc = <600>;
+ 			qcom,cold-bat-decidegc = <0>;
+ 			qcom,soft-jeita-supported;

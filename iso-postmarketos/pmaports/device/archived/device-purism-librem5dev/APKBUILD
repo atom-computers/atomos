@@ -1,0 +1,78 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Archived: Not actively maintained, hw is very rare/unlikely to be used by anyone, and port is outdated/broken
+pkgname=device-purism-librem5dev
+pkgdesc="Purism Librem 5 Devkit"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base
+	linux-purism-librem5
+	u-boot-tools
+	u-boot-librem5-devkit
+"
+makedepends="devicepkg-dev"
+_confver=16
+_confdir=$srcdir/librem5-base-v$_confver
+source="
+	https://source.puri.sm/Librem5/librem5-base/-/archive/v$_confver/librem5-base-v$_confver.tar.gz
+	deviceinfo
+	uboot-script.cmd
+	modprobe.d_rsi.conf
+	00-mesa.sh
+	flash_script.lst
+"
+subpackages="
+	$pkgname-phosh
+	$pkgname-pulseaudio
+"
+
+build() {
+	mkimage -A arm64 -C none -O linux -T script -d "$srcdir/uboot-script.cmd" "$srcdir/boot.scr"
+	devicepkg_build $startdir $pkgname
+}
+
+phosh() {
+	pkgdesc="Phosh support for the Librem 5"
+	install_if="$pkgname phosh"
+	install -D -m644 "$_confdir"/default/org.freedesktop.ModemManager1.pkla \
+		"$subpkgdir"/var/lib/polkit-1/localauthority/10-vendor.d/org.freedesktop.ModemManager1.pkla
+}
+
+pulseaudio() {
+	pkgdesc="Pulseaudio support for the Librem 5"
+	install_if="$pkgname pulseaudio"
+	# install config files from upstream Purism
+	mkdir -p "$subpkgdir"/etc/pulse/
+	cp -r "$_confdir"/default/audio/pulse/daemon.conf.d "$subpkgdir"/etc/pulse/
+	install -D -m644 "$_confdir"/default/audio/pulse/librem5.pa "$subpkgdir"/etc/pulse/librem5.pa
+	mkdir -p "$subpkgdir"/usr/share/pulseaudio/alsa-mixer
+	cp -r "$_confdir"/default/audio/profile-sets "$subpkgdir"/usr/share/pulseaudio/alsa-mixer/
+	mkdir -p "$subpkgdir"/usr/share/alsa/ucm
+	cp -r "$_confdir"/default/audio/ucm "$subpkgdir"/usr/share/alsa/
+}
+
+package() {
+	install -D -m644 "$srcdir"/boot.scr \
+		"$pkgdir"/boot/boot.scr
+	install -D -m644 "$srcdir"/modprobe.d_rsi.conf "$pkgdir"/etc/modprobe.d/rsi.conf
+	install -D -m644 "$srcdir"/00-mesa.sh "$pkgdir"/etc/profile.d/00-mesa.sh
+	install -D -m644 "$srcdir"/flash_script.lst "$pkgdir"/usr/share/uuu/flash_script.lst
+	install -D -m644 "$_confdir"/default/hwdb/80-librem5.hwdb "$pkgdir"/usr/lib/udev/hwdb.d/80-librem5.hwdb
+	install -D -m644 "$_confdir"/debian/librem5-base-defaults.librem5-devkit-sgtl5000.udev \
+		"$pkgdir"/usr/lib/udev/rules.d/librem5-base-defaults.librem5-devkit-sgtl5000.udev
+	install -D -m644 "$_confdir"/debian/librem5-base-defaults.librem5-pm.udev  \
+		"$pkgdir"/usr/lib/udev/rules.d/librem5-base-defaults.librem5-pm.udev
+
+	devicepkg_package $startdir $pkgname
+}
+sha512sums="
+d93aded121b830b5b7006166d3f8cd2efadc2fa454540d653e3f1cb8f009ffb7973a4037a62a47062f6f95f8bbbe546d8e72600a5dcded4eb7be78a7e6d35d02  librem5-base-v16.tar.gz
+135bbe0b68535a344a3a5a25ced46a719737ab4db583797ac0716a4bf3a3d78669027b796f15bb242ddc5d9cb7b8f4d6cde64c1f6aca6ea8f83bf9877d561a11  deviceinfo
+ff245e85996d1131583e66c9fb8c4f8d55d384df1d3fcc3b7c3819ad3ab3294a1e0aefb691b75c167cec134576d2bb54051bca523835ae80fece48e4f039f215  uboot-script.cmd
+9dc018f0de523cbfe5a49cbe831aa30e975a8dd34635197bb52582f072ac356ef2c02223fc794d970380091a69a83a74c3fbe34520190c8536e77f9ea98c7659  modprobe.d_rsi.conf
+5e0536a53ba5a33af6ddff3a5f5d866c09ae54dd6754e6b17e61fde0b141b3165379a598de562c89568a1de9ae9ae03a4f876c53002b87f09d7b56013345ab27  00-mesa.sh
+8e61cdcf1645d23912bbefef2063b8c3cd60bd86a55317bf07e72d49b1b42a36f9aea63dc9fe082d612dff1457083463da0cf69b82a83fc116be1f41addceeef  flash_script.lst
+"

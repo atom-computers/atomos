@@ -1,0 +1,36 @@
+diff --git a/drivers/misc/mediatek/connectivity/combo/common/platform/alps/mtk_wcn_cmb_stub_alps.c b/drivers/misc/mediatek/connectivity/combo/common/platform/alps/mtk_wcn_cmb_stub_alps.c
+index 1bba50c6..85fea736 100644
+--- a/drivers/misc/mediatek/connectivity/combo/common/platform/alps/mtk_wcn_cmb_stub_alps.c
++++ b/drivers/misc/mediatek/connectivity/combo/common/platform/alps/mtk_wcn_cmb_stub_alps.c
+@@ -15,9 +15,9 @@
+ *                                 M A C R O S
+ ********************************************************************************
+ */
+-#define CMB_STUB_LOG_INFO(fmt, arg...) pr_warn(fmt, ##arg)
+-#define CMB_STUB_LOG_WARN(fmt, arg...) pr_err(fmt, ##arg)
+-#define CMB_STUB_LOG_DBG(fmt, arg...) pr_warn(fmt, ##arg)
++#define CMB_STUB_LOG_INFO(fmt, arg...) pr_info(fmt, ##arg)
++#define CMB_STUB_LOG_WARN(fmt, arg...) pr_warn(fmt, ##arg)
++#define CMB_STUB_LOG_DBG(fmt, arg...) pr_debug(fmt, ##arg)
+ 
+ 
+ /*******************************************************************************
+diff --git a/drivers/misc/mediatek/connectivity/common_detect/mtk_wcn_stub_alps.c b/drivers/misc/mediatek/connectivity/common_detect/mtk_wcn_stub_alps.c
+index c2d20e1a..dcf43e74 100644
+--- a/drivers/misc/mediatek/connectivity/common_detect/mtk_wcn_stub_alps.c
++++ b/drivers/misc/mediatek/connectivity/common_detect/mtk_wcn_stub_alps.c
+@@ -305,10 +305,10 @@ signed long mtk_wcn_cmb_stub_query_ctrl()
+ 	{
+ 		temp = (*cmb_stub_thermal_ctrl_cb)();
+ 	}
+-	else
+-	{
+-		CMB_STUB_LOG_DBG("[cmb_stub] thermal_ctrl_cb null\n");
+-	}
++//	else
++//	{
++//		CMB_STUB_LOG_DBG("[cmb_stub] thermal_ctrl_cb null\n");
++//	}
+ 
+ 	return temp;
+ }

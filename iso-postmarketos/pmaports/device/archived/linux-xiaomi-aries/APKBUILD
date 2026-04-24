@@ -1,0 +1,62 @@
+# Archived: Kernel does not build anymore
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm/configs/aries-perf-user_defconfig
+
+pkgname=linux-xiaomi-aries
+pkgver=3.4.113
+pkgrel=4
+pkgdesc="Xiaomi Mi 2 kernel fork"
+arch="armhf"
+_carch="arm"
+_flavor="xiaomi-aries"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="perl sed installkernel bash gmp-dev bc linux-headers elfutils-dev devicepkg-dev xz"
+
+# Source
+_username="MoKee"
+_repository="android_kernel_xiaomi_aries"
+_commit="6a30963cf10e5b7cc938f3ac7b22af4ad72c0bf9"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/$_username/$_repository/archive/$_commit.tar.gz
+	$_config
+	gcc7-give-up-on-ilog2-const-optimizations.patch
+	gcc8-fix-put-user.patch
+	02_gpu-msm-fix-gcc5-compile.patch
+	03_fix-return-address.patch
+	04_fix-perf-trace-counters.patch
+	05_fix-adreno-trace.patch
+	06_fix-kgsl-events-include.patch
+	07_fix-kgsl-trace-h.patch
+	08_fix-red-screen.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" "$_flavor"
+}
+
+sha512sums="3d461173c0ec72d243870bcb2ce1935b2ba1652a532b9b09ef0a3823b5961a3d58415fce2d57f054e1945dc9e70c5c9a68fc45aad26a0adb894bc96120847bc9  linux-xiaomi-aries-6a30963cf10e5b7cc938f3ac7b22af4ad72c0bf9.tar.gz
+baee319e4fa5fa3e1f517daff7a640291ae34b154153754b520b124b02127aa2e0402d33ef4b082914d4eee7654072bd34fe80e4f43fa7ccd61f407e907216ba  config-xiaomi-aries.armhf
+77eba606a71eafb36c32e9c5fe5e77f5e4746caac292440d9fb720763d766074a964db1c12bc76fe583c5d1a5c864219c59941f5e53adad182dbc70bf2bc14a7  gcc7-give-up-on-ilog2-const-optimizations.patch
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+87ff591431c34d920527de8d7640b93bfc1f09ad541a58645969bc1e6b64b89e7443c38dd263cafa9a6090f4a74e0ffcd49f94dba0a4f1df5306dad106ecfb3f  02_gpu-msm-fix-gcc5-compile.patch
+7d5ca9d460030adf529466a8e8ef430337cbb998f78b1b5f37a2809fc745cdb16421dc314045ae411069d5af2ace7028f1139303ae4d6d583b6ae07ad931295e  03_fix-return-address.patch
+f85ced49ee2f2461adea68dac0a10452aa809a7d41d869092d94eb085344919a9a385dec0c48011f4601ca4f441700f7fe49075c7eca4fb2d66b01f7d413ccb7  04_fix-perf-trace-counters.patch
+71465422481ff79d2ddde7a9b55531b963f9a72efa9df47ecd5666353fbfb72e698290fa9e7f51522e2dadb2fa719ad5fc05fabe6c4ff7b9d387243a46d97d72  05_fix-adreno-trace.patch
+f58e3d2d327f2fc06b3599903eca8113facd550010e8e0db4ace8fbdeb042f62fdca61e9748770a8891e21dc8211c8366518e8e16c5d61c6b49a88d34a16493c  06_fix-kgsl-events-include.patch
+30b66b3b82a762a70381cc3e000f092c739714b116ff7fa4d13108e782789dce2f6e1490de54d720a8870fc52d379bd266abb873f79f7a021c0eced0fdbc70af  07_fix-kgsl-trace-h.patch
+67c5d25b7d18644266ea043430655f46edf9cb7ff82612e25e63015a183206966cb41865236ebf642e83bed454cdc0392400e26f4be14f649c615415599229c7  08_fix-red-screen.patch"

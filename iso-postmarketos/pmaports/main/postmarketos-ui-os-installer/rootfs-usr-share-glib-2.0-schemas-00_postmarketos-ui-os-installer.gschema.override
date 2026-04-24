@@ -1,0 +1,6 @@
+[org.gnome.desktop.screensaver]
+lock-enabled=false
+
+# hack to stop the GNOME tour from showing on first boot
+[org.gnome.shell]
+welcome-dialog-last-shown-version='47.0'

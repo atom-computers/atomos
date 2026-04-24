@@ -1,0 +1,6 @@
+#!/bin/sh
+DEV=`mount | sed -n -E 's:.*(/dev/mmcblk[0-9])p[0-9] on /boot .*:\1:p'`
+if [ -n "$DEV" ] ; then
+	dd if=/usr/share/u-boot/kobo-nia/u-boot.imx bs=512 seek=2 of="$DEV"
+fi
+

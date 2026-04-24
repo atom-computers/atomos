@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Enable wcnss-wlan init script
+rc-update add wcnss-wlan default

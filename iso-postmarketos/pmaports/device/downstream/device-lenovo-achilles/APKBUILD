@@ -1,0 +1,39 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-lenovo-achilles
+pkgdesc="Lenovo Tab2 A10-30L"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-lenovo-achilles
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo kernel-cmdline.conf"
+
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="Wifi firmware"
+	depends="firmware-lenovo-achilles"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+611bb72c0bc8889bdba177654f9abc24a61059a507b656c2594e4e252476ff50d57e021c36deeee5bf6de7dd5ef767afba1f2c071e988c7e1faf367b18cd45d0  deviceinfo
+0b2163126e6badc65bf840889157405b1011ddf19bba40b79cb568e1a685782a4ea93a099d1f490a215047f3ef378cf7d60d7c78236cb48a94bdf21ded4af48a  kernel-cmdline.conf
+"

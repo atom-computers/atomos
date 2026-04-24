@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+name=$RC_SVCNAME
+description="Restarts rockchip_ebc service before tinydm"
+
+depend() {
+    before tinydm
+}
+
+start() {
+    einfo "Reloading rockchip_ebc"
+    modprobe -r rockchip_ebc
+    modprobe rockchip_ebc
+    eend $?
+}

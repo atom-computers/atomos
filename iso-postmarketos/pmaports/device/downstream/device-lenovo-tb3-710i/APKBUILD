@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="sreeranj <sreeranj1000@gmail.com>"
+pkgname=device-lenovo-tb3-710i
+pkgdesc="Lenovo Tab3 7"
+pkgver=2
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-lenovo-tb3-710i
+	mkbootimg
+	postmarketos-base
+	postmarketos-base-downstream
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	00-fbdev-rotate.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/00-fbdev-rotate.conf \
+		"$pkgdir"/usr/share/X11/xorg.conf.d/00-fbdev-rotate.conf
+}
+
+sha512sums="
+4e2b33e6730d12f6bec2178be36cdeae5be931fd2767e8d3d702ae205002a0ee867f746d50ddd2901d4f86c3325cf8064956beb0009366818a9dbe5d7e1e012a  deviceinfo
+9e231e1c27492a08414caacbfa2336f0e95e9a601447ad50f7b8cd5b7b5c90498fd3cf1e48f73641365271ac9271feea2e587961af6ea7d6bbba6e4e90a88b93  00-fbdev-rotate.conf
+"

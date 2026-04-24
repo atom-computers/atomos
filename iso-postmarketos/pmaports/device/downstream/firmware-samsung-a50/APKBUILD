@@ -1,0 +1,35 @@
+maintainer="francescod <git@francescod.xyz>"
+pkgname=firmware-samsung-a50
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware files for Samsung Galaxy A50"
+_repository="firmware-samsung-a50-files"
+url="https://github.com/Frack91/$_repository"
+_commit="dc253530d3a2c552e3a0ec1235259916a81b311f"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="
+	30-initramfs-$pkgname.files
+	$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz
+"
+builddir="$srcdir/$pkgname"
+
+package() {
+	_sourcepath="$srcdir/$_repository-$_commit"
+	_target="$pkgdir/usr/lib/firmware/postmarketos"
+
+	mkdir -p "$_target"
+
+	mv "$_sourcepath/vendor-etc-wifi" "$_target/"
+	mv "$_sourcepath/vendor-bin" "$_target/"
+	mv "$_sourcepath/vendor-firmware" "$_target/"
+
+	install -Dm644 "$srcdir/30-initramfs-$pkgname.files" -t \
+		"$pkgdir/usr/share/mkinitfs/files"
+}
+
+sha512sums="
+923aacccb3c052736737c08af247f4263af0d1fd27318b2d5a70c0d98964fa2ad21eb34750f3a370f8c94f4bfed8e3582bce124fc843e6c504c7d3987ab32a53  30-initramfs-firmware-samsung-a50.files
+59cafc657257dd7e1f98006ea60b3797851a4affd5130264d8db401e130b55e00d8094c94864133e034bffd3fffde9808cd812baa7f3f94acbe212bd6a6fa6b8  firmware-samsung-a50-dc253530d3a2c552e3a0ec1235259916a81b311f.tar.gz
+"

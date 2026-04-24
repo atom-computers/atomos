@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: GPL-2.0-only
+
+depend() {
+	need localmount
+	after bootmisc modules
+	provide swap
+}
+
+start() {
+	ebegin "Starting zram swap"
+	if [ ! -f /usr/share/misc/source_deviceinfo ]; then
+		eend 1 "deviceinfo not found"
+		return 1
+	fi
+
+	zramstart
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping zram swap"
+	zramstop
+	eend $?
+}
