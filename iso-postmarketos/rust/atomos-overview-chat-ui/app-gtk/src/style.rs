@@ -3,25 +3,51 @@ use gtk::prelude::*;
 
 use crate::logic::{env_flag_enabled, theme_class};
 
-fn force_transparent_root() -> bool {
-    env_flag_enabled(std::env::var(
-        "ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT",
-    ))
-}
-
 fn custom_css_disabled() -> bool {
     env_flag_enabled(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS"))
 }
 
+/// Always-on CSS for the layer stack under the chat UI. The window node alone
+/// is not enough: the content `GtkBox` / `GtkOverlay` / `GtkRevealer` are often
+/// painted with the theme’s solid `.view` / default fill (reads as a black
+/// sheet over `atomos-home-bg`). `!important` beats adwaita’s per-widget
+/// background where needed.
+///
+/// The hardware-safety `DISABLE_CUSTOM_CSS` flag does not gate this — it
+/// only skips the decorative/themed `stylesheet()`.
+fn transparency_stylesheet() -> &'static str {
+    r#"
+window.atomos-chat-root {
+  background-color: transparent;
+}
+window.atomos-chat-root box.atomos-chat-outer {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+window.atomos-chat-root box.atomos-chat-fill {
+  background: transparent !important;
+}
+window.atomos-chat-root overlay {
+  background: transparent !important;
+}
+window.atomos-chat-root revealer {
+  background: transparent !important;
+}
+window.atomos-chat-root box.atomos-top-row {
+  background: transparent !important;
+}
+"#
+}
+
 fn stylesheet(desktop_like: bool) -> String {
     let top_row_padding_top = 8;
-    let root_bg = if force_transparent_root() {
-        "background-color: alpha(#000000, 0.22);"
-    } else if desktop_like {
+    // Decorative root background: applied on top of (and possibly overriding)
+    // the always-on transparency rule. On large monitors we use a slightly
+    // darker tint for visual hierarchy; mobile/overlay use the same value as
+    // the always-on rule so the two providers agree.
+    let root_bg = if desktop_like {
         "background-color: alpha(#0b0f17, 0.92);"
     } else {
-        // Mobile/overlay surfaces sit on top of existing UI; keep the root as a subtle
-        // darkening rather than an obvious colored tint.
         "background-color: alpha(#000000, 0.22);"
     };
     let input_extra = "border: 1px solid alpha(#ffffff, 0.22); box-shadow: none;";
@@ -127,24 +153,47 @@ label.atomos-app-label {{
 }
 
 pub fn install_css(desktop_like: bool) {
+    let Some(display) = gdk::Display::default() else {
+        return;
+    };
+
+    // Provider 1: always-on real transparency. Registered at `APPLICATION` so
+    // it *wins over* `THEME` (FALLBACK is too low: theme’s opaque @window_bg
+    // would paint on top and hide atomos-home-bg’s webview). When decorative
+    // CSS is enabled, the second provider loads the same priority after this
+    // and overrides `window.atomos-chat-root` with a subtle alpha tint.
+    let transparency = gtk::CssProvider::new();
+    transparency.load_from_data(transparency_stylesheet());
+    gtk::style_context_add_provider_for_display(
+        &display,
+        &transparency,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
+
     if custom_css_disabled() {
-        eprintln!("atomos-overview-chat-ui: custom CSS disabled by env");
+        eprintln!(
+            "atomos-overview-chat-ui: decorative CSS disabled by env (transparency stays on)"
+        );
         return;
     }
+
+    // Same priority as transparency: added after so more specific / same
+    // selector rules in `stylesheet` override the default transparent root.
     let css = gtk::CssProvider::new();
     css.load_from_data(&stylesheet(desktop_like));
-    if let Some(display) = gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &css,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-        );
-    }
+    gtk::style_context_add_provider_for_display(
+        &display,
+        &css,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{custom_css_disabled, stylesheet};
+    use super::{custom_css_disabled, stylesheet, transparency_stylesheet};
+    use std::sync::Mutex;
+
+    static DISABLE_CUSTOM_CSS_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn stylesheet_avoids_focus_within_selector_for_target_compat() {
@@ -168,13 +217,32 @@ mod tests {
     }
 
     #[test]
+    fn transparency_stylesheet_is_minimal_and_translucent() {
+        // The always-on provider: root + main layout nodes stay non-opaque so
+        // atomos-home-bg shows through. Decorative / crashy selectors stay in
+        // `stylesheet()`.
+        let css = transparency_stylesheet();
+        assert!(css.contains("window.atomos-chat-root"));
+        assert!(css.contains("box.atomos-chat-outer"));
+        assert!(css.contains("overlay"));
+        assert!(
+            css.contains("background-color: transparent"),
+            "root must be transparent; decorative CSS adds tint when enabled"
+        );
+        assert!(!css.contains(":focus-within"));
+        assert!(!css.contains("@keyframes"));
+    }
+
+    #[test]
     fn css_disable_flag_defaults_to_off() {
+        let _g = DISABLE_CUSTOM_CSS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS");
         assert!(!custom_css_disabled());
     }
 
     #[test]
     fn css_disable_flag_honors_env() {
+        let _g = DISABLE_CUSTOM_CSS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", "1");
         assert!(custom_css_disabled());
         std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS");

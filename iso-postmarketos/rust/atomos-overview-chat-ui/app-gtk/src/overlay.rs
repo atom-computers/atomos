@@ -1,3 +1,6 @@
+use adw::prelude::*;
+use gtk::prelude::NativeExt;
+
 #[cfg(target_os = "linux")]
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 
@@ -31,7 +34,7 @@ pub fn configure_mobile_overlay_surface(win: &adw::ApplicationWindow) -> bool {
     }
     // On Phosh, render as a layer-shell surface so it participates in shell stacking.
     win.init_layer_shell();
-    win.set_namespace(Some("atomos-overview-chat-ui"));
+    win.set_namespace(Some(atomos_overview_chat_ui::LAYER_SHELL_NAMESPACE));
     // Keep the surface behind launcher/top overlays by default.
     // Override with ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay|top|bottom|background.
     win.set_layer(target_layer());
@@ -58,4 +61,31 @@ pub fn configure_mobile_overlay_surface(win: &adw::ApplicationWindow) -> bool {
 pub fn configure_mobile_overlay_surface(_win: &adw::ApplicationWindow) -> bool {
     eprintln!("atomos-overview-chat-ui: layer-shell unsupported on non-linux target");
     false
+}
+
+/// Let the compositor know this toplevel is not a solid RGBA slab. Per GDK,
+/// `gdk_surface_set_opaque_region(surface, NULL)` means the *entire* surface
+/// is opaque (Wayland can skip blending and you only see a dark fill over the
+/// layer below). An **empty** `cairo::Region` marks no opaque pixels so the
+/// home-bg / wallpaper layer can show through.
+pub fn apply_translucent_toplevel_compositor_hint(win: &adw::ApplicationWindow) {
+    let apply = |w: &adw::ApplicationWindow| -> bool {
+        let Some(surface) = w.surface() else {
+            return false;
+        };
+        let region = gtk::cairo::Region::create();
+        surface.set_opaque_region(Some(&region));
+        eprintln!("atomos-overview-chat-ui: toplevel opaque region cleared (translucent hint)");
+        true
+    };
+
+    if apply(win) {
+        return;
+    }
+    let w = win.clone();
+    win.connect_map(move |_| {
+        if !apply(&w) {
+            eprintln!("atomos-overview-chat-ui: could not clear toplevel opaque region after map");
+        }
+    });
 }

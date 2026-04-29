@@ -1,0 +1,14 @@
+[package]
+name = "atomos-home-bg"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+
+# Integration tests only: combined-stack assertions against the overview-chat-ui
+# surface (layer ordering, namespace uniqueness, runtime-env disjointness).
+# Runtime binary has no dependency on overview-chat-ui.
+[dev-dependencies]
+atomos-overview-chat-ui = { path = "../../atomos-overview-chat-ui/core" }

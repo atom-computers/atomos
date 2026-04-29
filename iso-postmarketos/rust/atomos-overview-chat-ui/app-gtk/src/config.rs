@@ -62,16 +62,29 @@ fn largest_monitor_size_logical() -> Option<(i32, i32)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{desktop_like_override, layer_shell_enabled, touch_dismiss_enabled};
+    use super::{
+        desktop_like_override, layer_shell_enabled, session_looks_like_desktop,
+        touch_dismiss_enabled,
+    };
+    use std::sync::Mutex;
+
+    // Tests in this module mutate process env vars; cargo test runs test fns
+    // in parallel by default, so same-var mutators must serialize or they
+    // race their own remove_var/set_var pairs. PoisonError is ignored
+    // because assertion panics can leave the lock poisoned without
+    // invalidating the guard's state.
+    static DESKTOP_LIKE_OVERRIDE_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn desktop_like_override_unset() {
+        let _g = DESKTOP_LIKE_OVERRIDE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE");
         assert_eq!(desktop_like_override(), None);
     }
 
     #[test]
     fn desktop_like_override_true() {
+        let _g = DESKTOP_LIKE_OVERRIDE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE", "1");
         assert_eq!(desktop_like_override(), Some(true));
         std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE");
@@ -79,6 +92,7 @@ mod tests {
 
     #[test]
     fn desktop_like_override_false() {
+        let _g = DESKTOP_LIKE_OVERRIDE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE", "0");
         assert_eq!(desktop_like_override(), Some(false));
         std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE");

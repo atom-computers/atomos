@@ -2,6 +2,25 @@ pub const MAX_LINES: i32 = 6;
 pub const MIN_LINES: i32 = 1;
 pub const LINE_HEIGHT_PX: i32 = 38;
 
+/// Layer-shell namespace used by the production GTK binary. Exposed as a
+/// constant so sibling surfaces (e.g. `atomos-home-bg`) can assert they do
+/// not collide on the compositor.
+pub const LAYER_SHELL_NAMESPACE: &str = "atomos-overview-chat-ui";
+
+/// Default wlr-layer-shell layer for the overview chat surface. The binary
+/// reads `ATOMOS_OVERVIEW_CHAT_UI_LAYER` to override; this constant is the
+/// value used when the env var is absent.
+pub const DEFAULT_LAYER_NAME: &str = "top";
+
+/// Runtime enable gate env var. When not set to literal `"1"` the launcher
+/// skips starting the surface — matched by the home-bg gate for symmetry.
+pub const ENABLE_RUNTIME_ENV: &str = "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME";
+
+/// Basename used for the pidfile/logfile/disable marker under
+/// `XDG_RUNTIME_DIR`. Encoded so combined-stack tests can verify launchers
+/// don't write to overlapping paths.
+pub const RUNTIME_FILE_BASENAME: &str = "atomos-overview-chat-ui";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LayoutState {
     pub source_lines: i32,
@@ -149,5 +168,25 @@ mod tests {
     #[test]
     fn parse_lifecycle_empty_arg_defaults_run() {
         assert_eq!(parse_lifecycle_action(Some("")), "run");
+    }
+
+    #[test]
+    fn layer_shell_namespace_is_stable() {
+        assert_eq!(LAYER_SHELL_NAMESPACE, "atomos-overview-chat-ui");
+    }
+
+    #[test]
+    fn default_layer_is_top() {
+        assert_eq!(DEFAULT_LAYER_NAME, "top");
+    }
+
+    #[test]
+    fn enable_runtime_env_matches_launcher_contract() {
+        assert_eq!(ENABLE_RUNTIME_ENV, "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME");
+    }
+
+    #[test]
+    fn runtime_file_basename_matches_launcher() {
+        assert_eq!(RUNTIME_FILE_BASENAME, "atomos-overview-chat-ui");
     }
 }

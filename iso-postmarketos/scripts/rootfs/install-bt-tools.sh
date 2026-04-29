@@ -139,7 +139,7 @@ if [ -n "$DIRECT_ROOTFS_DIR" ]; then
 exec python3 /usr/local/share/atomos/badblue.py "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/badblue"
-    ln -sf /usr/local/bin/badblue "$DIRECT_ROOTFS_DIR/usr/bin/badblue"
+    ln -sf ../local/bin/badblue "$DIRECT_ROOTFS_DIR/usr/bin/badblue"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/cerberusblue"
     install -m 0644 "$CERBERUSBLUE_SRC" "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/cerberusblue/cerberusblue.py"
@@ -149,7 +149,7 @@ EOF
 exec python3 /usr/local/share/atomos/cerberusblue/cerberusblue.py "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/cerberusblue"
-    ln -sf /usr/local/bin/cerberusblue "$DIRECT_ROOTFS_DIR/usr/bin/cerberusblue"
+    ln -sf ../local/bin/cerberusblue "$DIRECT_ROOTFS_DIR/usr/bin/cerberusblue"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/blue-deauth"
     install -m 0755 "$BLUE_DEAUTH_SRC" "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/blue-deauth/blue_dos.sh"
@@ -158,7 +158,7 @@ EOF
 exec /usr/local/share/atomos/blue-deauth/blue_dos.sh "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/blue-deauth"
-    ln -sf /usr/local/bin/blue-deauth "$DIRECT_ROOTFS_DIR/usr/bin/blue-deauth"
+    ln -sf ../local/bin/blue-deauth "$DIRECT_ROOTFS_DIR/usr/bin/blue-deauth"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/share/BlueToolkit"
     rm -rf "$DIRECT_ROOTFS_DIR/usr/share/BlueToolkit/bluekit" \
@@ -177,7 +177,7 @@ fi
 exec python3 -m bluekit.bluekit "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bluekit"
-    ln -sf /usr/local/bin/bluekit "$DIRECT_ROOTFS_DIR/usr/bin/bluekit"
+    ln -sf ../local/bin/bluekit "$DIRECT_ROOTFS_DIR/usr/bin/bluekit"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluing"
     cp -a "$BLUING_SRC_DIR/bluing" "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluing/bluing"
@@ -195,7 +195,7 @@ fi
 exec python3 -m bluing "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bluing"
-    ln -sf /usr/local/bin/bluing "$DIRECT_ROOTFS_DIR/usr/bin/bluing"
+    ln -sf ../local/bin/bluing "$DIRECT_ROOTFS_DIR/usr/bin/bluing"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/whisperpair"
     install -m 0644 "$WHISPERPAIR_ROOT/whisperpair-cli.py" "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/whisperpair/whisperpair-cli.py"
@@ -207,7 +207,7 @@ EOF
 exec python3 /usr/local/share/atomos/whisperpair/whisperpair-cli.py "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/whisperpair"
-    ln -sf /usr/local/bin/whisperpair "$DIRECT_ROOTFS_DIR/usr/bin/whisperpair"
+    ln -sf ../local/bin/whisperpair "$DIRECT_ROOTFS_DIR/usr/bin/whisperpair"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/btle"
     cp -a "$BTLE_ROOT/python" "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/btle/python"
@@ -224,7 +224,7 @@ fi
 exec python3 "$BTLE_DIR/python/$1" "${@:2}"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/btle-python"
-    ln -sf /usr/local/bin/btle-python "$DIRECT_ROOTFS_DIR/usr/bin/btle-python"
+    ln -sf ../local/bin/btle-python "$DIRECT_ROOTFS_DIR/usr/bin/btle-python"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bleedingtooth"
     install -m 0644 "$BLEEDINGTOOTH_ROOT/exploit.c" "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bleedingtooth/exploit.c"
@@ -244,7 +244,7 @@ fi
 exec "$BIN" "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bleedingtooth-exploit"
-    ln -sf /usr/local/bin/bleedingtooth-exploit "$DIRECT_ROOTFS_DIR/usr/bin/bleedingtooth-exploit"
+    ln -sf ../local/bin/bleedingtooth-exploit "$DIRECT_ROOTFS_DIR/usr/bin/bleedingtooth-exploit"
     cat > "$DIRECT_ROOTFS_DIR/usr/local/bin/bleedingtooth-readme" <<'EOF'
 #!/bin/sh
 DOC="/usr/local/share/atomos/bleedingtooth/readme.md"
@@ -255,7 +255,7 @@ echo "BleedingTooth readme not found at $DOC" >&2
 exit 1
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bleedingtooth-readme"
-    ln -sf /usr/local/bin/bleedingtooth-readme "$DIRECT_ROOTFS_DIR/usr/bin/bleedingtooth-readme"
+    ln -sf ../local/bin/bleedingtooth-readme "$DIRECT_ROOTFS_DIR/usr/bin/bleedingtooth-readme"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluebugger"
     cp -a "$BLUEBUGGER_ROOT/." "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluebugger/"
@@ -272,7 +272,7 @@ cd "$APP_DIR"
 exec bash "$APP_DIR/bluebugger.sh" "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bluebugger"
-    ln -sf /usr/local/bin/bluebugger "$DIRECT_ROOTFS_DIR/usr/bin/bluebugger"
+    ln -sf ../local/bin/bluebugger "$DIRECT_ROOTFS_DIR/usr/bin/bluebugger"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluesploit"
     cp -a "$BLUESPLOIT_ROOT/." "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluesploit/"
@@ -282,7 +282,7 @@ APP_DIR="/usr/local/share/atomos/bluesploit"
 exec python3 "$APP_DIR/bluesploit.py" "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bluesploit"
-    ln -sf /usr/local/bin/bluesploit "$DIRECT_ROOTFS_DIR/usr/bin/bluesploit"
+    ln -sf ../local/bin/bluesploit "$DIRECT_ROOTFS_DIR/usr/bin/bluesploit"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluespy"
     cp -a "$BLUESPY_ROOT/." "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bluespy/"
@@ -293,7 +293,7 @@ cd "$APP_DIR"
 exec python3 "$APP_DIR/BlueSpy.py" "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bluespy"
-    ln -sf /usr/local/bin/bluespy "$DIRECT_ROOTFS_DIR/usr/bin/bluespy"
+    ln -sf ../local/bin/bluespy "$DIRECT_ROOTFS_DIR/usr/bin/bluespy"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/btlejack"
     cp -a "$BTLEJACK_ROOT/." "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/btlejack/"
@@ -308,7 +308,7 @@ fi
 exec python3 -c 'import btlejack; btlejack.main()' "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/btlejack"
-    ln -sf /usr/local/bin/btlejack "$DIRECT_ROOTFS_DIR/usr/bin/btlejack"
+    ln -sf ../local/bin/btlejack "$DIRECT_ROOTFS_DIR/usr/bin/btlejack"
 
     install -d "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bleeding"
     cp -a "$BLEEDING_ROOT/." "$DIRECT_ROOTFS_DIR/usr/local/share/atomos/bleeding/"
@@ -319,7 +319,7 @@ cd "$APP_DIR"
 exec python3 "$APP_DIR/bleeding.py" "$@"
 EOF
     chmod 0755 "$DIRECT_ROOTFS_DIR/usr/local/bin/bleeding"
-    ln -sf /usr/local/bin/bleeding "$DIRECT_ROOTFS_DIR/usr/bin/bleeding"
+    ln -sf ../local/bin/bleeding "$DIRECT_ROOTFS_DIR/usr/bin/bleeding"
     exit 0
 fi
 

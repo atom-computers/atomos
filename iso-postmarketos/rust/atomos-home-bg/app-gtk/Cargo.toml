@@ -1,0 +1,19 @@
+[package]
+name = "atomos-home-bg-app"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+atomos-home-bg = { path = "../core" }
+anyhow = "1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { package = "gtk4", version = "0.10" }
+gtk4-layer-shell = "0.7"
+webkit6 = "0.5"
+
+[[bin]]
+name = "atomos-home-bg"
+path = "src/main.rs"

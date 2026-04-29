@@ -263,9 +263,13 @@ INSTALL_SUBMIT_CMD='cat > /usr/libexec/atomos-overview-chat-submit && chmod 755 
 VERIFY_CMD='test -x /usr/local/bin/atomos-overview-chat-ui && test -x /usr/bin/atomos-overview-chat-ui && test -x /usr/libexec/atomos-overview-chat-ui && test -x /usr/libexec/atomos-overview-chat-submit'
 
 if [ -n "$DIRECT_ROOTFS_DIR" ]; then
-    install -d "$DIRECT_ROOTFS_DIR/usr/local/bin" "$DIRECT_ROOTFS_DIR/usr/libexec"
+    install -d "$DIRECT_ROOTFS_DIR/usr/local/bin" "$DIRECT_ROOTFS_DIR/usr/libexec" "$DIRECT_ROOTFS_DIR/usr/bin"
     install -m 0755 "$BIN_PATH" "$DIRECT_ROOTFS_DIR/usr/local/bin/atomos-overview-chat-ui"
-    ln -sf /usr/local/bin/atomos-overview-chat-ui "$DIRECT_ROOTFS_DIR/usr/bin/atomos-overview-chat-ui"
+    # Relative symlink so it resolves correctly both at runtime (rootfs at /)
+    # and when the rootfs is inspected under a /target mount (e.g. build-qemu
+    # final-verify container). Absolute symlinks fail test -x under /target
+    # because they dereference against the verify container's own root.
+    ln -sf ../local/bin/atomos-overview-chat-ui "$DIRECT_ROOTFS_DIR/usr/bin/atomos-overview-chat-ui"
     install -m 0755 "$tmpdir/atomos-overview-chat-ui-launcher" "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-overview-chat-ui"
     install -m 0755 "$tmpdir/atomos-overview-chat-submit" "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-overview-chat-submit"
     test -x "$DIRECT_ROOTFS_DIR/usr/local/bin/atomos-overview-chat-ui"

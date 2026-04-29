@@ -378,7 +378,7 @@ if [ -n "$DIRECT_ROOTFS_DIR" ]; then
     echo "Installing btlescan into direct rootfs dir..."
     install -d "$DIRECT_ROOTFS_DIR/usr/local/bin"
     install -m 0755 "$BIN_PATH" "$DIRECT_ROOTFS_DIR/usr/local/bin/btlescan"
-    ln -sf /usr/local/bin/btlescan "$DIRECT_ROOTFS_DIR/usr/bin/btlescan"
+    ln -sf ../local/bin/btlescan "$DIRECT_ROOTFS_DIR/usr/bin/btlescan"
     exit 0
 fi
 

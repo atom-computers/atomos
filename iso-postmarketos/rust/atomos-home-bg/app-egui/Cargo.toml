@@ -1,0 +1,21 @@
+[package]
+name = "atomos-home-bg-egui"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# Combined dev preview: draws the home-bg white canvas + bouncing ball in the
+# background layer of a single eframe window, with the overview-chat-ui chat
+# input strip overlaid on top. Gives macOS / dep-light Linux boxes a visual
+# parity check for what the real wlr-layer-shell composition looks like on
+# a Phosh device. Not shipped in the rootfs.
+
+[dependencies]
+atomos-home-bg = { path = "../core" }
+atomos-overview-chat-ui = { path = "../../atomos-overview-chat-ui/core" }
+eframe = { version = "0.33", default-features = true }
+
+[[bin]]
+name = "atomos-home-bg-combined-preview"
+path = "src/main.rs"

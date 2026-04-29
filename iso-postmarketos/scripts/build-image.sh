@@ -679,6 +679,17 @@ verify_final_rootfs_customizations() {
     '
 }
 
+verify_home_bg_launcher_contract() {
+    echo "=== Verify atomos-home-bg launcher contract in rootfs ==="
+    pmb chroot -r -- /bin/sh -eu -c '
+        test -x /usr/libexec/atomos-home-bg
+        grep -q "ATOMOS_HOME_BG_ENABLE_RUNTIME" /usr/libexec/atomos-home-bg
+        grep -q "atomos-home-bg.disabled" /usr/libexec/atomos-home-bg
+        grep -q "ATOMOS_HOME_BG_LAYER" /usr/libexec/atomos-home-bg
+        grep -q "ATOMOS_HOME_BG_INTERACTIVE" /usr/libexec/atomos-home-bg
+    '
+}
+
 verify_overview_chat_ui_launcher_contract() {
     echo "=== Verify atomos-overview-chat-ui launcher contract in rootfs ==="
     pmb chroot -r -- /bin/sh -eu -c "
@@ -1323,6 +1334,9 @@ fi
 bash "$ROOT_DIR/scripts/phosh/apply-atomos-phosh-dconf.sh" "$PROFILE_ENV_SOURCE"
 ATOMOS_LOCK_PARITY=1 bash "$ROOT_DIR/scripts/rootfs/apply-overlay.sh" "$PROFILE_ENV_SOURCE"
 verify_overview_chat_ui_launcher_contract
+if [ "$BUILD_HOME_BG" -eq 1 ]; then
+    verify_home_bg_launcher_contract
+fi
 
 # Re-promote vendor phosh after every apk-mutating customization step has
 # run. install-atomos-agents.sh and install-bt-tools.sh both run

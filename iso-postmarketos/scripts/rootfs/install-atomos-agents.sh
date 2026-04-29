@@ -61,7 +61,7 @@ export PYTHONPATH="/opt/atomos/agents/.deps:/opt/atomos/agents/src"
 exec /usr/bin/python3 /opt/atomos/agents/src/server.py
 EOF
     chmod 755 "$root/usr/local/bin/atomos-agents-run"
-    ln -sf /usr/local/bin/atomos-agents-run "$root/usr/bin/atomos-agents-run"
+    ln -sf ../local/bin/atomos-agents-run "$root/usr/bin/atomos-agents-run"
     install -d "$root/etc/systemd/system"
     cat > "$root/etc/systemd/system/atomos-agents.service" << "EOF"
 [Unit]

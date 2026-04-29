@@ -86,6 +86,7 @@ pub fn build_ui(app: &adw::Application) {
     startup_trace("widget_tree:before");
 
     let outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    outer.add_css_class("atomos-chat-outer");
     outer.set_vexpand(true);
 
     let top_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
@@ -115,6 +116,7 @@ pub fn build_ui(app: &adw::Application) {
     center_overlay.set_vexpand(true);
     center_overlay.set_hexpand(true);
     let spacer = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    spacer.add_css_class("atomos-chat-fill");
     spacer.set_vexpand(true);
     center_overlay.set_child(Some(&spacer));
 
@@ -194,6 +196,7 @@ pub fn build_ui(app: &adw::Application) {
         });
     }
 
+    crate::overlay::apply_translucent_toplevel_compositor_hint(&win);
     win.present();
     startup_trace("present:after");
 }
