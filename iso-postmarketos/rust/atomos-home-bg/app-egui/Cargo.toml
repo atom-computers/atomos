@@ -5,11 +5,11 @@ edition = "2021"
 license = "MIT"
 publish = false
 
-# Combined dev preview: draws the home-bg white canvas + bouncing ball in the
-# background layer of a single eframe window, with the overview-chat-ui chat
-# input strip overlaid on top. Gives macOS / dep-light Linux boxes a visual
-# parity check for what the real wlr-layer-shell composition looks like on
-# a Phosh device. Not shipped in the rootfs.
+# Combined dev preview: draws the home-bg plain white canvas in the
+# background layer of a single eframe window, with the overview-chat-ui
+# chat input strip overlaid on top. Gives macOS / dep-light Linux boxes
+# a visual parity check for what the real wlr-layer-shell composition
+# looks like on a Phosh device. Not shipped in the rootfs.
 
 [dependencies]
 atomos-home-bg = { path = "../core" }

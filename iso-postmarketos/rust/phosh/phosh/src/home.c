@@ -36,6 +36,7 @@
 #define ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_ENV "ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS"
 #define ATOMOS_PHOSH_HOME_TRACE_ENV "ATOMOS_PHOSH_HOME_TRACE"
 #define ATOMOS_PHOSH_ENABLE_APP_GRID_TOGGLE_ENV "ATOMOS_PHOSH_ENABLE_APP_GRID_TOGGLE"
+#define ATOMOS_PHOSH_DISABLE_BACKGROUND_ENV "ATOMOS_PHOSH_DISABLE_BACKGROUND"
 
 /* Chat strip matches atomos-overview-chat-ui. */
 #define ATOMOS_OVERVIEW_CHAT_UI_CSS                               \
@@ -203,6 +204,25 @@ app_grid_toggle_enabled (void)
     g_once_init_leave (&once, 1);
   }
   return enabled;
+}
+
+
+static gboolean
+atomos_phosh_background_disabled (void)
+{
+  static gsize once = 0;
+  static gboolean disabled = TRUE;
+
+  if (g_once_init_enter (&once)) {
+    const char *env = g_getenv (ATOMOS_PHOSH_DISABLE_BACKGROUND_ENV);
+
+    /* AtomOS uses atomos-home-bg for the visual home background. Phosh's
+     * home wallpaper sits on TOP and otherwise covers that surface. */
+    disabled = g_strcmp0 (env, "0") != 0;
+    g_once_init_leave (&once, 1);
+  }
+
+  return disabled;
 }
 
 
@@ -629,8 +649,9 @@ phosh_home_map (GtkWidget *widget)
 
   GTK_WIDGET_CLASS (phosh_home_parent_class)->map (widget);
 
-  phosh_layer_surface_set_stacked_below (PHOSH_LAYER_SURFACE (self->background),
-                                         PHOSH_LAYER_SURFACE (self));
+  if (self->background)
+    phosh_layer_surface_set_stacked_below (PHOSH_LAYER_SURFACE (self->background),
+                                           PHOSH_LAYER_SURFACE (self));
 }
 
 
@@ -1101,6 +1122,16 @@ phosh_home_add_background (PhoshHome *self)
   cairo_rectangle_int_t rect = { 0, 0, 0, 0 };
   cairo_region_t *region;
 
+  if (atomos_phosh_background_disabled ()) {
+    self->use_background = FALSE;
+    /* Don't add `.p-solid` to phosh-home: common.css paints it with
+     * @phosh_bg_color (black in dark theme), which would cover atomos-home-bg.
+     * The home bar still toggles `.p-solid` on its own sub-widget. */
+    phosh_util_toggle_style_class (GTK_WIDGET (self), "p-solid", FALSE);
+    g_message ("atomos: Phosh home wallpaper disabled; atomos-home-bg owns the home background");
+    return;
+  }
+
   monitor = phosh_shell_get_primary_monitor (shell);
   self->background = PHOSH_BACKGROUND (phosh_background_new (
                                          phosh_wayland_get_zwlr_layer_shell_v1 (wl),
@@ -1128,9 +1159,16 @@ on_theme_name_changed (PhoshHome  *self, GParamSpec *pspec, PhoshStyleManager *s
   g_assert (PHOSH_IS_HOME (self));
   g_assert (PHOSH_IS_STYLE_MANAGER (style_manager));
 
-  self->use_background = !phosh_style_manager_is_high_contrast (style_manager);
-  phosh_util_toggle_style_class (GTK_WIDGET (self), "p-solid", !self->use_background);
-  if (gtk_widget_get_visible (GTK_WIDGET (self)))
+  gboolean atomos_owns_bg = atomos_phosh_background_disabled ();
+
+  self->use_background = !atomos_owns_bg &&
+                         !phosh_style_manager_is_high_contrast (style_manager);
+  /* When AtomOS owns the background, keep phosh-home transparent: `.p-solid`
+   * paints @phosh_bg_color (black in dark theme) which would cover
+   * atomos-home-bg. Otherwise fall back to upstream behavior. */
+  phosh_util_toggle_style_class (GTK_WIDGET (self), "p-solid",
+                                 !atomos_owns_bg && !self->use_background);
+  if (self->background && gtk_widget_get_visible (GTK_WIDGET (self)))
     gtk_widget_set_visible (GTK_WIDGET (self->background), self->use_background);
 
   phosh_home_update_atomos_visual_theme (self);
@@ -1346,7 +1384,7 @@ phosh_home_init (PhoshHome *self)
 
   gtk_widget_init_template (GTK_WIDGET (self));
 
-  self->use_background = TRUE;
+  self->use_background = !atomos_phosh_background_disabled ();
   self->state = PHOSH_HOME_STATE_FOLDED;
   self->last_reference_height = 0;
   self->app_grid_toggle_queued = FALSE;

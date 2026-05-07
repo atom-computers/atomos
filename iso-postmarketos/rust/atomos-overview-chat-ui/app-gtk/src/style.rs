@@ -39,18 +39,13 @@ window.atomos-chat-root box.atomos-top-row {
 "#
 }
 
-fn stylesheet(desktop_like: bool) -> String {
+fn stylesheet(_desktop_like: bool) -> String {
     let top_row_padding_top = 8;
-    // Decorative root background: applied on top of (and possibly overriding)
-    // the always-on transparency rule. On large monitors we use a slightly
-    // darker tint for visual hierarchy; mobile/overlay use the same value as
-    // the always-on rule so the two providers agree.
-    let root_bg = if desktop_like {
-        "background-color: alpha(#0b0f17, 0.92);"
-    } else {
-        "background-color: alpha(#000000, 0.22);"
-    };
-    let input_extra = "border: 1px solid alpha(#ffffff, 0.22); box-shadow: none;";
+    // Keep the full layer-shell window transparent; atomos-home-bg owns the
+    // visual background. Individual controls/sheets below provide their own
+    // local tint.
+    let root_bg = "background-color: transparent;";
+    let input_extra = "box-shadow: none;";
     format!(
         "
 window.atomos-chat-root {{
@@ -61,12 +56,14 @@ box.atomos-chat-wrap {{
 }}
 scrolledwindow.atomos-chat-input {{
   border-radius: 16px;
-  background: alpha(#151923, 0.58);
+  background: alpha(#ffffff, 0.92);
+  border: 1px solid alpha(#000000, 0.18);
   {input_extra}
 }}
 textview.atomos-chat-input {{
   background-color: transparent;
-  color: #ffffff;
+  color: #121212;
+  caret-color: #121212;
   padding: 10px 14px;
   border: none;
   outline: none;
@@ -100,6 +97,14 @@ button.atomos-dock-btn image {{
 window.atomos-chat-root.atomos-dark box.atomos-top-dock {{
   background: #121212;
 }}
+window.atomos-chat-root.atomos-dark scrolledwindow.atomos-chat-input {{
+  background: alpha(#151923, 0.58);
+  border: 1px solid alpha(#ffffff, 0.22);
+}}
+window.atomos-chat-root.atomos-dark textview.atomos-chat-input {{
+  color: #ffffff;
+  caret-color: #ffffff;
+}}
 window.atomos-chat-root.atomos-dark button.atomos-dock-btn {{
   background: #121212;
   color: #ffffff;
@@ -107,6 +112,14 @@ window.atomos-chat-root.atomos-dark button.atomos-dock-btn {{
 window.atomos-chat-root.atomos-light box.atomos-top-dock {{
   background: #f2f2f2;
   outline: 1px solid alpha(#000000, 0.15);
+}}
+window.atomos-chat-root.atomos-light scrolledwindow.atomos-chat-input {{
+  background: alpha(#ffffff, 0.92);
+  border: 1px solid alpha(#000000, 0.18);
+}}
+window.atomos-chat-root.atomos-light textview.atomos-chat-input {{
+  color: #121212;
+  caret-color: #121212;
 }}
 window.atomos-chat-root.atomos-light button.atomos-dock-btn {{
   background: #f2f2f2;
@@ -213,7 +226,10 @@ mod tests {
     fn input_frame_uses_border_not_outline() {
         let css = stylesheet(false);
         assert!(css.contains("scrolledwindow.atomos-chat-input"));
+        assert!(css.contains("window.atomos-chat-root.atomos-dark scrolledwindow.atomos-chat-input"));
+        assert!(css.contains("window.atomos-chat-root.atomos-light scrolledwindow.atomos-chat-input"));
         assert!(css.contains("border: 1px solid alpha(#ffffff, 0.22);"));
+        assert!(css.contains("border: 1px solid alpha(#000000, 0.18);"));
     }
 
     #[test]
@@ -231,6 +247,19 @@ mod tests {
         );
         assert!(!css.contains(":focus-within"));
         assert!(!css.contains("@keyframes"));
+    }
+
+    #[test]
+    fn decorative_stylesheet_keeps_root_transparent() {
+        let desktop_css = stylesheet(true);
+        let mobile_css = stylesheet(false);
+
+        assert!(desktop_css.contains("window.atomos-chat-root"));
+        assert!(desktop_css.contains("background-color: transparent;"));
+        assert!(mobile_css.contains("window.atomos-chat-root"));
+        assert!(mobile_css.contains("background-color: transparent;"));
+        assert!(!mobile_css.contains("alpha(#000000, 0.22)"));
+        assert!(!desktop_css.contains("alpha(#0b0f17, 0.92)"));
     }
 
     #[test]

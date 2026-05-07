@@ -72,9 +72,10 @@ pub const DEFAULT_CONTENT_PATH: &str = "/usr/share/atomos-home-bg/index.html";
 
 /// Canonical default when `ATOMOS_HOME_BG_LAYER` is unset.
 ///
-/// **Not** [`LayerTarget::Background`]: postmarketOS / Phosh draws the session
-/// wallpaper on the `background` layer; a second `background` client can stack
-/// unpredictably. `bottom` sits *above* that wallpaper but still below the
+/// **Not** [`LayerTarget::Background`]: postmarketOS / Phosh still owns a
+/// `background`-layer surface (solid color when AtomOS disables the JPEG via
+/// `apply-atomos-wallpaper-dconf.sh`); stacking a second client on `background`
+/// is compositor-dependent. `bottom` sits *above* that layer but still below the
 /// overview chat UI (default `top`) and other shell UI.
 pub const DEFAULT_LAYER: LayerTarget = LayerTarget::Bottom;
 
@@ -92,9 +93,11 @@ pub const RUNTIME_FILE_BASENAME: &str = "atomos-home-bg";
 
 /// Fallback served via `data:` URL when the default content path is absent at
 /// startup. Kept minimal on purpose so missing rootfs content still produces
-/// a well-formed, transparent page rather than a WebKit error screen.
+/// a well-formed, opaque dark page rather than a WebKit error screen — same
+/// `#0a0a0a` base color as the shipped placeholder (`index.html`), so the
+/// home-bg surface stays opaque even with no `event-horizon.js` available.
 pub const BLANK_FALLBACK_DATA_URL: &str =
-    "data:text/html,%3Chtml%3E%3Cbody%20style=%22background:transparent%22%3E%3C/body%3E%3C/html%3E";
+    "data:text/html,%3Chtml%3E%3Cbody%20style=%22margin:0;background:%230a0a0a%22%3E%3C/body%3E%3C/html%3E";
 
 pub type EnvResult = Result<String, std::env::VarError>;
 
@@ -133,7 +136,8 @@ pub fn resolve_content_url(env_value: &EnvResult) -> String {
 }
 
 /// Choose the layer-shell layer. Unset / empty / unknown values use
-/// [`DEFAULT_LAYER`] (see module docs — `bottom` to sit above session wallpaper).
+/// [`DEFAULT_LAYER`] (see module docs — `bottom` to sit above Phosh's background
+/// layer).
 pub fn resolve_layer(env_value: &EnvResult) -> LayerTarget {
     match env_value
         .as_deref()
@@ -385,7 +389,18 @@ mod tests {
     #[test]
     fn blank_fallback_is_well_formed_data_url() {
         assert!(BLANK_FALLBACK_DATA_URL.starts_with("data:text/html,"));
-        assert!(BLANK_FALLBACK_DATA_URL.contains("transparent"));
+        // Dark base #0a0a0a (URL-encoded as %230a0a0a). Must match the
+        // visual contract of the shipped placeholder so a missing rootfs
+        // file doesn't suddenly turn the home-bg surface into a different
+        // color or a transparent rect.
+        assert!(
+            BLANK_FALLBACK_DATA_URL.contains("%230a0a0a"),
+            "fallback must paint opaque #0a0a0a, matching the placeholder's base color"
+        );
+        assert!(
+            !BLANK_FALLBACK_DATA_URL.contains("transparent"),
+            "fallback must not be transparent — would let unrelated layers bleed through"
+        );
     }
 
     #[test]

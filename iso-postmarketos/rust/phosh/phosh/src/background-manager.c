@@ -35,6 +35,7 @@
 #define BG_KEY_PICTURE_URI_DARK   "picture-uri-dark"
 
 #define IF_KEY_COLOR_SCHEME       "color-scheme"
+#define ATOMOS_PHOSH_DISABLE_BACKGROUND_ENV "ATOMOS_PHOSH_DISABLE_BACKGROUND"
 
 /**
  * PhoshBackgroundManager:
@@ -71,6 +72,25 @@ struct _PhoshBackgroundManager {
 };
 
 G_DEFINE_TYPE (PhoshBackgroundManager, phosh_background_manager, PHOSH_TYPE_MANAGER);
+
+
+static gboolean
+atomos_phosh_background_disabled (void)
+{
+  static gsize once = 0;
+  static gboolean disabled = TRUE;
+
+  if (g_once_init_enter (&once)) {
+    const char *env = g_getenv (ATOMOS_PHOSH_DISABLE_BACKGROUND_ENV);
+
+    /* AtomOS owns the home surface with atomos-home-bg. Keep Phosh's
+     * wallpaper surfaces off unless explicitly restored. */
+    disabled = g_strcmp0 (env, "0") != 0;
+    g_once_init_leave (&once, 1);
+  }
+
+  return disabled;
+}
 
 
 static void
@@ -393,6 +413,11 @@ phosh_background_manager_idle_init (PhoshManager *manager)
   PhoshBackgroundManager *self = PHOSH_BACKGROUND_MANAGER (manager);
   PhoshShell *shell = phosh_shell_get_default ();
   PhoshMonitorManager *monitor_manager = phosh_shell_get_monitor_manager (shell);
+
+  if (atomos_phosh_background_disabled ()) {
+    g_message ("atomos: Phosh background manager disabled; atomos-home-bg owns the home background");
+    return;
+  }
 
   self->settings = g_settings_new ("org.gnome.desktop.background");
   g_object_connect (self->settings,

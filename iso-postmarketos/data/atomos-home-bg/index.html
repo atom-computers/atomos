@@ -2,153 +2,51 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>AtomOS Home Background (preview test)</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>AtomOS Home Background</title>
     <style>
-      /* Solid white + fullscreen canvas. Deliberately opaque so the preview
-         script visually confirms home-bg is actually rendering *behind* the
-         overview-chat-ui surface — if the shell's own wallpaper bleeds
-         through, home-bg is not drawing. */
+      /* Dark opaque base. Matches the React component's outer container
+         (`bg-[#0a0a0a]`) so before WebGL has uploaded the first frame —
+         and as the persistent fallback if WebGL fails to initialize on a
+         given device — the home-bg surface is still an opaque solid color
+         instead of a transparent rect that would let other compositor
+         layers bleed through under the chat UI. */
       html,
       body {
         margin: 0;
         padding: 0;
+        width: 100%;
         height: 100%;
-        background: #ffffff;
-        color: #111;
+        background: #0a0a0a;
+        color: #e5e5e5;
         font-family: system-ui, -apple-system, Segoe UI, sans-serif;
         overflow: hidden;
       }
-      canvas {
-        display: block;
+      .stage {
+        position: fixed;
+        inset: 0;
         width: 100vw;
         height: 100vh;
+        background: #0a0a0a;
+        overflow: hidden;
       }
-      .overlay {
-        position: fixed;
-        top: 12px;
-        left: 12px;
-        font-size: 12px;
-        line-height: 1.35;
-        color: #333;
-        background: rgba(255, 255, 255, 0.85);
-        padding: 6px 10px;
-        border-radius: 6px;
-        pointer-events: none;
-        font-variant-numeric: tabular-nums;
-      }
-      .overlay b {
-        color: #000;
+      /* The shader paints into this canvas; CSS sizes it to fill the
+         stage and the JS handles devicePixelRatio. */
+      #event-horizon {
+        display: block;
+        width: 100%;
+        height: 100%;
       }
     </style>
   </head>
+  <!-- atomos-home-bg placeholder: WebGL event-horizon shader on dark base. -->
   <body>
-    <canvas id="stage" aria-hidden="true"></canvas>
-    <div class="overlay" id="hud">
-      <b>atomos-home-bg preview test</b><br />
-      frame: <span id="frame">0</span> &nbsp; fps: <span id="fps">0</span>
+    <div class="stage" aria-hidden="true">
+      <canvas id="event-horizon" aria-hidden="true"></canvas>
     </div>
-    <script>
-      // Vanilla JS bouncing-shape animation. No framework dependency, so this
-      // file is safe to ship as the default placeholder. Replace with a React
-      // build in /usr/share/atomos-home-bg/ when ready.
-      (function () {
-        const canvas = document.getElementById("stage");
-        const ctx = canvas.getContext("2d");
-        const frameEl = document.getElementById("frame");
-        const fpsEl = document.getElementById("fps");
-
-        let width = 0;
-        let height = 0;
-        const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-        function resize() {
-          width = window.innerWidth;
-          height = window.innerHeight;
-          canvas.width = Math.floor(width * dpr);
-          canvas.height = Math.floor(height * dpr);
-          canvas.style.width = width + "px";
-          canvas.style.height = height + "px";
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-        resize();
-        window.addEventListener("resize", resize);
-
-        const ball = {
-          x: 120,
-          y: 120,
-          r: 56,
-          vx: 220,
-          vy: 180,
-          hue: 200,
-        };
-
-        let lastT = performance.now();
-        let frame = 0;
-        let fpsEma = 0;
-
-        function step(now) {
-          const dt = Math.min(0.05, (now - lastT) / 1000);
-          lastT = now;
-          frame++;
-
-          ball.x += ball.vx * dt;
-          ball.y += ball.vy * dt;
-          if (ball.x - ball.r < 0) {
-            ball.x = ball.r;
-            ball.vx = Math.abs(ball.vx);
-          } else if (ball.x + ball.r > width) {
-            ball.x = width - ball.r;
-            ball.vx = -Math.abs(ball.vx);
-          }
-          if (ball.y - ball.r < 0) {
-            ball.y = ball.r;
-            ball.vy = Math.abs(ball.vy);
-          } else if (ball.y + ball.r > height) {
-            ball.y = height - ball.r;
-            ball.vy = -Math.abs(ball.vy);
-          }
-          ball.hue = (ball.hue + dt * 40) % 360;
-
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, width, height);
-
-          const grad = ctx.createRadialGradient(
-            ball.x - ball.r * 0.3,
-            ball.y - ball.r * 0.3,
-            ball.r * 0.2,
-            ball.x,
-            ball.y,
-            ball.r
-          );
-          grad.addColorStop(0, `hsl(${ball.hue}, 85%, 70%)`);
-          grad.addColorStop(1, `hsl(${ball.hue}, 85%, 42%)`);
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.strokeStyle = "rgba(0,0,0,0.08)";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(width / 2, 0);
-          ctx.lineTo(width / 2, height);
-          ctx.moveTo(0, height / 2);
-          ctx.lineTo(width, height / 2);
-          ctx.stroke();
-
-          if (dt > 0) {
-            const instFps = 1 / dt;
-            fpsEma = fpsEma ? fpsEma * 0.92 + instFps * 0.08 : instFps;
-          }
-          if ((frame & 7) === 0) {
-            frameEl.textContent = String(frame);
-            fpsEl.textContent = fpsEma.toFixed(1);
-          }
-
-          requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      })();
-    </script>
+    <script src="event-horizon.js"></script>
   </body>
 </html>

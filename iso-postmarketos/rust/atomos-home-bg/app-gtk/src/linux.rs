@@ -113,11 +113,81 @@ fn configure_layer_shell(window: &gtk::ApplicationWindow, layer: LayerTarget) {
 fn build_webview(url: &str) -> webkit6::WebView {
     let webview = webkit6::WebView::new();
 
+    // Transparent webview background lets the underlying GTK widget /
+    // layer-shell surface show through pixels the webview does not paint.
+    // The shipped placeholder paints an opaque #0a0a0a base via CSS, so
+    // the user sees solid dark even before WebGL uploads its first frame.
     let transparent = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
     webview.set_background_color(&transparent);
 
+    apply_webview_settings(&webview);
+
     webview.load_uri(url);
     webview
+}
+
+/// Configure `WebKitSettings` to actually let `event-horizon.js` get a
+/// WebGL context and pipe console.log/console.error into our log file.
+///
+/// Without this, webkit2gtk-6.0's defaults combined with the launcher's
+/// `LIBGL_ALWAYS_SOFTWARE=1` + `WEBKIT_DISABLE_DMABUF_RENDERER=1` cause
+/// `hardware-acceleration-policy=ON_DEMAND` to refuse to set up the
+/// GPU process — at which point `canvas.getContext("webgl")` returns
+/// `null` and the home-bg surface is just the CSS dark base.
+///
+/// Each setting below is named (rather than collapsed into a builder)
+/// so the failure mode is greppable in `/run/user/<uid>/atomos-home-bg.log`
+/// when `enable-write-console-messages-to-stdout` later forwards JS
+/// diagnostics there.
+fn apply_webview_settings(webview: &webkit6::WebView) {
+    // `WebViewExt::settings()` returns the *live* settings object
+    // already attached to the webview; mutating it applies in place.
+    // (`Option` wrapper is theoretical — webkit2gtk always populates
+    // it during `WebView::new()`.) If we somehow get None we attach a
+    // fresh one so the caller's set_* calls are not silently lost.
+    let settings = match webkit6::prelude::WebViewExt::settings(webview) {
+        Some(s) => s,
+        None => {
+            let s = webkit6::Settings::new();
+            webview.set_settings(&s);
+            s
+        }
+    };
+
+    // Explicit even though the webkit2gtk-6.0 default is `true` — being
+    // explicit guards against future webkit version drift / Alpine
+    // packaging variations turning WebGL off.
+    settings.set_enable_webgl(true);
+
+    // Force GL even when WebKit's GPU heuristics would prefer
+    // non-accelerated mode (which silently disables WebGL). Without
+    // ALWAYS, software-only GL stacks (QEMU virt, headless Mesa) get
+    // classified as "unhealthy" and the GPU process never starts.
+    settings.set_hardware_acceleration_policy(webkit6::HardwareAccelerationPolicy::Always);
+
+    // Forward `console.log` / `console.warn` / `console.error` from
+    // event-horizon.js into stdout, which the launcher captures into
+    // `$XDG_RUNTIME_DIR/atomos-home-bg.log`. Critical for diagnosing
+    // the on-device failure modes the JS reports.
+    settings.set_enable_write_console_messages_to_stdout(true);
+
+    // Developer extras (right-click → inspect, remote inspector when
+    // WEBKIT_INSPECTOR_SERVER is set) cost nothing on a non-interactive
+    // surface and make on-device debugging tractable.
+    settings.set_enable_developer_extras(true);
+
+    // Permit JS — the placeholder content depends on it.
+    settings.set_enable_javascript(true);
+
+    eprintln!(
+        "atomos-home-bg: webkit settings: webgl={} hw-accel={:?} \
+         console-to-stdout={} dev-extras={} js={}",
+        settings.enables_webgl(),
+        settings.hardware_acceleration_policy(),
+        settings.enables_write_console_messages_to_stdout(),
+        settings.enables_developer_extras(),
+        settings.enables_javascript(),
+    );
 }
 
 fn apply_non_interactive_input_region(window: &gtk::ApplicationWindow) {

@@ -218,6 +218,13 @@ case "${1:-}" in
         fi
         bind_phosh_session_env_if_missing
         logger -t atomos-home-bg "action=show wayland=${WAYLAND_DISPLAY:-<unset>}"
+        # Surface the GL/WebKit env in effect — when the WebGL shader in
+        # the placeholder content fails on device, this is the first
+        # thing to look at via `journalctl -t atomos-home-bg`.
+        logger -t atomos-home-bg \
+            "gl-env: LIBGL_ALWAYS_SOFTWARE=${LIBGL_ALWAYS_SOFTWARE:-<unset>} \
+GSK_RENDERER=${GSK_RENDERER:-<unset>} \
+WEBKIT_DISABLE_DMABUF_RENDERER=${WEBKIT_DISABLE_DMABUF_RENDERER:-<unset>}"
         start_ui
         ;;
     --hide)
@@ -237,10 +244,12 @@ EOF
 
 # Inline fallback HTML used only when data/atomos-home-bg/index.html is
 # missing (shouldn't happen in practice; the file is part of the repo).
+# Matches the shipped placeholder's #0a0a0a base color so the home-bg
+# surface stays an opaque solid even when the real content vanished.
 fallback_html() {
     cat <<'EOF'
 <!doctype html>
-<html><body style="margin:0;background:#fff;color:#000;font-family:sans-serif;">
+<html><body style="margin:0;background:#0a0a0a;color:#e5e5e5;font-family:sans-serif;">
 <main style="padding:2rem;">AtomOS Home Background (fallback placeholder)</main>
 </body></html>
 EOF

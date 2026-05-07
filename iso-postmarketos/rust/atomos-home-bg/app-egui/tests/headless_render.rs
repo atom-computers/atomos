@@ -4,23 +4,26 @@
 //! opening an eframe window, and uses public egui APIs
 //! (`Context::layer_id_at`, `Memory`) to assert:
 //!
-//!   1. both the white background CentralPanel and the chat-strip
+//!   1. both the dark home-bg CentralPanel and the chat-strip
 //!      Foreground Area produce paint commands;
 //!   2. the chat-strip Area is actually sized (non-empty rect) — this is
 //!      the exact regression the user hit, where the strip was emitted
 //!      into a zero-size Area and silently didn't appear;
 //!   3. clicks in the bottom-of-viewport region route to the Foreground
-//!      chat strip rather than the Background CentralPanel.
+//!      chat strip rather than the Background CentralPanel;
+//!   4. the home-bg CentralPanel uses the `#0a0a0a` base color that
+//!      matches the shipped HTML's `<body>` fill (the WebGL shader is
+//!      not exercised by this test — the dev preview only mirrors the
+//!      base color so layering / interactivity stay honest).
 
 use eframe::egui;
 
-#[path = "../src/ball.rs"]
-mod ball;
 #[path = "../src/overlay.rs"]
 mod overlay;
 
-use ball::{step, BallState};
 use overlay::chat_strip_height;
+
+const HOME_BG_BASE_COLOR: egui::Color32 = egui::Color32::from_rgb(0x0a, 0x0a, 0x0a);
 
 const STRIP_ID: &str = "atomos-overview-chat-ui-strip";
 
@@ -28,23 +31,12 @@ fn render_one_frame(ctx: &egui::Context, width: f32, height: f32) {
     egui::CentralPanel::default()
         .frame(
             egui::Frame::NONE
-                .fill(egui::Color32::WHITE)
+                .fill(HOME_BG_BASE_COLOR)
                 .inner_margin(0.0),
         )
-        .show(ctx, |ui| {
-            let ball = step(BallState::initial(), 0.016, width, height);
-            ui.painter().circle_filled(
-                egui::pos2(ball.x, ball.y),
-                ball.r,
-                egui::Color32::from_rgb(0x33, 0x66, 0xAA),
-            );
-            ui.painter().text(
-                ui.max_rect().min + egui::vec2(12.0, 12.0),
-                egui::Align2::LEFT_TOP,
-                "atomos-home-bg preview test",
-                egui::FontId::monospace(12.0),
-                egui::Color32::from_rgb(0x33, 0x33, 0x33),
-            );
+        .show(ctx, |_ui| {
+            // Dark base — mirrors the shipped placeholder's <body> fill.
+            // The actual WebGL shader runs in WebKitGTK on device only.
         });
 
     let strip_h = chat_strip_height(height);
@@ -143,7 +135,7 @@ fn chat_strip_height_is_substantial_fraction_of_viewport() {
 }
 
 #[test]
-fn render_is_idempotent_across_frames_when_ball_is_reset() {
+fn render_is_idempotent_across_frames() {
     let ctx = context_for(420.0, 820.0);
     let a = ctx.memory(|m| m.area_rect(egui::Id::new(STRIP_ID)));
     let b = ctx.memory(|m| m.area_rect(egui::Id::new(STRIP_ID)));

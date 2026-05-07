@@ -16,6 +16,42 @@ vendor/phosh-mobile-settings, vendor/phosh-wallpapers. Each is compiled into
 the rootfs when that directory contains meson.build. Phoc and
 phosh-mobile-settings ship Meson subprojects in-tree (no .wrap; see each
 README "AtomOS vendored subprojects").
+
+Environment (Meson incremental cache):
+  (default)                           A named docker volume
+                                      (atomos-qemu-meson-cache-<profile>) is
+                                      created and reused across runs. The
+                                      cache lives inside the engine VM so it
+                                      is unaffected by macOS bind-mount
+                                      EPERM quirks (colima#911) that break
+                                      `ar` / `ld` when building phosh.
+                                      Subdirs: gmobile, phosh, phoc,
+                                      phosh-mobile-settings, phosh-wallpapers.
+                                      Reuse across runs lets ninja do
+                                      incremental rebuilds instead of full
+                                      configure + compile (phosh + embedded
+                                      wlroots is the dominant cost).
+  ATOMOS_QEMU_MESON_CACHE_HOST_DIR=<dir>
+                                      Opt out of the named volume and
+                                      bind-mount this host directory at
+                                      /cache instead. Recommended only on
+                                      Linux hosts (or for CI that needs to
+                                      upload the cache as an artifact).
+                                      ATOMOS_QEMU_MESON_CACHE_DIR is the
+                                      legacy alias and is still honored.
+  ATOMOS_QEMU_MESON_CACHE_CLEAN=1     Wipe the Meson cache before building
+                                      (works for both volume and host dir).
+                                      Use after Alpine image upgrades or when
+                                      seeing stale-link errors.
+  ATOMOS_CCACHE_MAXSIZE=<size>        Bound the on-disk ccache size (default
+                                      5G). Stored under <cache>/.ccache.
+                                      Wrapping gcc via ccache makes ninja
+                                      "rebuilds" caused by reinstalled header
+                                      packages resolve as cache hits.
+  ATOMOS_QEMU_ENABLE_NFTABLES=1       Enable nftables service in default
+                                      runlevel. Default is 0 (disabled) for
+                                      QEMU images so hostfwd SSH on :2222 is
+                                      reachable without manual service stop.
 EOF
 }
 
@@ -106,6 +142,7 @@ IMAGE_PATH="$EXPORT_DIR/${PROFILE_NAME}.img"
 IMAGE_SIZE="${PMOS_QEMU_IMAGE_SIZE:-8G}"
 ALPINE_IMAGE="${ATOMOS_QEMU_ALPINE_CONTAINER_IMAGE:-alpine:edge}"
 INSTALL_PASSWORD="${PMOS_INSTALL_PASSWORD:-147147}"
+ATOMOS_QEMU_ENABLE_NFTABLES="${ATOMOS_QEMU_ENABLE_NFTABLES:-0}"
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 REPO_TOP="$(cd "$ROOT_DIR/.." && pwd)"
@@ -128,7 +165,61 @@ fi
 mkdir -p "$EXPORT_DIR" "$WORK_DIR"
 rm -f "$REPOSITORIES_FILE"
 
+# Meson incremental cache. The heavy build container mounts /cache so subsequent
+# runs reuse object files (phosh + embedded wlroots dominate compile time).
+# `meson_cache_setup` (in build_container_script) only re-runs `meson setup`
+# when args change or build.ninja is missing.
+#
+# Storage backend selection:
+#   - DEFAULT: a NAMED docker volume (atomos-qemu-meson-cache-<profile>). The
+#     cache lives entirely inside the engine VM. This is the only reliable
+#     option on macOS Docker/Colima/OrbStack hosts: bind mounts of macOS-host
+#     directories return EPERM at random under heavy small-file load (e.g. ar
+#     opening ~150 .o files in one shot during phosh's libphosh-tool.a build),
+#     surfacing as "ar: foo.o: Operation not permitted" / "ld: ... thin
+#     archive member: Operation not permitted" — see colima#911. A named
+#     volume sidesteps the macOS<->Linux file sharing layer entirely.
+#   - OPT-IN HOST DIR: set ATOMOS_QEMU_MESON_CACHE_HOST_DIR=<path> to mount a
+#     host directory instead. Useful on Linux hosts where bind mount is fast
+#     and inspectability matters (e.g. CI artifact upload). Setting the legacy
+#     ATOMOS_QEMU_MESON_CACHE_DIR=<path> is also honored for compatibility,
+#     but the new var name is preferred because it makes the host-vs-volume
+#     intent explicit at the call site.
+MESON_CACHE_VOLUME="atomos-qemu-meson-cache-${PROFILE_NAME}"
+MESON_CACHE_HOST_DIR="${ATOMOS_QEMU_MESON_CACHE_HOST_DIR:-${ATOMOS_QEMU_MESON_CACHE_DIR:-}}"
+if [ -n "$MESON_CACHE_HOST_DIR" ]; then
+    MESON_CACHE_MOUNT="$MESON_CACHE_HOST_DIR"
+    MESON_CACHE_KIND="host directory: $MESON_CACHE_HOST_DIR"
+    mkdir -p "$MESON_CACHE_HOST_DIR"
+else
+    MESON_CACHE_MOUNT="$MESON_CACHE_VOLUME"
+    MESON_CACHE_KIND="docker volume: $MESON_CACHE_VOLUME"
+    "$ENGINE" volume create "$MESON_CACHE_VOLUME" >/dev/null
+fi
+
+if [ "${ATOMOS_QEMU_MESON_CACHE_CLEAN:-0}" = "1" ]; then
+    echo "build-qemu: ATOMOS_QEMU_MESON_CACHE_CLEAN=1 -> wiping cache ($MESON_CACHE_KIND)"
+    # Wipe via the engine: docker-rootful writes cache files as root, which the
+    # invoking user may not be able to remove directly. For named volumes we
+    # destroy and recreate; for host dirs we rm -rf inside a container then
+    # fall back to host rm.
+    if [ -n "$MESON_CACHE_HOST_DIR" ] && [ -d "$MESON_CACHE_HOST_DIR" ]; then
+        "$ENGINE" run --rm \
+            -v "$MESON_CACHE_HOST_DIR:/cache" \
+            "$ALPINE_IMAGE" /bin/sh -c 'rm -rf /cache/* /cache/.[!.]* 2>/dev/null || true' \
+            >/dev/null 2>&1 || rm -rf "$MESON_CACHE_HOST_DIR"
+        mkdir -p "$MESON_CACHE_HOST_DIR"
+    elif [ -z "$MESON_CACHE_HOST_DIR" ]; then
+        "$ENGINE" volume rm -f "$MESON_CACHE_VOLUME" >/dev/null 2>&1 || true
+        "$ENGINE" volume create "$MESON_CACHE_VOLUME" >/dev/null
+    fi
+fi
+echo "build-qemu: meson cache backend: $MESON_CACHE_KIND (ATOMOS_QEMU_MESON_CACHE_CLEAN=1 to wipe; ATOMOS_QEMU_MESON_CACHE_HOST_DIR=<path> for host bind mount)"
+
 cleanup_volume() {
+    # Note: the meson cache volume ($MESON_CACHE_VOLUME) is intentionally
+    # *not* removed on exit so it persists across runs. Only the rootfs
+    # volume (which is freshly built each run) gets cleaned up.
     "$ENGINE" volume rm -f "$ROOTFS_VOLUME" >/dev/null 2>&1 || true
 }
 trap cleanup_volume EXIT
@@ -390,6 +481,7 @@ echo "=== build-qemu: base rootfs configuration ==="
 "$ENGINE" run --rm --platform linux/arm64 \
     -e PROFILE_NAME="$PROFILE_NAME" \
     -e INSTALL_PASSWORD="$INSTALL_PASSWORD" \
+    -e ATOMOS_QEMU_ENABLE_NFTABLES="$ATOMOS_QEMU_ENABLE_NFTABLES" \
     -e PMOS_USER_UID="${PMOS_USER_UID:-10000}" \
     -v "$ROOTFS_VOLUME:/target" \
     -v "$ROOT_DIR:/iso:ro" \
@@ -420,7 +512,11 @@ EOF
         ln -sf /etc/init.d/dbus /target/etc/runlevels/default/dbus || true
         ln -sf /etc/init.d/haveged /target/etc/runlevels/default/haveged || true
         ln -sf /etc/init.d/chronyd /target/etc/runlevels/default/chronyd || true
-        ln -sf /etc/init.d/nftables /target/etc/runlevels/default/nftables || true
+        if [ "${ATOMOS_QEMU_ENABLE_NFTABLES:-0}" = "1" ]; then
+            ln -sf /etc/init.d/nftables /target/etc/runlevels/default/nftables || true
+        else
+            rm -f /target/etc/runlevels/default/nftables
+        fi
         # postmarketos-base-ui-openrc.post-install also enables rfkill.
         ln -sf /etc/init.d/rfkill /target/etc/runlevels/default/rfkill || true
         # postmarketos-base-openrc.post-install
@@ -566,6 +662,12 @@ GREETD_CONFD
                 /target/usr/lib/sysctl.d /target/usr/lib/kernel-cmdline.d
             install -Dm600 "$PBASE/rootfs-etc-ssh-sshd_config.d-50-postmarketos-ui-policy.conf" \
                 /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf 2>/dev/null || true
+            # Some OpenSSH builds in this image path do not support UsePAM.
+            # If left in place, sshd exits on boot and hostfwd :2222 appears hung/reset.
+            if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
+                sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' \
+                    /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+            fi
             install -Dm440 "$PBASE/rootfs-etc-sudoers" /target/etc/sudoers 2>/dev/null || true
             install -Dm640 "$PBASE/rootfs-etc-doas.d-10-postmarketos.conf" \
                 /target/etc/doas.d/10-postmarketos.conf 2>/dev/null || true
@@ -648,6 +750,12 @@ PHOCINI
         printf "%s\n" "export XDG_CURRENT_DESKTOP=Phosh:GNOME" >> /target/home/user/.bash_profile
         printf "%s\n" "export WAYLAND_DISPLAY=wayland-0" >> /target/home/user/.bash_profile
         chown -R "${PMOS_USER_UID}:${PMOS_USER_UID}" /target/home/user/.config
+
+        # Pre-generate SSH host keys so first boot has a ready sshd.
+        if [ -x /target/usr/bin/ssh-keygen ]; then
+            chroot /target /usr/bin/ssh-keygen -A >/dev/null 2>&1 || \
+                echo "WARN: ssh-keygen -A failed in target rootfs; first boot may need manual keygen." >&2
+        fi
     '
 
 echo "=== build-qemu: regenerate initramfs with virtio modules ==="
@@ -776,22 +884,161 @@ apk add --no-interactive \
 apk add --no-interactive gtk4-layer-shell-dev >/dev/null 2>&1 || \
   apk add --no-interactive gtk4-layer-shell >/dev/null 2>&1 || true
 
+# `ar` shim that strips the T (thin archive) flag.
+#
+# Meson on GCC + Alpine binutils 2.42+ defaults to thin archives for internal
+# convenience static libs (libphosh-tool.a, libgvc.a, libcall-ui.a). A thin .a
+# only stores *paths* to the underlying .o files; at link time `ld` opens every
+# member through whatever filesystem holds /cache/<component>. With many member
+# objects (phosh links ~90 .o files into libphosh.so) the macOS Docker bind
+# mount returns EPERM on members semi-randomly, surfacing as:
+#   ld: subprojects/gvc/libgvc.a(.../gvc-mixer-ui-device.c.o):
+#       error opening thin archive member: Operation not permitted
+# Raising --ulimit nofile only delays the failure (it lands on a different
+# member next run). The reliable fix is to make ar produce regular archives,
+# which embed the member content and never re-open files at link time. The
+# tradeoff is slightly larger .a files in the cache, which we never install.
+mkdir -p /usr/local/bin
+# Heredoc terminator MUST be quoted so the container `sh` does not expand $1,
+# $#, $@, etc. inside the shim body at write time (set -u in this script
+# would otherwise abort with "sh: 1: parameter not set"). We use DOUBLE
+# quotes here, not single, because this entire build_container_script is
+# itself wrapped in single quotes by the host bash; an inner single quote
+# would terminate the surrounding string and silently un-quote the heredoc.
+cat > /usr/local/bin/ar <<"AR_SHIM"
+#!/bin/sh
+# Strip the "T" (thin) flag from ar operation modifiers. Forward everything
+# else verbatim. Operation modifiers are the FIRST positional arg, optionally
+# preceded by "-" (e.g. "csrTD" or "-csrTD"); long options ("--version",
+# "--help", "--target=...") and file names must pass through untouched.
+if [ "$#" -eq 0 ]; then
+    exec /usr/bin/ar
+fi
+_first="$1"
+shift
+case "$_first" in
+    --*) ;;
+    -[a-zA-Z]*|[a-zA-Z]*)
+        _first=$(printf "%s" "$_first" | tr -d "T")
+        ;;
+esac
+exec /usr/bin/ar "$_first" "$@"
+AR_SHIM
+chmod 0755 /usr/local/bin/ar
+export PATH="/usr/local/bin:$PATH"
+export AR="/usr/local/bin/ar"
+echo "build-qemu: installed ar shim that strips thin-archive flag (AR=$AR)"
+
+# Belt-and-suspenders: bump the per-process fd limit too. The docker run flag
+# already sets nofile=65536:65536, but inside the container `ulimit -n` reports
+# what each forked process actually inherits and surfaces drift if a future
+# refactor drops the --ulimit flag.
+if ulimit -n 65536 2>/dev/null; then
+    echo "build-qemu: ulimit -n raised to $(ulimit -n)"
+else
+    echo "build-qemu: WARN: could not raise ulimit -n (current=$(ulimit -n))"
+fi
+
+# Delete any pre-existing thin archives in the meson cache. Older runs (before
+# the AR shim landed) populated /cache/<component>/.../*.a as thin archives;
+# their member paths are resolved by ld at link time and would still trip the
+# EPERM. Removing them is safe: ninja sees the missing output and re-invokes
+# ar via the new shim, producing a regular archive in the same place. We do
+# this in a forked subshell so EPIPE/find quirks cannot abort `set -e`.
+#
+# Note: the find argument uses double quotes, not single, because the entire
+# build_container_script lives inside a single-quoted host bash string; a
+# nested single quote would prematurely terminate that string and silently
+# corrupt everything that follows.
+unthin_cached_archives() {
+    if ! command -v file >/dev/null 2>&1; then
+        apk add --no-interactive file >/dev/null 2>&1 || return 0
+    fi
+    _list=$(find /cache -type f -name "*.a" 2>/dev/null)
+    [ -n "$_list" ] || return 0
+    _count=0
+    printf "%s\n" "$_list" | while IFS= read -r _a; do
+        [ -n "$_a" ] || continue
+        if file "$_a" 2>/dev/null | grep -qi "thin archive"; then
+            rm -f "$_a"
+            _count=$((_count + 1))
+            echo "build-qemu: removed stale thin archive: $_a"
+        fi
+    done
+}
+unthin_cached_archives || true
+
+# ccache: each `apk update && apk add` between build-qemu runs reinstalls
+# header packages (glib-dev, gtk4.0-dev, libadwaita-dev, ...). Reinstall bumps
+# header mtimes even when contents are identical, which makes ninja re-run
+# every compile rule despite the cached build dir. ccache short-circuits those
+# "rebuilds" by hashing input file *content*, returning the previously stored
+# .o on a hit. Persist the cache under /cache so it survives across runs.
+mkdir -p /cache
+apk add --no-interactive ccache >/dev/null 2>&1 || true
+if command -v ccache >/dev/null 2>&1; then
+    export CCACHE_DIR=/cache/.ccache
+    mkdir -p "$CCACHE_DIR"
+    export CCACHE_COMPRESS=1
+    export CCACHE_MAXSIZE="${ATOMOS_CCACHE_MAXSIZE:-5G}"
+    # Set CC/CXX so meson records `ccache gcc` in build.ninja (vs absolute
+    # /usr/bin/gcc). Existing caches built before ccache was wired in will see
+    # a hash mismatch from the meson_cache_setup args hash below and run
+    # --reconfigure once to pick this up.
+    export CC="ccache gcc"
+    export CXX="ccache g++"
+    echo "build-qemu: ccache enabled (dir=$CCACHE_DIR, max=$CCACHE_MAXSIZE)"
+    ccache --version 2>/dev/null | head -1 || true
+    ccache -s 2>/dev/null | head -8 || true
+else
+    echo "build-qemu: ccache unavailable; compile cache disabled"
+fi
+
+# Meson build cache: each component reuses /cache/<name> across build-qemu runs
+# so ninja does incremental rebuilds. The host bind-mounts
+# build/qemu-meson-cache-<profile> -> /cache. To force a clean build, run with
+# ATOMOS_QEMU_MESON_CACHE_CLEAN=1.
+meson_cache_setup() {
+    _build_dir="$1"; shift
+    _src_dir="$1"; shift
+    # Hash of (src + compiler env + meson args) detects when the caller changes
+    # -D flags or when CC/CXX/AR flips (e.g. ccache wired in, or the no-thin
+    # ar shim landed) so we do not silently keep building with stale options.
+    _hash=$(printf "%s\n" "$_src_dir" "CC=${CC:-}" "CXX=${CXX:-}" "AR=${AR:-}" "$@" \
+            | sha256sum | cut -d" " -f1)
+    _marker="$_build_dir/.atomos-meson-args"
+    if [ -f "$_build_dir/build.ninja" ] && [ -f "$_marker" ] \
+        && [ "$(cat "$_marker" 2>/dev/null)" = "$_hash" ]; then
+        echo "build-qemu: reusing meson cache: $_build_dir"
+    elif [ -f "$_build_dir/build.ninja" ]; then
+        echo "build-qemu: meson args changed -> reconfigure: $_build_dir"
+        meson setup --reconfigure "$_build_dir" "$_src_dir" "$@"
+        printf "%s" "$_hash" > "$_marker"
+    else
+        rm -rf "$_build_dir"
+        mkdir -p "$(dirname "$_build_dir")"
+        meson setup "$_build_dir" "$_src_dir" "$@"
+        printf "%s" "$_hash" > "$_marker"
+    fi
+    unset _build_dir _src_dir _hash _marker
+}
+
 # Build and install gmobile: prefer vendored phoc subproject (matches vendor/phoc),
 # else phosh subproject. Same host /usr + DESTDIR pattern as phosh below.
 GMOBILE_DIR=/work/iso-postmarketos/vendor/phoc/subprojects/gmobile
 if [ ! -f "$GMOBILE_DIR/meson.build" ]; then
     GMOBILE_DIR=/work/iso-postmarketos/rust/phosh/phosh/subprojects/gmobile
 fi
-echo "Building gmobile from: $GMOBILE_DIR"
-rm -rf /tmp/gmobile-build
+GMOBILE_BUILD=/cache/gmobile
+echo "Building gmobile from: $GMOBILE_DIR (cache: $GMOBILE_BUILD)"
 apk add --no-interactive libgudev-dev >/dev/null 2>&1 || true
-meson setup /tmp/gmobile-build "$GMOBILE_DIR" --prefix=/usr -Dtests=false -Dgtk_doc=false
-ninja -C /tmp/gmobile-build
+meson_cache_setup "$GMOBILE_BUILD" "$GMOBILE_DIR" --prefix=/usr -Dtests=false -Dgtk_doc=false
+ninja -C "$GMOBILE_BUILD"
 # Install into the *build* /usr, not only DESTDIR: gmobile-1.pc reports
 # Cflags: -I/usr/include/gmobile. With DESTDIR-only, those
 # paths are missing in the container and phosh fails with: gmobile.h: No such file.
-ninja -C /tmp/gmobile-build install
-DESTDIR=/target ninja -C /tmp/gmobile-build install
+ninja -C "$GMOBILE_BUILD" install
+DESTDIR=/target ninja -C "$GMOBILE_BUILD" install
 
 # Verify gmobile installation
 if [ -f /target/usr/lib/libgmobile.so.0 ] && [ -f /usr/include/gmobile/gmobile.h ]; then
@@ -807,14 +1054,14 @@ fi
 export PKG_CONFIG_PATH="/target/usr/lib/pkgconfig:/target/usr/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
 # Build and stage custom phosh.
-rm -rf /tmp/phosh-build
-meson setup /tmp/phosh-build /work/iso-postmarketos/rust/phosh/phosh --prefix=/usr -Dtests=false
-ninja -C /tmp/phosh-build
+PHOSH_BUILD=/cache/phosh
+meson_cache_setup "$PHOSH_BUILD" /work/iso-postmarketos/rust/phosh/phosh --prefix=/usr -Dtests=false
+ninja -C "$PHOSH_BUILD"
 # Install to the build host /usr, not only DESTDIR: phosh-settings .pc uses
 # -I/usr/include/phosh; phosh-mobile-settings includes <phosh-settings-enums.h>
 # and fails if that path only exists under /target.
-ninja -C /tmp/phosh-build install
-DESTDIR=/target ninja -C /tmp/phosh-build install
+ninja -C "$PHOSH_BUILD" install
+DESTDIR=/target ninja -C "$PHOSH_BUILD" install
 if [ ! -f /usr/include/phosh/phosh-settings-enums.h ]; then
     echo "ERROR: phosh headers missing under /usr/include/phosh after host install" >&2
     exit 1
@@ -842,7 +1089,7 @@ if [ -f /work/iso-postmarketos/vendor/phoc/meson.build ]; then
     # hwdata-dev: provides hwdata.pc; wlroots DRM backend needs it (pnp.ids -> pnpids.c). Plain
     # `hwdata` is runtime data only—without the .pc Meson skips DRM and phoc fails linking
     # wlr_output_is_drm / wlr_drm_connector_*.
-    rm -rf /tmp/phoc-build
+    PHOC_BUILD=/cache/phoc
     # Static wlroots avoids runtime mismatch: distro libwlroots.so can be older/newer
     # than symbols phoc linked against (e.g. wlr_surface_set_preferred_buffer_scale).
     # Embed only the GLES2 renderer: phosh default wlroots opts include vulkan, which needs
@@ -852,7 +1099,7 @@ if [ -f /work/iso-postmarketos/vendor/phoc/meson.build ]; then
     # Disable libliftoff in embedded wlroots: linking would otherwise DT_NEEDED libliftoff.so; the
     # rootfs often has an older libliftoff than the build image (missing e.g.
     # liftoff_plane_destroy). WLroots falls back to the non-libliftoff DRM path (HAVE_LIBLIFTOFF=0).
-    meson setup /tmp/phoc-build /work/iso-postmarketos/vendor/phoc --prefix=/usr \
+    meson_cache_setup "$PHOC_BUILD" /work/iso-postmarketos/vendor/phoc --prefix=/usr \
         -Dtests=false \
         -Dman=false \
         -Dembed-wlroots=enabled \
@@ -861,10 +1108,10 @@ if [ -f /work/iso-postmarketos/vendor/phoc/meson.build ]; then
         -Dwlroots:xwayland=disabled \
         -Dwlroots:libliftoff=disabled \
         --default-library=static
-    ninja -C /tmp/phoc-build
+    ninja -C "$PHOC_BUILD"
     # Host + staged rootfs: .pc and headers use prefix=/usr (see gmobile comment).
-    ninja -C /tmp/phoc-build install
-    DESTDIR=/target ninja -C /tmp/phoc-build install
+    ninja -C "$PHOC_BUILD" install
+    DESTDIR=/target ninja -C "$PHOC_BUILD" install
     if [ ! -x /usr/bin/phoc ]; then
         echo "ERROR: phoc not in host PATH after install (check meson --prefix and install rules)" >&2
         exit 1
@@ -891,22 +1138,30 @@ if [ -f /work/iso-postmarketos/vendor/phosh-mobile-settings/meson.build ]; then
         desktop-file-utils \
         gsound-dev libportal-dev libportal-gtk4 yaml-dev \
         feedbackd-dev lm-sensors-dev cellbroadcastd-dev gnome-desktop-dev
-    rm -rf /tmp/phosh-mobile-settings-build
+    PMS_BUILD=/cache/phosh-mobile-settings
     # No project-level `tests` option in this meson.build (Meson errors on unknown -D).
-    meson setup /tmp/phosh-mobile-settings-build /work/iso-postmarketos/vendor/phosh-mobile-settings \
+    meson_cache_setup "$PMS_BUILD" /work/iso-postmarketos/vendor/phosh-mobile-settings \
         --prefix=/usr
-    ninja -C /tmp/phosh-mobile-settings-build
-    ninja -C /tmp/phosh-mobile-settings-build install
-    DESTDIR=/target ninja -C /tmp/phosh-mobile-settings-build install
+    ninja -C "$PMS_BUILD"
+    ninja -C "$PMS_BUILD" install
+    DESTDIR=/target ninja -C "$PMS_BUILD" install
 fi
 
 # Optional: wallpapers / plymouth theme / sound theme (mostly data).
 if [ -f /work/iso-postmarketos/vendor/phosh-wallpapers/meson.build ]; then
     echo "Building phosh-wallpapers from /work/iso-postmarketos/vendor/phosh-wallpapers..."
-    rm -rf /tmp/phosh-wallpapers-build
-    meson setup /tmp/phosh-wallpapers-build /work/iso-postmarketos/vendor/phosh-wallpapers --prefix=/usr
-    ninja -C /tmp/phosh-wallpapers-build
-    DESTDIR=/target ninja -C /tmp/phosh-wallpapers-build install
+    PWP_BUILD=/cache/phosh-wallpapers
+    meson_cache_setup "$PWP_BUILD" /work/iso-postmarketos/vendor/phosh-wallpapers --prefix=/usr
+    ninja -C "$PWP_BUILD"
+    DESTDIR=/target ninja -C "$PWP_BUILD" install
+fi
+
+# Surface ccache hit rate so a cached run is visibly cheap (high "cache hits"
+# count vs "cache miss"). On a clean cache the first run is all misses; on
+# subsequent runs hits should be 90%+ for the C/C++ portion.
+if command -v ccache >/dev/null 2>&1; then
+    echo "build-qemu: ccache stats after C/C++ builds:"
+    ccache -s 2>/dev/null || true
 fi
 
 # Build/install overview chat UI.
@@ -940,9 +1195,18 @@ apk add --no-interactive glib >/dev/null 2>&1 || true
 glib-compile-schemas /target/usr/share/glib-2.0/schemas/
 '
 
+# --ulimit nofile=65536:65536: belt-and-suspenders against the EPERM cascade
+# documented in colima#911 (small-file open via macOS bind mount returns
+# EPERM rather than EMFILE once the container's default nofile=1024 is
+# exceeded). On the meson cache mount this is now also avoided structurally
+# by routing /cache through a named docker volume by default (see
+# MESON_CACHE_VOLUME up top); the ulimit bump remains useful for /work and
+# any other bind mount that may still be in play.
 "$ENGINE" run --rm --platform linux/arm64 \
+    --ulimit nofile=65536:65536 \
     -v "$ROOTFS_VOLUME:/target" \
     -v "$REPO_TOP:/work" \
+    -v "$MESON_CACHE_MOUNT:/cache" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
     "$ALPINE_IMAGE" /bin/sh -c "$build_container_script"
 
@@ -958,7 +1222,11 @@ fi
     -v "$ROOTFS_VOLUME:/target" \
     -v "$REPO_TOP:/work" \
     "$ALPINE_IMAGE" /bin/sh -eu -c "
-        apk add --no-interactive bash python3 coreutils grep sed tar >/dev/null
+        # Do not pull `coreutils` here. On some host/container combinations this
+        # stage can resolve a coreutils build that expects newer libc symbols
+        # (e.g. renameat2), which breaks dirname/mkdir/mktemp during helper
+        # installs. BusyBox tools are sufficient for these direct-rootfs scripts.
+        apk add --no-interactive bash python3 grep sed tar >/dev/null
         if [ -f /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh ]; then
             ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh \"$PROFILE_ENV_CONTAINER\" || true
         fi
@@ -1004,6 +1272,21 @@ fi
             cp -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg /target/usr/share/backgrounds/gargantua-black.jpg
             cp -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg /target/usr/share/backgrounds/atomos/gargantua-black.jpg
         fi
+        if [ "${ATOMOS_QEMU_ENABLE_NFTABLES:-0}" != "1" ]; then
+            rm -f /target/etc/runlevels/default/nftables
+        fi
+
+        # Last-mile SSH hardening for this build path: later helper scripts may
+        # install/refresh packages and re-drop pmaports defaults. Re-apply the
+        # sshd policy sanitize right before final verification so first boot
+        # doesn't regress into banner timeout/reset on unsupported UsePAM.
+        if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
+            sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' \
+                /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+        fi
+        if [ -x /target/usr/bin/ssh-keygen ]; then
+            chroot /target /usr/bin/ssh-keygen -A >/dev/null 2>&1 || true
+        fi
     "
 
 echo "=== build-qemu: final verification ==="
@@ -1045,11 +1328,23 @@ test -f "$IMAGE_PATH"
                 FAIL=1
             fi
         }
+        check_not_grep() {
+            local pat="$1" file="$2"
+            if [ -f "$file" ] && ! grep -q "$pat" "$file"; then
+                echo "  ok  no $pat in $file"
+            else
+                echo "  FAIL unexpected $pat in $file" >&2
+                FAIL=1
+            fi
+        }
 
         echo "--- core binaries ---"
         check_x /target/usr/libexec/phosh
         check_x /target/usr/local/bin/atomos-overview-chat-ui
         check_x /target/usr/sbin/sshd
+        check_f /target/etc/ssh/ssh_host_ed25519_key
+        check_f /target/etc/ssh/ssh_host_rsa_key
+        check_not_grep "^[[:space:]]*UsePAM[[:space:]]" /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
 
         if [ "${BUILD_HOME_BG:-0}" = "1" ]; then
             echo "--- atomos-home-bg files ---"
@@ -1103,13 +1398,26 @@ test -f "$IMAGE_PATH"
 
             echo "--- atomos-home-bg content ---"
             if [ -f /target/usr/share/atomos-home-bg/index.html ]; then
-                if grep -q "atomos-home-bg preview test" /target/usr/share/atomos-home-bg/index.html \
+                if grep -q "atomos-home-bg placeholder" /target/usr/share/atomos-home-bg/index.html \
+                    || grep -q "atomos-home-bg preview test" /target/usr/share/atomos-home-bg/index.html \
                     || grep -q "fallback placeholder" /target/usr/share/atomos-home-bg/index.html; then
-                    echo "  ok  index.html ships expected preview/fallback marker"
+                    echo "  ok  index.html ships expected atomos-home-bg marker"
                 else
-                    echo "  FAIL index.html lacks both preview and fallback markers" >&2
+                    echo "  FAIL index.html lacks the atomos-home-bg marker" >&2
                     echo "       head: $(head -c 200 /target/usr/share/atomos-home-bg/index.html | tr -d "\n")" >&2
                     FAIL=1
+                fi
+                # The shipped placeholder loads the event-horizon WebGL
+                # shader from a sibling file; if the <script> tag is
+                # there but the file isn't, the home-bg would silently
+                # render only its dark base color on device.
+                if grep -q "event-horizon.js" /target/usr/share/atomos-home-bg/index.html; then
+                    if [ -f /target/usr/share/atomos-home-bg/event-horizon.js ]; then
+                        echo "  ok  event-horizon.js sibling shipped alongside index.html"
+                    else
+                        echo "  FAIL index.html references event-horizon.js but the file is missing in the rootfs" >&2
+                        FAIL=1
+                    fi
                 fi
             fi
         fi
@@ -1125,48 +1433,49 @@ echo "=== build-qemu: pack rootfs into image (containerized) ==="
 "$ENGINE" run --rm --privileged \
     -v "$ROOTFS_VOLUME:/target:ro" \
     -v "$EXPORT_DIR:/exportdir" \
-    "$ALPINE_IMAGE" /bin/sh -eu -c "
-        echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories
-        echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
+    -e PROFILE_NAME="$PROFILE_NAME" \
+    "$ALPINE_IMAGE" /bin/sh -eu -c '
+        echo "https://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+        echo "https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
         apk update >/dev/null
         apk add --no-interactive parted dosfstools e2fsprogs util-linux mount rsync systemd-boot multipath-tools >/dev/null
         IMAGE=/exportdir/${PROFILE_NAME}.img
-        parted -s \"\$IMAGE\" mklabel gpt
-        parted -s \"\$IMAGE\" mkpart ESP fat32 1MiB 513MiB
-        parted -s \"\$IMAGE\" set 1 esp on
-        parted -s \"\$IMAGE\" mkpart rootfs ext4 513MiB 100%
+        parted -s "$IMAGE" mklabel gpt
+        parted -s "$IMAGE" mkpart ESP fat32 1MiB 513MiB
+        parted -s "$IMAGE" set 1 esp on
+        parted -s "$IMAGE" mkpart rootfs ext4 513MiB 100%
         # Use losetup -P to create partition-aware loop devices
-        LOOP_DEV=\$(losetup --show -f -P \"\$IMAGE\")
-        LOOP_NAME=\$(basename \"\$LOOP_DEV\")
+        LOOP_DEV=$(losetup --show -f -P "$IMAGE")
+        LOOP_NAME=$(basename "$LOOP_DEV")
         # Re-read partition table (patterns from resync-rootfs-to-disk-image.sh and pmb-container-root-entry.sh)
         if command -v partx >/dev/null 2>&1; then
-            partx -u \"\$LOOP_DEV\" 2>/dev/null || true
+            partx -u "$LOOP_DEV" 2>/dev/null || true
         fi
         if command -v blockdev >/dev/null 2>&1; then
-            blockdev --rereadpt \"\$LOOP_DEV\" 2>/dev/null || true
+            blockdev --rereadpt "$LOOP_DEV" 2>/dev/null || true
         fi
         # Wait for partition devices to appear
-        LOOP_BOOT=\"\${LOOP_DEV}p1\"
-        LOOP_ROOT=\"\${LOOP_DEV}p2\"
+        LOOP_BOOT="${LOOP_DEV}p1"
+        LOOP_ROOT="${LOOP_DEV}p2"
         for i in 1 2 3 4 5; do
-            [ -b \"\$LOOP_BOOT\" ] && [ -b \"\$LOOP_ROOT\" ] && break
+            [ -b "$LOOP_BOOT" ] && [ -b "$LOOP_ROOT" ] && break
             sleep 0.5
         done
         # Fallback: use kpartx to create device-mapper partitions (from pmb-container-root-entry.sh)
         USE_KPARTX=0
-        if [ ! -b \"\$LOOP_BOOT\" ] || [ ! -b \"\$LOOP_ROOT\" ]; then
-            echo \"Partition nodes not found; using kpartx fallback...\"
-            kpartx -av \"\$LOOP_DEV\" 2>/dev/null || true
+        if [ ! -b "$LOOP_BOOT" ] || [ ! -b "$LOOP_ROOT" ]; then
+            echo "Partition nodes not found; using kpartx fallback..."
+            kpartx -av "$LOOP_DEV" 2>/dev/null || true
             sleep 1
             # kpartx creates /dev/mapper/loopXp1, /dev/mapper/loopXp2
-            if [ -b \"/dev/mapper/\${LOOP_NAME}p1\" ]; then
-                LOOP_BOOT=\"/dev/mapper/\${LOOP_NAME}p1\"
-                LOOP_ROOT=\"/dev/mapper/\${LOOP_NAME}p2\"
+            if [ -b "/dev/mapper/${LOOP_NAME}p1" ]; then
+                LOOP_BOOT="/dev/mapper/${LOOP_NAME}p1"
+                LOOP_ROOT="/dev/mapper/${LOOP_NAME}p2"
                 USE_KPARTX=1
             fi
         fi
-        if [ ! -b \"\$LOOP_BOOT\" ] || [ ! -b \"\$LOOP_ROOT\" ]; then
-            echo \"ERROR: partition devices not found: \$LOOP_BOOT \$LOOP_ROOT\" >&2
+        if [ ! -b "$LOOP_BOOT" ] || [ ! -b "$LOOP_ROOT" ]; then
+            echo "ERROR: partition devices not found: $LOOP_BOOT $LOOP_ROOT" >&2
             ls -la /dev/loop* /dev/mapper/ 2>/dev/null || true
             exit 1
         fi
@@ -1174,18 +1483,18 @@ echo "=== build-qemu: pack rootfs into image (containerized) ==="
             set +e
             if mountpoint -q /mnt/root/boot 2>/dev/null; then umount /mnt/root/boot; fi
             if mountpoint -q /mnt/root 2>/dev/null; then umount /mnt/root; fi
-            if [ \"\$USE_KPARTX\" = \"1\" ]; then
-                kpartx -d \"\$LOOP_DEV\" 2>/dev/null || true
+            if [ "$USE_KPARTX" = "1" ]; then
+                kpartx -d "$LOOP_DEV" 2>/dev/null || true
             fi
-            if [ -n \"\${LOOP_DEV:-}\" ]; then losetup -d \"\$LOOP_DEV\"; fi
+            if [ -n "${LOOP_DEV:-}" ]; then losetup -d "$LOOP_DEV"; fi
         }
         trap cleanup EXIT
-        mkfs.vfat -F 32 \"\$LOOP_BOOT\"
-        mkfs.ext4 -F \"\$LOOP_ROOT\"
+        mkfs.vfat -F 32 "$LOOP_BOOT"
+        mkfs.ext4 -F "$LOOP_ROOT"
         mkdir -p /mnt/root
-        mount \"\$LOOP_ROOT\" /mnt/root
+        mount "$LOOP_ROOT" /mnt/root
         mkdir -p /mnt/root/boot
-        mount \"\$LOOP_BOOT\" /mnt/root/boot
+        mount "$LOOP_BOOT" /mnt/root/boot
         # Sync rootfs and boot separately:
         # - /mnt/root/boot is FAT32 and cannot store symlinks
         # - some roots may carry /boot/boot -> . helper symlink
@@ -1194,18 +1503,18 @@ echo "=== build-qemu: pack rootfs into image (containerized) ==="
         mkdir -p /mnt/root/boot/EFI/BOOT
         cp /usr/lib/systemd/boot/efi/systemd-bootaa64.efi /mnt/root/boot/EFI/BOOT/BOOTAA64.EFI
         mkdir -p /mnt/root/boot/loader/entries
-        cat > /mnt/root/boot/loader/loader.conf <<'EOF'
+        cat > /mnt/root/boot/loader/loader.conf <<EOF
 default atomos.conf
 timeout 0
 console-mode auto
 EOF
-        cat > /mnt/root/boot/loader/entries/atomos.conf <<'EOF'
+        cat > /mnt/root/boot/loader/entries/atomos.conf <<EOF
 title   AtomOS
 linux   /vmlinuz-virt
 initrd  /initramfs-virt
 options root=/dev/vda2 rw rootwait console=ttyAMA0 console=tty1 modules=virtio_blk debug_init=yes
 EOF
-    "
+    '
 if [ "${ATOMOS_SKIP_EXPORT_CHOWN:-0}" != "1" ]; then
     if ! "$ENGINE" run --rm \
         -v "$EXPORT_DIR:/export" \

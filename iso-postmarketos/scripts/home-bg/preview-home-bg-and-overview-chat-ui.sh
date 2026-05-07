@@ -12,8 +12,9 @@
 #   egui-fallback (macOS, or Linux without WebKit / layer-shell)
 #     - atomos-home-bg cannot render without WebKitGTK on Linux, so we skip
 #       its runtime and run a single-window egui combined preview that
-#       simulates the layering visually (white canvas + bouncing ball under
-#       the chat input strip).
+#       simulates the layering visually (#0a0a0a base under the chat input
+#       strip — matches the dark base of the shipped placeholder; the
+#       WebGL event-horizon shader does not run in this mode).
 #
 # Override selection: ATOMOS_HOME_BG_COMBINED_MODE=layered|egui-fallback
 set -euo pipefail
@@ -106,9 +107,10 @@ preview-combined: mode=egui-fallback.
   composition.
 
   Running the combined egui dev preview (atomos-home-bg-combined-preview),
-  which renders the home-bg white canvas + bouncing ball animation in the
-  background of a single eframe window and overlays an overview-chat-ui
-  input strip on top. Visual parity with the on-device layering.
+  which renders the home-bg as a #0a0a0a opaque base in the background
+  of a single eframe window and overlays an overview-chat-ui input strip
+  on top. Layering parity with the on-device composition; the WebGL
+  event-horizon shader is exclusive to the layered (WebKitGTK) mode.
 
   The combined integration tests (cargo test -p atomos-home-bg) continue to
   lock the actual layer-shell invariants between the two crates.

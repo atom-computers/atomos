@@ -1,8 +1,18 @@
 #!/bin/bash
-# Install AtomOS default wallpaper via dbus + gsettings inside the pmbootstrap rootfs chroot.
+# Configure Phosh session + lock-screen background inside the pmbootstrap rootfs chroot via
+# dbus + gsettings, plus system dconf local.d.
+#
+# Default (ATOMOS_PHOSH_BACKGROUND_SOLID=1): solid color only — no picture URI. Phosh still
+# owns the wlr-layer-shell BACKGROUND surface, but it paints flat color so atomos-home-bg
+# (typically layer "bottom") is not covered by a JPEG. Matches phosh.gsettings(5) "classic
+# black overview": picture-options none + primary-color.
+#
+# Set ATOMOS_PHOSH_BACKGROUND_SOLID=0 to restore file-backed wallpaper (requires JPEG on disk;
+# see build-image.sh stream step).
+#
 # Writes the Phosh session user's dconf (postmarketOS uid 10000 or "user"), not only system
 # local.d — Phosh reads per-user gsettings; system keyfiles can lose to site DB ordering.
-# Run after the JPEG exists (see Makefile: stream into the chroot first).
+# For solid mode the JPEG is optional; for picture mode run after the JPEG exists.
 #
 # Image packages: config/*.env PMOS_EXTRA_PACKAGES should include dbus; Phosh normally pulls glib and
 # gsettings-desktop-schemas. The inner script runs apk add if gsettings/dbus-run-session are missing.
@@ -43,6 +53,9 @@ source "$PROFILE_ENV_SOURCE"
 
 SCREENLOCK_IDLE_SECONDS="${ATOMOS_SCREENLOCK_IDLE_SECONDS:-${PMOS_SCREENLOCK_IDLE_SECONDS:-300}}"
 SCREENLOCK_LOCK_DELAY_SECONDS="${ATOMOS_SCREENLOCK_LOCK_DELAY_SECONDS:-${PMOS_SCREENLOCK_LOCK_DELAY_SECONDS:-0}}"
+# Solid background: 1 = no Phosh wallpaper image (atomos-home-bg visible). 0 = legacy JPEG.
+ATOMOS_PHOSH_BACKGROUND_SOLID="${ATOMOS_PHOSH_BACKGROUND_SOLID:-1}"
+ATOMOS_PHOSH_BACKGROUND_PRIMARY="${ATOMOS_PHOSH_BACKGROUND_PRIMARY:-#000000}"
 
 if ! [[ "$SCREENLOCK_IDLE_SECONDS" =~ ^[0-9]+$ ]]; then
     echo "Invalid screen lock idle delay (seconds): $SCREENLOCK_IDLE_SECONDS" >&2
@@ -56,17 +69,10 @@ fi
 # Inner script runs under /bin/sh in the chroot (POSIX).
 INNER_SCRIPT=$(cat <<'INNER'
 set -e
-WALL="/usr/share/backgrounds/gnome/gargantua-black.jpg"
-if [ ! -f "$WALL" ] && [ -f /usr/share/backgrounds/gargantua-black.jpg ]; then
-    WALL="/usr/share/backgrounds/gargantua-black.jpg"
-fi
-if [ ! -f "$WALL" ] && [ -f /usr/share/backgrounds/atomos/gargantua-black.jpg ]; then
-    WALL="/usr/share/backgrounds/atomos/gargantua-black.jpg"
-fi
-if [ ! -f "$WALL" ]; then
-    echo "atomos-wallpaper-dconf: skip (missing wallpaper JPEG under /usr/share/backgrounds/)"
-    exit 0
-fi
+SOLID="__ATOMOS_PHOSH_BACKGROUND_SOLID__"
+PRIMARY="__ATOMOS_PHOSH_BACKGROUND_PRIMARY__"
+IDLE_DELAY="__SCREENLOCK_IDLE_SECONDS__"
+LOCK_DELAY="__SCREENLOCK_LOCK_DELAY_SECONDS__"
 
 # Ensure CLI + schemas (glib=gsettings, gsettings-desktop-schemas=org.gnome.desktop.*).
 if command -v apk >/dev/null 2>&1; then
@@ -86,15 +92,59 @@ if ! command -v dbus-run-session >/dev/null 2>&1; then
     exit 0
 fi
 
-URI="file://$WALL"
-IDLE_DELAY="__SCREENLOCK_IDLE_SECONDS__"
-LOCK_DELAY="__SCREENLOCK_LOCK_DELAY_SECONDS__"
+URI=""
+if [ "$SOLID" != "1" ]; then
+    WALL="/usr/share/backgrounds/gnome/gargantua-black.jpg"
+    if [ ! -f "$WALL" ] && [ -f /usr/share/backgrounds/gargantua-black.jpg ]; then
+        WALL="/usr/share/backgrounds/gargantua-black.jpg"
+    fi
+    if [ ! -f "$WALL" ] && [ -f /usr/share/backgrounds/atomos/gargantua-black.jpg ]; then
+        WALL="/usr/share/backgrounds/atomos/gargantua-black.jpg"
+    fi
+    if [ ! -f "$WALL" ]; then
+        echo "atomos-wallpaper-dconf: skip (ATOMOS_PHOSH_BACKGROUND_SOLID=0 but missing JPEG under /usr/share/backgrounds/)"
+        exit 0
+    fi
+    URI="file://$WALL"
+fi
 
 # Seed system dconf as a fallback/default for all users so lock + home stay in
 # parity even when per-user gsettings are not yet initialized at image build
 # time (or are later reset). Per-user writes below can still override unless
 # explicitly locked by policy.
 mkdir -p /etc/dconf/db/local.d /etc/dconf/db/local.d/locks
+
+if [ "$SOLID" = "1" ]; then
+cat > /etc/dconf/db/local.d/50-atomos-wallpaper.conf << EOS
+[org/gnome/desktop/background]
+picture-uri=''
+picture-uri-dark=''
+picture-options='none'
+primary-color='$PRIMARY'
+
+[org/gnome/desktop/screensaver]
+picture-uri=''
+picture-uri-dark=''
+picture-options='none'
+lock-enabled=true
+lock-delay=uint32 $LOCK_DELAY
+
+[org/gnome/desktop/session]
+idle-delay=uint32 $IDLE_DELAY
+EOS
+cat > /etc/dconf/db/local.d/locks/50-atomos-wallpaper << 'EOS'
+/org/gnome/desktop/background/picture-uri
+/org/gnome/desktop/background/picture-uri-dark
+/org/gnome/desktop/background/picture-options
+/org/gnome/desktop/background/primary-color
+/org/gnome/desktop/screensaver/picture-uri
+/org/gnome/desktop/screensaver/picture-uri-dark
+/org/gnome/desktop/screensaver/picture-options
+/org/gnome/desktop/screensaver/lock-enabled
+/org/gnome/desktop/screensaver/lock-delay
+/org/gnome/desktop/session/idle-delay
+EOS
+else
 cat > /etc/dconf/db/local.d/50-atomos-wallpaper.conf << EOS
 [org/gnome/desktop/background]
 picture-uri='$URI'
@@ -122,12 +172,35 @@ cat > /etc/dconf/db/local.d/locks/50-atomos-wallpaper << 'EOS'
 /org/gnome/desktop/screensaver/lock-delay
 /org/gnome/desktop/session/idle-delay
 EOS
+fi
+
 if command -v dconf >/dev/null 2>&1; then
     dconf update || true
 fi
 write_gs_script() {
     _out="$1"
     mkdir -p "$(dirname "$_out")"
+    if [ "$SOLID" = "1" ]; then
+    cat > "$_out" << EOS
+#!/bin/sh
+set -e
+export HOME="$HOME"
+PRIMARY="$PRIMARY"
+IDLE_DELAY="$IDLE_DELAY"
+LOCK_DELAY="$LOCK_DELAY"
+export PRIMARY
+dbus-run-session -- gsettings set org.gnome.desktop.background picture-uri ''
+dbus-run-session -- gsettings set org.gnome.desktop.background picture-uri-dark ''
+dbus-run-session -- gsettings set org.gnome.desktop.background picture-options none
+dbus-run-session -- gsettings set org.gnome.desktop.background primary-color "\$PRIMARY"
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-uri ''
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-uri-dark ''
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver picture-options none
+dbus-run-session -- gsettings set org.gnome.desktop.session idle-delay "uint32 \$IDLE_DELAY"
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-enabled true
+dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-delay "uint32 \$LOCK_DELAY"
+EOS
+    else
     cat > "$_out" << EOS
 #!/bin/sh
 set -e
@@ -146,6 +219,7 @@ dbus-run-session -- gsettings set org.gnome.desktop.session idle-delay "uint32 \
 dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-enabled true
 dbus-run-session -- gsettings set org.gnome.desktop.screensaver lock-delay "uint32 \$LOCK_DELAY"
 EOS
+    fi
 chmod +x "$_out"
 }
 
@@ -213,13 +287,15 @@ INNER
 
 INNER_SCRIPT="${INNER_SCRIPT//__SCREENLOCK_IDLE_SECONDS__/$SCREENLOCK_IDLE_SECONDS}"
 INNER_SCRIPT="${INNER_SCRIPT//__SCREENLOCK_LOCK_DELAY_SECONDS__/$SCREENLOCK_LOCK_DELAY_SECONDS}"
+INNER_SCRIPT="${INNER_SCRIPT//__ATOMOS_PHOSH_BACKGROUND_SOLID__/${ATOMOS_PHOSH_BACKGROUND_SOLID}}"
+INNER_SCRIPT="${INNER_SCRIPT//__ATOMOS_PHOSH_BACKGROUND_PRIMARY__/${ATOMOS_PHOSH_BACKGROUND_PRIMARY}}"
 
 if [ "${ATOMOS_WALLPAPER_DCONF_DUMP_ONLY:-0}" = "1" ]; then
     printf '%s\n' "$INNER_SCRIPT"
     exit 0
 fi
 
-echo "Applying AtomOS wallpaper + lock timeout (idle=${SCREENLOCK_IDLE_SECONDS}s, lock-delay=${SCREENLOCK_LOCK_DELAY_SECONDS}s) in chroot (${PROFILE_NAME})..."
+echo "Applying AtomOS Phosh background (solid=${ATOMOS_PHOSH_BACKGROUND_SOLID:-1}) + lock timeout (idle=${SCREENLOCK_IDLE_SECONDS}s, lock-delay=${SCREENLOCK_LOCK_DELAY_SECONDS}s) in chroot (${PROFILE_NAME})..."
 if [ "$PMB_CONTAINER_ROOT" = "1" ]; then
     PMB_CONTAINER_AS_ROOT=1 bash "$PMB" "$PROFILE_ENV_ARG" chroot -r -- /bin/sh -eu -c "$INNER_SCRIPT"
 else
