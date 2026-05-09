@@ -18,12 +18,36 @@
 # gsettings-desktop-schemas. The inner script runs apk add if gsettings/dbus-run-session are missing.
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
+# Two modes (mirrors apply-overlay.sh / apply-atomos-phosh-dconf.sh):
+#   1) Default: $0 <profile-env>            -> via pmb chroot -r (build-image.sh)
+#   2) Direct: $0 --rootfs <dir> [<env>]    -> via host chroot $ROOTFS (build-fairphone4.sh)
+#
+# In --rootfs mode we additionally seed /etc/skel and write the system dconf
+# local.d files; we SKIP the per-user gsettings-via-dbus step because a
+# build-time chroot has no running dbus session and no logged-in user.
+# Phosh reads system dconf at session start so the wallpaper still applies
+# at first login.
+DIRECT_ROOTFS_DIR=""
+if [ "${1:-}" = "--rootfs" ]; then
+    if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+        echo "Usage: $0 --rootfs <rootfs-dir> [<profile-env>]" >&2
+        echo "       $0 <profile-env>" >&2
+        exit 1
+    fi
+    DIRECT_ROOTFS_DIR="${2%/}"
+    if [ ! -d "$DIRECT_ROOTFS_DIR" ]; then
+        echo "ERROR: rootfs directory not found: $DIRECT_ROOTFS_DIR" >&2
+        exit 1
+    fi
+    PROFILE_ENV="${3:-config/fairphone-fp4.env}"
+elif [ "$#" -eq 1 ]; then
+    PROFILE_ENV="$1"
+else
     echo "Usage: $0 <profile-env>" >&2
+    echo "       $0 --rootfs <rootfs-dir> [<profile-env>]" >&2
     exit 1
 fi
 
-PROFILE_ENV="$1"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PMB_HOST="$ROOT_DIR/scripts/pmb/pmb.sh"
 PMB_CONTAINER="$ROOT_DIR/scripts/pmb/pmb-container.sh"
@@ -31,7 +55,7 @@ PMB_CONTAINER="$ROOT_DIR/scripts/pmb/pmb-container.sh"
 PMB="$PMB_HOST"
 PROFILE_ENV_ARG="$PROFILE_ENV"
 PMB_CONTAINER_ROOT=0
-if [ "${PMB_USE_CONTAINER:-0}" = "1" ] || ! command -v pmbootstrap >/dev/null 2>&1; then
+if [ -z "$DIRECT_ROOTFS_DIR" ] && { [ "${PMB_USE_CONTAINER:-0}" = "1" ] || ! command -v pmbootstrap >/dev/null 2>&1; }; then
     PMB="$PMB_CONTAINER"
     PMB_CONTAINER_ROOT=1
     if [[ "$PROFILE_ENV" == "$ROOT_DIR/"* ]]; then
@@ -296,7 +320,16 @@ if [ "${ATOMOS_WALLPAPER_DCONF_DUMP_ONLY:-0}" = "1" ]; then
 fi
 
 echo "Applying AtomOS Phosh background (solid=${ATOMOS_PHOSH_BACKGROUND_SOLID:-1}) + lock timeout (idle=${SCREENLOCK_IDLE_SECONDS}s, lock-delay=${SCREENLOCK_LOCK_DELAY_SECONDS}s) in chroot (${PROFILE_NAME})..."
-if [ "$PMB_CONTAINER_ROOT" = "1" ]; then
+if [ -n "$DIRECT_ROOTFS_DIR" ]; then
+    # --rootfs mode: chroot $ROOTFS and run the same INNER_SCRIPT.
+    # The system dconf db (/etc/dconf/db/local.d/50-atomos-wallpaper.conf
+    # + locks/50-atomos-wallpaper) IS written; the per-user gsettings
+    # block is best-effort and will WARN at the end ("could not apply
+    # wallpaper gsettings") because no dbus session exists in a build-
+    # time chroot. That warning is benign for build-fairphone4.sh -- the
+    # system db kicks in at first session login.
+    chroot "$DIRECT_ROOTFS_DIR" /bin/sh -eu -c "$INNER_SCRIPT"
+elif [ "$PMB_CONTAINER_ROOT" = "1" ]; then
     PMB_CONTAINER_AS_ROOT=1 bash "$PMB" "$PROFILE_ENV_ARG" chroot -r -- /bin/sh -eu -c "$INNER_SCRIPT"
 else
     bash "$PMB" "$PROFILE_ENV_ARG" chroot -r -- /bin/sh -eu -c "$INNER_SCRIPT"

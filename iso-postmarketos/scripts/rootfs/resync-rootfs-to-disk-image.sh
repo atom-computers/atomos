@@ -76,6 +76,36 @@ pmb_exec() {
 
 echo "=== RESYNC: rootfs -> /home/pmos/rootfs/{${PROFILE_NAME},${PMOS_DEVICE}}.img (post-install mutations; exact filename resolved inside chroot) ==="
 
+# Ensure the device rootfs is bind-mounted at /mnt/rootfs_<device> inside
+# the native chroot BEFORE the inner script runs. Background:
+#   - pmbootstrap's mount_device_rootfs() (vendor/pmbootstrap/pmb/helpers/
+#     mount.py:111) bind-mounts the device rootfs chroot dir into the
+#     native chroot's /mnt/rootfs_<chroot_name>.
+#   - It is invoked automatically by pmbootstrap's own copy_files_from_chroot
+#     during `pmb install`, AND every time we run `pmb chroot -r --`
+#     (because -r enters the device rootfs which depends on the bind).
+#   - It is NOT invoked by `pmb chroot --` (the native-chroot mode our
+#     resync inner script runs under).
+#   - pmbootstrap may shutdown bind mounts between operations (especially
+#     after errors or a post-build housekeeping pass). When it does, our
+#     resync sees /mnt/rootfs_<device> missing/empty and exits 2 -- which
+#     under set -e in build-image.sh aborts the build before
+#     export.sh streams the (now stale) install-time image to disk. The
+#     image still flashes and boots, but it ships the rootfs as
+#     pmbootstrap install left it -- without any of our post-install
+#     customizations (atomos-overview-chat-ui, atomos-home-bg, vendor
+#     phosh apk upgrade, custom wallpaper, dconf overrides, overlay).
+#
+# Fix: trigger mount_device_rootfs by running a no-op inside the device
+# rootfs (`pmb chroot -r -- /bin/true`). The bind mount it sets up
+# survives in the native chroot's mount namespace until pmb shutdown is
+# called, so the subsequent `pmb chroot --` resync sees the populated
+# /mnt/rootfs_<device>.
+echo "RESYNC pre-flight: ensuring /mnt/rootfs_${PMOS_DEVICE} bind mount in native chroot..."
+if ! pmb_exec chroot -r -- /bin/true >/dev/null 2>&1; then
+    echo "WARN: pmb chroot -r failed during pre-flight; resync inner script will retry the mount check and may exit 2." >&2
+fi
+
 # Inner script runs as root inside the native chroot (default for `pmbootstrap chroot`).
 # Do NOT use --output stdout here: that mode is for streaming a binary payload (see export.sh
 # `cat /boot/boot.img`). Our inner script prints diagnostics; stdout in stdout-mode can make
@@ -147,6 +177,11 @@ cleanup() {
 	if [ -n "${LOOP_COMBINED:-}" ]; then
 		losetup -d "${LOOP_COMBINED}" 2>/dev/null || true
 	fi
+	# If the sparse round-trip set up a raw temp file but we exited before
+	# converting back, clean it up. (Successful run removes it explicitly.)
+	if [ -n "${ATOMOS_RESYNC_RAW_TMP:-}" ] && [ -f "${ATOMOS_RESYNC_RAW_TMP}" ]; then
+		rm -f "${ATOMOS_RESYNC_RAW_TMP}" 2>/dev/null || true
+	fi
 }
 trap cleanup EXIT INT HUP
 
@@ -160,8 +195,56 @@ apk add --no-interactive --quiet rsync 2>/dev/null || apk add --no-interactive r
 
 mkdir -p /mnt/install
 
+# Detect Android sparse image format. pmbootstrap install for devices with
+# deviceinfo_flash_sparse=true (FP4, many other Qualcomm Android phones)
+# converts the rootfs image in place via img2simg
+# (vendor/pmbootstrap/pmb/install/_install.py:983-986). The on-disk file at
+# /home/pmos/rootfs/<device>.img is then in Android sparse format (magic
+# 0xed 0x26 0xff 0x3a, little-endian 0x3aFF26ED), NOT a raw ext4/GPT image.
+# losetup -P on that file attaches it as a flat block device with no
+# partitions -- so the previous resync code matched no BOOT_PART/ROOT_PART
+# and exited 3, BUT the pmbootstrap chroot --output log mode swallowed the
+# inner exit code. The build "succeeded", export.sh streamed the unmodified
+# install-time sparse image, and the device flashed it -- which carries
+# stock phosh from `pmb install`, none of the post-install customizations
+# (vendor phosh, atomos-overview-chat-ui, atomos-home-bg, dconf overrides,
+# overlay) that the rootfs chroot has.
+is_android_sparse() {
+	local f="$1"
+	[ -r "$f" ] || return 1
+	local magic
+	# Android sparse magic: bytes ED 26 FF 3A (little-endian 0x3AFF26ED).
+	magic="$(head -c 4 "$f" 2>/dev/null | od -An -tx1 2>/dev/null | tr -d ' \n')"
+	[ "$magic" = "ed26ff3a" ]
+}
+
 sync_combined() {
 	local img="$1"
+
+	# If the image is Android sparse, simg2img to a raw temp file so losetup
+	# can read its partition table. After rsync + post-rsync verify, we
+	# img2simg the raw file back over the original sparse one (atomic mv).
+	# This is the build-image.sh equivalent of the explicit raw->sparse
+	# round-trip build-fairphone4.sh:1604-1627 does inline.
+	if is_android_sparse "$img"; then
+		log "atomos: detected Android sparse image at $img; converting to raw ext4 for resync ..."
+		if ! command -v simg2img >/dev/null 2>&1 || ! command -v img2simg >/dev/null 2>&1; then
+			log "atomos: installing android-tools (simg2img + img2simg) in native chroot ..."
+			apk add --no-interactive --quiet android-tools 2>/dev/null \
+				|| apk add --no-interactive android-tools
+		fi
+		ATOMOS_RESYNC_SPARSE_SRC="$img"
+		ATOMOS_RESYNC_RAW_TMP="${img%.img}.atomos-resync-raw.img"
+		rm -f "$ATOMOS_RESYNC_RAW_TMP"
+		if ! simg2img "$img" "$ATOMOS_RESYNC_RAW_TMP"; then
+			log "ERROR: simg2img failed for $img -> $ATOMOS_RESYNC_RAW_TMP"
+			rm -f "$ATOMOS_RESYNC_RAW_TMP"
+			exit 11
+		fi
+		log "atomos: simg2img OK -> $ATOMOS_RESYNC_RAW_TMP ($(du -h "$ATOMOS_RESYNC_RAW_TMP" 2>/dev/null | cut -f1))"
+		img="$ATOMOS_RESYNC_RAW_TMP"
+	fi
+
 	LOOP_COMBINED="$(losetup -f --show -P "$img")"
 	reread_partitions "${LOOP_COMBINED}"
 	BOOT_PART=""
@@ -328,6 +411,151 @@ if [ -n "$WALL_REL" ] && command -v sha256sum >/dev/null 2>&1; then
 	fi
 elif [ -n "$WALL_REL" ]; then
 	log "NOTE: sha256sum not in PATH; skipping wallpaper hash check."
+fi
+
+# Post-rsync verification of the AtomOS customizations -- not just the
+# wallpaper. rsync exits 23/24 on partial transfer (e.g. file errors,
+# vanished sources mid-stream); we tolerate those exit codes above so the
+# build doesn't abort on transient noise. But "tolerated" must not silently
+# include "atomos-overview-chat-ui binary did not land in the image" --
+# that is the exact symptom users hit when post-install customizations are
+# present in the rootfs chroot but missing from the exported image.
+#
+# These checks compare the file in the rootfs chroot against the file at
+# the same path in /mnt/install (the mounted disk image). Missing in image
+# OR sha256 mismatch = a real failure that warrants exit non-zero so the
+# build pipeline catches it instead of shipping a half-customized image.
+#
+# Each entry is checked only when present in the chroot (so QEMU profiles
+# without home-bg don't fail this guard, and stock-phosh profiles where
+# vendor phosh wasn't installed don't trip the libphosh check).
+verify_customization_files() {
+	local relpath="$1"
+	# Both paths must exist OR both must be absent. Anything else is a
+	# silent rsync bug that previous runs of this script let through.
+	local in_chroot=0 in_image=0
+	[ -e "${ROOTFS_MP}/${relpath}" ] && in_chroot=1
+	[ -e "/mnt/install/${relpath}" ] && in_image=1
+	if [ "$in_chroot" -eq 1 ] && [ "$in_image" -eq 0 ]; then
+		log "VERIFY-FAIL: $relpath is in the rootfs chroot but MISSING from the image."
+		log "  this is a resync bug; the exported image will ship without this customization."
+		return 1
+	fi
+	if [ "$in_chroot" -eq 0 ] && [ "$in_image" -eq 1 ]; then
+		# Pre-existing in install image without a chroot source = stale
+		# leftover from a prior install. --delete on the rsync should have
+		# removed it. Warn but don't fail.
+		log "NOTE: $relpath is in the image but not in the rootfs chroot (rsync --delete did not remove it)."
+		return 0
+	fi
+	if [ "$in_chroot" -eq 0 ] && [ "$in_image" -eq 0 ]; then
+		# Neither has it -- expected when the customization was opt-out
+		# (e.g. --without-home-bg, or vendor phosh disabled).
+		return 0
+	fi
+	# Both present: verify content actually matches. sha256 is overkill for
+	# a regular file but cheap, and surfaces "rsync wrote 0-byte files"
+	# / "rsync wrote stale content" failure modes that simple presence
+	# checks miss.
+	if [ -f "${ROOTFS_MP}/${relpath}" ] && [ -f "/mnt/install/${relpath}" ] \
+		&& command -v sha256sum >/dev/null 2>&1; then
+		local chroot_sha image_sha
+		chroot_sha="$(sha256sum "${ROOTFS_MP}/${relpath}" 2>/dev/null | cut -d" " -f1)"
+		image_sha="$(sha256sum "/mnt/install/${relpath}" 2>/dev/null | cut -d" " -f1)"
+		if [ -n "$chroot_sha" ] && [ -n "$image_sha" ] && [ "$chroot_sha" != "$image_sha" ]; then
+			log "VERIFY-FAIL: $relpath sha256 differs between rootfs chroot and image."
+			log "  chroot: $chroot_sha"
+			log "  image:  $image_sha"
+			return 1
+		fi
+	fi
+	return 0
+}
+
+verify_atomos_customizations_in_image() {
+	# AtomOS customizations that are added by build-image.sh AFTER pmb
+	# install. If they exist in the rootfs chroot, they MUST be in the
+	# exported image; otherwise the device boots with stock postmarketOS
+	# instead of AtomOS.
+	local fail=0
+	local p
+	for p in \
+		"usr/local/bin/atomos-overview-chat-ui" \
+		"usr/bin/atomos-overview-chat-ui" \
+		"usr/libexec/atomos-overview-chat-ui" \
+		"usr/libexec/atomos-overview-chat-submit" \
+		"usr/local/bin/atomos-home-bg" \
+		"usr/bin/atomos-home-bg" \
+		"usr/libexec/atomos-home-bg" \
+		"usr/share/atomos-home-bg/index.html" \
+		"etc/xdg/autostart/atomos-home-bg.desktop" \
+		"etc/atomos/overview-chat-ui-overlay-contract" \
+		"etc/dconf/db/local.d/51-atomos-phosh-favorites.conf" \
+		"usr/libexec/phosh"; do
+		verify_customization_files "$p" || fail=1
+	done
+	if [ "$fail" -ne 0 ]; then
+		if [ "${ATOMOS_SKIP_RESYNC_VERIFY:-0}" = "1" ]; then
+			log "WARN: post-rsync verification failed; continuing because ATOMOS_SKIP_RESYNC_VERIFY=1."
+			return 0
+		fi
+		log "ERROR: post-rsync verification failed -- one or more AtomOS customizations are in the rootfs chroot but did NOT land in the exported image."
+		log "  This means the device will boot with the install-time rootfs (stock postmarketOS) instead of the AtomOS overlay set."
+		log "  Possible causes:"
+		log "    1. rsync exited 23/24 (partial transfer) and silently dropped /usr/local/bin/."
+		log "    2. /mnt/rootfs_<device> bind mount was empty/stale during the rsync pass."
+		log "    3. /mnt/install was unmounted before rsync finished writing."
+		log "  To downgrade this to a warning (and accept a half-customized image): export ATOMOS_SKIP_RESYNC_VERIFY=1"
+		return 1
+	fi
+	log "atomos: post-rsync verification OK -- AtomOS customizations match between chroot and image."
+	return 0
+}
+
+verify_atomos_customizations_in_image || exit 7
+
+# Convert the modified raw ext4 back to Android sparse and atomically replace
+# the original sparse image. This MUST happen after the customizations have
+# landed in the raw image (the rsync above) AND been verified
+# (verify_atomos_customizations_in_image), but BEFORE we exit -- otherwise
+# the cleanup trap removes the raw temp file and the original sparse stays
+# unchanged. Atomic mv on the same filesystem so a partial write can't leave
+# a half-converted image at the path export.sh streams from.
+if [ -n "${ATOMOS_RESYNC_RAW_TMP:-}" ] && [ -n "${ATOMOS_RESYNC_SPARSE_SRC:-}" ]; then
+	# Unmount + detach BEFORE converting back so the raw file is closed
+	# and final on disk. The cleanup trap would do this on exit, but we
+	# need it done now (before the img2simg read).
+	if [ -n "${BOOT_MNTED:-}" ] && mountpoint -q /mnt/install/boot 2>/dev/null; then
+		umount /mnt/install/boot && BOOT_MNTED=""
+	fi
+	if [ -n "${ROOT_MNTED:-}" ] && mountpoint -q /mnt/install 2>/dev/null; then
+		umount /mnt/install && ROOT_MNTED=""
+	fi
+	if [ -n "${LOOP_COMBINED:-}" ]; then
+		losetup -d "${LOOP_COMBINED}" && LOOP_COMBINED=""
+	fi
+	sync
+	new_sparse="${ATOMOS_RESYNC_SPARSE_SRC}.atomos-resync-new"
+	rm -f "$new_sparse"
+	log "atomos: converting modified raw ext4 back to Android sparse via img2simg ..."
+	if ! img2simg "$ATOMOS_RESYNC_RAW_TMP" "$new_sparse"; then
+		log "ERROR: img2simg failed converting modified raw image back to sparse."
+		log "  raw:    $ATOMOS_RESYNC_RAW_TMP"
+		log "  sparse: $new_sparse (will be removed)"
+		log "  Original sparse image at $ATOMOS_RESYNC_SPARSE_SRC is unchanged (still install-time stock)."
+		rm -f "$new_sparse" "$ATOMOS_RESYNC_RAW_TMP"
+		exit 12
+	fi
+	if ! mv -f "$new_sparse" "$ATOMOS_RESYNC_SPARSE_SRC"; then
+		log "ERROR: failed to atomically replace $ATOMOS_RESYNC_SPARSE_SRC with re-packed sparse image."
+		rm -f "$new_sparse" "$ATOMOS_RESYNC_RAW_TMP"
+		exit 13
+	fi
+	rm -f "$ATOMOS_RESYNC_RAW_TMP"
+	# Clear the marker so the cleanup trap doesn't try to remove the now
+	# already-removed temp file (it just guards rm -f, but be tidy).
+	ATOMOS_RESYNC_RAW_TMP=""
+	log "atomos: sparse re-pack complete; $ATOMOS_RESYNC_SPARSE_SRC now contains post-customization rootfs."
 fi
 
 log "atomos: resync complete."

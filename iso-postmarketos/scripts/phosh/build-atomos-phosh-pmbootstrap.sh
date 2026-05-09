@@ -531,17 +531,44 @@ prepare_native_package_output_permissions() {
 }
 
 prepare_native_abuild_repo_destination() {
-    # pmbootstrap expects built APKs in /home/pmos/packages/edge/<arch>.
-    # If abuild defaults to repo "pmos", pmbootstrap fails post-build with:
-    # "Package not found after build: .../packages/edge/<arch>/<pkg>.apk".
+    # pmbootstrap (vendor/pmbootstrap/pmb/build/backend.py:247) sets up:
+    #     /home/pmos/packages/pmos -> /mnt/pmbootstrap/packages/<channel>
+    # Inside the build chroot the APKBUILD lives at /home/pmos/build/APKBUILD,
+    # so abuild's auto-derived repo name is "pmos" (basename of dirname of
+    # dirname of APKBUILD). With REPODEST defaulting to $HOME/packages
+    # (=/home/pmos/packages), abuild writes:
+    #     /home/pmos/packages/pmos/<arch>/foo.apk
+    # which through the pmbootstrap-created symlink reaches:
+    #     /mnt/pmbootstrap/packages/<channel>/<arch>/foo.apk
+    # which is bind-mounted to:
+    #     <PMB_WORK_OVERRIDE>/packages/<channel>/<arch>/foo.apk
+    # which is exactly where pmbootstrap looks at the end of the build
+    # (backend.py:231-233 + _package.py:141 "Package not found after build").
+    #
+    # An earlier version of this helper override REPODEST to
+    # "/home/pmos/packages/edge" thinking that would point abuild straight
+    # at the edge repo. It actually broke the chain: abuild then wrote to
+    # /home/pmos/packages/edge/pmos/<arch>/foo.apk -- a real directory in
+    # the chroot rootfs that bypasses the pmos symlink and never reaches
+    # the host bind mount. pmbootstrap then reported `ERROR: Package not
+    # found after build: .../packages/edge/<arch>/foo.apk` even though the
+    # build itself succeeded; recovery saw only stale APKs from previous
+    # runs and shipped a stock-phosh image without any error.
+    #
+    # Correct behavior: do NOT set REPODEST. Strip any pre-existing
+    # REPODEST override from /home/pmos/.abuild/abuild.conf so abuild
+    # falls back to its $HOME/packages default. Idempotent: a no-op when
+    # there's no REPODEST line.
     local abuild_conf_cmd="
         mkdir -p /home/pmos/.abuild
         conf=/home/pmos/.abuild/abuild.conf
         [ -f \"\$conf\" ] || touch \"\$conf\"
         if grep -q '^REPODEST=' \"\$conf\"; then
-            sed -i 's|^REPODEST=.*|REPODEST=/home/pmos/packages/edge|' \"\$conf\"
-        else
-            printf '\nREPODEST=/home/pmos/packages/edge\n' >> \"\$conf\"
+            # Drop the override so abuild reverts to its $HOME/packages
+            # default. Cannot just unset because abuild reads abuild.conf
+            # at build time; the line must be physically removed.
+            sed -i '/^REPODEST=/d' \"\$conf\"
+            echo 'prepare_native_abuild_repo_destination: removed stale REPODEST= override from abuild.conf' >&2
         fi
         chown pmos:pmos \"\$conf\"
         chmod 600 \"\$conf\"
@@ -555,7 +582,7 @@ prepare_native_abuild_repo_destination() {
     local rc=$?
     set -e
     if [ "$rc" -ne 0 ]; then
-        echo "WARN: failed to enforce native abuild REPODEST=edge (exit $rc); continuing." >&2
+        echo "WARN: failed to clean stale abuild REPODEST override (exit $rc); continuing. abuild may still write to the wrong path." >&2
     fi
 }
 
@@ -747,7 +774,13 @@ if [ "${ATOMOS_PHOSH_DISABLE_CCACHE:-1}" = "1" ]; then
     # Default to deterministic no-ccache builds for reliability.
     CCACHE_ENV=(CCACHE_DISABLE=1)
 fi
-ABUILD_ENV=(REPODEST=/home/pmos/packages/edge)
+# Intentionally do NOT set REPODEST here. See the long comment in
+# prepare_native_abuild_repo_destination() for why: pmbootstrap's
+# /home/pmos/packages/pmos -> /mnt/pmbootstrap/packages/<channel> symlink
+# only works when abuild uses its $HOME/packages default. Setting REPODEST
+# to /home/pmos/packages/edge bypassed the symlink and made the APK land
+# inside the chroot rootfs, invisible to pmbootstrap's post-build check.
+ABUILD_ENV=()
 
 echo "=== pmbootstrap build ${IGNORE_DEP[*]} --arch=$ARCH --src=$PHOSH_FOR_BUILD --force phosh (install picks up local packages) ==="
 
@@ -834,26 +867,15 @@ PY
         return 0
     fi
 
-    # Fallback: if any core phosh APKs now exist in edge, continue and let
-    # install phase validate exact package selection.
-    local phosh_any=0
-    local libphosh_any=0
-    for f in "$edge_dir"/phosh-*.apk; do
-        if [ -f "$f" ]; then
-            phosh_any=1
-            break
-        fi
-    done
-    for f in "$edge_dir"/libphosh-*.apk; do
-        if [ -f "$f" ]; then
-            libphosh_any=1
-            break
-        fi
-    done
-    if [ "$phosh_any" -eq 1 ] && [ "$libphosh_any" -eq 1 ]; then
-        echo "Recovered edge repo contains phosh/libphosh APK(s) after mirror; continuing." >&2
-        return 0
-    fi
+    # Refuse to claim recovery succeeded based on "any phosh-*.apk exists
+    # in edge". The previous version of this fallback accepted leftovers
+    # from prior runs (different pkgver / weeks-old timestamp) as proof of
+    # a successful current build, which masked real abuild/meson failures
+    # and shipped stale or stock phosh in the rootfs without any error
+    # from the build pipeline. expected_name carries today's pkgver
+    # (e.g. phosh-0.54.0_p20260507201646-r0.apk) and is the only
+    # filename that can reliably distinguish "this run's output" from
+    # "leftover from a previous run".
     return 1
 }
 
@@ -944,34 +966,45 @@ PY
         return 0
     fi
 
-    # If copy failed due permissions/path ownership but local artifacts exist in
-    # pmos/native/buildroot buckets, continue and let install/origin checks decide.
-    if [ "$copied_any" -eq 0 ] && [ "$copy_failed" -ne 0 ] && [ "$found_any_source" -eq 1 ]; then
-        echo "WARN: local phosh artifacts found but edge mirror copy failed; proceeding with local repo artifacts." >&2
-        return 0
+    # If copy failed due permissions/path ownership but the EXPECTED-name
+    # artifact exists in pmos/native/buildroot buckets, continue and let
+    # install/origin checks decide. We use expected_name (parsed from
+    # pmbootstrap's own "Package not found after build:" message) as the
+    # freshness signal: that filename embeds today's build pkgver+timestamp
+    # and can only be present when THIS run's compile actually produced it.
+    if [ "$copied_any" -eq 0 ] && [ "$copy_failed" -ne 0 ] && [ -n "$expected_name" ]; then
+        local probe
+        for probe in \
+            "$pkg_root"/*/"$ARCH"/"$expected_name" \
+            "$native_pkg_root"/*/"$ARCH"/"$expected_name" \
+            "$buildroot_pkg_root"/*/"$ARCH"/"$expected_name"; do
+            if [ -f "$probe" ]; then
+                echo "WARN: today's expected ${expected_name} exists at $probe but mirror copy failed; proceeding so install/origin checks can validate." >&2
+                return 0
+            fi
+        done
     fi
 
-    local phosh_any=0
-    local libphosh_any=0
-    for src in "$edge_dir"/phosh-*.apk; do
-        if [ -f "$src" ]; then
-            phosh_any=1
-            break
-        fi
-    done
-    for src in "$edge_dir"/libphosh-*.apk; do
-        if [ -f "$src" ]; then
-            libphosh_any=1
-            break
-        fi
-    done
-    if [ "$phosh_any" -eq 1 ] && [ "$libphosh_any" -eq 1 ]; then
-        echo "Recovered edge repo contains phosh/libphosh APK(s) after bucket scan; continuing." >&2
-        return 0
+    # IMPORTANT: do NOT claim success on the basis of "any phosh-*.apk
+    # exists anywhere" -- that bug previously accepted weeks-old APKs from
+    # chroot_native/home/pmos/packages/edge/pmos/<arch>/ as proof of a
+    # successful current build, masking the real compile/abuild failure
+    # from pmbootstrap and shipping either a stale rebuild or stock phosh
+    # without any error.
+    #
+    # If expected_name is known (parsed from pmbootstrap log) and it isn't
+    # in any bucket, the build genuinely failed; let the caller see the rc
+    # and run the log dump. If expected_name is unknown (log parse failed),
+    # we have no reliable freshness signal -> also fail.
+    if [ -n "$expected_name" ]; then
+        echo "ERROR: today's expected build artifact ${expected_name} is not present in any local bucket (edge/${ARCH}, pmos/${ARCH}, native or buildroot chroot)." >&2
+        echo "  This means the build (abuild + meson/ninja) actually failed for THIS run." >&2
+        echo "  Older phosh-*.apk files from previous runs do NOT count -- their pkgver+timestamp does not match." >&2
+    else
+        echo "ERROR: could not determine the expected build artifact filename (log parse failed); refusing to recover with stale APKs." >&2
     fi
     if [ "$found_any_source" -eq 1 ]; then
-        echo "WARN: local phosh APK artifacts exist outside edge/${ARCH}; continuing so install/origin checks can validate." >&2
-        return 0
+        echo "  (saw older phosh-*.apk files in local buckets but ignored them; they predate this build's pkgver.)" >&2
     fi
     return 1
 }

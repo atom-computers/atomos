@@ -1,12 +1,51 @@
 #!/bin/bash
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
+# Two modes:
+#   1) Default: $0 <profile-env>
+#      Runs the overlay against pmbootstrap's rootfs chroot via pmb chroot -r.
+#      Used by build-image.sh (the pmbootstrap path).
+#
+#   2) Direct rootfs: $0 --rootfs <rootfs-dir> [<profile-env>]
+#      Runs the overlay against an arbitrary rootfs directory via
+#      `chroot $ROOTFS /bin/sh`. Used by build-fairphone4.sh which builds
+#      the rootfs in a docker volume (no pmbootstrap, /target instead of
+#      pmbootstrap chroot path). Mirrors the --rootfs mode that
+#      apply-atomos-phosh-dconf.sh already supports.
+#
+# Both modes apply the same OVERLAY_SCRIPT (Atom OS branding, sshd
+# hardening, production atomos-overview-chat-ui launcher with the safety
+# env defaults that prevent GTK4 GL crashes on FP4 hardware, etc.).
+DIRECT_ROOTFS_DIR=""
+if [ "${1:-}" = "--rootfs" ]; then
+    if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+        echo "Usage: $0 --rootfs <rootfs-dir> [<profile-env>]" >&2
+        echo "       $0 <profile-env>" >&2
+        exit 1
+    fi
+    DIRECT_ROOTFS_DIR="${2%/}"
+    if [ ! -d "$DIRECT_ROOTFS_DIR" ]; then
+        echo "ERROR: rootfs directory not found: $DIRECT_ROOTFS_DIR" >&2
+        exit 1
+    fi
+    if [ ! -x "$DIRECT_ROOTFS_DIR/bin/sh" ] && [ ! -x "$DIRECT_ROOTFS_DIR/bin/busybox" ]; then
+        echo "ERROR: rootfs $DIRECT_ROOTFS_DIR has no /bin/sh or /bin/busybox; cannot chroot." >&2
+        exit 1
+    fi
+    PROFILE_ENV="${3:-}"
+    if [ -z "$PROFILE_ENV" ]; then
+        # Fall back to the FP4 profile so the script keeps working when
+        # callers don't pass a profile env (build-fairphone4.sh always does).
+        PROFILE_ENV="config/fairphone-fp4.env"
+    fi
+elif [ "$#" -eq 1 ]; then
+    PROFILE_ENV="$1"
+else
     echo "Usage: $0 <profile-env>" >&2
+    echo "       $0 --rootfs <rootfs-dir> [<profile-env>]" >&2
     exit 1
 fi
 
-PROFILE_ENV="$1"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PMB_HOST="$ROOT_DIR/scripts/pmb/pmb.sh"
 PMB_CONTAINER="$ROOT_DIR/scripts/pmb/pmb-container.sh"
@@ -14,7 +53,7 @@ PMB_CONTAINER="$ROOT_DIR/scripts/pmb/pmb-container.sh"
 PMB="$PMB_HOST"
 PROFILE_ENV_ARG="$PROFILE_ENV"
 PMB_CONTAINER_ROOT=0
-if [ "${PMB_USE_CONTAINER:-0}" = "1" ] || ! command -v pmbootstrap >/dev/null 2>&1; then
+if [ -z "$DIRECT_ROOTFS_DIR" ] && { [ "${PMB_USE_CONTAINER:-0}" = "1" ] || ! command -v pmbootstrap >/dev/null 2>&1; }; then
     PMB="$PMB_CONTAINER"
     PMB_CONTAINER_ROOT=1
     if [[ "$PROFILE_ENV" == "$ROOT_DIR/"* ]]; then
@@ -25,6 +64,10 @@ fi
 PROFILE_ENV_SOURCE="$PROFILE_ENV"
 if [ ! -f "$PROFILE_ENV_SOURCE" ] && [ -f "$ROOT_DIR/$PROFILE_ENV" ]; then
     PROFILE_ENV_SOURCE="$ROOT_DIR/$PROFILE_ENV"
+fi
+if [ ! -f "$PROFILE_ENV_SOURCE" ]; then
+    echo "ERROR: profile env not found: $PROFILE_ENV" >&2
+    exit 1
 fi
 # shellcheck source=/dev/null
 source "$PROFILE_ENV_SOURCE"
@@ -309,7 +352,21 @@ if [ "${ATOMOS_OVERLAY_DUMP_ONLY:-0}" = "1" ]; then
     exit 0
 fi
 
-if [ "$PMB_CONTAINER_ROOT" = "1" ]; then
+if [ -n "$DIRECT_ROOTFS_DIR" ]; then
+    # --rootfs mode: run OVERLAY_SCRIPT inside the rootfs via host chroot.
+    # Caller must already be root (build-fairphone4.sh runs us inside a
+    # privileged docker container that's effectively root). We rely on the
+    # rootfs having /bin/sh available (Alpine ships busybox), which the
+    # arg-parse block above already verified.
+    #
+    # Why chroot and not "bash $script with paths prefixed by $ROOTFS"?
+    # The script does `systemctl enable sshd.service` / `rc-update add sshd
+    # default` / `chroot ... ssh-keygen` -- all of which need to resolve
+    # paths INSIDE the rootfs's view of the world, not the container's.
+    # chroot fixes that uniformly without per-line rewrites.
+    echo "Applying mobile Phosh overlay in --rootfs $DIRECT_ROOTFS_DIR ..."
+    chroot "$DIRECT_ROOTFS_DIR" /bin/sh -eu -c "$OVERLAY_SCRIPT"
+elif [ "$PMB_CONTAINER_ROOT" = "1" ]; then
     PMB_CONTAINER_AS_ROOT=1 bash "$PMB" "$PROFILE_ENV_ARG" chroot -r -- /bin/sh -eu -c "$OVERLAY_SCRIPT"
 else
     bash "$PMB" "$PROFILE_ENV_ARG" chroot -r -- /bin/sh -eu -c "$OVERLAY_SCRIPT"

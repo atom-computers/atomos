@@ -147,15 +147,21 @@ if [ "$CONTENT_ONLY" != "1" ]; then
         case "$BUILD_MODE" in
             host)
                 need_cmd cargo
-                if command -v rustup >/dev/null 2>&1; then
-                    rustup target add "$TARGET_TRIPLE" >/dev/null 2>&1 || true
+                # shellcheck source=/dev/null
+                . "$ROOT_DIR/scripts/home-bg/_lib-cross-build.sh"
+                # Use the shared cross-compile helper so the gtk-rs /
+                # webkit-rs *-sys build scripts get a usable
+                # PKG_CONFIG_SYSROOT_DIR / PKG_CONFIG_PATH instead of
+                # erroring with "pkg-config has not been configured to
+                # support cross-compilation."
+                if ! home_bg_run_cross_cargo_build "$PROFILE_ENV_SOURCE" "$CRATE_MANIFEST" "$TARGET_TRIPLE" "$ROOT_DIR"; then
+                    if [ "${ATOMOS_HOME_BG_HOTFIX_FALLBACK_TO_CONTAINER:-1}" = "1" ]; then
+                        echo "WARN: host cross-build failed; falling back to Alpine arm64 container build for hotfix." >&2
+                        bash "$ROOT_DIR/scripts/home-bg/build-atomos-home-bg-in-container.sh"
+                    else
+                        exit 1
+                    fi
                 fi
-                echo "Building atomos-home-bg ($TARGET_TRIPLE) on host ..."
-                cargo build \
-                    --manifest-path "$CRATE_MANIFEST" \
-                    --release \
-                    --target "$TARGET_TRIPLE" \
-                    --bin atomos-home-bg
                 ;;
             container)
                 # Containerized build sidesteps macOS pkg-config woes.

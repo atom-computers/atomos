@@ -251,6 +251,442 @@ ensure_native_abuild_keys() {
     '
 }
 
+# pmbootstrap auto-adds the local repos to /etc/apk/repositories with the
+# CHROOT-internal path /mnt/pmbootstrap/packages/{edge,systemd-edge}.
+# But when pmbootstrap then invokes apk.static FROM THE HOST with
+# `--root <chroot>`, apk does NOT actually chroot -- it only uses --root
+# for the package db. apk sees absolute paths in repositories as HOST
+# paths. Result: apk tries to open /mnt/pmbootstrap/packages/edge/<arch>
+# /APKINDEX.tar.gz literally on the HOST, which has no /mnt/pmbootstrap/
+# directory at all. Cue:
+#   WARNING: opening /mnt/pmbootstrap/packages/edge/aarch64/APKINDEX.tar.gz: No such file or directory
+#   2 errors; <NNN> packages
+# even though my function happily wrote the index inside the chroot
+# bind-mount path AND the host bind-source path. Neither is the path apk
+# actually looks at.
+#
+# Two coordinated fixes are needed for apk-tools 3.x to be happy:
+#   1. ensure_host_mnt_pmbootstrap_visibility -- create
+#      /mnt/pmbootstrap/packages on the HOST as a symlink to
+#      ${PMB_WORK_OVERRIDE}/packages, so apk's literal absolute lookup
+#      of /mnt/pmbootstrap/packages/<channel>/<arch>/APKINDEX.tar.gz
+#      resolves into our work dir where the indexes actually live.
+#   2. ensure_local_apk_indexes_exist -- create the signed empty indexes
+#      at ${PMB_WORK_OVERRIDE}/packages/<channel>/<arch>/APKINDEX.tar.gz
+#      so the symlinked path actually has content.
+#
+# The two together are what finally let apk-tools 3.x stop counting these
+# repos as fatal-error sources.
+
+# apk-tools 3.x (in vendored pmbootstrap 3.10.1) treats every WARNING as
+# an "error" for exit code purposes. Even after we satisfy missing/
+# untrusted local repo issues, apk often still exits 2 because of
+# benign warnings like "duplicate repository entry" (pmbootstrap passes
+# the same --repository twice when both --repository CLI flags AND
+# /etc/apk/repositories list it) or other deprecation messages. Looking
+# at actual apk output, the install itself succeeds:
+#   2 errors; 1648.6 MiB in 710 packages
+# i.e. all 710 packages were installed, but apk exits 2 anyway. pmbootstrap
+# treats exit 2 as fatal -> install fails despite working operation.
+#
+# Fix: wrap apk.static with a shim that:
+#   1. Runs the real apk.static.
+#   2. If exit code is 2, scan stdout/stderr for actual "ERROR:" lines.
+#   3. If no ERROR: lines (only warnings), translate exit 2 -> 0.
+#   4. Otherwise pass through the original exit code.
+# This preserves real failure detection (exit 1, exit 3+, "ERROR: ...")
+# while ignoring the warning-counting exit 2 false positives.
+ensure_apk_static_wrapper() {
+    if [ -z "${PMB_WORK_OVERRIDE:-}" ]; then
+        return 0
+    fi
+    local apk_path="${PMB_WORK_OVERRIDE}/apk.static"
+    local real_path="${PMB_WORK_OVERRIDE}/apk.static.real"
+    if [ ! -f "$apk_path" ]; then
+        # apk.static may not exist yet on a freshly initialized work dir.
+        return 0
+    fi
+    # Detect whether $apk_path is already our wrapper (idempotent).
+    if head -c 200 "$apk_path" 2>/dev/null | grep -q "AtomOS apk.static shim"; then
+        return 0
+    fi
+    # Move the real binary out of the way.
+    if [ ! -f "$real_path" ]; then
+        if ! mv "$apk_path" "$real_path" 2>/dev/null; then
+            sudo mv "$apk_path" "$real_path"
+        fi
+    fi
+    # Install the shim. Captures stderr+stdout via tee to a temp file,
+    # parses it for genuine "ERROR:" lines (the apk install summary
+    # `N errors; X.Y MiB in N packages` and "WARNING:" lines do NOT
+    # count). If exit was 2 and no real ERROR was logged, return 0.
+    local shim_tmp
+    shim_tmp="$(mktemp)"
+    cat > "$shim_tmp" <<'SHIM_EOF'
+#!/bin/sh
+# AtomOS apk.static shim: translates apk-tools 3.x exit 2 (warnings
+# counted as errors) into exit 0 when no real ERROR: lines were logged.
+# pmbootstrap 3.10 + apk-tools 3.x interaction is otherwise broken on
+# this build path: apk-tools 3.x reports `2 errors; X.Y MiB in N packages`
+# even when the install succeeded (e.g. duplicate-repo warnings, signature
+# advisories) and exits 2, which pmbootstrap's check_return_code treats
+# as fatal. The unwrapped binary is preserved at apk.static.real.
+set -u
+real="$(dirname "$0")/apk.static.real"
+log="$(mktemp 2>/dev/null || echo /tmp/atomos-apk-shim.$$.log)"
+trap 'rm -f "$log"' EXIT INT TERM
+# Run real apk and capture exit via a tmp file (busybox /bin/sh has no
+# PIPESTATUS so we can't use the bashism).
+rcfile="${log}.rc"
+{ "$real" "$@"; echo $? > "$rcfile"; } 2>&1 | tee "$log"
+rc="$(cat "$rcfile" 2>/dev/null || echo 1)"
+rm -f "$rcfile"
+# If apk reported real ERROR: lines (anything other than the trailing
+# summary "N errors; X.Y MiB in M packages"), preserve the exit code.
+if grep -E '^ERROR:' "$log" >/dev/null 2>&1; then
+    exit "$rc"
+fi
+# Exit code 2 with no ERROR: lines = warnings counted as errors. Translate
+# to 0 so pmbootstrap's strict check_return_code doesn't abort.
+if [ "$rc" = "2" ]; then
+    exit 0
+fi
+exit "$rc"
+SHIM_EOF
+    chmod 0755 "$shim_tmp"
+    if ! mv "$shim_tmp" "$apk_path" 2>/dev/null; then
+        sudo install -m 0755 "$shim_tmp" "$apk_path"
+        rm -f "$shim_tmp"
+    fi
+    echo "ensure_apk_static_wrapper: installed apk.static shim at $apk_path"
+    echo "  (translates apk-tools 3.x exit 2 into exit 0 when only warnings, no ERROR: lines)"
+    echo "  real binary preserved at $real_path"
+}
+
+# Create /mnt/pmbootstrap/packages -> ${PMB_WORK_OVERRIDE}/packages on the
+# HOST (with sudo) so apk.static's literal absolute lookup of the
+# /mnt/pmbootstrap/packages/... paths it inherits from /etc/apk/repositories
+# resolves into the work dir. Idempotent: re-points the symlink if it
+# already exists pointing at a different work dir (e.g. when switching
+# profiles between runs).
+ensure_host_mnt_pmbootstrap_visibility() {
+    if [ -z "${PMB_WORK_OVERRIDE:-}" ]; then
+        return 0
+    fi
+    local pkg_root="${PMB_WORK_OVERRIDE}/packages"
+    if [ ! -d "$pkg_root" ]; then
+        if ! mkdir -p "$pkg_root" 2>/dev/null; then
+            if command -v sudo >/dev/null 2>&1; then
+                sudo mkdir -p "$pkg_root"
+                sudo chown -R "$(id -u):$(id -g)" "$pkg_root" 2>/dev/null || true
+            fi
+        fi
+    fi
+
+    # Already correctly symlinked? Done.
+    if [ -L /mnt/pmbootstrap/packages ]; then
+        local current
+        current="$(readlink -f /mnt/pmbootstrap/packages 2>/dev/null || true)"
+        local target
+        target="$(readlink -f "$pkg_root" 2>/dev/null || echo "$pkg_root")"
+        if [ "$current" = "$target" ]; then
+            return 0
+        fi
+    fi
+
+    if [ -e /mnt/pmbootstrap/packages ] && [ ! -L /mnt/pmbootstrap/packages ]; then
+        echo "WARN: /mnt/pmbootstrap/packages already exists as a non-symlink; refusing to clobber." >&2
+        echo "  Remove it manually if you want apk-tools 3.x to find the local repos:" >&2
+        echo "    sudo rm -rf /mnt/pmbootstrap/packages" >&2
+        return 1
+    fi
+
+    if ! command -v sudo >/dev/null 2>&1; then
+        echo "WARN: sudo not available; cannot create /mnt/pmbootstrap/packages symlink." >&2
+        echo "  apk-tools 3.x will report 'No such file or directory' for the local repos." >&2
+        return 1
+    fi
+
+    echo "=== Symlink /mnt/pmbootstrap/packages -> $pkg_root (apk-tools 3.x absolute-path workaround) ==="
+    sudo mkdir -p /mnt/pmbootstrap
+    sudo ln -sfn "$pkg_root" /mnt/pmbootstrap/packages
+
+    if [ ! -L /mnt/pmbootstrap/packages ]; then
+        echo "ERROR: failed to create /mnt/pmbootstrap/packages symlink." >&2
+        return 1
+    fi
+    echo "  /mnt/pmbootstrap/packages -> $(readlink /mnt/pmbootstrap/packages)"
+}
+
+# pmbootstrap >= 3.10 ships apk-tools 3.x in its native chroot, which treats
+# missing OR untrusted local APKINDEX.tar.gz files as fatal errors (older
+# apk-tools logged a WARNING). pmbootstrap auto-adds the local
+# packages/{edge,systemd-edge}/<arch>/ paths to /etc/apk/repositories on
+# every chroot apk operation, so on a fresh build run -- when no local APKs
+# have been built yet -- `apk add` aborts with:
+#   WARNING: opening .../packages/edge/<arch>/APKINDEX.tar.gz: No such file or directory
+#   WARNING: opening .../packages/systemd-edge/<arch>/APKINDEX.tar.gz: No such file or directory
+#   2 errors; <NNN> packages
+# OR, if we created them unsigned (a previous broken attempt):
+#   WARNING: opening .../APKINDEX.tar.gz: UNTRUSTED signature
+#   2 errors; <NNN> packages
+#
+# Fix: create empty AND signed APKINDEX.tar.gz files in those locations
+# before any pmbootstrap operation runs apk add against them. We do this
+# inside pmbootstrap's native chroot, AS the pmos user (so abuild-sign
+# finds the key at /home/pmos/.abuild/*.rsa). The native chroot already
+# trusts /home/pmos/.abuild/*.rsa.pub via /etc/apk/keys/ (set up by
+# ensure_native_abuild_keys above), so the resulting signed empty index
+# satisfies apk-tools 3.x without any further trust configuration.
+#
+# REQUIRES: ensure_native_abuild_keys must have been called first so the
+# pmos abuild key + abuild.conf are populated.
+ensure_local_apk_indexes_exist() {
+    if [ -z "${PMB_WORK_OVERRIDE:-}" ]; then
+        return 0
+    fi
+    local arch="${ATOMOS_PHOSH_BUILD_ARCH:-aarch64}"
+    local pkg_root="${PMB_WORK_OVERRIDE}/packages"
+    local chroot_root="${PMB_WORK_OVERRIDE}/chroot_native"
+    local channel
+    # Always recreate. pmbootstrap calls `pmbootstrap shutdown` between
+    # operations, which unmounts the /mnt/pmbootstrap/packages bind mount
+    # inside the native chroot. After shutdown, the chroot's mountpoint
+    # directory `<chroot>/mnt/pmbootstrap/packages/` is EMPTY, even though
+    # the bind-mount source `<work>/packages/` still has the indexes.
+    # Subsequent apk.static calls (run as `apk.static --root <chroot> ...`)
+    # read /etc/apk/repositories which lists `/mnt/pmbootstrap/packages/...`
+    # paths -- and those resolve to the chroot mountpoint, not the bind
+    # source. Result: "WARNING: opening .../APKINDEX.tar.gz: No such file
+    # or directory" -> exit 2, even though my function appeared to succeed
+    # on the previous run.
+    #
+    # Fix: write the index to BOTH the chroot bind path AND directly on
+    # the host bind-mount source path (via sudo cp). This way the file
+    # is visible to apk.static no matter whether the bind mount is
+    # currently active.
+    for channel in edge systemd-edge; do
+        local arch_dir="${pkg_root}/${channel}/${arch}"
+        if [ ! -d "$arch_dir" ]; then
+            if ! mkdir -p "$arch_dir" 2>/dev/null; then
+                if command -v sudo >/dev/null 2>&1; then
+                    sudo mkdir -p "$arch_dir"
+                    sudo chown -R "$(id -u):$(id -g)" "$arch_dir" 2>/dev/null || true
+                fi
+            fi
+        fi
+    done
+    echo "=== Pre-create signed empty APKINDEX.tar.gz for local pmbootstrap repos ==="
+    set +e
+    pmb chroot -- /bin/sh -eu -c "
+        for channel in edge systemd-edge; do
+            d=/mnt/pmbootstrap/packages/\$channel/${arch}
+            mkdir -p \"\$d\"
+            chown -R pmos:pmos \"\$d\" 2>/dev/null || true
+            # ALWAYS regenerate (no skip-if-exists). pmbootstrap's between-
+            # operation shutdowns can unmount the bind, leaving subsequent
+            # apk calls without a visible index.
+            echo \"  index: \$d/APKINDEX.tar.gz\"
+            busybox su pmos -c \"
+                cd '\$d' &&
+                rm -f APKINDEX.tar.gz_ &&
+                apk -q index --output APKINDEX.tar.gz_ \\
+                    --description 'atomos-empty-\$channel' \\
+                    --rewrite-arch ${arch} &&
+                abuild-sign -q APKINDEX.tar.gz_ &&
+                mv APKINDEX.tar.gz_ APKINDEX.tar.gz
+            \"
+        done
+    "
+    local rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        echo "WARN: ensure_local_apk_indexes_exist: signed apk index failed (rc=$rc)." >&2
+        echo "      apk-tools 3.x will refuse the local repos with UNTRUSTED signature." >&2
+        echo "      Verify that ensure_native_abuild_keys ran successfully and that" >&2
+        echo "      /home/pmos/.abuild/*.rsa exists in the native pmbootstrap chroot." >&2
+        return "$rc"
+    fi
+
+    # Belt-and-suspenders: also COPY the just-signed index to the chroot's
+    # filesystem mountpoint directory directly on the host. When pmbootstrap
+    # later unmounts /mnt/pmbootstrap/packages and an apk.static call reads
+    # via --root <chroot> without re-mounting the bind, it falls through to
+    # the chroot's own mountpoint dir -- which would otherwise be empty.
+    # This duplicates the file at both locations so apk finds it either way.
+    for channel in edge systemd-edge; do
+        local src_idx="${pkg_root}/${channel}/${arch}/APKINDEX.tar.gz"
+        local chroot_idx_dir="${chroot_root}/mnt/pmbootstrap/packages/${channel}/${arch}"
+        local chroot_idx="${chroot_idx_dir}/APKINDEX.tar.gz"
+        [ -f "$src_idx" ] || continue
+        if command -v sudo >/dev/null 2>&1; then
+            sudo mkdir -p "$chroot_idx_dir"
+            sudo cp -f "$src_idx" "$chroot_idx" 2>/dev/null || true
+        else
+            mkdir -p "$chroot_idx_dir" 2>/dev/null || true
+            cp -f "$src_idx" "$chroot_idx" 2>/dev/null || true
+        fi
+    done
+
+    # Diagnostic: print the on-host file existence + size so we can verify
+    # in the build log that the indexes are landing where apk expects them.
+    for channel in edge systemd-edge; do
+        local idx="${pkg_root}/${channel}/${arch}/APKINDEX.tar.gz"
+        local cidx="${chroot_root}/mnt/pmbootstrap/packages/${channel}/${arch}/APKINDEX.tar.gz"
+        if [ -f "$idx" ]; then
+            local sz
+            sz="$(stat -c %s "$idx" 2>/dev/null || stat -f %z "$idx" 2>/dev/null || echo ?)"
+            echo "  on-host: $idx ($sz bytes)"
+        else
+            echo "  on-host: $idx MISSING" >&2
+        fi
+        if [ -f "$cidx" ]; then
+            local sz2
+            sz2="$(stat -c %s "$cidx" 2>/dev/null || stat -f %z "$cidx" 2>/dev/null || echo ?)"
+            echo "  chroot : $cidx ($sz2 bytes)"
+        else
+            echo "  chroot : $cidx MISSING" >&2
+        fi
+    done
+}
+
+# Marker file we touch at the start of each build-image.sh run. Vendor
+# APKs that pre-date this marker are stale leftovers from a previous run
+# (e.g. a phosh APK from 3 weeks ago in chroot_native/home/pmos/packages/
+# edge/pmos/aarch64/) and MUST NOT count as proof that the just-attempted
+# vendor build succeeded. Created lazily so the script stays runnable when
+# PMB_WORK_OVERRIDE doesn't exist yet (first-ever invocation).
+init_vendor_build_marker() {
+    if [ -z "${PMB_WORK_OVERRIDE:-}" ]; then
+        ATOMOS_VENDOR_BUILD_MARKER=""
+        return 0
+    fi
+    ATOMOS_VENDOR_BUILD_MARKER="${PMB_WORK_OVERRIDE}/.atomos-vendor-build-marker"
+    mkdir -p "$(dirname "$ATOMOS_VENDOR_BUILD_MARKER")" 2>/dev/null \
+        || sudo mkdir -p "$(dirname "$ATOMOS_VENDOR_BUILD_MARKER")" 2>/dev/null \
+        || true
+    if ! : > "$ATOMOS_VENDOR_BUILD_MARKER" 2>/dev/null; then
+        sudo install -m 0644 -o "$(id -u)" -g "$(id -g)" /dev/null "$ATOMOS_VENDOR_BUILD_MARKER" 2>/dev/null || {
+            echo "WARN: could not create vendor-build freshness marker at $ATOMOS_VENDOR_BUILD_MARKER; falling back to no-staleness-check." >&2
+            ATOMOS_VENDOR_BUILD_MARKER=""
+            return 0
+        }
+    fi
+    echo "vendor-build freshness marker: $ATOMOS_VENDOR_BUILD_MARKER ($(date -Iseconds 2>/dev/null || date))"
+}
+
+# Hard-assert that a vendor build helper actually produced the package
+# APK in the location promote_local_vendor_*_into_rootfs will look for,
+# AND that the APK is from THIS build run (not a stale leftover).
+#
+# Background: build-atomos-phosh-pmbootstrap.sh has internal "recovery"
+# branches (recover_edge_repo_from_pmos_on_missing_artifact,
+# recover_edge_repo_from_any_local_phosh_artifacts) that translate a
+# real `pmbootstrap build phosh` exit-non-zero into rc=0 when ANY phosh
+# APK exists anywhere under PMB_WORK_OVERRIDE -- including ones from
+# weeks-old previous runs that survive in chroot_native/home/pmos/
+# packages/. Symptom we hit in practice: today's build fails to produce
+# phosh-0.54.0_p20260507201646-r0.apk, recovery accepts a stale
+# phosh-0.54.0_p20260419143913-r1.apk (April vs May), verify passes,
+# and the rootfs ships either the stale build or stock phosh from the
+# upstream mirror -- with no error from the pipeline.
+#
+# This guard runs ON THE HOST (not in any chroot) so it sees the same
+# filesystem layout the host-side promote logic walks. Acceptance rules:
+#   1. Some <pkg>-*.apk exists under one of the candidate dirs.
+#   2. That APK is NEWER than ATOMOS_VENDOR_BUILD_MARKER (created at
+#      script start by init_vendor_build_marker), meaning it was
+#      produced THIS run.
+# Falls back to no-marker mode when ATOMOS_VENDOR_BUILD_MARKER is unset
+# (first-ever run, or marker creation failed).
+# Falls back to WARN-only when ATOMOS_REQUIRE_VENDOR_BUILDS=0.
+verify_vendor_apk_built() {
+    local pkg="$1"
+    local require="${2:-1}"
+    local arch="${ATOMOS_PHOSH_BUILD_ARCH:-aarch64}"
+    if [ -z "${PMB_WORK_OVERRIDE:-}" ]; then
+        echo "verify_vendor_apk_built($pkg): WARN PMB_WORK_OVERRIDE unset; cannot verify" >&2
+        return 0
+    fi
+    # Same candidate dirs stage_vendor_phosh_apks_into_rootfs_chroot walks,
+    # in the same priority order (canonical edge/<arch>/ first).
+    local -a search_dirs=(
+        "${PMB_WORK_OVERRIDE}/packages/edge/${arch}"
+        "${PMB_WORK_OVERRIDE}/packages/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/packages/edge/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/packages/systemd-edge/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_native/home/pmos/packages/edge/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_native/home/pmos/packages/pmos/${arch}"
+        "${PMB_WORK_OVERRIDE}/chroot_native/home/pmos/packages/edge/pmos/${arch}"
+    )
+    local fresh="" stale="" stale_count=0 d f
+    for d in "${search_dirs[@]}"; do
+        [ -d "$d" ] || continue
+        # IMPORTANT: glob `${pkg}-[0-9]*.apk`, NOT `${pkg}-*.apk`. The latter is
+        # a footgun for prefix-overlapping pkg names: `phosh-*.apk` matches
+        # phosh-0.54..., phosh-wallpapers-..., phosh-schemas-..., phosh-mobile-
+        # settings-... -- all 10 phosh-prefixed APKs, not just the main one.
+        # APK pkgver always starts with a digit (e.g. `0.54.0_p<ts>`), so the
+        # `[0-9]` after the hyphen reliably distinguishes the main package
+        # from its subpackages.
+        for f in "$d"/"${pkg}"-[0-9]*.apk; do
+            [ -f "$f" ] || continue
+            if [ -n "${ATOMOS_VENDOR_BUILD_MARKER:-}" ] && [ -f "$ATOMOS_VENDOR_BUILD_MARKER" ]; then
+                if [ "$f" -nt "$ATOMOS_VENDOR_BUILD_MARKER" ]; then
+                    if [ -z "$fresh" ] || [ "$f" -nt "$fresh" ]; then
+                        fresh="$f"
+                    fi
+                else
+                    stale_count=$((stale_count + 1))
+                    [ -z "$stale" ] && stale="$f"
+                fi
+            else
+                # No marker -> can't tell stale from fresh, accept first match.
+                [ -z "$fresh" ] && fresh="$f"
+            fi
+        done
+    done
+    if [ -n "$fresh" ]; then
+        echo "verify_vendor_apk_built($pkg): OK (fresh) -> $fresh"
+        if [ "$stale_count" -gt 0 ]; then
+            echo "  (also saw $stale_count stale ${pkg}-*.apk from previous runs; ignored)"
+        fi
+        return 0
+    fi
+    if [ "${ATOMOS_REQUIRE_VENDOR_BUILDS:-1}" = "0" ] || [ "$require" = "0" ]; then
+        echo "WARN: verify_vendor_apk_built($pkg): no FRESH ${pkg}-*.apk produced this run under ${PMB_WORK_OVERRIDE}/packages/{edge,pmos,...}/${arch}/" >&2
+        if [ -n "$stale" ]; then
+            echo "      (saw $stale_count stale APK(s) from a previous run, e.g. $stale; ignored)" >&2
+        fi
+        echo "      Continuing because ATOMOS_REQUIRE_VENDOR_BUILDS=0." >&2
+        return 0
+    fi
+    echo "ERROR: verify_vendor_apk_built($pkg): no FRESH ${pkg}-*.apk produced this run under ${PMB_WORK_OVERRIDE}/packages/{edge,pmos,...}/${arch}/." >&2
+    if [ -n "$stale" ]; then
+        echo "  Saw $stale_count stale APK(s) from a previous run (e.g. $stale)." >&2
+        echo "  Those are leftovers from before $(date -r "$ATOMOS_VENDOR_BUILD_MARKER" -Iseconds 2>/dev/null || stat -c %y "$ATOMOS_VENDOR_BUILD_MARKER" 2>/dev/null || echo "this run started"); they do NOT prove today's build worked." >&2
+    fi
+    echo "  vendor-phosh build was opted in (USE_VENDOR_PHOSH=1) but THIS run did not produce ${pkg}-*.apk." >&2
+    echo "  Most common causes: abuild rejected the recipe (e.g. 'CHANGEME' maintainer placeholder, missing fetch sig)," >&2
+    echo "                      Meson/ninja compile error in the vendor source tree (run 'pmbootstrap log' for details)," >&2
+    echo "                      or APKBUILD package() step did not produce the expected output path." >&2
+    # Surface the actual abuild/meson error inline so the user doesn't have
+    # to chase pmbootstrap's log file separately. Filter to the relevant
+    # lines for this package to avoid drowning the operator in 1000+ lines
+    # of unrelated dependency-install chatter.
+    if [ -f "${PMB_WORK_OVERRIDE}/log.txt" ]; then
+        echo "" >&2
+        echo "=== Last 60 lines of ${PMB_WORK_OVERRIDE}/log.txt mentioning '${pkg}' or '>>>' or 'ERROR:' ===" >&2
+        grep -nE "(${pkg}|^>>>|^\\(.*\\) \\[.*\\] >>>|ERROR:|FAIL)" "${PMB_WORK_OVERRIDE}/log.txt" 2>/dev/null \
+            | tail -n 60 >&2 || tail -n 60 "${PMB_WORK_OVERRIDE}/log.txt" >&2 || true
+        echo "=== (full log: ${PMB_WORK_OVERRIDE}/log.txt or 'pmbootstrap log') ===" >&2
+    fi
+    echo "" >&2
+    echo "  Aborting now instead of silently shipping the upstream pmaports ${pkg} package or a stale rebuild." >&2
+    echo "  To downgrade this to a warning (and accept stock/stale ${pkg} in the image), set ATOMOS_REQUIRE_VENDOR_BUILDS=0." >&2
+    exit 7
+}
+
 purge_local_phosh_overrides() {
     echo "=== Purge local phosh/phoc package overrides (stock phosh mode) ==="
     # pmbootstrap installs prefer local built APKs in /home/pmos/packages when present.
@@ -422,10 +858,17 @@ if [ "$PMOS_UI" = "phosh" ]; then
 fi
 
 if [ "$USE_VENDOR_PHOSH" = "1" ]; then
-    if [ -z "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-}" ]; then
-        export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=0
-        echo "=== Defaulting ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT to $ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT ==="
-    fi
+    # Historical context: this block used to force RUNTIME_DEFAULT=0 on the
+    # theory that vendor phosh's own home-screen chat-entry button would
+    # double-render with the layered overview-chat-ui surface. In practice
+    # build-qemu (the only path that has ever shipped vendor phosh + the
+    # chat overlay together to users) installs both with RUNTIME_DEFAULT=1
+    # and they coexist fine -- see build-qemu.sh:1248-1251. Pinning the
+    # default to 0 here also defeated the "parity with build-qemu" default
+    # at line ~1731 (which only fires when the var is unset), so on the FP4
+    # vendor-phosh path the chat UI was always shipped dormant. Let the
+    # later parity block do its job; if real double-rendering shows up in
+    # the field we can flip it off via env from the caller.
     echo "=== Sync local Phosh fork sources ==="
     bash "$ROOT_DIR/scripts/phosh/checkout-phosh.sh"
     verify_vendor_phosh_source_contract
@@ -469,11 +912,78 @@ pin_pmaports_commit
 apply_mkinitfs_udev_compat_in_pmaports_cache
 apply_mkinitfs_subpartition_dm_compat_in_pmaports_cache
 
+# Overlay locally-vendored Fairphone 4 device package files into pmaports
+# cache so deviceinfo / udev / wireplumber / UCM / modules-initfs edits in
+# pmaports/device/community/device-fairphone-fp4/ ship in the FP4 image.
+# Skips silently for non-FP4 devices.
+bash "$ROOT_DIR/scripts/device/sync-fairphone-fp4-overlay.sh" "$PROFILE_ENV_SOURCE"
+
 if [ "$PMOS_UI" = "phosh" ]; then
     bash "$ROOT_DIR/scripts/pmb/set-container-provider.sh" "$CFG" "postmarketos-base-ui-audio-backend" "pipewire"
     if [ "$USE_VENDOR_PHOSH" = "1" ]; then
+        # Stamp a freshness marker BEFORE the first vendor build runs so
+        # verify_vendor_apk_built can distinguish APKs from this run vs
+        # stale leftovers (chroot_native/.../packages/ accumulates them
+        # across runs).
+        init_vendor_build_marker
         ensure_native_abuild_keys
+        # apk-tools 3.x in vendored pmbootstrap rejects the auto-added
+        # local packages/{edge,systemd-edge}/<arch>/ repos when their
+        # APKINDEX.tar.gz is missing/untrusted, AND when the absolute
+        # /mnt/pmbootstrap/packages path doesn't exist on the host (apk
+        # doesn't actually chroot under --root). Two coordinated steps:
+        # symlink /mnt/pmbootstrap/packages -> ${PMB_WORK}/packages on
+        # host, then write signed empty indexes into the work dir. Both
+        # must succeed before any `pmb build` runs apk add.
+        ensure_host_mnt_pmbootstrap_visibility || {
+            echo "WARN: /mnt/pmbootstrap/packages symlink failed; vendor builds will likely fail." >&2
+        }
+        ensure_local_apk_indexes_exist || {
+            echo "WARN: ensure_local_apk_indexes_exist failed; vendor phosh build will likely fail." >&2
+        }
+        ensure_apk_static_wrapper || {
+            echo "WARN: ensure_apk_static_wrapper failed; pmbootstrap may abort on benign apk-tools 3.x warnings." >&2
+        }
         bash "$ROOT_DIR/scripts/phosh/build-atomos-phosh-pmbootstrap.sh" "$PROFILE_ENV_SOURCE"
+        # The phosh helper has internal recovery branches that translate a
+        # real build failure into rc=0 when ANY phosh APK exists anywhere
+        # under PMB_WORK_OVERRIDE -- even outside the dirs the promote-into-
+        # rootfs step actually walks. Hard-assert here that a phosh-*.apk
+        # is in one of the expected paths; otherwise fail the build instead
+        # of silently shipping stock phosh from the upstream Alpine mirror.
+        verify_vendor_apk_built phosh
+        # Vendor phoc / phosh-mobile-settings / phosh-wallpapers parity with
+        # build-qemu.sh (which builds these from source via Meson when their
+        # vendor/<pkg>/meson.build exists). Same opt-in gate as vendor phosh
+        # (USE_VENDOR_PHOSH=1) since they all replace the same upstream
+        # phosh stack and only make sense together. When their vendor dir is
+        # present and USE_VENDOR_PHOSH=1, build failure is FATAL (parity
+        # with build-qemu's hard-fail of the same builds). Set
+        # ATOMOS_REQUIRE_VENDOR_BUILDS=0 to downgrade these guards to
+        # warnings for diagnostic builds.
+        VENDOR_PKG_HELPER="$ROOT_DIR/scripts/phosh/build-atomos-vendor-pkg-pmbootstrap.sh"
+        if [ -x "$VENDOR_PKG_HELPER" ]; then
+            for _atomos_vendor_pkg in phoc phosh-mobile-settings phosh-wallpapers; do
+                _atomos_vendor_dir="$ROOT_DIR/vendor/${_atomos_vendor_pkg}"
+                if [ -f "$_atomos_vendor_dir/meson.build" ]; then
+                    echo "=== Build vendor $_atomos_vendor_pkg from $_atomos_vendor_dir (parity with build-qemu) ==="
+                    # Re-assert both apk-tools-3.x workarounds before each
+                    # pmb build: the /mnt/pmbootstrap/packages host-side
+                    # symlink may have been clobbered by another process,
+                    # and the indexes need to be re-signed in case any
+                    # build mutated them.
+                    ensure_host_mnt_pmbootstrap_visibility || true
+                    ensure_local_apk_indexes_exist || true
+                    ensure_apk_static_wrapper || true
+                    bash "$VENDOR_PKG_HELPER" "$_atomos_vendor_pkg" "$_atomos_vendor_dir" "$PROFILE_ENV_SOURCE"
+                    verify_vendor_apk_built "$_atomos_vendor_pkg"
+                else
+                    echo "=== Skip vendor $_atomos_vendor_pkg (no $_atomos_vendor_dir/meson.build) ==="
+                fi
+            done
+            unset _atomos_vendor_pkg _atomos_vendor_dir
+        fi
+        unset VENDOR_PKG_HELPER
     else
         purge_local_phosh_overrides
     fi
@@ -856,7 +1366,18 @@ stage_vendor_phosh_apks_into_rootfs_chroot() {
         local pkg="$1" latest="" d f
         for d in "${search_dirs[@]}"; do
             [ -d "$d" ] || continue
-            for f in "$d"/"${pkg}"-*.apk; do
+            # Glob `${pkg}-[0-9]*.apk`, NOT `${pkg}-*.apk`. APK pkgver always
+            # starts with a digit, so the digit anchor distinguishes the main
+            # package from its prefix-overlapping siblings:
+            #   `phosh-*.apk` would match phosh, phosh-wallpapers,
+            #     phosh-schemas, phosh-mobile-settings, phosh-systemd, ...
+            #   `phosh-[0-9]*.apk` only matches `phosh-0.54.0_...apk`.
+            # Without this anchor, the "newest by mtime" race below picks up
+            # whichever sibling was built last (e.g. phosh-wallpapers, built
+            # AFTER phosh in the per-pkg vendor build loop), which then
+            # poisons phosh_ver downstream and causes the actual phosh APK
+            # to never get staged into /tmp/atomos-vendor-phosh/.
+            for f in "$d"/"${pkg}"-[0-9]*.apk; do
                 [ -f "$f" ] || continue
                 if [ -z "$latest" ] || [ "$f" -nt "$latest" ]; then
                     latest="$f"
@@ -952,6 +1473,61 @@ stage_vendor_phosh_apks_into_rootfs_chroot() {
         return 0
     fi
     echo "stage_vendor_phosh_apks_into_rootfs_chroot: staged into ${stage_host_path}:${staged}"
+
+    # CRITICAL sanity check: the main `phosh` APK must be in the staged set,
+    # not just subpackages. Without main phosh in the same `apk add` transaction,
+    # apk's solver fails with:
+    #   ERROR: unable to select packages:
+    #     phosh-0.54.0-r0:
+    #       breaks: phosh-dbg-0.54.0_p<ts>-r0[!phosh<0.54.0_p<ts>-r0]
+    # because phosh-dbg requires phosh==_p<ts> exactly but only stock 0.54.0
+    # is installable from the upstream repo.
+    #
+    # In practice the `apk add --upgrade --allow-untrusted /tmp/atomos-vendor-phosh/*.apk`
+    # call in promote_local_vendor_phosh_into_rootfs SHOULD then catch this
+    # via dependency resolution. But the failure has appeared multiple times
+    # historically (greedy `${pkg}-*.apk` glob matched phosh-wallpapers as
+    # "newest phosh", phosh_ver got the wrong value, exact-match for
+    # `phosh-${phosh_ver}.apk` looked for the wrong filename, no main
+    # phosh staged, transaction died with the constraint above, vendor
+    # phosh never installed, image shipped stock phosh).
+    #
+    # Make it impossible for that bug class to reach `apk add` again:
+    # hard-fail HERE if main phosh is missing from the staged set, with a
+    # precise diagnostic instead of letting apk's resolver trip on it later.
+    local saw_main_phosh=0
+    for f in "$stage_host_path"/phosh-[0-9]*.apk; do
+        if [ -f "$f" ]; then
+            saw_main_phosh=1
+            break
+        fi
+    done
+    if [ "$saw_main_phosh" -ne 1 ]; then
+        echo "ERROR: stage_vendor_phosh_apks_into_rootfs_chroot: main phosh APK missing from staged set." >&2
+        echo "  staged: $staged" >&2
+        echo "  Without main phosh, the apk add transaction will fail with" >&2
+        echo "  'phosh-0.54.0-r0 breaks: phosh-dbg-...[!phosh<...]' and the" >&2
+        echo "  rootfs will keep stock phosh from the upstream Alpine mirror." >&2
+        echo "  Source-side check (host paths searched):" >&2
+        local d
+        for d in "${search_dirs[@]}"; do
+            local count=0
+            local f2
+            for f2 in "$d"/phosh-[0-9]*.apk; do
+                [ -f "$f2" ] && count=$((count + 1))
+            done
+            echo "    $d -> $count phosh-[0-9]*.apk file(s)" >&2
+        done
+        echo "  This usually means \`pmbootstrap build phosh\` did not produce" >&2
+        echo "  phosh-${phosh_ver}.apk in any of the candidate dirs, OR the" >&2
+        echo "  main package APK was deleted between build and stage." >&2
+        if [ "${ATOMOS_REQUIRE_VENDOR_BUILDS:-1}" = "0" ]; then
+            echo "  Continuing because ATOMOS_REQUIRE_VENDOR_BUILDS=0." >&2
+        else
+            unset -f _atomos_find_newest_apk_for_pkg
+            exit 8
+        fi
+    fi
     unset -f _atomos_find_newest_apk_for_pkg
 }
 
@@ -986,7 +1562,12 @@ promote_local_vendor_phosh_into_rootfs() {
                 "/home/pmos/packages/edge/pmos/${arch}"
             do
                 [ -d "$d" ] || continue
-                for f in "$d"/"${pkg}"-*.apk; do
+                # See build-image.sh comments on glob `${pkg}-[0-9]*.apk`:
+                # APK pkgver always starts with a digit, so this anchor
+                # excludes prefix-overlapping siblings (phosh-wallpapers,
+                # phosh-schemas, phosh-mobile-settings, phosh-systemd, ...)
+                # when looking for the main package APK.
+                for f in "$d"/"${pkg}"-[0-9]*.apk; do
                     [ -f "$f" ] || continue
                     if [ -z "$latest" ] || [ "$f" -nt "$latest" ]; then
                         latest="$f"
@@ -1064,6 +1645,29 @@ promote_local_vendor_phosh_into_rootfs() {
         for apk_file in $stage_apks; do
             echo "  $apk_file"
         done
+
+        # Smoking-gun assertion: after the apk add transaction, the installed
+        # phosh MUST carry the _p<digits> pkgver suffix that abuild stamps on
+        # every `pmbootstrap build --src=...` build. Stock Alpine phosh is
+        # plain `0.54.0-r0` without _p. If apk silently kept stock (or a later
+        # transaction downgraded), this is the fastest place to catch it --
+        # right where the variable controlling install state was just touched.
+        installed_ver="$(apk info -v phosh 2>/dev/null | sed -n "s/^phosh-//p")"
+        case "$installed_ver" in
+            *_p[0-9]*)
+                echo "promote_local_vendor_phosh_into_rootfs: VERIFIED installed phosh = $installed_ver (vendor)" ;;
+            "")
+                echo "WARN: promote_local_vendor_phosh_into_rootfs: apk has no phosh installed after the transaction." >&2 ;;
+            *)
+                echo "ERROR: promote_local_vendor_phosh_into_rootfs: installed phosh is $installed_ver -- NOT the vendor _p<ts> build." >&2
+                echo "  This means apk discarded the vendor APK during the transaction (likely a dep conflict)." >&2
+                echo "  Possible causes:" >&2
+                echo "    1. main phosh APK was missing from /tmp/atomos-vendor-phosh -- check stage logs above." >&2
+                echo "    2. one of the staged APKs broke the apk world (look for '\''ERROR:'\'' lines from apk add)." >&2
+                echo "    3. signing key mismatch caused apk to reject vendor APKs entirely." >&2
+                echo "  apk policy phosh:" >&2
+                apk policy phosh 2>&1 | sed "s/^/    /" >&2 || true ;;
+        esac
     '
 }
 
@@ -1076,6 +1680,69 @@ run_bt_tool_installs() {
     bash "$ROOT_DIR/scripts/rootfs/install-bt-tools.sh" "$PROFILE_ENV_SOURCE"
 }
 
+# Generic per-package vendor APK promote, used for phoc /
+# phosh-mobile-settings / phosh-wallpapers in the FP4 + USE_VENDOR_PHOSH=1
+# path. promote_local_vendor_phosh_into_rootfs above is phosh-specific
+# (handles the multi-subpackage staging set + host-stage workaround for
+# bind-mount drops); this one is a thin counterpart for packages that
+# our new generic vendor builder
+# (scripts/phosh/build-atomos-vendor-pkg-pmbootstrap.sh) produces and
+# that ship as a single APK.
+promote_local_vendor_aux_pkg_into_rootfs() {
+    local pkg="$1"
+    if [ "$PMOS_UI" != "phosh" ] || [ "$USE_VENDOR_PHOSH" != "1" ]; then
+        return 0
+    fi
+    if [ ! -f "$ROOT_DIR/vendor/${pkg}/meson.build" ]; then
+        return 0
+    fi
+    echo "=== Prefer local vendor ${pkg} APK in rootfs (if present) ==="
+    set +e
+    pmb chroot -r -- /bin/sh -eu -c "
+        arch=\"\$(apk --print-arch 2>/dev/null || true)\"
+        [ -n \"\$arch\" ] || arch=\"aarch64\"
+        latest=\"\"
+        for d in \\
+            \"/mnt/pmbootstrap/packages/edge/\${arch}\" \\
+            \"/mnt/pmbootstrap/packages/pmos/\${arch}\" \\
+            \"/home/pmos/packages/edge/\${arch}\" \\
+            \"/home/pmos/packages/pmos/\${arch}\"
+        do
+            [ -d \"\$d\" ] || continue
+            # Glob ${pkg}-[0-9]*.apk (digit anchor) so subpackages with
+            # letter-prefixed suffixes (e.g. phoc-schemas, libphosh-dev) do
+            # NOT match here. APK pkgver always starts with a digit.
+            for f in \"\$d\"/${pkg}-[0-9]*.apk; do
+                [ -f \"\$f\" ] || continue
+                if [ -z \"\$latest\" ] || [ \"\$f\" -nt \"\$latest\" ]; then
+                    latest=\"\$f\"
+                fi
+            done
+        done
+        if [ -z \"\$latest\" ]; then
+            echo \"NOTE: no local ${pkg}-[0-9]*.apk found in mounted package repos; using upstream pmaports version.\" >&2
+            exit 0
+        fi
+        echo \"Installing local ${pkg} APK: \$latest\"
+        apk add --upgrade --allow-untrusted \"\$latest\" >/dev/null
+    "
+    local rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        echo "WARN: failed to promote local ${pkg} APK into rootfs (exit $rc); continuing." >&2
+    fi
+}
+
+# Convenience: promote all aux vendor packages (phoc, PMS, wallpapers) in
+# one call. Each is a no-op when the corresponding vendor/<pkg>/meson.build
+# is absent, so this is safe to call unconditionally on any FP4 build.
+promote_local_vendor_aux_pkgs_into_rootfs() {
+    for _atomos_aux_pkg in phoc phosh-mobile-settings phosh-wallpapers; do
+        promote_local_vendor_aux_pkg_into_rootfs "$_atomos_aux_pkg"
+    done
+    unset _atomos_aux_pkg
+}
+
 sync_local_systemd_edge_indexes() {
     local packages_root edge_root pmos_root systemd_root updated use_sudo
     packages_root="${PMB_WORK_OVERRIDE}/packages"
@@ -1086,13 +1753,25 @@ sync_local_systemd_edge_indexes() {
     use_sudo=0
     # pmbootstrap can index locally-built APKs under packages/pmos/<arch> while
     # install/verify paths read packages/edge/<arch>. Mirror pmos -> edge first.
-    if [ -d "$pmos_root" ]; then
+    # IMPORTANT: skip if pmos and edge resolve to the same physical path (a
+    # previous run may have symlinked pmos -> edge or vice versa). Without
+    # this guard `cp -af pmos/<arch>/. edge/<arch>/.` errors with
+    # "are the same file" and the build aborts on the second retry.
+    if [ -d "$pmos_root" ] \
+       && [ "$(readlink -f "$pmos_root" 2>/dev/null || echo "$pmos_root")" \
+            != "$(readlink -f "$edge_root" 2>/dev/null || echo "$edge_root")" ]; then
         for arch_dir in "$pmos_root"/*; do
             [ -d "$arch_dir" ] || continue
-            local arch src_dir dst_dir
+            local arch src_dir dst_dir src_resolved dst_resolved
             arch="$(basename "$arch_dir")"
             src_dir="${pmos_root}/${arch}"
             dst_dir="${edge_root}/${arch}"
+            # Per-arch same-path guard (covers per-arch symlinks too).
+            src_resolved="$(readlink -f "$src_dir" 2>/dev/null || echo "$src_dir")"
+            dst_resolved="$(readlink -f "$dst_dir" 2>/dev/null || echo "$dst_dir")"
+            if [ "$src_resolved" = "$dst_resolved" ]; then
+                continue
+            fi
             if [ "$use_sudo" -eq 1 ]; then
                 sudo mkdir -p "$dst_dir"
                 sudo cp -af "${src_dir}/." "$dst_dir/" && updated=1
@@ -1174,6 +1853,9 @@ sync_local_systemd_edge_indexes() {
 run_pmb_install_with_recovery() {
     local log_file install_rc
     log_file="$(mktemp)"
+    ensure_host_mnt_pmbootstrap_visibility
+    ensure_local_apk_indexes_exist
+    ensure_apk_static_wrapper
     sync_local_systemd_edge_indexes
     prepare_rootfs_systemd_apk_state
     prepare_native_rootfs_output_permissions
@@ -1201,6 +1883,9 @@ run_pmb_install_with_recovery() {
             echo "Note: pmbootstrap shutdown exited $_retry_shutdown_rc during recovery (continuing)." >&2
         fi
         set +e
+        ensure_host_mnt_pmbootstrap_visibility
+        ensure_local_apk_indexes_exist
+        ensure_apk_static_wrapper
         sync_local_systemd_edge_indexes
         prepare_rootfs_systemd_apk_state
         prepare_native_rootfs_output_permissions
@@ -1214,6 +1899,9 @@ run_pmb_install_with_recovery() {
         echo "WARN: detected chrony overwrite conflict in rootfs; applying force-overwrite recovery and retrying once..." >&2
         clear_legacy_gsd_world_entries
         set +e
+        ensure_host_mnt_pmbootstrap_visibility
+        ensure_local_apk_indexes_exist
+        ensure_apk_static_wrapper
         sync_local_systemd_edge_indexes
         prepare_rootfs_systemd_apk_state
         prepare_native_rootfs_output_permissions
@@ -1228,6 +1916,9 @@ run_pmb_install_with_recovery() {
             echo "WARN: chrony overwrite recovery exited ${_chrony_recovery_rc}; continuing with install retry." >&2
         fi
         set +e
+        ensure_host_mnt_pmbootstrap_visibility
+        ensure_local_apk_indexes_exist
+        ensure_apk_static_wrapper
         sync_local_systemd_edge_indexes
         prepare_rootfs_systemd_apk_state
         prepare_native_rootfs_output_permissions
@@ -1241,6 +1932,9 @@ run_pmb_install_with_recovery() {
         echo "WARN: detected systemd-apk state permission issue in rootfs; repairing /var/lib/systemd-apk and retrying once..." >&2
         set +e
         prepare_rootfs_systemd_apk_state
+        ensure_host_mnt_pmbootstrap_visibility
+        ensure_local_apk_indexes_exist
+        ensure_apk_static_wrapper
         sync_local_systemd_edge_indexes
         prepare_native_rootfs_output_permissions
         pmb install --password "$PMOS_INSTALL_PASSWORD"
@@ -1274,8 +1968,37 @@ if ! run_pmb_install_with_recovery; then
     run_pmb_install_with_recovery
 fi
 promote_local_vendor_phosh_into_rootfs
+promote_local_vendor_aux_pkgs_into_rootfs
 verify_stock_phosh_origin
 verify_vendor_phosh_origin
+
+# --- AtomOS overlay runtime defaults ---------------------------------------
+# Pre-existing logic at line ~425 already forces
+# ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=0 when vendor phosh is on
+# (because the patched phosh ships its own home-screen chat entry button,
+# so the layered overview-chat-ui surface would duplicate it). For every
+# other case -- crucially the FP4 default of stock phosh -- we want parity
+# with build-qemu.sh: chat UI active, layer-shell on, home-bg active +
+# autostarted. Without these env exports the install scripts default to
+# 0/0/0 and the AtomOS overlays ship dormant; the device boots but the
+# user never sees them. Honors any existing override the caller set
+# upstream.
+if [ -z "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-}" ]; then
+    export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=1
+    echo "=== Defaulting ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=1 (parity with build-qemu) ==="
+fi
+if [ -z "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT:-}" ]; then
+    export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT=1
+    echo "=== Defaulting ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT=1 (parity with build-qemu) ==="
+fi
+if [ -z "${ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT:-}" ]; then
+    export ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT=1
+    echo "=== Defaulting ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT=1 (parity with build-qemu) ==="
+fi
+if [ -z "${ATOMOS_HOME_BG_INSTALL_AUTOSTART:-}" ]; then
+    export ATOMOS_HOME_BG_INSTALL_AUTOSTART=1
+    echo "=== Defaulting ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 (parity with build-qemu) ==="
+fi
 
 echo "=== Apply AtomOS rootfs customizations ==="
 bash "$ROOT_DIR/scripts/rootfs/wire-custom-apk-repos.sh" "$PROFILE_ENV_SOURCE"
@@ -1350,6 +2073,7 @@ fi
 # therefore the resync'd disk image) definitely carries the AtomOS-patched
 # phosh.
 promote_local_vendor_phosh_into_rootfs
+promote_local_vendor_aux_pkgs_into_rootfs
 verify_vendor_phosh_origin
 
 echo "=== Resync rootfs and export image ==="

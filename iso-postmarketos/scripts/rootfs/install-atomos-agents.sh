@@ -82,6 +82,38 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+
+    # OpenRC init script (the systemd unit above is inert under OpenRC).
+    # Mirrors the systemd unit's behaviour: launches atomos-agents-run as
+    # root in the background, supervised. respawn_max=5 caps the loop so
+    # a misconfigured service doesn't pin the CPU forever -- this is
+    # important because in --rootfs mode we install the source but DO
+    # NOT pip-install dependencies (no live network in the cross-arch
+    # build container). The user must run `pip install` on-device once
+    # then `rc-update add atomos-agents default` to enable at boot.
+    install -d "$root/etc/init.d"
+    cat > "$root/etc/init.d/atomos-agents" << "EOF"
+#!/sbin/openrc-run
+
+description="AtomOS Agents Service (gRPC bridge for applet clients)"
+supervisor=supervise-daemon
+command=/usr/local/bin/atomos-agents-run
+command_user=root
+pidfile=/run/atomos-agents.pid
+respawn_delay=5
+respawn_max=5
+
+depend() {
+    need net
+    after dbus
+}
+EOF
+    chmod 0755 "$root/etc/init.d/atomos-agents"
+    # Intentionally NOT linking into default runlevel -- on-device the
+    # user must:
+    #   1. install python deps:  cd /opt/atomos/agents && sudo pip install --break-system-packages .
+    #   2. enable at boot:       sudo rc-update add atomos-agents default
+    #   3. start now:            sudo rc-service atomos-agents start
 }
 
 if [ -n "$DIRECT_ROOTFS_DIR" ]; then
@@ -89,7 +121,9 @@ if [ -n "$DIRECT_ROOTFS_DIR" ]; then
     install_direct_rootfs "$DIRECT_ROOTFS_DIR"
     test -x "$DIRECT_ROOTFS_DIR/usr/local/bin/atomos-agents-run"
     test -f "$DIRECT_ROOTFS_DIR/etc/systemd/system/atomos-agents.service"
-    echo "Installed atomos-agents service (direct rootfs mode)."
+    test -x "$DIRECT_ROOTFS_DIR/etc/init.d/atomos-agents"
+    echo "Installed atomos-agents service (direct rootfs mode; systemd unit + OpenRC init script,"
+    echo "  NOT enabled at boot -- enable on-device after pip-installing deps)."
     exit 0
 fi
 

@@ -42,6 +42,9 @@ if [ ! -f "$CRATE_MANIFEST" ]; then
     exit 1
 fi
 
+# shellcheck source=/dev/null
+. "$ROOT_DIR/scripts/home-bg/_lib-cross-build.sh"
+
 # Auto-pick build mode unless explicitly overridden. Host cross-compile
 # only works on Linux because the gtk-rs / webkit-rs sys crates use
 # pkg-config to resolve gtk4 / webkit2gtk-6.0 at build time, and macOS
@@ -67,26 +70,34 @@ case "$BUILD_MODE" in
         echo "Built atomos-home-bg: $CONTAINER_BIN_PATH"
         ;;
     host)
-        if ! command -v cargo >/dev/null 2>&1; then
-            echo "ERROR: cargo is required to build atomos-home-bg." >&2
-            exit 1
+        # Cross-build via host cargo. The helper resolves the
+        # pmbootstrap rootfs as the cross sysroot, apk-installs the
+        # gtk-rs / webkit-rs *-dev packages there, and exports
+        # PKG_CONFIG_* + CARGO_TARGET_*_RUSTFLAGS so the gio-sys /
+        # gtk4-sys / webkit6-sys build scripts stop dying with
+        # "pkg-config has not been configured to support
+        # cross-compilation."
+        if home_bg_run_cross_cargo_build "$PROFILE_ENV_SOURCE" "$CRATE_MANIFEST" "$TARGET_TRIPLE" "$ROOT_DIR"; then
+            if [ ! -x "$HOST_BIN_PATH" ]; then
+                echo "ERROR: atomos-home-bg build reported success but binary missing at: $HOST_BIN_PATH" >&2
+                exit 1
+            fi
+            echo "Built atomos-home-bg: $HOST_BIN_PATH"
+        else
+            host_rc=$?
+            if [ "${ATOMOS_HOME_BG_HOST_FALLBACK_TO_CONTAINER:-1}" = "1" ]; then
+                echo "WARN: host cross-build for atomos-home-bg failed (rc=$host_rc); falling back to Alpine arm64 container build." >&2
+                echo "      Set ATOMOS_HOME_BG_HOST_FALLBACK_TO_CONTAINER=0 to disable this fallback." >&2
+                bash "$ROOT_DIR/scripts/home-bg/build-atomos-home-bg-in-container.sh"
+                if [ ! -x "$CONTAINER_BIN_PATH" ]; then
+                    echo "ERROR: container fallback build did not produce binary at: $CONTAINER_BIN_PATH" >&2
+                    exit 1
+                fi
+                echo "Built atomos-home-bg (via container fallback): $CONTAINER_BIN_PATH"
+            else
+                exit "$host_rc"
+            fi
         fi
-        if command -v rustup >/dev/null 2>&1; then
-            rustup target add "$TARGET_TRIPLE" >/dev/null 2>&1 || true
-        fi
-
-        echo "Building atomos-home-bg ($TARGET_TRIPLE)..."
-        cargo build \
-            --manifest-path "$CRATE_MANIFEST" \
-            --release \
-            --target "$TARGET_TRIPLE" \
-            --bin atomos-home-bg
-
-        if [ ! -x "$HOST_BIN_PATH" ]; then
-            echo "ERROR: atomos-home-bg build did not produce binary at: $HOST_BIN_PATH" >&2
-            exit 1
-        fi
-        echo "Built atomos-home-bg: $HOST_BIN_PATH"
         ;;
     *)
         echo "ERROR: ATOMOS_HOME_BG_BUILD_MODE must be 'host' or 'container' (got '$BUILD_MODE')" >&2

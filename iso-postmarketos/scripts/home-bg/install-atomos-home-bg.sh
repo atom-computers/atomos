@@ -379,6 +379,46 @@ if [ -z "$BIN_PATH" ]; then
 fi
 echo "install-atomos-home-bg: installing binary from $BIN_PATH"
 
+# Ensure WebKitGTK 6.0 + GTK4 layer-shell RUNTIME libs are present in the
+# rootfs. The atomos-home-bg binary is built from rust/atomos-home-bg/
+# app-gtk/Cargo.toml which links against:
+#   libwebkitgtk-6.0.so.0   (provided by apk: webkit2gtk-6.0)
+#   libgtk4-layer-shell.so  (provided by apk: gtk4-layer-shell)
+#   libgtk-4.so / libadwaita / libgdk_pixbuf / etc.
+# Without these in the rootfs, the binary lands at /usr/local/bin/
+# atomos-home-bg but exits at session start with a missing-library error
+# and the home-bg overlay never renders -- the exact "make build-fairphone4
+# ships the binary but home-bg doesn't appear" symptom we hit on FP4.
+#
+# build-qemu lists webkit2gtk-6.0 + gtk4-layer-shell directly in
+# BASE_APK_PACKAGES (build-qemu.sh:296-297) so the QEMU image is
+# automatically correct. The pmbootstrap path (build-image.sh) only pulls
+# postmarketos-ui-phosh's deps via `pmb install`, which does NOT include
+# WebKitGTK -- nothing in the standard phosh stack uses it. Profiles that
+# enable home-bg should list webkit2gtk-6.0 in PMOS_EXTRA_PACKAGES (FP4
+# does, see config/fairphone-fp4.env), but we also defensively `apk add`
+# here so the contract holds for any profile / install-path combination.
+# Idempotent: apk add is a no-op when the package is already installed.
+ENSURE_RUNTIME_DEPS_CMD='set -eu;
+have_pkg() { apk info -e "$1" >/dev/null 2>&1; }
+need=""
+for p in webkit2gtk-6.0 gtk4-layer-shell; do
+    if ! have_pkg "$p"; then
+        need="$need $p"
+    fi
+done
+if [ -n "$need" ]; then
+    echo "install-atomos-home-bg: installing runtime libs in rootfs:$need"
+    apk update >/dev/null 2>&1 || true
+    apk add --no-interactive $need
+fi'
+if ! bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$ENSURE_RUNTIME_DEPS_CMD"; then
+    echo "WARN: install-atomos-home-bg: failed to apk-install webkit2gtk-6.0 / gtk4-layer-shell in rootfs." >&2
+    echo "      atomos-home-bg may fail to start with a missing-library error at session login." >&2
+    echo "      Add webkit2gtk-6.0,gtk4-layer-shell to PMOS_EXTRA_PACKAGES in your profile env" >&2
+    echo "      and re-run the build, or ignore this warning if home-bg is intentionally optional." >&2
+fi
+
 INSTALL_DIRS='install -d /usr/local/bin /usr/libexec /usr/share/atomos-home-bg'
 bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_DIRS"
 

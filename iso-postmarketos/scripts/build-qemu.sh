@@ -85,6 +85,13 @@ done
 PROFILE_ENV="${PROFILE_ENV:-config/arm64-virt.env}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Shared host-side helpers (atomos_find_container_engine, atomos_require_tools,
+# atomos_cleanup_volume). build-fairphone4.sh sources the same file -- single
+# source of truth for the small bits of host orchestration both targets need.
+# shellcheck source=scripts/_lib-build-common.sh
+source "$ROOT_DIR/scripts/_lib-build-common.sh"
+
 PROFILE_ENV_SOURCE="$PROFILE_ENV"
 if [ ! -f "$PROFILE_ENV_SOURCE" ] && [ -f "$ROOT_DIR/$PROFILE_ENV" ]; then
     PROFILE_ENV_SOURCE="$ROOT_DIR/$PROFILE_ENV"
@@ -107,29 +114,8 @@ if [ "$(uname -s)" != "Linux" ]; then
     exit 2
 fi
 
-find_container_engine() {
-    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-        echo "docker"
-    elif command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then
-        echo "podman"
-    else
-        echo ""
-    fi
-}
-
-require_tools() {
-    local missing=0 t
-    for t in dd rsync python3; do
-        if ! command -v "$t" >/dev/null 2>&1; then
-            echo "ERROR: required command missing: $t" >&2
-            missing=1
-        fi
-    done
-    [ "$missing" -eq 0 ] || exit 2
-}
-
-require_tools
-ENGINE="$(find_container_engine)"
+atomos_require_tools
+ENGINE="$(atomos_find_container_engine)"
 if [ -z "$ENGINE" ]; then
     echo "ERROR: docker or podman is required for Alpine ARM64 bootstrap/build." >&2
     exit 2
@@ -217,10 +203,15 @@ fi
 echo "build-qemu: meson cache backend: $MESON_CACHE_KIND (ATOMOS_QEMU_MESON_CACHE_CLEAN=1 to wipe; ATOMOS_QEMU_MESON_CACHE_HOST_DIR=<path> for host bind mount)"
 
 cleanup_volume() {
+    # Thin wrapper around atomos_cleanup_volume() (defined in
+    # scripts/_lib-build-common.sh) so the EXIT trap and the up-front
+    # "fresh start" call below can stay one-liners.
+    #
     # Note: the meson cache volume ($MESON_CACHE_VOLUME) is intentionally
-    # *not* removed on exit so it persists across runs. Only the rootfs
-    # volume (which is freshly built each run) gets cleaned up.
-    "$ENGINE" volume rm -f "$ROOTFS_VOLUME" >/dev/null 2>&1 || true
+    # *not* removed here -- it persists across runs so ninja can do
+    # incremental rebuilds. Only the rootfs volume (which is freshly
+    # built each run) gets cleaned up.
+    atomos_cleanup_volume "$ENGINE" "$ROOTFS_VOLUME"
 }
 trap cleanup_volume EXIT
 cleanup_volume
@@ -1222,10 +1213,13 @@ fi
     -v "$ROOTFS_VOLUME:/target" \
     -v "$REPO_TOP:/work" \
     "$ALPINE_IMAGE" /bin/sh -eu -c "
-        # Do not pull `coreutils` here. On some host/container combinations this
-        # stage can resolve a coreutils build that expects newer libc symbols
-        # (e.g. renameat2), which breaks dirname/mkdir/mktemp during helper
-        # installs. BusyBox tools are sufficient for these direct-rootfs scripts.
+        # Do not pull the coreutils package here. On some host/container
+        # combinations this stage can resolve a coreutils build that expects
+        # newer libc symbols (e.g. renameat2), which breaks dirname/mkdir/mktemp
+        # during helper installs. BusyBox tools are sufficient for these
+        # direct-rootfs scripts. (Avoid backticks here too: this whole script is
+        # passed as a double-quoted bash string, so backticks would trigger
+        # command substitution before docker even sees the body.)
         apk add --no-interactive bash python3 grep sed tar >/dev/null
         if [ -f /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh ]; then
             ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh \"$PROFILE_ENV_CONTAINER\" || true
@@ -1409,8 +1403,13 @@ test -f "$IMAGE_PATH"
                 fi
                 # The shipped placeholder loads the event-horizon WebGL
                 # shader from a sibling file; if the <script> tag is
-                # there but the file isn't, the home-bg would silently
+                # there but the file is missing, the home-bg would silently
                 # render only its dark base color on device.
+                # (No apostrophes in this verify heredoc -- it is wrapped in
+                # single quotes for the outer shell, so any stray "isn t" /
+                # "doesn t" style word would terminate the quote and truncate
+                # the script body, producing a misleading "unexpected end of
+                # file (expecting fi)" error from the inner /bin/sh.)
                 if grep -q "event-horizon.js" /target/usr/share/atomos-home-bg/index.html; then
                     if [ -f /target/usr/share/atomos-home-bg/event-horizon.js ]; then
                         echo "  ok  event-horizon.js sibling shipped alongside index.html"
