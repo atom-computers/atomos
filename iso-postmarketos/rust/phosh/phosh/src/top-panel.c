@@ -164,10 +164,26 @@ phosh_top_panel_get_property (GObject    *object,
 static void
 update_drag_handle (PhoshTopPanel *self, gboolean queue_draw)
 {
-  /* AtomOS: disable drag gestures for top-panel too, so no shell surface is
-   * swipe-draggable. */
+  int handle, offset;
+
+  /* By default only the bottom bar handle is draggable. The handle starts at
+   * `PHOSH_TOP_BAR_HEIGHT` below the top edge so the visible top-bar stays
+   * tappable while a swipe anywhere over the unfolded settings area unfolds
+   * the panel. */
+  handle = phosh_layer_surface_get_configured_height (PHOSH_LAYER_SURFACE (self));
+  handle -= PHOSH_TOP_BAR_HEIGHT;
+
+  /* Settings can enlarge the draggable area (e.g. when a popover is open). */
+  offset = phosh_settings_get_drag_handle_offset (PHOSH_SETTINGS (self->settings));
+  handle -= offset;
+
+  g_debug ("Drag Handle: %d", handle);
+  if (handle < 0)
+    return;
+
   phosh_drag_surface_set_drag_mode (PHOSH_DRAG_SURFACE (self),
-                                    PHOSH_DRAG_SURFACE_DRAG_MODE_NONE);
+                                    PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE);
+  phosh_drag_surface_set_drag_handle (PHOSH_DRAG_SURFACE (self), handle);
 
   /* Trigger redraw and surface commit */
   if (queue_draw)
@@ -1085,7 +1101,6 @@ phosh_top_panel_new (struct zwlr_layer_shell_v1          *layer_shell,
                        "namespace", "phosh top-panel",
                        /* drag-surface */
                        "layer-shell-effects", layer_shell_effects,
-                       "drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE,
                        "exclusive", PHOSH_TOP_BAR_HEIGHT,
                        "threshold", PHOSH_TOP_PANEL_DRAG_THRESHOLD,
                        NULL);

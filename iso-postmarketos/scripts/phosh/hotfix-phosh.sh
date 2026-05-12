@@ -82,6 +82,9 @@ PHOSH_SKIP_BUILD="${ATOMOS_PHOSH_HOTFIX_SKIP_BUILD:-0}"
 # Fail fast by default: a hotfix should replace installed bits, not just sync source.
 # Set ATOMOS_PHOSH_HOTFIX_SOURCE_ONLY_ON_BUILD_FAIL=1 to allow source-only fallback.
 PHOSH_SOURCE_ONLY_ON_BUILD_FAIL="${ATOMOS_PHOSH_HOTFIX_SOURCE_ONLY_ON_BUILD_FAIL:-0}"
+# Auto-install build deps on Alpine targets (postmarketOS) when meson/ninja or
+# any phosh -dev package is missing. Set to 0 to require pre-baked deps.
+PHOSH_INSTALL_BUILD_DEPS="${ATOMOS_PHOSH_HOTFIX_INSTALL_BUILD_DEPS:-1}"
 
 tmpdir="$(mktemp -d)"
 cleanup() {
@@ -119,6 +122,7 @@ REMOTE_PREFIX_Q="$(shell_quote_sq "$REMOTE_PREFIX")"
 REMOTE_RESTART_CMD_Q="$(shell_quote_sq "$REMOTE_RESTART_CMD")"
 PHOSH_SKIP_BUILD_Q="$(shell_quote_sq "$PHOSH_SKIP_BUILD")"
 PHOSH_SOURCE_ONLY_ON_BUILD_FAIL_Q="$(shell_quote_sq "$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL")"
+PHOSH_INSTALL_BUILD_DEPS_Q="$(shell_quote_sq "$PHOSH_INSTALL_BUILD_DEPS")"
 
 REMOTE_APPLY_SCRIPT="$(cat <<EOF
 set -eu
@@ -129,7 +133,55 @@ REMOTE_PREFIX=$REMOTE_PREFIX_Q
 REMOTE_RESTART_CMD=$REMOTE_RESTART_CMD_Q
 PHOSH_SKIP_BUILD=$PHOSH_SKIP_BUILD_Q
 PHOSH_SOURCE_ONLY_ON_BUILD_FAIL=$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL_Q
+PHOSH_INSTALL_BUILD_DEPS=$PHOSH_INSTALL_BUILD_DEPS_Q
 HOTFIX_INSTALLED=0
+
+# Mirrors build-qemu.sh's container apk list so an on-device build sees the
+# same package set the cached host build resolves against. Keep this list in
+# sync with the apk add stanza in scripts/build-qemu.sh; phosh's meson.build
+# is the source of truth for the dependency set.
+PHOSH_BUILD_DEPS="\
+build-base git meson ninja-build pkgconf \
+glib-dev gtk+3.0-dev libhandy1-dev \
+gnome-bluetooth-dev gnome-desktop-dev libgudev-dev \
+evolution-data-server-dev gcr-dev libsecret-dev \
+callaudiod-dev feedbackd-dev pulseaudio-dev \
+networkmanager-dev modemmanager-dev upower-dev \
+evince-dev qrcodegen-dev polkit-dev elogind-dev \
+gobject-introspection-dev vala \
+wayland-dev wayland-protocols \
+libxkbcommon-dev dbus-dev linux-pam-dev \
+pango-dev cairo-dev gdk-pixbuf-dev libsoup3-dev json-glib-dev \
+appstream-dev fribidi-dev desktop-file-utils gstreamer-dev \
+"
+
+ensure_build_deps() {
+    [ "\$PHOSH_INSTALL_BUILD_DEPS" = "1" ] || return 0
+    if ! command -v apk >/dev/null 2>&1; then
+        # Non-Alpine target: leave dep handling to the operator.
+        return 0
+    fi
+    # Skip the (slow) apk solve if the toolchain entrypoints are already there.
+    # First-time hotfix on a clean rootfs will hit the install path; subsequent
+    # runs short-circuit here.
+    if command -v meson >/dev/null 2>&1 \
+       && command -v ninja >/dev/null 2>&1 \
+       && command -v pkg-config >/dev/null 2>&1; then
+        return 0
+    fi
+    echo "Installing phosh build deps via apk (one-time per device)..."
+    # --no-interactive: never prompt; missing packages cause a non-zero exit.
+    # Spread the list across one apk invocation so the solver can pick a
+    # consistent edge/community set in a single transaction.
+    # shellcheck disable=SC2086
+    if ! apk add --no-interactive \$PHOSH_BUILD_DEPS; then
+        echo "WARN: apk add failed for one or more phosh build deps." >&2
+        echo "      You can disable auto-install with ATOMOS_PHOSH_HOTFIX_INSTALL_BUILD_DEPS=0" >&2
+        echo "      and pre-bake the deps via PMOS_EXTRA_PACKAGES in your profile env." >&2
+        return 1
+    fi
+    return 0
+}
 
 restart_phosh_default() {
     pids=\$(pidof phosh 2>/dev/null || true)
@@ -163,11 +215,16 @@ echo "Phosh source synced to \$REMOTE_SRC_DIR"
 if [ "\$PHOSH_SKIP_BUILD" = "1" ]; then
     echo "Skipping remote build/install (ATOMOS_PHOSH_HOTFIX_SKIP_BUILD=1)"
 else
+    ensure_build_deps || true
     if ! command -v meson >/dev/null 2>&1 || ! command -v ninja >/dev/null 2>&1; then
         if [ "\$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL" = "1" ]; then
             echo "WARN: meson/ninja missing on target, source-only sync applied." >&2
         else
             echo "ERROR: meson and ninja are required on target for build/install." >&2
+            echo "       Auto-install was attempted via apk; check the WARN above." >&2
+            echo "       To pre-bake deps into the rootfs add 'meson,ninja-build' (and the" >&2
+            echo "       phosh -dev packages from scripts/phosh/hotfix-phosh.sh) to" >&2
+            echo "       PMOS_EXTRA_PACKAGES in your profile env, then reflash." >&2
             exit 1
         fi
     else

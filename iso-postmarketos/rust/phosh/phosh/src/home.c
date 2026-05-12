@@ -30,6 +30,31 @@
 
 #define PHOSH_HOME_DRAG_THRESHOLD 0.3
 
+/* AtomOS: thresholds for the GTK-level swipe-up-to-unfold gesture.
+ *
+ * This gesture is complementary to phoc's draggable-layer-surface drag, which
+ * update_drag_handle() leaves at DRAG_MODE_HANDLE while folded (matching
+ * upstream). phoc claims any vertical motion past its drag threshold
+ * (PHOSH_HOME_DRAG_THRESHOLD = 0.3 of surface height) and animates the
+ * margin transition itself. Below that threshold phoc never enters
+ * STATE_DRAGGED and the touch sequence bubbles up to GTK; this gesture
+ * catches such sub-threshold flicks and ends in phosh_home_set_state(UNFOLDED)
+ * so the resulting unfold still routes through the ui_stable_for_popups
+ * gate (mark_ui_stable_for_popups_timeout) that the explicit app-grid
+ * toggle button respects. Net effect:
+ *   - large/fast swipes: phoc owns the transition (smooth margin animation)
+ *   - small/slow flicks: GTK owns the transition (instant set_state)
+ * Both endpoints converge on the same ui_stable_for_popups gating, so
+ * popup-spawning children can't race the post-unfold tree mapping.
+ *
+ * SWIPE_UNFOLD_MIN_VY_PX_PER_SEC: minimum upward velocity (negative because Y
+ *   grows downward in GTK) required for a swipe to count as an unfold intent.
+ *   Tuned for mobile: a deliberate flick from the bottom edge typically
+ *   produces |vy| of 600-1500 px/s, so 300 rejects accidental nudges while
+ *   accepting slow drags.
+ */
+#define SWIPE_UNFOLD_MIN_VY_PX_PER_SEC 300.0
+
 #define POWERBAR_ACTIVE_CLASS "p-active"
 #define POWERBAR_FAILED_CLASS "p-failed"
 #define ATOMOS_CHAT_SUBMIT_PATH "/usr/libexec/atomos-overview-chat-submit"
@@ -160,6 +185,7 @@ struct _PhoshHome
   GtkGesture     *click_gesture; /* needed so that the gesture isn't destroyed immediately */
   GtkGesture     *osk_toggle_long_press; /* to toggle osk from the home bar itself */
   GtkGesture     *chat_dismiss_tap; /* clears entry focus when tapping outside input */
+  GtkGesture     *swipe_unfold; /* AtomOS: swipe-up from folded home -> unfold (gated through phosh_home_set_state) */
   GSettings      *phosh_settings;
 
   PhoshMonitor    *monitor;
@@ -253,6 +279,12 @@ mark_ui_stable_for_popups_timeout (gpointer data)
 
   if (self->app_grid_toggle_queued)
     g_idle_add (apply_queued_app_grid_toggle_idle, self);
+
+  /* The drag-mode clamp in update_drag_handle() reads ui_stable_for_popups,
+   * so the gate flipping true must propagate to phoc immediately. Without
+   * this, drag stays at NONE until the next configure event (potentially
+   * the next fold) and swipe-down-to-fold appears broken. */
+  update_drag_handle (self, FALSE);
 
   return G_SOURCE_REMOVE;
 }
@@ -450,14 +482,28 @@ on_chat_dismiss_tap_pressed (GtkGestureMultiPress *gesture,
 static void
 phosh_home_update_home_bar (PhoshHome *self)
 {
-  gboolean reveal, solid = TRUE;
+  gboolean reveal, solid;
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
 
-  reveal = !(self->state == PHOSH_HOME_STATE_UNFOLDED);
+  if (self->use_background) {
+    /* Upstream visuals: pill revealed when not unfolded, solid background on
+     * the home-bar strip while folded-and-not-mid-drag. */
+    reveal = !(self->state == PHOSH_HOME_STATE_UNFOLDED);
+    solid = (self->state == PHOSH_HOME_STATE_FOLDED &&
+             drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED);
+  } else {
+    /* AtomOS: atomos-home-bg owns the home wallpaper, so phosh must NOT
+     * paint anything at the screen bottom. Without this branch the upstream
+     * code unconditionally adds `.p-solid` (which paints @phosh_bg_color
+     * over the 15px home-bar strip) and reveals the powerbar pill on every
+     * fold, producing the "empty transparent bar with a pill" the user
+     * sees. evbox_home_bar stays in the GtkBox layout because the bottom
+     * 15px is the touch target phoc maps to its drag handle (see the floor
+     * in update_drag_handle); we just keep it visually empty. */
+    reveal = FALSE;
+    solid = FALSE;
+  }
   gtk_revealer_set_reveal_child (GTK_REVEALER (self->rev_powerbar), reveal);
-
-  if (self->use_background)
-    solid = !!(self->state == PHOSH_HOME_STATE_FOLDED && drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED);
 
   phosh_util_toggle_style_class (self->evbox_home_bar, "p-solid", solid);
 
@@ -516,35 +562,67 @@ update_drag_handle (PhoshHome *self, gboolean queue_draw)
 {
   gboolean success;
   gint handle = 0;
-  guint previous_handle = 0;
   PhoshAppGrid *app_grid;
-  PhoshDragSurfaceDragMode drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_NONE;
+  PhoshDragSurfaceDragMode drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE;
+  PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
 
   /* reset osk_toggle_long_press to prevent OSK from unfolding accidentally */
   gtk_event_controller_reset (GTK_EVENT_CONTROLLER (self->osk_toggle_long_press));
 
-  app_grid = phosh_overview_get_app_grid (PHOSH_OVERVIEW (self->overview));
-
-  /* AtomOS: disable drag gestures for the entire home surface in all states.
-   * Folding/unfolding should only happen via explicit actions, never swipes. */
+  /* Two reasons to fall back to DRAG_MODE_NONE while UNFOLDED:
+   *
+   *   1. Empty overview: upstream phosh disables further drag once the surface
+   *      is at its UNFOLDED target margin and there's nothing to scroll within.
+   *      Without this, phoc would let the user "over-drag" past margin 0.
+   *
+   *   2. AtomOS popup-map gate: while ui_stable_for_popups is still false
+   *      (the 160ms window after UNFOLDED is reached, plus any time the
+   *      overview tree isn't yet mapped), popup-spawning children
+   *      (tooltips, atomos-overview-chat-ui chat strip, atomos-home-bg
+   *      subsurface) may still be mid-map. Re-entering STATE_DRAGGED in
+   *      that window short-circuits on_configure_event (the drag-state
+   *      guard) and phosh_home_set_state (early return), and reproduces
+   *      the map-order crash the diagnose-phosh-home-chat-ui-crash.sh
+   *      script captures. The explicit app-grid toggle button already
+   *      respects the same gate (see on_app_grid_toggle_clicked); doing
+   *      the same here keeps the two unfold paths symmetric.
+   *
+   * The FOLDED branch is intentionally left untouched: ui_stable_for_popups
+   * is FALSE in FOLDED state too, and clamping there would break the very
+   * swipe-up-to-unfold this option re-enables. The map-race only happens
+   * once we've started showing the overview tree. */
+  if (self->state == PHOSH_HOME_STATE_UNFOLDED &&
+      drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
+    if (phosh_overview_has_running_activities (PHOSH_OVERVIEW (self->overview)) == FALSE)
+      drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_NONE;
+    else if (!self->ui_stable_for_popups)
+      drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_NONE;
+  }
   phosh_drag_surface_set_drag_mode (PHOSH_DRAG_SURFACE (self), drag_mode);
 
   /* Update handle size */
+  app_grid = phosh_overview_get_app_grid (PHOSH_OVERVIEW (self->overview));
   success = gtk_widget_translate_coordinates (GTK_WIDGET (app_grid),
                                               GTK_WIDGET (self),
                                               0, 0, NULL, &handle);
-  previous_handle = phosh_drag_surface_get_drag_handle (PHOSH_DRAG_SURFACE (self));
   if (!success) {
-    /* App-grid can be hidden/unmapped during transitions and while toggling.
-     * In that case, keep the last valid drag handle so the home surface
-     * doesn't collapse into a tiny draggable strip. */
-    g_debug ("Failed to get handle position; keeping previous drag handle");
-    if (previous_handle > 0) {
-      handle = (gint) previous_handle;
-    } else {
-      handle = PHOSH_HOME_BAR_HEIGHT;
-    }
+    g_warning ("Failed to get handle position");
+    handle = PHOSH_HOME_BAR_HEIGHT;
   }
+
+  /* AtomOS: the AtomOS shell keeps app_grid set_visible(FALSE) until the
+   * explicit toggle button fires (see phosh_home_constructed and
+   * on_app_grid_toggle_clicked). gtk_widget_translate_coordinates on a
+   * never-allocated hidden widget returns (TRUE, 0) — not a failure — so the
+   * branch above doesn't catch it and we'd hand phoc handle=0. phoc treats
+   * drag-mode=HANDLE + handle=0 as "no drag area at all" and silently
+   * disables the swipe-up gesture (the diagnose script captures the exact
+   * "swipe does nothing while a 15px transparent home-bar is at the screen
+   * bottom" symptom). Floor to PHOSH_HOME_BAR_HEIGHT so the bottom-edge
+   * touch strip (the same strip update_home_bar leaves transparent in the
+   * AtomOS branch) always accepts a swipe. */
+  if (handle < PHOSH_HOME_BAR_HEIGHT)
+    handle = PHOSH_HOME_BAR_HEIGHT;
 
   g_debug ("Drag Handle: %d", handle);
   phosh_drag_surface_set_drag_handle (PHOSH_DRAG_SURFACE (self), handle);
@@ -661,11 +739,13 @@ on_home_released (GtkButton *button, int n_press, double x, double y, GtkGesture
   PhoshHome *self = g_object_get_data (G_OBJECT (gesture), "phosh-home");
 
   g_return_if_fail (PHOSH_IS_HOME (self));
-  /* AtomOS: home-bar tap should not toggle fold/unfold. */
-  (void) button;
-  (void) n_press;
-  (void) x;
-  (void) y;
+
+  /* Mouse-click on the home-bar toggles fold/unfold. Touch is intentionally
+   * skipped because phoc owns touch interpretation through the draggable
+   * layer-shell-effects extension; a touch tap that doesn't reach phoc's drag
+   * threshold falls through here and we don't want it to also toggle state. */
+  if (phosh_util_gesture_is_touch (GTK_GESTURE_SINGLE (gesture)) == FALSE)
+    phosh_home_set_state (self, !self->state);
 }
 
 
@@ -761,6 +841,67 @@ on_chat_entry_activate (GtkEntry *entry, PhoshHome *self)
   }
 
   gtk_entry_set_text (entry, "");
+}
+
+
+/* AtomOS: GTK-level swipe-up handler. Supplements phoc's draggable-layer-surface
+ * drag for sub-threshold flicks that never cross PHOSH_HOME_DRAG_THRESHOLD
+ * (0.3 of surface height) and therefore never trigger phoc's STATE_DRAGGED.
+ *
+ * Behaviour split with phoc:
+ *   - phoc drag handles long/fast swipes by translating touch motion into
+ *     zphoc_draggable_layer_surface_v1.dragged() margin updates, ending in
+ *     STATE_UNFOLDED. update_drag_handle() keeps drag-mode at HANDLE in the
+ *     folded state for exactly this path.
+ *   - This handler catches short flicks: GTK delivers the swipe to BUBBLE
+ *     phase only if phoc never claimed the touch sequence. We then call
+ *     phosh_home_set_state(UNFOLDED) directly. phosh_home_set_state itself
+ *     refuses to act mid-drag (early return when drag_state==DRAGGED), so
+ *     we can't accidentally double-trigger when phoc DID claim the touch.
+ *
+ * Both paths converge on schedule_ui_stable_gate(), which clears
+ * ui_stable_for_popups and re-arms the 160ms timer. update_drag_handle()
+ * then clamps drag-mode to NONE during that window so the user can't
+ * immediately re-drag back to FOLDED while popup-spawning children
+ * (tooltips, atomos-overview-chat-ui chat strip, atomos-home-bg subsurface)
+ * are still mid-map - the crash class the diagnose-phosh-home-chat-ui-crash.sh
+ * script captures.
+ *
+ * Folded-only is intentional. When the home is unfolded its surface covers the
+ * full screen and any swipe inside the overview / app-grid would otherwise
+ * race with the children's own scroll gestures. The mirror swipe-down-to-fold
+ * is left to the explicit app-grid toggle button (which switches the icon to
+ * window-close-symbolic precisely so the user has a tappable close affordance)
+ * and to phoc's drag once ui_stable_for_popups becomes true again.
+ */
+static void
+on_swipe_unfold (GtkGestureSwipe *gesture,
+                 gdouble          v_x,
+                 gdouble          v_y,
+                 PhoshHome       *self)
+{
+  (void) gesture;
+
+  g_return_if_fail (PHOSH_IS_HOME (self));
+
+  /* Only intercept when we have something meaningful to do. UNFOLDED stays
+   * untouched so app-grid / overview gestures keep working unchanged. */
+  if (self->state != PHOSH_HOME_STATE_FOLDED)
+    return;
+
+  /* Reject downward and slow swipes. v_y is negative for upward motion in
+   * GTK's coordinate system. */
+  if (v_y > -SWIPE_UNFOLD_MIN_VY_PX_PER_SEC)
+    return;
+
+  /* Reject horizontally biased swipes so a sideways flick on the visible
+   * home-bar strip never accidentally unfolds. Strict >: a perfectly diagonal
+   * upward swipe still counts. */
+  if (ABS (v_x) > ABS (v_y))
+    return;
+
+  HOME_TRACE ("swipe-up detected (v_x=%.1f v_y=%.1f) -> unfold", v_x, v_y);
+  phosh_home_set_state (self, PHOSH_HOME_STATE_UNFOLDED);
 }
 
 
@@ -1211,12 +1352,9 @@ phosh_home_constructed (GObject *object)
   root_box = gtk_widget_get_parent (self->overview);
   g_return_if_fail (GTK_IS_BOX (root_box));
 
-  /* AtomOS: remove the legacy divider/home-bar strip entirely so there is no
-   * visible swipe strip above overview content. */
-  gtk_widget_set_sensitive (self->evbox_home_bar, FALSE);
-  gtk_widget_set_visible (self->rev_powerbar, FALSE);
-  gtk_widget_set_size_request (self->evbox_home_bar, -1, 0);
-  gtk_widget_set_visible (self->evbox_home_bar, FALSE);
+  /* Keep the upstream divider/home-bar + powerbar visible: they double as the
+   * swipe-pill (input region phoc treats as the drag handle in HANDLE mode)
+   * and the OSK long-press target. The AtomOS app-grid-row sits below them. */
 
   self->app_grid_toggle_icon = gtk_image_new_from_icon_name ("view-app-grid-symbolic", GTK_ICON_SIZE_BUTTON);
   gtk_image_set_pixel_size (GTK_IMAGE (self->app_grid_toggle_icon), 22);
@@ -1264,6 +1402,26 @@ phosh_home_constructed (GObject *object)
                     G_CALLBACK (on_chat_dismiss_tap_pressed),
                     self);
 
+  /* AtomOS: swipe-up-to-unfold (see on_swipe_unfold for the rationale).
+   *
+   * BUBBLE phase: children (overview, app-grid, chat entry) get first dibs on
+   * the touch sequence. We only see "swipe" if no descendant claimed the
+   * gesture. In folded state there are no interactive descendants in the
+   * visible 15px home-bar strip, so the gesture reliably reaches us. In
+   * unfolded state the on_swipe_unfold handler short-circuits anyway.
+   *
+   * Button 0: accept any pointer / touch input. GtkGestureSwipe internally
+   * gates on the GtkSettings drag-threshold so a tap can never be mistaken
+   * for a swipe and our v_y check then filters out non-vertical motion. */
+  self->swipe_unfold = gtk_gesture_swipe_new (GTK_WIDGET (self));
+  gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (self->swipe_unfold),
+                                              GTK_PHASE_BUBBLE);
+  gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (self->swipe_unfold), 0);
+  g_signal_connect (self->swipe_unfold,
+                    "swipe",
+                    G_CALLBACK (on_swipe_unfold),
+                    self);
+
   app_grid = phosh_overview_get_app_grid (PHOSH_OVERVIEW (self->overview));
   phosh_home_style_app_grid_widgets (self);
   gtk_widget_set_visible (GTK_WIDGET (app_grid), FALSE);
@@ -1295,6 +1453,7 @@ phosh_home_dispose (GObject *object)
     g_signal_handlers_disconnect_by_data (G_OBJECT (osk_manager), self);
 
   g_clear_object (&self->chat_dismiss_tap);
+  g_clear_object (&self->swipe_unfold);
   g_clear_object (&self->settings);
   g_clear_handle_id (&self->unfold_stable_source, g_source_remove);
 
@@ -1416,13 +1575,11 @@ phosh_home_new (struct zwlr_layer_shell_v1          *layer_shell,
                                  ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
                        "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
                        "kbd-interactivity", FALSE,
-                       /* AtomOS: no reserved strip/divider above overview content. */
-                       "exclusive-zone", 0,
+                       "exclusive-zone", PHOSH_HOME_BAR_HEIGHT,
                        "namespace", "phosh home",
                        /* drag-surface */
                        "layer-shell-effects", layer_shell_effects,
-                       "drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE,
-                       "exclusive", 0,
+                       "exclusive", PHOSH_HOME_BAR_HEIGHT,
                        "threshold", PHOSH_HOME_DRAG_THRESHOLD,
                        NULL);
 }
