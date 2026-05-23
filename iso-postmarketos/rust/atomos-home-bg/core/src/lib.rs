@@ -72,11 +72,11 @@ pub const DEFAULT_CONTENT_PATH: &str = "/usr/share/atomos-home-bg/index.html";
 
 /// Canonical default when `ATOMOS_HOME_BG_LAYER` is unset.
 ///
-/// **Not** [`LayerTarget::Background`]: postmarketOS / Phosh still owns a
-/// `background`-layer surface (solid color when AtomOS disables the JPEG via
-/// `apply-atomos-wallpaper-dconf.sh`); stacking a second client on `background`
-/// is compositor-dependent. `bottom` sits *above* that layer but still below the
-/// overview chat UI (default `top`) and other shell UI.
+/// `bottom` keeps the webview below running app toplevels while Phosh is
+/// folded. Phosh spawns `/usr/libexec/atomos-home-bg --show` with
+/// `ATOMOS_HOME_BG_LAYER=top` when the overview unfolds so the switcher
+/// backdrop occludes the foreground app. Vendor Phoc then stacks
+/// `atomos-home-bg` below `phosh home` and `atomos-overview-chat-ui` above it.
 pub const DEFAULT_LAYER: LayerTarget = LayerTarget::Bottom;
 
 /// String form of `DEFAULT_LAYER`; matches the launcher default and the env
@@ -136,8 +136,8 @@ pub fn resolve_content_url(env_value: &EnvResult) -> String {
 }
 
 /// Choose the layer-shell layer. Unset / empty / unknown values use
-/// [`DEFAULT_LAYER`] (see module docs — `bottom` to sit above Phosh's background
-/// layer).
+/// [`DEFAULT_LAYER`] (see module docs — `bottom` while folded; Phosh passes
+/// `top` when spawning `--show` for the overview backdrop).
 pub fn resolve_layer(env_value: &EnvResult) -> LayerTarget {
     match env_value
         .as_deref()

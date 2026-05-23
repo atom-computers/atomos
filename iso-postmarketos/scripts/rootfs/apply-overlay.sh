@@ -75,13 +75,48 @@ LOCK_PARITY="${ATOMOS_LOCK_PARITY:-${PMOS_LOCK_PARITY:-1}}"
 if [ "$LOCK_PARITY" != "0" ]; then
     LOCK_PARITY=1
 fi
+# Greetd auto-login skips Phrog and starts phosh-session directly under the
+# build's PMOS_USER (uid PMOS_USER_UID). Default OFF; only the integration
+# test profiles set PMOS_AUTOLOGIN=1 (override via ATOMOS_AUTOLOGIN at the
+# script boundary). Production images keep Phrog as the greeter, matching
+# upstream postmarketos-ui-phosh-openrc.
+AUTOLOGIN="${ATOMOS_AUTOLOGIN:-${PMOS_AUTOLOGIN:-0}}"
+if [ "$AUTOLOGIN" != "1" ]; then
+    AUTOLOGIN=0
+fi
+AUTOLOGIN_USER="${PMOS_USER:-user}"
 OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-0}"
-OVERVIEW_OVERLAY_CONTRACT_VERSION="overview-chat-ui-overlay-v5-lifecycle-only"
+# v6 restores the XDG autostart .desktop for the chat UI. v5 (commit
+# d6405345 "fix: home screen") deleted both the autostart .desktop AND
+# the vendor phosh patches that spawned the layer-shell binary on home
+# unfold (0003-atomos-overview-chat-ui-lifecycle.patch,
+# 0004-atomos-overview-chat-ui-show-on-unfold.patch), so nothing left
+# was actually launching atomos-overview-chat-ui on the home screen.
+# v6 adds the autostart back; phosh-side spawn is handled in
+# rust/phosh/phosh/src/home.c (atomos_phosh_sync_overview_chat_ui_lifecycle).
+# Skip writing the autostart by setting ATOMOS_OVERVIEW_CHAT_UI_AUTOSTART=0.
+OVERVIEW_AUTOSTART="${ATOMOS_OVERVIEW_CHAT_UI_AUTOSTART:-1}"
+if [ "$OVERVIEW_AUTOSTART" != "0" ]; then
+    OVERVIEW_AUTOSTART=1
+fi
+OVERVIEW_OVERLAY_CONTRACT_VERSION="overview-chat-ui-overlay-v6-autostart-restored"
 
 echo "Applying mobile Phosh overlay via chroot..."
 echo "  lock parity layer: $LOCK_PARITY"
+echo "  greetd autologin: $AUTOLOGIN (user=$AUTOLOGIN_USER)"
 
-OVERLAY_SCRIPT='
+# Read OVERLAY_SCRIPT from a here-doc rather than a single-quoted string so the
+# script body may freely contain apostrophes (e.g. "Alpine's OpenDoas" in
+# comments, the awk script in the lock-parity teardown branch) without each
+# one closing the outer quote. The here-doc delimiter is quoted so $vars are
+# left literal; placeholders like __LOCK_PARITY__ are filled in via the
+# parameter-substitution chain below. `IFS= read -r -d '' VAR <<EOF` is used
+# (instead of $(cat <<EOF)EOF\n)) because the launcher body contains a
+# `case … ;;` block and bash mis-parses `;;` inside `$()` command
+# substitution heredocs (it still tokenises the body when locating the
+# matching `)`). `read -r -d ''` keeps the body opaque and exits with rc=1
+# on EOF, hence the `|| true` tail.
+IFS= read -r -d '' OVERLAY_SCRIPT << 'ATOMOS_OVERLAY_SCRIPT_EOF' || true
 mkdir -p /etc/xdg/autostart
 mkdir -p /etc/systemd/system
 mkdir -p /etc/dconf/db/local.d
@@ -131,12 +166,87 @@ EOF
 
 if [ "__LOCK_PARITY__" = "1" ]; then
     mkdir -p /etc/atomos
+    # Gate (3): must match atomos-app-handler install contract version.
+    echo "app-handler-v1-launch-switcher-dbus-home" > /etc/atomos/phosh-integration-contract
+    chmod 0644 /etc/atomos/phosh-integration-contract
     cat > /etc/atomos/phosh-profile.env << "EOF"
 ATOMOS_UI_PROFILE=phosh
 ATOMOS_WALLPAPER=/usr/share/backgrounds/gnome/gargantua-black.jpg
+# Phosh-side toggles for the AtomOS-fork phosh-overview integration. The
+# legacy ATOMOS_PHOSH_ENABLE_SWIPE_BRIDGE knob has been retired now that the
+# rust atomos-app-handler folded in the swipe-bridge socket and the bottom
+# edge gesture. ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1 yields the bottom
+# edge to the rust layer-shell handle, and ATOMOS_APP_HANDLER_TAKES_OVER=1
+# hides PhoshOverview so the rust overlay owns the surface.
+ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1
+ATOMOS_APP_HANDLER_TAKES_OVER=1
+ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1
 EOF
+    chmod 0644 /etc/atomos/phosh-profile.env
+    # QEMU/dev SSH hotfixes: OpenDoas has no -S; allow wheel to run doas -n
+    # without a TTY. Alpine's OpenDoas does NOT auto-include /etc/doas.d/, so
+    # the rule must live in /etc/doas.conf directly (or be `include`d from it).
+    # We append idempotently with a sentinel comment so re-running the overlay
+    # is safe and doesn't duplicate the rule.
+    if [ ! -f /etc/doas.conf ]; then
+        : > /etc/doas.conf
+        chmod 0400 /etc/doas.conf
+    fi
+    if ! grep -qF "# atomos-lock-parity-nopass-wheel" /etc/doas.conf; then
+        {
+            echo ""
+            echo "# atomos-lock-parity-nopass-wheel: SSH hotfix/bisect scripts run doas -n"
+            echo "# from non-TTY shells; OpenDoas has no -S so we grant nopass for :wheel."
+            echo "permit nopass keepenv :wheel"
+        } >> /etc/doas.conf
+        chmod 0400 /etc/doas.conf
+    fi
+    # Old broken location (kept for cleanup of pre-fix images).
+    rm -f /etc/doas.d/99-atomos-dev.conf
 else
     rm -f /etc/atomos/phosh-profile.env
+    rm -f /etc/doas.d/99-atomos-dev.conf
+    # Remove the sentinel block from /etc/doas.conf if present.
+    if [ -f /etc/doas.conf ] && grep -qF "# atomos-lock-parity-nopass-wheel" /etc/doas.conf; then
+        # Strip the 3-line block we appended (sentinel comment + continuation
+        # comment + permit rule). The bare blank line that precedes the
+        # sentinel is left in place; harmless even if accumulating.
+        awk '
+            BEGIN { skip = 0 }
+            /^# atomos-lock-parity-nopass-wheel:/ { skip = 2; next }
+            skip > 0                              { skip--;   next }
+            { print }
+        ' /etc/doas.conf > /etc/doas.conf.tmp \
+            && mv /etc/doas.conf.tmp /etc/doas.conf \
+            && chmod 0400 /etc/doas.conf
+    fi
+fi
+
+# Greetd auto-login: gated, dev/test images only. Skips Phrog and starts
+# phosh-session directly so integration tests can drive past the lock screen
+# without typing into the QEMU display. The marker file is consumed by
+# tests/test_lock_parity_scripts.py and tests/integration/test_qemu_phosh_login_lifetime.py.
+if [ "__ATOMOS_AUTOLOGIN__" = "1" ]; then
+    mkdir -p /etc/greetd /etc/atomos
+    cat > /etc/greetd/config.toml << "GREETDEOF"
+# AtomOS test image: skip the Phrog greeter and start phosh-session for the
+# build user automatically. Re-enable Phrog by rebuilding with ATOMOS_AUTOLOGIN=0.
+[terminal]
+vt = 7
+
+[default_session]
+command = "/usr/libexec/phrog-greetd-session"
+user = "greetd"
+
+[initial_session]
+command = "/usr/bin/phosh-session"
+user = "__ATOMOS_AUTOLOGIN_USER__"
+GREETDEOF
+    chmod 0644 /etc/greetd/config.toml
+    printf "%s\n" "__ATOMOS_AUTOLOGIN_USER__" > /etc/atomos/autologin-user
+    chmod 0644 /etc/atomos/autologin-user
+else
+    rm -f /etc/atomos/autologin-user
 fi
 
 # ── SSH and USB gadget networking (developer USB Ethernet + sshd) ──
@@ -181,7 +291,7 @@ export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENA
 # Keep disabled by default; set to 1 to opt in.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-0}"
 # Keep visible by default while diagnosing fold/unfold lifecycle issues.
-export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-1}"
+export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-0}"
 # Safety fallback: some target GTK stacks crash while parsing advanced CSS.
 # Set to 0 to re-enable themed CSS after confirming target stability.
 export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS:-1}"
@@ -193,7 +303,7 @@ export LIBGL_ALWAYS_SOFTWARE="${ATOMOS_OVERVIEW_CHAT_UI_LIBGL_ALWAYS_SOFTWARE:-1
 export ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE="${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"
 # Keep layer defaults aligned with installer/hotfix launchers.
-export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-top}"
+export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
 # Phosh runs this as the logged-in user; prefer session runtime dir.
@@ -316,7 +426,8 @@ case "${1:-}" in
             exit 0
         fi
         bind_phosh_session_env
-        logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} runtime=${XDG_RUNTIME_DIR:-<unset>}"
+        logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+        stop_ui
         start_ui
         ;;
     --hide)
@@ -340,12 +451,36 @@ printf "%s\n" "__OVERVIEW_OVERLAY_CONTRACT_VERSION__" > /etc/atomos/overview-cha
 rm -f /usr/libexec/atomos-overview-chat-ui-boot
 rm -f /usr/lib/systemd/user/atomos-overview-chat-ui.service
 rm -f /etc/systemd/user/default.target.wants/atomos-overview-chat-ui.service
-rm -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop
-'
+
+# Restore XDG autostart for atomos-overview-chat-ui (commit d6405345 deleted
+# this together with the vendor phosh patches that spawned the layer-shell
+# binary on home unfold, leaving the chat UI with nothing to start it).
+# The runtime gate ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME still applies, so
+# this only takes effect when the profile sets RUNTIME_DEFAULT=1 (or the
+# user-level env exports it explicitly).
+if [ "__OVERVIEW_AUTOSTART__" = "1" ]; then
+    cat > /etc/xdg/autostart/atomos-overview-chat-ui.desktop << "EOF"
+[Desktop Entry]
+Type=Application
+Name=AtomOS Overview Chat UI
+Comment=Layer-shell chat overlay that follows the Phosh home screen.
+Exec=/usr/libexec/atomos-overview-chat-ui --show
+OnlyShowIn=GNOME;Phosh;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+EOF
+    chmod 0644 /etc/xdg/autostart/atomos-overview-chat-ui.desktop
+else
+    rm -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop
+fi
+ATOMOS_OVERLAY_SCRIPT_EOF
 
 OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__LOCK_PARITY__/$LOCK_PARITY}"
 OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__/$OVERVIEW_RUNTIME_DEFAULT}"
 OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__OVERVIEW_OVERLAY_CONTRACT_VERSION__/$OVERVIEW_OVERLAY_CONTRACT_VERSION}"
+OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__OVERVIEW_AUTOSTART__/$OVERVIEW_AUTOSTART}"
+OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__ATOMOS_AUTOLOGIN__/$AUTOLOGIN}"
+OVERLAY_SCRIPT="${OVERLAY_SCRIPT//__ATOMOS_AUTOLOGIN_USER__/$AUTOLOGIN_USER}"
 
 if [ "${ATOMOS_OVERLAY_DUMP_ONLY:-0}" = "1" ]; then
     printf '%s\n' "$OVERLAY_SCRIPT"

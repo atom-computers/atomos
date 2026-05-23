@@ -49,7 +49,7 @@ set -euo pipefail
 
 usage() {
     cat >&2 <<'EOF'
-Usage: build-fairphone4.sh [profile-env] [--without-overview-chat-ui] [--without-home-bg]
+Usage: build-fairphone4.sh [profile-env] [--without-overview-chat-ui] [--without-home-bg] [--without-app-switcher]
 
 Builds a fastboot-flashable Fairphone 4 image (boot.img + fairphone-fp4.img)
 from Alpine Linux + the postmarketOS APK mirror, without pmbootstrap.
@@ -57,6 +57,8 @@ from Alpine Linux + the postmarketOS APK mirror, without pmbootstrap.
 Options:
   --without-overview-chat-ui    Skip building/installing atomos-overview-chat-ui.
   --without-home-bg             Skip building/installing atomos-home-bg.
+  --without-app-switcher        Skip building/installing atomos-app-handler.
+                                Legacy --without-swipe-bridge accepted (alias).
 
 Outputs:
   build/host-export-fairphone-fp4/boot.img
@@ -67,6 +69,7 @@ EOF
 PROFILE_ENV=""
 BUILD_OVERVIEW_CHAT_UI=1
 BUILD_HOME_BG=1
+BUILD_APP_HANDLER=1
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --without-overview-chat-ui|--skip-overview-chat-ui)
@@ -74,6 +77,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         --without-home-bg|--skip-home-bg)
             BUILD_HOME_BG=0
+            ;;
+        --without-app-switcher|--skip-app-switcher|--without-swipe-bridge|--skip-swipe-bridge)
+            BUILD_APP_HANDLER=0
             ;;
         -h|--help)
             usage
@@ -1150,6 +1156,12 @@ if [ "${BUILD_HOME_BG:-0}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-ho
     test -x /work/iso-postmarketos/rust/atomos-home-bg/target/release/atomos-home-bg
 fi
 
+if [ "${BUILD_APP_HANDLER:-0}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml ]; then
+    cargo build --manifest-path /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml \
+        --release --bin atomos-app-handler
+    test -x /work/iso-postmarketos/rust/atomos-app-handler/target/release/atomos-app-handler
+fi
+
 apk add --no-interactive glib >/dev/null 2>&1 || true
 glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
 '
@@ -1161,6 +1173,7 @@ glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
     -v "$MESON_CACHE_MOUNT:/cache" \
     -v "$PMOS_KEY_HOST:/tmp/pmos.rsa.pub:ro" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+    -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
     -e USE_VENDOR_PHOSH="$USE_VENDOR_PHOSH" \
     "$ALPINE_IMAGE" /bin/sh -c "$build_container_script"
 
@@ -1180,6 +1193,7 @@ fi
     -v "$REPO_TOP:/work" \
     -e BUILD_OVERVIEW_CHAT_UI="$BUILD_OVERVIEW_CHAT_UI" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+    -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
     "$ALPINE_IMAGE" /bin/sh -eu -c "
         apk add --no-interactive bash python3 grep sed tar >/dev/null
         if [ -f /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh ]; then
@@ -1196,6 +1210,9 @@ fi
             ROOTFS_DIR=/target \
                 ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT=1 \
                 ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=1 \
+                ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART=1 \
+                ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT=0 \
+                ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT=0 \
                 bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \"$PROFILE_ENV_CONTAINER\"
         fi
         if [ \"\$BUILD_HOME_BG\" = \"1\" ] && [ -f /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh ]; then
@@ -1203,6 +1220,12 @@ fi
                 ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT=1 \
                 ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 \
                 bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \"$PROFILE_ENV_CONTAINER\"
+        fi
+        if [ \"\$BUILD_APP_HANDLER\" = \"1\" ] && [ -f /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh ]; then
+            ROOTFS_DIR=/target \
+                ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 \
+                ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 \
+                bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \"$PROFILE_ENV_CONTAINER\"
         fi
         if [ -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg ]; then
             mkdir -p /target/usr/share/backgrounds/gnome /target/usr/share/backgrounds/atomos /target/usr/share/backgrounds
@@ -1244,13 +1267,9 @@ fi
 # either.
 #
 # build-qemu.sh ships working customizations (vendor phosh + chat UI +
-# home-bg + wallpaper + sshd hardening) WITHOUT any of these three
-# overlay scripts -- the install-overview-chat-ui.sh launcher (which we
-# already invoke above with ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_
-# DEFAULT=1 + ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=1) is
-# sufficient on its own; the apply-overlay.sh "production launcher
-# overwrite" was unnecessary in practice. So we keep parity with the
-# known-good build-qemu.sh customization set.
+# home-bg + wallpaper + sshd hardening) WITHOUT apply-overlay.sh --
+# install-overview-chat-ui.sh (with ATOMOS_OVERVIEW_CHAT_UI_INSTALL_
+# AUTOSTART=1) drops the XDG autostart alongside the launcher.
 #
 # If we ever want OS branding ("Atom OS" PRETTY_NAME) or the dconf
 # overrides on FP4, port them as direct file writes from the existing
@@ -1296,6 +1315,7 @@ echo "=== build-fairphone4: final verification ==="
     -v "$ROOTFS_VOLUME:/target" \
     -e BUILD_OVERVIEW_CHAT_UI="$BUILD_OVERVIEW_CHAT_UI" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+    -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
     "$ALPINE_IMAGE" /bin/sh -eu -c '
         FAIL=0
         check_x() { if [ -x "$1" ]; then echo "  ok  -x $1"; else echo "  FAIL -x $1" >&2; FAIL=1; fi; }
@@ -1417,6 +1437,26 @@ echo "=== build-fairphone4: final verification ==="
                     echo "  FAIL ${lib}* not found" >&2; FAIL=1
                 fi
             done
+        fi
+
+        if [ "$BUILD_APP_HANDLER" = "1" ]; then
+            echo "--- atomos-app-handler files ---"
+            check_x /target/usr/local/bin/atomos-app-handler
+            check_x /target/usr/bin/atomos-app-handler
+            check_x /target/usr/libexec/atomos-app-handler
+            check_grep "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" /target/usr/libexec/atomos-app-handler
+            check_grep "atomos-app-handler.disabled" /target/usr/libexec/atomos-app-handler
+            echo "--- atomos-app-handler hybrid lifecycle contract ---"
+            check_f /target/etc/atomos/app-handler-contract
+            check_grep "^app-handler-v1-launch-switcher-dbus-home$" /target/etc/atomos/app-handler-contract
+            check_grep "action=show"    /target/usr/libexec/atomos-app-handler
+            check_grep "action=hide"    /target/usr/libexec/atomos-app-handler
+            check_grep "signal_show"    /target/usr/libexec/atomos-app-handler
+            check_grep "signal_hide"    /target/usr/libexec/atomos-app-handler
+            check_grep "kill -USR1"     /target/usr/libexec/atomos-app-handler
+            check_grep "kill -USR2"     /target/usr/libexec/atomos-app-handler
+            check_f /target/etc/xdg/autostart/atomos-app-handler.desktop
+            check_grep "Exec=/usr/libexec/atomos-app-handler --start" /target/etc/xdg/autostart/atomos-app-handler.desktop
         fi
 
         if [ "$FAIL" -ne 0 ]; then

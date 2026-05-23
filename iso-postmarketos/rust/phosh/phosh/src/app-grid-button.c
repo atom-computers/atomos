@@ -205,12 +205,22 @@ on_long_pressed (GtkWidget *self, double x, double y, GtkGesture *gesture)
 static void
 activate_cb (PhoshAppGridButton *self)
 {
-  PhoshAppTracker *app_tracker = phosh_shell_get_app_tracker (phosh_shell_get_default ());
   PhoshAppGridButtonPrivate *priv = phosh_app_grid_button_get_instance_private (self);
+  g_autofree char *cmd = NULL;
+  g_autoptr (GError) err = NULL;
+  const char *app_id;
 
-  g_return_if_fail (PHOSH_IS_APP_TRACKER (app_tracker));
+  g_return_if_fail (G_IS_APP_INFO (priv->info));
 
-  phosh_app_tracker_launch_app_info (app_tracker, priv->info);
+  app_id = g_app_info_get_id (priv->info);
+  if (!app_id || !*app_id)
+    return;
+
+  /* AtomOS: user launches go through rust atomos-app-handler. */
+  cmd = g_strdup_printf ("/usr/libexec/atomos-app-handler launch %s", app_id);
+  if (!g_spawn_command_line_async (cmd, &err))
+    g_warning ("Failed to launch via atomos-app-handler: %s", err->message);
+
   g_signal_emit (self, signals[APP_LAUNCHED], 0, priv->info);
 }
 

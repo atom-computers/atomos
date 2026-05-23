@@ -1,0 +1,19 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+
+  <!--
+      org.atomos.PhoshHome:
+
+      AtomOS hook: Rust atomos-app-handler drives fold/unfold instead of
+      Phosh shell.c auto-fold on toplevel count.
+  -->
+
+  <interface name="org.atomos.PhoshHome">
+    <method name="SetFolded"/>
+    <method name="SetUnfolded"/>
+    <method name="GetState">
+      <arg name="state" type="s" direction="out"/>
+    </method>
+  </interface>
+</node>

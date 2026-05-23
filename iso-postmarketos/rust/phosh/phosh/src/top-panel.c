@@ -1101,6 +1101,7 @@ phosh_top_panel_new (struct zwlr_layer_shell_v1          *layer_shell,
                        "namespace", "phosh top-panel",
                        /* drag-surface */
                        "layer-shell-effects", layer_shell_effects,
+                       "drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE,
                        "exclusive", PHOSH_TOP_BAR_HEIGHT,
                        "threshold", PHOSH_TOP_PANEL_DRAG_THRESHOLD,
                        NULL);

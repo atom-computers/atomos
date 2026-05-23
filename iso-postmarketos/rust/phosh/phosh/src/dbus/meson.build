@@ -201,6 +201,13 @@ dbus_server_protos = [
     false,
     false,
   ],
+  [
+    'phosh-atomos-home-dbus',
+    'org.atomos.PhoshHome.xml',
+    'org.atomos',
+    false,
+    false,
+  ],
 ]
 
 foreach p : dbus_client_protos + dbus_server_protos

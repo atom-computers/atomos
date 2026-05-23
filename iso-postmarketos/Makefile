@@ -80,4 +80,68 @@ build-qemu:
 qemu:
 	@bash "$(ROOT_DIR)/scripts/qemu/run-local-qemu.sh" "$(QEMU_PROFILE)"
 
-.PHONY: help build build-fairphone4 build-fairphone4-pmbootstrap build-qemu qemu
+# Layered QEMU integration suite (see tests/integration/conftest.py).
+# Runs L1 (args lint, no QEMU) first, then L2/L3 (boot survives + SSH up),
+# then L4/L5 (post-login Phosh lifetime + scanout resize stress). L4/L5
+# require an image built with PMOS_AUTOLOGIN=1 (already set in arm64-virt.env).
+test-qemu-integration:
+	cd "$(ROOT_DIR)/.." && python3 -m unittest discover -v \
+	    -s iso-postmarketos/tests -p 'test_qemu_run_args.py'
+	cd "$(ROOT_DIR)/.." && python3 -m unittest discover -v \
+	    -s iso-postmarketos/tests/integration -p 'test_qemu_boot_survives.py'
+	cd "$(ROOT_DIR)/.." && python3 -m unittest discover -v \
+	    -s iso-postmarketos/tests/integration -p 'test_qemu_phosh_login_lifetime.py'
+
+# Diagnose the "lockscreen -> load -> lockscreen" cycle over SSH.
+# Polls greetd/phoc/phosh/gnome-session pids in a window and reports
+# which side dies first plus journal/dmesg/coredump excerpts.
+#   Defaults: QEMU profile, ssh user@localhost:2222, 30s window.
+#   Override: SSH_TARGET=user@172.16.42.1 PROFILE=$(FP4_PROFILE) \
+#             OBSERVE=60 make diagnose-session-restart-loop
+SSH_TARGET ?= user@localhost
+PROFILE    ?= $(QEMU_PROFILE)
+OBSERVE    ?= 30
+diagnose-session-restart-loop:
+	ATOMOS_DIAG_OBSERVE_SECONDS=$(OBSERVE) \
+	    bash "$(ROOT_DIR)/scripts/app-handler/diagnose-session-restart-loop.sh" \
+	        "$(PROFILE)" "$(SSH_TARGET)"
+
+# One-shot variant: "session never came up after unlock" (no cycle).
+diagnose-session-boot-loop:
+	bash "$(ROOT_DIR)/scripts/app-handler/diagnose-session-boot-loop.sh" \
+	    "$(PROFILE)" "$(SSH_TARGET)"
+
+# Bisect the post-login Phosh SIGSEGV by toggling the runtime knobs.
+# Rewrites /etc/atomos/phosh-profile.env with all knobs OFF, optionally
+# removes /etc/xdg/autostart/atomos-app-handler.desktop, restarts greetd,
+# and holds for HOLD seconds. Splits "always-on phosh patches" from
+# "runtime-gated phosh patches" as the SIGSEGV source.
+#   HOLD                     window after greetd restart (default 30)
+#   DISABLE_HANDLER_AUTOSTART also remove the layer-shell handler at-login (default 1)
+#   REVERT_ON_EXIT           restore the original env on exit (default 0)
+HOLD                     ?= 30
+DISABLE_HANDLER_AUTOSTART ?= 1
+REVERT_ON_EXIT            ?= 0
+bisect-phosh-runtime-knobs:
+	ATOMOS_BISECT_HOLD_SECONDS=$(HOLD) \
+	ATOMOS_BISECT_DISABLE_HANDLER_AUTOSTART=$(DISABLE_HANDLER_AUTOSTART) \
+	ATOMOS_BISECT_REVERT_ON_EXIT=$(REVERT_ON_EXIT) \
+	    bash "$(ROOT_DIR)/scripts/app-handler/bisect-phosh-runtime-knobs.sh" \
+	        "$(PROFILE)" "$(SSH_TARGET)"
+
+# Capture a core dump from the post-login Phosh SIGSEGV and run gdb on it.
+# Use after bisect-phosh-runtime-knobs returns the "always-on phosh patch"
+# verdict, to pinpoint the faulting frame.
+#   WAIT          poll window for the core file (default 30)
+#   FETCH_CORE    scp the core back to host (default 0; cores are 50–200 MB)
+WAIT       ?= 30
+FETCH_CORE ?= 0
+capture-phosh-coredump:
+	ATOMOS_COREDUMP_WAIT_SECONDS=$(WAIT) \
+	ATOMOS_COREDUMP_FETCH=$(FETCH_CORE) \
+	    bash "$(ROOT_DIR)/scripts/app-handler/capture-phosh-coredump.sh" \
+	        "$(PROFILE)" "$(SSH_TARGET)"
+
+.PHONY: help build build-fairphone4 build-fairphone4-pmbootstrap build-qemu qemu \
+        test-qemu-integration diagnose-session-restart-loop diagnose-session-boot-loop \
+        bisect-phosh-runtime-knobs capture-phosh-coredump

@@ -10,7 +10,7 @@
 # orchestrator just calls one of the entry points.
 #
 # Required globals: ENGINE ALPINE_IMAGE ROOTFS_VOLUME
-# BUILD_OVERVIEW_CHAT_UI BUILD_HOME_BG
+# BUILD_OVERVIEW_CHAT_UI BUILD_HOME_BG BUILD_APP_HANDLER
 
 _atomos_verify_predicates_body() {
     cat <<'PRED_BODY'
@@ -262,6 +262,12 @@ if [ "\${BUILD_OVERVIEW_CHAT_UI:-1}" = "1" ]; then
     check_x /target/usr/local/bin/atomos-overview-chat-ui
     check_x /target/usr/bin/atomos-overview-chat-ui
     check_x /target/usr/libexec/atomos-overview-chat-ui
+    check_x /target/usr/libexec/atomos-overview-chat-submit
+    check_grep "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME" /target/usr/libexec/atomos-overview-chat-ui
+    check_grep "atomos-overview-chat-ui.disabled" /target/usr/libexec/atomos-overview-chat-ui
+    check_f /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
+    check_grep "Exec=/usr/libexec/atomos-overview-chat-ui --show" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
+    check_grep "OnlyShowIn=GNOME;Phosh;" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
 fi
 
 if [ "\${BUILD_HOME_BG:-1}" = "1" ]; then
@@ -285,6 +291,52 @@ if [ "\${BUILD_HOME_BG:-1}" = "1" ]; then
     done
 fi
 
+if [ "\${BUILD_APP_HANDLER:-1}" = "1" ]; then
+    echo "--- atomos-app-handler files ---"
+    check_x /target/usr/local/bin/atomos-app-handler
+    check_x /target/usr/bin/atomos-app-handler
+    check_x /target/usr/libexec/atomos-app-handler
+    check_grep "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" /target/usr/libexec/atomos-app-handler
+    check_grep "atomos-app-handler.disabled" /target/usr/libexec/atomos-app-handler
+    echo "--- atomos phosh-profile.env (phosh-session sources before phosh shell) ---"
+    check_f /target/etc/atomos/phosh-profile.env
+    check_grep "^ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1" /target/etc/atomos/phosh-profile.env
+    check_grep "^ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1" /target/etc/atomos/phosh-profile.env
+    check_grep "^ATOMOS_APP_HANDLER_TAKES_OVER=1" /target/etc/atomos/phosh-profile.env
+
+    echo "--- atomos stack integration contract (Phosh + app-handler) ---"
+    check_f /target/etc/atomos/app-handler-contract
+    check_f /target/etc/atomos/phosh-integration-contract
+    check_grep "^app-handler-v1-launch-switcher-dbus-home$" /target/etc/atomos/app-handler-contract
+    check_grep "^app-handler-v1-launch-switcher-dbus-home$" /target/etc/atomos/phosh-integration-contract
+    if [ -f /target/etc/atomos/app-handler-contract ] && [ -f /target/etc/atomos/phosh-integration-contract ]; then
+        hv="\$(tr -d '[:space:]' < /target/etc/atomos/app-handler-contract)"
+        pv="\$(tr -d '[:space:]' < /target/etc/atomos/phosh-integration-contract)"
+        if [ "\$hv" = "\$pv" ]; then
+            echo "  ok  phosh-integration-contract matches app-handler-contract (\$hv)"
+        else
+            echo "  FAIL contract mismatch: handler=\$hv phosh=\$pv" >&2
+            FAIL=1
+        fi
+    fi
+    libphosh="\$(find /target/usr/lib /target/lib -maxdepth 2 -name 'libphosh-*.so*' ! -name '*.a' 2>/dev/null | head -n 1)"
+    if [ -n "\$libphosh" ] && strings "\$libphosh" 2>/dev/null | grep -q 'org.atomos.PhoshHome'; then
+        echo "  ok  strings \$libphosh contains org.atomos.PhoshHome"
+    else
+        echo "  FAIL libphosh missing org.atomos.PhoshHome (stock phosh in image?)" >&2
+        FAIL=1
+    fi
+    echo "--- atomos-app-handler hybrid lifecycle contract ---"
+    check_grep "action=show" /target/usr/libexec/atomos-app-handler
+    check_grep "action=hide" /target/usr/libexec/atomos-app-handler
+    check_grep "signal_show" /target/usr/libexec/atomos-app-handler
+    check_grep "signal_hide" /target/usr/libexec/atomos-app-handler
+    check_grep "kill -USR1"  /target/usr/libexec/atomos-app-handler
+    check_grep "kill -USR2"  /target/usr/libexec/atomos-app-handler
+    check_f /target/etc/xdg/autostart/atomos-app-handler.desktop
+    check_grep "Exec=/usr/libexec/atomos-app-handler --start" /target/etc/xdg/autostart/atomos-app-handler.desktop
+fi
+
 if [ "\$FAIL" -ne 0 ]; then
     echo "ERROR: build-fairphone4-v2 final verification failed (see above)." >&2
     exit 1
@@ -299,6 +351,7 @@ atomos_verify_rootfs() {
         -v "$ROOTFS_VOLUME:/target" \
         -e BUILD_OVERVIEW_CHAT_UI="$BUILD_OVERVIEW_CHAT_UI" \
         -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+        -e BUILD_APP_HANDLER="${BUILD_APP_HANDLER:-1}" \
         -e ATOMOS_FP4V2_DEBUG_NO_GREETD="${ATOMOS_FP4V2_DEBUG_NO_GREETD:-0}" \
         "$ALPINE_IMAGE" /bin/sh -eu -c "$(_atomos_verify_container_body)"
 }

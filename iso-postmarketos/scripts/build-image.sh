@@ -3,19 +3,24 @@ set -euo pipefail
 
 usage() {
     cat >&2 <<'EOF'
-Usage: build-image.sh [profile-env] [--without-overview-chat-ui] [--without-home-bg]
+Usage: build-image.sh [profile-env] [--without-overview-chat-ui] [--without-home-bg] [--without-app-switcher]
 
 Options:
   --without-overview-chat-ui, --skip-overview-chat-ui
       Skip building/installing atomos-overview-chat-ui during image build.
   --without-home-bg, --skip-home-bg
       Skip building/installing atomos-home-bg during image build.
+  --without-app-switcher, --skip-app-switcher
+      Skip building/installing atomos-app-handler during image build.
+      Legacy --without-swipe-bridge / --skip-swipe-bridge accepted as
+      aliases (the app-switcher folded the swipe-bridge into one crate).
 EOF
 }
 
 PROFILE_ENV=""
 BUILD_OVERVIEW_CHAT_UI=1
 BUILD_HOME_BG=1
+BUILD_APP_HANDLER=1
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -24,6 +29,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         --without-home-bg|--skip-home-bg)
             BUILD_HOME_BG=0
+            ;;
+        --without-app-switcher|--skip-app-switcher|--without-swipe-bridge|--skip-swipe-bridge)
+            BUILD_APP_HANDLER=0
             ;;
         -h|--help)
             usage
@@ -155,10 +163,8 @@ verify_vendor_phosh_source_contract() {
     fi
     local src_dir="$ROOT_DIR/rust/phosh/phosh"
     [ -d "$src_dir" ] || return 0
-    echo "=== Verify local Phosh fork source tree ==="
-    test -f "$src_dir/meson.build"
-    test -f "$src_dir/src/home.c"
-    test -f "$src_dir/src/ui/home.ui"
+    echo "=== Verify local Phosh fork source tree (AtomOS app-handler D-Bus) ==="
+    bash "$ROOT_DIR/scripts/phosh/verify-vendor-phosh-build.sh" --source-only
 }
 
 warn_if_workdir_on_unreliable_fs() {
@@ -1079,6 +1085,7 @@ verify_final_rootfs_customizations() {
     echo "=== Final rootfs verification (pre-resync) ==="
     local must_have_overview="${BUILD_OVERVIEW_CHAT_UI:-1}"
     local must_have_home_bg="${BUILD_HOME_BG:-1}"
+    local must_have_app_switcher="${BUILD_APP_HANDLER:-1}"
     local must_have_vendor_phosh="${USE_VENDOR_PHOSH:-0}"
     pmb chroot -r -- /bin/sh -eu -c '
         fail=0
@@ -1179,6 +1186,31 @@ verify_final_rootfs_customizations() {
             fi
             [ "$fail" -eq 0 ] && echo "final-verify: atomos-home-bg binary + launcher + content dir present"
         fi
+        if [ "'"$must_have_app_switcher"'" = "1" ]; then
+            for p in /usr/local/bin/atomos-app-handler /usr/bin/atomos-app-handler /usr/libexec/atomos-app-handler; do
+                if ! test -x "$p"; then
+                    echo "FINAL-VERIFY FAIL: $p missing" >&2
+                    fail=1
+                fi
+            done
+            if ! test -f /etc/atomos/app-handler-contract; then
+                echo "FINAL-VERIFY FAIL: /etc/atomos/app-handler-contract missing" >&2
+                fail=1
+            fi
+            if ! grep -q "app-handler-v1-launch-switcher-dbus-home" /etc/atomos/app-handler-contract; then
+                echo "FINAL-VERIFY FAIL: app-switcher lifecycle contract marker mismatch" >&2
+                fail=1
+            fi
+            if ! test -f /etc/xdg/autostart/atomos-app-handler.desktop; then
+                echo "FINAL-VERIFY FAIL: /etc/xdg/autostart/atomos-app-handler.desktop missing (handle bar autostart)" >&2
+                fail=1
+            fi
+            if ! grep -q "signal_show" /usr/libexec/atomos-app-handler; then
+                echo "FINAL-VERIFY FAIL: launcher missing signal_show / signal_hide bridge" >&2
+                fail=1
+            fi
+            [ "$fail" -eq 0 ] && echo "final-verify: atomos-app-handler binary + launcher + autostart + lifecycle contract present"
+        fi
         if [ "$fail" -ne 0 ]; then
             if [ "${ATOMOS_SKIP_FINAL_VERIFY:-0}" = "1" ]; then
                 echo "WARN: final rootfs verification failed; continuing because ATOMOS_SKIP_FINAL_VERIFY=1." >&2
@@ -1207,14 +1239,33 @@ verify_overview_chat_ui_launcher_contract() {
         grep -q "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME" /usr/libexec/atomos-overview-chat-ui
         grep -q "atomos-overview-chat-ui.disabled" /usr/libexec/atomos-overview-chat-ui
         grep -q "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS" /usr/libexec/atomos-overview-chat-ui
-        test -f /etc/atomos/overview-chat-ui-overlay-contract
-        grep -q "overview-chat-ui-overlay-v5-lifecycle-only" /etc/atomos/overview-chat-ui-overlay-contract
-        test ! -e /etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        test -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        grep -q "Exec=/usr/libexec/atomos-overview-chat-ui --show" /etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        grep -q "OnlyShowIn=GNOME;Phosh;" /etc/xdg/autostart/atomos-overview-chat-ui.desktop
         test ! -e /usr/libexec/atomos-overview-chat-ui-boot
         test ! -e /usr/lib/systemd/user/atomos-overview-chat-ui.service
         test ! -e /etc/systemd/user/default.target.wants/atomos-overview-chat-ui.service
         test ! -e /etc/atomos/overview-chat-ui-always-on
     "
+}
+
+verify_app_switcher_launcher_contract() {
+    echo "=== Verify atomos-app-handler launcher contract in rootfs ==="
+    pmb chroot -r -- /bin/sh -eu -c '
+        test -x /usr/libexec/atomos-app-handler
+        grep -q "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" /usr/libexec/atomos-app-handler
+        grep -q "atomos-app-handler.disabled" /usr/libexec/atomos-app-handler
+        grep -q "action=show"  /usr/libexec/atomos-app-handler
+        grep -q "action=hide"  /usr/libexec/atomos-app-handler
+        grep -q "signal_show"  /usr/libexec/atomos-app-handler
+        grep -q "signal_hide"  /usr/libexec/atomos-app-handler
+        grep -q "kill -USR1"   /usr/libexec/atomos-app-handler
+        grep -q "kill -USR2"   /usr/libexec/atomos-app-handler
+        test -f /etc/atomos/app-handler-contract
+        grep -q "app-handler-v1-launch-switcher-dbus-home" /etc/atomos/app-handler-contract
+        test -f /etc/xdg/autostart/atomos-app-handler.desktop
+        grep -q "Exec=/usr/libexec/atomos-app-handler --start" /etc/xdg/autostart/atomos-app-handler.desktop
+    '
 }
 
 verify_stock_phosh_origin() {
@@ -1999,6 +2050,14 @@ if [ -z "${ATOMOS_HOME_BG_INSTALL_AUTOSTART:-}" ]; then
     export ATOMOS_HOME_BG_INSTALL_AUTOSTART=1
     echo "=== Defaulting ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 (parity with build-qemu) ==="
 fi
+if [ -z "${ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT:-}" ]; then
+    export ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1
+    echo "=== Defaulting ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 (parity with build-qemu) ==="
+fi
+if [ -z "${ATOMOS_APP_HANDLER_INSTALL_AUTOSTART:-}" ]; then
+    export ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1
+    echo "=== Defaulting ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 (handle-bar autostart; lifecycle hooks signal SIGUSR1/2) ==="
+fi
 
 echo "=== Apply AtomOS rootfs customizations ==="
 bash "$ROOT_DIR/scripts/rootfs/wire-custom-apk-repos.sh" "$PROFILE_ENV_SOURCE"
@@ -2046,6 +2105,21 @@ else
     echo "=== Skip atomos-home-bg (BUILD_HOME_BG=0) ==="
 fi
 
+if [ "$BUILD_APP_HANDLER" -eq 1 ]; then
+    APP_SWITCHER_BUILD="$ROOT_DIR/scripts/app-handler/build-app-handler.sh"
+    APP_SWITCHER_INSTALL="$ROOT_DIR/scripts/app-handler/install-app-handler.sh"
+    if [ ! -f "$APP_SWITCHER_BUILD" ] || [ ! -f "$APP_SWITCHER_INSTALL" ]; then
+        echo "=== Skip atomos-app-handler (helper scripts missing on this host) ==="
+        BUILD_APP_HANDLER=0
+    else
+        bash "$APP_SWITCHER_BUILD" "$PROFILE_ENV_SOURCE"
+        bash "$APP_SWITCHER_INSTALL" "$PROFILE_ENV_SOURCE"
+    fi
+    unset APP_SWITCHER_BUILD APP_SWITCHER_INSTALL
+else
+    echo "=== Skip atomos-app-handler (BUILD_APP_HANDLER=0) ==="
+fi
+
 WALLPAPER_SRC="$ROOT_DIR/data/wallpapers/gargantua-black.jpg"
 
 if [ -n "$WALLPAPER_SRC" ] && [ -f "$WALLPAPER_SRC" ]; then
@@ -2055,10 +2129,14 @@ if [ -n "$WALLPAPER_SRC" ] && [ -f "$WALLPAPER_SRC" ]; then
 fi
 
 bash "$ROOT_DIR/scripts/phosh/apply-atomos-phosh-dconf.sh" "$PROFILE_ENV_SOURCE"
-ATOMOS_LOCK_PARITY=1 bash "$ROOT_DIR/scripts/rootfs/apply-overlay.sh" "$PROFILE_ENV_SOURCE"
+ATOMOS_LOCK_PARITY=1 \
+    bash "$ROOT_DIR/scripts/rootfs/apply-overlay.sh" "$PROFILE_ENV_SOURCE"
 verify_overview_chat_ui_launcher_contract
 if [ "$BUILD_HOME_BG" -eq 1 ]; then
     verify_home_bg_launcher_contract
+fi
+if [ "$BUILD_APP_HANDLER" -eq 1 ]; then
+    verify_app_switcher_launcher_contract
 fi
 
 # Re-promote vendor phosh after every apk-mutating customization step has

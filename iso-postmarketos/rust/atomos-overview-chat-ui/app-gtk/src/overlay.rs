@@ -35,7 +35,7 @@ pub fn configure_mobile_overlay_surface(win: &adw::ApplicationWindow) -> bool {
     // On Phosh, render as a layer-shell surface so it participates in shell stacking.
     win.init_layer_shell();
     win.set_namespace(Some(atomos_overview_chat_ui::LAYER_SHELL_NAMESPACE));
-    // Keep the surface behind launcher/top overlays by default.
+    // Phosh sets top|bottom on each --show; default top when env unset.
     // Override with ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay|top|bottom|background.
     win.set_layer(target_layer());
     win.set_anchor(Edge::Left, true);

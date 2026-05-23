@@ -1,0 +1,22 @@
+[package]
+name = "atomos-app-handler-app"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+atomos-app-handler = { path = "../core" }
+anyhow = "1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { package = "gtk4", version = "0.10" }
+gtk4-layer-shell = "0.7"
+wayland-client = "0.31"
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+async-channel = "2"
+libc = "0.2"
+
+[[bin]]
+name = "atomos-app-handler"
+path = "src/main.rs"

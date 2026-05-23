@@ -1,7 +1,8 @@
 /*
  * AtomOS home-background animation: WebGL black-hole / accretion-disk
  * shader. Runtime entry point loaded by `index.html` inside the
- * WebKitGTK webview that `atomos-home-bg` puts on the `bottom`
+ * WebKitGTK webview that `atomos-home-bg` puts on the `bottom` layer while
+ * folded and on `top` when Phosh opens the overview (see phosh home.c).
  * layer-shell layer.
  *
  * This file is HAND-DERIVED from `event-horizon.tsx` (the canonical

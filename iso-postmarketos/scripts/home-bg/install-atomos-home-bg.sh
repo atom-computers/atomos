@@ -89,9 +89,8 @@ render_launcher() {
 set -eu
 BIN="/usr/local/bin/atomos-home-bg"
 export ATOMOS_HOME_BG_ENABLE_RUNTIME="${ATOMOS_HOME_BG_ENABLE_RUNTIME:-__HOME_BG_RUNTIME_DEFAULT__}"
-# Default `bottom` so the webview sits above the session wallpaper (background
-# layer) and below overview-chat-ui (top). Use `background` to share the lowest
-# layer with other wallpaper clients (stacking is compositor-dependent).
+# Default `bottom` while Phosh is folded (below app toplevels). Phosh spawns
+# `--show` with `ATOMOS_HOME_BG_LAYER=top` when the overview opens.
 export ATOMOS_HOME_BG_LAYER="${ATOMOS_HOME_BG_LAYER:-bottom}"
 # Non-interactive by default; pointer/touch falls through to phosh overview.
 export ATOMOS_HOME_BG_INTERACTIVE="${ATOMOS_HOME_BG_INTERACTIVE:-0}"
@@ -217,7 +216,7 @@ case "${1:-}" in
             exit 0
         fi
         bind_phosh_session_env_if_missing
-        logger -t atomos-home-bg "action=show wayland=${WAYLAND_DISPLAY:-<unset>}"
+        logger -t atomos-home-bg "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_HOME_BG_LAYER:-bottom}"
         # Surface the GL/WebKit env in effect — when the WebGL shader in
         # the placeholder content fails on device, this is the first
         # thing to look at via `journalctl -t atomos-home-bg`.
@@ -225,6 +224,8 @@ case "${1:-}" in
             "gl-env: LIBGL_ALWAYS_SOFTWARE=${LIBGL_ALWAYS_SOFTWARE:-<unset>} \
 GSK_RENDERER=${GSK_RENDERER:-<unset>} \
 WEBKIT_DISABLE_DMABUF_RENDERER=${WEBKIT_DISABLE_DMABUF_RENDERER:-<unset>}"
+        # Restart so a new ATOMOS_HOME_BG_LAYER (e.g. top for overview) applies.
+        stop_ui
         start_ui
         ;;
     --hide)
@@ -265,8 +266,9 @@ render_autostart_desktop() {
 [Desktop Entry]
 Type=Application
 Name=AtomOS Home Background
-Comment=Non-interactive WebKit on layer-shell (default above session wallpaper, below chat UI)
+Comment=Non-interactive WebKit on layer-shell (bottom when folded; Phosh promotes to top for overview)
 Exec=/usr/libexec/atomos-home-bg --show
+Environment=ATOMOS_HOME_BG_LAYER=bottom
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Phase=Applications

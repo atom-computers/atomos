@@ -1,0 +1,5 @@
+[workspace]
+members = ["core", "app-gtk", "app-egui"]
+resolver = "2"
+# Production image builds only need core + app-gtk; egui is a dev preview.
+default-members = ["core", "app-gtk"]

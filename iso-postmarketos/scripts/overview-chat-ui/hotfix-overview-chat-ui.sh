@@ -179,7 +179,7 @@ export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENA
 # Keep disabled by default; set to 1 to opt in.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-0}"
 # Keep visible by default while diagnosing fold/unfold lifecycle issues.
-export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-1}"
+export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-0}"
 # Safety fallback: some target GTK stacks crash while parsing advanced CSS.
 # Set to 0 to re-enable themed CSS after confirming target stability.
 export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS:-1}"
@@ -192,7 +192,7 @@ export ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE="${ATOMOS_OVERVIEW_CHAT_UI_SKI
 export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT="${ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT:-1}"
 # Lifecycle mode controls app visibility; default layer should remain visible on home.
-export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-top}"
+export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
 # Phosh runs this as the logged-in user; prefer session runtime dir.
@@ -313,7 +313,8 @@ case "${1:-}" in
             exit 0
         fi
         bind_phosh_session_env_if_missing
-        logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} runtime=${XDG_RUNTIME_DIR:-<unset>}"
+        logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+        stop_ui
         start_ui
         ;;
     --hide)
@@ -375,6 +376,39 @@ if [ "$SKIP_BIN_INSTALL" != "1" ]; then
     install -m 755 "$REMOTE_TMP_DIR/atomos-overview-chat-ui-bin" /usr/local/bin/atomos-overview-chat-ui
     ln -sf /usr/local/bin/atomos-overview-chat-ui /usr/bin/atomos-overview-chat-ui
 fi
+
+# Restore the XDG autostart that commit d6405345 "fix: home screen" removed.
+# Without it, the launcher at /usr/libexec/atomos-overview-chat-ui is never
+# invoked by the session, so the layer-shell chat overlay does not appear
+# on the home screen even when the binary is correctly installed.
+install -d /etc/xdg/autostart
+cat > /etc/xdg/autostart/atomos-overview-chat-ui.desktop << 'AUTOSTART_EOF'
+[Desktop Entry]
+Type=Application
+Name=AtomOS Overview Chat UI
+Comment=Layer-shell chat overlay that follows the Phosh home screen.
+Exec=/usr/libexec/atomos-overview-chat-ui --show
+OnlyShowIn=GNOME;Phosh;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+AUTOSTART_EOF
+chmod 0644 /etc/xdg/autostart/atomos-overview-chat-ui.desktop
+
+# The launcher gates --show on ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=1.
+# Plumb the runtime gate through /etc/atomos/phosh-profile.env so the next
+# session inherits it. Idempotent: rewrites only if missing or set to 0.
+install -d /etc/atomos
+PROFILE_ENV=/etc/atomos/phosh-profile.env
+if [ -f "\$PROFILE_ENV" ]; then
+    if grep -q '^ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=' "\$PROFILE_ENV"; then
+        sed -i 's/^ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=.*/ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=1/' "\$PROFILE_ENV"
+    else
+        printf '\nATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=1\n' >> "\$PROFILE_ENV"
+    fi
+else
+    printf 'ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=1\n' > "\$PROFILE_ENV"
+fi
+chmod 0644 "\$PROFILE_ENV"
 
 if [ -n "$REMOTE_RESTART_CMD" ]; then
     /bin/sh -eu -c "$REMOTE_RESTART_CMD"

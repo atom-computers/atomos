@@ -26,7 +26,6 @@
 #include <handy.h>
 
 #define OVERVIEW_ICON_SIZE 64
-#define ATOMOS_OVERVIEW_CHAT_UI_APP_ID "org.atomos.OverviewChatUi"
 
 /**
  * PhoshOverview:
@@ -65,6 +64,14 @@ typedef struct {
   PhoshSplashManager *splash_manager;  /* unowned */
 
   int has_activities;
+
+  /* AtomOS: when set, set_has_activities() must keep the carousel hidden
+   * regardless of the running-toplevel count, because the rust
+   * atomos-app-switcher overlay owns the running-app switcher surface and
+   * the legacy carousel would otherwise re-show itself the moment a new
+   * toplevel maps. The app grid below it stays unaffected so the app grid
+   * button still opens a usable launcher panel. */
+  gboolean force_running_activities_hidden;
 } PhoshOverviewPrivate;
 
 
@@ -531,11 +538,6 @@ toplevel_to_activity (PhoshOverview *self, PhoshToplevel *toplevel)
   app_id = phosh_toplevel_get_app_id (toplevel);
   title = phosh_toplevel_get_title (toplevel);
 
-  if (g_strcmp0 (app_id, ATOMOS_OVERVIEW_CHAT_UI_APP_ID) == 0) {
-    g_debug ("Skipping overview activity for shell-owned app-id '%s'", app_id);
-    return;
-  }
-
   if (phosh_toplevel_get_parent_handle (toplevel))
     parent = phosh_toplevel_manager_get_parent (m, toplevel);
   if (parent)
@@ -595,14 +597,61 @@ set_has_activities (PhoshOverview *self)
 {
   PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
   gboolean has_activities;
+  gboolean carousel_visible;
 
   has_activities = !!hdy_carousel_get_n_pages (HDY_CAROUSEL (priv->carousel_running_activities));
-  if (priv->has_activities == has_activities)
+
+  /* AtomOS: honour force-hide even if upstream has_activities flips, so
+   * the rust app-switcher overlay never has the legacy carousel pop back
+   * underneath it when a new toplevel maps. The has_activities property
+   * itself still reflects upstream truth — callers that key off it (e.g.
+   * home.c bottom-edge drag handling) keep working unchanged. */
+  carousel_visible = has_activities && !priv->force_running_activities_hidden;
+
+  if (priv->has_activities == has_activities) {
+    /* Even if has_activities didn't change, honour any pending force-hide
+     * toggle so the carousel widget visibility tracks the flag. */
+    gtk_widget_set_visible (GTK_WIDGET (priv->carousel_running_activities), carousel_visible);
     return;
+  }
 
   priv->has_activities = has_activities;
-  gtk_widget_set_visible (GTK_WIDGET (priv->carousel_running_activities), has_activities);
+  gtk_widget_set_visible (GTK_WIDGET (priv->carousel_running_activities), carousel_visible);
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_HAS_ACTIVITIES]);
+}
+
+
+/**
+ * phosh_overview_set_running_activities_visible:
+ * @self: The overview
+ * @visible: %TRUE to show the carousel (default), %FALSE to keep it hidden
+ *
+ * AtomOS hook. When @visible is %FALSE, the running-activities carousel
+ * stays hidden even if new toplevels map (set_has_activities() honours
+ * the flag). The app grid + search half of the overview is unaffected,
+ * so the app grid button still opens a usable launcher panel while the
+ * rust atomos-app-switcher overlay owns the running-app switcher.
+ */
+void
+phosh_overview_set_running_activities_visible (PhoshOverview *self, gboolean visible)
+{
+  PhoshOverviewPrivate *priv;
+  gboolean force_hidden;
+
+  g_return_if_fail (PHOSH_IS_OVERVIEW (self));
+  priv = phosh_overview_get_instance_private (self);
+
+  force_hidden = !visible;
+  if (priv->force_running_activities_hidden == force_hidden)
+    return;
+
+  priv->force_running_activities_hidden = force_hidden;
+  /* Re-derive visibility from the upstream has_activities truth + the
+   * new flag instead of overriding to false unconditionally, so toggling
+   * the flag back on restores the carousel iff there are actually
+   * running toplevels. */
+  gtk_widget_set_visible (GTK_WIDGET (priv->carousel_running_activities),
+                          priv->has_activities && !force_hidden);
 }
 
 
@@ -853,6 +902,10 @@ phosh_overview_init (PhoshOverview *self)
   }
 
   priv->splash_manager = phosh_shell_get_splash_manager (shell);
+
+  /* AtomOS: app switching lives in rust atomos-app-handler; hide the Phosh
+   * activity carousel so users never flash the upstream GNOME Mobile switcher. */
+  phosh_overview_set_running_activities_visible (self, FALSE);
 }
 
 

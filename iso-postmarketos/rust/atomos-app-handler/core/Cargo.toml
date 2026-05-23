@@ -1,0 +1,12 @@
+[package]
+name = "atomos-app-handler"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+
+[dev-dependencies]
+atomos-home-bg = { path = "../../atomos-home-bg/core" }
+atomos-overview-chat-ui = { path = "../../atomos-overview-chat-ui/core" }

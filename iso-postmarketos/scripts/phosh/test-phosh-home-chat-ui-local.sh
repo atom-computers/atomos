@@ -89,22 +89,35 @@ require_pattern "gtk_widget_set_visible \\(GTK_WIDGET \\(app_grid\\), FALSE\\);"
 require_pattern "Ask AtomOS" "chat placeholder text present"
 require_pattern "last_reference_height" "configure-height fallback state tracked"
 require_pattern "reference_height_for_margin \\(PhoshHome \\*self, gint configured_height\\)" "margin reference helper uses home state"
-require_pattern "phosh_drag_surface_get_drag_handle" "drag handle keeps previous stable value"
-require_pattern "keeping previous drag handle" "failed coordinate path avoids collapsing handle"
+require_pattern "phosh_overview_has_running_activities" "home drag-mode follows vendor running-activities gate"
+require_pattern "handle = PHOSH_HOME_BAR_HEIGHT;" "failed coordinate path falls back to home bar handle"
 require_pattern "on_chat_dismiss_tap_pressed" "outside-tap dismiss callback present"
 require_pattern "gtk_window_set_focus \\(GTK_WINDOW \\(self\\), NULL\\);" "outside-tap dismiss clears focus"
 require_pattern "static gboolean enabled = TRUE;" "app-grid toggle defaults enabled"
 require_pattern "enabled = g_strcmp0 \\(env, \"0\"\\) != 0;" "app-grid toggle supports explicit env opt-out"
-require_pattern "home-bar tap should not toggle fold/unfold" "home-bar tap no longer toggles fold state"
-require_pattern "ignoring fold callback while app-grid is opening/visible" "fold callback guarded while app-grid active"
-require_pattern "\"exclusive-zone\", 0" "home surface reserves no divider strip exclusive zone"
+require_pattern "phosh_home_set_state \\(self, !self->state\\);" "mouse click on home bar toggles fold/unfold (vendor parity)"
+require_pattern "switcher: tapping an activity card must dismiss the overview" "fold_cb always folds for switcher (vendor parity)"
+require_pattern "\"exclusive-zone\", 0" "home surface overlays app content (no reserved bottom strip)"
 require_pattern "\"exclusive\", 0" "home drag-surface exclusive area disabled"
-require_pattern "\"drag-mode\", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE" "home drag-mode defaults to none"
+require_pattern "\"drag-mode\", PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE" "home drag-mode enables phoc swipe-up"
+require_pattern "#define PHOSH_HOME_DRAG_THRESHOLD 0.0" "home swipe drag claims immediately (no motion threshold)"
+require_pattern "ATOMOS_APP_HANDLER_LAUNCHER_PATH" "home exposes app-handler launcher path"
+require_pattern "atomos_phosh_sync_app_handler_lifecycle" "home syncs app-handler lifecycle with home state"
+require_pattern "action = \"--hide\"" "home requests app-handler --hide on fold"
+require_pattern "Do NOT --show on unfold" "home must not open switcher overlay on unfold"
+require_pattern "ATOMOS_HOME_BG_LAUNCHER_PATH" "home-bg launcher path wired"
+require_pattern "atomos_phosh_sync_home_bg_layer" "home promotes home-bg layer on overview unfold"
+require_pattern 'layer = "top"' "overview unfold uses home-bg top layer"
+require_pattern 'layer = "bottom"' "overview fold restores home-bg bottom layer"
+require_pattern "atomos_phosh_sync_overview_chat_ui_lifecycle" "home syncs overview-chat-ui layer with home state"
+require_pattern "ATOMOS_OVERVIEW_CHAT_UI_LAYER=%s %s --show" "overview chat uses layer-prefixed --show"
+require_pattern 'layer = "top"' "overview unfold uses chat top layer"
+require_pattern 'layer = "bottom"' "overview fold demotes chat to bottom layer"
 
-if rg -n "\"drag-mode\", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE" "$TOP_PANEL_C" >/dev/null; then
-    echo "PASS: top-panel drag-mode defaults to none"
+if rg -n "\"drag-mode\", PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE" "$TOP_PANEL_C" >/dev/null; then
+    echo "PASS: top-panel drag-mode enables phoc swipe-down"
 else
-    echo "FAIL: top-panel drag-mode defaults to none (missing pattern)" >&2
+    echo "FAIL: top-panel drag-mode enables phoc swipe-down (missing pattern)" >&2
     exit 1
 fi
 

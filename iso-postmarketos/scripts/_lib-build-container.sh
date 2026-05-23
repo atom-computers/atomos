@@ -6,7 +6,7 @@
 #
 # Required globals: ENGINE ALPINE_IMAGE ROOTFS_VOLUME REPO_TOP
 # MESON_CACHE_MOUNT PMOS_KEY_HOST PMOS_REPO_URL USE_VENDOR_PHOSH
-# BUILD_HOME_BG
+# BUILD_HOME_BG BUILD_APP_HANDLER
 
 atomos_build_heavy_components() {
     echo "=== build-fairphone4-v2: build vendor phosh + Rust components ==="
@@ -18,6 +18,7 @@ atomos_build_heavy_components() {
         -v "$PMOS_KEY_HOST:/tmp/pmos.rsa.pub:ro" \
         -e PMOS_REPO_URL="$PMOS_REPO_URL" \
         -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+        -e BUILD_APP_HANDLER="${BUILD_APP_HANDLER:-1}" \
         -e USE_VENDOR_PHOSH="$USE_VENDOR_PHOSH" \
         -e ATOMOS_CCACHE_MAXSIZE="${ATOMOS_CCACHE_MAXSIZE:-5G}" \
         "$ALPINE_IMAGE" /bin/sh \

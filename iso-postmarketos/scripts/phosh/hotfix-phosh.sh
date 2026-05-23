@@ -68,7 +68,14 @@ fi
 REMOTE_TMP_DIR="${ATOMOS_PHOSH_REMOTE_TMP:-/tmp/atomos-phosh-hotfix.$$}"
 REMOTE_SRC_DIR="${ATOMOS_PHOSH_REMOTE_SRC:-/usr/local/src/atomos-phosh}"
 REMOTE_BUILD_DIR="${ATOMOS_PHOSH_REMOTE_BUILD_DIR:-$REMOTE_SRC_DIR/_build-atomos-hotfix}"
-REMOTE_PREFIX="${ATOMOS_PHOSH_REMOTE_PREFIX:-/usr/local}"
+# greetd/phrog always exec /usr/libexec/phosh — prefix must be /usr or the
+# hotfix builds successfully but the running session never changes.
+REMOTE_PREFIX="${ATOMOS_PHOSH_REMOTE_PREFIX:-/usr}"
+PHOSH_RUNTIME_BIN="${ATOMOS_PHOSH_RUNTIME_BIN:-/usr/libexec/phosh}"
+# C string literal in home.c (ATOMOS_CHAT_SUBMIT_PATH); survives strip -O2.
+# Legacy GtkBuilder ids (atomos-home-chat-entry) are not reliable: chat entry
+# is created in code now and gresource blobs are often gzip-compressed.
+PHOSH_VERIFY_MARKER="${ATOMOS_PHOSH_HOTFIX_VERIFY_MARKER:-atomos-overview-chat-submit}"
 REMOTE_SUDO="${ATOMOS_PHOSH_REMOTE_SUDO:-sudo}"
 REMOTE_SUDO_PASSWORD="${ATOMOS_PHOSH_REMOTE_SUDO_PASSWORD:-${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-}}}"
 # Default behavior: restart phosh so newly installed bits are picked up.
@@ -85,6 +92,20 @@ PHOSH_SOURCE_ONLY_ON_BUILD_FAIL="${ATOMOS_PHOSH_HOTFIX_SOURCE_ONLY_ON_BUILD_FAIL
 # Auto-install build deps on Alpine targets (postmarketOS) when meson/ninja or
 # any phosh -dev package is missing. Set to 0 to require pre-baked deps.
 PHOSH_INSTALL_BUILD_DEPS="${ATOMOS_PHOSH_HOTFIX_INSTALL_BUILD_DEPS:-1}"
+# Wipe the remote Meson build dir before configure (avoids stale wrap cache /
+# reconfigure state that can make Meson read corrupted subprojects/*.wrap).
+PHOSH_CLEAN_BUILD="${ATOMOS_PHOSH_HOTFIX_CLEAN_BUILD:-1}"
+
+echo "Phosh hotfix plan:"
+echo "  host source:     $PHOSH_DIR"
+echo "  remote src:      $REMOTE_SRC_DIR"
+echo "  meson prefix:    $REMOTE_PREFIX"
+echo "  install target:  ${REMOTE_PREFIX}/libexec/phosh"
+echo "  runtime binary:  $PHOSH_RUNTIME_BIN (what greetd/phrog exec)"
+if [ "$REMOTE_PREFIX" != "/usr" ]; then
+    echo "WARN: REMOTE_PREFIX is not /usr — the session will keep using $PHOSH_RUNTIME_BIN" >&2
+    echo "      unless you change greetd to launch ${REMOTE_PREFIX}/libexec/phosh." >&2
+fi
 
 tmpdir="$(mktemp -d)"
 cleanup() {
@@ -93,6 +114,11 @@ cleanup() {
 trap cleanup EXIT
 
 ARCHIVE_PATH="$tmpdir/phosh-src.tar.gz"
+# macOS tar embeds AppleDouble/xattrs unless disabled; those can land beside
+# subprojects/*.wrap on Linux and break Meson's UTF-8 wrap parser.
+if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+    export COPYFILE_DISABLE=1
+fi
 (
     cd "$PHOSH_DIR"
     tar -czf "$ARCHIVE_PATH" \
@@ -100,9 +126,12 @@ ARCHIVE_PATH="$tmpdir/phosh-src.tar.gz"
         --exclude "_build*" \
         --exclude "build" \
         --exclude ".direnv" \
+        --exclude "subprojects/packagecache" \
+        --exclude "subprojects/packagefiles" \
         --exclude "*.o" \
         --exclude "*.so" \
         --exclude "*.a" \
+        --exclude "._*" \
         .
 )
 
@@ -123,6 +152,9 @@ REMOTE_RESTART_CMD_Q="$(shell_quote_sq "$REMOTE_RESTART_CMD")"
 PHOSH_SKIP_BUILD_Q="$(shell_quote_sq "$PHOSH_SKIP_BUILD")"
 PHOSH_SOURCE_ONLY_ON_BUILD_FAIL_Q="$(shell_quote_sq "$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL")"
 PHOSH_INSTALL_BUILD_DEPS_Q="$(shell_quote_sq "$PHOSH_INSTALL_BUILD_DEPS")"
+PHOSH_CLEAN_BUILD_Q="$(shell_quote_sq "$PHOSH_CLEAN_BUILD")"
+PHOSH_RUNTIME_BIN_Q="$(shell_quote_sq "$PHOSH_RUNTIME_BIN")"
+PHOSH_VERIFY_MARKER_Q="$(shell_quote_sq "$PHOSH_VERIFY_MARKER")"
 
 REMOTE_APPLY_SCRIPT="$(cat <<EOF
 set -eu
@@ -134,7 +166,48 @@ REMOTE_RESTART_CMD=$REMOTE_RESTART_CMD_Q
 PHOSH_SKIP_BUILD=$PHOSH_SKIP_BUILD_Q
 PHOSH_SOURCE_ONLY_ON_BUILD_FAIL=$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL_Q
 PHOSH_INSTALL_BUILD_DEPS=$PHOSH_INSTALL_BUILD_DEPS_Q
+PHOSH_CLEAN_BUILD=$PHOSH_CLEAN_BUILD_Q
+PHOSH_RUNTIME_BIN=$PHOSH_RUNTIME_BIN_Q
+PHOSH_VERIFY_MARKER=$PHOSH_VERIFY_MARKER_Q
 HOTFIX_INSTALLED=0
+PHOSH_INSTALLED_BIN="\${REMOTE_PREFIX}/libexec/phosh"
+
+verify_subproject_wraps() {
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "WARN: python3 missing; skipping subprojects/*.wrap UTF-8 check" >&2
+        return 0
+    fi
+    python3 - "\$REMOTE_SRC_DIR/subprojects" <<'PY'
+import os
+import sys
+
+root = sys.argv[1]
+if not os.path.isdir(root):
+    sys.exit(0)
+
+bad = []
+for name in sorted(os.listdir(root)):
+    if not name.endswith(".wrap"):
+        continue
+    path = os.path.join(root, name)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            fh.read()
+    except UnicodeDecodeError as exc:
+        bad.append((path, exc))
+
+if bad:
+    for path, exc in bad:
+        print(f"ERROR: invalid UTF-8 in {path}: {exc}", file=sys.stderr)
+        try:
+            with open(path, "rb") as fh:
+                sample = fh.read(80)
+            print(f"  first bytes: {sample!r}", file=sys.stderr)
+        except OSError:
+            pass
+    sys.exit(1)
+PY
+}
 
 # Mirrors build-qemu.sh's container apk list so an on-device build sees the
 # same package set the cached host build resolves against. Keep this list in
@@ -183,7 +256,79 @@ ensure_build_deps() {
     return 0
 }
 
+running_phosh_exe() {
+    local pid exe
+    pid=\$(pidof phosh 2>/dev/null | awk '{print \$1}')
+    if [ -z "\$pid" ]; then
+        pid=\$(pgrep -x phosh 2>/dev/null | head -n1)
+    fi
+    [ -n "\$pid" ] || return 1
+    exe=\$(readlink -f "/proc/\$pid/exe" 2>/dev/null || true)
+    [ -n "\$exe" ] || return 1
+    printf '%s\n' "\$exe"
+}
+
+phosh_binary_has_atomos_marker() {
+    local bin="\$1"
+    local m
+    for m in "\$PHOSH_VERIFY_MARKER" atomos-overview-chat-submit "Ask AtomOS"; do
+        if strings "\$bin" 2>/dev/null | grep -q "\$m"; then
+            PHOSH_DETECTED_MARKER="\$m"
+            return 0
+        fi
+    done
+    return 1
+}
+
+verify_phosh_install() {
+    if [ ! -x "\$PHOSH_INSTALLED_BIN" ]; then
+        echo "ERROR: meson install did not produce executable: \$PHOSH_INSTALLED_BIN" >&2
+        exit 1
+    fi
+    if ! phosh_binary_has_atomos_marker "\$PHOSH_INSTALLED_BIN"; then
+        echo "ERROR: \$PHOSH_INSTALLED_BIN lacks AtomOS marker (tried: \$PHOSH_VERIFY_MARKER, atomos-overview-chat-submit, Ask AtomOS)." >&2
+        echo "       The build may have used the wrong source tree or install prefix." >&2
+        exit 1
+    fi
+    echo "Verified install: \$PHOSH_INSTALLED_BIN (marker: \$PHOSH_DETECTED_MARKER)"
+    if [ "\$PHOSH_INSTALLED_BIN" != "\$PHOSH_RUNTIME_BIN" ]; then
+        echo "ERROR: install path \$PHOSH_INSTALLED_BIN != runtime \$PHOSH_RUNTIME_BIN." >&2
+        echo "       Set ATOMOS_PHOSH_REMOTE_PREFIX=/usr (default) so greetd loads the hotfix." >&2
+        exit 1
+    fi
+}
+
+verify_running_phosh() {
+    local exe
+    exe=\$(running_phosh_exe || true)
+    if [ -z "\$exe" ]; then
+        echo "WARN: no running phosh process after restart (session may still be starting)." >&2
+        return 0
+    fi
+    echo "Running phosh: \$exe"
+    if [ "\$exe" != "\$PHOSH_RUNTIME_BIN" ]; then
+        echo "ERROR: running phosh is '\$exe', expected '\$PHOSH_RUNTIME_BIN'." >&2
+        echo "       Hotfix binary was installed but the session is still using another build." >&2
+        exit 1
+    fi
+    if ! phosh_binary_has_atomos_marker "\$exe"; then
+        echo "ERROR: running phosh lacks AtomOS marker — stale binary still in use." >&2
+        exit 1
+    fi
+    echo "Running phosh marker: \$PHOSH_DETECTED_MARKER"
+}
+
 restart_phosh_default() {
+    if command -v rc-service >/dev/null 2>&1 && [ -f /etc/init.d/greetd ]; then
+        echo "Restarting greetd (reloads \$PHOSH_RUNTIME_BIN)..."
+        if rc-service greetd restart; then
+            sleep 2
+            verify_running_phosh
+            return 0
+        fi
+        echo "WARN: rc-service greetd restart failed; falling back to kill phosh." >&2
+    fi
+
     pids=\$(pidof phosh 2>/dev/null || true)
     if [ -z "\$pids" ]; then
         pids=\$(pgrep -x phosh 2>/dev/null || true)
@@ -195,12 +340,13 @@ restart_phosh_default() {
 
     echo "Restarting phosh (pids: \$pids)"
     kill -TERM \$pids 2>/dev/null || true
-    sleep 1
-    # If any process survived TERM, hard-kill.
+    sleep 2
     for pid in \$pids; do
         kill -0 "\$pid" 2>/dev/null || continue
         kill -KILL "\$pid" 2>/dev/null || true
     done
+    sleep 1
+    verify_running_phosh
 }
 
 mkdir -p "\$REMOTE_TMP_DIR/unpack"
@@ -212,10 +358,23 @@ cp -a "\$REMOTE_TMP_DIR/unpack/." "\$REMOTE_SRC_DIR/"
 
 echo "Phosh source synced to \$REMOTE_SRC_DIR"
 
+# Drop Meson wrap cache dirs that may linger from a previous on-device build.
+rm -rf "\$REMOTE_SRC_DIR/subprojects/packagecache" \
+       "\$REMOTE_SRC_DIR/subprojects/packagefiles"
+find "\$REMOTE_SRC_DIR/subprojects" -name '._*.wrap' -delete 2>/dev/null || true
+
+if ! verify_subproject_wraps; then
+    echo "ERROR: subprojects/*.wrap files are not valid UTF-8 (see bytes above)." >&2
+    echo "       Re-run from a clean host tree or set ATOMOS_PHOSH_HOTFIX_CLEAN_BUILD=1." >&2
+    exit 1
+fi
+
 if [ "\$PHOSH_SKIP_BUILD" = "1" ]; then
     echo "Skipping remote build/install (ATOMOS_PHOSH_HOTFIX_SKIP_BUILD=1)"
 else
-    ensure_build_deps || true
+    if ! ensure_build_deps; then
+        echo "WARN: could not install all phosh build deps via apk." >&2
+    fi
     if ! command -v meson >/dev/null 2>&1 || ! command -v ninja >/dev/null 2>&1; then
         if [ "\$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL" = "1" ]; then
             echo "WARN: meson/ninja missing on target, source-only sync applied." >&2
@@ -228,15 +387,25 @@ else
             exit 1
         fi
     else
+        if [ "\$PHOSH_CLEAN_BUILD" = "1" ] && [ -d "\$REMOTE_BUILD_DIR" ]; then
+            echo "Removing stale Meson build dir: \$REMOTE_BUILD_DIR"
+            rm -rf "\$REMOTE_BUILD_DIR"
+        fi
         if [ -d "\$REMOTE_BUILD_DIR" ]; then
-            meson setup --reconfigure "\$REMOTE_BUILD_DIR" "\$REMOTE_SRC_DIR" --prefix "\$REMOTE_PREFIX"
+            meson setup --reconfigure "\$REMOTE_BUILD_DIR" "\$REMOTE_SRC_DIR" \
+                --prefix "\$REMOTE_PREFIX" \
+                -Dtests=false
         else
-            meson setup "\$REMOTE_BUILD_DIR" "\$REMOTE_SRC_DIR" --prefix "\$REMOTE_PREFIX"
+            meson setup "\$REMOTE_BUILD_DIR" "\$REMOTE_SRC_DIR" \
+                --prefix "\$REMOTE_PREFIX" \
+                -Dtests=false
         fi
         if meson compile -C "\$REMOTE_BUILD_DIR" && meson install -C "\$REMOTE_BUILD_DIR"; then
             echo "Remote phosh build/install completed."
+            verify_phosh_install
             HOTFIX_INSTALLED=1
         else
+            echo "ERROR: meson compile or meson install failed." >&2
             if [ "\$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL" = "1" ]; then
                 echo "WARN: remote build failed, source-only sync applied." >&2
             else
@@ -253,8 +422,14 @@ if [ "\$HOTFIX_INSTALLED" = "1" ] && [ -n "\$REMOTE_RESTART_CMD" ]; then
     else
         /bin/sh -eu -c "\$REMOTE_RESTART_CMD"
     fi
-elif [ "\$HOTFIX_INSTALLED" != "1" ] && [ -n "\$REMOTE_RESTART_CMD" ]; then
-    echo "Skipping phosh restart because no build/install completed."
+elif [ "\$HOTFIX_INSTALLED" != "1" ]; then
+    echo "Skipping phosh restart because no build/install completed." >&2
+    if [ "\$PHOSH_SKIP_BUILD" = "1" ] || [ "\$PHOSH_SOURCE_ONLY_ON_BUILD_FAIL" = "1" ]; then
+        echo "WARN: source-only hotfix — \$PHOSH_RUNTIME_BIN was NOT updated." >&2
+    else
+        echo "ERROR: hotfix did not install \$PHOSH_RUNTIME_BIN (source was synced only)." >&2
+        exit 1
+    fi
 fi
 
 rm -rf "\$REMOTE_TMP_DIR"
@@ -289,4 +464,4 @@ if [ "$apply_rc" -ne 0 ]; then
     exit "$apply_rc"
 fi
 
-echo "Phosh hotfix applied."
+echo "Phosh hotfix applied: $PHOSH_RUNTIME_BIN updated from $PHOSH_DIR"

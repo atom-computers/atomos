@@ -1,0 +1,18 @@
+[package]
+name = "atomos-app-handler-egui"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+atomos-app-handler = { path = "../core" }
+# Dev preview only — not installed on device. Disable default `accesskit`
+# (pulls atspi-proxies 0.9.x which fails to compile on some Linux hosts:
+# duplicate `Action` in atspi-proxies). Headless tests use `egui` directly.
+egui = "0.33"
+eframe = { version = "0.33", default-features = false, features = ["default_fonts", "glow"] }
+
+[[bin]]
+name = "atomos-app-handler-preview"
+path = "src/main.rs"

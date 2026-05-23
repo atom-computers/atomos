@@ -29,6 +29,7 @@
 #include "background.h"
 #include "brightness-manager.h"
 #include "drag-surface.h"
+#include "atomos-phosh-home-dbus.h"
 #include "debug-control.h"
 #include "shell-priv.h"
 #include "app-tracker.h"
@@ -201,6 +202,7 @@ typedef struct {
   PhoshMprisManager          *mpris_manager;
   PhoshBrightnessManager     *brightness_manager;
   PhoshDebugControl          *debug_control;
+  PhoshAtomosPhoshHomeDBus  *atomos_phosh_home_dbus;
 
   /* sensors */
   PhoshSensorProxyManager    *sensor_proxy_manager;
@@ -427,6 +429,30 @@ panels_create (PhoshShell *self)
   priv->home = PHOSH_DRAG_SURFACE (phosh_home_new (phosh_wayland_get_zwlr_layer_shell_v1 (wl),
                                                    phosh_wayland_get_zphoc_layer_shell_effects_v1 (wl),
                                                    monitor));
+  /* AtomOS: org.atomos.PhoshHome D-Bus skeleton (atomos-phosh-home-dbus.c).
+   *
+   * Currently disabled by default: phosh_atomos_phosh_home_dbus_new()
+   * segfaults at construction on Alpine + libphosh 26.x — gdb backtrace from
+   * scripts/app-handler/capture-phosh-coredump.sh points to atomos-phosh-home-
+   * dbus.c:153 (`self->home = g_object_ref (home)`) which means g_object_new
+   * returned NULL or a layout-mismatched object. Suspect: the
+   * G_DEFINE_TYPE_WITH_CODE / G_IMPLEMENT_INTERFACE pair against the
+   * gdbus-codegen-generated PhoshDBusPhoshHomeSkeleton + PhoshDBusPhoshHome
+   * iface (interface_prefix='org.atomos', namespace='PhoshDBus') is producing
+   * a vtable that doesn't match the iface struct phosh_dbus_phosh_home_iface_init
+   * tries to populate.
+   *
+   * Until the constructor is fixed, gate the instantiation behind an env
+   * knob so the rest of the shell can come up. The fold/unfold lifecycle
+   * still flows through atomos-app-handler via the home.c spawn paths;
+   * only the inbound D-Bus interface is missing while this is off. Set
+   * ATOMOS_PHOSH_ENABLE_HOME_DBUS=1 in /etc/atomos/phosh-profile.env to
+   * opt back in (e.g. for testing a fix in atomos-phosh-home-dbus.c).
+   */
+  priv->atomos_phosh_home_dbus = NULL;
+  if (g_strcmp0 (g_getenv ("ATOMOS_PHOSH_ENABLE_HOME_DBUS"), "1") == 0) {
+    priv->atomos_phosh_home_dbus = phosh_atomos_phosh_home_dbus_new (PHOSH_HOME (priv->home));
+  }
   g_object_bind_property (self, "overview-visible", priv->home, "visible", G_BINDING_SYNC_CREATE);
 
   g_signal_connect_swapped (priv->top_panel,
@@ -595,6 +621,7 @@ phosh_shell_dispose (GObject *object)
 
   /* dispose managers in opposite order of declaration */
   g_clear_object (&priv->debug_control);
+  g_clear_object (&priv->atomos_phosh_home_dbus);
   g_clear_object (&priv->brightness_manager);
   g_clear_object (&priv->mpris_manager);
   g_clear_object (&priv->connectivity_manager);
@@ -673,29 +700,20 @@ on_num_toplevels_changed (PhoshShell           *self,
                           GParamSpec           *pspec,
                           PhoshToplevelManager *toplevel_manager)
 {
-  PhoshShellPrivate *priv;
-
-  g_return_if_fail (PHOSH_IS_SHELL (self));
-  g_return_if_fail (PHOSH_IS_TOPLEVEL_MANAGER (toplevel_manager));
-
-  priv = phosh_shell_get_instance_private (self);
-  /* all toplevels gone, show the overview */
-  if (!phosh_toplevel_manager_get_num_toplevels (toplevel_manager))
-    phosh_home_set_state (PHOSH_HOME (priv->home), PHOSH_HOME_STATE_UNFOLDED);
+  /* AtomOS: fold/unfold is driven by rust atomos-app-handler via
+   * org.atomos.PhoshHome D-Bus instead of reacting to toplevel count here. */
+  (void) self;
+  (void) pspec;
+  (void) toplevel_manager;
 }
 
 
 static void
 on_toplevel_added (PhoshShell *self, PhoshToplevel *unused, PhoshToplevelManager *toplevel_manager)
 {
-  PhoshShellPrivate *priv;
-
-  g_return_if_fail (PHOSH_IS_SHELL (self));
-  g_return_if_fail (PHOSH_IS_TOPLEVEL_MANAGER (toplevel_manager));
-
-  priv = phosh_shell_get_instance_private (self);
-  if (phosh_toplevel_manager_get_num_toplevels (toplevel_manager) == 1)
-    phosh_home_set_state (PHOSH_HOME (priv->home), PHOSH_HOME_STATE_FOLDED);
+  (void) self;
+  (void) unused;
+  (void) toplevel_manager;
 }
 
 
@@ -852,6 +870,9 @@ setup_idle_cb (PhoshShell *self)
   /* PhoshHome needs the background manager */
   priv->background_manager = phosh_background_manager_new ();
   panels_create (self);
+
+  if (priv->atomos_phosh_home_dbus)
+    phosh_atomos_phosh_home_dbus_set_exported (priv->atomos_phosh_home_dbus, TRUE);
 
   g_signal_connect_object (priv->toplevel_manager,
                            "notify::num-toplevels",
@@ -2346,11 +2367,11 @@ phosh_shell_get_usable_area (PhoshShell *self, int *x, int *y, int *width, int *
   case PHOSH_MONITOR_TRANSFORM_FLIPPED:
   case PHOSH_MONITOR_TRANSFORM_FLIPPED_180:
     w = mode->width / scale;
-    h = mode->height / scale - PHOSH_TOP_BAR_HEIGHT - PHOSH_HOME_BAR_HEIGHT;
+    h = mode->height / scale - PHOSH_TOP_BAR_HEIGHT;
     break;
   default:
     w = mode->height / scale;
-    h = mode->width / scale - PHOSH_TOP_BAR_HEIGHT - PHOSH_HOME_BAR_HEIGHT;
+    h = mode->width / scale - PHOSH_TOP_BAR_HEIGHT;
     break;
   }
 
@@ -2383,7 +2404,7 @@ phosh_shell_get_area (PhoshShell *self, int *width, int *height)
     *width = w;
 
   if (height)
-    *height = h + PHOSH_TOP_BAR_HEIGHT + PHOSH_HOME_BAR_HEIGHT;
+    *height = h + PHOSH_TOP_BAR_HEIGHT;
 }
 
 static PhoshShell *instance;

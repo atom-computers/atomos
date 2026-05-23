@@ -112,7 +112,7 @@ EOF
 # Heredoc runs as root inside the container; chown step at the end
 # normalizes ownership of files written into the bind-mounted workspace.
 "$ENGINE" run --rm -i \
-    "${PLATFORM_FLAG[@]}" \
+    ${PLATFORM_FLAG[@]+"${PLATFORM_FLAG[@]}"} \
     -v "$REPO_TOP:/work" \
     -v "$CARGO_CACHE_VOLUME:/cargo" \
     -e CARGO_HOME=/cargo \
@@ -152,7 +152,19 @@ apk add --no-interactive gtk4-layer-shell-dev >/dev/null 2>&1 \
     || apk add --no-interactive gtk4-layer-shell >/dev/null 2>&1 \
     || echo "[container] WARN: gtk4-layer-shell-dev unavailable; build will likely fail at link time"
 
+# Alpine's *-linux-musl Rust targets default to `+crt-static`, which makes
+# rustc skip rlib emission for build-script / proc-macro dependencies
+# (e.g. `pkg_config`, `version_compare`) and breaks gdk-pixbuf-sys et al.
+# Disable crt-static for both host and target so build scripts can link
+# `pkg_config` as rlib like they do on every other distro. We do NOT
+# want a statically-linked final ELF either, because gtk4-layer-shell.so
+# and webkit2gtk come from /usr/lib at runtime.
+export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static"
+export CARGO_HOST_RUSTFLAGS="${CARGO_HOST_RUSTFLAGS:-} -C target-feature=-crt-static"
+
 echo "[container] cargo build atomos-home-bg (release) ..."
+echo "[container]   RUSTFLAGS=$RUSTFLAGS"
+echo "[container]   CARGO_HOST_RUSTFLAGS=$CARGO_HOST_RUSTFLAGS"
 cargo build \
     --manifest-path app-gtk/Cargo.toml \
     --release \

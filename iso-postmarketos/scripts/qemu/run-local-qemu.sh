@@ -23,13 +23,13 @@ fi
 source "$PROFILE_ENV_SOURCE"
 
 IMAGE_PATH="${IMAGE_OVERRIDE:-$ROOT_DIR/build/host-export-${PROFILE_NAME}/${PROFILE_NAME}.img}"
-if [ ! -f "$IMAGE_PATH" ]; then
+if [ "${ATOMOS_QEMU_DRY_RUN:-0}" != "1" ] && [ ! -f "$IMAGE_PATH" ]; then
     echo "QEMU image not found: $IMAGE_PATH" >&2
     echo "Run: make build-qemu" >&2
     exit 1
 fi
 
-if ! command -v qemu-system-aarch64 >/dev/null 2>&1; then
+if [ "${ATOMOS_QEMU_DRY_RUN:-0}" != "1" ] && ! command -v qemu-system-aarch64 >/dev/null 2>&1; then
     echo "qemu-system-aarch64 is required." >&2
     exit 1
 fi
@@ -103,12 +103,39 @@ if [ "$ACCEL" = "kvm" ] || [ "$ACCEL" = "hvf" ]; then
     CPU_MODEL="host"
 fi
 
-DISPLAY_ARGS=()
-if [ "${ATOMOS_QEMU_HEADLESS:-0}" = "1" ]; then
-    DISPLAY_ARGS=(-nographic)
-else
-    DISPLAY_ARGS=(-display default)
-fi
+# Display backend. Mirrors upstream QEMU defaults: GTK on Linux, Cocoa on
+# macOS. Override with ATOMOS_QEMU_DISPLAY=<mode> or ATOMOS_QEMU_HEADLESS=1.
+resolve_display_args() {
+    if [ "${ATOMOS_QEMU_HEADLESS:-0}" = "1" ]; then
+        printf '%s\n' "-nographic"
+        return 0
+    fi
+    local mode="${ATOMOS_QEMU_DISPLAY:-default}"
+    case "$mode" in
+        default)
+            printf '%s\n' "-display default"
+            ;;
+        cocoa)
+            printf '%s\n' "-display cocoa"
+            ;;
+        vnc)
+            local vnc_port="${ATOMOS_QEMU_VNC_PORT:-5900}"
+            printf '%s\n' "-display none -vnc 127.0.0.1:${vnc_port}"
+            ;;
+        none)
+            printf '%s\n' "-display none"
+            ;;
+        *)
+            printf '%s\n' "-display ${mode}"
+            ;;
+    esac
+}
+
+DISPLAY_ARG="$(resolve_display_args)"
+# shellcheck disable=SC2206
+DISPLAY_ARGS=($DISPLAY_ARG)
+
+GPU_ARGS=(-device virtio-gpu-pci)
 
 DRIVE_ARGS=(
     -drive "if=none,file=$IMAGE_PATH,format=raw,id=disk0"
@@ -156,20 +183,37 @@ fi
 echo "Launching QEMU:"
 echo "  image: $IMAGE_PATH"
 echo "  accel: $ACCEL  cpu: $CPU_MODEL  mem: ${MEMORY_MB}M  smp: $CPUS"
+DISPLAY_MODE="${ATOMOS_QEMU_DISPLAY:-default}"
+echo "  display: $DISPLAY_MODE (${DISPLAY_ARG})"
+if [[ "$DISPLAY_ARG" == *"-vnc"* ]]; then
+    vnc_show="${ATOMOS_QEMU_VNC_PORT:-5900}"
+    echo "  vnc:   Screen Sharing -> vnc://127.0.0.1:${vnc_show}"
+fi
 echo "  ssh:   host 127.0.0.1:${SSH_FWD_PORT} -> guest :22 (SLIRP user netdev)"
 echo "         (172.16.42.1 is USB gadget on hardware; bridge/tap is not configured here.)"
 
-exec qemu-system-aarch64 \
-    -machine "virt,accel=${ACCEL}" \
-    -cpu "$CPU_MODEL" \
-    -smp "$CPUS" \
-    -m "$MEMORY_MB" \
-    "${UEFI_ARGS[@]}" \
-    "${DRIVE_ARGS[@]}" \
-    -device virtio-gpu-pci \
-    -device qemu-xhci \
-    -device usb-kbd \
-    -device usb-tablet \
-    -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:${SSH_FWD_PORT}-:22" \
-    -device virtio-net-pci,netdev=net0 \
+QEMU_ARGV=(
+    qemu-system-aarch64
+    -machine "virt,accel=${ACCEL}"
+    -cpu "$CPU_MODEL"
+    -smp "$CPUS"
+    -m "$MEMORY_MB"
+    "${UEFI_ARGS[@]}"
+    "${DRIVE_ARGS[@]}"
+    "${GPU_ARGS[@]}"
+    -device qemu-xhci
+    -device usb-kbd
+    -device usb-tablet
+    -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:${SSH_FWD_PORT}-:22"
+    -device virtio-net-pci,netdev=net0
     "${DISPLAY_ARGS[@]}"
+)
+
+# Dry-run mode for tests/test_qemu_run_args.py: print the full argv (one arg
+# per line so the test can split deterministically) and exit without exec'ing.
+if [ "${ATOMOS_QEMU_DRY_RUN:-0}" = "1" ]; then
+    printf '%s\n' "${QEMU_ARGV[@]}"
+    exit 0
+fi
+
+exec "${QEMU_ARGV[@]}"

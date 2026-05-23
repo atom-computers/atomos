@@ -7,11 +7,24 @@ fn custom_css_disabled() -> bool {
     env_flag_enabled(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS"))
 }
 
-/// Always-on CSS for the layer stack under the chat UI. The window node alone
-/// is not enough: the content `GtkBox` / `GtkOverlay` / `GtkRevealer` are often
-/// painted with the theme’s solid `.view` / default fill (reads as a black
-/// sheet over `atomos-home-bg`). `!important` beats adwaita’s per-widget
-/// background where needed.
+/// Always-on CSS for the layer stack under the chat UI. The window node
+/// alone is not enough: the content `GtkBox` / `GtkOverlay` / `GtkRevealer`
+/// are often painted with the theme's solid `.view` / default fill (reads
+/// as a black sheet over `atomos-home-bg`).
+///
+/// We do *not* use `!important` here — GTK4's CSS parser is a strict
+/// subset of CSS3 and rejects `!important` as junk after the value,
+/// silently dropping the entire declaration (the
+/// `Gtk-WARNING: Theme parser error: <data>:N:M-M+1: Junk at end of value
+/// for background` lines you'll see in
+/// `/run/user/<uid>/atomos-overview-chat-ui.log` if `!important` is
+/// reintroduced). To beat Adwaita's per-widget background we instead
+/// rely on the provider's registration priority: this CSS is installed
+/// at `STYLE_PROVIDER_PRIORITY_APPLICATION` (600) which is strictly
+/// higher than `STYLE_PROVIDER_PRIORITY_THEME` (200), so any matching
+/// selector here wins regardless of `!important`. A regression test in
+/// the `tests` module pins this — see
+/// `css_strings_must_not_use_important_keyword_gtk4_rejects_it`.
 ///
 /// The hardware-safety `DISABLE_CUSTOM_CSS` flag does not gate this — it
 /// only skips the decorative/themed `stylesheet()`.
@@ -21,20 +34,20 @@ window.atomos-chat-root {
   background-color: transparent;
 }
 window.atomos-chat-root box.atomos-chat-outer {
-  background: transparent !important;
-  background-color: transparent !important;
+  background: transparent;
+  background-color: transparent;
 }
 window.atomos-chat-root box.atomos-chat-fill {
-  background: transparent !important;
+  background: transparent;
 }
 window.atomos-chat-root overlay {
-  background: transparent !important;
+  background: transparent;
 }
 window.atomos-chat-root revealer {
-  background: transparent !important;
+  background: transparent;
 }
 window.atomos-chat-root box.atomos-top-row {
-  background: transparent !important;
+  background: transparent;
 }
 "#
 }
@@ -230,6 +243,49 @@ mod tests {
         assert!(css.contains("window.atomos-chat-root.atomos-light scrolledwindow.atomos-chat-input"));
         assert!(css.contains("border: 1px solid alpha(#ffffff, 0.22);"));
         assert!(css.contains("border: 1px solid alpha(#000000, 0.18);"));
+    }
+
+    #[test]
+    fn css_strings_must_not_use_important_keyword_gtk4_rejects_it() {
+        // GTK4's CSS parser is a strict subset of CSS3 — it does NOT
+        // accept `!important`. When the parser hits ` !important;`, it
+        // emits `Theme parser error: <data>:N:M-M+1: Junk at end of
+        // value for background` to stderr AND **discards the entire
+        // declaration**. The result is the chat-ui layer-shell window
+        // ends up with the Adwaita default solid `.view` background
+        // painted over the supposedly-transparent layer, hiding
+        // atomos-home-bg's webview behind an opaque sheet — i.e. the
+        // exact "chat-ui doesn't load on reboot" symptom captured in
+        // /run/user/<uid>/atomos-overview-chat-ui.log:
+        //
+        //     Gtk-WARNING: Theme parser error: <data>:6:27-28:
+        //                  Junk at end of value for background
+        //
+        // The provider is already registered at
+        // STYLE_PROVIDER_PRIORITY_APPLICATION (600) which beats
+        // PRIORITY_THEME (200), so `!important` adds nothing that
+        // priority + selector specificity don't already deliver — and
+        // by being rejected outright it actively breaks the rule.
+        // Pin both CSS strings against the literal so a future edit
+        // can't reintroduce the keyword.
+        let transparency = transparency_stylesheet();
+        let decorative_mobile = stylesheet(false);
+        let decorative_desktop = stylesheet(true);
+        for (label, body) in [
+            ("transparency_stylesheet()", transparency),
+            ("stylesheet(mobile)", decorative_mobile.as_str()),
+            ("stylesheet(desktop)", decorative_desktop.as_str()),
+        ] {
+            assert!(
+                !body.contains("!important"),
+                "{label} contains `!important`, which GTK4's CSS parser \
+                 rejects as junk and silently discards the whole \
+                 declaration — see /run/user/<uid>/atomos-overview-chat-ui.log \
+                 for `Theme parser error: <data>:N:M: Junk at end of value`. \
+                 Use STYLE_PROVIDER_PRIORITY_APPLICATION + selector \
+                 specificity instead."
+            );
+        }
     }
 
     #[test]

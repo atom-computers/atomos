@@ -43,7 +43,6 @@ enum {
 static guint signals[N_SIGNALS];
 
 #define MAX_INITIAL_TOPLEVEL_TIMEOUT 30 /* s */
-#define ATOMOS_OVERVIEW_CHAT_UI_APP_ID "org.atomos.OverviewChatUi"
 
 typedef struct {
   GAppInfo *app_info;
@@ -56,24 +55,12 @@ struct _PhoshToplevelManager {
 
   GPtrArray       *toplevels;         /* (element-type: PhoshToplevel) */
   GPtrArray       *toplevels_pending; /* (element-type: PhoshToplevel) */
-  GPtrArray       *toplevels_ignored; /* (element-type: PhoshToplevel) */
 
   PhoshAppTracker *app_tracker;
   GPtrArray       *launching_apps;    /* (element-type: LaunchingToplevelInfo */
 };
 
 G_DEFINE_TYPE (PhoshToplevelManager, phosh_toplevel_manager, G_TYPE_OBJECT);
-
-static gboolean
-should_ignore_toplevel (PhoshToplevel *toplevel)
-{
-  const char *app_id;
-
-  g_return_val_if_fail (PHOSH_IS_TOPLEVEL (toplevel), FALSE);
-
-  app_id = phosh_toplevel_get_app_id (toplevel);
-  return g_strcmp0 (app_id, ATOMOS_OVERVIEW_CHAT_UI_APP_ID) == 0;
-}
 
 
 static void
@@ -209,11 +196,6 @@ on_toplevel_closed (PhoshToplevelManager *self, PhoshToplevel *toplevel)
     return;
   }
 
-  if (g_ptr_array_find (self->toplevels_ignored, toplevel, NULL)) {
-    g_assert_true (g_ptr_array_remove (self->toplevels_ignored, toplevel));
-    return;
-  }
-
   g_assert_true (g_ptr_array_remove (self->toplevels, toplevel));
 
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_NUM_TOPLEVELS]);
@@ -231,13 +213,6 @@ on_toplevel_configured (PhoshToplevelManager *self, GParamSpec *pspec, PhoshTopl
 
   if (!configured)
     return;
-
-  if (should_ignore_toplevel (toplevel)) {
-    g_assert_true (g_ptr_array_remove (self->toplevels_pending, toplevel));
-    g_ptr_array_add (self->toplevels_ignored, toplevel);
-    g_debug ("Ignoring toplevel for app-id '%s'", phosh_toplevel_get_app_id (toplevel));
-    return;
-  }
 
   if (g_ptr_array_find (self->toplevels, toplevel, NULL)) {
     g_signal_emit (self, signals[TOPLEVEL_CHANGED], 0, toplevel);
@@ -300,10 +275,6 @@ phosh_toplevel_manager_dispose (GObject *object)
   if (self->toplevels_pending) {
     g_ptr_array_free (self->toplevels_pending, TRUE);
     self->toplevels_pending = NULL;
-  }
-  if (self->toplevels_ignored) {
-    g_ptr_array_free (self->toplevels_ignored, TRUE);
-    self->toplevels_ignored = NULL;
   }
 
   g_clear_pointer (&self->launching_apps, g_ptr_array_unref);
@@ -390,7 +361,6 @@ phosh_toplevel_manager_init (PhoshToplevelManager *self)
   self->launching_apps = g_ptr_array_new_with_free_func ((GDestroyNotify)launching_app_info_free);
   self->toplevels = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   self->toplevels_pending = g_ptr_array_new ();
-  self->toplevels_ignored = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
 
   if (!toplevel_manager) {
     g_critical ("Missing wlr-foreign-toplevel-management protocol extension");

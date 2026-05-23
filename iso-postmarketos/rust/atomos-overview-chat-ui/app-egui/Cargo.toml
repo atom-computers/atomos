@@ -12,3 +12,7 @@ eframe = { version = "0.33", default-features = true }
 [[bin]]
 name = "atomos-overview-chat-ui-dev"
 path = "src/main.rs"
+
+[[bin]]
+name = "atomos-overview-chat-ui-swipe-lab"
+path = "src/swipe_lab.rs"

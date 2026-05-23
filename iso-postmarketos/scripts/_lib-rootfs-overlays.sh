@@ -7,7 +7,7 @@
 # overlay scripts can re-drop the pmaports defaults.
 #
 # Required globals: ENGINE ALPINE_IMAGE ROOTFS_VOLUME REPO_TOP
-# PROFILE_ENV_SOURCE BUILD_OVERVIEW_CHAT_UI BUILD_HOME_BG
+# PROFILE_ENV_SOURCE BUILD_OVERVIEW_CHAT_UI BUILD_HOME_BG BUILD_APP_HANDLER
 
 # Translate the host profile env path to its in-container equivalent
 # (the heavy mount makes /work = $REPO_TOP, so anything under
@@ -41,10 +41,13 @@ run_helper scripts/rootfs/install-btlescan.sh
 
 if [ "${BUILD_OVERVIEW_CHAT_UI:-1}" = "1" ] \
     && [ -f /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh ]; then
-    echo "  -> install-overview-chat-ui.sh (layer-shell ON, runtime ON)"
+    echo "  -> install-overview-chat-ui.sh (layer-shell ON, runtime ON, autostart ON)"
     ROOTFS_DIR=/target \
         ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT=1 \
         ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=1 \
+        ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART=1 \
+        ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT=0 \
+        ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT=0 \
         bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \
         "$PROFILE_ENV_CONTAINER"
 fi
@@ -56,6 +59,16 @@ if [ "${BUILD_HOME_BG:-1}" = "1" ] \
         ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT=1 \
         ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 \
         bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \
+        "$PROFILE_ENV_CONTAINER"
+fi
+
+if [ "${BUILD_APP_HANDLER:-1}" = "1" ] \
+    && [ -f /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh ]; then
+    echo "  -> install-app-handler.sh (autostart ON, runtime ON)"
+    ROOTFS_DIR=/target \
+        ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 \
+        ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 \
+        bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \
         "$PROFILE_ENV_CONTAINER"
 fi
 
@@ -90,6 +103,7 @@ atomos_apply_overlays() {
         -v "$REPO_TOP:/work" \
         -e BUILD_OVERVIEW_CHAT_UI="$BUILD_OVERVIEW_CHAT_UI" \
         -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+        -e BUILD_APP_HANDLER="${BUILD_APP_HANDLER:-1}" \
         -e PROFILE_ENV_CONTAINER="$profile_in_container" \
         "$ALPINE_IMAGE" /bin/sh -eu -c "$(_atomos_overlay_container_body)"
 }

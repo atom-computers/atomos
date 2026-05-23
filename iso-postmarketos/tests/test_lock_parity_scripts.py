@@ -11,9 +11,30 @@ SCRIPTS = ISO_ROOT / "scripts"
 S_OVERVIEW = SCRIPTS / "overview-chat-ui"
 S_PMB = SCRIPTS / "pmb"
 S_PHOSH = SCRIPTS / "phosh"
+S_APP_HANDLER = SCRIPTS / "app-handler"
 S_ROOTFS = SCRIPTS / "rootfs"
 S_VALIDATE = SCRIPTS / "validate"
 S_DEVICE = SCRIPTS / "device"
+R_APP_HANDLER_HANDLE_RS = (
+    ISO_ROOT
+    / "rust"
+    / "atomos-app-handler"
+    / "app-gtk"
+    / "src"
+    / "linux"
+    / "handle.rs"
+)
+R_APP_HANDLER_HANDLE_CORE = (
+    ISO_ROOT / "rust" / "atomos-app-handler" / "core" / "src" / "handle.rs"
+)
+R_APP_HANDLER_CORE_LIB = ISO_ROOT / "rust" / "atomos-app-handler" / "core" / "src" / "lib.rs"
+PHOSH_SHELL_C = ISO_ROOT / "rust" / "phosh" / "phosh" / "src" / "shell.c"
+PHOSH_OVERVIEW_C = ISO_ROOT / "rust" / "phosh" / "phosh" / "src" / "overview.c"
+PHOSH_APP_GRID_BUTTON_C = ISO_ROOT / "rust" / "phosh" / "phosh" / "src" / "app-grid-button.c"
+PHOSH_ATOMOS_HOME_DBUS_C = ISO_ROOT / "rust" / "phosh" / "phosh" / "src" / "atomos-phosh-home-dbus.c"
+PHOSH_ATOMOS_HOME_DBUS_XML = (
+    ISO_ROOT / "rust" / "phosh" / "phosh" / "src" / "dbus" / "org.atomos.PhoshHome.xml"
+)
 STYLE_RS = (
     ISO_ROOT
     / "rust"
@@ -53,6 +74,8 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             self.assertEqual(result.returncode, 0, msg=result.stderr)
             self.assertIn('if [ "1" = "1" ]; then', result.stdout)
             self.assertIn("phosh-profile.env", result.stdout)
+            self.assertIn("phosh-integration-contract", result.stdout)
+            self.assertIn("app-handler-v1-launch-switcher-dbus-home", result.stdout)
             self.assertIn("mobile Phosh", result.stdout)
             self.assertIn("atomos-overview-chat-submit", result.stdout)
             self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", result.stdout)
@@ -60,16 +83,30 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", result.stdout)
             self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}"', result.stdout)
             self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"', result.stdout)
-            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-top}"', result.stdout)
+            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"', result.stdout)
             self.assertIn("bind_phosh_session_env()", result.stdout)
             self.assertIn("xargs -0 -n1", result.stdout)
             self.assertIn("corrected invalid WAYLAND_DISPLAY to wayland-0", result.stdout)
             self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS", result.stdout)
             self.assertIn("overview-chat-ui-overlay-contract", result.stdout)
-            self.assertIn("overview-chat-ui-overlay-v5-lifecycle-only", result.stdout)
+            self.assertIn("overview-chat-ui-overlay-v6-autostart-restored", result.stdout)
             self.assertNotIn("atomos-mobile-lockscreen --lock", result.stdout)
             self.assertNotIn("atomos-lock-daemon.desktop", result.stdout)
             self.assertNotIn("atomos-lock-daemon.service", result.stdout)
+            # Regression guard: commit d6405345 "fix: home screen" deleted both
+            # the XDG autostart for atomos-overview-chat-ui AND the vendor
+            # phosh patches that spawned it on home unfold, leaving the chat
+            # UI with nothing to launch it on the home screen. The overlay
+            # must write a .desktop that runs the launcher with --show.
+            self.assertIn("/etc/xdg/autostart/atomos-overview-chat-ui.desktop", result.stdout)
+            self.assertIn("Exec=/usr/libexec/atomos-overview-chat-ui --show", result.stdout)
+            self.assertIn("OnlyShowIn=GNOME;Phosh;", result.stdout)
+            self.assertNotIn(
+                "rm -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop\n'",
+                result.stdout,
+                "apply-overlay.sh must not unconditionally remove the chat UI autostart "
+                "(see commit d6405345 'fix: home screen' regression).",
+            )
 
     def test_apply_overlay_dump_mode_replaces_lock_placeholder_disabled(self):
         with tempfile.TemporaryDirectory() as td:
@@ -210,28 +247,339 @@ class TestDockerfileToolchain(unittest.TestCase):
 
 
 class TestPhoshHomeAndPanelSourceContracts(unittest.TestCase):
-    def test_home_disables_swipe_drag_and_reserved_divider_strip(self):
+    def test_home_enables_phoc_edge_drag_without_reserved_strip(self):
         text = PHOSH_HOME_C.read_text(encoding="utf-8")
-        self.assertIn('"drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE', text)
+        self.assertIn('"drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE', text)
         self.assertIn('"exclusive-zone", 0', text)
         self.assertIn('"exclusive", 0', text)
-        self.assertIn("home-bar tap should not toggle fold/unfold", text)
+        self.assertIn("#define PHOSH_HOME_DRAG_THRESHOLD 0.0", text)
+        self.assertIn("phosh_overview_has_running_activities", text)
+        self.assertIn("ATOMOS_APP_HANDLER_LAUNCHER_PATH", text)
+        self.assertIn("atomos_phosh_sync_app_handler_lifecycle", text)
+        self.assertIn("atomos_phosh_bottom_edge_drag_disabled", text)
+        self.assertIn("ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG_ENV", text)
+        import sys
 
-    def test_home_app_grid_toggle_defaults_to_enabled(self):
+        tests_dir = pathlib.Path(__file__).resolve().parent
+        if str(tests_dir) not in sys.path:
+            sys.path.insert(0, str(tests_dir))
+        from phosh_home_c_lifecycle import (
+            assert_phosh_home_c_shell_lifecycle_contract,
+            extract_c_function,
+        )
+
+        lifecycle_fn = extract_c_function(text, "atomos_phosh_sync_app_handler_lifecycle")
+        assert_phosh_home_c_shell_lifecycle_contract(lifecycle_fn)
+        self.assertIn('action = "--hide"', text)
+        self.assertIn("atomos_phosh_sync_home_bg_layer", text)
+        self.assertIn('layer = "top"', text)
+        self.assertIn('layer = "bottom"', text)
+        # Vendor parity: mouse click on the home bar toggles fold/unfold.
+        self.assertIn("phosh_home_set_state (self, !self->state);", text)
+
+    def test_home_app_grid_toggle_hidden_when_handler_active(self):
         text = PHOSH_HOME_C.read_text(encoding="utf-8")
-        self.assertIn("app_grid_toggle_enabled", text)
-        self.assertIn("static gboolean enabled = TRUE;", text)
-        self.assertIn('enabled = g_strcmp0 (env, "0") != 0;', text)
+        self.assertIn("app_grid_toggle_button", text)
+        self.assertIn(
+            "gtk_widget_set_visible (self->app_grid_toggle_button, FALSE);",
+            text,
+            msg="Phosh dock toggle must be hidden; Rust handler owns launcher UI",
+        )
 
-    def test_home_ignores_fold_while_app_grid_visible(self):
+    def test_home_syncs_app_handler_lifecycle_from_state_transitions(self):
         text = PHOSH_HOME_C.read_text(encoding="utf-8")
-        self.assertIn("ignoring fold callback while app-grid is opening/visible", text)
-        self.assertIn("self->app_grid_toggle_queued || gtk_widget_get_visible (GTK_WIDGET (app_grid))", text)
+        self.assertIn(
+            "atomos_phosh_sync_app_handler_lifecycle (self->state);",
+            text,
+            msg="home.c must sync app-handler lifecycle from drag/home state transitions",
+        )
+        self.assertNotIn("atomos_phosh_sync_app_switcher_lifecycle", text)
 
-    def test_top_panel_disables_drag_mode(self):
+    def test_home_syncs_overview_chat_ui_lifecycle_from_state_transitions(self):
+        # Regression guard: commit d6405345 "fix: home screen" deleted both
+        #   vendor/phosh/patches/0003-atomos-overview-chat-ui-lifecycle.patch
+        #   vendor/phosh/patches/0004-atomos-overview-chat-ui-show-on-unfold.patch
+        # which used to spawn /usr/libexec/atomos-overview-chat-ui --show /
+        # --hide on home fold/unfold. The replacement lives in home.c as
+        # atomos_phosh_sync_overview_chat_ui_lifecycle() and must be called
+        # from on_drag_state_changed alongside the other two sync helpers,
+        # or the layer-shell chat UI never appears on the home screen.
+        text = PHOSH_HOME_C.read_text(encoding="utf-8")
+        self.assertIn(
+            "ATOMOS_OVERVIEW_CHAT_UI_LAUNCHER_PATH",
+            text,
+            msg="home.c must define the /usr/libexec/atomos-overview-chat-ui launcher path",
+        )
+        self.assertIn(
+            '"/usr/libexec/atomos-overview-chat-ui"',
+            text,
+            msg="home.c must reference the canonical launcher path string",
+        )
+        self.assertIn(
+            "atomos_phosh_sync_overview_chat_ui_lifecycle",
+            text,
+            msg="home.c must define the overview chat UI lifecycle sync helper",
+        )
+        self.assertIn(
+            "atomos_phosh_sync_overview_chat_ui_lifecycle (self->state);",
+            text,
+            msg=(
+                "home.c must call atomos_phosh_sync_overview_chat_ui_lifecycle "
+                "from on_drag_state_changed, mirroring app-handler/home-bg syncs"
+            ),
+        )
+        self.assertIn(
+            "ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE_ENV",
+            text,
+            msg="lifecycle helper must expose a kill-switch env for bisection",
+        )
+        self.assertIn(
+            "ATOMOS_OVERVIEW_CHAT_UI_LAYER=%s %s --show",
+            text,
+            msg="overview chat lifecycle must pass layer on --show like home-bg",
+        )
+
+    def test_overview_force_hides_running_activities_at_init(self):
+        text = PHOSH_OVERVIEW_C.read_text(encoding="utf-8")
+        self.assertIn(
+            "phosh_overview_set_running_activities_visible (self, FALSE);",
+            text,
+            msg="overview must force-hide the Phosh activity carousel at init",
+        )
+
+    def test_overview_exposes_running_activities_visible_accessor(self):
+        # The surgical accessor home.c relies on must exist with a
+        # force-hide flag in private state so set_has_activities cannot
+        # un-hide the carousel when a new toplevel maps underneath.
+        overview_c = PHOSH_OVERVIEW_C.read_text(encoding="utf-8")
+        overview_h = PHOSH_OVERVIEW_C.with_name("overview.h").read_text(encoding="utf-8")
+        self.assertIn(
+            "phosh_overview_set_running_activities_visible",
+            overview_h,
+            msg="overview.h must declare the AtomOS surgical visibility accessor",
+        )
+        self.assertIn(
+            "phosh_overview_set_running_activities_visible",
+            overview_c,
+            msg="overview.c must implement the AtomOS surgical visibility accessor",
+        )
+        self.assertIn(
+            "force_running_activities_hidden",
+            overview_c,
+            msg="overview.c must carry a force-hide flag so set_has_activities cannot re-show the carousel underneath the rust overlay",
+        )
+
+    def test_home_fold_cb_always_folds_for_switcher(self):
+        # Vendor parity: fold_cb must always fold the home when the overview
+        # emits activity-launched/raised so the switcher actually switches.
+        text = PHOSH_HOME_C.read_text(encoding="utf-8")
+        self.assertNotIn("ignoring fold callback while app-grid is opening/visible", text)
+        self.assertIn(
+            "switcher: tapping an activity card must dismiss the overview",
+            text,
+        )
+
+    def test_top_panel_enables_phoc_edge_drag(self):
         text = PHOSH_TOP_PANEL_C.read_text(encoding="utf-8")
-        self.assertIn("PHOSH_DRAG_SURFACE_DRAG_MODE_NONE", text)
-        self.assertIn('"drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_NONE', text)
+        self.assertIn("PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE", text)
+        self.assertIn('"drag-mode", PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE', text)
+
+
+class TestAppHandlerScripts(unittest.TestCase):
+    def test_app_handler_script_syntax(self):
+        for script in (
+            S_APP_HANDLER / "build-app-handler.sh",
+            S_APP_HANDLER / "install-app-handler.sh",
+            S_APP_HANDLER / "hotfix-app-handler.sh",
+            S_APP_HANDLER / "preview-app-handler.sh",
+            S_APP_HANDLER / "preview-app-handler-egui.sh",
+            S_APP_HANDLER / "test-app-handler-local.sh",
+            S_APP_HANDLER / "smoke-post-unlock.sh",
+            S_APP_HANDLER / "diagnose-session-boot-loop.sh",
+            S_APP_HANDLER / "_lib-post-unlock-runtime-checks.remote.sh",
+            S_PHOSH / "verify-vendor-phosh-build.sh",
+            S_PHOSH / "test-phosh-home-dbus-compile.sh",
+        ):
+            r = subprocess.run(
+                ["bash", "-n", str(script)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(r.returncode, 0, msg=f"{script}: {r.stderr}")
+
+    def test_install_app_handler_contract(self):
+        text = (S_APP_HANDLER / "install-app-handler.sh").read_text(encoding="utf-8")
+        self.assertIn("ROOTFS_DIR", text)
+        self.assertIn("atomos-app-handler.desktop", text)
+        self.assertIn("ATOMOS_APP_HANDLER_ENABLE_RUNTIME", text)
+        self.assertIn("Exec=/usr/libexec/atomos-app-handler --start", text)
+        self.assertIn("app-handler-contract", text)
+        self.assertIn("ATOMOS_APP_HANDLER_INSTALL_AUTOSTART:-1", text)
+        self.assertIn("launch)", text, msg="libexec launcher must forward launch subcommand")
+
+    def test_install_app_handler_writes_lifecycle_contract_marker(self):
+        text = (S_APP_HANDLER / "install-app-handler.sh").read_text(encoding="utf-8")
+        self.assertIn("ensure_stack_integration_contracts_in_root", text)
+        self.assertIn("/etc/atomos/app-handler-contract", text)
+        self.assertIn("/etc/atomos/phosh-integration-contract", text)
+        self.assertIn(
+            "app-handler-v1-launch-switcher-dbus-home",
+            text,
+        )
+        self.assertRegex(
+            text,
+            r"install_into_root\(\)[\s\S]*?ensure_app_handler_contract_in_root \"\$root\"",
+        )
+        self.assertIn("ENSURE_LIFECYCLE_CONTRACT_CMD=", text)
+        self.assertIn("APP_HANDLER_CONTRACT_VERSION", text)
+
+    def test_install_app_handler_launcher_signals_on_show_hide(self):
+        text = (S_APP_HANDLER / "install-app-handler.sh").read_text(encoding="utf-8")
+        self.assertIn("signal_show()", text)
+        self.assertIn("signal_hide()", text)
+        self.assertIn("kill -USR1", text)
+        self.assertIn("kill -USR2", text)
+        self.assertIn("action=show", text)
+        self.assertIn("action=hide", text)
+
+    def test_qemu_and_fairphone4_final_verify_check_lifecycle_contract(self):
+        # If lifecycle integration breaks, builds must fail instead of
+        # silently shipping either a swipe-less image (no autostart) or
+        # an autostart-only image that ignores phosh's lifecycle hooks.
+        for path in (
+            SCRIPTS / "build-qemu.sh",
+            SCRIPTS / "build-fairphone4.sh",
+            SCRIPTS / "_lib-verify.sh",
+        ):
+            text = path.read_text(encoding="utf-8")
+            self.assertIn(
+                "app-handler-v1-launch-switcher-dbus-home",
+                text,
+                msg=f"{path} must check app-handler lifecycle contract marker in final verify",
+            )
+            self.assertIn(
+                "signal_show",
+                text,
+                msg=f"{path} must assert the --show signal bridge is wired",
+            )
+            self.assertIn(
+                "signal_hide",
+                text,
+                msg=f"{path} must assert the --hide signal bridge is wired",
+            )
+            self.assertIn(
+                "atomos-app-handler.desktop",
+                text,
+                msg=f"{path} must assert the handle-bar autostart desktop is shipped",
+            )
+
+    def test_app_handler_handle_paint_uses_core_layout(self):
+        core_text = R_APP_HANDLER_HANDLE_CORE.read_text(encoding="utf-8")
+        gtk_text = R_APP_HANDLER_HANDLE_RS.read_text(encoding="utf-8")
+        lib_text = R_APP_HANDLER_CORE_LIB.read_text(encoding="utf-8")
+        egui_text = (
+            ISO_ROOT
+            / "rust"
+            / "atomos-app-handler"
+            / "app-egui"
+            / "src"
+            / "main.rs"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("mod handle", lib_text)
+        self.assertIn("mod launch", lib_text)
+        self.assertIn("mod session", lib_text)
+        self.assertIn("app-handler-v1-launch-switcher-dbus-home", lib_text)
+        self.assertIn("PHOSH_INTEGRATION_CONTRACT_BASENAME", lib_text)
+        self.assertIn("STACK_INTEGRATION_VERSION", lib_text)
+        self.assertIn("PILL_WIDTH_PX", core_text)
+        self.assertIn("150.0", core_text)
+        self.assertIn("layout_handle_paint", core_text)
+        self.assertIn("STRIP_SCRIM", core_text)
+        self.assertIn("PILL_FILL", core_text)
+        self.assertIn("atomos_app_handler::handle", gtk_text)
+        self.assertIn("layout_handle_paint", gtk_text)
+        self.assertNotIn("background: transparent", gtk_text)
+        self.assertIn("handle::layout_handle_paint", egui_text)
+        self.assertIn("handle::STRIP_SCRIM", egui_text)
+        self.assertIn("handle::PILL_FILL", egui_text)
+
+    def test_app_handler_local_test_script_runs_core_and_egui(self):
+        text = (S_APP_HANDLER / "test-app-handler-local.sh").read_text(encoding="utf-8")
+        self.assertIn("cargo test -p atomos-app-handler", text)
+        self.assertIn("cargo test -p atomos-app-handler-egui", text)
+        self.assertIn("handle_paint", text)
+        self.assertIn("home_handler_contract", text)
+        self.assertIn("test-phosh-home-dbus-compile.sh", text)
+
+    def test_phosh_home_dbus_wired_for_handler_fold_ipc(self):
+        dbus_c = PHOSH_ATOMOS_HOME_DBUS_C.read_text(encoding="utf-8")
+        dbus_xml = PHOSH_ATOMOS_HOME_DBUS_XML.read_text(encoding="utf-8")
+        shell_c = PHOSH_SHELL_C.read_text(encoding="utf-8")
+        self.assertIn("SetFolded", dbus_xml)
+        self.assertIn("SetUnfolded", dbus_xml)
+        self.assertIn("handle_set_folded", dbus_c)
+        self.assertIn("handle_set_unfolded", dbus_c)
+        self.assertIn("phosh_home_set_state", dbus_c)
+        self.assertIn("atomos_phosh_home_dbus", shell_c)
+        self.assertIn("phosh_atomos_phosh_home_dbus_set_exported", shell_c)
+
+    def test_core_session_policy_matches_phosh_home_lifecycle(self):
+        """Rust core is the contract; Phosh C must not drift (e.g. --show on unfold)."""
+        session_rs = (
+            ISO_ROOT / "rust" / "atomos-app-handler" / "core" / "src" / "session.rs"
+        ).read_text(encoding="utf-8")
+        home_c = PHOSH_HOME_C.read_text(encoding="utf-8")
+        integration = (
+            ISO_ROOT
+            / "rust"
+            / "atomos-app-handler"
+            / "core"
+            / "tests"
+            / "home_handler_contract.rs"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("shell_lifecycle_action_for_home_state", session_rs)
+        self.assertIn("launcher_home_ipc_when_visibility_changes", session_rs)
+        self.assertIn("phosh_unfold_must_not_hide_or_show_switcher_via_shell_lifecycle", session_rs)
+        self.assertIn("launcher_close_must_not_fold_home", session_rs)
+        self.assertIn("after_unlock_home_unfold_does_not_trigger_show_or_hide_shell_sync", integration)
+        self.assertIn("launcher_open_close_ipc_contract", integration)
+
+        import sys
+
+        tests_dir = pathlib.Path(__file__).resolve().parent
+        if str(tests_dir) not in sys.path:
+            sys.path.insert(0, str(tests_dir))
+        from phosh_home_c_lifecycle import (
+            assert_phosh_home_c_shell_lifecycle_contract,
+            extract_c_function,
+        )
+
+        lifecycle_fn = extract_c_function(home_c, "atomos_phosh_sync_app_handler_lifecycle")
+        assert_phosh_home_c_shell_lifecycle_contract(lifecycle_fn)
+        self.assertIn('action = "--hide"', home_c)
+        self.assertIn("Do NOT --show on unfold", home_c)
+
+    def test_shell_no_longer_auto_folds_on_toplevel_count(self):
+        text = PHOSH_SHELL_C.read_text(encoding="utf-8")
+        self.assertIn(
+            "fold/unfold is driven by rust atomos-app-handler",
+            text,
+        )
+        self.assertNotRegex(
+            text,
+            r"on_toplevel_added[\s\S]{0,400}phosh_home_set_state \(PHOSH_HOME \(priv->home\), PHOSH_HOME_STATE_FOLDED\)",
+        )
+
+    def test_app_grid_button_launches_via_handler_not_tracker(self):
+        text = PHOSH_APP_GRID_BUTTON_C.read_text(encoding="utf-8")
+        self.assertIn("/usr/libexec/atomos-app-handler launch", text)
+        self.assertNotRegex(
+            text,
+            r"phosh_app_tracker_launch_app_info\s*\(",
+            msg="activate_cb must not call phosh_app_tracker_launch_app_info",
+        )
 
 
 class TestCheckoutPhoshScript(unittest.TestCase):
@@ -432,17 +780,27 @@ class TestInstallOverviewChatUiScript(unittest.TestCase):
         self.assertIn("resolve_runtime_paths", text)
         self.assertIn('candidate="/run/user/$uid"', text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", text)
+        self.assertIn("__OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT__", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_GSK_RENDERER", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS", text)
+        self.assertIn("__OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT__", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE", text)
+        self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-0', text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_LAYER", text)
+        self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom', text)
+        self.assertIn("layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER", text)
+        self.assertIn("stop_ui\n        start_ui", text)
         self.assertIn("bind_phosh_session_env_if_missing", text)
-        self.assertIn("pgrep phosh", text)
+        self.assertIn("wait_for_phosh_wayland_env", text)
+        self.assertIn("pgrep -u", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
         self.assertIn("atomos-overview-chat-ui.disabled", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_REQUIRE_BINARY", text)
         self.assertIn("no prebuilt binary found; fail install", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART", text)
+        self.assertIn("/etc/xdg/autostart/atomos-overview-chat-ui.desktop", text)
+        self.assertIn("Exec=/usr/libexec/atomos-overview-chat-ui --show", text)
 
 
 class TestInstallAtomosAgentsScript(unittest.TestCase):

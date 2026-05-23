@@ -3,13 +3,18 @@ set -euo pipefail
 
 usage() {
     cat >&2 <<'EOF'
-Usage: build-qemu.sh [profile-env] [--without-home-bg]
+Usage: build-qemu.sh [profile-env] [--without-home-bg] [--without-app-switcher]
 
 Builds a bootable ARM64 QEMU image from Alpine Linux without pmbootstrap.
 
 Options:
   --without-home-bg, --skip-home-bg
       Skip building/installing atomos-home-bg in the QEMU image.
+  --without-app-switcher, --skip-app-switcher
+      Skip building/installing atomos-app-handler in the QEMU image.
+      The legacy --without-swipe-bridge / --skip-swipe-bridge aliases are
+      accepted for backwards compatibility — both now toggle the
+      app-switcher (which folded in the swipe-bridge in v1).
 
 Optional local Meson trees under iso-postmarketos/vendor/: vendor/phoc,
 vendor/phosh-mobile-settings, vendor/phosh-wallpapers. Each is compiled into
@@ -57,10 +62,14 @@ EOF
 
 PROFILE_ENV=""
 WITHOUT_HOME_BG_FLAG=0
+WITHOUT_APP_SWITCHER_FLAG=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --without-home-bg|--skip-home-bg)
             WITHOUT_HOME_BG_FLAG=1
+            ;;
+        --without-app-switcher|--skip-app-switcher|--without-swipe-bridge|--skip-swipe-bridge)
+            WITHOUT_APP_SWITCHER_FLAG=1
             ;;
         -h|--help)
             usage
@@ -138,7 +147,9 @@ PMOS_USER_UID="${PMOS_USER_UID:-10000}"
 ROOTFS_VOLUME="atomos-qemu-rootfs-${PROFILE_NAME}"
 REPOSITORIES_FILE="$WORK_DIR/etc_apk_repositories"
 HOME_BG_MANIFEST="$ROOT_DIR/rust/atomos-home-bg/app-gtk/Cargo.toml"
+APP_SWITCHER_MANIFEST="$ROOT_DIR/rust/atomos-app-handler/app-gtk/Cargo.toml"
 BUILD_HOME_BG=1
+BUILD_APP_HANDLER=1
 if [ "$WITHOUT_HOME_BG_FLAG" = "1" ]; then
     BUILD_HOME_BG=0
     echo "build-qemu: --without-home-bg requested; home-bg disabled."
@@ -146,6 +157,14 @@ elif [ ! -f "$HOME_BG_MANIFEST" ]; then
     BUILD_HOME_BG=0
     echo "WARN: atomos-home-bg manifest missing; skipping home-bg build/install."
     echo "  missing: $HOME_BG_MANIFEST"
+fi
+if [ "$WITHOUT_APP_SWITCHER_FLAG" = "1" ]; then
+    BUILD_APP_HANDLER=0
+    echo "build-qemu: --without-app-switcher requested; app-switcher disabled."
+elif [ ! -f "$APP_SWITCHER_MANIFEST" ]; then
+    BUILD_APP_HANDLER=0
+    echo "WARN: atomos-app-handler manifest missing; skipping app-switcher build/install."
+    echo "  missing: $APP_SWITCHER_MANIFEST"
 fi
 
 mkdir -p "$EXPORT_DIR" "$WORK_DIR"
@@ -1178,6 +1197,15 @@ else
   echo "Skipping atomos-home-bg build (manifest missing or disabled)."
 fi
 
+if [ "${BUILD_APP_HANDLER:-0}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml ]; then
+  cargo build --manifest-path /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml \
+    --release \
+    --bin atomos-app-handler
+  test -x /work/iso-postmarketos/rust/atomos-app-handler/target/release/atomos-app-handler
+else
+  echo "Skipping atomos-app-handler build (manifest missing or disabled)."
+fi
+
 # Meson skips post-install glib-compile-schemas when DESTDIR is set ("Skipping custom install script..."),
 # so schemas staged under /target exist as .xml only and gschemas.compiled is missing or stale. The
 # initial rootfs build already ran glib-compile-schemas once before these installs; rerun after staged
@@ -1199,6 +1227,7 @@ glib-compile-schemas /target/usr/share/glib-2.0/schemas/
     -v "$REPO_TOP:/work" \
     -v "$MESON_CACHE_MOUNT:/cache" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+    -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
     "$ALPINE_IMAGE" /bin/sh -c "$build_container_script"
 
 echo "=== build-qemu: apply direct-rootfs customizations ==="
@@ -1242,6 +1271,9 @@ fi
             ROOTFS_DIR=/target \
                 ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT=1 \
                 ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=1 \
+                ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART=1 \
+                ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT=0 \
+                ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT=0 \
                 bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \"$PROFILE_ENV_CONTAINER\"
         fi
         if [ -f /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh ]; then
@@ -1258,6 +1290,16 @@ fi
                     bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \"$PROFILE_ENV_CONTAINER\"
             else
                 echo 'Skipping home-bg install helper (BUILD_HOME_BG=0).'
+            fi
+        fi
+        if [ -f /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh ]; then
+            if [ \"$BUILD_APP_HANDLER\" = \"1\" ]; then
+                ROOTFS_DIR=/target \
+                    ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 \
+                    ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 \
+                    bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \"$PROFILE_ENV_CONTAINER\"
+            else
+                echo 'Skipping app-switcher install helper (BUILD_APP_HANDLER=0).'
             fi
         fi
         if [ -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg ]; then
@@ -1288,6 +1330,7 @@ test -f "$IMAGE_PATH"
 "$ENGINE" run --rm --platform linux/arm64 \
     -v "$ROOTFS_VOLUME:/target" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
+    -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
     "$ALPINE_IMAGE" /bin/sh -eu -c '
         # Diagnostic verify: report each missing file individually and tally
         # failures so build-qemu prints something more useful than "Error 1".
@@ -1339,6 +1382,27 @@ test -f "$IMAGE_PATH"
         check_f /target/etc/ssh/ssh_host_ed25519_key
         check_f /target/etc/ssh/ssh_host_rsa_key
         check_not_grep "^[[:space:]]*UsePAM[[:space:]]" /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+
+        echo "--- atomos-overview-chat-ui files ---"
+        check_x /target/usr/bin/atomos-overview-chat-ui
+        check_x /target/usr/libexec/atomos-overview-chat-ui
+        check_x /target/usr/libexec/atomos-overview-chat-submit
+
+        echo "--- atomos-overview-chat-ui launcher contract ---"
+        check_grep "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME" /target/usr/libexec/atomos-overview-chat-ui
+        check_grep "atomos-overview-chat-ui.disabled"       /target/usr/libexec/atomos-overview-chat-ui
+
+        echo "--- atomos-overview-chat-ui autostart wiring ---"
+        check_f /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        check_grep "Exec=/usr/libexec/atomos-overview-chat-ui --show" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        check_grep "OnlyShowIn=GNOME;Phosh;" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        if grep -Eq "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=\"\\\$\\{ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1\\}\"" /target/usr/libexec/atomos-overview-chat-ui; then
+            echo "  ok  launcher has ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME default=1"
+        else
+            echo "  FAIL launcher runtime gate is not 1 by default; --show will no-op" >&2
+            grep ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME /target/usr/libexec/atomos-overview-chat-ui >&2 || true
+            FAIL=1
+        fi
 
         if [ "${BUILD_HOME_BG:-0}" = "1" ]; then
             echo "--- atomos-home-bg files ---"
@@ -1419,6 +1483,56 @@ test -f "$IMAGE_PATH"
                     fi
                 fi
             fi
+        fi
+
+        if [ "${BUILD_APP_HANDLER:-0}" = "1" ]; then
+            echo "--- atomos-app-handler files ---"
+            check_x /target/usr/local/bin/atomos-app-handler
+            check_x /target/usr/bin/atomos-app-handler
+            check_x /target/usr/libexec/atomos-app-handler
+            check_grep "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" /target/usr/libexec/atomos-app-handler
+            check_grep "atomos-app-handler.disabled"       /target/usr/libexec/atomos-app-handler
+            if grep -Eq "ATOMOS_APP_HANDLER_ENABLE_RUNTIME=\"\\\$\\{ATOMOS_APP_HANDLER_ENABLE_RUNTIME:-1\\}\"" /target/usr/libexec/atomos-app-handler; then
+                echo "  ok  launcher has ATOMOS_APP_HANDLER_ENABLE_RUNTIME default=1"
+            else
+                echo "  FAIL launcher runtime gate is not 1 by default; --start will no-op" >&2
+                grep ATOMOS_APP_HANDLER_ENABLE_RUNTIME /target/usr/libexec/atomos-app-handler >&2 || true
+                FAIL=1
+            fi
+            echo "--- atomos-app-handler runtime library check ---"
+            # gtk4-layer-shell is not pulled by the standard phosh stack;
+            # missing this lib means the binary exits rc=127 at session start
+            # and the bottom-edge swipe never opens the switcher.
+            for lib in \
+                "libgtk4-layer-shell.so" \
+                "libgtk-4.so" \
+                "libwayland-client.so"; do
+                if find /target/usr/lib /target/lib -name "${lib}*" -maxdepth 3 2>/dev/null | grep -q .; then
+                    echo "  ok  found ${lib}*"
+                else
+                    echo "  FAIL ${lib}* not found in rootfs — app-switcher will fail to start" >&2
+                    FAIL=1
+                fi
+            done
+            echo "--- atomos-app-handler hybrid lifecycle contract ---"
+            # Contract marker version must match core/src/lib.rs OVERLAY_CONTRACT_VERSION
+            # so a rust constant rename does not silently bypass the verify.
+            check_f /target/etc/atomos/app-handler-contract
+            check_grep "^app-handler-v1-launch-switcher-dbus-home$" /target/etc/atomos/app-handler-contract
+            check_grep "action=show" /target/usr/libexec/atomos-app-handler
+            check_grep "action=hide" /target/usr/libexec/atomos-app-handler
+            # Launcher must signal the autostarted handle process for --show / --hide
+            # rather than spawning a second binary, otherwise the always-visible
+            # swipe-up bar dies the moment the overlay is dismissed.
+            check_grep "signal_show" /target/usr/libexec/atomos-app-handler
+            check_grep "signal_hide" /target/usr/libexec/atomos-app-handler
+            check_grep "kill -USR1"  /target/usr/libexec/atomos-app-handler
+            check_grep "kill -USR2"  /target/usr/libexec/atomos-app-handler
+            # Handle-bar autostart MUST be present; without it there is no
+            # visible swipe-up affordance at session start.
+            check_f /target/etc/xdg/autostart/atomos-app-handler.desktop
+            check_grep "Exec=/usr/libexec/atomos-app-handler --start" /target/etc/xdg/autostart/atomos-app-handler.desktop
+            check_grep "OnlyShowIn=GNOME;Phosh;" /target/etc/xdg/autostart/atomos-app-handler.desktop
         fi
 
         if [ "$FAIL" -ne 0 ]; then

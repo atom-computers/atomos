@@ -489,6 +489,10 @@ verify_atomos_customizations_in_image() {
 		"usr/libexec/atomos-home-bg" \
 		"usr/share/atomos-home-bg/index.html" \
 		"etc/xdg/autostart/atomos-home-bg.desktop" \
+		"usr/local/bin/atomos-app-handler" \
+		"usr/libexec/atomos-app-handler" \
+		"etc/xdg/autostart/atomos-app-handler.desktop" \
+		"etc/atomos/phosh-profile.env" \
 		"etc/atomos/overview-chat-ui-overlay-contract" \
 		"etc/dconf/db/local.d/51-atomos-phosh-favorites.conf" \
 		"usr/libexec/phosh"; do

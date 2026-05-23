@@ -50,17 +50,12 @@ get_last_overview_coredump_id() {
     | awk 'NF {id=$1} END {print id}'
 }
 
-PID="$(pgrep phosh | head -n 1 || true)"
-if [ -z "$PID" ]; then
-  echo "ERROR: no running phosh process found." >&2
+if ! pgrep -u "$(id -u)" phosh >/dev/null 2>&1; then
+  echo "ERROR: no running phosh process found for uid $(id -u)." >&2
   exit 1
 fi
 
-for v in WAYLAND_DISPLAY XDG_RUNTIME_DIR DISPLAY DBUS_SESSION_BUS_ADDRESS; do
-  line="$(tr '\0' '\n' < "/proc/$PID/environ" | grep "^${v}=" || true)"
-  [ -n "$line" ] || continue
-  export "$line"
-done
+bind_phosh_wayland_env
 
 echo "=== overview chat ui segfault repro ==="
 echo "iterations=$ITERATIONS sleep_ms=$SLEEP_MS"
@@ -112,4 +107,7 @@ REMOTE_SH
 
 REMOTE_SH="${REMOTE_SH//__ITERATIONS__/$ITERATIONS}"
 REMOTE_SH="${REMOTE_SH//__SLEEP_MS__/$SLEEP_MS}"
+WAYLAND_ENV_LIB="$(cat "$ROOT_DIR/scripts/device/_lib-bind-phosh-wayland-env.sh")"
+REMOTE_SH="${WAYLAND_ENV_LIB}
+${REMOTE_SH}"
 exec bash "$ROOT_DIR/scripts/device/atomos-device-ssh.sh" /bin/sh -lc "$REMOTE_SH"

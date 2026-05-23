@@ -149,6 +149,12 @@ if [ "${USE_VENDOR_PHOSH:-1}" = "1" ]; then
             echo "ERROR: phosh headers missing under /usr/include/phosh after host install" >&2
             exit 1
         fi
+        # Gate (1): fail the image build if vendor phosh lacks org.atomos.PhoshHome.
+        # shellcheck source=scripts/phosh/_lib-verify-vendor-phosh-atomos.sh
+        source /work/iso-postmarketos/scripts/phosh/_lib-verify-vendor-phosh-atomos.sh
+        atomos_verify_phosh_source_atomos_dbus "$PHOSH_SRC"
+        atomos_verify_phosh_meson_build_has_atomos_dbus "$PHOSH_BUILD"
+        atomos_verify_built_libphosh_has_atomos_dbus ""
     else
         echo "build-fairphone4-v2: WARN no rust/phosh/phosh/meson.build; using stock pmOS phosh."
     fi
@@ -209,6 +215,13 @@ if [ "${BUILD_HOME_BG:-1}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-ho
     cargo build --manifest-path /work/iso-postmarketos/rust/atomos-home-bg/app-gtk/Cargo.toml \
         --release --bin atomos-home-bg
     test -x /work/iso-postmarketos/rust/atomos-home-bg/target/release/atomos-home-bg
+fi
+
+if [ "${BUILD_APP_HANDLER:-1}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml ]; then
+    echo "Building atomos-app-handler..."
+    cargo build --manifest-path /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml \
+        --release --bin atomos-app-handler
+    test -x /work/iso-postmarketos/rust/atomos-app-handler/target/release/atomos-app-handler
 fi
 
 # Recompile gschemas after staged installs (Meson skips this when DESTDIR is set).

@@ -1,3 +1,10 @@
+use std::path::Path;
+use std::process::Command;
+
+use atomos_overview_chat_ui::{
+    decide_launch_invocation, launch_invocation_argv, resolve_app_handler_launcher,
+    LaunchInvocation, APP_HANDLER_LAUNCHER_ENV, APP_HANDLER_LAUNCHER_PATH,
+};
 use gtk::gio;
 use gtk::gio::prelude::*;
 use gtk::prelude::*;
@@ -85,6 +92,68 @@ fn app_icon(app: &gio::AppInfo) -> Option<gio::Icon> {
     None
 }
 
+/// Dispatch a tile click to either the `atomos-app-handler` launcher
+/// (preferred — round-trips through the same lifecycle Phosh's
+/// `app-grid-button.c:activate_cb` uses) or `gio::AppInfo::launch`
+/// (warn-and-skip fallback for hosts without the rootfs overlay).
+fn tile_click_launch(app: &gio::AppInfo, app_name: &str) {
+    let env_override = std::env::var(APP_HANDLER_LAUNCHER_ENV).ok();
+    let launcher = resolve_app_handler_launcher(env_override.as_deref(), |p: &Path| p.is_file());
+
+    let app_id = app.id().map(|s| s.to_string()).unwrap_or_default();
+    if app_id.is_empty() {
+        eprintln!(
+            "atomos-overview-chat-ui: tile click for '{app_name}' has empty app id; \
+             skipping atomos-app-handler dispatch"
+        );
+        gio_fallback_launch(app, app_name);
+        return;
+    }
+
+    let invocation = decide_launch_invocation(&app_id, launcher.as_deref());
+    match invocation {
+        LaunchInvocation::DispatchAppHandler { .. } => {
+            let argv = launch_invocation_argv(&invocation);
+            let mut iter = argv.into_iter();
+            let Some(program) = iter.next() else {
+                eprintln!(
+                    "atomos-overview-chat-ui: empty argv from launch_invocation_argv \
+                     for '{app_name}' — falling back to gio"
+                );
+                gio_fallback_launch(app, app_name);
+                return;
+            };
+            let args: Vec<String> = iter.collect();
+            eprintln!(
+                "atomos-overview-chat-ui: dispatching launch via {program} {args:?} \
+                 (default path={APP_HANDLER_LAUNCHER_PATH})"
+            );
+            if let Err(err) = Command::new(&program).args(&args).spawn() {
+                eprintln!(
+                    "atomos-overview-chat-ui: spawn of {program} failed for '{app_name}': {err}; \
+                     falling back to gio"
+                );
+                gio_fallback_launch(app, app_name);
+            }
+        }
+        LaunchInvocation::DirectGioFallback { .. } => {
+            // Phosh `home.c:276-285` parity: warn-and-skip — keep launching
+            // the app, just don't dispatch the lifecycle round-trip.
+            eprintln!(
+                "atomos-overview-chat-ui: {APP_HANDLER_LAUNCHER_PATH} not present; \
+                 falling back to gio for '{app_name}'"
+            );
+            gio_fallback_launch(app, app_name);
+        }
+    }
+}
+
+fn gio_fallback_launch(app: &gio::AppInfo, app_name: &str) {
+    if let Err(err) = app.launch(&[], Option::<&gio::AppLaunchContext>::None) {
+        eprintln!("atomos-overview-chat-ui: failed launching {app_name}: {err}");
+    }
+}
+
 pub fn build_app_grid_sheet() -> gtk::ScrolledWindow {
     let flow = gtk::FlowBox::new();
     flow.set_selection_mode(gtk::SelectionMode::None);
@@ -143,12 +212,7 @@ pub fn build_app_grid_sheet() -> gtk::ScrolledWindow {
         let app_for_launch = app.clone();
         let app_name_for_launch = app_name.clone();
         tile_btn.connect_clicked(move |_| {
-            if let Err(err) = app_for_launch.launch(&[], Option::<&gio::AppLaunchContext>::None) {
-                eprintln!(
-                    "atomos-overview-chat-ui: failed launching {}: {err}",
-                    app_name_for_launch
-                );
-            }
+            tile_click_launch(&app_for_launch, &app_name_for_launch);
         });
         flow.insert(&tile_btn, -1);
     }

@@ -46,6 +46,13 @@ if [ -f "$HOME/.phoshdebug" ]; then
   . "$HOME/.phoshdebug"
 fi
 
+if [ -f /etc/atomos/phosh-profile.env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . /etc/atomos/phosh-profile.env
+  set +a
+fi
+
 if which systemd-cat >/dev/null 2>&1; then
   SYSTEMD_CAT="systemd-cat -t phoc"
 fi

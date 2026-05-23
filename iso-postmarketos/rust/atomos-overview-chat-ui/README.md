@@ -59,6 +59,15 @@ not libadwaita (`-p atomos-overview-chat-ui-egui`):
 
 On Linux you can force egui with `ATOMOS_OVERVIEW_CHAT_UI_PREVIEW=egui`.
 
+**Swipe gesture lab (egui, fast loop):**
+
+- `bash scripts/overview-chat-ui/preview-overview-chat-ui-swipe-lab-egui.sh`
+
+This lab focuses on the open-app swipe-up contract: bottom-edge start handle +
+distance threshold (`PHOSH_HOME_DRAG_THRESHOLD`-style fraction). It is meant for
+rapid iteration on gesture expectations and does not replace compositor/device
+integration testing.
+
 ## Device hotfix loop
 
 For device-side iteration without reflashing the full image:
@@ -80,9 +89,12 @@ helpers, and restarts the overview UI process on the device. Override
 session instead of just the chat UI process.
 
 Launcher defaults are tuned for shell integration: layer-shell is enabled,
-`--hide` events are honored, and the surface defaults to the `top` layer so it
-is visible on home/overview while app visibility is still controlled by Phosh
-lifecycle show/hide hooks, unless explicitly overridden.
+and Phosh drives layer on each fold/unfold (mirroring `atomos-home-bg`):
+`ATOMOS_OVERVIEW_CHAT_UI_LAYER=top` while the overview is unfolded so the chat
+strip sits above shell UI, and `layer=bottom` while folded so running apps
+paint above the strip. The launcher restarts the GTK process on every `--show`
+so the layer change applies. Set `ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE=1` only
+when bisecting lifecycle issues.
 When `--show` is invoked from sessions that do not already carry Wayland vars
 (for example over SSH), the launcher now attempts to import
 `WAYLAND_DISPLAY`/`XDG_RUNTIME_DIR` from the running `phosh` process.

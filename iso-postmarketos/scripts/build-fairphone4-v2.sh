@@ -53,10 +53,11 @@ set -euo pipefail
 usage() {
     cat >&2 <<'EOF'
 Usage: build-fairphone4-v2.sh [profile-env] \
-    [--without-vendor-phosh] [--without-overview-chat-ui] [--without-home-bg]
+    [--without-vendor-phosh] [--without-overview-chat-ui] [--without-home-bg] \
+    [--without-app-switcher]
 
 Modular Fairphone 4 builder. Defaults: vendor phosh ON, overview-chat-ui ON,
-home-bg ON. Outputs build/host-export-fairphone-fp4/{boot.img,fairphone-fp4.img}.
+home-bg ON, app-switcher ON. Outputs build/host-export-fairphone-fp4/{boot.img,fairphone-fp4.img}.
 EOF
 }
 
@@ -65,11 +66,13 @@ PROFILE_ENV=""
 USE_VENDOR_PHOSH=1
 BUILD_OVERVIEW_CHAT_UI=1
 BUILD_HOME_BG=1
+BUILD_APP_HANDLER=1
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --without-vendor-phosh|--skip-vendor-phosh) USE_VENDOR_PHOSH=0 ;;
         --without-overview-chat-ui|--skip-overview-chat-ui) BUILD_OVERVIEW_CHAT_UI=0 ;;
         --without-home-bg|--skip-home-bg) BUILD_HOME_BG=0 ;;
+        --without-app-switcher|--skip-app-switcher|--without-swipe-bridge|--skip-swipe-bridge) BUILD_APP_HANDLER=0 ;;
         -h|--help) usage; exit 0 ;;
         -*) echo "ERROR: unknown option: $1" >&2; usage; exit 1 ;;
         *)
