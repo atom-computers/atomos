@@ -111,7 +111,8 @@ require_pattern 'layer = "top"' "overview unfold uses home-bg top layer"
 require_pattern 'layer = "bottom"' "overview fold restores home-bg bottom layer"
 require_pattern "atomos_phosh_sync_overview_chat_ui_lifecycle" "home syncs overview-chat-ui layer with home state"
 require_pattern "ATOMOS_OVERVIEW_CHAT_UI_LAYER=%s %s --show" "overview chat uses layer-prefixed --show"
-require_pattern 'layer = "top"' "overview unfold uses chat top layer"
+require_pattern 'layer = "overlay"' "overview unfold uses chat overlay layer (above phosh-home TOP)"
+require_pattern "phosh_shell_get_locked" "overview chat hides while session locked"
 require_pattern 'layer = "bottom"' "overview fold demotes chat to bottom layer"
 
 if rg -n "\"drag-mode\", PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE" "$TOP_PANEL_C" >/dev/null; then

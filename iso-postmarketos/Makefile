@@ -17,6 +17,8 @@ help:
 	@echo "                                   #   Opt out: ATOMOS_SKIP_VENDOR_PHOSH_BUILD=1 make build-fairphone4"
 	@echo "  make build-fairphone4-pmbootstrap # Legacy: Fairphone FP4 via pmbootstrap (kept for diffing)."
 	@echo "  make build-qemu                  # ARM64 QEMU profile (Alpine-based, ships vendor phosh)"
+	@echo "                                   #   Meson cache persists in a docker volume; unchanged"
+	@echo "                                   #   rust/phosh skips recompile (see build-qemu.sh env docs)."
 	@echo "  make qemu                        # Boot exported image via qemu-system-aarch64"
 	@echo ""
 	@echo "Fairphone 4 build details (build-fairphone4):"

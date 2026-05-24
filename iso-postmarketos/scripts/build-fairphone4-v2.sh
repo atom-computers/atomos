@@ -42,6 +42,10 @@
 #   ATOMOS_FP4V2_PMOS_MIRROR              pmOS mirror URL
 #   ATOMOS_FP4V2_MESON_CACHE_HOST_DIR     host bind mount for /cache
 #   ATOMOS_FP4V2_MESON_CACHE_CLEAN=1      wipe meson/ccache cache
+#   (default volume)                      Reuses /cache/phosh across runs;
+#                                         skips compile when rust/phosh is
+#                                         unchanged ("unchanged source tree,
+#                                         skipping compile" in the log).
 #   ATOMOS_FP4V2_BUILD_ENGINE             docker | podman (auto-detected)
 #   ATOMOS_FP4V2_ROOTFS_SIZE_MB           sparse image size override
 #   ATOMOS_FP4V2_KEEP_ROOTFS_VOLUME=1     reuse the bootstrapped volume

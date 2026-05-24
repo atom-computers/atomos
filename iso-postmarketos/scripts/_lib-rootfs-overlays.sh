@@ -24,14 +24,18 @@ _atomos_overlay_profile_env_in_container() {
 }
 
 _atomos_overlay_container_body() {
+    local lib_dir
+    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # shellcheck source=scripts/_lib-build-common.sh
+    source "$lib_dir/_lib-build-common.sh"
+    atomos_overlay_container_bash_setup
     cat <<'OVERLAY_BODY'
-apk add --no-interactive bash python3 grep sed tar >/dev/null
 
 run_helper() {
     local script="$1"; shift
     if [ -f "/work/iso-postmarketos/$script" ]; then
         echo "  -> $script $*"
-        ROOTFS_DIR=/target "$@" bash "/work/iso-postmarketos/$script" "$PROFILE_ENV_CONTAINER" || true
+        ROOTFS_DIR=/target "$@" atomos_bash "/work/iso-postmarketos/$script" "$PROFILE_ENV_CONTAINER" || true
     fi
 }
 
@@ -48,7 +52,7 @@ if [ "${BUILD_OVERVIEW_CHAT_UI:-1}" = "1" ] \
         ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART=1 \
         ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT=0 \
         ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT=0 \
-        bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \
+        atomos_bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \
         "$PROFILE_ENV_CONTAINER"
 fi
 
@@ -58,7 +62,7 @@ if [ "${BUILD_HOME_BG:-1}" = "1" ] \
     ROOTFS_DIR=/target \
         ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT=1 \
         ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 \
-        bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \
+        atomos_bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \
         "$PROFILE_ENV_CONTAINER"
 fi
 
@@ -68,7 +72,7 @@ if [ "${BUILD_APP_HANDLER:-1}" = "1" ] \
     ROOTFS_DIR=/target \
         ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 \
         ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 \
-        bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \
+        atomos_bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \
         "$PROFILE_ENV_CONTAINER"
 fi
 

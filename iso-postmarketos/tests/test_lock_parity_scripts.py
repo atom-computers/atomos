@@ -97,9 +97,9 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             # the XDG autostart for atomos-overview-chat-ui AND the vendor
             # phosh patches that spawned it on home unfold, leaving the chat
             # UI with nothing to launch it on the home screen. The overlay
-            # must write a .desktop that runs the launcher with --show.
+            # must write a .desktop that runs the launcher with --start (Phosh drives --show).
             self.assertIn("/etc/xdg/autostart/atomos-overview-chat-ui.desktop", result.stdout)
-            self.assertIn("Exec=/usr/libexec/atomos-overview-chat-ui --show", result.stdout)
+            self.assertIn("Exec=/usr/libexec/atomos-overview-chat-ui --start", result.stdout)
             self.assertIn("OnlyShowIn=GNOME;Phosh;", result.stdout)
             self.assertNotIn(
                 "rm -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop\n'",
@@ -325,8 +325,33 @@ class TestPhoshHomeAndPanelSourceContracts(unittest.TestCase):
             text,
             msg=(
                 "home.c must call atomos_phosh_sync_overview_chat_ui_lifecycle "
-                "from on_drag_state_changed, mirroring app-handler/home-bg syncs"
+                "from on_drag_state_changed when not in TRANSITION"
             ),
+        )
+        self.assertIn(
+            "if (self->state != PHOSH_HOME_STATE_TRANSITION)",
+            text,
+            msg="chat-ui sync must be skipped during drag TRANSITION",
+        )
+        self.assertIn('layer = "overlay"', text, msg="unfolded home must promote chat-ui to overlay")
+        chat_lifecycle = text.split("atomos_phosh_sync_overview_chat_ui_lifecycle", 1)[1].split(
+            "atomos_phosh_bottom_edge_drag_disabled", 1
+        )[0]
+        self.assertNotIn(
+            'layer = "top"',
+            chat_lifecycle,
+            msg="layer=top leaves chat-ui under phosh-home (home-bg may still use top)",
+        )
+        self.assertIn("phosh_shell_get_locked", text, msg="chat-ui must hide while session locked")
+        self.assertIn(
+            "g_idle_add (atomos_phosh_sync_overview_chat_ui_after_map_idle",
+            text,
+            msg="unlock must re-sync chat-ui layer from drag state",
+        )
+        self.assertIn(
+            "atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED)",
+            text,
+            msg="unfold stable gate must promote chat-ui to overlay",
         )
         self.assertIn(
             "ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE_ENV",
@@ -472,6 +497,19 @@ class TestAppHandlerScripts(unittest.TestCase):
                 text,
                 msg=f"{path} must assert the handle-bar autostart desktop is shipped",
             )
+
+    def test_image_builds_share_meson_source_tree_skip_helper(self):
+        meson_body = (SCRIPTS / "_lib-meson-cache-body.sh").read_text(encoding="utf-8")
+        self.assertIn("atomos_tree_content_hash", meson_body)
+        self.assertIn("atomos_meson_ninja_build_install", meson_body)
+        self.assertIn("unchanged source tree, skipping compile", meson_body)
+        for path in (
+            SCRIPTS / "build-qemu.sh",
+            SCRIPTS / "_lib-build-container-body.sh",
+        ):
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("_lib-meson-cache-body.sh", text, msg=path.name)
+            self.assertIn("atomos_meson_ninja_build_install", text, msg=path.name)
 
     def test_app_handler_handle_paint_uses_core_layout(self):
         core_text = R_APP_HANDLER_HANDLE_CORE.read_text(encoding="utf-8")
@@ -790,6 +828,9 @@ class TestInstallOverviewChatUiScript(unittest.TestCase):
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_LAYER", text)
         self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom', text)
         self.assertIn("layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER", text)
+        self.assertIn("    --start)", text)
+        self.assertIn("    --show)", text)
+        self.assertIn("log_action", text)
         self.assertIn("stop_ui\n        start_ui", text)
         self.assertIn("bind_phosh_session_env_if_missing", text)
         self.assertIn("wait_for_phosh_wayland_env", text)
@@ -800,7 +841,53 @@ class TestInstallOverviewChatUiScript(unittest.TestCase):
         self.assertIn("no prebuilt binary found; fail install", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART", text)
         self.assertIn("/etc/xdg/autostart/atomos-overview-chat-ui.desktop", text)
-        self.assertIn("Exec=/usr/libexec/atomos-overview-chat-ui --show", text)
+        self.assertIn("Exec=/usr/libexec/atomos-overview-chat-ui --start", text)
+        self.assertNotIn("Exec=/usr/libexec/atomos-overview-chat-ui --show", text)
+
+
+class TestSmokeChatUiPostUnlockScript(unittest.TestCase):
+    def test_bash_syntax(self):
+        script = S_OVERVIEW / "smoke-chat-ui-post-unlock.sh"
+        r = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_remote_lib_bash_syntax(self):
+        lib = S_OVERVIEW / "_lib-chat-ui-smoke.remote.sh"
+        r = subprocess.run(["bash", "-n", str(lib)], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_smoke_drives_dbus_and_checks_overlay_runtime(self):
+        text = (S_OVERVIEW / "_lib-chat-ui-smoke.remote.sh").read_text(encoding="utf-8")
+        self.assertIn("SetUnfolded", text)
+        self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay", text)
+        self.assertIn("gtk_layer=Overlay", text)
+        self.assertIn("atomos_find_chat_ui_binary_pid", text)
+
+
+class TestOverviewChatUiLifecycleStackRegression(unittest.TestCase):
+    """Guards for chat-ui invisible-on-home / visible-on-lock regressions."""
+
+    def test_phosh_home_chat_ui_local_script_expects_overlay_and_lock_gate(self):
+        script = S_PHOSH / "test-phosh-home-chat-ui-local.sh"
+        text = script.read_text(encoding="utf-8")
+        self.assertIn('overview unfold uses chat overlay layer', text)
+        self.assertIn("overview chat hides while session locked", text)
+        self.assertIn("overview fold demotes chat to bottom layer", text)
+
+    def test_diagnose_script_remote_blob_has_no_single_quotes(self):
+        text = (SCRIPTS / "app-handler" / "diagnose-app-handler.sh").read_text(encoding="utf-8")
+        start = text.index("REMOTE_SCRIPT='") + len("REMOTE_SCRIPT='")
+        end = text.index("\n'\n", start)
+        body = text[start:end]
+        self.assertNotIn("'", body)
+        self.assertIn("layer=overlay", body)
+
+    def test_lib_verify_autostart_start_contract(self):
+        text = (SCRIPTS / "_lib-verify.sh").read_text(encoding="utf-8")
+        self.assertIn(
+            "Exec=/usr/libexec/atomos-overview-chat-ui --start",
+            text,
+        )
 
 
 class TestInstallAtomosAgentsScript(unittest.TestCase):

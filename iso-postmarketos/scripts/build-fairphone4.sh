@@ -1181,66 +1181,9 @@ glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
 # Step 4: direct rootfs install of AtomOS overlays (parity with build-qemu).
 ##############################################################################
 echo "=== build-fairphone4: apply AtomOS overlays (direct rootfs mode) ==="
-PROFILE_ENV_CONTAINER="$PROFILE_ENV_SOURCE"
-if [[ "$PROFILE_ENV_SOURCE" == "$REPO_TOP/"* ]]; then
-    PROFILE_ENV_CONTAINER="/work/${PROFILE_ENV_SOURCE#"$REPO_TOP"/}"
-elif [[ "$PROFILE_ENV_SOURCE" != /* ]]; then
-    PROFILE_ENV_CONTAINER="/work/iso-postmarketos/$PROFILE_ENV_SOURCE"
-fi
-
-"$ENGINE" run --rm --platform "linux/arm64" \
-    -v "$ROOTFS_VOLUME:/target" \
-    -v "$REPO_TOP:/work" \
-    -e BUILD_OVERVIEW_CHAT_UI="$BUILD_OVERVIEW_CHAT_UI" \
-    -e BUILD_HOME_BG="$BUILD_HOME_BG" \
-    -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
-    "$ALPINE_IMAGE" /bin/sh -eu -c "
-        apk add --no-interactive bash python3 grep sed tar >/dev/null
-        if [ -f /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh ]; then
-            ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh \"$PROFILE_ENV_CONTAINER\" || true
-        fi
-        if [ -f /work/iso-postmarketos/scripts/rootfs/install-bt-tools.sh ]; then
-            ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-bt-tools.sh \"$PROFILE_ENV_CONTAINER\" || true
-        fi
-        if [ -f /work/iso-postmarketos/scripts/rootfs/install-btlescan.sh ]; then
-            ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-btlescan.sh \"$PROFILE_ENV_CONTAINER\" || true
-        fi
-        if [ \"\$BUILD_OVERVIEW_CHAT_UI\" = \"1\" ] && [ -f /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh ]; then
-            # Same runtime defaults as build-qemu: chat UI active by default.
-            ROOTFS_DIR=/target \
-                ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT=1 \
-                ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT=1 \
-                ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART=1 \
-                ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT=0 \
-                ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT=0 \
-                bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \"$PROFILE_ENV_CONTAINER\"
-        fi
-        if [ \"\$BUILD_HOME_BG\" = \"1\" ] && [ -f /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh ]; then
-            ROOTFS_DIR=/target \
-                ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT=1 \
-                ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 \
-                bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \"$PROFILE_ENV_CONTAINER\"
-        fi
-        if [ \"\$BUILD_APP_HANDLER\" = \"1\" ] && [ -f /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh ]; then
-            ROOTFS_DIR=/target \
-                ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 \
-                ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 \
-                bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \"$PROFILE_ENV_CONTAINER\"
-        fi
-        if [ -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg ]; then
-            mkdir -p /target/usr/share/backgrounds/gnome /target/usr/share/backgrounds/atomos /target/usr/share/backgrounds
-            cp -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg /target/usr/share/backgrounds/gnome/gargantua-black.jpg
-            cp -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg /target/usr/share/backgrounds/gargantua-black.jpg
-            cp -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg /target/usr/share/backgrounds/atomos/gargantua-black.jpg
-        fi
-        # Re-run sshd sanitize after agents install (which can drop/replace files).
-        if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
-            sed -i '/^[[:space:]]*UsePAM[[:space:]]\\+/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
-        fi
-        if [ -x /target/usr/bin/ssh-keygen ]; then
-            chroot /target /usr/bin/ssh-keygen -A >/dev/null 2>&1 || true
-        fi
-    "
+# shellcheck source=scripts/_lib-rootfs-overlays.sh
+source "$ROOT_DIR/scripts/_lib-rootfs-overlays.sh"
+atomos_apply_overlays
 
 # NOTE: deliberately NOT calling scripts/rootfs/apply-overlay.sh,
 # scripts/phosh/apply-atomos-phosh-dconf.sh, or

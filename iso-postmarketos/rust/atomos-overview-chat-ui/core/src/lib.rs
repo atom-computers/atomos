@@ -122,10 +122,12 @@ pub fn launch_invocation_argv(invocation: &LaunchInvocation) -> Vec<String> {
 /// not collide on the compositor.
 pub const LAYER_SHELL_NAMESPACE: &str = "atomos-overview-chat-ui";
 
-/// Default wlr-layer-shell layer for the overview chat surface. The binary
-/// reads `ATOMOS_OVERVIEW_CHAT_UI_LAYER` to override; this constant is the
-/// value used when the env var is absent.
-pub const DEFAULT_LAYER_NAME: &str = "top";
+/// Default wlr-layer-shell layer for the overview chat surface when Phosh
+/// has not yet supplied `ATOMOS_OVERVIEW_CHAT_UI_LAYER`. Unfolded home uses
+/// `overlay` (see `atomos_phosh_sync_overview_chat_ui_lifecycle` in
+/// phosh `home.c`) so the strip sits above phosh-home, which is itself a TOP
+/// layer-shell surface. Folded / autostart-before-unfold uses `bottom`.
+pub const DEFAULT_LAYER_NAME: &str = "overlay";
 
 /// Runtime enable gate env var. When not set to literal `"1"` the launcher
 /// skips starting the surface — matched by the home-bg gate for symmetry.
@@ -291,8 +293,8 @@ mod tests {
     }
 
     #[test]
-    fn default_layer_is_top() {
-        assert_eq!(DEFAULT_LAYER_NAME, "top");
+    fn default_layer_is_overlay_above_phosh_home_top_surface() {
+        assert_eq!(DEFAULT_LAYER_NAME, "overlay");
     }
 
     #[test]

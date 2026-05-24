@@ -200,12 +200,31 @@ PIDFILE=""
 LOGFILE=""
 DISABLE_FILE=""
 
+# True only when the GTK binary (not the /bin/sh --show wrapper) is alive.
+# See install-overview-chat-ui.sh for the full rationale (Phosh LAYER=top
+# --show must kill the real binary, not the launcher subshell).
 is_running() {
     resolve_runtime_paths
     [ -f "$PIDFILE" ] || return 1
     pid=$(cat "$PIDFILE" 2>/dev/null || true)
     [ -n "$pid" ] || return 1
-    kill -0 "$pid" 2>/dev/null
+    kill -0 "$pid" 2>/dev/null || return 1
+    cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
+    case "$cmdline" in
+        */usr/local/bin/atomos-overview-chat-ui*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+kill_chat_ui_binary() {
+    for pid in $(pgrep -f '/usr/local/bin/atomos-overview-chat-ui' 2>/dev/null || true); do
+        [ -n "$pid" ] || continue
+        kill "$pid" 2>/dev/null || true
+    done
 }
 
 resolve_runtime_paths() {
@@ -273,15 +292,15 @@ start_ui() {
     (
         printf '%s\n' "---- $(date) ----"
         set +e
-        "$BIN"
-        rc=$?
-        if [ "$rc" -eq 127 ]; then
-            # "command not found"/loader failure class; avoid restart loops.
-            : > "$DISABLE_FILE"
-            logger -t atomos-overview-chat-ui "binary exec failed rc=127; wrote disable marker $DISABLE_FILE"
+        if ! exec "$BIN"; then
+            rc=$?
+            if [ "$rc" -eq 127 ]; then
+                : > "$DISABLE_FILE"
+                logger -t atomos-overview-chat-ui "binary exec failed rc=127; wrote disable marker $DISABLE_FILE"
+            fi
+            logger -t atomos-overview-chat-ui "process-exit rc=$rc"
+            exit "$rc"
         fi
-        logger -t atomos-overview-chat-ui "process-exit rc=$rc"
-        exit "$rc"
     ) >>"$LOGFILE" 2>&1 &
     pid=$!
     echo "$pid" > "$PIDFILE"
@@ -297,28 +316,49 @@ stop_ui() {
         logger -t atomos-overview-chat-ui "hide ignored (ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE=1)"
         return 0
     fi
-    if ! is_running; then
-        rm -f "$PIDFILE"
-        return 0
+    resolve_runtime_paths
+    if is_running; then
+        pid=$(cat "$PIDFILE" 2>/dev/null || true)
+        kill "$pid" 2>/dev/null || true
     fi
-    pid=$(cat "$PIDFILE" 2>/dev/null || true)
-    kill "$pid" 2>/dev/null || true
+    kill_chat_ui_binary
     rm -f "$PIDFILE"
 }
 
+log_action() {
+    resolve_runtime_paths
+    msg="$1"
+    logger -t atomos-overview-chat-ui "$msg"
+    if [ -n "${LOGFILE:-}" ]; then
+        printf "%s\n" "$msg" >>"$LOGFILE"
+    fi
+}
+
 case "${1:-}" in
-    --show)
+    --start)
         if [ "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1}" != "1" ]; then
-            logger -t atomos-overview-chat-ui "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
+            log_action "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping start"
             exit 0
         fi
         bind_phosh_session_env_if_missing
-        logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+        log_action "action=start wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+        if is_running; then
+            exit 0
+        fi
+        start_ui
+        ;;
+    --show)
+        if [ "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1}" != "1" ]; then
+            log_action "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
+            exit 0
+        fi
+        bind_phosh_session_env_if_missing
+        log_action "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
         stop_ui
         start_ui
         ;;
     --hide)
-        logger -t atomos-overview-chat-ui "action=hide"
+        log_action "action=hide"
         stop_ui
         ;;
     *)
@@ -387,7 +427,7 @@ cat > /etc/xdg/autostart/atomos-overview-chat-ui.desktop << 'AUTOSTART_EOF'
 Type=Application
 Name=AtomOS Overview Chat UI
 Comment=Layer-shell chat overlay that follows the Phosh home screen.
-Exec=/usr/libexec/atomos-overview-chat-ui --show
+Exec=/usr/libexec/atomos-overview-chat-ui --start
 OnlyShowIn=GNOME;Phosh;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true

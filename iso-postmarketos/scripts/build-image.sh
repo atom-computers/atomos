@@ -1240,7 +1240,7 @@ verify_overview_chat_ui_launcher_contract() {
         grep -q "atomos-overview-chat-ui.disabled" /usr/libexec/atomos-overview-chat-ui
         grep -q "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS" /usr/libexec/atomos-overview-chat-ui
         test -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop
-        grep -q "Exec=/usr/libexec/atomos-overview-chat-ui --show" /etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        grep -q "Exec=/usr/libexec/atomos-overview-chat-ui --start" /etc/xdg/autostart/atomos-overview-chat-ui.desktop
         grep -q "OnlyShowIn=GNOME;Phosh;" /etc/xdg/autostart/atomos-overview-chat-ui.desktop
         test ! -e /usr/libexec/atomos-overview-chat-ui-boot
         test ! -e /usr/lib/systemd/user/atomos-overview-chat-ui.service

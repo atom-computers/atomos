@@ -63,3 +63,31 @@ atomos_cleanup_volume() {
     fi
     "$engine" volume rm -f "$vol" >/dev/null 2>&1 || true
 }
+
+# Shell fragment for docker/podman overlay containers (build-qemu, build-fairphone4).
+# The rootfs at /target already has bash/python3 from the manifest apk pass; use
+# that musl binary via the target dynamic linker instead of `apk add` in the
+# ephemeral alpine:edge helper (which hits dl-cdn and can 404 when the image
+# index is stale). vendor/aports and rust/ are unrelated to this step.
+atomos_overlay_container_bash_setup() {
+    cat <<'ATOMOS_OVERLAY_BASH_SETUP'
+# Prefer /target bash (already installed into the image rootfs). The loader
+# must see /target/usr/lib (libreadline, etc.); invoking ld-musl without
+# --library-path only searches the helper container's libs.
+_atomos_target_libpath="/target/usr/lib:/target/lib"
+if [ -x /target/bin/bash ] && [ -x /target/lib/ld-musl-aarch64.so.1 ]; then
+    atomos_bash() {
+        PATH=/target/usr/bin:/target/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        LD_LIBRARY_PATH="$_atomos_target_libpath${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+            /target/lib/ld-musl-aarch64.so.1 \
+            --library-path "$_atomos_target_libpath" \
+            /target/bin/bash "$@"
+    }
+else
+    echo "WARN: /target bash missing; apk-installing helper tools (network)" >&2
+    apk update >/dev/null 2>&1 || true
+    apk add --no-interactive bash python3 grep sed tar >/dev/null
+    atomos_bash() { bash "$@"; }
+fi
+ATOMOS_OVERLAY_BASH_SETUP
+}

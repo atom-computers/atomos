@@ -15,7 +15,7 @@ fn prefer_on_demand_keyboard_mode() -> bool {
 #[cfg(target_os = "linux")]
 fn target_layer() -> Layer {
     match std::env::var("ATOMOS_OVERVIEW_CHAT_UI_LAYER")
-        .unwrap_or_else(|_| "top".to_string())
+        .unwrap_or_else(|_| atomos_overview_chat_ui::DEFAULT_LAYER_NAME.to_string())
         .to_ascii_lowercase()
         .as_str()
     {
@@ -53,7 +53,13 @@ pub fn configure_mobile_overlay_surface(win: &adw::ApplicationWindow) -> bool {
         win.set_keyboard_mode(KeyboardMode::None);
     }
     win.set_exclusive_zone(0);
-    eprintln!("atomos-overview-chat-ui: layer-shell configured successfully");
+    let layer_env = std::env::var("ATOMOS_OVERVIEW_CHAT_UI_LAYER")
+        .unwrap_or_else(|_| atomos_overview_chat_ui::DEFAULT_LAYER_NAME.to_string());
+    eprintln!(
+        "atomos-overview-chat-ui: layer-shell configured successfully \
+         ATOMOS_OVERVIEW_CHAT_UI_LAYER={layer_env} gtk_layer={:?}",
+        target_layer()
+    );
     true
 }
 

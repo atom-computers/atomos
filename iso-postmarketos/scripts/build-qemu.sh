@@ -35,7 +35,12 @@ Environment (Meson incremental cache):
                                       Reuse across runs lets ninja do
                                       incremental rebuilds instead of full
                                       configure + compile (phosh + embedded
-                                      wlroots is the dominant cost).
+                                      wlroots is the dominant cost). When
+                                      rust/phosh (and other vendor trees) are
+                                      unchanged, the build skips the compile
+                                      step and only re-stages into the fresh
+                                      rootfs (look for "unchanged source tree,
+                                      skipping compile" in the log).
   ATOMOS_QEMU_MESON_CACHE_HOST_DIR=<dir>
                                       Opt out of the named volume and
                                       bind-mount this host directory at
@@ -859,6 +864,8 @@ unset _atomos_local_meson _atomos_vendor_name 2>/dev/null || true
 
 build_container_script='
 set -eu
+ATOMOS_BUILD_LOG_PREFIX=build-qemu
+. /work/iso-postmarketos/scripts/_lib-meson-cache-body.sh
 printf "%s\n" \
   "https://dl-cdn.alpinelinux.org/alpine/v3.21/main" \
   "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" \
@@ -1004,34 +1011,10 @@ else
     echo "build-qemu: ccache unavailable; compile cache disabled"
 fi
 
-# Meson build cache: each component reuses /cache/<name> across build-qemu runs
-# so ninja does incremental rebuilds. The host bind-mounts
-# build/qemu-meson-cache-<profile> -> /cache. To force a clean build, run with
-# ATOMOS_QEMU_MESON_CACHE_CLEAN=1.
-meson_cache_setup() {
-    _build_dir="$1"; shift
-    _src_dir="$1"; shift
-    # Hash of (src + compiler env + meson args) detects when the caller changes
-    # -D flags or when CC/CXX/AR flips (e.g. ccache wired in, or the no-thin
-    # ar shim landed) so we do not silently keep building with stale options.
-    _hash=$(printf "%s\n" "$_src_dir" "CC=${CC:-}" "CXX=${CXX:-}" "AR=${AR:-}" "$@" \
-            | sha256sum | cut -d" " -f1)
-    _marker="$_build_dir/.atomos-meson-args"
-    if [ -f "$_build_dir/build.ninja" ] && [ -f "$_marker" ] \
-        && [ "$(cat "$_marker" 2>/dev/null)" = "$_hash" ]; then
-        echo "build-qemu: reusing meson cache: $_build_dir"
-    elif [ -f "$_build_dir/build.ninja" ]; then
-        echo "build-qemu: meson args changed -> reconfigure: $_build_dir"
-        meson setup --reconfigure "$_build_dir" "$_src_dir" "$@"
-        printf "%s" "$_hash" > "$_marker"
-    else
-        rm -rf "$_build_dir"
-        mkdir -p "$(dirname "$_build_dir")"
-        meson setup "$_build_dir" "$_src_dir" "$@"
-        printf "%s" "$_hash" > "$_marker"
-    fi
-    unset _build_dir _src_dir _hash _marker
-}
+# Meson build cache: each component reuses /cache/<name> across build-qemu runs.
+# atomos_meson_ninja_build_install (in _lib-meson-cache-body.sh) skips the
+# compile step when the source tree content hash is unchanged and ninja reports
+# no work. To force a clean build, run with ATOMOS_QEMU_MESON_CACHE_CLEAN=1.
 
 # Build and install gmobile: prefer vendored phoc subproject (matches vendor/phoc),
 # else phosh subproject. Same host /usr + DESTDIR pattern as phosh below.
@@ -1042,13 +1025,8 @@ fi
 GMOBILE_BUILD=/cache/gmobile
 echo "Building gmobile from: $GMOBILE_DIR (cache: $GMOBILE_BUILD)"
 apk add --no-interactive libgudev-dev >/dev/null 2>&1 || true
-meson_cache_setup "$GMOBILE_BUILD" "$GMOBILE_DIR" --prefix=/usr -Dtests=false -Dgtk_doc=false
-ninja -C "$GMOBILE_BUILD"
-# Install into the *build* /usr, not only DESTDIR: gmobile-1.pc reports
-# Cflags: -I/usr/include/gmobile. With DESTDIR-only, those
-# paths are missing in the container and phosh fails with: gmobile.h: No such file.
-ninja -C "$GMOBILE_BUILD" install
-DESTDIR=/target ninja -C "$GMOBILE_BUILD" install
+atomos_meson_ninja_build_install gmobile "$GMOBILE_BUILD" "$GMOBILE_DIR" \
+    --prefix=/usr -Dtests=false -Dgtk_doc=false
 
 # Verify gmobile installation
 if [ -f /target/usr/lib/libgmobile.so.0 ] && [ -f /usr/include/gmobile/gmobile.h ]; then
@@ -1065,13 +1043,8 @@ export PKG_CONFIG_PATH="/target/usr/lib/pkgconfig:/target/usr/share/pkgconfig${P
 
 # Build and stage custom phosh.
 PHOSH_BUILD=/cache/phosh
-meson_cache_setup "$PHOSH_BUILD" /work/iso-postmarketos/rust/phosh/phosh --prefix=/usr -Dtests=false
-ninja -C "$PHOSH_BUILD"
-# Install to the build host /usr, not only DESTDIR: phosh-settings .pc uses
-# -I/usr/include/phosh; phosh-mobile-settings includes <phosh-settings-enums.h>
-# and fails if that path only exists under /target.
-ninja -C "$PHOSH_BUILD" install
-DESTDIR=/target ninja -C "$PHOSH_BUILD" install
+atomos_meson_ninja_build_install phosh "$PHOSH_BUILD" /work/iso-postmarketos/rust/phosh/phosh \
+    --prefix=/usr -Dtests=false
 if [ ! -f /usr/include/phosh/phosh-settings-enums.h ]; then
     echo "ERROR: phosh headers missing under /usr/include/phosh after host install" >&2
     exit 1
@@ -1109,7 +1082,8 @@ if [ -f /work/iso-postmarketos/vendor/phoc/meson.build ]; then
     # Disable libliftoff in embedded wlroots: linking would otherwise DT_NEEDED libliftoff.so; the
     # rootfs often has an older libliftoff than the build image (missing e.g.
     # liftoff_plane_destroy). WLroots falls back to the non-libliftoff DRM path (HAVE_LIBLIFTOFF=0).
-    meson_cache_setup "$PHOC_BUILD" /work/iso-postmarketos/vendor/phoc --prefix=/usr \
+    atomos_meson_ninja_build_install phoc "$PHOC_BUILD" /work/iso-postmarketos/vendor/phoc \
+        --prefix=/usr \
         -Dtests=false \
         -Dman=false \
         -Dembed-wlroots=enabled \
@@ -1118,10 +1092,6 @@ if [ -f /work/iso-postmarketos/vendor/phoc/meson.build ]; then
         -Dwlroots:xwayland=disabled \
         -Dwlroots:libliftoff=disabled \
         --default-library=static
-    ninja -C "$PHOC_BUILD"
-    # Host + staged rootfs: .pc and headers use prefix=/usr (see gmobile comment).
-    ninja -C "$PHOC_BUILD" install
-    DESTDIR=/target ninja -C "$PHOC_BUILD" install
     if [ ! -x /usr/bin/phoc ]; then
         echo "ERROR: phoc not in host PATH after install (check meson --prefix and install rules)" >&2
         exit 1
@@ -1150,20 +1120,16 @@ if [ -f /work/iso-postmarketos/vendor/phosh-mobile-settings/meson.build ]; then
         feedbackd-dev lm-sensors-dev cellbroadcastd-dev gnome-desktop-dev
     PMS_BUILD=/cache/phosh-mobile-settings
     # No project-level `tests` option in this meson.build (Meson errors on unknown -D).
-    meson_cache_setup "$PMS_BUILD" /work/iso-postmarketos/vendor/phosh-mobile-settings \
-        --prefix=/usr
-    ninja -C "$PMS_BUILD"
-    ninja -C "$PMS_BUILD" install
-    DESTDIR=/target ninja -C "$PMS_BUILD" install
+    atomos_meson_ninja_build_install phosh-mobile-settings "$PMS_BUILD" \
+        /work/iso-postmarketos/vendor/phosh-mobile-settings --prefix=/usr
 fi
 
 # Optional: wallpapers / plymouth theme / sound theme (mostly data).
 if [ -f /work/iso-postmarketos/vendor/phosh-wallpapers/meson.build ]; then
     echo "Building phosh-wallpapers from /work/iso-postmarketos/vendor/phosh-wallpapers..."
     PWP_BUILD=/cache/phosh-wallpapers
-    meson_cache_setup "$PWP_BUILD" /work/iso-postmarketos/vendor/phosh-wallpapers --prefix=/usr
-    ninja -C "$PWP_BUILD"
-    DESTDIR=/target ninja -C "$PWP_BUILD" install
+    atomos_meson_ninja_build_install phosh-wallpapers "$PWP_BUILD" \
+        /work/iso-postmarketos/vendor/phosh-wallpapers --prefix=/usr
 fi
 
 # Surface ccache hit rate so a cached run is visibly cheap (high "cache hits"
@@ -1249,15 +1215,29 @@ fi
         # direct-rootfs scripts. (Avoid backticks here too: this whole script is
         # passed as a double-quoted bash string, so backticks would trigger
         # command substitution before docker even sees the body.)
-        apk add --no-interactive bash python3 grep sed tar >/dev/null
+        _atomos_target_libpath=/target/usr/lib:/target/lib
+        if [ -x /target/bin/bash ] && [ -x /target/lib/ld-musl-aarch64.so.1 ]; then
+            atomos_bash() {
+                PATH=/target/usr/bin:/target/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+                LD_LIBRARY_PATH=\"\$_atomos_target_libpath\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}\" \
+                    /target/lib/ld-musl-aarch64.so.1 \
+                    --library-path \"\$_atomos_target_libpath\" \
+                    /target/bin/bash \"\$@\"
+            }
+        else
+            echo \"WARN: /target bash missing; apk-installing helper tools (network)\" >&2
+            apk update >/dev/null 2>&1 || true
+            apk add --no-interactive bash python3 grep sed tar >/dev/null
+            atomos_bash() { bash \"\$@\"; }
+        fi
         if [ -f /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh ]; then
-            ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh \"$PROFILE_ENV_CONTAINER\" || true
+            ROOTFS_DIR=/target atomos_bash /work/iso-postmarketos/scripts/rootfs/install-atomos-agents.sh \"$PROFILE_ENV_CONTAINER\" || true
         fi
         if [ -f /work/iso-postmarketos/scripts/rootfs/install-bt-tools.sh ]; then
-            ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-bt-tools.sh \"$PROFILE_ENV_CONTAINER\" || true
+            ROOTFS_DIR=/target atomos_bash /work/iso-postmarketos/scripts/rootfs/install-bt-tools.sh \"$PROFILE_ENV_CONTAINER\" || true
         fi
         if [ -f /work/iso-postmarketos/scripts/rootfs/install-btlescan.sh ]; then
-            ROOTFS_DIR=/target bash /work/iso-postmarketos/scripts/rootfs/install-btlescan.sh \"$PROFILE_ENV_CONTAINER\" || true
+            ROOTFS_DIR=/target atomos_bash /work/iso-postmarketos/scripts/rootfs/install-btlescan.sh \"$PROFILE_ENV_CONTAINER\" || true
         fi
         if [ -f /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh ]; then
             # QEMU-specific launcher defaults:
@@ -1274,7 +1254,7 @@ fi
                 ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART=1 \
                 ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT=0 \
                 ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT=0 \
-                bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \"$PROFILE_ENV_CONTAINER\"
+                atomos_bash /work/iso-postmarketos/scripts/overview-chat-ui/install-overview-chat-ui.sh \"$PROFILE_ENV_CONTAINER\"
         fi
         if [ -f /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh ]; then
             if [ \"$BUILD_HOME_BG\" = \"1\" ]; then
@@ -1287,7 +1267,7 @@ fi
                 ROOTFS_DIR=/target \
                     ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT=1 \
                     ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 \
-                    bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \"$PROFILE_ENV_CONTAINER\"
+                    atomos_bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \"$PROFILE_ENV_CONTAINER\"
             else
                 echo 'Skipping home-bg install helper (BUILD_HOME_BG=0).'
             fi
@@ -1297,7 +1277,7 @@ fi
                 ROOTFS_DIR=/target \
                     ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 \
                     ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 \
-                    bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \"$PROFILE_ENV_CONTAINER\"
+                    atomos_bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \"$PROFILE_ENV_CONTAINER\"
             else
                 echo 'Skipping app-switcher install helper (BUILD_APP_HANDLER=0).'
             fi
@@ -1394,7 +1374,7 @@ test -f "$IMAGE_PATH"
 
         echo "--- atomos-overview-chat-ui autostart wiring ---"
         check_f /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
-        check_grep "Exec=/usr/libexec/atomos-overview-chat-ui --show" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
+        check_grep "Exec=/usr/libexec/atomos-overview-chat-ui --start" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
         check_grep "OnlyShowIn=GNOME;Phosh;" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
         if grep -Eq "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=\"\\\$\\{ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1\\}\"" /target/usr/libexec/atomos-overview-chat-ui; then
             echo "  ok  launcher has ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME default=1"

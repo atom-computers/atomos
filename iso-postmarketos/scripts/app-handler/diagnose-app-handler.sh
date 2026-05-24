@@ -178,6 +178,257 @@ else
     info "phosh running" "no phosh process"
 fi
 
+# ----- Chat-UI runtime state (cross-component) -----
+# When the user reports chat-ui not loading on the home screen on the
+# 2nd run after `make qemu` quit + relaunch, the failure mode is almost
+# always persistent state that survived the QEMU disk image (mounted
+# without `snapshot=on` in scripts/qemu/run-local-qemu.sh:141). This
+# section captures the four gates the launcher script
+# /usr/libexec/atomos-overview-chat-ui checks before spawning the
+# binary, so we can see at a glance which one is stuck.
+#
+# REMOTE_SCRIPT is single-quoted on the host side, so this whole block
+# must contain ZERO ASCII single quotes. awk programs use double-quoted
+# bodies (with \$ escapes); English messages avoid contractions.
+header "Chat-UI runtime state (post-unlock divergence checks)"
+CHAT_UI_BIN="/usr/local/bin/atomos-overview-chat-ui"
+CHAT_UI_LAUNCHER="/usr/libexec/atomos-overview-chat-ui"
+CHAT_UI_AUTOSTART="/etc/xdg/autostart/atomos-overview-chat-ui.desktop"
+
+if [ -x "$CHAT_UI_BIN" ]; then
+    pass "chat-ui binary executable" "$CHAT_UI_BIN"
+else
+    warn "chat-ui binary executable" "$CHAT_UI_BIN missing or not +x"
+fi
+if [ -x "$CHAT_UI_LAUNCHER" ]; then
+    pass "chat-ui launcher script" "$CHAT_UI_LAUNCHER"
+else
+    warn "chat-ui launcher script" "$CHAT_UI_LAUNCHER missing"
+fi
+if [ -f "$CHAT_UI_AUTOSTART" ]; then
+    pass "chat-ui autostart .desktop" "$CHAT_UI_AUTOSTART"
+else
+    warn "chat-ui autostart .desktop" "$CHAT_UI_AUTOSTART missing -- Phosh will not fire --show on session start"
+fi
+
+CHAT_UI_BG_PIDS="$(pgrep -f "$CHAT_UI_BIN" 2>/dev/null || true)"
+CHAT_UI_LAUNCHER_PIDS="$(pgrep -f "$CHAT_UI_LAUNCHER" 2>/dev/null || true)"
+if [ -n "$CHAT_UI_BG_PIDS" ]; then
+    pass "chat-ui binary running" "pid(s): $CHAT_UI_BG_PIDS"
+else
+    warn "chat-ui binary running" "no /usr/local/bin/atomos-overview-chat-ui process -- the home screen will be blank/wallpaper-only"
+fi
+if [ -n "$CHAT_UI_LAUNCHER_PIDS" ]; then
+    info "chat-ui launcher script processes" "pid(s): $CHAT_UI_LAUNCHER_PIDS (lingering --show wrappers; mostly harmless)"
+fi
+
+# Per-user runtime dir contents -- pidfile + disable marker live here.
+# Also report whether the dir is tmpfs (expected: gone on every reboot,
+# so a stale pidfile/disable marker is a symptom of a non-tmpfs /run).
+CHAT_UI_RUNTIME_DIR=""
+for d in /run/user/*; do
+    [ -d "$d" ] || continue
+    CHAT_UI_RUNTIME_DIR="$d"
+    break
+done
+if [ -n "$CHAT_UI_RUNTIME_DIR" ]; then
+    mount_type="$(awk -v t="$CHAT_UI_RUNTIME_DIR" "\$2 == t {print \$3; exit}" /proc/mounts 2>/dev/null || true)"
+    if [ -z "$mount_type" ]; then
+        mount_type="$(awk "\$2 == \"/run/user\" {print \$3; exit}" /proc/mounts 2>/dev/null || true)"
+        [ -z "$mount_type" ] && mount_type="$(awk "\$2 == \"/run\" {print \$3; exit}" /proc/mounts 2>/dev/null || true)"
+    fi
+    if [ "$mount_type" = "tmpfs" ]; then
+        pass "$CHAT_UI_RUNTIME_DIR is tmpfs" "(stale pidfile/disable-marker should be impossible across reboots)"
+    elif [ -n "$mount_type" ]; then
+        warn "$CHAT_UI_RUNTIME_DIR mount type" "$mount_type -- NOT tmpfs; pidfile/disable marker can persist across QEMU reboots and silently break chat-ui startup on 2nd run"
+    else
+        info "$CHAT_UI_RUNTIME_DIR mount type" "could not resolve from /proc/mounts (Alpine busybox mount line format)"
+    fi
+
+    pidfile="$CHAT_UI_RUNTIME_DIR/atomos-overview-chat-ui.pid"
+    if [ -f "$pidfile" ]; then
+        stale_pid="$(cat "$pidfile" 2>/dev/null || true)"
+        if [ -n "$stale_pid" ] && kill -0 "$stale_pid" 2>/dev/null; then
+            cmdline_dump="$(tr "\000" " " < "/proc/$stale_pid/cmdline" 2>/dev/null || true)"
+            case "$cmdline_dump" in
+                */usr/local/bin/atomos-overview-chat-ui*)
+                    info "chat-ui pidfile" "$pidfile -> $stale_pid (GTK binary)"
+                    ;;
+                */usr/libexec/atomos-overview-chat-ui*)
+                    warn "chat-ui pidfile points at launcher shell" \
+                        "$pidfile -> $stale_pid cmdline=[$cmdline_dump]. Phosh layer --show kills the shell but leaves the GTK binary on the wrong layer (home looks empty). Reinstall launcher from install-overview-chat-ui.sh (exec pidfile fix) or: kill stray binary, rm pidfile, run: ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay /usr/libexec/atomos-overview-chat-ui --show"
+                    ;;
+                *)
+                    warn "chat-ui pidfile points to PID-reuse" \
+                        "$pidfile -> $stale_pid cmdline=[$cmdline_dump] (NOT chat-ui). Fix: rm $pidfile; ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay /usr/libexec/atomos-overview-chat-ui --show"
+                    ;;
+            esac
+        else
+            warn "chat-ui pidfile is stale" \
+                "$pidfile -> $stale_pid but kill -0 fails (process gone). Harmless on its own, but indicates /run/user/ persists across reboots"
+        fi
+    else
+        info "chat-ui pidfile" "$pidfile not present (first run, or chat-ui exited cleanly)"
+    fi
+
+    chat_ui_layer_env=""
+    chat_ui_binary_pid="$(echo "$CHAT_UI_BG_PIDS" | awk "{print \$1}")"
+    if [ -n "$chat_ui_binary_pid" ] && [ -r "/proc/$chat_ui_binary_pid/environ" ]; then
+        chat_ui_layer_env="$(tr "\000" "\n" < "/proc/$chat_ui_binary_pid/environ" 2>/dev/null | grep "^ATOMOS_OVERVIEW_CHAT_UI_LAYER=" | head -n1 || true)"
+    fi
+    if [ -n "$chat_ui_layer_env" ]; then
+        info "chat-ui process layer env" "$chat_ui_layer_env"
+        if echo "$chat_ui_layer_env" | grep -q "=bottom$"; then
+            warn "chat-ui on layer=bottom (invisible on unfolded home)" \
+                "Unlock is not enough: swipe UP on the Phosh home bar until the overview is fully open. Phosh must log action=show layer=overlay in atomos-overview-chat-ui.log. Manual: ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay /usr/libexec/atomos-overview-chat-ui --show"
+        elif echo "$chat_ui_layer_env" | grep -q "=top$"; then
+            warn "chat-ui on layer=top while home should be visible" \
+                "phosh-home is a TOP layer-shell surface too, so chat-ui paints underneath it and looks invisible. Rebuild phosh with overlay-on-unfold fix or run: ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay /usr/libexec/atomos-overview-chat-ui --show"
+        elif echo "$chat_ui_layer_env" | grep -q "=overlay$"; then
+            pass "chat-ui layer env is overlay (above phosh-home)" "$chat_ui_layer_env (must be hidden while locked; rebuild phosh if visible on lock screen)"
+        else
+            pass "chat-ui layer env is not bottom/top" "$chat_ui_layer_env"
+        fi
+    else
+        info "chat-ui process layer env" "ATOMOS_OVERVIEW_CHAT_UI_LAYER unset in binary environ (defaults to overlay in overlay.rs)"
+    fi
+
+    HOME_BG_PIDS="$(pgrep -f "/usr/local/bin/atomos-home-bg" 2>/dev/null || true)"
+    if [ -n "$HOME_BG_PIDS" ]; then
+        pass "atomos-home-bg running" "pid(s): $HOME_BG_PIDS"
+    else
+        warn "atomos-home-bg running" "no process -- chat-ui is transparent but wallpaper/webview may be missing"
+    fi
+
+    disable_file="$CHAT_UI_RUNTIME_DIR/atomos-overview-chat-ui.disabled"
+    if [ -f "$disable_file" ]; then
+        warn "chat-ui disable marker present" \
+            "$disable_file -- launcher will skip starting the binary. Usually written when the binary exited rc=127 (missing shared lib). Delete it to re-enable: rm $disable_file"
+    else
+        pass "chat-ui no disable marker"
+    fi
+fi
+
+# Tail the chat-ui launcher log so we see startup attempts and exits.
+header "Chat-UI launcher log (last 60 lines)"
+chat_ui_log_found=0
+for log in /run/user/*/atomos-overview-chat-ui.log; do
+    if [ -f "$log" ]; then
+        chat_ui_log_found=1
+        info "chat-ui log path" "$log"
+        echo "----8<----"
+        tail -n 60 "$log" || true
+        echo "----8<----"
+    fi
+done
+if [ "$chat_ui_log_found" = "0" ]; then
+    warn "chat-ui launcher log" "no /run/user/*/atomos-overview-chat-ui.log present -- the launcher script never ran (autostart did not fire) or /run/user/ is on a different mount than the launcher writes to"
+fi
+
+# Pinpoint exited-immediately / Wayland-bind / CSS-parse-error issues so
+# the user gets a one-line classification.
+chat_ui_classified=0
+for log in /run/user/*/atomos-overview-chat-ui.log; do
+    [ -f "$log" ] || continue
+    if grep -q "exited immediately" "$log"; then
+        warn "chat-ui startup classification" \
+            "log contains [exited immediately] -- binary failed to bind Wayland (compositor not ready, or WAYLAND_DISPLAY/XDG_RUNTIME_DIR mismatch)"
+        chat_ui_classified=1
+    fi
+    if grep -q "Theme parser error" "$log"; then
+        warn "chat-ui startup classification" \
+            "log contains [Theme parser error] -- CSS provider declarations rejected (e.g. !important after a value), layer-shell paints opaque over atomos-home-bg"
+        chat_ui_classified=1
+    fi
+    if grep -q "main phase=after-run" "$log"; then
+        info "chat-ui startup classification" "log contains [main phase=after-run] -- binary returned from app.run() (clean exit; UI gone)"
+        chat_ui_classified=1
+    fi
+    if grep -q "ATOMOS_OVERVIEW_CHAT_UI_LAYER=bottom" "$log"; then
+        warn "chat-ui startup classification" \
+            "log shows layer=bottom -- expected until home unfolds; Phosh must run overlay --show (see chat-ui lifecycle log below)"
+        chat_ui_classified=1
+    fi
+    if grep -q "layer=overlay" "$log" || grep -q "ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay" "$log"; then
+        pass "chat-ui startup classification" "log shows layer=overlay (above phosh-home)"
+        chat_ui_classified=1
+    fi
+done
+
+# Phosh binary must ship the overlay-on-unfold lifecycle (strings survive musl strip).
+phosh_bin=""
+for candidate in /usr/libexec/phosh /usr/bin/phosh; do
+    if [ -x "$candidate" ]; then
+        phosh_bin="$candidate"
+        break
+    fi
+done
+if [ -n "$phosh_bin" ] && command -v strings >/dev/null 2>&1; then
+    if strings "$phosh_bin" 2>/dev/null | grep -q "atomos-overview-chat-ui"; then
+        pass "phosh binary references overview-chat-ui launcher"
+    else
+        warn "phosh binary references overview-chat-ui launcher" \
+            "strings $phosh_bin missing atomos-overview-chat-ui — stock phosh will never drive overlay --show; rebuild with make build-qemu"
+    fi
+    if strings "$phosh_bin" 2>/dev/null | grep -q "ATOMOS_OVERVIEW_CHAT_UI_LAYER=top"; then
+        warn "phosh binary still embeds LAYER=top" \
+            "rebuild phosh (home.c must use overlay on unfold, not top)"
+    elif strings "$phosh_bin" 2>/dev/null | grep -q "overlay"; then
+        pass "phosh binary embeds overlay layer string"
+    else
+        info "phosh overlay layer string" "could not confirm overlay in strings output (binary may be stripped)"
+    fi
+else
+    info "phosh binary strings check" "skipped (no phosh binary or strings(1) missing)"
+fi
+
+chat_ui_saw_overlay_show=0
+for log in /run/user/*/atomos-overview-chat-ui.log; do
+    [ -f "$log" ] || continue
+    if grep -q "action=show.*layer=overlay" "$log" 2>/dev/null; then
+        chat_ui_saw_overlay_show=1
+    fi
+done
+if [ "$chat_ui_saw_overlay_show" = "1" ]; then
+    pass "chat-ui lifecycle log" "Phosh overlay --show recorded in atomos-overview-chat-ui.log"
+elif [ "$chat_ui_log_found" = "1" ]; then
+    info "chat-ui lifecycle log" \
+        "no action=show layer=overlay in log yet — unfold home after unlock, or phosh is stale; autostart should use --start not --show"
+fi
+for log in /run/user/*/atomos-overview-chat-ui.log; do
+    [ -f "$log" ] || continue
+    if grep -q "action=hide" "$log" 2>/dev/null && ! grep -q "action=show" "$log" 2>/dev/null; then
+        fail "chat-ui hide without show" \
+            "log has action=hide but no action=show — Phosh killed autostart chat-ui (map-idle while locked or stale phosh); rebuild phosh home.c fix"
+        break
+    fi
+done
+if [ "$chat_ui_classified" = "0" ] && [ "$chat_ui_log_found" = "1" ]; then
+    info "chat-ui startup classification" "no known failure marker in log; binary is either running or the failure is novel"
+fi
+
+# Snapshot of chat-ui-relevant per-user state that COULD persist across
+# qemu reboots and silently break the 2nd run.
+header "Chat-UI persistent state (survives QEMU reboot when disk has no snapshot=on)"
+USER_HOME="$(awk -F: "\$3 == 10000 {print \$6; exit}" /etc/passwd 2>/dev/null || true)"
+if [ -z "$USER_HOME" ]; then
+    USER_HOME="/home/user"
+fi
+info "user home (uid 10000)" "$USER_HOME"
+for f in \
+    "$USER_HOME/.config/autostart" \
+    "$USER_HOME/.config/dconf/user" \
+    "$USER_HOME/.cache/sessions" \
+    "$USER_HOME/.local/state/atomos-overview-chat-ui" ; do
+    if [ -e "$f" ]; then
+        sz="$(du -sh "$f" 2>/dev/null | awk "{print \$1}" || echo "?")"
+        info "persistent state present" "$f (size=$sz)"
+    fi
+done
+if [ -d /etc/atomos ]; then
+    info "/etc/atomos contents" "$(ls -la /etc/atomos 2>/dev/null | awk "NR>1 {print \$9}" | tr "\n" " ")"
+fi
+
 # ----- Env var visibility -----
 header "Env var visibility (proc/<pid>/environ)"
 if [ -n "$APP_SWITCHER_PIDS" ]; then
@@ -200,8 +451,8 @@ else
     info "app-switcher env" "process not running; the launcher --show signal will start it"
 fi
 
-# ----- Lifecycle hook evidence in the launcher log -----
-header "Lifecycle hook evidence (launcher log)"
+# ----- Lifecycle hook evidence in the app-handler launcher log -----
+header "App-handler lifecycle evidence (launcher log)"
 saw_show=0
 saw_hide=0
 for log in /run/user/*/atomos-app-handler.log; do
@@ -371,6 +622,14 @@ if command -v journalctl >/dev/null 2>&1; then
 fi
 '
 
+# Host-side guard: the remote blob is assigned inside a single-quoted literal;
+# any ASCII single quote inside it truncates the assignment and breaks SSH.
+case $REMOTE_SCRIPT in *"'"*)
+    echo "diagnose-app-handler.sh: REMOTE_SCRIPT contains a single quote; fix quoting before shipping" >&2
+    exit 1
+    ;;
+esac
+
 POST_UNLOCK_RUNTIME_CHECKS="$(cat "$ROOT_DIR/scripts/app-handler/_lib-post-unlock-runtime-checks.remote.sh")"
 
 REMOTE_SCRIPT="${REMOTE_SCRIPT}
@@ -384,6 +643,7 @@ atomos_post_unlock_check_phoc_journal_since \"\$TS_BEGIN\"
 echo
 header \"Post-unlock smoke hint\"
 info \"full unlock smoke\" \"run on host: bash scripts/app-handler/smoke-post-unlock.sh <profile> <ssh-target>\"
+info \"chat-ui overlay runtime\" \"run on host: bash scripts/overview-chat-ui/smoke-chat-ui-post-unlock.sh <profile> <ssh-target>\"
 
 if [ \"\$fail\" -eq 0 ]; then
     echo \"RESULT: all checks PASS — if swipe still does nothing, attach ATOMOS_APP_HANDLER_DEBUG_TINT=1 and re-test, then re-run diagnose.\"

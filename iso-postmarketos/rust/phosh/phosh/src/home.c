@@ -13,7 +13,9 @@
 #include "layersurface-priv.h"
 #include "overview.h"
 #include "home.h"
+#include "shell.h"
 #include "shell-priv.h"
+#include "toplevel-manager.h"
 #include "phosh-enums.h"
 #include "osk-manager.h"
 #include "style-manager.h"
@@ -252,8 +254,11 @@ atomos_phosh_sync_home_bg_layer (PhoshHomeState state)
     layer = "top";
     break;
   case PHOSH_HOME_STATE_FOLDED:
-    layer = "bottom";
+    /* background sits below BOTTOM (chat-ui autostart / folded strip) so a
+     * later phosh --show restart does not paint WebKit over the chat surface. */
+    layer = "background";
     break;
+  case PHOSH_HOME_STATE_TRANSITION:
   default:
     return;
   }
@@ -285,6 +290,8 @@ atomos_phosh_sync_app_handler_lifecycle (PhoshHomeState state)
   case PHOSH_HOME_STATE_UNFOLDED:
     /* Do NOT --show on unfold: SIGUSR1 opens the full-screen switcher and
      * would cover the home UI (black overlay) right after unlock/swipe-up. */
+    return;
+  case PHOSH_HOME_STATE_TRANSITION:
   default:
     return;
   }
@@ -304,11 +311,17 @@ atomos_phosh_sync_app_handler_lifecycle (PhoshHomeState state)
  * .desktop is present, because phosh used to drive both startup AND
  * focus/dismiss.
  *
- * Layer split (mirrors atomos_phosh_sync_home_bg_layer): `top` while the
- * overview is unfolded so the chat strip sits above Phosh home UI; `bottom`
- * while folded so the strip stays under xdg-toplevel apps. The launcher
- * restarts the GTK process on each --show so ATOMOS_OVERVIEW_CHAT_UI_LAYER
- * is applied.
+ * Layer split (mirrors atomos_phosh_sync_home_bg_layer): `overlay` while the
+ * overview is unfolded so the chat strip sits above Phosh home (which is
+ * itself a zwlr_layer_shell_v1 TOP surface — putting chat-ui on TOP as well
+ * leaves it *under* phosh-home in practice and the home screen looks empty).
+ * `bottom` while folded so the strip stays under xdg-toplevel apps. The
+ * launcher restarts the GTK process on each --show so
+ * ATOMOS_OVERVIEW_CHAT_UI_LAYER is applied.
+ *
+ * While the session is locked, chat-ui must not use the overlay layer: Phosh
+ * places the lock surface on OVERLAY too, so an overlay chat strip paints on
+ * top of the lock screen. Use --hide until unlock, then re-sync on unfold.
  *
  * Kill switch (for bisection): set ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE=1
  * to disable the spawn entirely. The launcher honours
@@ -320,6 +333,7 @@ atomos_phosh_sync_overview_chat_ui_lifecycle (PhoshHomeState state)
   const char *layer;
   g_autofree char *cmd = NULL;
   g_autoptr (GError) err = NULL;
+  PhoshShell *shell;
 
   env = g_getenv (ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE_ENV);
   if (env && *env && g_strcmp0 (env, "0") != 0)
@@ -328,13 +342,24 @@ atomos_phosh_sync_overview_chat_ui_lifecycle (PhoshHomeState state)
   if (!g_file_test (ATOMOS_OVERVIEW_CHAT_UI_LAUNCHER_PATH, G_FILE_TEST_IS_EXECUTABLE))
     return;
 
+  shell = phosh_shell_get_default ();
+  if (shell && phosh_shell_get_locked (shell)) {
+    cmd = g_strdup_printf ("%s --hide", ATOMOS_OVERVIEW_CHAT_UI_LAUNCHER_PATH);
+    if (!g_spawn_command_line_async (cmd, &err))
+      g_warning ("Failed to hide atomos-overview-chat-ui on lock: %s", err->message);
+    return;
+  }
+
   switch (state) {
   case PHOSH_HOME_STATE_UNFOLDED:
-    layer = "top";
+    /* wlr-layer-shell OVERLAY (3) is strictly above TOP (2). phosh-home is
+     * anchored on TOP, so chat-ui must use overlay to paint above it. */
+    layer = "overlay";
     break;
   case PHOSH_HOME_STATE_FOLDED:
     layer = "bottom";
     break;
+  case PHOSH_HOME_STATE_TRANSITION:
   default:
     return;
   }
@@ -362,6 +387,14 @@ static void phosh_home_enforce_safe_widget_state (PhoshHome *self);
 static void phosh_home_style_app_grid_widgets (PhoshHome *self);
 static void update_drag_handle (PhoshHome *self, gboolean queue_draw);
 static gboolean apply_queued_app_grid_toggle_idle (gpointer data);
+static gboolean atomos_phosh_sync_overview_chat_ui_after_map_idle (gpointer user_data);
+static gboolean atomos_phosh_sync_home_bg_after_map_idle (gpointer user_data);
+static gboolean atomos_phosh_promote_chat_ui_when_unlocked_idle (gpointer user_data);
+static void atomos_phosh_schedule_chat_ui_unlock_sync (PhoshHome *self);
+static void on_shell_locked_changed_atomos_chat_ui (PhoshHome *self);
+static gboolean atomos_phosh_rehide_chat_ui_while_locked_idle (gpointer user_data);
+static PhoshHomeState atomos_phosh_chat_ui_state_from_home (PhoshHome *self);
+static PhoshHomeState atomos_phosh_chat_ui_layer_state_for_home (PhoshHome *self);
 
 static gboolean
 mark_ui_stable_for_popups_timeout (gpointer data)
@@ -389,7 +422,48 @@ mark_ui_stable_for_popups_timeout (gpointer data)
    * the next fold) and swipe-down-to-fold appears broken. */
   update_drag_handle (self, FALSE);
 
+  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
+
   return G_SOURCE_REMOVE;
+}
+
+static PhoshHomeState
+atomos_phosh_chat_ui_state_from_home (PhoshHome *self)
+{
+  PhoshDragSurfaceState drag_state;
+
+  g_return_val_if_fail (PHOSH_IS_HOME (self), PHOSH_HOME_STATE_FOLDED);
+
+  drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
+  if (drag_state == PHOSH_DRAG_SURFACE_STATE_UNFOLDED)
+    return PHOSH_HOME_STATE_UNFOLDED;
+  return PHOSH_HOME_STATE_FOLDED;
+}
+
+
+/* Folded phosh-home still covers layer=BOTTOM chat-ui. While unlocked and no
+ * app toplevel is focused, treat folded home like overview for chat-ui layer. */
+static PhoshHomeState
+atomos_phosh_chat_ui_layer_state_for_home (PhoshHome *self)
+{
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshHomeState state;
+
+  g_return_val_if_fail (PHOSH_IS_HOME (self), PHOSH_HOME_STATE_FOLDED);
+
+  state = atomos_phosh_chat_ui_state_from_home (self);
+  if (!shell || phosh_shell_get_locked (shell))
+    return state;
+
+  if (state == PHOSH_HOME_STATE_FOLDED) {
+    PhoshToplevelManager *toplevel_manager = phosh_shell_get_toplevel_manager (shell);
+
+    if (toplevel_manager &&
+        phosh_toplevel_manager_get_num_toplevels (toplevel_manager) == 0)
+      return PHOSH_HOME_STATE_UNFOLDED;
+  }
+
+  return state;
 }
 
 static void
@@ -829,6 +903,9 @@ phosh_home_map (GtkWidget *widget)
   if (self->background)
     phosh_layer_surface_set_stacked_below (PHOSH_LAYER_SURFACE (self->background),
                                            PHOSH_LAYER_SURFACE (self));
+
+  g_idle_add (atomos_phosh_sync_home_bg_after_map_idle, self);
+  g_idle_add (atomos_phosh_sync_overview_chat_ui_after_map_idle, self);
 }
 
 
@@ -1220,6 +1297,103 @@ phosh_home_dragged (PhoshDragSurface *drag_surface, int margin)
 }
 
 
+/* Promote chat-ui to overlay while the session is unlocked. Autostart only
+ * runs --start on layer=bottom, which is occluded by phosh-home (TOP). */
+static gboolean
+atomos_phosh_promote_chat_ui_when_unlocked_idle (gpointer user_data)
+{
+  PhoshHome *self = PHOSH_HOME (user_data);
+  PhoshShell *shell = phosh_shell_get_default ();
+
+  if (!PHOSH_IS_HOME (self))
+    return G_SOURCE_REMOVE;
+  if (shell && phosh_shell_get_locked (shell))
+    return G_SOURCE_REMOVE;
+
+  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
+  return G_SOURCE_REMOVE;
+}
+
+
+static void
+atomos_phosh_schedule_chat_ui_unlock_sync (PhoshHome *self)
+{
+  /* First session start: the user often unlocks before PhoshHome exists, so
+   * notify::locked never fires for that transition. Schedule overlay --show
+   * from map/construct paths and retry after the shell/home finish coming up. */
+  g_idle_add (atomos_phosh_promote_chat_ui_when_unlocked_idle, self);
+  g_idle_add (atomos_phosh_sync_overview_chat_ui_after_map_idle, self);
+  g_timeout_add (500, atomos_phosh_promote_chat_ui_when_unlocked_idle, self);
+}
+
+
+/* Re-sync layer after map when autostart left chat-ui on bottom but home is
+ * already unfolded. Skipped while locked (sync hides overlay chat on lock). */
+static gboolean
+atomos_phosh_sync_home_bg_after_map_idle (gpointer user_data)
+{
+  PhoshHome *self = PHOSH_HOME (user_data);
+
+  if (!PHOSH_IS_HOME (self))
+    return G_SOURCE_REMOVE;
+
+  /* Use real drag/home state only — do not promote home-bg to top when chat-ui
+   * is logically unfolded on a folded phosh-home bar. */
+  atomos_phosh_sync_home_bg_layer (atomos_phosh_chat_ui_state_from_home (self));
+  return G_SOURCE_REMOVE;
+}
+
+
+static gboolean
+atomos_phosh_sync_overview_chat_ui_after_map_idle (gpointer user_data)
+{
+  PhoshHome *self = PHOSH_HOME (user_data);
+  PhoshShell *shell = phosh_shell_get_default ();
+
+  /* Do not --hide here while locked: autostart may have just spawned chat-ui on
+   * bottom (session starts locked from phosh main). Hiding from map-idle leaves
+   * no unlock follow-up if notify::locked already fired. Lock transitions and
+   * the constructed delayed rehide timer handle --hide instead. */
+  if (shell && phosh_shell_get_locked (shell))
+    return G_SOURCE_REMOVE;
+
+  atomos_phosh_sync_overview_chat_ui_lifecycle (
+    atomos_phosh_chat_ui_layer_state_for_home (self));
+  return G_SOURCE_REMOVE;
+}
+
+
+static void
+on_shell_locked_changed_atomos_chat_ui (PhoshHome *self)
+{
+  PhoshShell *shell = phosh_shell_get_default ();
+
+  if (shell && phosh_shell_get_locked (shell)) {
+    atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_FOLDED);
+    return;
+  }
+
+  /* Synchronous promotion before queued idles so a prior map-idle cannot leave
+   * chat-ui killed without overlay --show (2nd-boot flash-then-wallpaper). */
+  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
+  atomos_phosh_schedule_chat_ui_unlock_sync (self);
+}
+
+
+static gboolean
+atomos_phosh_rehide_chat_ui_while_locked_idle (gpointer user_data)
+{
+  PhoshHome *self = PHOSH_HOME (user_data);
+  PhoshShell *shell = phosh_shell_get_default ();
+
+  if (!shell || !phosh_shell_get_locked (shell))
+    return G_SOURCE_REMOVE;
+
+  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_FOLDED);
+  return G_SOURCE_REMOVE;
+}
+
+
 static void
 on_drag_state_changed (PhoshHome *self)
 {
@@ -1279,9 +1453,11 @@ on_drag_state_changed (PhoshHome *self)
 
   phosh_layer_surface_set_kbd_interactivity (PHOSH_LAYER_SURFACE (self), kbd_interactivity);
   update_drag_handle (self, TRUE);
-  atomos_phosh_sync_home_bg_layer (self->state);
+  atomos_phosh_sync_home_bg_layer (atomos_phosh_chat_ui_state_from_home (self));
   atomos_phosh_sync_app_handler_lifecycle (self->state);
-  atomos_phosh_sync_overview_chat_ui_lifecycle (self->state);
+  if (self->state != PHOSH_HOME_STATE_TRANSITION)
+    atomos_phosh_sync_overview_chat_ui_lifecycle (
+      atomos_phosh_chat_ui_layer_state_for_home (self));
 }
 
 
@@ -1389,6 +1565,23 @@ phosh_home_constructed (GObject *object)
                     G_CALLBACK (on_osk_manager_visible_notify), self);
 
   g_signal_connect (self, "notify::drag-state", G_CALLBACK (on_drag_state_changed), NULL);
+
+  g_signal_connect_object (shell,
+                         "notify::locked",
+                         G_CALLBACK (on_shell_locked_changed_atomos_chat_ui),
+                         self,
+                         G_CONNECT_SWAPPED);
+
+  /* XDG autostart --start can race ahead of this and map chat-ui while locked.
+   * Avoid an immediate --hide at construct (kills autostart with no unlock edge);
+   * use delayed rehide while the session stays locked instead. */
+  if (phosh_shell_get_locked (shell)) {
+    g_timeout_add (250, atomos_phosh_rehide_chat_ui_while_locked_idle, self);
+    g_timeout_add_seconds (3, atomos_phosh_rehide_chat_ui_while_locked_idle, self);
+  } else {
+    atomos_phosh_sync_home_bg_layer (PHOSH_HOME_STATE_FOLDED);
+    atomos_phosh_schedule_chat_ui_unlock_sync (self);
+  }
 
   g_object_set_data (G_OBJECT (self->click_gesture), "phosh-home", self);
   g_object_set_data (G_OBJECT (self->osk_toggle_long_press), "phosh-home", self);

@@ -89,9 +89,9 @@ render_launcher() {
 set -eu
 BIN="/usr/local/bin/atomos-home-bg"
 export ATOMOS_HOME_BG_ENABLE_RUNTIME="${ATOMOS_HOME_BG_ENABLE_RUNTIME:-__HOME_BG_RUNTIME_DEFAULT__}"
-# Default `bottom` while Phosh is folded (below app toplevels). Phosh spawns
-# `--show` with `ATOMOS_HOME_BG_LAYER=top` when the overview opens.
-export ATOMOS_HOME_BG_LAYER="${ATOMOS_HOME_BG_LAYER:-bottom}"
+# Default `background` (below chat-ui on BOTTOM/OVERLAY). Phosh spawns `--show`
+# with `ATOMOS_HOME_BG_LAYER=top` when the overview unfolds.
+export ATOMOS_HOME_BG_LAYER="${ATOMOS_HOME_BG_LAYER:-background}"
 # Non-interactive by default; pointer/touch falls through to phosh overview.
 export ATOMOS_HOME_BG_INTERACTIVE="${ATOMOS_HOME_BG_INTERACTIVE:-0}"
 # WebKit on QEMU GL stacks can crash very early; cairo/software is the safe default.
@@ -107,6 +107,7 @@ export WEBKIT_DISABLE_DMABUF_RENDERER="${WEBKIT_DISABLE_DMABUF_RENDERER:-1}"
 PIDFILE=""
 LOGFILE=""
 DISABLE_FILE=""
+LAYERFILE=""
 
 resolve_runtime_paths() {
     runtime="${XDG_RUNTIME_DIR:-}"
@@ -124,6 +125,7 @@ resolve_runtime_paths() {
     PIDFILE="$runtime/atomos-home-bg.pid"
     LOGFILE="$runtime/atomos-home-bg.log"
     DISABLE_FILE="$runtime/atomos-home-bg.disabled"
+    LAYERFILE="$runtime/atomos-home-bg.layer"
 }
 
 is_running() {
@@ -216,7 +218,16 @@ case "${1:-}" in
             exit 0
         fi
         bind_phosh_session_env_if_missing
-        logger -t atomos-home-bg "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_HOME_BG_LAYER:-bottom}"
+        desired_layer="${ATOMOS_HOME_BG_LAYER:-background}"
+        resolve_runtime_paths
+        if is_running; then
+            current_layer="$(cat "$LAYERFILE" 2>/dev/null || true)"
+            if [ "$current_layer" = "$desired_layer" ]; then
+                logger -t atomos-home-bg "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${desired_layer} (already running)"
+                exit 0
+            fi
+        fi
+        logger -t atomos-home-bg "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${desired_layer}"
         # Surface the GL/WebKit env in effect — when the WebGL shader in
         # the placeholder content fails on device, this is the first
         # thing to look at via `journalctl -t atomos-home-bg`.
@@ -226,6 +237,7 @@ GSK_RENDERER=${GSK_RENDERER:-<unset>} \
 WEBKIT_DISABLE_DMABUF_RENDERER=${WEBKIT_DISABLE_DMABUF_RENDERER:-<unset>}"
         # Restart so a new ATOMOS_HOME_BG_LAYER (e.g. top for overview) applies.
         stop_ui
+        printf '%s\n' "$desired_layer" > "$LAYERFILE"
         start_ui
         ;;
     --hide)
@@ -266,9 +278,9 @@ render_autostart_desktop() {
 [Desktop Entry]
 Type=Application
 Name=AtomOS Home Background
-Comment=Non-interactive WebKit on layer-shell (bottom when folded; Phosh promotes to top for overview)
+Comment=Non-interactive WebKit on layer-shell (background when folded; Phosh promotes to top for overview)
 Exec=/usr/libexec/atomos-home-bg --show
-Environment=ATOMOS_HOME_BG_LAYER=bottom
+Environment=ATOMOS_HOME_BG_LAYER=background
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Phase=Applications
@@ -346,6 +358,8 @@ if [ -n "$DIRECT_ROOTFS_DIR" ]; then
     if [ "$INSTALL_AUTOSTART" = "1" ]; then
         test -f "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-home-bg.desktop"
         grep -q "Exec=/usr/libexec/atomos-home-bg --show" \
+            "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-home-bg.desktop"
+        grep -q "ATOMOS_HOME_BG_LAYER=background" \
             "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-home-bg.desktop"
     fi
     # Launcher contract sanity (matches verify_home_bg_launcher_contract in build-image.sh).

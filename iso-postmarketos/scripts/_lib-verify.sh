@@ -266,7 +266,7 @@ if [ "\${BUILD_OVERVIEW_CHAT_UI:-1}" = "1" ]; then
     check_grep "ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME" /target/usr/libexec/atomos-overview-chat-ui
     check_grep "atomos-overview-chat-ui.disabled" /target/usr/libexec/atomos-overview-chat-ui
     check_f /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
-    check_grep "Exec=/usr/libexec/atomos-overview-chat-ui --show" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
+    check_grep "Exec=/usr/libexec/atomos-overview-chat-ui --start" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
     check_grep "OnlyShowIn=GNOME;Phosh;" /target/etc/xdg/autostart/atomos-overview-chat-ui.desktop
 fi
 

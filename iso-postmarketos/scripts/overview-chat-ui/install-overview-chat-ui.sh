@@ -147,7 +147,7 @@ export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENA
 # Touch-dismiss can trigger compositor/input-stack instability on some phones.
 # Keep disabled by default; set to 1 to opt in.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS:-0}"
-# Phosh drives layer via ATOMOS_OVERVIEW_CHAT_UI_LAYER=top|bottom on --show.
+# Phosh drives layer via ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay|bottom on --show.
 export ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE="${ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE:-0}"
 # Safety fallback: some target GTK stacks crash while parsing advanced CSS.
 # Set to 0 to re-enable themed CSS after confirming target stability.
@@ -160,7 +160,7 @@ export LIBGL_ALWAYS_SOFTWARE="${ATOMOS_OVERVIEW_CHAT_UI_LIBGL_ALWAYS_SOFTWARE:-1
 export ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE="${ATOMOS_OVERVIEW_CHAT_UI_SKIP_MONITOR_PROBE:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-__OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT__}"
 export ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT="${ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT:-1}"
-# Default bottom until Phosh unfolds (then layer=top). Folded apps stay above us.
+# Default bottom until Phosh unfolds (then layer=overlay). Folded apps stay above us.
 export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
@@ -168,13 +168,35 @@ export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_
 PIDFILE=""
 LOGFILE=""
 DISABLE_FILE=""
+LAYERFILE=""
 
+# True only when the GTK binary (not the /bin/sh --show wrapper) is alive.
+# The pidfile must reference /usr/local/bin/atomos-overview-chat-ui: if it
+# still points at the launcher subshell, Phosh's `LAYER=top --show` stop_ui
+# kills the shell while the old binary keeps running on layer=bottom and the
+# home screen looks empty on later boots (the "3rd reboot" symptom).
 is_running() {
     resolve_runtime_paths
     [ -f "$PIDFILE" ] || return 1
     pid=$(cat "$PIDFILE" 2>/dev/null || true)
     [ -n "$pid" ] || return 1
-    kill -0 "$pid" 2>/dev/null
+    kill -0 "$pid" 2>/dev/null || return 1
+    cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
+    case "$cmdline" in
+        */usr/local/bin/atomos-overview-chat-ui*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+kill_chat_ui_binary() {
+    for pid in $(pgrep -f '/usr/local/bin/atomos-overview-chat-ui' 2>/dev/null || true); do
+        [ -n "$pid" ] || continue
+        kill "$pid" 2>/dev/null || true
+    done
 }
 
 resolve_runtime_paths() {
@@ -193,6 +215,7 @@ resolve_runtime_paths() {
     PIDFILE="$runtime/atomos-overview-chat-ui.pid"
     LOGFILE="$runtime/atomos-overview-chat-ui.log"
     DISABLE_FILE="$runtime/atomos-overview-chat-ui.disabled"
+    LAYERFILE="$runtime/atomos-overview-chat-ui.layer"
 }
 
 bind_phosh_session_env_if_missing() {
@@ -266,15 +289,17 @@ start_ui() {
     (
         printf '%s\n' "---- $(date) ----"
         set +e
-        "$BIN"
-        rc=$?
-        if [ "$rc" -eq 127 ]; then
-            # "command not found"/loader failure class; avoid restart loops.
-            : > "$DISABLE_FILE"
-            logger -t atomos-overview-chat-ui "binary exec failed rc=127; wrote disable marker $DISABLE_FILE"
+        # exec replaces the subshell with the GTK binary so $! / the pidfile
+        # track the real process Phosh must kill on layer --show restarts.
+        if ! exec "$BIN"; then
+            rc=$?
+            if [ "$rc" -eq 127 ]; then
+                : > "$DISABLE_FILE"
+                logger -t atomos-overview-chat-ui "binary exec failed rc=127; wrote disable marker $DISABLE_FILE"
+            fi
+            logger -t atomos-overview-chat-ui "process-exit rc=$rc"
+            exit "$rc"
         fi
-        logger -t atomos-overview-chat-ui "process-exit rc=$rc"
-        exit "$rc"
     ) >>"$LOGFILE" 2>&1 &
     pid=$!
     echo "$pid" > "$PIDFILE"
@@ -290,29 +315,68 @@ stop_ui() {
         logger -t atomos-overview-chat-ui "hide ignored (ATOMOS_OVERVIEW_CHAT_UI_IGNORE_HIDE=1)"
         return 0
     fi
-    if ! is_running; then
-        rm -f "$PIDFILE"
-        return 0
+    resolve_runtime_paths
+    if is_running; then
+        pid=$(cat "$PIDFILE" 2>/dev/null || true)
+        kill "$pid" 2>/dev/null || true
     fi
-    pid=$(cat "$PIDFILE" 2>/dev/null || true)
-    kill "$pid" 2>/dev/null || true
+    # Belt-and-suspenders: older images wrote the launcher shell pid into the
+    # pidfile; killing it left the GTK binary alive on the wrong layer.
+    kill_chat_ui_binary
     rm -f "$PIDFILE"
 }
 
+log_action() {
+    resolve_runtime_paths
+    msg="$1"
+    logger -t atomos-overview-chat-ui "$msg"
+    if [ -n "${LOGFILE:-}" ]; then
+        printf "%s\n" "$msg" >>"$LOGFILE"
+    fi
+}
+
 case "${1:-}" in
-    --show)
+    --start)
         if [ "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1}" != "1" ]; then
-            logger -t atomos-overview-chat-ui "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
+            log_action "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping start"
+            exit 0
+        fi
+        if [ "${ATOMOS_OVERVIEW_CHAT_UI_AUTOSTART_SPAWN:-1}" != "1" ]; then
+            log_action "action=start autostart spawn suppressed; phosh drives overlay --show"
             exit 0
         fi
         wait_for_phosh_wayland_env || true
-        logger -t atomos-overview-chat-ui "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
-        # Restart so a new ATOMOS_OVERVIEW_CHAT_UI_LAYER (top/bottom) applies.
+        log_action "action=start wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+        # Session autostart must not call stop_ui: a late autostart --show used to
+        # downgrade overlay back to bottom after the user had already unfolded home.
+        if is_running; then
+            exit 0
+        fi
+        start_ui
+        ;;
+    --show)
+        if [ "${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1}" != "1" ]; then
+            log_action "runtime disabled (ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME=${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}); skipping show"
+            exit 0
+        fi
+        wait_for_phosh_wayland_env || true
+        desired_layer="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+        resolve_runtime_paths
+        if is_running; then
+            current_layer="$(cat "$LAYERFILE" 2>/dev/null || true)"
+            if [ "$current_layer" = "$desired_layer" ]; then
+                log_action "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${desired_layer} (already running)"
+                exit 0
+            fi
+        fi
+        log_action "action=show wayland=${WAYLAND_DISPLAY:-<unset>} layer=${desired_layer}"
+        # Restart so a new ATOMOS_OVERVIEW_CHAT_UI_LAYER (overlay/bottom) applies.
         stop_ui
+        printf '%s\n' "$desired_layer" > "$LAYERFILE"
         start_ui
         ;;
     --hide)
-        logger -t atomos-overview-chat-ui "action=hide"
+        log_action "action=hide"
         stop_ui
         ;;
     *)
@@ -335,7 +399,8 @@ render_autostart_desktop() {
 Type=Application
 Name=AtomOS Overview Chat UI
 Comment=Layer-shell chat overlay that follows the Phosh home screen.
-Exec=/usr/libexec/atomos-overview-chat-ui --show
+Exec=/usr/libexec/atomos-overview-chat-ui --start
+Environment=ATOMOS_OVERVIEW_CHAT_UI_AUTOSTART_SPAWN=0
 OnlyShowIn=GNOME;Phosh;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
@@ -389,7 +454,9 @@ if [ -n "$DIRECT_ROOTFS_DIR" ]; then
     test -x "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-overview-chat-submit"
     if [ -n "$AUTOSTART_TMP" ]; then
         test -f "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-overview-chat-ui.desktop"
-        grep -q "Exec=/usr/libexec/atomos-overview-chat-ui --show" \
+        grep -q "Exec=/usr/libexec/atomos-overview-chat-ui --start" \
+            "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-overview-chat-ui.desktop"
+        grep -q "ATOMOS_OVERVIEW_CHAT_UI_AUTOSTART_SPAWN=0" \
             "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-overview-chat-ui.desktop"
         grep -q "OnlyShowIn=GNOME;Phosh;" \
             "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-overview-chat-ui.desktop"
@@ -416,7 +483,7 @@ else
     fi
     VERIFY_CMD="$VERIFY_CMD"
     if [ -n "$AUTOSTART_TMP" ]; then
-        VERIFY_CMD="$VERIFY_CMD"' && test -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop && grep -q "Exec=/usr/libexec/atomos-overview-chat-ui --show" /etc/xdg/autostart/atomos-overview-chat-ui.desktop'
+        VERIFY_CMD="$VERIFY_CMD"' && test -f /etc/xdg/autostart/atomos-overview-chat-ui.desktop && grep -q "Exec=/usr/libexec/atomos-overview-chat-ui --start" /etc/xdg/autostart/atomos-overview-chat-ui.desktop'
     fi
     bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$VERIFY_CMD"
 fi
