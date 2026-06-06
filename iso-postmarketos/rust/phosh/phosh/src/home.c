@@ -55,9 +55,9 @@
   "}\n"                                                           \
   "entry.atomos-chat-input {\n"                                   \
   "  border-radius: 16px;\n"                                      \
-  "  background: alpha(#151923, 0.58);\n"                         \
+  "  background: #121212;\n"                                      \
   "  color: #ffffff;\n"                                           \
-  "  border: 1px solid alpha(#ffffff, 0.22);\n"                  \
+  "  border: 1px solid #303132;\n"                                \
   "  box-shadow: none;\n"                                         \
   "  padding: 10px 14px;\n"                                       \
   "}\n"                                                           \
@@ -86,19 +86,25 @@
   "  color: #121212;\n"                                           \
   "}\n"                                                           \
   "phosh-home .atomos-app-sheet-wrap {\n"                         \
-  "  margin: 18px 0 0 0;\n"                                       \
+  "  margin: 18px 12px 18px 12px;\n"                              \
   "  border-radius: 40px;\n"                                      \
   "  border: 1px solid #303132;\n"                                \
   "}\n"                                                           \
-  "phosh-home.atomos-dark .atomos-app-sheet-wrap,\n"              \
+  "phosh-home.atomos-dark .atomos-app-sheet-wrap {\n"             \
+  "  background-image: none;\n"                                   \
+  "  background-color: alpha(#121212, 0.8);\n"                    \
+  "}\n"                                                           \
   "phosh-home.atomos-dark .atomos-app-sheet {\n"                  \
   "  background-image: none;\n"                                   \
-  "  background-color: #121212;\n"                                \
+  "  background-color: transparent;\n"                            \
   "}\n"                                                           \
-  "phosh-home.atomos-light .atomos-app-sheet-wrap,\n"             \
+  "phosh-home.atomos-light .atomos-app-sheet-wrap {\n"            \
+  "  background-image: none;\n"                                   \
+  "  background-color: alpha(#f2f2f2, 0.8);\n"                    \
+  "}\n"                                                           \
   "phosh-home.atomos-light .atomos-app-sheet {\n"                 \
   "  background-image: none;\n"                                   \
-  "  background-color: #f2f2f2;\n"                                \
+  "  background-color: transparent;\n"                            \
   "}\n"                                                           \
   "phosh-home .atomos-app-sheet {\n"                              \
   "  border-radius: 40px;\n"                                      \
@@ -248,6 +254,14 @@ atomos_phosh_sync_home_bg_layer (PhoshHomeState state)
 
   if (!g_file_test (ATOMOS_HOME_BG_LAUNCHER_PATH, G_FILE_TEST_IS_EXECUTABLE))
     return;
+
+  PhoshShell *shell = phosh_shell_get_default ();
+  if (shell && phosh_shell_get_locked (shell)) {
+    cmd = g_strdup_printf ("%s --hide", ATOMOS_HOME_BG_LAUNCHER_PATH);
+    if (!g_spawn_command_line_async (cmd, &err))
+      g_warning ("Failed to hide atomos-home-bg on lock: %s", err->message);
+    return;
+  }
 
   switch (state) {
   case PHOSH_HOME_STATE_UNFOLDED:
@@ -675,6 +689,13 @@ phosh_home_update_home_bar (PhoshHome *self)
   solid = (self->state == PHOSH_HOME_STATE_FOLDED &&
            drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED);
 
+  if (atomos_phosh_bottom_edge_drag_disabled ()) {
+    solid = FALSE;
+    gtk_widget_set_opacity (self->powerbar, 0.0);
+  } else {
+    gtk_widget_set_opacity (self->powerbar, 1.0);
+  }
+
   gtk_revealer_set_reveal_child (GTK_REVEALER (self->rev_powerbar), reveal);
   phosh_util_toggle_style_class (self->evbox_home_bar, "p-solid", solid);
 
@@ -912,22 +933,11 @@ phosh_home_map (GtkWidget *widget)
 static void
 on_home_released (GtkButton *button, int n_press, double x, double y, GtkGestureMultiPress *gesture)
 {
-  PhoshHome *self = g_object_get_data (G_OBJECT (gesture), "phosh-home");
-
-  g_return_if_fail (PHOSH_IS_HOME (self));
-
   (void) button;
   (void) n_press;
   (void) x;
   (void) y;
-
-  /* Vendor parity: a non-touch (mouse) click on the home bar toggles
-   * fold/unfold. Touch is skipped because phoc owns touch interpretation
-   * through the draggable layer-shell-effects extension; a touch tap that
-   * doesn't reach phoc's drag threshold falls through here and we don't want
-   * it to also toggle state. */
-  if (phosh_util_gesture_is_touch (GTK_GESTURE_SINGLE (gesture)) == FALSE)
-    phosh_home_set_state (self, !self->state);
+  (void) gesture;
 }
 
 
@@ -1311,6 +1321,7 @@ atomos_phosh_promote_chat_ui_when_unlocked_idle (gpointer user_data)
     return G_SOURCE_REMOVE;
 
   atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
+  atomos_phosh_sync_home_bg_layer (self->state);
   return G_SOURCE_REMOVE;
 }
 
@@ -1370,12 +1381,14 @@ on_shell_locked_changed_atomos_chat_ui (PhoshHome *self)
 
   if (shell && phosh_shell_get_locked (shell)) {
     atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_FOLDED);
+    atomos_phosh_sync_home_bg_layer (PHOSH_HOME_STATE_FOLDED);
     return;
   }
 
   /* Synchronous promotion before queued idles so a prior map-idle cannot leave
    * chat-ui killed without overlay --show (2nd-boot flash-then-wallpaper). */
   atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
+  atomos_phosh_sync_home_bg_layer (self->state);
   atomos_phosh_schedule_chat_ui_unlock_sync (self);
 }
 

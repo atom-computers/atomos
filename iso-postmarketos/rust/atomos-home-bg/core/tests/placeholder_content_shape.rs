@@ -22,7 +22,7 @@ fn data_dir() -> PathBuf {
         .join("..")
         .join("..")
         .join("..")
-        .join("data/atomos-home-bg")
+        .join("data/atomos-home-bg/black-hole")
 }
 
 fn read_data_file(name: &str) -> String {

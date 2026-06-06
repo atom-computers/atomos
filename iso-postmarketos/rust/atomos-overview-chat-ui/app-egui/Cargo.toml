@@ -16,3 +16,7 @@ path = "src/main.rs"
 [[bin]]
 name = "atomos-overview-chat-ui-swipe-lab"
 path = "src/swipe_lab.rs"
+
+[lib]
+name = "atomos_overview_chat_ui_egui"
+path = "src/lib.rs"

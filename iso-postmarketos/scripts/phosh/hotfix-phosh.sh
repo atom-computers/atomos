@@ -40,7 +40,15 @@ need_cmd mktemp
 
 SSH_CMD=(ssh)
 SCP_CMD=(scp)
-SSH_PORT="${ATOMOS_DEVICE_SSH_PORT:-2222}"
+# Default to 22 (physical) or 2222 (virtual/QEMU forwards) if not already defined
+if [ -z "${ATOMOS_DEVICE_SSH_PORT:-}" ]; then
+    if [ "${PROFILE_NAME:-}" = "fairphone-fp4" ] || [ "${SSH_TARGET:-}" = "172.16.42.1" ] || [[ "${SSH_TARGET:-}" == *172.16.42.1* ]]; then
+        export ATOMOS_DEVICE_SSH_PORT="22"
+    else
+        export ATOMOS_DEVICE_SSH_PORT="2222"
+    fi
+fi
+SSH_PORT="${ATOMOS_DEVICE_SSH_PORT}"
 if [ -n "${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-}}" ]; then
     need_cmd sshpass
     SSH_PASSWORD="${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-}}"

@@ -107,6 +107,62 @@ pub fn capsule_corner_radius(pill_w: f64, pill_h: f64) -> f64 {
     (pill_h / 2.0).min(pill_w / 2.0)
 }
 
+/// Rectangle over the foreground app where the swipe-up fade is painted.
+/// Excludes the top bar inset but includes the bottom handle area so the bottom
+/// handle bar is covered by the fade overlay and fades out during swipe.
+pub fn layout_app_content_fade_rect(
+    viewport_w: f64,
+    viewport_h: f64,
+    top_bar_height_px: i32,
+    _handle_height_px: i32,
+) -> Option<RectPx> {
+    if !viewport_w.is_finite()
+        || !viewport_h.is_finite()
+        || viewport_w <= 0.0
+        || viewport_h <= 0.0
+    {
+        return None;
+    }
+    let top = top_bar_height_px.max(0) as f64;
+    let height = viewport_h - top;
+    if height <= 0.0 {
+        return None;
+    }
+    Some(RectPx {
+        x: 0.0,
+        y: top,
+        width: viewport_w,
+        height,
+    })
+}
+
+/// Layout the dynamic height transparent overlay rectangle.
+/// Starts at the bottom of the viewport and its height increases with the upward swipe distance.
+pub fn layout_dynamic_swipe_overlay_rect(
+    viewport_w: f64,
+    viewport_h: f64,
+    handle_height_px: i32,
+    upward_drag_px: f64,
+) -> Option<RectPx> {
+    if !viewport_w.is_finite()
+        || !viewport_h.is_finite()
+        || viewport_w <= 0.0
+        || viewport_h <= 0.0
+    {
+        return None;
+    }
+    let handle_h = handle_height_px.max(0) as f64;
+    let drag = upward_drag_px.max(0.0);
+    let height = (handle_h + drag).min(viewport_h);
+    let y = viewport_h - height;
+    Some(RectPx {
+        x: 0.0,
+        y,
+        width: viewport_w,
+        height,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,4 +235,41 @@ mod tests {
         assert_ne!(DEBUG_TINT, STRIP_SCRIM);
         assert!(DEBUG_TINT.r > STRIP_SCRIM.r);
     }
+
+    #[test]
+    fn app_content_fade_rect_excludes_top_bar_and_includes_bottom_handle() {
+        let rect = layout_app_content_fade_rect(420.0, 820.0, 32, 24).expect("valid viewport");
+        assert!((rect.y - 32.0).abs() < f64::EPSILON);
+        assert!((rect.height - (820.0 - 32.0)).abs() < f64::EPSILON);
+        assert_eq!(rect.width, 420.0);
+    }
+
+    #[test]
+    fn app_content_fade_rect_rejects_non_positive_height() {
+        assert!(layout_app_content_fade_rect(420.0, 30.0, 32, 24).is_none());
+    }
+
+    #[test]
+    fn dynamic_swipe_overlay_rect_grows_upward_with_drag() {
+        let handle_h = 24;
+        let viewport_h = 820.0;
+        let viewport_w = 420.0;
+
+        // At zero drag, height is exactly handle_height_px, anchored at the bottom
+        let rect_zero = layout_dynamic_swipe_overlay_rect(viewport_w, viewport_h, handle_h, 0.0).expect("valid rect");
+        assert_eq!(rect_zero.height, 24.0);
+        assert_eq!(rect_zero.y, 820.0 - 24.0);
+        assert_eq!(rect_zero.width, 420.0);
+
+        // At 100px drag, height increases by 100px, y-anchor moves up
+        let rect_drag = layout_dynamic_swipe_overlay_rect(viewport_w, viewport_h, handle_h, 100.0).expect("valid rect");
+        assert_eq!(rect_drag.height, 124.0);
+        assert_eq!(rect_drag.y, 820.0 - 124.0);
+
+        // Huge drag clamps to full screen height
+        let rect_clamped = layout_dynamic_swipe_overlay_rect(viewport_w, viewport_h, handle_h, 1000.0).expect("valid rect");
+        assert_eq!(rect_clamped.height, 820.0);
+        assert_eq!(rect_clamped.y, 0.0);
+    }
 }
+

@@ -22,6 +22,16 @@ const CSS_PROVIDER_NAME_MARKER: &str = "atomos-app-handler-backdrop";
 pub fn install_css(hex_color: &str) {
     let css = format!(
         ".atomos-app-handler-root {{ background: {hex_color}; }} \
+         /* Default theme styling: fallback to dark */ \
+         .atomos-top-bar {{ \
+            color: #ffffff; \
+         }} \
+         .atomos-top-bar label {{ \
+            color: #ffffff; \
+         }} \
+         .atomos-top-bar image {{ \
+            color: #ffffff; \
+         }} \
          .atomos-app-handler-card {{ \
             background: rgba(20, 20, 20, 0.92); \
             border-radius: 18px; \
@@ -30,6 +40,42 @@ pub fn install_css(hex_color: &str) {
             min-height: 240px; \
             color: #f5f5f5; \
          }} \
+         \
+         /* DARK theme overrides */ \
+         .atomos-app-handler-root.atomos-dark {{ \
+            background: {hex_color}; \
+         }} \
+         .atomos-top-bar.atomos-dark, \
+         .atomos-top-bar.atomos-dark label, \
+         .atomos-top-bar.atomos-dark image, \
+         .atomos-app-handler-root.atomos-dark .atomos-top-bar, \
+         .atomos-app-handler-root.atomos-dark .atomos-top-bar label, \
+         .atomos-app-handler-root.atomos-dark .atomos-top-bar image {{ \
+            color: #ffffff; \
+         }} \
+         .atomos-app-handler-root.atomos-dark .atomos-app-handler-card {{ \
+            background: rgba(20, 20, 20, 0.92); \
+            color: #f5f5f5; \
+         }} \
+         \
+         /* LIGHT theme overrides */ \
+         .atomos-app-handler-root.atomos-light {{ \
+            background: #f2f2f2; \
+         }} \
+         .atomos-top-bar.atomos-light, \
+         .atomos-top-bar.atomos-light label, \
+         .atomos-top-bar.atomos-light image, \
+         .atomos-app-handler-root.atomos-light .atomos-top-bar, \
+         .atomos-app-handler-root.atomos-light .atomos-top-bar label, \
+         .atomos-app-handler-root.atomos-light .atomos-top-bar image {{ \
+            color: #121212; \
+         }} \
+         .atomos-app-handler-root.atomos-light .atomos-app-handler-card {{ \
+            background: rgba(240, 240, 240, 0.92); \
+            color: #121212; \
+            border: 1px solid rgba(0, 0, 0, 0.12); \
+         }} \
+         \
          .atomos-app-handler-card.activated {{ \
             border: 2px solid rgba(128, 224, 178, 0.85); \
          }} \
@@ -46,6 +92,7 @@ pub fn install_css(hex_color: &str) {
             background: rgba(255, 0, 0, 0.35); \
             min-height: 1px; \
          }} \
+         .atomos-app-handler-transparent-window {{ background: transparent; }} \
          /* tag for sanity-grep: {CSS_PROVIDER_NAME_MARKER} */",
     );
 

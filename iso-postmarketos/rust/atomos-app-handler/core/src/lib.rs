@@ -6,11 +6,28 @@
 //! consuming `Result<String, std::env::VarError>`, so the composition step is
 //! exhaustively unit-testable.
 
+pub mod desktop_launch;
 pub mod handle;
 pub mod launch;
+pub mod launch_visibility;
 pub mod session;
 
+pub use desktop_launch::{
+    dbus_activation_env_var_names_present, dbus_service_basename, default_dbus_service_path,
+    desktop_entry_has_exec, desktop_entry_is_dbus_activatable, launch_requires_gdk_app_launch_context,
+    parse_dbus_service_exec, APP_ID_FIREFOX_ESR, APP_ID_GNOME_CONSOLE,
+    DBUS_ACTIVATION_SESSION_ENV_VARS, FIXTURE_FIREFOX_ESR_DESKTOP, FIXTURE_GNOME_CONSOLE_DESKTOP,
+    FIXTURE_GNOME_CONSOLE_SERVICE_DAEMON, dbus_service_exec_is_daemon_only,
+    desktop_exec_is_spawnable_for_window, parse_desktop_entry_primary_exec,
+    should_spawn_dbus_service_exec_directly,
+};
 pub use launch::{LaunchPlan, app_ids_match, find_matching_toplevel, plan_launch};
+pub use launch_visibility::{
+    chat_ui_layer_must_change_after_tile_launch, foreground_xdg_toplevel_visible_with_chat_ui_layer,
+    required_chat_ui_layer_after_tile_launch, CHAT_UI_LAYER_AFTER_SUCCESSFUL_LAUNCH,
+    CHAT_UI_LAYER_APP_GRID_OPEN, REGRESSION_APP_DBUS_ACTIVATABLE,
+    REGRESSION_APP_EXISTING_TOLEVEL,
+};
 pub use session::{
     derive_home_ipc, launcher_home_ipc_when_visibility_changes, home_target_name, HomeTarget,
     PhoshHomeIpc, PhoshHomeShellState, ShellLifecycleAction, UiMode,
@@ -97,6 +114,11 @@ pub const BACKDROP_BASE_COLOR_RGB: [u8; 3] = [0x0a, 0x0a, 0x0a];
 /// `atomos-swipe-bridge` (which only fired open at `dy >= MIN_UPWARD_PX`);
 /// we bump `OPEN_THRESHOLD` to 48 px so a stray finger-jitter at the bottom
 /// edge doesn't accidentally pop the switcher.
+/// Height of `atomos-top-bar` / Phosh `PHOSH_TOP_BAR_HEIGHT`. The swipe-up
+/// fade overlay must not paint over this strip so the status bar stays crisp
+/// while the foreground app dims.
+pub const TOP_BAR_HEIGHT_PX: i32 = 32;
+
 pub const DEFAULT_HANDLE_HEIGHT_PX: i32 = 24;
 pub const DEFAULT_OPEN_THRESHOLD_PX: f64 = 48.0;
 pub const DEFAULT_DISMISS_THRESHOLD_PX: f64 = 120.0;
@@ -141,6 +163,39 @@ pub fn parse_lifecycle_action_from_argv() -> LifecycleAction {
     parse_lifecycle_action(&args)
 }
 
+/// Visual fade ramp for the bottom-edge swipe-up gesture, in `[0.0, 1.0]`.
+///
+/// Egui-parity contract: a full-screen `Layer::Overlay` gesture surface
+/// (so the wayland implicit pointer grab survives an upward drag of any
+/// length — there is no surface boundary the pointer can leave) paints a
+/// backdrop fade only over the foreground app's content rectangle — from
+/// [`TOP_BAR_HEIGHT_PX`] down to the bottom handle strip. The visible
+/// 24 px handle chrome lives on `Layer::Bottom` below the app; its
+/// `exclusive_zone` reserves the bottom inset so the running app sits in
+/// the closeable window between the top bar and the handle.
+///
+/// This pure function computes the alpha:
+///
+/// - `dy` follows GTK's `GestureDrag` convention: negative = upward.
+/// - Returns `0.0` for a downward / zero / non-finite drag.
+/// - Ramps linearly from `0.0` at `dy = 0` to `1.0` at
+///   `dy = -open_threshold_px` so the fade peaks exactly when
+///   [`evaluate_swipe_up`] returns [`SwipeOutcome::OpenOverlay`].
+/// - Clamped at `1.0` for any further upward motion (the switcher
+///   has already opened by that point and the handle bar is hidden
+///   for the duration of the open state).
+/// - Returns `0.0` when `open_threshold_px <= 0` so the
+///   "threshold == 0 disables the open path" test/debug knob does
+///   not also flash a full-screen black fade on every twitch.
+pub fn handle_drag_progress(dy: f64, cfg: &GestureConfig) -> f32 {
+    if !dy.is_finite() || cfg.open_threshold_px <= 0.0 {
+        return 0.0;
+    }
+    let upward = (-dy).max(0.0);
+    let ratio = (upward / cfg.open_threshold_px).clamp(0.0, 1.0);
+    ratio as f32
+}
+
 /// Whether the bottom-edge handle surface should be mapped on the
 /// compositor right now, given the current Wayland toplevel count.
 ///
@@ -150,8 +205,8 @@ pub fn parse_lifecycle_action_from_argv() -> LifecycleAction {
 ///   visible. The handle bar must not paint over the chat-ui app-grid /
 ///   chat input strip.
 /// - `count >= 1` → at least one foreground app is open and chat-ui has
-///   relayered to `Bottom`; the handle bar is the user's only path back
-///   to the switcher, so it must be mapped above the running app.
+///   relayered to `Bottom`; the bottom handle strip and gesture overlay
+///   must be mapped so the app sits above the handle in the layer stack.
 ///
 /// Pure so `linux.rs` can call it from `on_toplevel_count_changed` and
 /// the policy is unit-tested cross-platform.
@@ -610,6 +665,101 @@ mod tests {
                 should_show_handle(n),
                 "with {n} toplevel(s) open the handle must be mapped \
                  so the user can swipe up into the switcher",
+            );
+        }
+    }
+
+    #[test]
+    fn handle_drag_progress_zero_when_idle() {
+        let cfg = GestureConfig::default();
+        assert_eq!(handle_drag_progress(0.0, &cfg), 0.0);
+    }
+
+    #[test]
+    fn handle_drag_progress_zero_for_downward_drag() {
+        // Downward drag (dy > 0) is not part of the open path — it must
+        // NOT fade the running app out, otherwise a stray downward
+        // touch would dim the whole screen.
+        let cfg = GestureConfig::default();
+        assert_eq!(handle_drag_progress(10.0, &cfg), 0.0);
+        assert_eq!(handle_drag_progress(1000.0, &cfg), 0.0);
+    }
+
+    #[test]
+    fn handle_drag_progress_ramps_linearly_to_one_at_open_threshold() {
+        // Defaults: open_threshold_px = 48.0.
+        let cfg = GestureConfig::default();
+        assert!((handle_drag_progress(-12.0, &cfg) - 0.25).abs() < 1e-6);
+        assert!((handle_drag_progress(-24.0, &cfg) - 0.5).abs() < 1e-6);
+        assert!((handle_drag_progress(-36.0, &cfg) - 0.75).abs() < 1e-6);
+        assert!((handle_drag_progress(-48.0, &cfg) - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn handle_drag_progress_clamps_to_one_past_open_threshold() {
+        // Past the threshold the switcher is opening / open, so the
+        // fade must stay at 1.0 rather than over-fading.
+        let cfg = GestureConfig::default();
+        assert_eq!(handle_drag_progress(-100.0, &cfg), 1.0);
+        assert_eq!(handle_drag_progress(-10_000.0, &cfg), 1.0);
+    }
+
+    #[test]
+    fn handle_drag_progress_scales_with_open_threshold() {
+        // A maintainer-tuned 96 px threshold means halfway = 48 px upward.
+        let cfg = GestureConfig {
+            handle_height_px: DEFAULT_HANDLE_HEIGHT_PX,
+            open_threshold_px: 96.0,
+            dismiss_threshold_px: DEFAULT_DISMISS_THRESHOLD_PX,
+        };
+        assert!((handle_drag_progress(-48.0, &cfg) - 0.5).abs() < 1e-6);
+        assert!((handle_drag_progress(-96.0, &cfg) - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn handle_drag_progress_zero_when_open_threshold_disabled() {
+        // open_threshold_px == 0 disables the open path (see
+        // evaluate_swipe_up_with_zero_threshold_disables_path). The fade
+        // must follow suit — otherwise the first finger-twitch would
+        // black out the whole screen with no possibility of opening.
+        let cfg = GestureConfig {
+            handle_height_px: DEFAULT_HANDLE_HEIGHT_PX,
+            open_threshold_px: 0.0,
+            dismiss_threshold_px: DEFAULT_DISMISS_THRESHOLD_PX,
+        };
+        assert_eq!(handle_drag_progress(-100.0, &cfg), 0.0);
+    }
+
+    #[test]
+    fn handle_drag_progress_handles_non_finite() {
+        let cfg = GestureConfig::default();
+        assert_eq!(handle_drag_progress(f64::NAN, &cfg), 0.0);
+        assert_eq!(handle_drag_progress(f64::INFINITY, &cfg), 0.0);
+        assert_eq!(handle_drag_progress(f64::NEG_INFINITY, &cfg), 0.0);
+    }
+
+    #[test]
+    fn handle_drag_progress_peaks_with_evaluate_swipe_up_outcome() {
+        // Sanity-check the egui-parity contract: at EXACTLY the dy that
+        // graduates evaluate_swipe_up to OpenOverlay, the fade must be
+        // fully opaque. This way the visible hand-off from "drag is
+        // ramping the app dimming" to "switcher backdrop took over"
+        // happens with no opacity discontinuity.
+        for thr in [12.0_f64, 24.0, 48.0, 96.0, 240.0] {
+            let cfg = GestureConfig {
+                handle_height_px: DEFAULT_HANDLE_HEIGHT_PX,
+                open_threshold_px: thr,
+                dismiss_threshold_px: 120.0,
+            };
+            let dy_at_threshold = -thr;
+            assert!(
+                (handle_drag_progress(dy_at_threshold, &cfg) - 1.0).abs() < 1e-6,
+                "fade must reach 1.0 at dy={dy_at_threshold} for threshold={thr}",
+            );
+            assert_eq!(
+                evaluate_swipe_up(dy_at_threshold, &cfg),
+                SwipeOutcome::OpenOverlay,
+                "evaluate_swipe_up must fire at the same dy the fade peaks",
             );
         }
     }

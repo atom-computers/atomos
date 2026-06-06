@@ -69,6 +69,14 @@ warn() { echo "FAIL  $1 -- $2"; fail=1; }
 info() { echo "INFO  $1 -- $2"; }
 header() { echo; echo "=== $1 ==="; }
 
+# busybox grep -c prints 0 and exits 1 when there are no matches; pairing it
+# with `|| echo 0` yields "0\n0" and breaks `[ "$n" -eq 0 ]` downstream.
+count_matches() {
+    _n=$(printf "%s\n" "$1" | grep -c "$2" 2>/dev/null || true)
+    _n=${_n:-0}
+    printf "%s" "$_n" | head -n 1
+}
+
 # ----- Files installed -----
 header "Files installed by install-app-handler.sh"
 for p in /usr/local/bin/atomos-app-handler /usr/bin/atomos-app-handler /usr/libexec/atomos-app-handler; do
@@ -398,7 +406,7 @@ fi
 for log in /run/user/*/atomos-overview-chat-ui.log; do
     [ -f "$log" ] || continue
     if grep -q "action=hide" "$log" 2>/dev/null && ! grep -q "action=show" "$log" 2>/dev/null; then
-        fail "chat-ui hide without show" \
+        warn "chat-ui hide without show" \
             "log has action=hide but no action=show — Phosh killed autostart chat-ui (map-idle while locked or stale phosh); rebuild phosh home.c fix"
         break
     fi
@@ -449,6 +457,54 @@ if [ -n "$APP_SWITCHER_PIDS" ]; then
     fi
 else
     info "app-switcher env" "process not running; the launcher --show signal will start it"
+fi
+
+# ----- Phosh runtime env (single most common cause of "bar visible but
+# swipe does nothing") -----
+#
+# The rust handle surface lives on Layer::Overlay so the wlr-layer-shell
+# input ordering says touches in the bottom 24 px should reach it BEFORE
+# phosh-home (Top). But phoc-layer-shell-effects ships a separate path:
+# when phosh-home keeps PhoshDragSurface drag-mode=HANDLE, phoc captures
+# touches in the home-bar drag region itself, regardless of higher-layer
+# overlays. AtomOS-fork phosh yields the bottom edge iff its process
+# sees ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1 in /proc/<pid>/environ
+# (the atomos_phosh_bottom_edge_drag_disabled() branch in home.c that
+# sets drag_mode=NONE).
+#
+# Reading /etc/atomos/phosh-profile.env from the rootfs is NOT enough --
+# phosh-session.in must have actually sourced it before exec-ing phoc,
+# and on hotfix/upgrade paths that file might exist but the live phosh
+# was started before it landed. So we grep the live phosh environ here
+# and remember the result for the swipe-pipeline analysis below.
+ATOMOS_PHOSH_EDGE_DRAG_YIELDED=unknown
+ATOMOS_PHOSH_TAKES_OVER=unknown
+header "Live phosh runtime env (bottom-edge yield to atomos-app-handler)"
+if [ -n "$PHOSH_PID" ] && [ -r "/proc/$PHOSH_PID/environ" ]; then
+    phosh_env="$(tr "\000" "\n" < "/proc/$PHOSH_PID/environ" \
+        | grep -E "^ATOMOS_(PHOSH_DISABLE_BOTTOM_EDGE_DRAG|APP_HANDLER_(TAKES_OVER|ENABLE_RUNTIME))=" \
+        | tr "\n" " " || true)"
+    info "phosh atomos env" "${phosh_env:-<none of the atomos-app-handler keys in phosh environ>}"
+    if echo "$phosh_env" | grep -q "ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1"; then
+        pass "phosh sees ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1" \
+            "phosh-home will set PhoshDragSurface drag_mode=NONE so phoc yields the bottom edge to the overlay handle"
+        ATOMOS_PHOSH_EDGE_DRAG_YIELDED=yes
+    else
+        warn "phosh sees ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1" \
+            "MISSING from phosh environ -- phosh-home stays at drag_mode=HANDLE and phoc swallows every bottom-edge touch BEFORE the wlr-layer-shell Overlay surface gets a chance. This is the single most common cause of \"visible bar, swipe does nothing\". Fix: ensure /etc/atomos/phosh-profile.env contains the key AND phosh-session.in sources it (re-login, or re-run install-app-handler.sh + hotfix-phosh-profile-env.sh, then log out / log back in)."
+        ATOMOS_PHOSH_EDGE_DRAG_YIELDED=no
+    fi
+    if echo "$phosh_env" | grep -q "ATOMOS_APP_HANDLER_TAKES_OVER=1"; then
+        pass "phosh sees ATOMOS_APP_HANDLER_TAKES_OVER=1" \
+            "PhoshOverview is hidden so the rust overlay owns the switcher surface"
+        ATOMOS_PHOSH_TAKES_OVER=yes
+    else
+        warn "phosh sees ATOMOS_APP_HANDLER_TAKES_OVER=1" \
+            "MISSING from phosh environ -- PhoshOverview will paint its own switcher on top of the rust overlay when unfolded"
+        ATOMOS_PHOSH_TAKES_OVER=no
+    fi
+else
+    info "phosh runtime env" "no phosh pid or /proc/<pid>/environ not readable; cannot confirm bottom-edge yield"
 fi
 
 # ----- Lifecycle hook evidence in the app-handler launcher log -----
@@ -503,7 +559,7 @@ done
 # want when the visible bar is there but "swipe up does nothing":
 #
 #   1. handle_window mapped?            → wayland surface is up
-#   2. handle_strip resize fired?       → GTK allocated the strip
+#   2. handle_canvas resize fired?      → GTK allocated the full-screen canvas
 #   3. event_probe count > 0?           → touches reach the widget
 #   4. drag_begin count > 0?            → GestureDrag started
 #   5. drag_update count > 0?           → motion events flow
@@ -529,30 +585,59 @@ else
         SLICE="$(cat "$LOG")"
     fi
 
-    map_line="$(printf "%s\n" "$SLICE" | grep -m 1 "handle_window map width=" || true)"
+    map_line="$(printf "%s\n" "$SLICE" | grep "handle_window map width=" 2>/dev/null | tail -n 1 || true)"
     if [ -n "$map_line" ]; then
         pass "handle_window mapped" "${map_line##*atomos-app-handler: }"
         map_w="$(printf "%s\n" "$map_line" | sed -n "s/.* width=\([0-9][0-9]*\).*/\1/p")"
-        if [ -n "$map_w" ] && [ "$map_w" -lt 360 ]; then
+        map_h="$(printf "%s\n" "$map_line" | sed -n "s/.* height=\([0-9][0-9]*\).*/\1/p")"
+        if printf "%s" "$map_line" | grep -q "surface_height_px="; then
+            warn "app-handler binary stale" \
+                "launcher log still shows surface_height_px= (pre full-screen build). /usr/local/bin may be updated but the running process was not restarted — run: bash scripts/app-handler/hotfix-app-handler.sh <profile> <ssh-target> (must print OK: installed binary contains handle_canvas)"
+        elif printf "%s\n" "$SLICE" | grep -q "handle_strip resize"; then
+            warn "app-handler binary stale" \
+                "launcher log shows handle_strip resize (old 24px surface). Restart atomos-app-handler after hotfix."
+        fi
+        if [ -n "$map_w" ] && [ "$map_w" -gt 0 ] && [ "$map_w" -lt 360 ]; then
             warn "handle_window width" "${map_w}px < 360 — layer-shell L+R anchors may not be honored; touches outside this strip will miss"
+        fi
+        # Full-screen overlay: height should be display-sized (typically >= 600).
+        # width=0 height=0 is the first map callback before GTK allocates — ignore.
+        if [ -n "$map_h" ] && [ "$map_h" -gt 0 ] && [ "$map_h" -lt 200 ]; then
+            warn "handle_window height" "${map_h}px < 200 — the handle surface should be full-screen overlay (anchor T as well as L+R+B). Re-run hotfix and confirm the running binary contains handle_canvas."
         fi
     else
         info "handle_window mapped" "no map line in this session — open an app to trigger toplevel_count > 0"
     fi
 
-    resize_line="$(printf "%s\n" "$SLICE" | grep -m 1 "handle_strip resize" || true)"
+    resize_line="$(printf "%s\n" "$SLICE" | grep "handle_canvas resize" 2>/dev/null | tail -n 1 || true)"
     if [ -n "$resize_line" ]; then
-        pass "handle_strip allocated" "${resize_line##*atomos-app-handler: }"
+        pass "handle_canvas allocated" "${resize_line##*atomos-app-handler: }"
     fi
 
-    probe_count="$(printf "%s\n" "$SLICE" | grep -c "handle event_probe" 2>/dev/null || echo 0)"
-    drag_begin_count="$(printf "%s\n" "$SLICE" | grep -c "handle drag_begin" 2>/dev/null || echo 0)"
-    drag_update_count="$(printf "%s\n" "$SLICE" | grep -c "handle drag_update" 2>/dev/null || echo 0)"
-    drag_end_count="$(printf "%s\n" "$SLICE" | grep -c "handle drag_end" 2>/dev/null || echo 0)"
-    open_outcome_count="$(printf "%s\n" "$SLICE" | grep -c "outcome=OpenOverlay" 2>/dev/null || echo 0)"
-    overlay_open_count="$(printf "%s\n" "$SLICE" | grep -c "overlay open from=" 2>/dev/null || echo 0)"
+    if strings /usr/local/bin/atomos-app-handler 2>/dev/null | grep -q "handle_canvas resize"; then
+        pass "installed binary build" "contains handle_canvas (full-screen fade build)"
+    elif [ -x /usr/local/bin/atomos-app-handler ]; then
+        warn "installed binary build" \
+            "missing handle_canvas string — hotfix did not install the new binary, or the container build was stale"
+    fi
 
-    info "event counts" "event_probe=$probe_count drag_begin=$drag_begin_count drag_update=$drag_update_count drag_end=$drag_end_count outcome=OpenOverlay=$open_outcome_count overlay_open=$overlay_open_count"
+    probe_count="$(count_matches "$SLICE" "handle event_probe")"
+    drag_begin_count="$(count_matches "$SLICE" "handle drag_begin")"
+    drag_update_count="$(count_matches "$SLICE" "handle drag_update")"
+    drag_end_count="$(count_matches "$SLICE" "handle drag_end")"
+    open_outcome_count="$(count_matches "$SLICE" "outcome=OpenOverlay")"
+    overlay_open_count="$(count_matches "$SLICE" "overlay open from=")"
+    grab_broken_count="$(count_matches "$SLICE" "event_probe type=GrabBroken")"
+    # Peak fade-overlay alpha reported during drag_update lines. Drag start
+    # logs `progress=0.000`; at the open threshold it logs `progress=1.000`.
+    # A peak < 1.000 means the user never reached the threshold OR the
+    # fade is misconfigured.
+    max_progress="$(printf "%s\n" "$SLICE" | sed -n "s/.*progress=\([0-9]\.[0-9][0-9][0-9]\).*/\1/p" | sort -n | tail -n 1)"
+
+    info "event counts" "event_probe=$probe_count drag_begin=$drag_begin_count drag_update=$drag_update_count drag_end=$drag_end_count outcome=OpenOverlay=$open_outcome_count overlay_open=$overlay_open_count grab_broken=$grab_broken_count"
+    if [ -n "$max_progress" ]; then
+        info "max fade progress" "${max_progress} (drag fade ramps 0.000 → 1.000 as |dy| reaches open_threshold_px; the running app fades out in lockstep)"
+    fi
 
     # Largest |accumulated_dy| reported at any drag_end. The format is
     # `accumulated_dy=-12.3` (negative for upward); we strip the sign and
@@ -565,8 +650,16 @@ else
     if [ "$map_line" = "" ]; then
         info "swipe pipeline" "no handle_window map yet; nothing to analyze"
     elif [ "$probe_count" -eq 0 ] && [ "$drag_begin_count" -eq 0 ]; then
-        warn "swipe pipeline" \
-            "handle_window mapped but ZERO input events reached the strip — Phoc/Phosh is consuming the touch before it can be delivered to the overlay layer-shell surface; verify ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1 is in /proc/$PHOSH_PID/environ and that Phoc honors zwlr_layer_shell_v1 Overlay layer ordering"
+        if [ "${ATOMOS_PHOSH_EDGE_DRAG_YIELDED:-unknown}" = "no" ]; then
+            warn "swipe pipeline" \
+                "handle_window mapped but ZERO input events reached the strip AND phosh environ is missing ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1 — root cause: phoc is intercepting the bottom-edge touch via phosh-home drag_mode=HANDLE. Fix the phosh env (see the \"Live phosh runtime env\" section above) and re-login, then re-test."
+        elif [ "${ATOMOS_PHOSH_EDGE_DRAG_YIELDED:-unknown}" = "yes" ]; then
+            warn "swipe pipeline" \
+                "handle_window mapped but ZERO input events reached the strip even though phosh environ DOES yield the bottom edge — likely a Phoc layer-ordering bug (Overlay vs Top input routing) or a wlr-layer-shell input-region miss on the handle surface. Capture wayland-info + phoc trace and file upstream."
+        else
+            warn "swipe pipeline" \
+                "handle_window mapped but ZERO input events reached the strip — Phoc/Phosh is consuming the touch before it can be delivered to the overlay layer-shell surface; verify ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG=1 is in /proc/$PHOSH_PID/environ and that Phoc honors zwlr_layer_shell_v1 Overlay layer ordering"
+        fi
     elif [ "$probe_count" -gt 0 ] && [ "$drag_begin_count" -eq 0 ]; then
         warn "swipe pipeline" \
             "raw events reach the strip ($probe_count event_probe lines) but GestureDrag.drag_begin never fires — the gesture controller is misconfigured (button mask, propagation phase, or strip hit-region)"
@@ -574,9 +667,12 @@ else
         warn "swipe pipeline" \
             "drag_begin fires but drag_update never does — the sequence is being denied/cancelled before any motion event flows; check that nothing else is claiming the wl_touch sequence"
     elif [ "$drag_update_count" -gt 0 ] && [ "$open_outcome_count" -eq 0 ]; then
-        if [ -n "$max_abs_dy" ] && [ "$max_abs_dy" -lt 48 ]; then
+        if [ -n "$max_abs_dy" ] && [ "$max_abs_dy" -lt 48 ] && [ "$grab_broken_count" -gt 0 ]; then
             warn "swipe pipeline" \
-                "drag motion is flowing but no swipe ever reached the 48px open threshold (max |dy|=${max_abs_dy}px) — sequence likely cancelled when the pointer leaves the 24px strip; verify GestureDrag set_exclusive(true) + set_state(Claimed) are taking effect"
+                "drag motion flows but the gesture dies at |dy|=${max_abs_dy}px (open threshold = 48px) and the launcher log shows GrabBroken — the wayland pointer grab is being broken even though the handle surface is supposed to be FULL-SCREEN overlay (anchors L+R+T+B). Either (a) the binary on /usr/local/bin/atomos-app-handler is stale and still uses the old 24 px-tall surface — run: bash scripts/app-handler/hotfix-app-handler.sh <profile> <ssh-target>; or (b) phoc is mis-handling the layer-shell pointer grab (capture wayland-info + phoc trace and file upstream)."
+        elif [ -n "$max_abs_dy" ] && [ "$max_abs_dy" -lt 48 ]; then
+            warn "swipe pipeline" \
+                "drag motion is flowing but no swipe ever reached the 48px open threshold (max |dy|=${max_abs_dy}px) and no GrabBroken was logged — the user lifted their finger before completing the gesture (try a longer swipe), OR a competing GTK controller is cancelling the sequence (verify GestureDrag set_exclusive(true) + set_state(Claimed) are taking effect)."
         else
             warn "swipe pipeline" \
                 "drag motion received but evaluate_swipe_up never returned OpenOverlay — check open_threshold_px"

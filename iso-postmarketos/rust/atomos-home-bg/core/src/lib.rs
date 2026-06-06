@@ -68,7 +68,7 @@ pub const LAYER_SHELL_NAMESPACE: &str = "atomos-home-bg";
 
 /// Content path shipped in the rootfs overlay. A React `dist/` is expected to
 /// land here (packaging is independent of this crate).
-pub const DEFAULT_CONTENT_PATH: &str = "/usr/share/atomos-home-bg/index.html";
+pub const DEFAULT_CONTENT_PATH: &str = "/usr/share/atomos-home-bg/black-hole/index.html";
 
 /// Canonical default when `ATOMOS_HOME_BG_LAYER` is unset.
 ///

@@ -238,3 +238,28 @@ fn phosh_home_c_chat_ui_stack_contract_summary() {
         "chat-ui lifecycle must not use top",
     );
 }
+
+#[test]
+fn gtk_overlay_rs_uses_keyboard_mode_override() {
+    let overlay_rs = read_repo_file("../app-gtk/src/overlay.rs");
+    assert_contains(
+        &overlay_rs,
+        "crate::config::keyboard_mode_override()",
+        "overlay.rs must read config::keyboard_mode_override",
+    );
+    assert_contains(&overlay_rs, "KeyboardMode::Exclusive", "overlay.rs must support exclusive keyboard mode");
+    assert_contains(&overlay_rs, "KeyboardMode::OnDemand", "overlay.rs must support on-demand keyboard mode");
+    assert_contains(&overlay_rs, "KeyboardMode::None", "overlay.rs must support none keyboard mode");
+}
+
+#[test]
+fn test_no_capture_gesture_on_window_to_prevent_osk_blocking() {
+    let ui_rs = read_repo_file("../app-gtk/src/ui.rs");
+    // Intercepting taps at the window level in the capture phase blocks focus events
+    // on child widgets (like TextView), which prevents Squeekboard/OSK from triggering.
+    assert_not_contains(
+        &ui_rs,
+        "PropagationPhase::Capture",
+        "Window must not intercept taps in Capture phase as it blocks child widget focus and OSK activation",
+    );
+}

@@ -15,12 +15,18 @@ atomos_build_heavy_components() {
         -v "$ROOTFS_VOLUME:/target" \
         -v "$REPO_TOP:/work" \
         -v "$MESON_CACHE_MOUNT:/cache" \
+        -v "$PKG_CACHE_MOUNT_SRC:$PKG_CACHE_MOUNT" \
         -v "$PMOS_KEY_HOST:/tmp/pmos.rsa.pub:ro" \
         -e PMOS_REPO_URL="$PMOS_REPO_URL" \
         -e BUILD_HOME_BG="$BUILD_HOME_BG" \
         -e BUILD_APP_HANDLER="${BUILD_APP_HANDLER:-1}" \
         -e USE_VENDOR_PHOSH="$USE_VENDOR_PHOSH" \
+        -e ATOMOS_V2="${ATOMOS_V2:-0}" \
         -e ATOMOS_CCACHE_MAXSIZE="${ATOMOS_CCACHE_MAXSIZE:-5G}" \
+        -e ATOMOS_APK_CACHE_DIR="$APK_CACHE_CONTAINER_DIR" \
+        -e ATOMOS_APK_NET="${ATOMOS_APK_NET:---update-cache}" \
+        -e ATOMOS_CARGO_OFFLINE="${ATOMOS_CARGO_OFFLINE:-0}" \
+        -e CARGO_HOME="$CARGO_HOME_CONTAINER_DIR" \
         "$ALPINE_IMAGE" /bin/sh \
         /work/iso-postmarketos/scripts/_lib-build-container-body.sh
 }

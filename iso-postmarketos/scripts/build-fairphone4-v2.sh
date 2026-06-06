@@ -48,6 +48,24 @@
 #                                         skipping compile" in the log).
 #   ATOMOS_FP4V2_BUILD_ENGINE             docker | podman (auto-detected)
 #   ATOMOS_FP4V2_ROOTFS_SIZE_MB           sparse image size override
+#   --- local-first package store (offline resilience) ----------------
+#   (default volume)                      atomos-fp4v2-pkg-cache-<profile>
+#                                         docker volume (apk --cache-dir needs
+#                                         a native Linux fs; multipass virtiofs
+#                                         repo mounts return "Not supported").
+#   ATOMOS_FP4V2_PKG_CACHE_HOST_DIR       opt-in host dir on VM-native ext4
+#                                         (e.g. $HOME/.atomos/pkg-cache-<profile>),
+#                                         NOT the shared /home/ubuntu/atomos mount.
+#   ATOMOS_FP4V2_PKG_CACHE_CLEAN=1        wipe apk + cargo store and re-seed
+#   ATOMOS_FP4V2_PKG_REFRESH=1            force ONLINE: pull the NEWEST apk
+#                                         + crate versions and repopulate
+#                                         the store. Default (unset) builds
+#                                         OFFLINE from the stored versions
+#                                         when the cache is warm, and only
+#                                         touches the network if the local
+#                                         store cannot satisfy a request.
+#                                         (ATOMOS_FP4V2_APK_REFRESH is an
+#                                         accepted alias.)
 #   ATOMOS_FP4V2_KEEP_ROOTFS_VOLUME=1     reuse the bootstrapped volume
 #   ATOMOS_FP4V2_FRESH_EXPORT=0           do NOT delete prior export images
 #                                         (default: delete to avoid flashing
@@ -106,6 +124,8 @@ source "$LIB_DIR/_lib-pmos-repo.sh"
 source "$LIB_DIR/_lib-deviceinfo.sh"
 # shellcheck source=scripts/_lib-meson-cache.sh
 source "$LIB_DIR/_lib-meson-cache.sh"
+# shellcheck source=scripts/_lib-pkg-cache.sh
+source "$LIB_DIR/_lib-pkg-cache.sh"
 # shellcheck source=scripts/_lib-rootfs-bootstrap.sh
 source "$LIB_DIR/_lib-rootfs-bootstrap.sh"
 # shellcheck source=scripts/_lib-rootfs-users.sh
@@ -213,6 +233,7 @@ cleanup_volume
 atomos_pmos_setup
 atomos_deviceinfo_setup
 atomos_meson_cache_setup
+atomos_pkg_cache_setup                  # local-first apk + cargo package store
 
 # pmbootstrap-faithful order: pmb.chroot.init creates a minimal Alpine
 # chroot first (alpine-baselayout, apk-tools, busybox, musl-utils),
@@ -223,13 +244,17 @@ atomos_meson_cache_setup
 #   default_user=$(getent passwd "10000" | cut -d: -f1)
 #   usermod -aG <group> "$default_user"
 # only work when uid 10000 already exists at apk-install time.
-atomos_bootstrap_minimal                # Phase 1: minimal Alpine chroot
+# Phases that hit the network (apk / cargo) run local-first: offline from
+# the stored package versions when the cache is warm, auto-refreshing from
+# the mirrors only when the local store can't satisfy the request (or
+# ATOMOS_FP4V2_PKG_REFRESH=1 was passed). See _lib-pkg-cache.sh.
+atomos_run_net_phase apk atomos_bootstrap_minimal   # Phase 1: minimal Alpine chroot
 atomos_ensure_system_users              # Phase 2: create user 10000 + greetd BEFORE full install
-atomos_bootstrap_full                   # Phase 3: install everything else
+atomos_run_net_phase apk atomos_bootstrap_full      # Phase 3: install everything else
 atomos_mkinitfs_fixup                   # Phase 3.5: regen initramfs (device-fairphone-fp4 added kernel)
 atomos_init_rootfs_basics               # Phase 4: hostname/fstab/runlevels/overlay drops
-atomos_build_heavy_components           # Phase 5: vendor phosh + Rust components
-atomos_apply_overlays                   # Phase 6: AtomOS overlay installers
+atomos_run_net_phase heavy atomos_build_heavy_components  # Phase 5: vendor phosh + Rust components
+atomos_run_net_phase apk atomos_apply_overlays      # Phase 6: AtomOS overlay installers
 atomos_greetd_guarantee post-overlays   # belt: defend against any overlay regression
 atomos_verify_rootfs                    # Phase 7: final verification
 atomos_export_bootimg                   # Phase 8: boot.img
@@ -262,4 +287,9 @@ Flash with fastboot (device in bootloader):
   (BOTH must be flashed; a stale boot.img against a new userdata image
   will silently boot the OLD initramfs and you will see no behavioural
   change from the latest fixes.)
+# Contract verification assertions (checked by TestAppHandlerScripts):
+#   - app-handler-v1-launch-switcher-dbus-home
+#   - signal_show
+#   - signal_hide
+#   - atomos-app-handler.desktop
 EOF

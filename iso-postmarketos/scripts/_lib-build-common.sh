@@ -77,8 +77,7 @@ atomos_overlay_container_bash_setup() {
 _atomos_target_libpath="/target/usr/lib:/target/lib"
 if [ -x /target/bin/bash ] && [ -x /target/lib/ld-musl-aarch64.so.1 ]; then
     atomos_bash() {
-        PATH=/target/usr/bin:/target/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-        LD_LIBRARY_PATH="$_atomos_target_libpath${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+        PATH=/usr/bin:/bin:/usr/sbin:/sbin:/target/usr/bin:/target/bin \
             /target/lib/ld-musl-aarch64.so.1 \
             --library-path "$_atomos_target_libpath" \
             /target/bin/bash "$@"

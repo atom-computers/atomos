@@ -1,0 +1,13 @@
+[package]
+name = "atomos-top-bar-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4"
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+zbus = "4.1"
+futures = "0.3"
+
+
+

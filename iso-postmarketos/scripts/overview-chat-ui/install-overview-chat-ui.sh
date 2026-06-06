@@ -41,8 +41,8 @@ fi
 source "$PROFILE_ENV_SOURCE"
 OVERVIEW_RUNTIME_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT:-0}"
 OVERVIEW_LAYER_SHELL_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL_DEFAULT:-0}"
-OVERVIEW_DISABLE_CUSTOM_CSS_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT:-1}"
-OVERVIEW_DISABLE_THEME_CLASS_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT:-1}"
+OVERVIEW_DISABLE_CUSTOM_CSS_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_DEFAULT:-0}"
+OVERVIEW_DISABLE_THEME_CLASS_DEFAULT="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS_DEFAULT:-0}"
 INSTALL_AUTOSTART="${ATOMOS_OVERVIEW_CHAT_UI_INSTALL_AUTOSTART:-1}"
 
 sed_inplace() {
@@ -62,6 +62,8 @@ candidate_bin_paths() {
     if [ -n "${ATOMOS_OVERVIEW_CHAT_UI_BIN:-}" ]; then
         printf '%s\n' "$ATOMOS_OVERVIEW_CHAT_UI_BIN"
     fi
+    printf '%s\n' "/cache/cargo-target/aarch64-unknown-linux-musl/release/atomos-overview-chat-ui"
+    printf '%s\n' "/cache/cargo-target/release/atomos-overview-chat-ui"
     printf '%s\n' "$ROOT_DIR/rust/atomos-overview-chat-ui/target/aarch64-unknown-linux-musl/release/atomos-overview-chat-ui"
     printf '%s\n' "$ROOT_DIR/rust/atomos-overview-chat-ui/target/release/atomos-overview-chat-ui"
 }
@@ -162,6 +164,7 @@ export ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DI
 export ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT="${ATOMOS_OVERVIEW_CHAT_UI_FORCE_TRANSPARENT_ROOT:-1}"
 # Default bottom until Phosh unfolds (then layer=overlay). Folded apps stay above us.
 export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+# Icon metadata probes extra GLib desktop fields; keep off by default on device.
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS:-1}"
 export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-__OVERVIEW_CHAT_UI_RUNTIME_DEFAULT__}"
 # Phosh runs this as the logged-in user; prefer session runtime dir.
@@ -347,6 +350,9 @@ case "${1:-}" in
         fi
         wait_for_phosh_wayland_env || true
         log_action "action=start wayland=${WAYLAND_DISPLAY:-<unset>} layer=${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
+        resolve_runtime_paths
+        exec 9> "${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.lock"
+        flock 9
         # Session autostart must not call stop_ui: a late autostart --show used to
         # downgrade overlay back to bottom after the user had already unfolded home.
         if is_running; then
@@ -362,6 +368,8 @@ case "${1:-}" in
         wait_for_phosh_wayland_env || true
         desired_layer="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"
         resolve_runtime_paths
+        exec 9> "${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.lock"
+        flock 9
         if is_running; then
             current_layer="$(cat "$LAYERFILE" 2>/dev/null || true)"
             if [ "$current_layer" = "$desired_layer" ]; then
@@ -376,6 +384,9 @@ case "${1:-}" in
         start_ui
         ;;
     --hide)
+        resolve_runtime_paths
+        exec 9> "${XDG_RUNTIME_DIR:-/tmp}/atomos-overview-chat-ui.lock"
+        flock 9
         log_action "action=hide"
         stop_ui
         ;;

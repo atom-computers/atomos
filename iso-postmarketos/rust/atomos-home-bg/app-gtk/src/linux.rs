@@ -1,8 +1,4 @@
-//! Linux implementation: GTK4 + webkit2gtk-6.0 surface on wlr-layer-shell.
-//!
-//! The whole thing is deliberately small — all policy lives in the core crate
-//! (`atomos_home_bg`). This file just wires policy → live widgets.
-
+use adw::prelude::*;
 use atomos_home_bg::{
     compose_surface_config, parse_lifecycle_action, EnvInputs, InputPolicy, LayerTarget,
     LifecycleAction, SurfaceConfig, LAYER_SHELL_NAMESPACE,
@@ -10,7 +6,6 @@ use atomos_home_bg::{
 use gtk::cairo;
 use gtk::gdk;
 use gtk::gio;
-use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use webkit6::prelude::*;
 
@@ -39,7 +34,7 @@ pub fn run() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let app = gtk::Application::builder()
+    let app = adw::Application::builder()
         .application_id("org.atomos.HomeBg")
         .flags(gio::ApplicationFlags::NON_UNIQUE)
         .build();
@@ -51,7 +46,34 @@ pub fn run() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn build_ui(app: &gtk::Application, cfg: &SurfaceConfig) {
+fn resolve_theme_url(is_dark: bool, fallback_url: &str) -> String {
+    if std::env::var("ATOMOS_HOME_BG_URL").is_ok() {
+        return fallback_url.to_string();
+    }
+
+    let folder = if is_dark { "black-hole" } else { "light-earth" };
+    
+    // Check if we are running in development/preview or on target image
+    let path = if std::path::Path::new("/usr/share/atomos-home-bg").exists() {
+        format!("/usr/share/atomos-home-bg/{}/index.html", folder)
+    } else {
+        // Fallback to local workspace relative to cargo manifest dir
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_default();
+        if !manifest_dir.is_empty() {
+            let ws_root = std::path::Path::new(&manifest_dir)
+                .parent()
+                .and_then(|p| p.parent())
+                .and_then(|p| p.parent())
+                .unwrap_or_else(|| std::path::Path::new("."));
+            format!("{}/data/atomos-home-bg/{}/index.html", ws_root.to_string_lossy(), folder)
+        } else {
+            format!("./data/atomos-home-bg/{}/index.html", folder)
+        }
+    };
+    format!("file://{}", path)
+}
+
+fn build_ui(app: &adw::Application, cfg: &SurfaceConfig) {
     let window = gtk::ApplicationWindow::builder()
         .application(app)
         .title("AtomOS Home Background")
@@ -68,8 +90,22 @@ fn build_ui(app: &gtk::Application, cfg: &SurfaceConfig) {
 
     configure_layer_shell(&window, cfg.layer);
 
-    let webview = build_webview(&cfg.url);
+    let initial_is_dark = adw::StyleManager::default().is_dark();
+    let initial_url = resolve_theme_url(initial_is_dark, &cfg.url);
+
+    let webview = build_webview(&initial_url);
     window.set_child(Some(&webview));
+
+    // Dynamic theme transition listener
+    let webview_clone = webview.clone();
+    let fallback_url_clone = cfg.url.clone();
+    let style_manager = adw::StyleManager::default();
+    style_manager.connect_dark_notify(move |manager| {
+        let is_dark = manager.is_dark();
+        let target_url = resolve_theme_url(is_dark, &fallback_url_clone);
+        eprintln!("atomos-home-bg: dynamic theme change is_dark={}, reloading to {}", is_dark, target_url);
+        webview_clone.load_uri(&target_url);
+    });
 
     // Input policy must be applied after the surface exists. On Wayland
     // `gdk::Surface` only shows up once the window is realized/mapped.

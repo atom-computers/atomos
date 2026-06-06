@@ -16,3 +16,7 @@ eframe = { version = "0.33", default-features = false, features = ["default_font
 [[bin]]
 name = "atomos-app-handler-preview"
 path = "src/main.rs"
+
+[lib]
+name = "atomos_app_handler_egui"
+path = "src/lib.rs"

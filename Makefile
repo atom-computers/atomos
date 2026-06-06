@@ -10,7 +10,8 @@ REDOX_BUILD = redox-build
 CONFIG_SRC = config/atom.toml
 CONFIG_DEST = $(REDOX_BUILD)/config/$(ARCH)/$(CONFIG_NAME).toml
 
-.PHONY: all qemu sync help setup-build pmos-build pmos-build-qemu pmos-qemu
+.PHONY: all qemu sync help setup-build pmos-build pmos-build-qemu pmos-qemu pmos-hotfix
+
 
 # Default target
 all: setup-build sync
@@ -63,6 +64,10 @@ pmos-build-qemu:
 pmos-qemu:
 	@$(MAKE) -C iso-postmarketos qemu
 
+pmos-hotfix:
+	@$(MAKE) -C iso-postmarketos pmos-hotfix-all
+
+
 # Setup build directory and patch sources
 setup-build:
 	@echo "Setting up build directory..."
@@ -112,5 +117,7 @@ help:
 	@echo "  pmos-build      - Build postmarketOS (fairphone-fp4) in iso-postmarketos/"
 	@echo "  pmos-build-qemu - Build postmarketOS QEMU image in iso-postmarketos/"
 	@echo "  pmos-qemu       - Boot postmarketOS QEMU image from iso-postmarketos/build/"
+	@echo "  pmos-hotfix     - Intelligently rebuild and hotfix only changed components on QEMU/device over SSH"
 	@echo "  sync   - Symlink config to redox-build/config/"
+
 	@echo "  clean  - Clean the build artifacts"

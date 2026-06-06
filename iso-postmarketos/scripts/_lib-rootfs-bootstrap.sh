@@ -47,7 +47,7 @@ atomos_bootstrap_base_packages() {
         boot-deploy
         e2fsprogs
         dosfstools
-        openssh
+        openssh-client
         openssh-server-pam
         sudo
         doas
@@ -93,7 +93,6 @@ atomos_bootstrap_base_packages() {
         adwaita-icon-theme
         xdg-desktop-portal-gtk
         xdg-desktop-portal-wlr
-        xdg-desktop-portal-phosh
         xdg-user-dirs
         xdg-user-dirs-gtk
         udiskie
@@ -107,22 +106,37 @@ atomos_bootstrap_base_packages() {
         iio-sensor-proxy-openrc
         power-profiles-daemon
         apk-polkit-rs-openrc
-        # Phosh stack. We carry the `phosh` apk so dependents resolve;
-        # the heavy build container reinstalls phosh from
-        # rust/phosh/phosh under DESTDIR=/target on top of it (vendor
-        # phosh is ON by default in v2 -- mirrors build-qemu).
-        phoc
-        phoc-schemas
-        phosh
-        phosh-schemas
-        phosh-mobile-settings
-        phosh-wallpapers
+        # Phosh stack or AtomOS V2 stack
         feedbackd
-        squeekboard
         simdutf
         greetd
         greetd-openrc
-        greetd-phrog
+    )
+
+    if [ "${ATOMOS_V2:-0}" = "1" ]; then
+        BASE_APK_PACKAGES+=(
+            greetd-wlgreet
+        )
+    else
+        BASE_APK_PACKAGES+=(
+            xdg-desktop-portal-phosh
+            phoc
+            phoc-schemas
+            phosh
+            phosh-schemas
+            phosh-mobile-settings
+            phosh-wallpapers
+            greetd-phrog
+        )
+        # Select OSK: squeekboard vs stevia.
+        # If squeekboard is explicitly requested in PMOS_EXTRA_PACKAGES, do not add stevia.
+        # If squeekboard is not requested, default to stevia.
+        if [[ ! ",${PMOS_EXTRA_PACKAGES:-}," =~ ",squeekboard," ]]; then
+            BASE_APK_PACKAGES+=(stevia)
+        fi
+    fi
+
+    BASE_APK_PACKAGES+=(
         # AtomOS overlay runtime libs.
         webkit2gtk-6.0
         gtk4-layer-shell
@@ -246,6 +260,7 @@ pmos    = [p.strip() for p in sys.argv[4].split() if p.strip()]
 
 replacements = {
     "webkit6.0-gtk4-dev": "webkit2gtk-6.0-dev",
+    "openssh-server": "openssh-server-pam",
 }
 ordered = []
 for group in (base, pmos, profile, parity):
@@ -269,6 +284,11 @@ PY
 # the orchestrator and survive longer than a heredoc would).
 _atomos_bootstrap_container_body() {
     cat <<BOOTSTRAP_BODY
+# --- local-first apk wrapper (AtomOS local package store) ------------
+mkdir -p /usr/local/bin
+install -m0755 /work/iso-postmarketos/scripts/container-apk-shim.sh /usr/local/bin/apk
+export PATH="/usr/local/bin:\$PATH"
+
 mkdir -p /target/etc/apk/keys
 cp -r /etc/apk/keys/. /target/etc/apk/keys/
 # Trust the postmarketOS signing key in BOTH the host apk DB (so
@@ -488,6 +508,14 @@ fi
 
 # AUTHORITATIVE CHECK: is the file on disk?
 # This is what actually matters. apk's rc lies; the filesystem doesn't.
+if [ ! -f /target/lib/firmware/qcom/a630_sqe.fw ]; then
+    if [ -f /work/iso-postmarketos/data/a630_sqe.fw ]; then
+        echo "  /target/lib/firmware/qcom/a630_sqe.fw missing. Copying from vendored /work/iso-postmarketos/data/a630_sqe.fw..."
+        mkdir -p /target/lib/firmware/qcom
+        cp /work/iso-postmarketos/data/a630_sqe.fw /target/lib/firmware/qcom/a630_sqe.fw
+    fi
+fi
+
 if [ -f /target/lib/firmware/qcom/a630_sqe.fw ]; then
     echo "  OK /lib/firmware/qcom/a630_sqe.fw present (size: \$(wc -c < /target/lib/firmware/qcom/a630_sqe.fw) bytes)"
 else
@@ -507,6 +535,9 @@ else
 fi
 
 # Hard fail only when bootstrap produced an obviously unusable rootfs.
+if [ ! -x /target/usr/sbin/sshd ] && [ -x /target/usr/sbin/sshd.pam ]; then
+    ln -sf sshd.pam /target/usr/sbin/sshd
+fi
 test -x /target/bin/sh
 test -x /target/usr/sbin/sshd
 test -x /target/usr/bin/mkbootimg
@@ -529,6 +560,14 @@ BOOTSTRAP_BODY
 # (pmaports#820 -- documented in pmb/install/_install.py:1273).
 _atomos_minimal_container_body() {
     cat <<'MINIMAL_BODY'
+# --- local-first apk wrapper (AtomOS local package store) ------------
+# Install the PATH `apk` shim so every apk call below reuses the
+# persistent cache dir and honours the host-selected network mode
+# ($ATOMOS_APK_NET). See scripts/container-apk-shim.sh.
+mkdir -p /usr/local/bin
+install -m0755 /work/iso-postmarketos/scripts/container-apk-shim.sh /usr/local/bin/apk
+export PATH="/usr/local/bin:$PATH"
+
 mkdir -p /target/etc/apk/keys
 cp -r /etc/apk/keys/. /target/etc/apk/keys/
 cp /tmp/pmos.rsa.pub /etc/apk/keys/build.postmarketos.org.rsa.pub
@@ -646,8 +685,12 @@ atomos_bootstrap_minimal() {
     echo "=== build-fairphone4-v2: bootstrap minimal Alpine chroot ==="
     "$ENGINE" run --rm --platform "linux/arm64" \
         -v "$ROOTFS_VOLUME:/target" \
+        -v "${REPO_TOP:-$ROOT_DIR/..}:/work:ro" \
+        -v "$PKG_CACHE_MOUNT_SRC:$PKG_CACHE_MOUNT" \
         -v "$REPOSITORIES_FILE:/tmp/repositories:ro" \
         -v "$PMOS_KEY_HOST:/tmp/pmos.rsa.pub:ro" \
+        -e ATOMOS_APK_CACHE_DIR="$APK_CACHE_CONTAINER_DIR" \
+        -e ATOMOS_APK_NET="${ATOMOS_APK_NET:---update-cache}" \
         "$ALPINE_IMAGE" /bin/sh -eu -c "$(_atomos_minimal_container_body)"
 }
 
@@ -664,6 +707,10 @@ atomos_bootstrap_full() {
         -v "$ROOTFS_VOLUME:/target" \
         -v "$REPOSITORIES_FILE:/tmp/repositories:ro" \
         -v "$PMOS_KEY_HOST:/tmp/pmos.rsa.pub:ro" \
+        -v "${REPO_TOP:-$ROOT_DIR/..}:/work:ro" \
+        -v "$PKG_CACHE_MOUNT_SRC:$PKG_CACHE_MOUNT" \
+        -e ATOMOS_APK_CACHE_DIR="$APK_CACHE_CONTAINER_DIR" \
+        -e ATOMOS_APK_NET="${ATOMOS_APK_NET:---update-cache}" \
         "$ALPINE_IMAGE" /bin/sh -eu -c "$(_atomos_bootstrap_container_body)"
 }
 

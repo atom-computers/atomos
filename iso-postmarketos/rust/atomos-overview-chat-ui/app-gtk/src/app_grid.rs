@@ -30,15 +30,10 @@ fn normalized_id_label(id: &str) -> String {
     out
 }
 
+/// Label shown on tiles. Prefer the `.desktop` id — on device images some
+/// broken entries fault or hang inside GLib when `display_name()` / `name()`
+/// are read on the main thread (looks like a frozen launcher, not a slow PC).
 fn app_label(app: &gio::AppInfo) -> String {
-    let display_name = app.display_name();
-    if !display_name.trim().is_empty() {
-        return display_name.to_string();
-    }
-    let name = app.name();
-    if !name.trim().is_empty() {
-        return name.to_string();
-    }
     app.id()
         .map(|id| normalized_id_label(&id))
         .unwrap_or_else(|| "Application".to_string())
@@ -49,9 +44,13 @@ fn visible_apps() -> Vec<gio::AppInfo> {
         .into_iter()
         .filter(|app| app.should_show())
         .collect();
-    // Some images expose malformed desktop entries. Avoid metadata accessors
-    // that can fault in GLib for broken records and sort by safe id-derived label.
-    apps.sort_by_key(|app| app_label(app).to_lowercase());
+    // Sort by app id only — never call app_label() here (it must stay safe for
+    // malformed records; see comment on app_label).
+    apps.sort_by_key(|app| {
+        app.id()
+            .map(|id| id.to_ascii_lowercase())
+            .unwrap_or_default()
+    });
     apps
 }
 
@@ -154,7 +153,10 @@ fn gio_fallback_launch(app: &gio::AppInfo, app_name: &str) {
     }
 }
 
-pub fn build_app_grid_sheet() -> gtk::ScrolledWindow {
+pub fn build_app_grid_sheet<F>(on_tile_launch: F) -> gtk::ScrolledWindow
+where
+    F: Fn() + Clone + 'static,
+{
     let flow = gtk::FlowBox::new();
     flow.set_selection_mode(gtk::SelectionMode::None);
     flow.set_homogeneous(false);
@@ -211,7 +213,12 @@ pub fn build_app_grid_sheet() -> gtk::ScrolledWindow {
 
         let app_for_launch = app.clone();
         let app_name_for_launch = app_name.clone();
+        let dismiss_for_tile = on_tile_launch.clone();
         tile_btn.connect_clicked(move |_| {
+            // Drop the overlay app sheet before spawning the app — otherwise
+            // chat-ui stays on wlr-layer-shell OVERLAY and the new xdg-toplevel
+            // paints underneath (symptom: log says launch ok, nothing visible).
+            dismiss_for_tile();
             tile_click_launch(&app_for_launch, &app_name_for_launch);
         });
         flow.insert(&tile_btn, -1);

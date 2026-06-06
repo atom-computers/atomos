@@ -26,9 +26,14 @@ cargo test -p atomos-app-handler
 cargo test -p atomos-app-handler --test handle_paint
 cargo test -p atomos-app-handler --test home_handler_contract
 cargo test -p atomos-app-handler --test phosh_home_c_source_contract
+cargo test -p atomos-app-handler --test app_launch_exec_integration
+cargo test -p atomos-app-handler --test app_launch_layer_visibility
+cargo test -p atomos-app-handler --test app_launch_dbus_activation
 
 # Cross-layer: Phosh home.c must not send --show on unfold (post-unlock regression).
 (cd "$ROOT_DIR" && python3 -m unittest tests.test_phosh_home_c_lifecycle_contract -q)
+(cd "$ROOT_DIR" && python3 -m unittest tests.test_app_launch_layer_visibility -q)
+(cd "$ROOT_DIR" && python3 -m unittest tests.test_app_launch_dbus_activation -q)
 
 # Gate (4): Phosh org.atomos.PhoshHome gdbus source/compile checks (Linux only).
 if [ "$(uname -s)" = "Linux" ] || [ "${ATOMOS_PHOSH_DBUS_COMPILE_TEST:-0}" = "1" ]; then

@@ -63,6 +63,8 @@ candidate_bin_paths() {
     if [ -n "${ATOMOS_APP_HANDLER_BIN_PATH:-}" ]; then
         printf '%s\n' "$ATOMOS_APP_HANDLER_BIN_PATH"
     fi
+    printf '%s\n' "/cache/cargo-target/$TARGET_TRIPLE/release/atomos-app-handler"
+    printf '%s\n' "/cache/cargo-target/release/atomos-app-handler"
     printf '%s\n' "$CRATE_DIR/target/$TARGET_TRIPLE/release/atomos-app-handler"
     printf '%s\n' "$CRATE_DIR/target/release/atomos-app-handler"
 }

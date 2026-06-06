@@ -142,26 +142,72 @@ install_pm postmarketos-artwork/10_pmOS-wallpaper.gschema.override \
 # Recompile gschema cache so overrides take effect at runtime.
 glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
 
-# greetd config: point greetd at greetd-phrog's /etc/phrog/greetd-config.toml.
-# Previously this file was shipped by postmarketos-ui-phosh-openrc, but
-# we no longer install that metapackage (it pulled half a dozen other
-# pmOS configs we override anyway, and its post-install ran via apk
-# under qemu-user emulation prone to lockfile races). Write the file
-# directly here -- same exact content the apk would have shipped.
-# Matches what build-qemu.sh does at lines 553-561.
+# Override prebuilt postmarketos-usb-moded files with our patched versions from the vendored pmaports tree
+USB_MODED_PM="postmarketos-usb-moded"
+if [ -d "$PM/$USB_MODED_PM" ]; then
+    install -Dm755 "$PM/$USB_MODED_PM/rootfs-usr-bin-usb-moded-developer-mode" /target/usr/bin/usb-moded-developer-mode
+    install -Dm755 "$PM/$USB_MODED_PM/rootfs-usr-bin-usb-moded-tethering-mode" /target/usr/bin/usb-moded-tethering-mode
+    install -Dm755 "$PM/$USB_MODED_PM/rootfs-etc-init.d-usb-moded-developer-mode.initd" /target/etc/init.d/usb-moded-developer-mode
+    install -Dm755 "$PM/$USB_MODED_PM/rootfs-etc-init.d-usb-moded-tethering-mode.initd" /target/etc/init.d/usb-moded-tethering-mode
+    install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-configfs.ini" /target/etc/usb-moded/configfs.ini
+    install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-developer_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/developer_mode_openrc.ini
+    install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-tethering_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/tethering_mode_openrc.ini
+    install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-mtp_ffs_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/mtp_ffs_mode_openrc.ini
+    install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-umtprd-umtprd.conf" /target/etc/umtprd/umtprd.conf
+
+    # Ensure default mode is developer mode
+    mkdir -p /target/etc/usb-moded
+    cat << 'EOF' > /target/etc/usb-moded/usbmode.ini
+[usbmode]
+mode = developer_mode
+EOF
+fi
+
+
+# greetd config: point greetd at our session (V2) or phrog (V1).
 mkdir -p /target/etc/conf.d
-cat > /target/etc/conf.d/greetd <<'GREETD_CONFD'
+if [ "${ATOMOS_V2:-0}" = "1" ]; then
+    cat > /target/etc/conf.d/greetd <<'GREETD_CONFD'
+# Configuration for greetd
+cfgfile="/etc/greetd/config.toml"
+GREETD_CONFD
+
+    mkdir -p /target/etc/greetd
+    cat > /target/etc/greetd/config.toml <<'GREETD_TOML'
+[terminal]
+vt = 7
+
+[default_session]
+command = "/usr/bin/atomos-session"
+user = "user"
+
+[initial_session]
+command = "/usr/bin/atomos-session"
+user = "user"
+GREETD_TOML
+else
+    cat > /target/etc/conf.d/greetd <<'GREETD_CONFD'
 # Configuration for greetd
 # Path to config file to use (phrog provides this)
 cfgfile="/etc/phrog/greetd-config.toml"
 GREETD_CONFD
+fi
 
 # sshd policy sanitize. Some OpenSSH builds in this image path do
 # not support UsePAM; if left in place sshd exits at boot and
 # hostfwd :2222 hangs. Strip the directive.
+if [ -f /target/etc/ssh/sshd_config ]; then
+    sed -i '/^[[:space:]]*PasswordAuthentication/d' /target/etc/ssh/sshd_config
+    echo "PasswordAuthentication yes" >> /target/etc/ssh/sshd_config
+    sed -i '/^[[:space:]]*PermitRootLogin/d' /target/etc/ssh/sshd_config
+    echo "PermitRootLogin no" >> /target/etc/ssh/sshd_config
+fi
 if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
-    sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' \
-        /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    sed -i '/^[[:space:]]*PasswordAuthentication/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    echo "PasswordAuthentication yes" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    sed -i '/^[[:space:]]*PermitRootLogin/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    echo "PermitRootLogin no" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
 fi
 # Pre-generate SSH host keys so first boot has a ready sshd.
 if [ -x /target/usr/bin/ssh-keygen ]; then
@@ -190,6 +236,54 @@ echo 'LANG=C.UTF-8' > /target/etc/locale.conf
 printf '#!/bin/sh\nsource /etc/locale.conf\nexport LANG\n' > /target/etc/profile.d/10locale-pmos.sh
 chmod 0755 /target/etc/profile.d/10locale-pmos.sh
 
+# postmarketos-base-nftables-openrc.post-install may symlink nftables into
+# default when apk pulls postmarketos-config-nftables (via device-fairphone-fp4
+# -> postmarketos-base). That config ends with 99_drop_log.nft which drops all
+# input not matched earlier; USB NCM gadgets often expose ifnames like enp*
+# rather than usb*, so ping/SSH over 172.16.42.1 can fail while the host still
+# sees layer-3 reachability. Default OFF on this build path (matches qemu).
+if [ "${ATOMOS_ENABLE_NFTABLES:-0}" = "1" ]; then
+    ln_runlevel nftables boot
+else
+    rm -f /target/etc/runlevels/default/nftables \
+          /target/etc/runlevels/boot/nftables
+    echo "init: nftables service not enabled in runlevel (ATOMOS_ENABLE_NFTABLES!=1)"
+fi
+
+# Debug/Developer Mode firewall exceptions when nftables is used manually.
+if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
+    mkdir -p /target/etc/nftables.d
+    # pmaports ships a blanket drop as 99_drop_log.nft; remove it for developer
+    # images so SSH/USB debug is not silently blocked.
+    rm -f /target/etc/nftables.d/99_drop_log.nft
+    cat > /target/etc/nftables.d/55_atomos_developer_usb.nft <<'EOF'
+#!/usr/sbin/nft -f
+table inet filter {
+    chain input {
+        iifname { "usb*", "rndis*", "ncm*", "eth*", "enp*", "ens*" } accept comment "debug netdevs"
+        ip saddr { 172.16.42.0/16, 10.0.2.0/24 } accept comment "USB gadget + QEMU SLIRP"
+        tcp dport { 22, 2222 } accept comment "SSH in Debug/Developer Mode"
+    }
+}
+EOF
+    chmod 0644 /target/etc/nftables.d/55_atomos_developer_usb.nft
+    echo "init: developer nftables exceptions (USB subnet + SSH, drop-log removed)"
+
+    # Make sure the main nftables.nft config includes the rules in nftables.d/
+    if [ -f /target/etc/nftables.nft ]; then
+        if ! grep -F -q 'include "/etc/nftables.d/*.nft"' /target/etc/nftables.nft; then
+            echo 'include "/etc/nftables.d/*.nft"' >> /target/etc/nftables.nft
+            echo "init: Appended include for /etc/nftables.d/*.nft to /etc/nftables.nft"
+        fi
+    else
+        cat > /target/etc/nftables.nft <<'EOF'
+flush ruleset
+include "/etc/nftables.d/*.nft"
+EOF
+        echo "init: Created /etc/nftables.nft with include for /etc/nftables.d/*.nft"
+    fi
+fi
+
 # create_home_from_skel: matches pmb/install/_install.py:162-174.
 # Many GNOME/Phosh apps rely on /etc/skel templates being copied into
 # /home/user (e.g. .config dotfiles). Without this they create the
@@ -208,8 +302,11 @@ atomos_init_rootfs_basics() {
     "$ENGINE" run --rm --platform "linux/arm64" \
         -e PROFILE_NAME="$PROFILE_NAME" \
         -e PMOS_USER_UID="$PMOS_USER_UID" \
+        -e ATOMOS_V2="${ATOMOS_V2:-0}" \
         -e ATOMOS_FP4V2_DEBUG_NO_GREETD="${ATOMOS_FP4V2_DEBUG_NO_GREETD:-0}" \
         -e ATOMOS_FP4V2_DEBUG_NO_HEXAGONRPCD="${ATOMOS_FP4V2_DEBUG_NO_HEXAGONRPCD:-0}" \
+        -e ATOMOS_DEBUG_FIREWALL="${ATOMOS_DEBUG_FIREWALL:-${ATOMOS_DEVELOPER_MODE:-0}}" \
+        -e ATOMOS_ENABLE_NFTABLES="${ATOMOS_ENABLE_NFTABLES:-0}" \
         -v "$ROOTFS_VOLUME:/target" \
         -v "$ROOT_DIR:/iso:ro" \
         "$ALPINE_IMAGE" /bin/sh -eu -c "$(_atomos_init_container_body)"

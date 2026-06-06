@@ -19,3 +19,7 @@ eframe = { version = "0.33", default-features = true }
 [[bin]]
 name = "atomos-home-bg-combined-preview"
 path = "src/main.rs"
+
+[lib]
+name = "atomos_home_bg_egui"
+path = "src/lib.rs"

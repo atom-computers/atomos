@@ -143,6 +143,8 @@ IMAGE_SIZE="${PMOS_QEMU_IMAGE_SIZE:-8G}"
 ALPINE_IMAGE="${ATOMOS_QEMU_ALPINE_CONTAINER_IMAGE:-alpine:edge}"
 INSTALL_PASSWORD="${PMOS_INSTALL_PASSWORD:-147147}"
 ATOMOS_QEMU_ENABLE_NFTABLES="${ATOMOS_QEMU_ENABLE_NFTABLES:-0}"
+ATOMOS_ENABLE_NFTABLES="${ATOMOS_ENABLE_NFTABLES:-$ATOMOS_QEMU_ENABLE_NFTABLES}"
+ATOMOS_DEBUG_FIREWALL="${ATOMOS_DEBUG_FIREWALL:-${ATOMOS_DEVELOPER_MODE:-0}}"
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 REPO_TOP="$(cd "$ROOT_DIR/.." && pwd)"
@@ -258,7 +260,7 @@ BASE_APK_PACKAGES=(
     alpine-base
     linux-virt
     linux-firmware-none
-    openssh
+    openssh-client
     openssh-server-pam
     sudo
     doas
@@ -433,6 +435,7 @@ replacements = {
     "rfkill": "util-linux",
     "bluez-hcidump": "bluez-btmon",
     "webkit6.0-gtk4-dev": "webkit2gtk-6.0-dev",
+    "openssh-server": "openssh-server-pam",
 }
 drop = {""}
 
@@ -486,6 +489,9 @@ echo "  $PACKAGE_MANIFEST"
             echo \"WARN: base package install returned non-zero (\$rc); continuing with rootfs sanity checks.\" >&2
         fi
         # Hard fail only when bootstrap produced an obviously unusable rootfs.
+        if [ ! -x /target/usr/sbin/sshd ] && [ -x /target/usr/sbin/sshd.pam ]; then
+            ln -sf sshd.pam /target/usr/sbin/sshd
+        fi
         test -x /target/bin/sh
         test -x /target/usr/sbin/sshd
         test -e /target/boot/vmlinuz-virt
@@ -497,6 +503,8 @@ echo "=== build-qemu: base rootfs configuration ==="
     -e PROFILE_NAME="$PROFILE_NAME" \
     -e INSTALL_PASSWORD="$INSTALL_PASSWORD" \
     -e ATOMOS_QEMU_ENABLE_NFTABLES="$ATOMOS_QEMU_ENABLE_NFTABLES" \
+    -e ATOMOS_ENABLE_NFTABLES="$ATOMOS_ENABLE_NFTABLES" \
+    -e ATOMOS_DEBUG_FIREWALL="$ATOMOS_DEBUG_FIREWALL" \
     -e PMOS_USER_UID="${PMOS_USER_UID:-10000}" \
     -v "$ROOTFS_VOLUME:/target" \
     -v "$ROOT_DIR:/iso:ro" \
@@ -522,16 +530,20 @@ EOF
             echo "build-qemu: note: no /etc/init.d/syslog (logger will warn about /dev/log until syslog is available)" >&2
         fi
         ln -sf /etc/init.d/modules /target/etc/runlevels/boot/modules || true
+        # BOOT: SSH + networking before DEFAULT (greetd) so hostfwd :2222 works
+        # even when the display stack hangs.
+        for s in dbus seatd elogind networkmanager wpa_supplicant sshd; do
+            ln -sf "/etc/init.d/$s" "/target/etc/runlevels/boot/$s" || true
+        done
+        if [ "${ATOMOS_ENABLE_NFTABLES:-0}" = "1" ]; then
+            ln -sf /etc/init.d/nftables /target/etc/runlevels/boot/nftables || true
+        else
+            rm -f /target/etc/runlevels/default/nftables /target/etc/runlevels/boot/nftables
+        fi
         # Default runlevel services (from postmarketos-base-ui-openrc.post-install)
         ln -sf /etc/init.d/cgroups /target/etc/runlevels/default/cgroups || true
-        ln -sf /etc/init.d/dbus /target/etc/runlevels/default/dbus || true
         ln -sf /etc/init.d/haveged /target/etc/runlevels/default/haveged || true
         ln -sf /etc/init.d/chronyd /target/etc/runlevels/default/chronyd || true
-        if [ "${ATOMOS_QEMU_ENABLE_NFTABLES:-0}" = "1" ]; then
-            ln -sf /etc/init.d/nftables /target/etc/runlevels/default/nftables || true
-        else
-            rm -f /target/etc/runlevels/default/nftables
-        fi
         # postmarketos-base-ui-openrc.post-install also enables rfkill.
         ln -sf /etc/init.d/rfkill /target/etc/runlevels/default/rfkill || true
         # postmarketos-base-openrc.post-install
@@ -540,20 +552,39 @@ EOF
         ln -sf /etc/init.d/bluetooth /target/etc/runlevels/default/bluetooth || true
         ln -sf /etc/init.d/iio-sensor-proxy /target/etc/runlevels/default/iio-sensor-proxy || true
         ln -sf /etc/init.d/apk-polkit-server /target/etc/runlevels/default/apk-polkit-server || true
-        ln -sf /etc/init.d/elogind /target/etc/runlevels/default/elogind || true
         # postmarketos-base-ui-elogind.post-install + openrc-settingsd.post-install
         ln -sf /etc/init.d/sleep-inhibitor /target/etc/runlevels/default/sleep-inhibitor || true
         ln -sf /etc/init.d/openrc-settingsd /target/etc/runlevels/default/openrc-settingsd || true
         ln -sf /etc/init.d/modemmanager /target/etc/runlevels/default/modemmanager || true
-        ln -sf /etc/init.d/networkmanager /target/etc/runlevels/default/networkmanager || true
-        # postmarketos-base-ui-wifi-wpa_supplicant-openrc: wpa only (no iwd in default)
-        ln -sf /etc/init.d/wpa_supplicant /target/etc/runlevels/default/wpa_supplicant || true
         # postmarketos-base-openrc.post-upgrade: zram-swap (Alpine zram-init)
         ln -sf /etc/init.d/zram-init /target/etc/runlevels/default/zram-init || true
-        # Additional services
-        ln -sf /etc/init.d/sshd /target/etc/runlevels/default/sshd || true
-        ln -sf /etc/init.d/seatd /target/etc/runlevels/default/seatd || true
         ln -sf /etc/init.d/greetd /target/etc/runlevels/default/greetd || true
+
+        # Developer firewall exceptions (only matter if nftables service is on).
+        if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
+            mkdir -p /target/etc/nftables.d
+            rm -f /target/etc/nftables.d/99_drop_log.nft
+            cat > /target/etc/nftables.d/55_atomos_developer_usb.nft <<'"'"'NFTEOF'"'"'
+#!/usr/sbin/nft -f
+table inet filter {
+    chain input {
+        iifname { "usb*", "rndis*", "ncm*", "eth*", "enp*", "ens*" } accept comment "debug netdevs"
+        ip saddr { 172.16.42.0/16, 10.0.2.0/24 } accept comment "USB gadget + QEMU SLIRP"
+        tcp dport { 22, 2222 } accept comment "SSH in Debug/Developer Mode"
+    }
+}
+NFTEOF
+            chmod 0644 /target/etc/nftables.d/55_atomos_developer_usb.nft
+            if [ -f /target/etc/nftables.nft ]; then
+                grep -F -q '"'"'include "/etc/nftables.d/*.nft"'"'"' /target/etc/nftables.nft \
+                    || echo '"'"'include "/etc/nftables.d/*.nft"'"'"' >> /target/etc/nftables.nft
+            else
+                cat > /target/etc/nftables.nft <<'"'"'NFTEOF'"'"'
+flush ruleset
+include "/etc/nftables.d/*.nft"
+NFTEOF
+            fi
+        fi
 
         mkdir -p /target/etc/conf.d
 
@@ -679,10 +710,13 @@ GREETD_CONFD
                 /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf 2>/dev/null || true
             # Some OpenSSH builds in this image path do not support UsePAM.
             # If left in place, sshd exits on boot and hostfwd :2222 appears hung/reset.
-            if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
-                sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' \
-                    /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
-            fi
+             if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
+                 sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+                 sed -i '/^[[:space:]]*PasswordAuthentication/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+                 echo "PasswordAuthentication yes" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+                 sed -i '/^[[:space:]]*PermitRootLogin/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+                 echo "PermitRootLogin no" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+             fi
             install -Dm440 "$PBASE/rootfs-etc-sudoers" /target/etc/sudoers 2>/dev/null || true
             install -Dm640 "$PBASE/rootfs-etc-doas.d-10-postmarketos.conf" \
                 /target/etc/doas.d/10-postmarketos.conf 2>/dev/null || true
@@ -1044,7 +1078,7 @@ export PKG_CONFIG_PATH="/target/usr/lib/pkgconfig:/target/usr/share/pkgconfig${P
 # Build and stage custom phosh.
 PHOSH_BUILD=/cache/phosh
 atomos_meson_ninja_build_install phosh "$PHOSH_BUILD" /work/iso-postmarketos/rust/phosh/phosh \
-    --prefix=/usr -Dtests=false
+    --prefix=/usr -Dtests=false -Dbindings-lib=true
 if [ ! -f /usr/include/phosh/phosh-settings-enums.h ]; then
     echo "ERROR: phosh headers missing under /usr/include/phosh after host install" >&2
     exit 1
@@ -1140,13 +1174,31 @@ if command -v ccache >/dev/null 2>&1; then
     ccache -s 2>/dev/null || true
 fi
 
+# Route all cargo builds at the /cache named docker volume instead of each
+# crate default target/ dir under the /work bind mount. The per-crate target/
+# would otherwise live on the macOS<->Linux file sharing layer, where the rustc
+# archive writer hits the same EPERM the meson ar path documents (colima#911)
+# the moment it opens the .o members for a large rlib (e.g. libgsk4-*.rlib):
+#   error: failed to build archive ...: failed to open object file:
+#          Operation not permitted (os error 1)
+# /cache is a named volume living inside the engine VM, so it sidesteps the
+# bind-mount entirely (and persists across runs for incremental rebuilds).
+# NOTE: this comment must contain ZERO apostrophes/single quotes -- the whole
+# build_container_script is single-quoted by the host bash, so any inner single
+# quote terminates the string and leaks the rest onto the host (which is exactly
+# how an apostrophe here once produced: mkdir: cannot create directory /cache).
+# Mirrors scripts/_lib-build-container-body.sh, which already exports it.
+export CARGO_TARGET_DIR=/cache/cargo-target
+mkdir -p "$CARGO_TARGET_DIR"
+echo "build-qemu: CARGO_TARGET_DIR=$CARGO_TARGET_DIR (off the /work bind mount; avoids rlib archive EPERM)"
+
 # Build/install overview chat UI.
 cargo build --manifest-path /work/iso-postmarketos/rust/atomos-overview-chat-ui/Cargo.toml \
   -p atomos-overview-chat-ui-app \
   --release \
   --bin atomos-overview-chat-ui
 install -d /target/usr/local/bin /target/usr/libexec
-install -m 0755 /work/iso-postmarketos/rust/atomos-overview-chat-ui/target/release/atomos-overview-chat-ui /target/usr/local/bin/atomos-overview-chat-ui
+install -m 0755 /cache/cargo-target/release/atomos-overview-chat-ui /target/usr/local/bin/atomos-overview-chat-ui
 ln -sf ../local/bin/atomos-overview-chat-ui /target/usr/bin/atomos-overview-chat-ui
 
 # Build atomos-home-bg binary into the workspace target dir. The actual
@@ -1158,7 +1210,7 @@ if [ "${BUILD_HOME_BG:-0}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-ho
   cargo build --manifest-path /work/iso-postmarketos/rust/atomos-home-bg/app-gtk/Cargo.toml \
     --release \
     --bin atomos-home-bg
-  test -x /work/iso-postmarketos/rust/atomos-home-bg/target/release/atomos-home-bg
+  test -x /cache/cargo-target/release/atomos-home-bg
 else
   echo "Skipping atomos-home-bg build (manifest missing or disabled)."
 fi
@@ -1167,9 +1219,36 @@ if [ "${BUILD_APP_HANDLER:-0}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomo
   cargo build --manifest-path /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml \
     --release \
     --bin atomos-app-handler
-  test -x /work/iso-postmarketos/rust/atomos-app-handler/target/release/atomos-app-handler
+  test -x /cache/cargo-target/release/atomos-app-handler
 else
   echo "Skipping atomos-app-handler build (manifest missing or disabled)."
+fi
+
+if [ "${BUILD_TOP_BAR:-1}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-top-bar/app-gtk/Cargo.toml ]; then
+  echo "Building atomos-top-bar (Phosh)..."
+  cargo build --manifest-path /work/iso-postmarketos/rust/atomos-top-bar/app-gtk/Cargo.toml \
+    --release \
+    --bin atomos-top-bar
+  test -x /cache/cargo-target/release/atomos-top-bar
+  install -d /target/usr/bin
+  install -m 0755 /cache/cargo-target/release/atomos-top-bar \
+    /target/usr/bin/atomos-top-bar
+
+  echo "Creating atomos-top-bar autostart entry..."
+  install -d /target/etc/xdg/autostart
+  cat > /target/etc/xdg/autostart/atomos-top-bar.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=AtomOS Top Bar
+Comment=GTK4 layer-shell top bar replacement
+Exec=/usr/bin/atomos-top-bar
+OnlyShowIn=GNOME;Phosh;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+EOF
+  chmod 0644 /target/etc/xdg/autostart/atomos-top-bar.desktop
+else
+  echo "Skipping atomos-top-bar build (manifest missing or BUILD_TOP_BAR=0)."
 fi
 
 # Meson skips post-install glib-compile-schemas when DESTDIR is set ("Skipping custom install script..."),
@@ -1207,6 +1286,7 @@ fi
 "$ENGINE" run --rm --platform linux/arm64 \
     -v "$ROOTFS_VOLUME:/target" \
     -v "$REPO_TOP:/work" \
+    -v "$MESON_CACHE_MOUNT:/cache" \
     "$ALPINE_IMAGE" /bin/sh -eu -c "
         # Do not pull the coreutils package here. On some host/container
         # combinations this stage can resolve a coreutils build that expects
@@ -1218,8 +1298,7 @@ fi
         _atomos_target_libpath=/target/usr/lib:/target/lib
         if [ -x /target/bin/bash ] && [ -x /target/lib/ld-musl-aarch64.so.1 ]; then
             atomos_bash() {
-                PATH=/target/usr/bin:/target/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-                LD_LIBRARY_PATH=\"\$_atomos_target_libpath\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}\" \
+                PATH=/usr/bin:/bin:/usr/sbin:/sbin:/target/usr/bin:/target/bin \
                     /target/lib/ld-musl-aarch64.so.1 \
                     --library-path \"\$_atomos_target_libpath\" \
                     /target/bin/bash \"\$@\"
@@ -1288,18 +1367,24 @@ fi
             cp -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg /target/usr/share/backgrounds/gargantua-black.jpg
             cp -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg /target/usr/share/backgrounds/atomos/gargantua-black.jpg
         fi
-        if [ "${ATOMOS_QEMU_ENABLE_NFTABLES:-0}" != "1" ]; then
-            rm -f /target/etc/runlevels/default/nftables
+        if [ "${ATOMOS_ENABLE_NFTABLES:-0}" != "1" ]; then
+            rm -f /target/etc/runlevels/default/nftables /target/etc/runlevels/boot/nftables
+        fi
+        if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
+            rm -f /target/etc/nftables.d/99_drop_log.nft
         fi
 
         # Last-mile SSH hardening for this build path: later helper scripts may
         # install/refresh packages and re-drop pmaports defaults. Re-apply the
         # sshd policy sanitize right before final verification so first boot
         # doesn't regress into banner timeout/reset on unsupported UsePAM.
-        if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
-            sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' \
-                /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
-        fi
+         if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
+             sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+             sed -i '/^[[:space:]]*PasswordAuthentication/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+             echo \"PasswordAuthentication yes\" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+             sed -i '/^[[:space:]]*PermitRootLogin/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+             echo \"PermitRootLogin no\" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+         fi
         if [ -x /target/usr/bin/ssh-keygen ]; then
             chroot /target /usr/bin/ssh-keygen -A >/dev/null 2>&1 || true
         fi
@@ -1311,6 +1396,8 @@ test -f "$IMAGE_PATH"
     -v "$ROOTFS_VOLUME:/target" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
     -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
+    -e ATOMOS_ENABLE_NFTABLES="$ATOMOS_ENABLE_NFTABLES" \
+    -e ATOMOS_QEMU_ENABLE_NFTABLES="$ATOMOS_QEMU_ENABLE_NFTABLES" \
     "$ALPINE_IMAGE" /bin/sh -eu -c '
         # Diagnostic verify: report each missing file individually and tally
         # failures so build-qemu prints something more useful than "Error 1".
@@ -1357,11 +1444,33 @@ test -f "$IMAGE_PATH"
 
         echo "--- core binaries ---"
         check_x /target/usr/libexec/phosh
+        check_x /target/usr/bin/atomos-top-bar
+        check_f /target/etc/xdg/autostart/atomos-top-bar.desktop
+        check_grep "Exec=/usr/bin/atomos-top-bar" /target/etc/xdg/autostart/atomos-top-bar.desktop
         check_x /target/usr/local/bin/atomos-overview-chat-ui
         check_x /target/usr/sbin/sshd
         check_f /target/etc/ssh/ssh_host_ed25519_key
         check_f /target/etc/ssh/ssh_host_rsa_key
         check_not_grep "^[[:space:]]*UsePAM[[:space:]]" /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+        if [ -L /target/etc/runlevels/boot/sshd ] || [ -L /target/etc/runlevels/default/sshd ]; then
+            echo "  ok  sshd enabled in boot or default runlevel"
+        else
+            echo "  FAIL sshd not in boot/default runlevel" >&2
+            FAIL=1
+        fi
+        if [ "${ATOMOS_ENABLE_NFTABLES:-${ATOMOS_QEMU_ENABLE_NFTABLES:-0}}" = "1" ]; then
+            if [ -L /target/etc/runlevels/boot/nftables ] || [ -L /target/etc/runlevels/default/nftables ]; then
+                echo "  ok  nftables enabled (ATOMOS_ENABLE_NFTABLES=1)"
+            else
+                echo "  FAIL nftables requested but not in runlevel" >&2
+                FAIL=1
+            fi
+        elif [ -L /target/etc/runlevels/boot/nftables ] || [ -L /target/etc/runlevels/default/nftables ]; then
+            echo "  FAIL nftables in runlevel but not requested (blocks SSH)" >&2
+            FAIL=1
+        else
+            echo "  ok  nftables not in runlevel (developer SSH path)"
+        fi
 
         echo "--- atomos-overview-chat-ui files ---"
         check_x /target/usr/bin/atomos-overview-chat-ui
@@ -1389,7 +1498,8 @@ test -f "$IMAGE_PATH"
             check_x /target/usr/local/bin/atomos-home-bg
             check_x /target/usr/bin/atomos-home-bg
             check_x /target/usr/libexec/atomos-home-bg
-            check_f /target/usr/share/atomos-home-bg/index.html
+            check_f /target/usr/share/atomos-home-bg/black-hole/index.html
+            check_f /target/usr/share/atomos-home-bg/light-earth/index.html
 
             echo "--- atomos-home-bg launcher contract ---"
             check_grep "ATOMOS_HOME_BG_ENABLE_RUNTIME" /target/usr/libexec/atomos-home-bg
@@ -1435,30 +1545,31 @@ test -f "$IMAGE_PATH"
             done
 
             echo "--- atomos-home-bg content ---"
-            if [ -f /target/usr/share/atomos-home-bg/index.html ]; then
-                if grep -q "atomos-home-bg placeholder" /target/usr/share/atomos-home-bg/index.html \
-                    || grep -q "atomos-home-bg preview test" /target/usr/share/atomos-home-bg/index.html \
-                    || grep -q "fallback placeholder" /target/usr/share/atomos-home-bg/index.html; then
-                    echo "  ok  index.html ships expected atomos-home-bg marker"
+            if [ -f /target/usr/share/atomos-home-bg/black-hole/index.html ]; then
+                if grep -q "atomos-home-bg placeholder" /target/usr/share/atomos-home-bg/black-hole/index.html \
+                    || grep -q "atomos-home-bg preview test" /target/usr/share/atomos-home-bg/black-hole/index.html \
+                    || grep -q "fallback placeholder" /target/usr/share/atomos-home-bg/black-hole/index.html; then
+                    echo "  ok  black-hole/index.html ships expected atomos-home-bg marker"
                 else
-                    echo "  FAIL index.html lacks the atomos-home-bg marker" >&2
-                    echo "       head: $(head -c 200 /target/usr/share/atomos-home-bg/index.html | tr -d "\n")" >&2
+                    echo "  FAIL black-hole/index.html lacks the atomos-home-bg marker" >&2
+                    echo "       head: $(head -c 200 /target/usr/share/atomos-home-bg/black-hole/index.html | tr -d "\n")" >&2
                     FAIL=1
                 fi
-                # The shipped placeholder loads the event-horizon WebGL
-                # shader from a sibling file; if the <script> tag is
-                # there but the file is missing, the home-bg would silently
-                # render only its dark base color on device.
-                # (No apostrophes in this verify heredoc -- it is wrapped in
-                # single quotes for the outer shell, so any stray "isn t" /
-                # "doesn t" style word would terminate the quote and truncate
-                # the script body, producing a misleading "unexpected end of
-                # file (expecting fi)" error from the inner /bin/sh.)
-                if grep -q "event-horizon.js" /target/usr/share/atomos-home-bg/index.html; then
-                    if [ -f /target/usr/share/atomos-home-bg/event-horizon.js ]; then
-                        echo "  ok  event-horizon.js sibling shipped alongside index.html"
+                if grep -q "event-horizon.js" /target/usr/share/atomos-home-bg/black-hole/index.html; then
+                    if [ -f /target/usr/share/atomos-home-bg/black-hole/event-horizon.js ]; then
+                        echo "  ok  event-horizon.js sibling shipped alongside black-hole/index.html"
                     else
-                        echo "  FAIL index.html references event-horizon.js but the file is missing in the rootfs" >&2
+                        echo "  FAIL black-hole/index.html references event-horizon.js but the file is missing in the rootfs" >&2
+                        FAIL=1
+                    fi
+                fi
+            fi
+            if [ -f /target/usr/share/atomos-home-bg/light-earth/index.html ]; then
+                if grep -q "index.js" /target/usr/share/atomos-home-bg/light-earth/index.html; then
+                    if [ -f /target/usr/share/atomos-home-bg/light-earth/index.js ]; then
+                        echo "  ok  index.js shipped alongside light-earth/index.html"
+                    else
+                        echo "  FAIL light-earth/index.html references index.js but the file is missing in the rootfs" >&2
                         FAIL=1
                     fi
                 fi

@@ -60,9 +60,10 @@ case "$MODE" in
         export ATOMOS_HOME_BG_ENABLE_RUNTIME=1
         export ATOMOS_HOME_BG_LAYER="${ATOMOS_HOME_BG_LAYER:-bottom}"
         export ATOMOS_HOME_BG_INTERACTIVE="${ATOMOS_HOME_BG_INTERACTIVE:-0}"
-        if [ -z "${ATOMOS_HOME_BG_URL:-}" ]; then
-            export ATOMOS_HOME_BG_URL="file://$ROOT_DIR/data/atomos-home-bg/index.html"
-        fi
+        # Let application auto-detect theme-specific paths inside development workspace
+        # if [ -z "${ATOMOS_HOME_BG_URL:-}" ]; then
+        #     export ATOMOS_HOME_BG_URL="file://$ROOT_DIR/data/atomos-home-bg/index.html"
+        # fi
         export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_LAYER_SHELL:-1}"
         export ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-1}"
         export ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-top}"

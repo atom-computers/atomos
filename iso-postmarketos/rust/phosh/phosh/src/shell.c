@@ -423,7 +423,7 @@ panels_create (PhoshShell *self)
                                           phosh_wayland_get_zphoc_layer_shell_effects_v1 (wl),
                                           monitor,
                                           top_layer));
-  gtk_widget_set_visible (GTK_WIDGET (priv->top_panel), TRUE);
+  gtk_widget_set_visible (GTK_WIDGET (priv->top_panel), FALSE);
 
   /* Home is created after the top-panel so it honors its exclusive zone */
   priv->home = PHOSH_DRAG_SURFACE (phosh_home_new (phosh_wayland_get_zwlr_layer_shell_v1 (wl),
@@ -431,26 +431,24 @@ panels_create (PhoshShell *self)
                                                    monitor));
   /* AtomOS: org.atomos.PhoshHome D-Bus skeleton (atomos-phosh-home-dbus.c).
    *
-   * Currently disabled by default: phosh_atomos_phosh_home_dbus_new()
-   * segfaults at construction on Alpine + libphosh 26.x — gdb backtrace from
-   * scripts/app-handler/capture-phosh-coredump.sh points to atomos-phosh-home-
-   * dbus.c:153 (`self->home = g_object_ref (home)`) which means g_object_new
-   * returned NULL or a layout-mismatched object. Suspect: the
-   * G_DEFINE_TYPE_WITH_CODE / G_IMPLEMENT_INTERFACE pair against the
-   * gdbus-codegen-generated PhoshDBusPhoshHomeSkeleton + PhoshDBusPhoshHome
-   * iface (interface_prefix='org.atomos', namespace='PhoshDBus') is producing
-   * a vtable that doesn't match the iface struct phosh_dbus_phosh_home_iface_init
-   * tries to populate.
+   * The Rust atomos-app-handler launch path (run_launch_once) calls SetFolded
+   * over this interface to fold the home after launching an app from the
+   * chat-ui overview grid. Without the service the launch reaches gio spawn
+   * but then fails with GDBus ServiceUnknown, so the home never folds and the
+   * new window stays hidden behind the overview ("some apps do not open").
    *
-   * Until the constructor is fixed, gate the instantiation behind an env
-   * knob so the rest of the shell can come up. The fold/unfold lifecycle
-   * still flows through atomos-app-handler via the home.c spawn paths;
-   * only the inbound D-Bus interface is missing while this is off. Set
-   * ATOMOS_PHOSH_ENABLE_HOME_DBUS=1 in /etc/atomos/phosh-profile.env to
-   * opt back in (e.g. for testing a fix in atomos-phosh-home-dbus.c).
+   * This was previously gated OFF because phosh_atomos_phosh_home_dbus_new()
+   * segfaulted at construction: the G_DECLARE_FINAL_TYPE parent in
+   * atomos-phosh-home-dbus.h was GObject instead of PhoshDBusPhoshHomeSkeleton,
+   * so the synthesized class struct was sized for GObjectClass while the type
+   * registered against PHOSH_DBUS_TYPE_PHOSH_HOME_SKELETON — the type system
+   * then overran the undersized class buffer. With the parent corrected the
+   * constructor is safe, so enable by default. Set
+   * ATOMOS_PHOSH_ENABLE_HOME_DBUS=0 in /etc/atomos/phosh-profile.env to opt out
+   * (e.g. to bisect a regression).
    */
   priv->atomos_phosh_home_dbus = NULL;
-  if (g_strcmp0 (g_getenv ("ATOMOS_PHOSH_ENABLE_HOME_DBUS"), "1") == 0) {
+  if (g_strcmp0 (g_getenv ("ATOMOS_PHOSH_ENABLE_HOME_DBUS"), "0") != 0) {
     priv->atomos_phosh_home_dbus = phosh_atomos_phosh_home_dbus_new (PHOSH_HOME (priv->home));
   }
   g_object_bind_property (self, "overview-visible", priv->home, "visible", G_BINDING_SYNC_CREATE);

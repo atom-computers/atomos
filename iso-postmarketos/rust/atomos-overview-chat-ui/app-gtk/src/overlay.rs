@@ -6,9 +6,10 @@ use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 
 #[cfg(target_os = "linux")]
 fn prefer_on_demand_keyboard_mode() -> bool {
-    matches!(
+    // Default to true (OnDemand) unless explicitly set to "0" (None)
+    !matches!(
         std::env::var("ATOMOS_OVERVIEW_CHAT_UI_LAYER_KEYBOARD_ON_DEMAND").as_deref(),
-        Ok("1")
+        Ok("0")
     )
 }
 
@@ -43,14 +44,28 @@ pub fn configure_mobile_overlay_surface(win: &adw::ApplicationWindow) -> bool {
     win.set_anchor(Edge::Bottom, true);
     // Fill full height in mobile mode; content layout keeps input at bottom.
     win.set_anchor(Edge::Top, true);
-    // Some phosh stacks expose layer-shell v3 where OnDemand is unsupported.
-    // Default to None for compatibility and allow explicit opt-in when needed.
-    if prefer_on_demand_keyboard_mode() {
-        eprintln!("atomos-overview-chat-ui: layer-shell keyboard=on-demand");
-        win.set_keyboard_mode(KeyboardMode::OnDemand);
-    } else {
-        eprintln!("atomos-overview-chat-ui: layer-shell keyboard=none");
-        win.set_keyboard_mode(KeyboardMode::None);
+    // Read the custom keyboard mode setting from ATOMOS_OVERVIEW_CHAT_UI_KEYBOARD_MODE, defaulting to OnDemand.
+    let mode = crate::config::keyboard_mode_override().unwrap_or_else(|| {
+        if prefer_on_demand_keyboard_mode() {
+            "on-demand".to_string()
+        } else {
+            "none".to_string()
+        }
+    });
+
+    match mode.as_str() {
+        "exclusive" => {
+            eprintln!("atomos-overview-chat-ui: layer-shell keyboard=exclusive");
+            win.set_keyboard_mode(KeyboardMode::Exclusive);
+        }
+        "none" => {
+            eprintln!("atomos-overview-chat-ui: layer-shell keyboard=none");
+            win.set_keyboard_mode(KeyboardMode::None);
+        }
+        _ => {
+            eprintln!("atomos-overview-chat-ui: layer-shell keyboard=on-demand");
+            win.set_keyboard_mode(KeyboardMode::OnDemand);
+        }
     }
     win.set_exclusive_zone(0);
     let layer_env = std::env::var("ATOMOS_OVERVIEW_CHAT_UI_LAYER")

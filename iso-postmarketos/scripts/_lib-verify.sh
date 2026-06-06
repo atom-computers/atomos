@@ -44,7 +44,17 @@ _atomos_verify_container_body() {
 $(_atomos_verify_predicates_body)
 
 echo "--- core binaries ---"
-check_x /target/usr/libexec/phosh
+if [ "${ATOMOS_V2:-0}" = "1" ]; then
+    check_x /target/usr/bin/atomos-comp
+    check_x /target/usr/bin/atomos-lockscreen
+    check_x /target/usr/bin/atomos-quick-settings
+    check_x /target/usr/bin/atomos-top-bar
+else
+    check_x /target/usr/libexec/phosh
+    check_x /target/usr/bin/atomos-top-bar
+    check_f /target/etc/xdg/autostart/atomos-top-bar.desktop
+    check_grep "Exec=/usr/bin/atomos-top-bar" /target/etc/xdg/autostart/atomos-top-bar.desktop
+fi
 check_x /target/usr/sbin/sshd
 check_x /target/usr/bin/mkbootimg
 check_f /target/etc/ssh/ssh_host_ed25519_key
@@ -113,6 +123,33 @@ elif [ -L /target/etc/runlevels/default/usb-moded ]; then
     echo "  ok  usb-moded in default runlevel"
 else
     echo "  WARN usb-moded not enabled (USB ethernet 172.16.42.1 will not come up)"
+fi
+
+# nftables: default OFF on FP4 build path so postmarketos-config-nftables
+# 99_drop_log.nft does not block USB-gadget SSH (NCM ifaces are often enp*).
+if [ "${ATOMOS_ENABLE_NFTABLES:-0}" = "1" ]; then
+    if [ -L /target/etc/runlevels/boot/nftables ] || [ -L /target/etc/runlevels/default/nftables ]; then
+        echo "  ok  nftables enabled in a runlevel (ATOMOS_ENABLE_NFTABLES=1)"
+    else
+        echo "  FAIL ATOMOS_ENABLE_NFTABLES=1 but nftables not in boot/default runlevel" >&2
+        FAIL=1
+    fi
+else
+    if [ -L /target/etc/runlevels/boot/nftables ] || [ -L /target/etc/runlevels/default/nftables ]; then
+        echo "  FAIL nftables in runlevel but ATOMOS_ENABLE_NFTABLES!=1 (blocks developer USB SSH)" >&2
+        FAIL=1
+    else
+        echo "  ok  nftables not in runlevel (developer USB/SSH path)"
+    fi
+fi
+if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
+    if [ -f /target/etc/nftables.d/99_drop_log.nft ]; then
+        echo "  FAIL 99_drop_log.nft present with ATOMOS_DEBUG_FIREWALL=1" >&2
+        FAIL=1
+    else
+        echo "  ok  99_drop_log.nft absent (developer firewall)"
+    fi
+    check_f /target/etc/nftables.d/55_atomos_developer_usb.nft
 fi
 
 # Greetd setuid()s to the user named in the toml. If that user does not
@@ -275,7 +312,8 @@ if [ "\${BUILD_HOME_BG:-1}" = "1" ]; then
     check_x /target/usr/local/bin/atomos-home-bg
     check_x /target/usr/bin/atomos-home-bg
     check_x /target/usr/libexec/atomos-home-bg
-    check_f /target/usr/share/atomos-home-bg/index.html
+    check_f /target/usr/share/atomos-home-bg/black-hole/index.html
+    check_f /target/usr/share/atomos-home-bg/light-earth/index.html
     check_grep "ATOMOS_HOME_BG_ENABLE_RUNTIME" /target/usr/libexec/atomos-home-bg
     check_grep "atomos-home-bg.disabled"       /target/usr/libexec/atomos-home-bg
     check_grep "ATOMOS_HOME_BG_LAYER"          /target/usr/libexec/atomos-home-bg
@@ -353,6 +391,9 @@ atomos_verify_rootfs() {
         -e BUILD_HOME_BG="$BUILD_HOME_BG" \
         -e BUILD_APP_HANDLER="${BUILD_APP_HANDLER:-1}" \
         -e ATOMOS_FP4V2_DEBUG_NO_GREETD="${ATOMOS_FP4V2_DEBUG_NO_GREETD:-0}" \
+        -e ATOMOS_V2="${ATOMOS_V2:-0}" \
+        -e ATOMOS_ENABLE_NFTABLES="${ATOMOS_ENABLE_NFTABLES:-0}" \
+        -e ATOMOS_DEBUG_FIREWALL="${ATOMOS_DEBUG_FIREWALL:-${ATOMOS_DEVELOPER_MODE:-0}}" \
         "$ALPINE_IMAGE" /bin/sh -eu -c "$(_atomos_verify_container_body)"
 }
 

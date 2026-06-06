@@ -1,0 +1,16 @@
+[package]
+name = "atomos-preview"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+egui = "0.33"
+eframe = { version = "0.33", default-features = false, features = ["default_fonts", "glow"] }
+tokio = { version = "1.0", features = ["full"] }
+
+atomos-lockscreen-egui = { path = "../atomos-lockscreen/app-egui" }
+atomos-quick-settings-egui = { path = "../atomos-quick-settings/app-egui" }
+atomos-top-bar-egui = { path = "../atomos-top-bar/app-egui" }
+atomos-home-bg-egui = { path = "../atomos-home-bg/app-egui" }
+atomos-overview-chat-ui-egui = { path = "../atomos-overview-chat-ui/app-egui" }
+atomos-app-handler-egui = { path = "../atomos-app-handler/app-egui" }

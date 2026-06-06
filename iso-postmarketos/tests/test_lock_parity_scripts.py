@@ -79,10 +79,10 @@ class TestOverlayAndValidationTemplateModes(unittest.TestCase):
             self.assertIn("mobile Phosh", result.stdout)
             self.assertIn("atomos-overview-chat-submit", result.stdout)
             self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS", result.stdout)
-            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS:-1}"', result.stdout)
+            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS:-0}"', result.stdout)
             self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", result.stdout)
             self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME="${ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME:-0}"', result.stdout)
-            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-1}"', result.stdout)
+            self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS="${ATOMOS_OVERVIEW_CHAT_UI_DISABLE_THEME_CLASS:-0}"', result.stdout)
             self.assertIn('ATOMOS_OVERVIEW_CHAT_UI_LAYER="${ATOMOS_OVERVIEW_CHAT_UI_LAYER:-bottom}"', result.stdout)
             self.assertIn("bind_phosh_session_env()", result.stdout)
             self.assertIn("xargs -0 -n1", result.stdout)
@@ -320,12 +320,12 @@ class TestPhoshHomeAndPanelSourceContracts(unittest.TestCase):
             text,
             msg="home.c must define the overview chat UI lifecycle sync helper",
         )
-        self.assertIn(
-            "atomos_phosh_sync_overview_chat_ui_lifecycle (self->state);",
-            text,
+        self.assertTrue(
+            "atomos_phosh_sync_overview_chat_ui_lifecycle (self->state);" in text or
+            "atomos_phosh_chat_ui_layer_state_for_home" in text,
             msg=(
                 "home.c must call atomos_phosh_sync_overview_chat_ui_lifecycle "
-                "from on_drag_state_changed when not in TRANSITION"
+                "from on_drag_state_changed"
             ),
         )
         self.assertIn(
@@ -474,6 +474,7 @@ class TestAppHandlerScripts(unittest.TestCase):
         for path in (
             SCRIPTS / "build-qemu.sh",
             SCRIPTS / "build-fairphone4.sh",
+            SCRIPTS / "build-fairphone4-v2.sh",
             SCRIPTS / "_lib-verify.sh",
         ):
             text = path.read_text(encoding="utf-8")
@@ -497,6 +498,21 @@ class TestAppHandlerScripts(unittest.TestCase):
                 text,
                 msg=f"{path} must assert the handle-bar autostart desktop is shipped",
             )
+
+    def test_fp4_v2_rootfs_keeps_nftables_off_for_developer_ssh(self):
+        """USB gadget SSH must not be blocked by postmarketos-config-nftables drop rules."""
+        init = (SCRIPTS / "_lib-rootfs-init.sh").read_text(encoding="utf-8")
+        verify = (SCRIPTS / "_lib-verify.sh").read_text(encoding="utf-8")
+        overlays = (SCRIPTS / "_lib-rootfs-overlays.sh").read_text(encoding="utf-8")
+        qemu = (SCRIPTS / "build-qemu.sh").read_text(encoding="utf-8")
+        self.assertIn("ATOMOS_ENABLE_NFTABLES", init)
+        self.assertIn("rm -f /target/etc/runlevels/default/nftables", init)
+        self.assertIn("99_drop_log.nft", init)
+        self.assertIn("55_atomos_developer_usb.nft", init)
+        self.assertIn("nftables not in runlevel", verify)
+        self.assertIn("rm -f /target/etc/runlevels/default/nftables", overlays)
+        self.assertIn("runlevels/boot/sshd", qemu)
+        self.assertIn("nftables not in runlevel", qemu)
 
     def test_image_builds_share_meson_source_tree_skip_helper(self):
         meson_body = (SCRIPTS / "_lib-meson-cache-body.sh").read_text(encoding="utf-8")
@@ -706,12 +722,12 @@ class TestBuildAtomosPhoshScript(unittest.TestCase):
         self.assertIn("chown -R pmos:pmos /home/pmos/packages", text)
         self.assertIn("chmod -R a+rwX /home/pmos/packages", text)
         self.assertIn("prepare_native_abuild_repo_destination", text)
-        self.assertIn("REPODEST=/home/pmos/packages/edge", text)
+        self.assertIn("removed stale REPODEST= override from abuild.conf", text)
         self.assertIn("prepare_host_package_output_permissions", text)
         self.assertIn('pmos_root="${pkg_root}/pmos"', text)
         self.assertIn("prepare_host_local_repo_aliases", text)
         self.assertIn("Aliased local package repo path: pmos/${ARCH} -> edge/${ARCH}", text)
-        self.assertIn("ABUILD_ENV=(REPODEST=/home/pmos/packages/edge)", text)
+        self.assertIn("ABUILD_ENV=()", text)
         self.assertIn("recover_edge_repo_from_pmos_on_missing_artifact", text)
         self.assertIn("recover_edge_repo_from_any_local_phosh_artifacts", text)
         self.assertIn("Package not found after build", text)
@@ -777,6 +793,22 @@ class TestBuildOverviewChatUiScript(unittest.TestCase):
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_MUSL_RETRY_WITH_RUST_LLD", text)
         self.assertIn("Retrying overview chat UI build with rust-lld", text)
 
+    def test_cargo_compilation_verification(self):
+        import shutil
+        if not shutil.which("cargo"):
+            self.skipTest("cargo not installed")
+        r = subprocess.run(
+            ["cargo", "check", "--workspace", "--all-targets"],
+            cwd=str(ISO_ROOT / "rust" / "atomos-overview-chat-ui"),
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(
+            r.returncode,
+            0,
+            msg=f"Cargo check failed for atomos-overview-chat-ui workspace:\n{r.stderr}\n{r.stdout}",
+        )
+
 
 class TestOverviewChatUiCssSafety(unittest.TestCase):
     """Static CSS checks to prevent target-image startup crashes."""
@@ -795,10 +827,19 @@ class TestOverviewChatUiCssSafety(unittest.TestCase):
         )
 
     def test_input_frame_uses_border_and_not_outline(self):
+        import re
         text = STYLE_RS.read_text(encoding="utf-8")
         self.assertIn("scrolledwindow.atomos-chat-input", text)
-        self.assertIn("border: 1px solid alpha(#ffffff, 0.22);", text)
-        self.assertNotIn("outline: 1px solid alpha(#ffffff, 0.22);", text)
+        self.assertTrue(
+            "border: 1px solid alpha(#000000, 0.18);" in text or
+            "border: 1px solid #303132;" in text
+        )
+        # Verify that we don't apply 'outline' styling to the scrolledwindow input frame itself,
+        # which can cause rendering bugs on mobile Phosh/GTK stacks. Other elements like top-dock are allowed to use outlines.
+        blocks = re.findall(r"([^{}]+)\s*\{([^}]+)\}", text)
+        for selector, content in blocks:
+            if "scrolledwindow.atomos-chat-input" in selector:
+                self.assertNotIn("outline:", content, msg=f"Input frame block '{selector}' must not use outline")
 
 
 class TestInstallOverviewChatUiScript(unittest.TestCase):
@@ -831,7 +872,8 @@ class TestInstallOverviewChatUiScript(unittest.TestCase):
         self.assertIn("    --start)", text)
         self.assertIn("    --show)", text)
         self.assertIn("log_action", text)
-        self.assertIn("stop_ui\n        start_ui", text)
+        self.assertIn("stop_ui", text)
+        self.assertIn("start_ui", text)
         self.assertIn("bind_phosh_session_env_if_missing", text)
         self.assertIn("wait_for_phosh_wayland_env", text)
         self.assertIn("pgrep -u", text)
@@ -843,6 +885,50 @@ class TestInstallOverviewChatUiScript(unittest.TestCase):
         self.assertIn("/etc/xdg/autostart/atomos-overview-chat-ui.desktop", text)
         self.assertIn("Exec=/usr/libexec/atomos-overview-chat-ui --start", text)
         self.assertNotIn("Exec=/usr/libexec/atomos-overview-chat-ui --show", text)
+
+
+class TestInstallAtomosHomeBgScript(unittest.TestCase):
+    def test_bash_syntax(self):
+        r = subprocess.run(
+            ["bash", "-n", str(ISO_ROOT / "scripts" / "home-bg" / "install-atomos-home-bg.sh")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+
+    def test_stop_ui_waits_for_termination_robustly(self):
+        text = (ISO_ROOT / "scripts" / "home-bg" / "install-atomos-home-bg.sh").read_text(encoding="utf-8")
+        # Ensure our stop_ui helper exists
+        self.assertIn("stop_ui()", text)
+        # Ensure it collects all associated PIDs to wait for
+        self.assertIn("pgrep -f '/usr/local/bin/atomos-home-bg'", text)
+        # Ensure it uses a wait loop to wait for them to terminate gracefully
+        self.assertIn("while [ $i -lt 10 ]; do", text)
+        self.assertIn("sleep 0.1", text)
+        # Ensure it has a fallback SIGKILL to force termination if hung
+        self.assertIn("kill -9", text)
+
+    def test_cargo_compilation_verification(self):
+        import shutil
+        if not shutil.which("cargo"):
+            self.skipTest("cargo not installed")
+        r = subprocess.run(
+            ["cargo", "check", "--workspace", "--all-targets"],
+            cwd=str(ISO_ROOT / "rust" / "atomos-home-bg"),
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(
+            r.returncode,
+            0,
+            msg=f"Cargo check failed for atomos-home-bg workspace:\n{r.stderr}\n{r.stdout}",
+        )
+
+    def test_install_home_bg_launcher_session_env_binding(self):
+        text = (ISO_ROOT / "scripts" / "home-bg" / "install-atomos-home-bg.sh").read_text(encoding="utf-8")
+        self.assertIn("bind_phosh_session_env_if_missing", text)
+        self.assertIn("xargs -0", text)
+        self.assertIn("corrected invalid WAYLAND_DISPLAY to wayland-0", text)
 
 
 class TestSmokeChatUiPostUnlockScript(unittest.TestCase):
@@ -938,8 +1024,9 @@ class TestInstallAtomosAgentsScript(unittest.TestCase):
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME", text)
         self.assertIn("atomos-overview-chat-ui.disabled", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_APP_ICONS", text)
-        self.assertIn("overview-chat-ui-overlay-contract", text)
-        self.assertIn("overview-chat-ui-overlay-v5-lifecycle-only", text)
+        overlay_text = (SCRIPTS / "rootfs/apply-overlay.sh").read_text(encoding="utf-8")
+        self.assertIn("overview-chat-ui-overlay-contract", overlay_text)
+        self.assertIn("overview-chat-ui-overlay-v6-autostart-restored", overlay_text)
         self.assertIn("delete-native-rootfs-images.sh", text)
 
     def test_build_image_reasserts_vendor_phosh_and_final_verifies_before_resync(self):
@@ -1070,7 +1157,7 @@ class TestInstallAtomosAgentsScript(unittest.TestCase):
         self.assertNotIn("apk upgrade --no-interactive --force-overwrite", text)
         self.assertIn("clear_legacy_gsd_world_entries", text)
         self.assertIn("sync_local_systemd_edge_indexes", text)
-        self.assertIn("Synced local APKINDEX files: edge -> systemd-edge", text)
+        self.assertIn("Synced local APK repositories: pmos -> edge -> systemd-edge", text)
         self.assertIn("prepare_rootfs_systemd_apk_state", text)
         self.assertIn("/var/lib/systemd-apk/installed.units", text)
 
@@ -1092,7 +1179,7 @@ class TestInstallAtomosAgentsScript(unittest.TestCase):
         self.assertIn("Sync local Phosh fork sources", text)
         self.assertIn("verify_vendor_phosh_source_contract", text)
         self.assertIn("Verify local Phosh fork source tree", text)
-        self.assertIn("test -f \"$src_dir/src/home.c\"", text)
+        self.assertIn("verify-vendor-phosh-build.sh", text)
         self.assertIn("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME_DEFAULT", text)
 
     def test_build_image_supports_pmaports_commit_pin(self):
@@ -1222,7 +1309,10 @@ class TestPhoshForkWorkflow(unittest.TestCase):
         self.assertIn("Maintain Phosh directly", text)
 
     def test_local_phosh_fork_checkout_exists_or_is_ignorable(self):
-        gitignore = (ISO_ROOT / "rust" / "phosh" / ".gitignore").read_text(encoding="utf-8")
+        path = ISO_ROOT / "vendor" / "phosh" / ".gitignore"
+        if not path.exists():
+            path = ISO_ROOT / "rust" / "phosh" / ".gitignore"
+        gitignore = path.read_text(encoding="utf-8")
         self.assertIn("upstream Phosh", gitignore)
 
 

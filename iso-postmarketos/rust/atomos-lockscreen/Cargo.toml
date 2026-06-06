@@ -1,0 +1,3 @@
+[workspace]
+members = ["app-egui"]
+resolver = "2"

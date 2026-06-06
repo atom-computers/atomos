@@ -22,6 +22,10 @@ pub fn touch_dismiss_enabled() -> bool {
     env_flag_enabled(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_ENABLE_TOUCH_DISMISS"))
 }
 
+pub fn desktop_like_override() -> Option<bool> {
+    parse_bool_env_value(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE"))
+}
+
 /// Use GDK primary/largest monitor geometry (logical px). Phones stay in strip mode.
 pub fn session_looks_like_desktop() -> bool {
     if env_flag_enabled(std::env::var(
@@ -32,8 +36,11 @@ pub fn session_looks_like_desktop() -> bool {
     resolve_desktop_like_mode(desktop_like_override(), largest_monitor_size_logical())
 }
 
-fn desktop_like_override() -> Option<bool> {
-    parse_bool_env_value(std::env::var("ATOMOS_OVERVIEW_CHAT_UI_DESKTOP_LIKE_OVERRIDE"))
+#[allow(dead_code)]
+pub fn keyboard_mode_override() -> Option<String> {
+    std::env::var("ATOMOS_OVERVIEW_CHAT_UI_KEYBOARD_MODE")
+        .ok()
+        .map(|s| s.trim().to_ascii_lowercase())
 }
 
 fn largest_monitor_size_logical() -> Option<(i32, i32)> {
@@ -64,7 +71,7 @@ fn largest_monitor_size_logical() -> Option<(i32, i32)> {
 mod tests {
     use super::{
         desktop_like_override, layer_shell_enabled, session_looks_like_desktop,
-        touch_dismiss_enabled,
+        touch_dismiss_enabled, keyboard_mode_override,
     };
     use std::sync::Mutex;
 
@@ -74,6 +81,17 @@ mod tests {
     // because assertion panics can leave the lock poisoned without
     // invalidating the guard's state.
     static DESKTOP_LIKE_OVERRIDE_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn keyboard_mode_override_honors_env() {
+        let _g = DESKTOP_LIKE_OVERRIDE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_KEYBOARD_MODE", "Exclusive");
+        assert_eq!(keyboard_mode_override(), Some("exclusive".to_string()));
+        std::env::set_var("ATOMOS_OVERVIEW_CHAT_UI_KEYBOARD_MODE", "  on-demand  ");
+        assert_eq!(keyboard_mode_override(), Some("on-demand".to_string()));
+        std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_KEYBOARD_MODE");
+        assert_eq!(keyboard_mode_override(), None);
+    }
 
     #[test]
     fn desktop_like_override_unset() {

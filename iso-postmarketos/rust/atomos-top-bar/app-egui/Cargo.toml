@@ -1,0 +1,19 @@
+[package]
+name = "atomos-top-bar-egui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+atomos-top-bar-core = { path = "../core" }
+egui = "0.33"
+eframe = { version = "0.33", default-features = false, features = ["default_fonts", "glow", "wayland"] }
+chrono = "0.4"
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+atomos-theme = { path = "../../atomos-theme" }
+
+
+
+
+[lib]
+name = "atomos_top_bar_egui"
+path = "src/lib.rs"

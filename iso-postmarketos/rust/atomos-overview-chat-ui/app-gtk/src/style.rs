@@ -1,5 +1,4 @@
 use gtk::gdk;
-use gtk::prelude::*;
 
 use crate::logic::{env_flag_enabled, theme_class};
 
@@ -111,8 +110,8 @@ window.atomos-chat-root.atomos-dark box.atomos-top-dock {{
   background: #121212;
 }}
 window.atomos-chat-root.atomos-dark scrolledwindow.atomos-chat-input {{
-  background: alpha(#151923, 0.58);
-  border: 1px solid alpha(#ffffff, 0.22);
+  background: #121212;
+  border: 1px solid #303132;
 }}
 window.atomos-chat-root.atomos-dark textview.atomos-chat-input {{
   color: #ffffff;
@@ -139,15 +138,16 @@ window.atomos-chat-root.atomos-light button.atomos-dock-btn {{
   color: #121212;
 }}
 box.atomos-app-sheet-wrap {{
-  margin: 18px 0 0 0;
+  margin: 5px 2px 5px 2px;
   border-radius: 40px;
   border: 1px solid #303132;
 }}
 window.atomos-chat-root.atomos-dark box.atomos-app-sheet-wrap {{
-  background: #121212;
+  background: alpha(#121212, 0.8);
 }}
 window.atomos-chat-root.atomos-light box.atomos-app-sheet-wrap {{
-  background: #f2f2f2;
+  background: alpha(#f2f2f2, 0.8);
+  border: 1px solid #ffffff;
 }}
 scrolledwindow.atomos-app-sheet {{
   border-radius: 40px;
@@ -158,9 +158,11 @@ button.atomos-app-tile {{
   min-height: 0;
   padding: 0;
   background: transparent;
-  color: inherit;
   border: none;
   box-shadow: none;
+}}
+button.atomos-app-tile image {{
+  -gtk-icon-size: 40px;
 }}
 button.atomos-app-tile:hover,
 button.atomos-app-tile:active {{
@@ -168,8 +170,15 @@ button.atomos-app-tile:active {{
   box-shadow: none;
 }}
 label.atomos-app-label {{
-  color: inherit;
   font-size: 10px;
+}}
+window.atomos-chat-root.atomos-dark button.atomos-app-tile,
+window.atomos-chat-root.atomos-dark label.atomos-app-label {{
+  color: #ffffff;
+}}
+window.atomos-chat-root.atomos-light button.atomos-app-tile,
+window.atomos-chat-root.atomos-light label.atomos-app-label {{
+  color: #121212;
 }}
 ",
         root_bg = root_bg,
@@ -241,7 +250,7 @@ mod tests {
         assert!(css.contains("scrolledwindow.atomos-chat-input"));
         assert!(css.contains("window.atomos-chat-root.atomos-dark scrolledwindow.atomos-chat-input"));
         assert!(css.contains("window.atomos-chat-root.atomos-light scrolledwindow.atomos-chat-input"));
-        assert!(css.contains("border: 1px solid alpha(#ffffff, 0.22);"));
+        assert!(css.contains("border: 1px solid #303132;"));
         assert!(css.contains("border: 1px solid alpha(#000000, 0.18);"));
     }
 
@@ -319,6 +328,15 @@ mod tests {
     }
 
     #[test]
+    fn app_tile_styles_use_explicit_theme_colors() {
+        let css = stylesheet(false);
+        assert!(css.contains("window.atomos-chat-root.atomos-dark label.atomos-app-label"));
+        assert!(css.contains("window.atomos-chat-root.atomos-light label.atomos-app-label"));
+        assert!(css.contains("button.atomos-app-tile image"));
+        assert!(!css.contains("label.atomos-app-label {\n  color: inherit"));
+    }
+
+    #[test]
     fn css_disable_flag_defaults_to_off() {
         let _g = DISABLE_CUSTOM_CSS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::remove_var("ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS");
@@ -343,6 +361,16 @@ pub fn apply_theme_class(win: &adw::ApplicationWindow) {
     }
     // Avoid string-typed GObject property access here. Some target stacks emit
     // unstable GLib errors during early startup when querying settings this way.
-    let prefers_dark = adw::StyleManager::default().is_dark();
+    use adw::prelude::*;
+    let style_manager = adw::StyleManager::default();
+    let prefers_dark = style_manager.is_dark();
     win.add_css_class(theme_class(prefers_dark));
+
+    let win_clone = win.clone();
+    style_manager.connect_dark_notify(move |manager| {
+        let is_dark = manager.is_dark();
+        win_clone.remove_css_class("atomos-dark");
+        win_clone.remove_css_class("atomos-light");
+        win_clone.add_css_class(theme_class(is_dark));
+    });
 }

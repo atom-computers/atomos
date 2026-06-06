@@ -487,7 +487,8 @@ verify_atomos_customizations_in_image() {
 		"usr/local/bin/atomos-home-bg" \
 		"usr/bin/atomos-home-bg" \
 		"usr/libexec/atomos-home-bg" \
-		"usr/share/atomos-home-bg/index.html" \
+		"usr/share/atomos-home-bg/black-hole/index.html" \
+		"usr/share/atomos-home-bg/light-earth/index.html" \
 		"etc/xdg/autostart/atomos-home-bg.desktop" \
 		"usr/local/bin/atomos-app-handler" \
 		"usr/libexec/atomos-app-handler" \

@@ -92,7 +92,7 @@ build-app-handler-in-container:
 EOF
 
 "$ENGINE" run --rm -i \
-    "${PLATFORM_FLAG[@]}" \
+    ${PLATFORM_FLAG[@]+"${PLATFORM_FLAG[@]}"} \
     -v "$REPO_TOP:/work" \
     -v "$CARGO_CACHE_VOLUME:/cargo" \
     -e CARGO_HOME=/cargo \

@@ -125,10 +125,10 @@ pub fn build_ui(app: &adw::Application) {
     app_sheet_wrap.set_halign(gtk::Align::Fill);
     app_sheet_wrap.set_hexpand(true);
     app_sheet_wrap.set_vexpand(true);
-    app_sheet_wrap.set_margin_start(0);
-    app_sheet_wrap.set_margin_end(0);
+    app_sheet_wrap.set_margin_start(20);
+    app_sheet_wrap.set_margin_end(20);
     app_sheet_wrap.set_margin_top(18);
-    app_sheet_wrap.set_margin_bottom(0);
+    app_sheet_wrap.set_margin_bottom(18);
     app_sheet_wrap.set_height_request(240);
     let app_sheet_revealer = gtk::Revealer::new();
     app_sheet_revealer.set_transition_type(gtk::RevealerTransitionType::SlideDown);
@@ -159,25 +159,40 @@ pub fn build_ui(app: &adw::Application) {
     outer.append(&wrap);
     win.set_content(Some(&outer));
     let app_sheet_built = Rc::new(Cell::new(false));
+    let dismiss_app_sheet = {
+        let app_sheet_revealer = app_sheet_revealer.clone();
+        let app_grid_icon = app_grid_icon.clone();
+        let wrap = wrap.clone();
+        Rc::new(move || {
+            if app_sheet_revealer.reveals_child() {
+                eprintln!("atomos-overview-chat-ui: dismissing app sheet for launch");
+                app_sheet_revealer.set_reveal_child(false);
+                app_grid_icon.set_icon_name(Some("view-app-grid-symbolic"));
+                wrap.set_visible(true);
+            }
+        })
+    };
     if eager_app_grid_enabled() {
         startup_trace("app_grid:eager-build:before");
-        // Headless and CI repro mode: run the same app-grid construction path
-        // as first-open toggle, but during startup so no click is required.
-        let app_sheet = build_app_grid_sheet();
-        app_sheet_wrap.append(&app_sheet);
-        app_sheet_built.set(true);
-        startup_trace("app_grid:eager-build:after");
+        // Headless/CI repro: still defer so startup does not block the main loop.
+        schedule_app_grid_build(
+            &app_sheet_wrap,
+            app_sheet_built.clone(),
+            dismiss_app_sheet.clone(),
+        );
+        startup_trace("app_grid:eager-build:scheduled");
     }
 
     connect_dock_toggle(
         &win,
-        &top_dock,
+        &app_grid_btn,
         &app_sheet_revealer,
         &app_sheet_wrap,
         &app_grid_icon,
         &wrap,
         &input,
         app_sheet_built.clone(),
+        dismiss_app_sheet,
     );
     if touch_dismiss_enabled() {
         connect_touch_dismiss(&outer, &input_scroller, &win);
@@ -186,7 +201,12 @@ pub fn build_ui(app: &adw::Application) {
     wire_input_layout_behavior(&input_scroller, &input);
     wire_enter_submit_behavior(&input);
 
-    if desktop_like {
+    let should_grab_focus = desktop_like || !matches!(
+        std::env::var("ATOMOS_OVERVIEW_CHAT_UI_LAYER").as_deref(),
+        Ok("bottom" | "background")
+    );
+
+    if should_grab_focus {
         let input_focus = input.clone();
         win.connect_map(move |_w| {
             let input_focus = input_focus.clone();
@@ -201,56 +221,78 @@ pub fn build_ui(app: &adw::Application) {
     startup_trace("present:after");
 }
 
+/// Building the app grid runs `gio::AppInfo::all()` on the GTK main thread.
+/// On the phone that can block touch for hundreds of ms (or wedge on a broken
+/// `.desktop`), which feels like a frozen launcher — unrelated to "many apps".
+/// Defer to idle and show a placeholder so the sheet is not an empty panel.
+fn schedule_app_grid_build(
+    app_sheet_wrap: &gtk::Box,
+    app_sheet_built: Rc<Cell<bool>>,
+    on_tile_launch: Rc<dyn Fn()>,
+) {
+    if app_sheet_built.get() {
+        return;
+    }
+    let loading = gtk::Label::new(Some("Loading apps…"));
+    loading.add_css_class("atomos-app-grid-loading");
+    loading.set_halign(gtk::Align::Center);
+    loading.set_valign(gtk::Align::Center);
+    loading.set_vexpand(true);
+    app_sheet_wrap.append(&loading);
+
+    let wrap = app_sheet_wrap.clone();
+    let built = app_sheet_built;
+    glib::idle_add_local_once(move || {
+        if built.get() {
+            return;
+        }
+        eprintln!("atomos-overview-chat-ui: app-grid building on idle");
+        let app_sheet = build_app_grid_sheet(move || on_tile_launch());
+        while let Some(child) = wrap.first_child() {
+            wrap.remove(&child);
+        }
+        wrap.append(&app_sheet);
+        built.set(true);
+        eprintln!("atomos-overview-chat-ui: app-grid build complete");
+    });
+}
+
 fn connect_dock_toggle(
     win: &adw::ApplicationWindow,
-    top_dock: &gtk::Box,
+    app_grid_btn: &gtk::Button,
     app_sheet_revealer: &gtk::Revealer,
     app_sheet_wrap: &gtk::Box,
     app_grid_icon: &gtk::Image,
     wrap: &gtk::Box,
     input: &gtk::TextView,
     app_sheet_built: Rc<Cell<bool>>,
+    dismiss_app_sheet: Rc<dyn Fn()>,
 ) {
     let app_sheet_revealer_for_btn = app_sheet_revealer.clone();
     let input_for_app_toggle = input.clone();
     let wrap_for_app_toggle = wrap.clone();
     let app_grid_icon_for_toggle = app_grid_icon.clone();
-    let top_dock_for_hit = top_dock.clone();
-    let win_for_hit = win.clone();
+    let win_for_click = win.clone();
     let app_sheet_wrap_for_toggle = app_sheet_wrap.clone();
     let app_sheet_built_for_toggle = app_sheet_built.clone();
-    let dock_hit_tap = gtk::GestureClick::new();
-    dock_hit_tap.set_button(0);
-    dock_hit_tap.set_propagation_phase(gtk::PropagationPhase::Capture);
-    dock_hit_tap.connect_pressed(move |_gesture, _n_press, x, y| {
-        eprintln!("atomos-overview-chat-ui: tap x={x:.1} y={y:.1}");
-        let Some(bounds) = top_dock_for_hit.compute_bounds(&win_for_hit) else {
-            return;
-        };
-        let x0 = f64::from(bounds.x());
-        let y0 = f64::from(bounds.y());
-        let x1 = x0 + f64::from(bounds.width());
-        let y1 = y0 + f64::from(bounds.height());
-        let inside_dock = x >= x0 && x <= x1 && y >= y0 && y <= y1;
-        if !inside_dock {
-            return;
-        }
+    let dismiss_for_schedule = dismiss_app_sheet;
 
+    app_grid_btn.connect_clicked(move |_btn| {
         let next = !app_sheet_revealer_for_btn.reveals_child();
         eprintln!("atomos-overview-chat-ui: app-sheet toggled={next}");
-        if next && !app_sheet_built_for_toggle.get() {
-            // Build app grid lazily: some device images have malformed desktop
-            // metadata that can fault when enumerated during initial startup.
-            let app_sheet = build_app_grid_sheet();
-            app_sheet_wrap_for_toggle.append(&app_sheet);
-            app_sheet_built_for_toggle.set(true);
-        }
         app_sheet_revealer_for_btn.set_reveal_child(next);
+        if next && !app_sheet_built_for_toggle.get() {
+            schedule_app_grid_build(
+                &app_sheet_wrap_for_toggle,
+                app_sheet_built_for_toggle.clone(),
+                dismiss_for_schedule.clone(),
+            );
+        }
         if next {
             app_grid_icon_for_toggle.set_icon_name(Some("window-close-symbolic"));
             wrap_for_app_toggle.set_visible(false);
             // Opening the app sheet should dismiss OSK if the input had focus.
-            adw::prelude::GtkWindowExt::set_focus(&win_for_hit, Option::<&gtk::Widget>::None);
+            adw::prelude::GtkWindowExt::set_focus(&win_for_click, Option::<&gtk::Widget>::None);
         } else {
             app_grid_icon_for_toggle.set_icon_name(Some("view-app-grid-symbolic"));
             wrap_for_app_toggle.set_visible(true);
@@ -259,7 +301,6 @@ fn connect_dock_toggle(
             input_for_app_toggle.grab_focus();
         }
     });
-    win.add_controller(dock_hit_tap);
 }
 
 fn connect_touch_dismiss(

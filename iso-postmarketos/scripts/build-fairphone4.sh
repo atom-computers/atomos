@@ -318,7 +318,7 @@ BASE_APK_PACKAGES=(
     boot-deploy
     e2fsprogs
     dosfstools
-    openssh
+    openssh-client
     openssh-server-pam
     sudo
     doas
@@ -481,6 +481,7 @@ pmos = [p.strip() for p in sys.argv[4].split() if p.strip()]
 # Map a few legacy names that creep in from older configs.
 replacements = {
     "webkit6.0-gtk4-dev": "webkit2gtk-6.0-dev",
+    "openssh-server": "openssh-server-pam",
 }
 ordered = []
 for group in (base, pmos, profile, parity):
@@ -561,6 +562,9 @@ echo "  $PACKAGE_MANIFEST"
             echo \"NOTE: apk exited \$rc but only postmarketos-mkinitfs trigger errors were reported; will regenerate initramfs in post-bootstrap fixup.\" >&2
         fi
         # Hard fail only when bootstrap produced an obviously unusable rootfs.
+        if [ ! -x /target/usr/sbin/sshd ] && [ -x /target/usr/sbin/sshd.pam ]; then
+            ln -sf sshd.pam /target/usr/sbin/sshd
+        fi
         test -x /target/bin/sh
         test -x /target/usr/sbin/sshd
         test -x /target/usr/bin/mkbootimg
@@ -676,6 +680,7 @@ echo "=== build-fairphone4: base rootfs configuration ==="
     -e PROFILE_NAME="$PROFILE_NAME" \
     -e INSTALL_PASSWORD="$INSTALL_PASSWORD" \
     -e PMOS_USER_UID="$PMOS_USER_UID" \
+    -e ATOMOS_DEBUG_FIREWALL="${ATOMOS_DEBUG_FIREWALL:-${ATOMOS_DEVELOPER_MODE:-0}}" \
     -v "$ROOTFS_VOLUME:/target" \
     -v "$ROOT_DIR:/iso:ro" \
     "$ALPINE_IMAGE" /bin/sh -eu -c '
@@ -733,6 +738,7 @@ EOF
         ln -sf ../../init.d/wpa_supplicant   /target/etc/runlevels/default/wpa_supplicant || true
         ln -sf ../../init.d/zram-init        /target/etc/runlevels/default/zram-init || true
         ln -sf ../../init.d/sshd             /target/etc/runlevels/default/sshd || true
+        ln -sf ../../init.d/usb-moded        /target/etc/runlevels/default/usb-moded || true
         ln -sf ../../init.d/seatd            /target/etc/runlevels/default/seatd || true
         ln -sf ../../init.d/greetd           /target/etc/runlevels/default/greetd || true
         # rfkill: parity with postmarketos-base-ui-openrc post-install
@@ -784,6 +790,28 @@ EOF
         fi
         # Recompile schemas so the gsettings overrides take effect.
         glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
+
+        # Override prebuilt postmarketos-usb-moded files with our patched versions from the vendored pmaports tree
+        USB_MODED_PM="postmarketos-usb-moded"
+        if [ -d "$PM/$USB_MODED_PM" ]; then
+            install -Dm755 "$PM/$USB_MODED_PM/rootfs-usr-bin-usb-moded-developer-mode" /target/usr/bin/usb-moded-developer-mode
+            install -Dm755 "$PM/$USB_MODED_PM/rootfs-usr-bin-usb-moded-tethering-mode" /target/usr/bin/usb-moded-tethering-mode
+            install -Dm755 "$PM/$USB_MODED_PM/rootfs-etc-init.d-usb-moded-developer-mode.initd" /target/etc/init.d/usb-moded-developer-mode
+            install -Dm755 "$PM/$USB_MODED_PM/rootfs-etc-init.d-usb-moded-tethering-mode.initd" /target/etc/init.d/usb-moded-tethering-mode
+            install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-configfs.ini" /target/etc/usb-moded/configfs.ini
+            install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-developer_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/developer_mode_openrc.ini
+            install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-tethering_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/tethering_mode_openrc.ini
+            install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-mtp_ffs_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/mtp_ffs_mode_openrc.ini
+            install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-umtprd-umtprd.conf" /target/etc/umtprd/umtprd.conf
+
+            # Ensure default mode is developer mode
+            mkdir -p /target/etc/usb-moded
+            cat << 'EOF' > /target/etc/usb-moded/usbmode.ini
+[usbmode]
+mode = developer_mode
+EOF
+        fi
+
 
         # Run device-fairphone-fp4 post-install equivalents: drop UCM
         # (already shipped by the apk), wireplumber rule, and udev rule.
@@ -853,12 +881,51 @@ EOF
         chown -R "${PMOS_USER_UID}:${PMOS_USER_UID}" /target/home/user/.config
 
         # Sshd policy sanitize (UsePAM is unsupported in this image path).
+        if [ -f /target/etc/ssh/sshd_config ]; then
+            sed -i '/^[[:space:]]*PasswordAuthentication/d' /target/etc/ssh/sshd_config
+            echo "PasswordAuthentication yes" >> /target/etc/ssh/sshd_config
+            sed -i '/^[[:space:]]*PermitRootLogin/d' /target/etc/ssh/sshd_config
+            echo "PermitRootLogin no" >> /target/etc/ssh/sshd_config
+        fi
         if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
             sed -i "/^[[:space:]]*UsePAM[[:space:]]\\+/d" /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+            sed -i '/^[[:space:]]*PasswordAuthentication/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+            echo "PasswordAuthentication yes" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+            sed -i '/^[[:space:]]*PermitRootLogin/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+            echo "PermitRootLogin no" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
         fi
         # Pre-generate SSH host keys.
         if [ -x /target/usr/bin/ssh-keygen ]; then
             chroot /target /usr/bin/ssh-keygen -A >/dev/null 2>&1 || true
+        fi
+
+        # Debug/Developer Mode firewall exception for SSH (ports 22, 2222)
+        if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
+            mkdir -p /target/etc/nftables.d
+            cat > /target/etc/nftables.d/99_allow_ssh.nft <<'EOF'
+#!/usr/sbin/nft -f
+table inet filter {
+    chain input {
+        tcp dport { 22, 2222 } accept comment "Allow SSH in Debug/Developer Mode"
+    }
+}
+EOF
+            chmod 0644 /target/etc/nftables.d/99_allow_ssh.nft
+            echo "init: Created debug firewall exception for SSH (ports 22, 2222)"
+
+            # Make sure the main nftables.nft config includes the rules in nftables.d/
+            if [ -f /target/etc/nftables.nft ]; then
+                if ! grep -F -q 'include "/etc/nftables.d/*.nft"' /target/etc/nftables.nft; then
+                    echo 'include "/etc/nftables.d/*.nft"' >> /target/etc/nftables.nft
+                    echo "init: Appended include for /etc/nftables.d/*.nft to /etc/nftables.nft"
+                fi
+            else
+                cat > /target/etc/nftables.nft <<'EOF'
+flush ruleset
+include "/etc/nftables.d/*.nft"
+EOF
+                echo "init: Created /etc/nftables.nft with include for /etc/nftables.d/*.nft"
+            fi
         fi
 
         # Greetd config (parity with build-qemu). Only write if the apk
@@ -1366,7 +1433,8 @@ echo "=== build-fairphone4: final verification ==="
             check_x /target/usr/local/bin/atomos-home-bg
             check_x /target/usr/bin/atomos-home-bg
             check_x /target/usr/libexec/atomos-home-bg
-            check_f /target/usr/share/atomos-home-bg/index.html
+            check_f /target/usr/share/atomos-home-bg/black-hole/index.html
+            check_f /target/usr/share/atomos-home-bg/light-earth/index.html
             check_grep "ATOMOS_HOME_BG_ENABLE_RUNTIME" /target/usr/libexec/atomos-home-bg
             check_grep "atomos-home-bg.disabled"       /target/usr/libexec/atomos-home-bg
             check_grep "ATOMOS_HOME_BG_LAYER"          /target/usr/libexec/atomos-home-bg

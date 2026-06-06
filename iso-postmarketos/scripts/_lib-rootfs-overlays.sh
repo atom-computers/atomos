@@ -31,6 +31,15 @@ _atomos_overlay_container_body() {
     atomos_overlay_container_bash_setup
     cat <<'OVERLAY_BODY'
 
+# --- local-first apk wrapper (AtomOS local package store) ------------
+# Install the PATH `apk` shim. Overlay installers run as their own
+# processes (atomos_bash sub-shells) but inherit PATH, so any `apk` they
+# call transparently reuses the persistent cache dir and honours the
+# host-selected network mode ($ATOMOS_APK_NET).
+mkdir -p /usr/local/bin
+install -m0755 /work/iso-postmarketos/scripts/container-apk-shim.sh /usr/local/bin/apk
+export PATH="/usr/local/bin:$PATH"
+
 run_helper() {
     local script="$1"; shift
     if [ -f "/work/iso-postmarketos/$script" ]; then
@@ -89,11 +98,24 @@ fi
 
 # sshd policy sanitize (overlay installers can re-drop pmaports defaults).
 if [ -f /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf ]; then
-    sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' \
-        /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    sed -i '/^[[:space:]]*UsePAM[[:space:]]\+/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    sed -i '/^[[:space:]]*PasswordAuthentication/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    echo "PasswordAuthentication yes" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    sed -i '/^[[:space:]]*PermitRootLogin/d' /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
+    echo "PermitRootLogin no" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
 fi
 if [ -x /target/usr/bin/ssh-keygen ]; then
     chroot /target /usr/bin/ssh-keygen -A >/dev/null 2>&1 || true
+fi
+
+# apk post-installs may re-enable nftables in default; keep developer USB/SSH
+# reachable unless the profile explicitly opts in.
+if [ "${ATOMOS_ENABLE_NFTABLES:-0}" != "1" ]; then
+    rm -f /target/etc/runlevels/default/nftables \
+          /target/etc/runlevels/boot/nftables
+fi
+if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
+    rm -f /target/etc/nftables.d/99_drop_log.nft
 fi
 OVERLAY_BODY
 }
@@ -105,9 +127,15 @@ atomos_apply_overlays() {
     "$ENGINE" run --rm --platform "linux/arm64" \
         -v "$ROOTFS_VOLUME:/target" \
         -v "$REPO_TOP:/work" \
+        -v "$MESON_CACHE_MOUNT:/cache" \
+        -e ATOMOS_ENABLE_NFTABLES="${ATOMOS_ENABLE_NFTABLES:-0}" \
+        -e ATOMOS_DEBUG_FIREWALL="${ATOMOS_DEBUG_FIREWALL:-${ATOMOS_DEVELOPER_MODE:-0}}" \
+        -v "$PKG_CACHE_MOUNT_SRC:$PKG_CACHE_MOUNT" \
         -e BUILD_OVERVIEW_CHAT_UI="$BUILD_OVERVIEW_CHAT_UI" \
         -e BUILD_HOME_BG="$BUILD_HOME_BG" \
         -e BUILD_APP_HANDLER="${BUILD_APP_HANDLER:-1}" \
         -e PROFILE_ENV_CONTAINER="$profile_in_container" \
+        -e ATOMOS_APK_CACHE_DIR="$APK_CACHE_CONTAINER_DIR" \
+        -e ATOMOS_APK_NET="${ATOMOS_APK_NET:---update-cache}" \
         "$ALPINE_IMAGE" /bin/sh -eu -c "$(_atomos_overlay_container_body)"
 }

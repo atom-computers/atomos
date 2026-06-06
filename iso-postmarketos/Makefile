@@ -6,6 +6,8 @@ DEFAULT_PROFILE := $(FP4_PROFILE)
 BUILD_FP4_SCRIPT := $(ROOT_DIR)/scripts/build-fairphone4-v2.sh
 BUILD_FP4_PMBOOTSTRAP_SCRIPT := $(ROOT_DIR)/scripts/build-image.sh
 BUILD_QEMU_SCRIPT := $(ROOT_DIR)/scripts/build-qemu.sh
+BUILD_QEMU_V2_SCRIPT := $(ROOT_DIR)/scripts/build-qemu-2.sh
+BUILD_FP4_V2_SCRIPT := $(ROOT_DIR)/scripts/build-fairphone4-v2-2.sh
 FP4_OVERLAY_SCRIPT := $(ROOT_DIR)/scripts/device/sync-fairphone-fp4-overlay.sh
 
 help:
@@ -15,8 +17,10 @@ help:
 	@echo "                                   #   container-based, NO pmbootstrap. Mirrors build-qemu model."
 	@echo "                                   #   Ships VENDOR phosh from rust/phosh/phosh by default."
 	@echo "                                   #   Opt out: ATOMOS_SKIP_VENDOR_PHOSH_BUILD=1 make build-fairphone4"
+	@echo "  make build-fairphone4-2          # Fairphone FP4 V2 (AtomOS-Comp replacing Phosh)"
 	@echo "  make build-fairphone4-pmbootstrap # Legacy: Fairphone FP4 via pmbootstrap (kept for diffing)."
 	@echo "  make build-qemu                  # ARM64 QEMU profile (Alpine-based, ships vendor phosh)"
+	@echo "  make build-qemu-2                # ARM64 QEMU profile V2 (AtomOS-Comp replacing Phosh)"
 	@echo "                                   #   Meson cache persists in a docker volume; unchanged"
 	@echo "                                   #   rust/phosh skips recompile (see build-qemu.sh env docs)."
 	@echo "  make qemu                        # Boot exported image via qemu-system-aarch64"
@@ -34,6 +38,16 @@ help:
 	@echo "    pmaports/device/community/device-fairphone-fp4/deviceinfo."
 	@echo "  - Packs rootfs into a sparse ext4 fairphone-fp4.img for fastboot."
 	@echo ""
+	@echo "Offline / local-first package store (build-fairphone4):"
+	@echo "  - apk + Rust crates persist in docker volume atomos-fp4v2-pkg-cache-"
+	@echo "    fairphone-fp4 (default). On multipass the repo tree is virtiofs and"
+	@echo "    cannot host apk's cache -- do NOT point ATOMOS_FP4V2_PKG_CACHE_HOST_DIR"
+	@echo "    at build/ under /home/ubuntu/atomos. Use a VM-native path instead."
+	@echo "  - FIRST build seeds the store online; later builds run OFFLINE from"
+	@echo "    stored versions (immune to mirror/DNS outages)."
+	@echo "  - Pull newest + repopulate: ATOMOS_FP4V2_PKG_REFRESH=1 make build-fairphone4"
+	@echo "  - Missing package auto-refreshes that phase from the network."
+	@echo ""
 	@echo "SSH:"
 	@echo "  Device (USB): 172.16.42.1 -- after make build-fairphone4 + USB developer mode"
 	@echo "  QEMU (make qemu): ssh -p 2222 user@127.0.0.1 -- user networking, not bridge100"
@@ -47,37 +61,31 @@ help:
 	@echo "  fastboot flash boot     build/host-export-fairphone-fp4/boot.img"
 	@echo "  fastboot flash userdata build/host-export-fairphone-fp4/fairphone-fp4.img"
 
+WITHOUT_HOME_BG ?= 0
+
+# Support building without the home-bg WebGL background.
+# Pass --without-home-bg to build scripts if WITHOUT_HOME_BG=1.
+HOME_BG_ARG :=
+ifeq ($(WITHOUT_HOME_BG),1)
+HOME_BG_ARG := --without-home-bg
+endif
+
 build: build-fairphone4
 
 build-fairphone4:
-	# ATOMOS_ENABLE_VENDOR_PHOSH_ON_FP4=1 -- parity with build-qemu, which
-	# always builds the custom phosh fork from rust/phosh/phosh into /target.
-	# Without this flag, build-fairphone4.sh:1031-1036 defaults USE_VENDOR_PHOSH=0
-	# (a safety net from when patched phosh would brick the device) and the
-	# image ships stock postmarketOS phosh -- which is what was happening
-	# despite all the rust/atomos-overview-chat-ui + rust/atomos-home-bg
-	# binaries landing correctly. With the flag set the meson build of
-	# rust/phosh/phosh runs in the Alpine arm64 container and DESTDIR=/target
-	# installs the patched phosh + libphosh + schemas straight into the
-	# rootfs, mirroring build-qemu's behavior.
-	#
-	# Opt-out (ship stock pmOS phosh):
-	#   ATOMOS_SKIP_VENDOR_PHOSH_BUILD=1 make build-fairphone4
-	ATOMOS_ENABLE_VENDOR_PHOSH_ON_FP4=1 bash "$(BUILD_FP4_SCRIPT)" "$(FP4_PROFILE)"
+	ATOMOS_ENABLE_VENDOR_PHOSH_ON_FP4=1 bash "$(BUILD_FP4_SCRIPT)" "$(FP4_PROFILE)" $(HOME_BG_ARG)
+
+build-fairphone4-2:
+	ATOMOS_V2=1 bash "$(BUILD_FP4_V2_SCRIPT)" "$(FP4_PROFILE)" $(HOME_BG_ARG)
 
 build-fairphone4-pmbootstrap:
-	# ATOMOS_ENABLE_VENDOR_PHOSH_ON_FP4=1 -- parity with build-qemu, which
-	# always builds the custom phosh fork from rust/phosh/phosh. Without
-	# this flag, build-image.sh defaults to STOCK phosh on FP4 (safety net
-	# from the days the patched phosh would brick the device). With it the
-	# patched phosh ships AND every vendor stack package (phoc /
-	# phosh-mobile-settings / phosh-wallpapers) is built from vendor/<pkg>;
-	# any of those build steps failing will now hard-fail the make target
-	# instead of silently falling back to upstream pmaports.
-	ATOMOS_ENABLE_VENDOR_PHOSH_ON_FP4=1 bash "$(BUILD_FP4_PMBOOTSTRAP_SCRIPT)" "$(FP4_PROFILE)"
+	ATOMOS_ENABLE_VENDOR_PHOSH_ON_FP4=1 bash "$(BUILD_FP4_PMBOOTSTRAP_SCRIPT)" "$(FP4_PROFILE)" $(HOME_BG_ARG)
 
 build-qemu:
-	bash "$(BUILD_QEMU_SCRIPT)" "$(QEMU_PROFILE)"
+	bash "$(BUILD_QEMU_SCRIPT)" "$(QEMU_PROFILE)" $(HOME_BG_ARG)
+
+build-qemu-2:
+	ATOMOS_V2=1 bash "$(BUILD_QEMU_V2_SCRIPT)" "$(QEMU_PROFILE)" $(HOME_BG_ARG)
 
 qemu:
 	@bash "$(ROOT_DIR)/scripts/qemu/run-local-qemu.sh" "$(QEMU_PROFILE)"
@@ -144,6 +152,12 @@ capture-phosh-coredump:
 	    bash "$(ROOT_DIR)/scripts/app-handler/capture-phosh-coredump.sh" \
 	        "$(PROFILE)" "$(SSH_TARGET)"
 
+# Intelligently hotfixes only changed custom components (Phosh or Rust packages)
+# on the running target (device or QEMU) over SSH.
+pmos-hotfix-all:
+	bash "$(ROOT_DIR)/scripts/phosh/hotfix-all.sh" "$(PROFILE)" "$(SSH_TARGET)"
+
 .PHONY: help build build-fairphone4 build-fairphone4-pmbootstrap build-qemu qemu \
         test-qemu-integration diagnose-session-restart-loop diagnose-session-boot-loop \
-        bisect-phosh-runtime-knobs capture-phosh-coredump
+        bisect-phosh-runtime-knobs capture-phosh-coredump pmos-hotfix-all
+

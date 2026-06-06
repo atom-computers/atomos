@@ -43,8 +43,7 @@ HOME_BG_RUNTIME_DEFAULT="${ATOMOS_HOME_BG_ENABLE_RUNTIME_DEFAULT:-0}"
 SKIP_BINARY_INSTALL="${ATOMOS_HOME_BG_SKIP_BINARY_INSTALL:-0}"
 INSTALL_AUTOSTART="${ATOMOS_HOME_BG_INSTALL_AUTOSTART:-1}"
 
-CONTENT_SRC="$ROOT_DIR/data/atomos-home-bg/index.html"
-EVENT_HORIZON_SRC="$ROOT_DIR/data/atomos-home-bg/event-horizon.js"
+# Assets are loaded from black-hole/ and light-earth/ subdirectories
 
 # Binary search order: explicit override → pmbootstrap musl cross-build path
 # → workspace native release path (built by build-qemu.sh inside the Alpine
@@ -53,6 +52,8 @@ candidate_bin_paths() {
     if [ -n "${ATOMOS_HOME_BG_BIN_PATH:-}" ]; then
         printf '%s\n' "$ATOMOS_HOME_BG_BIN_PATH"
     fi
+    printf '%s\n' "/cache/cargo-target/aarch64-unknown-linux-musl/release/atomos-home-bg"
+    printf '%s\n' "/cache/cargo-target/release/atomos-home-bg"
     printf '%s\n' "$ROOT_DIR/rust/atomos-home-bg/target/aarch64-unknown-linux-musl/release/atomos-home-bg"
     printf '%s\n' "$ROOT_DIR/rust/atomos-home-bg/target/release/atomos-home-bg"
 }
@@ -133,11 +134,29 @@ is_running() {
     [ -f "$PIDFILE" ] || return 1
     pid=$(cat "$PIDFILE" 2>/dev/null || true)
     [ -n "$pid" ] || return 1
-    kill -0 "$pid" 2>/dev/null
+    kill -0 "$pid" 2>/dev/null || return 1
+    cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
+    case "$cmdline" in
+        *atomos-home-bg*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+kill_home_bg_binary() {
+    for pid in $(pgrep -f '/usr/local/bin/atomos-home-bg' 2>/dev/null || true); do
+        [ -n "$pid" ] || continue
+        kill "$pid" 2>/dev/null || true
+    done
 }
 
 bind_phosh_session_env_if_missing() {
-    [ -n "${WAYLAND_DISPLAY:-}" ] && [ -n "${XDG_RUNTIME_DIR:-}" ] && return 0
+    if [ -n "${WAYLAND_DISPLAY:-}" ] && [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -S "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" ]; then
+        return 0
+    fi
     if ! command -v pgrep >/dev/null 2>&1; then
         logger -t atomos-home-bg "pgrep unavailable; cannot auto-bind Wayland env"
         return 0
@@ -153,18 +172,21 @@ bind_phosh_session_env_if_missing() {
         return 0
     fi
     for var in WAYLAND_DISPLAY XDG_RUNTIME_DIR DISPLAY DBUS_SESSION_BUS_ADDRESS; do
-        cur=""
-        case "$var" in
-            WAYLAND_DISPLAY) cur="${WAYLAND_DISPLAY:-}" ;;
-            XDG_RUNTIME_DIR) cur="${XDG_RUNTIME_DIR:-}" ;;
-            DISPLAY) cur="${DISPLAY:-}" ;;
-            DBUS_SESSION_BUS_ADDRESS) cur="${DBUS_SESSION_BUS_ADDRESS:-}" ;;
-        esac
-        if [ -z "$cur" ]; then
-            line="$(tr '\0' '\n' < "$env_file" | awk -F= -v k="$var" '$1 == k { print; exit }' || true)"
-            [ -n "$line" ] && export "$line"
-        fi
+        # /proc/<pid>/environ is NUL-separated. BusyBox tr can mis-handle
+        # \0 and corrupt values (e.g. wayland-0 -> wayland-n), so use
+        # xargs -0 to split safely.
+        line="$(xargs -0 -n1 < "$env_file" 2>/dev/null | awk -v k="$var" "index(\$0, k \"=\") == 1 { print; exit }" || true)"
+        [ -n "$line" ] && export "$line"
     done
+
+    # If imported display does not exist, clamp to a known-safe default.
+    if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -n "${WAYLAND_DISPLAY:-}" ] && [ ! -S "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" ]; then
+        if [ -S "${XDG_RUNTIME_DIR}/wayland-0" ]; then
+            WAYLAND_DISPLAY="wayland-0"
+            export WAYLAND_DISPLAY
+            logger -t atomos-home-bg "corrected invalid WAYLAND_DISPLAY to wayland-0"
+        fi
+    fi
 }
 
 start_ui() {
@@ -183,14 +205,15 @@ start_ui() {
     (
         printf '%s\n' "---- $(date) ----"
         set +e
-        "$BIN"
-        rc=$?
-        if [ "$rc" -eq 127 ]; then
-            : > "$DISABLE_FILE"
-            logger -t atomos-home-bg "exec rc=127; wrote disable marker $DISABLE_FILE"
+        if ! exec "$BIN"; then
+            rc=$?
+            if [ "$rc" -eq 127 ]; then
+                : > "$DISABLE_FILE"
+                logger -t atomos-home-bg "binary exec failed rc=127; wrote disable marker $DISABLE_FILE"
+            fi
+            logger -t atomos-home-bg "process-exit rc=$rc"
+            exit "$rc"
         fi
-        logger -t atomos-home-bg "process-exit rc=$rc"
-        exit "$rc"
     ) >>"$LOGFILE" 2>&1 &
     pid=$!
     echo "$pid" > "$PIDFILE"
@@ -202,12 +225,50 @@ start_ui() {
 }
 
 stop_ui() {
-    if ! is_running; then
-        rm -f "$PIDFILE"
-        return 0
+    resolve_runtime_paths
+    local pids=""
+    if is_running; then
+        pids="$(cat "$PIDFILE" 2>/dev/null || true)"
     fi
-    pid=$(cat "$PIDFILE" 2>/dev/null || true)
-    kill "$pid" 2>/dev/null || true
+    if [ -n "$pids" ]; then
+        kill $pids 2>/dev/null || true
+    fi
+    kill_home_bg_binary
+
+    local all_pids=""
+    if [ -n "$pids" ]; then
+        all_pids="$pids"
+    fi
+    for p in $(pgrep -f '/usr/local/bin/atomos-home-bg' 2>/dev/null || true); do
+        all_pids="$all_pids $p"
+    done
+
+    # Wait up to 1.0s (10 * 0.1s) for they to terminate gracefully
+    local i=0
+    while [ $i -lt 10 ]; do
+        local any_alive=0
+        for pid in $all_pids; do
+            [ -n "$pid" ] || continue
+            if kill -0 "$pid" 2>/dev/null; then
+                any_alive=1
+                break
+            fi
+        done
+        if [ "$any_alive" -eq 0 ]; then
+            break
+        fi
+        sleep 0.1
+        i=$((i + 1))
+    done
+
+    # Force kill if still alive
+    for pid in $all_pids; do
+        [ -n "$pid" ] || continue
+        if kill -0 "$pid" 2>/dev/null; then
+            kill -9 "$pid" 2>/dev/null || true
+        fi
+    done
+
     rm -f "$PIDFILE"
 }
 
@@ -220,6 +281,8 @@ case "${1:-}" in
         bind_phosh_session_env_if_missing
         desired_layer="${ATOMOS_HOME_BG_LAYER:-background}"
         resolve_runtime_paths
+        exec 9> "${XDG_RUNTIME_DIR:-/tmp}/atomos-home-bg.lock"
+        flock 9
         if is_running; then
             current_layer="$(cat "$LAYERFILE" 2>/dev/null || true)"
             if [ "$current_layer" = "$desired_layer" ]; then
@@ -241,6 +304,9 @@ WEBKIT_DISABLE_DMABUF_RENDERER=${WEBKIT_DISABLE_DMABUF_RENDERER:-<unset>}"
         start_ui
         ;;
     --hide)
+        resolve_runtime_paths
+        exec 9> "${XDG_RUNTIME_DIR:-/tmp}/atomos-home-bg.lock"
+        flock 9
         logger -t atomos-home-bg "action=hide"
         stop_ui
         ;;
@@ -300,12 +366,7 @@ if [ "$INSTALL_AUTOSTART" = "1" ]; then
     render_autostart_desktop "$AUTOSTART_TMP"
 fi
 
-if [ -f "$CONTENT_SRC" ]; then
-    HTML_TMP="$CONTENT_SRC"
-else
-    HTML_TMP="$tmpdir/index.html"
-    fallback_html > "$HTML_TMP"
-fi
+# Assets are installed from black-hole/ and light-earth/ folders directly
 
 # ---------- direct rootfs mode ----------
 if [ -n "$DIRECT_ROOTFS_DIR" ]; then
@@ -342,10 +403,12 @@ if [ -n "$DIRECT_ROOTFS_DIR" ]; then
     # container's own root and appear broken under /target.
     ln -sf ../local/bin/atomos-home-bg "$DIRECT_ROOTFS_DIR/usr/bin/atomos-home-bg"
     install -m 0755 "$LAUNCHER_TMP" "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-home-bg"
-    install -m 0644 "$HTML_TMP" "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/index.html"
-    if [ -f "$EVENT_HORIZON_SRC" ]; then
-        install -m 0644 "$EVENT_HORIZON_SRC" "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/event-horizon.js"
-    fi
+    install -d "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/black-hole" \
+               "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/light-earth"
+    install -m 0644 "$ROOT_DIR/data/atomos-home-bg/black-hole/index.html" "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/black-hole/index.html"
+    install -m 0644 "$ROOT_DIR/data/atomos-home-bg/black-hole/event-horizon.js" "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/black-hole/event-horizon.js"
+    install -m 0644 "$ROOT_DIR/data/atomos-home-bg/light-earth/index.html" "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/light-earth/index.html"
+    install -m 0644 "$ROOT_DIR/data/atomos-home-bg/light-earth/index.js" "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/light-earth/index.js"
     if [ -n "$AUTOSTART_TMP" ]; then
         install -d "$DIRECT_ROOTFS_DIR/etc/xdg/autostart"
         install -m 0644 "$AUTOSTART_TMP" "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-home-bg.desktop"
@@ -354,7 +417,8 @@ if [ -n "$DIRECT_ROOTFS_DIR" ]; then
     test -x "$DIRECT_ROOTFS_DIR/usr/local/bin/atomos-home-bg"
     test -x "$DIRECT_ROOTFS_DIR/usr/bin/atomos-home-bg"
     test -x "$DIRECT_ROOTFS_DIR/usr/libexec/atomos-home-bg"
-    test -f "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/index.html"
+    test -f "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/black-hole/index.html"
+    test -f "$DIRECT_ROOTFS_DIR/usr/share/atomos-home-bg/light-earth/index.html"
     if [ "$INSTALL_AUTOSTART" = "1" ]; then
         test -f "$DIRECT_ROOTFS_DIR/etc/xdg/autostart/atomos-home-bg.desktop"
         grep -q "Exec=/usr/libexec/atomos-home-bg --show" \
@@ -444,13 +508,16 @@ bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_BIN_CMD"
 INSTALL_LAUNCHER_CMD='cat > /usr/libexec/atomos-home-bg && chmod 755 /usr/libexec/atomos-home-bg'
 bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_LAUNCHER_CMD" < "$LAUNCHER_TMP"
 
-INSTALL_INDEX_CMD='cat > /usr/share/atomos-home-bg/index.html && chmod 644 /usr/share/atomos-home-bg/index.html'
-bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_INDEX_CMD" < "$HTML_TMP"
+# Prepare and install the black-hole and light-earth HTML/JS assets via a tar pipe
+INSTALL_ASSETS_CMD='install -d /usr/share/atomos-home-bg/black-hole /usr/share/atomos-home-bg/light-earth'
+bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_ASSETS_CMD"
 
-if [ -f "$EVENT_HORIZON_SRC" ]; then
-    INSTALL_EH_CMD='cat > /usr/share/atomos-home-bg/event-horizon.js && chmod 644 /usr/share/atomos-home-bg/event-horizon.js'
-    bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_EH_CMD" < "$EVENT_HORIZON_SRC"
-fi
+(cd "$ROOT_DIR/data/atomos-home-bg" && tar -cf - \
+    black-hole/index.html \
+    black-hole/event-horizon.js \
+    light-earth/index.html \
+    light-earth/index.js) | \
+    bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c 'tar -xf - -C /usr/share/atomos-home-bg'
 
 if [ -n "$AUTOSTART_TMP" ]; then
     INSTALL_AUTOSTART_DIR='install -d /etc/xdg/autostart'
@@ -459,7 +526,7 @@ if [ -n "$AUTOSTART_TMP" ]; then
     bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$INSTALL_AUTOSTART_CMD" < "$AUTOSTART_TMP"
 fi
 
-VERIFY_CMD='test -x /usr/local/bin/atomos-home-bg && test -x /usr/bin/atomos-home-bg && test -x /usr/libexec/atomos-home-bg && test -f /usr/share/atomos-home-bg/index.html && grep -q "ATOMOS_HOME_BG_ENABLE_RUNTIME" /usr/libexec/atomos-home-bg && grep -q "atomos-home-bg.disabled" /usr/libexec/atomos-home-bg && grep -q "ATOMOS_HOME_BG_LAYER" /usr/libexec/atomos-home-bg && grep -q "ATOMOS_HOME_BG_INTERACTIVE" /usr/libexec/atomos-home-bg'
+VERIFY_CMD='test -x /usr/local/bin/atomos-home-bg && test -x /usr/bin/atomos-home-bg && test -x /usr/libexec/atomos-home-bg && test -f /usr/share/atomos-home-bg/black-hole/index.html && test -f /usr/share/atomos-home-bg/light-earth/index.html && grep -q "ATOMOS_HOME_BG_ENABLE_RUNTIME" /usr/libexec/atomos-home-bg && grep -q "atomos-home-bg.disabled" /usr/libexec/atomos-home-bg && grep -q "ATOMOS_HOME_BG_LAYER" /usr/libexec/atomos-home-bg && grep -q "ATOMOS_HOME_BG_INTERACTIVE" /usr/libexec/atomos-home-bg'
 if [ -n "$AUTOSTART_TMP" ]; then
     VERIFY_CMD="$VERIFY_CMD"' && test -f /etc/xdg/autostart/atomos-home-bg.desktop && grep -q "Exec=/usr/libexec/atomos-home-bg --show" /etc/xdg/autostart/atomos-home-bg.desktop'
 fi

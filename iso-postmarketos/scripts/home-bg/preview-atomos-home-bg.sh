@@ -47,9 +47,10 @@ export ATOMOS_HOME_BG_ENABLE_RUNTIME="${ATOMOS_HOME_BG_ENABLE_RUNTIME:-1}"
 export ATOMOS_HOME_BG_LAYER="${ATOMOS_HOME_BG_LAYER:-bottom}"
 export ATOMOS_HOME_BG_INTERACTIVE="${ATOMOS_HOME_BG_INTERACTIVE:-0}"
 
-if [ -z "${ATOMOS_HOME_BG_URL:-}" ]; then
-    export ATOMOS_HOME_BG_URL="file://$ROOT_DIR/data/atomos-home-bg/index.html"
-fi
+# Let application auto-detect theme-specific paths inside development workspace
+# if [ -z "${ATOMOS_HOME_BG_URL:-}" ]; then
+#     export ATOMOS_HOME_BG_URL="file://$ROOT_DIR/data/atomos-home-bg/index.html"
+# fi
 
 exec cargo run \
     --manifest-path "$CRATE_DIR/Cargo.toml" \

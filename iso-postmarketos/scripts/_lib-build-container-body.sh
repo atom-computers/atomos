@@ -23,6 +23,25 @@
 #   /tmp/pmos.rsa.pub -- pmOS signing key (for apk update against the pmOS mirror)
 
 set -eu
+export CARGO_TARGET_DIR=/cache/cargo-target
+export CARGO_INCREMENTAL=0
+
+# --- local-first package store (AtomOS) ---------------------------------
+# apk: install the PATH shim so every dev-dependency `apk add` below
+# reuses the persistent cache dir and honours the host-selected network
+# mode ($ATOMOS_APK_NET). See scripts/container-apk-shim.sh.
+mkdir -p /usr/local/bin
+install -m0755 /work/iso-postmarketos/scripts/container-apk-shim.sh /usr/local/bin/apk
+export PATH="/usr/local/bin:$PATH"
+# cargo: CARGO_HOME is bind-mounted from the local store so crates.io
+# downloads (registry index + crate sources) persist across builds. When
+# the host says the crate cache is warm and no refresh was requested
+# ($ATOMOS_CARGO_OFFLINE=1) build fully offline; otherwise cargo fetches
+# from the network and repopulates the store.
+mkdir -p "${CARGO_HOME:-/pkgcache/cargo-home}"
+if [ "${ATOMOS_CARGO_OFFLINE:-0}" = "1" ]; then
+    export CARGO_NET_OFFLINE=true
+fi
 
 ATOMOS_BUILD_LOG_PREFIX="${ATOMOS_BUILD_LOG_PREFIX:-build-fairphone4-v2}"
 # shellcheck source=scripts/_lib-meson-cache-body.sh
@@ -119,7 +138,7 @@ if [ "${USE_VENDOR_PHOSH:-1}" = "1" ]; then
     if [ -f "$PHOSH_SRC/meson.build" ]; then
         echo "Building vendor phosh from: $PHOSH_SRC"
         atomos_meson_ninja_build_install phosh "$PHOSH_BUILD" "$PHOSH_SRC" \
-            --prefix=/usr -Dtests=false
+            --prefix=/usr -Dtests=false -Dbindings-lib=true
         if [ ! -f /usr/include/phosh/phosh-settings-enums.h ]; then
             echo "ERROR: phosh headers missing under /usr/include/phosh after host install" >&2
             exit 1
@@ -171,12 +190,68 @@ if [ "${USE_VENDOR_PHOSH:-1}" = "1" ]; then
     fi
 fi
 
+if [ "${ATOMOS_V2:-0}" = "1" ]; then
+    echo "Installing atomos-comp build dependencies..."
+    apk add --no-interactive \
+        libinput-dev libdrm-dev pixman-dev \
+        eudev-dev libseat-dev hwdata-dev mesa-dev libdisplay-info-dev || true
+
+    echo "Building atomos-comp..."
+    cargo build --manifest-path /work/atomos-comp/Cargo.toml \
+        --release --bin cosmic-comp
+    install -d /target/usr/bin
+    install -m 0755 /cache/cargo-target/release/cosmic-comp \
+        /target/usr/bin/atomos-comp
+
+    echo "Building AtomOS V2 Rust Components..."
+    for component in atomos-lockscreen atomos-quick-settings atomos-top-bar; do
+        if [ -f /work/iso-postmarketos/rust/$component/app-egui/Cargo.toml ]; then
+            echo "Building $component..."
+            cargo build --manifest-path /work/iso-postmarketos/rust/$component/app-egui/Cargo.toml \
+                --release --bin ${component}-egui
+            install -m 0755 /cache/cargo-target/release/${component}-egui \
+                /target/usr/bin/$component
+        fi
+    done
+    
+    # Write atomos-session autostart script
+    cat > /target/usr/bin/atomos-session <<EOF
+#!/bin/sh
+export XDG_CURRENT_DESKTOP=atomos
+export XDG_SESSION_TYPE=wayland
+
+(
+    # Wait for compositor to create the Wayland socket
+    while [ ! -S "\$XDG_RUNTIME_DIR/wayland-0" ] && [ ! -S "\$XDG_RUNTIME_DIR/wayland-1" ]; do
+        sleep 0.1
+    done
+    
+    if [ -S "\$XDG_RUNTIME_DIR/wayland-0" ]; then
+        export WAYLAND_DISPLAY=wayland-0
+    else
+        export WAYLAND_DISPLAY=wayland-1
+    fi
+
+    # Start our UI components
+    /usr/bin/atomos-home-bg &
+    /usr/bin/atomos-top-bar &
+    /usr/bin/atomos-quick-settings &
+    /usr/bin/atomos-lockscreen &
+    /usr/bin/atomos-overview-chat-ui --start &
+    /usr/bin/atomos-app-handler --start &
+) &
+
+exec /usr/bin/atomos-comp
+EOF
+    chmod +x /target/usr/bin/atomos-session
+fi
+
 # ---- AtomOS Rust components --------------------------------------------
 echo "Building atomos-overview-chat-ui..."
 cargo build --manifest-path /work/iso-postmarketos/rust/atomos-overview-chat-ui/Cargo.toml \
     -p atomos-overview-chat-ui-app --release --bin atomos-overview-chat-ui
 install -d /target/usr/local/bin /target/usr/libexec
-install -m 0755 /work/iso-postmarketos/rust/atomos-overview-chat-ui/target/release/atomos-overview-chat-ui \
+install -m 0755 /cache/cargo-target/release/atomos-overview-chat-ui \
     /target/usr/local/bin/atomos-overview-chat-ui
 ln -sf ../local/bin/atomos-overview-chat-ui /target/usr/bin/atomos-overview-chat-ui
 
@@ -184,14 +259,44 @@ if [ "${BUILD_HOME_BG:-1}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-ho
     echo "Building atomos-home-bg..."
     cargo build --manifest-path /work/iso-postmarketos/rust/atomos-home-bg/app-gtk/Cargo.toml \
         --release --bin atomos-home-bg
-    test -x /work/iso-postmarketos/rust/atomos-home-bg/target/release/atomos-home-bg
+    test -x /cache/cargo-target/release/atomos-home-bg
+    install -d /target/usr/bin
+    install -m 0755 /cache/cargo-target/release/atomos-home-bg \
+        /target/usr/bin/atomos-home-bg
 fi
 
 if [ "${BUILD_APP_HANDLER:-1}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml ]; then
     echo "Building atomos-app-handler..."
     cargo build --manifest-path /work/iso-postmarketos/rust/atomos-app-handler/app-gtk/Cargo.toml \
         --release --bin atomos-app-handler
-    test -x /work/iso-postmarketos/rust/atomos-app-handler/target/release/atomos-app-handler
+    test -x /cache/cargo-target/release/atomos-app-handler
+    install -d /target/usr/bin
+    install -m 0755 /cache/cargo-target/release/atomos-app-handler \
+        /target/usr/bin/atomos-app-handler
+fi
+
+if [ "${BUILD_TOP_BAR:-1}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-top-bar/app-gtk/Cargo.toml ]; then
+    echo "Building atomos-top-bar (Phosh)..."
+    cargo build --manifest-path /work/iso-postmarketos/rust/atomos-top-bar/app-gtk/Cargo.toml \
+        --release --bin atomos-top-bar
+    test -x /cache/cargo-target/release/atomos-top-bar
+    install -d /target/usr/bin
+    install -m 0755 /cache/cargo-target/release/atomos-top-bar \
+        /target/usr/bin/atomos-top-bar
+
+    echo "Creating atomos-top-bar autostart entry..."
+    install -d /target/etc/xdg/autostart
+    cat > /target/etc/xdg/autostart/atomos-top-bar.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=AtomOS Top Bar
+Comment=GTK4 layer-shell top bar replacement
+Exec=/usr/bin/atomos-top-bar
+OnlyShowIn=GNOME;Phosh;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+EOF
+    chmod 0644 /target/etc/xdg/autostart/atomos-top-bar.desktop
 fi
 
 # Recompile gschemas after staged installs (Meson skips this when DESTDIR is set).

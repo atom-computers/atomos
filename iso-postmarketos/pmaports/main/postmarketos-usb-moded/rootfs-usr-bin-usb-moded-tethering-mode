@@ -4,10 +4,57 @@
 #
 # Copyright (c) Dylan Van Assche (2025)
 
-IFACE=usb0
 CONNECTION_NAME="USB Tethering Mode"
 
+# Detect interface name dynamically if possible, fallback to usb0
+CONFIGFS="/sys/kernel/config/usb_gadget"
+IFACE=usb0
+if [ -d "$CONFIGFS/g1" ]; then
+    # Find any active network functions
+    for func in "$CONFIGFS/g1/functions"/ncm.* "$CONFIGFS/g1/functions"/rndis.* "$CONFIGFS/g1/functions"/eem.*; do
+        if [ -f "$func/ifname" ]; then
+            candidate="$(cat "$func/ifname" 2>/dev/null)"
+            if [ -n "$candidate" ]; then
+                IFACE="$candidate"
+                break
+            fi
+        fi
+    done
+fi
+
+# If candidate interface doesn't exist in ip link, fallback to checking typical names
+if ! ip link show "$IFACE" >/dev/null 2>&1; then
+    for fallback in usb0 rndis0 eth0; do
+        if ip link show "$fallback" >/dev/null 2>&1; then
+            IFACE="$fallback"
+            break
+        fi
+    done
+fi
+
 up() {
+    # Wait for NetworkManager to be fully ready
+    local max_wait=30
+    local wait_count=0
+    while [ $wait_count -lt $max_wait ]; do
+        if nmcli general status >/dev/null 2>&1; then
+            break
+        fi
+        sleep 1
+        wait_count=$((wait_count + 1))
+    done
+
+    # Wait for the interface to exist in the system
+    local max_iface_wait=10
+    local iface_wait_count=0
+    while [ $iface_wait_count -lt $max_iface_wait ]; do
+        if ip link show "$IFACE" >/dev/null 2>&1; then
+            break
+        fi
+        sleep 1
+        iface_wait_count=$((iface_wait_count + 1))
+    done
+
     # Bring interface and NetworkManager connection up
     nmcli connection add con-name "$CONNECTION_NAME" type ethernet \
         ifname "$IFACE" ipv4.method shared
@@ -36,4 +83,5 @@ case $1 in
         exit 0
         ;;
 esac
+
 

@@ -14,9 +14,18 @@
 #   ATOMOS_DEVICE_SSHPASS or SSHPASS  passed to sshpass -e
 set -euo pipefail
 
-HOST="${ATOMOS_DEVICE_HOST:-127.0.0.1}"
+HOST="${ATOMOS_DEVICE_HOST:-172.16.42.1}"
 USER="${ATOMOS_DEVICE_USER:-user}"
-PORT="${ATOMOS_DEVICE_SSH_PORT:-2222}"
+
+if [ -z "${ATOMOS_DEVICE_SSH_PORT:-}" ]; then
+  if [ "$HOST" = "127.0.0.1" ] || [ "$HOST" = "localhost" ]; then
+    PORT="2222"
+  else
+    PORT="22"
+  fi
+else
+  PORT="${ATOMOS_DEVICE_SSH_PORT}"
+fi
 SSH_OPTS=( -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$PORT" )
 
 if [ -n "${ATOMOS_DEVICE_SSHPASS:-}" ]; then

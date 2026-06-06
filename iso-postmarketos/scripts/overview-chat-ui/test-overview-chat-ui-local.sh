@@ -49,6 +49,19 @@ cargo test \
     --manifest-path "$CRATE_DIR/Cargo.toml" \
     -p atomos-overview-chat-ui
 
+print_header "App launcher hang integration contracts (Rust + Python parity)"
+cargo test \
+    --manifest-path "$CRATE_DIR/Cargo.toml" \
+    -p atomos-overview-chat-ui \
+    --test app_launcher_integration \
+    --test app_grid_wiring
+(cd "$ROOT_DIR/rust/atomos-app-handler" && cargo test -p atomos-app-handler --test app_launch_exec_integration)
+(cd "$ROOT_DIR/rust/atomos-app-handler" && cargo test -p atomos-app-handler --test app_launch_layer_visibility)
+(cd "$ROOT_DIR/rust/atomos-app-handler" && cargo test -p atomos-app-handler --test app_launch_dbus_activation)
+(cd "$ROOT_DIR" && python3 -m unittest tests.test_app_launcher_integration -q)
+(cd "$ROOT_DIR" && python3 -m unittest tests.test_app_launch_layer_visibility -q)
+(cd "$ROOT_DIR" && python3 -m unittest tests.test_app_launch_dbus_activation -q)
+
 print_header "egui integration tests/build checks (crate: atomos-overview-chat-ui-egui)"
 cargo test \
     --manifest-path "$CRATE_DIR/Cargo.toml" \

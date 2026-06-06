@@ -207,20 +207,31 @@ if [ "$CONTENT_ONLY" = "1" ]; then
     echo "  (set ATOMOS_HOME_BG_CONTENT_ONLY=0 to also rebuild + redeploy"
     echo "   the binary — required to pick up WebKit settings changes,"
     echo "   e.g. enable_webgl / hardware_acceleration_policy.)"
-    install -d "$STAGED_ROOTFS/usr/share/atomos-home-bg"
-    install -m 0644 "$ROOT_DIR/data/atomos-home-bg/index.html" \
-        "$STAGED_ROOTFS/usr/share/atomos-home-bg/index.html"
-    if [ -f "$ROOT_DIR/data/atomos-home-bg/event-horizon.js" ]; then
-        install -m 0644 "$ROOT_DIR/data/atomos-home-bg/event-horizon.js" \
-            "$STAGED_ROOTFS/usr/share/atomos-home-bg/event-horizon.js"
+    install -d "$STAGED_ROOTFS/usr/share/atomos-home-bg/black-hole"
+    install -d "$STAGED_ROOTFS/usr/share/atomos-home-bg/light-earth"
+    if [ -f "$ROOT_DIR/data/atomos-home-bg/black-hole/index.html" ]; then
+        install -m 0644 "$ROOT_DIR/data/atomos-home-bg/black-hole/index.html" \
+            "$STAGED_ROOTFS/usr/share/atomos-home-bg/black-hole/index.html"
+    fi
+    if [ -f "$ROOT_DIR/data/atomos-home-bg/black-hole/event-horizon.js" ]; then
+        install -m 0644 "$ROOT_DIR/data/atomos-home-bg/black-hole/event-horizon.js" \
+            "$STAGED_ROOTFS/usr/share/atomos-home-bg/black-hole/event-horizon.js"
+    fi
+    if [ -f "$ROOT_DIR/data/atomos-home-bg/light-earth/index.html" ]; then
+        install -m 0644 "$ROOT_DIR/data/atomos-home-bg/light-earth/index.html" \
+            "$STAGED_ROOTFS/usr/share/atomos-home-bg/light-earth/index.html"
+    fi
+    if [ -f "$ROOT_DIR/data/atomos-home-bg/light-earth/index.js" ]; then
+        install -m 0644 "$ROOT_DIR/data/atomos-home-bg/light-earth/index.js" \
+            "$STAGED_ROOTFS/usr/share/atomos-home-bg/light-earth/index.js"
     fi
 
     payload_paths=(
-        "usr/share/atomos-home-bg/index.html"
+        "usr/share/atomos-home-bg/black-hole/index.html"
+        "usr/share/atomos-home-bg/black-hole/event-horizon.js"
+        "usr/share/atomos-home-bg/light-earth/index.html"
+        "usr/share/atomos-home-bg/light-earth/index.js"
     )
-    if [ -f "$STAGED_ROOTFS/usr/share/atomos-home-bg/event-horizon.js" ]; then
-        payload_paths+=("usr/share/atomos-home-bg/event-horizon.js")
-    fi
     (
         cd "$STAGED_ROOTFS"
         tar -czf "$ARCHIVE_PATH" "${payload_paths[@]}"
@@ -236,11 +247,11 @@ else
         "usr/local/bin/atomos-home-bg"
         "usr/bin/atomos-home-bg"
         "usr/libexec/atomos-home-bg"
-        "usr/share/atomos-home-bg/index.html"
+        "usr/share/atomos-home-bg/black-hole/index.html"
+        "usr/share/atomos-home-bg/black-hole/event-horizon.js"
+        "usr/share/atomos-home-bg/light-earth/index.html"
+        "usr/share/atomos-home-bg/light-earth/index.js"
     )
-    if [ -f "$STAGED_ROOTFS/usr/share/atomos-home-bg/event-horizon.js" ]; then
-        payload_paths+=("usr/share/atomos-home-bg/event-horizon.js")
-    fi
     if [ -f "$STAGED_ROOTFS/etc/xdg/autostart/atomos-home-bg.desktop" ]; then
         payload_paths+=("etc/xdg/autostart/atomos-home-bg.desktop")
     fi
