@@ -113,7 +113,7 @@ apk update >/dev/null
 apk add --no-interactive \
     build-base pkgconf \
     rust cargo \
-    glib-dev gtk4.0-dev \
+    glib-dev gtk4.0-dev libadwaita-dev \
     cairo-dev pango-dev gdk-pixbuf-dev graphene-dev \
     wayland-dev libxkbcommon-dev >/dev/null
 

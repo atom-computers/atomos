@@ -25,6 +25,7 @@
 set -eu
 export CARGO_TARGET_DIR=/cache/cargo-target
 export CARGO_INCREMENTAL=0
+export PKG_CONFIG_PATH="/target/usr/lib/pkgconfig:/target/usr/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
 # --- local-first package store (AtomOS) ---------------------------------
 # apk: install the PATH shim so every dev-dependency `apk add` below

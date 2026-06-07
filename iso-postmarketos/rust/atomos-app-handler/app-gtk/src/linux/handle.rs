@@ -25,8 +25,8 @@
 //! direct dependency from `handle.rs` back onto it.
 
 use atomos_app_handler::handle::{
-    capsule_corner_radius, layout_app_content_fade_rect, layout_handle_paint, HandlePaintPlan,
-    DEBUG_TINT, PILL_FILL, STRIP_SCRIM,
+    capsule_corner_radius, layout_handle_paint, HandlePaintPlan,
+    PILL_FILL, STRIP_SCRIM,
 };
 use atomos_app_handler::{BACKDROP_BASE_COLOR_RGB, TOP_BAR_HEIGHT_PX};
 use gtk::prelude::*;
@@ -48,6 +48,7 @@ use std::f64::consts::PI;
 pub fn install_fade_paint<F, F2>(
     canvas: &gtk::DrawingArea,
     handle_height_px: i32,
+    debug_tint: bool,
     get_drag_progress: F,
     get_drag_dy: F2,
 ) where
@@ -63,19 +64,17 @@ pub fn install_fade_paint<F, F2>(
             handle_height_px,
             get_drag_progress(),
             get_drag_dy(),
+            debug_tint,
         );
     });
 }
 
 pub fn install_handle_paint(
-    canvas: &gtk::DrawingArea,
-    debug_tint: bool,
+    _canvas: &gtk::DrawingArea,
+    _debug_tint: bool,
 ) {
-    canvas.set_draw_func(move |_area, cr, width, height| {
-        if let Some(plan) = layout_handle_paint(width as f64, height as f64) {
-            paint_plan(cr, plan, debug_tint);
-        }
-    });
+    // No-op. The non-interactive handle strip window is now 100% transparent and draws nothing,
+    // as all styling and interactive visual feedback is consolidated in fade_window.
 }
 
 fn paint_backdrop_fade(
@@ -86,14 +85,12 @@ fn paint_backdrop_fade(
     handle_height_px: i32,
     progress: f32,
     drag_dy: f64,
+    _debug_tint: bool,
 ) {
     if width <= 0 || height <= 0 {
         return;
     }
-    let alpha = progress.clamp(0.0, 1.0) as f64;
-    if alpha <= 0.0 {
-        return;
-    }
+
     let upward_drag = (-drag_dy).max(0.0);
     let Some(rect) = atomos_app_handler::handle::layout_dynamic_swipe_overlay_rect(
         width as f64,
@@ -103,30 +100,38 @@ fn paint_backdrop_fade(
     ) else {
         return;
     };
-    let r = BACKDROP_BASE_COLOR_RGB[0] as f64 / 255.0;
-    let g = BACKDROP_BASE_COLOR_RGB[1] as f64 / 255.0;
-    let b = BACKDROP_BASE_COLOR_RGB[2] as f64 / 255.0;
-    cr.set_source_rgba(r, g, b, alpha);
-    cr.rectangle(rect.x, rect.y, rect.width, rect.height);
-    let _ = cr.fill();
-}
 
-fn paint_plan(cr: &gtk::cairo::Context, plan: HandlePaintPlan, debug_tint: bool) {
-    if debug_tint {
-        let c = DEBUG_TINT;
-        cr.set_source_rgba(c.r, c.g, c.b, c.a);
-        let _ = cr.paint();
-    } else {
-        let c = STRIP_SCRIM;
-        cr.set_source_rgba(c.r, c.g, c.b, c.a);
-        cr.rectangle(
-            plan.strip.x,
-            plan.strip.y,
-            plan.strip.width,
-            plan.strip.height,
-        );
+    // Idle state (progress <= 0.0): draw a translucent green rectangle to show where to touch, slightly opaque.
+    // Active drag (progress > 0.0): don't add black background, make it transparent (by drawing nothing for background).
+    if progress <= 0.0 {
+        cr.set_source_rgba(0.0, 0.0, 0.0, 0.10); // Translucent black, slightly opaque
+        cr.rectangle(rect.x, rect.y, rect.width, rect.height);
         let _ = cr.fill();
     }
+
+    // Also draw the pill capsule handle on the green/blue strip so the user has the handle visual guide!
+    if let Some(plan) = layout_handle_paint(width as f64, handle_height_px as f64) {
+        let mut pill = plan.pill;
+        // Offset the pill y-coordinate so it aligns with the bottom strip of the full-screen overlay
+        pill.y += (height - handle_height_px) as f64;
+
+        let c = PILL_FILL;
+        cr.set_source_rgba(c.r, c.g, c.b, c.a);
+        trace_capsule(cr, &pill);
+        let _ = cr.fill();
+    }
+}
+
+fn paint_plan(cr: &gtk::cairo::Context, plan: HandlePaintPlan, _debug_tint: bool) {
+    let c = STRIP_SCRIM;
+    cr.set_source_rgba(c.r, c.g, c.b, c.a);
+    cr.rectangle(
+        plan.strip.x,
+        plan.strip.y,
+        plan.strip.width,
+        plan.strip.height,
+    );
+    let _ = cr.fill();
 
     let c = PILL_FILL;
     cr.set_source_rgba(c.r, c.g, c.b, c.a);

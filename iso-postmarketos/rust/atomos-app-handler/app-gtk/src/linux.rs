@@ -596,9 +596,14 @@ fn build_fade_window(
 
     let ctl_for_paint = controller.clone();
     let ctl_for_dy = controller.clone();
+    let debug_tint = debug_tint_enabled();
+    if debug_tint {
+        event!("debug-tint enabled on fade/gesture window");
+    }
     handle::install_fade_paint(
         &fade_canvas,
         handle_height_px,
+        debug_tint,
         move || *ctl_for_paint.handle_drag_progress.borrow(),
         move || *ctl_for_dy.handle_drag_dy.borrow(),
     );
@@ -864,7 +869,7 @@ fn configure_layer_surface(
             win.set_anchor(Edge::Right, true);
             win.set_anchor(Edge::Bottom, true);
             win.set_anchor(Edge::Top, true);
-            win.set_exclusive_zone(0);
+            win.set_exclusive_zone(-1);
             win.set_keyboard_mode(KeyboardMode::None);
         }
         LayerSurfaceRole::Switcher => {
@@ -966,19 +971,66 @@ fn init_lock_tracking(controller: Rc<OverlayController>) {
         Ok(res) => {
             let val = res.child_value(0).get::<bool>().unwrap_or(false);
             event!("lock tracking: GetActive returned {val}");
-            val
+            Some(val)
         }
         Err(e) => {
-            event!("lock tracking: GetActive failed: {e}; assuming unlocked");
-            false
+            event!("lock tracking: GetActive failed: {e}; assuming locked during startup/init");
+            None
         }
     };
 
-    controller.session_locked.set(initial_locked);
-    if initial_locked {
-        event!("lock tracking: started with locked state. Dismissing switcher and hiding handle surfaces.");
+    let resolved_locked = initial_locked.unwrap_or(true);
+    controller.session_locked.set(resolved_locked);
+    if resolved_locked {
+        event!("lock tracking: started with locked state (or unresolved). Dismissing switcher and hiding handle surfaces.");
         controller.close();
         controller.set_handle_surfaces_visible(false);
+    }
+
+    if initial_locked.is_none() {
+        // Run a retry loop to query lock state once org.gnome.ScreenSaver becomes available.
+        let conn_clone = conn.clone();
+        let ctl_clone = controller.clone();
+        let mut retry_count = 0;
+        glib::timeout_add_seconds_local(1, move || {
+            retry_count += 1;
+            match conn_clone.call_sync(
+                Some("org.gnome.ScreenSaver"),
+                "/org/gnome/ScreenSaver",
+                "org.gnome.ScreenSaver",
+                "GetActive",
+                None,
+                None,
+                gio::DBusCallFlags::NONE,
+                1_000,
+                None::<&gio::Cancellable>,
+            ) {
+                Ok(res) => {
+                    let val = res.child_value(0).get::<bool>().unwrap_or(false);
+                    event!("lock tracking retry: GetActive succeeded on retry {retry_count} returning {val}");
+                    ctl_clone.session_locked.set(val);
+                    if !val {
+                        let count = *ctl_clone.toplevel_count.borrow();
+                        ctl_clone.set_handle_surfaces_visible(should_show_handle(count));
+                    } else {
+                        ctl_clone.close();
+                        ctl_clone.set_handle_surfaces_visible(false);
+                    }
+                    glib::ControlFlow::Break
+                }
+                Err(e) => {
+                    if retry_count >= 15 {
+                        event!("lock tracking retry: failed 15 times: {e}; giving up and assuming unlocked");
+                        ctl_clone.session_locked.set(false);
+                        let count = *ctl_clone.toplevel_count.borrow();
+                        ctl_clone.set_handle_surfaces_visible(should_show_handle(count));
+                        glib::ControlFlow::Break
+                    } else {
+                        glib::ControlFlow::Continue
+                    }
+                }
+            }
+        });
     }
 
     let ctl = controller.clone();
