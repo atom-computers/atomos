@@ -285,35 +285,9 @@ atomos_phosh_sync_home_bg_layer (PhoshHomeState state)
 }
 
 
-static void
-atomos_phosh_sync_app_handler_lifecycle (PhoshHomeState state)
-{
-  const char *action = NULL;
-  g_autofree char *cmd = NULL;
-  g_autoptr (GError) err = NULL;
-
-  if (!g_file_test (ATOMOS_APP_HANDLER_LAUNCHER_PATH, G_FILE_TEST_IS_EXECUTABLE))
-    return;
-
-  switch (state) {
-  case PHOSH_HOME_STATE_FOLDED:
-    /* Dismiss the rust switcher overlay when home folds; the bottom handle
-     * bar stays up from session autostart (--start). */
-    action = "--hide";
-    break;
-  case PHOSH_HOME_STATE_UNFOLDED:
-    /* Do NOT --show on unfold: SIGUSR1 opens the full-screen switcher and
-     * would cover the home UI (black overlay) right after unlock/swipe-up. */
-    return;
-  case PHOSH_HOME_STATE_TRANSITION:
-  default:
-    return;
-  }
-
-  cmd = g_strdup_printf ("%s %s", ATOMOS_APP_HANDLER_LAUNCHER_PATH, action);
-  if (!g_spawn_command_line_async (cmd, &err))
-    g_warning ("Failed to sync atomos-app-handler lifecycle: %s", err->message);
-}
+/* Removed: atomos_phosh_sync_app_handler_lifecycle — the switcher overlay
+ * has been gutted. Swipe-up now closes the foreground app directly without
+ * opening an overlay surface, so there is no overlay to hide on fold. */
 
 
 /* Replacement for the deleted vendor phosh patches
@@ -1467,7 +1441,6 @@ on_drag_state_changed (PhoshHome *self)
   phosh_layer_surface_set_kbd_interactivity (PHOSH_LAYER_SURFACE (self), kbd_interactivity);
   update_drag_handle (self, TRUE);
   atomos_phosh_sync_home_bg_layer (atomos_phosh_chat_ui_state_from_home (self));
-  atomos_phosh_sync_app_handler_lifecycle (self->state);
   if (self->state != PHOSH_HOME_STATE_TRANSITION)
     atomos_phosh_sync_overview_chat_ui_lifecycle (
       atomos_phosh_chat_ui_layer_state_for_home (self));

@@ -5,7 +5,7 @@
 //! Architecture:
 //!
 //!   GTK main loop (atomos-app-handler process)
-//!     - owns `Rc<OverlayController>` and the card widgets
+//!     - owns `Rc<HandlerState>` and the gesture widgets
 //!     - holds `async_channel::Receiver<Snapshot>` and drains it via
 //!       `glib::spawn_future_local`
 //!     - calls `ToplevelHandle::activate()` / `ToplevelHandle::close()`

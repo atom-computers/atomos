@@ -21,14 +21,14 @@
 //! through to the app.
 //!
 //! The closure-passed `get_drag_progress` lets `linux.rs` keep
-//! `OverlayController` private to this crate's module tree without forcing a
+//! `HandlerState` private to this crate's module tree without forcing a
 //! direct dependency from `handle.rs` back onto it.
 
 use atomos_app_handler::handle::{
     capsule_corner_radius, layout_handle_paint, HandlePaintPlan,
     PILL_FILL, STRIP_SCRIM,
 };
-use atomos_app_handler::{BACKDROP_BASE_COLOR_RGB, TOP_BAR_HEIGHT_PX};
+use atomos_app_handler::TOP_BAR_HEIGHT_PX;
 use gtk::prelude::*;
 use std::f64::consts::PI;
 

@@ -196,9 +196,50 @@ is_running() {
 }
 
 kill_chat_ui_binary() {
+    pids=""
     for pid in $(pgrep -f '/usr/local/bin/atomos-overview-chat-ui' 2>/dev/null || true); do
-        [ -n "$pid" ] || continue
-        kill "$pid" 2>/dev/null || true
+        [ -n "$pid" ] && pids="$pids $pid"
+    done
+    
+    [ -n "$pids" ] || return 0
+    
+    for pid in $pids; do
+        kill -15 "$pid" 2>/dev/null || true
+    done
+    
+    tries=0
+    while [ "$tries" -lt 5 ]; do
+        alive=0
+        for pid in $pids; do
+            if kill -0 "$pid" 2>/dev/null; then
+                alive=1
+                break
+            fi
+        done
+        [ "$alive" -eq 0 ] && break
+        sleep 0.1
+        tries=$((tries + 1))
+    done
+    
+    for pid in $pids; do
+        if kill -0 "$pid" 2>/dev/null; then
+            logger -t atomos-overview-chat-ui "pid $pid still alive after SIGTERM, sending SIGKILL"
+            kill -9 "$pid" 2>/dev/null || true
+        fi
+    done
+    
+    tries=0
+    while [ "$tries" -lt 3 ]; do
+        alive=0
+        for pid in $pids; do
+            if kill -0 "$pid" 2>/dev/null; then
+                alive=1
+                break
+            fi
+        done
+        [ "$alive" -eq 0 ] && break
+        sleep 0.05
+        tries=$((tries + 1))
     done
 }
 
@@ -290,6 +331,7 @@ start_ui() {
         return 0
     fi
     (
+        exec 9>&-
         printf '%s\n' "---- $(date) ----"
         set +e
         # exec replaces the subshell with the GTK binary so $! / the pidfile

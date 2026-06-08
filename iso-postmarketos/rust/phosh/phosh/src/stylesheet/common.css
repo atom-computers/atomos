@@ -341,15 +341,6 @@ phosh-home {
   color: @phosh_fg_color;
 }
 
-/* AtomOS: while the overview is unfolded, paint phosh-home opaque so the
- * running app under us cannot bleed through the transparent gutters of the
- * switcher / app-grid. Color matches the atomos-home-bg placeholder base
- * (#0a0a0a) so the transition reads as continuous with the home wallpaper.
- * Toggled by atomos_phosh_sync_overview_backdrop() in home.c. */
-phosh-home.atomos-overview-backdrop {
-  background-color: #0a0a0a;
-}
-
 .phosh-activity-close-button {
   min-width: 32px;
   min-height: 32px;

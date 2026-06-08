@@ -167,7 +167,7 @@ stop_ui() {
 }
 
 case "${1:-}" in
-    --start|--show) bind_phosh_session_env_if_missing; start_ui ;;
+    --start) bind_phosh_session_env_if_missing; start_ui ;;
     --stop|--hide) stop_ui ;;
     --restart) stop_ui; bind_phosh_session_env_if_missing; start_ui ;;
     *) exec "$BIN" "$@" ;;

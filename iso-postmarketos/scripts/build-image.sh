@@ -1205,10 +1205,7 @@ verify_final_rootfs_customizations() {
                 echo "FINAL-VERIFY FAIL: /etc/xdg/autostart/atomos-app-handler.desktop missing (handle bar autostart)" >&2
                 fail=1
             fi
-            if ! grep -q "signal_show" /usr/libexec/atomos-app-handler; then
-                echo "FINAL-VERIFY FAIL: launcher missing signal_show / signal_hide bridge" >&2
-                fail=1
-            fi
+            
             [ "$fail" -eq 0 ] && echo "final-verify: atomos-app-handler binary + launcher + autostart + lifecycle contract present"
         fi
         if [ "$fail" -ne 0 ]; then
@@ -1255,12 +1252,7 @@ verify_app_switcher_launcher_contract() {
         test -x /usr/libexec/atomos-app-handler
         grep -q "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" /usr/libexec/atomos-app-handler
         grep -q "atomos-app-handler.disabled" /usr/libexec/atomos-app-handler
-        grep -q "action=show"  /usr/libexec/atomos-app-handler
-        grep -q "action=hide"  /usr/libexec/atomos-app-handler
-        grep -q "signal_show"  /usr/libexec/atomos-app-handler
-        grep -q "signal_hide"  /usr/libexec/atomos-app-handler
-        grep -q "kill -USR1"   /usr/libexec/atomos-app-handler
-        grep -q "kill -USR2"   /usr/libexec/atomos-app-handler
+        
         test -f /etc/atomos/app-handler-contract
         grep -q "app-handler-v1-launch-switcher-dbus-home" /etc/atomos/app-handler-contract
         test -f /etc/xdg/autostart/atomos-app-handler.desktop

@@ -1,6 +1,7 @@
-//! Phosh `home.c` must implement the same shell lifecycle argv policy as
-//! [`atomos_app_handler::shell_lifecycle_argv`]. Rust unit tests alone cannot
-//! catch Phosh C regressions (e.g. `--show` on `PHOSH_HOME_STATE_UNFOLDED`).
+//! Phosh `home.c` source-level contract tests for chat-ui lifecycle
+//! and home-bg layer sync. The app-handler switcher overlay lifecycle
+//! (atomos_phosh_sync_app_handler_lifecycle) has been removed — swipe-up
+//! now closes the foreground app directly without an overlay.
 
 use std::path::PathBuf;
 
@@ -85,35 +86,6 @@ fn extract_switch_case(function_body: &str, case_label: &str) -> String {
         .or_else(|| rest.find("default:"))
         .unwrap_or(rest.len());
     strip_c_block_comments(&rest[..end])
-}
-
-#[test]
-fn phosh_home_c_unfolded_must_not_assign_show_or_any_action() {
-    let src = read_home_c();
-    let lifecycle_fn =
-        extract_function_body(&src, "atomos_phosh_sync_app_handler_lifecycle");
-    let unfolded = extract_switch_case(&lifecycle_fn, "PHOSH_HOME_STATE_UNFOLDED");
-    assert!(
-        !unfolded.contains("action = \"--show\"") && !unfolded.contains("action = \"--show\";"),
-        "UNFOLDED must not assign action=\"--show\" (post-unlock black overlay bug)"
-    );
-    assert!(
-        !unfolded.contains("action ="),
-        "UNFOLDED must not assign action; only FOLDED may spawn --hide"
-    );
-}
-
-#[test]
-fn phosh_home_c_folded_only_hides_switcher() {
-    let src = read_home_c();
-    let lifecycle_fn =
-        extract_function_body(&src, "atomos_phosh_sync_app_handler_lifecycle");
-    let folded = extract_switch_case(&lifecycle_fn, "PHOSH_HOME_STATE_FOLDED");
-    assert!(
-        folded.contains("action = \"--hide\"") || folded.contains("action = \"--hide\";"),
-        "FOLDED must spawn --hide"
-    );
-    assert!(!folded.contains("--show"), "FOLDED must not use --show");
 }
 
 #[test]
@@ -350,17 +322,5 @@ fn phosh_home_c_map_idle_is_declared_before_phosh_home_map() {
     assert!(
         forward < map_pos,
         "C requires forward declaration before phosh_home_map calls g_idle_add"
-    );
-}
-
-#[test]
-fn phosh_home_c_lifecycle_function_never_spawns_show() {
-    let src = read_home_c();
-    let lifecycle_fn =
-        extract_function_body(&src, "atomos_phosh_sync_app_handler_lifecycle");
-    let tail = strip_c_block_comments(&lifecycle_fn);
-    assert!(
-        !tail.contains("action = \"--show\"") && !tail.contains("action = \"--show\";"),
-        "lifecycle sync must not spawn --show"
     );
 }

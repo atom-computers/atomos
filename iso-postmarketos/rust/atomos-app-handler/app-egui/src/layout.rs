@@ -1,11 +1,8 @@
-//! Pure layout helpers for the app-switcher overlay.
+//! Pure layout helpers for the app-switcher.
 //!
 //! Extracted so the geometry the preview and the GTK device binary share —
-//! card placement, bottom-edge handle bounds, animation easing — can be
-//! covered by plain unit tests without an eframe window or a Wayland
-//! compositor in the loop.
-
-use atomos_app_handler::OverlayState;
+//! card placement, bottom-edge handle bounds — can be covered by plain
+//! unit tests without an eframe window or a Wayland compositor in the loop.
 
 /// A laid-out card rect in viewport-local coordinates. `opacity` carries the
 /// animation curve so the front-ends don't have to re-derive it; both the
@@ -32,17 +29,6 @@ pub const CARD_MAX_WIDTH_PX: f32 = 320.0;
 /// Cards never shrink below this width; they get horizontally scrollable
 /// when the row gets crowded.
 pub const CARD_MIN_WIDTH_PX: f32 = 200.0;
-
-/// Animation progress in `[0.0, 1.0]` for the given overlay state. The
-/// preview / GTK renderer multiplies translation and opacity by this curve.
-pub fn overlay_progress(state: OverlayState) -> f32 {
-    match state {
-        OverlayState::Closed => 0.0,
-        OverlayState::Open => 1.0,
-        OverlayState::Opening { progress } => progress.clamp(0.0, 1.0),
-        OverlayState::Closing { progress } => 1.0 - progress.clamp(0.0, 1.0),
-    }
-}
 
 /// Returns the bottom-edge handle rect where the swipe-up gesture is
 /// captured. Pure helper so both the egui preview and the GTK linux module
@@ -120,35 +106,6 @@ pub fn lay_out_cards(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn progress_curve_endpoints() {
-        assert_eq!(overlay_progress(OverlayState::Closed), 0.0);
-        assert_eq!(overlay_progress(OverlayState::Open), 1.0);
-        assert_eq!(
-            overlay_progress(OverlayState::Opening { progress: 0.0 }),
-            0.0
-        );
-        assert_eq!(
-            overlay_progress(OverlayState::Opening { progress: 1.0 }),
-            1.0
-        );
-        assert_eq!(
-            overlay_progress(OverlayState::Closing { progress: 0.0 }),
-            1.0
-        );
-        assert_eq!(
-            overlay_progress(OverlayState::Closing { progress: 1.0 }),
-            0.0
-        );
-    }
-
-    #[test]
-    fn progress_curve_monotone_during_opening() {
-        let a = overlay_progress(OverlayState::Opening { progress: 0.2 });
-        let b = overlay_progress(OverlayState::Opening { progress: 0.7 });
-        assert!(a < b);
-    }
 
     #[test]
     fn bottom_handle_rect_pins_to_bottom_edge() {

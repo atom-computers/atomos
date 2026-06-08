@@ -148,29 +148,7 @@ else
     warn "busctl" "not installed"
 fi
 
-header "Handler must not auto-open switcher overlay on unlock"
-echo "Watching handler log for \${WATCH_SECONDS}s — FAIL if SIGUSR1/opening switcher without user swipe..."
-log=""
-if [ -n "\${ATOMOS_SESSION_RUN:-}" ] && [ -f "\${ATOMOS_SESSION_RUN}/atomos-app-handler.log" ]; then
-    log="\${ATOMOS_SESSION_RUN}/atomos-app-handler.log"
-fi
-if [ -z "\$log" ]; then
-    for f in /run/user/*/atomos-app-handler.log; do
-        [ -f "\$f" ] && log="\$f" && break
-    done
-fi
-if [ -z "\$log" ]; then
-    warn "handler log" "no /run/user/*/atomos-app-handler.log"
-else
-    start_lines="\$(wc -l < "\$log" | tr -d ' ')"
-    sleep "\$WATCH_SECONDS"
-    if tail -n 80 "\$log" 2>/dev/null | grep -qE 'SIGUSR1 received|opening switcher overlay|action=show'; then
-        warn "handler log after unlock" "switcher opened without swipe (see \$log)"
-        tail -n 20 "\$log" 2>/dev/null || true
-    else
-        pass "handler log after unlock" "no unsolicited SIGUSR1/open in last 80 lines"
-    fi
-fi
+
 
 atomos_post_unlock_check_phosh_profile_env_readable
 atomos_post_unlock_check_phoc_process_stable

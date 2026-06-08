@@ -1,36 +1,29 @@
-//! Headless egui render test for the app-switcher dev preview.
+//! Headless egui render test for the app-handler dev preview.
 //!
 //! Drives one or more frames through a fresh `egui::Context` without
 //! opening an eframe window, and asserts the visual contracts that matter:
 //!
-//!   1. The backdrop fill matches `BACKDROP_BASE_COLOR_RGB` (`#0a0a0a`) so
-//!      the switcher reads as the home-bg surface rather than a still of
-//!      the running app — this is the user-visible requirement.
-//!   2. The card row layout actually produces non-empty rects with usable
-//!      area (the same regression class home-bg hit with a zero-size
-//!      chat-strip Area).
-//!   3. The overlay state machine never skips the `Opening` / `Closing`
-//!      animation phases, even when the preview drives it as fast as it
-//!      can.
+//!   1. The backdrop fill matches `#0a0a0a` so the handle surface reads
+//!      as the home-bg surface rather than a still of the running app.
+//!   2. The bottom handle rect sits at the bottom edge of a phone viewport.
+//!   3. The handle paint layout matches the core crate contract.
 //!
 //! These tests don't need a windowing system, so they run on the same
 //! macOS hosts that exercise `cargo test -p atomos-app-handler` for the
 //! core crate.
 
-use atomos_app_handler::{handle, OverlayState, BACKDROP_BASE_COLOR_RGB};
+use atomos_app_handler::handle;
 use egui;
 
 #[path = "../src/layout.rs"]
 mod layout;
 
-use layout::{bottom_handle_rect, lay_out_cards, overlay_progress};
+use layout::bottom_handle_rect;
+
+const BACKDROP_RGB: [u8; 3] = [0x0a, 0x0a, 0x0a];
 
 fn backdrop_color() -> egui::Color32 {
-    egui::Color32::from_rgb(
-        BACKDROP_BASE_COLOR_RGB[0],
-        BACKDROP_BASE_COLOR_RGB[1],
-        BACKDROP_BASE_COLOR_RGB[2],
-    )
+    egui::Color32::from_rgb(BACKDROP_RGB[0], BACKDROP_RGB[1], BACKDROP_RGB[2])
 }
 
 fn render_one_frame(ctx: &egui::Context) {
@@ -70,11 +63,6 @@ fn context_for(width: f32, height: f32) -> egui::Context {
 #[test]
 fn backdrop_color_is_home_bg_base() {
     let ctx = context_for(420.0, 820.0);
-    // We can't trivially inspect the rasterized pixels without a renderer,
-    // but we can confirm the central panel painted by checking that the
-    // background area was registered with a layer at the viewport center.
-    // The stronger byte-for-byte contract is asserted via the constant
-    // below, mirroring how the home-bg test pins HOME_BG_BASE_COLOR.
     let probe = egui::pos2(210.0, 410.0);
     let layer = ctx.layer_id_at(probe);
     assert!(
@@ -106,82 +94,4 @@ fn handle_paint_layout_matches_core_contract() {
     assert_eq!(plan.pill.height, handle::PILL_HEIGHT_PX);
     assert!(handle::STRIP_SCRIM.a > 0.0);
     assert!(handle::PILL_FILL.a > 0.0);
-}
-
-#[test]
-fn card_layout_produces_nonempty_area_for_realistic_phone_viewport() {
-    let rects = lay_out_cards(4, 420.0, 820.0, 1.0);
-    assert_eq!(rects.len(), 4);
-    let total_area: f32 = rects.iter().map(|r| r.width * r.height).sum();
-    assert!(
-        total_area > 5_000.0,
-        "card row must claim meaningful area on a phone viewport; got total {total_area} px^2"
-    );
-    for r in &rects {
-        assert!(r.width > 0.0 && r.height > 0.0);
-    }
-}
-
-#[test]
-fn overlay_progress_endpoints_are_clamped() {
-    assert_eq!(overlay_progress(OverlayState::Closed), 0.0);
-    assert_eq!(overlay_progress(OverlayState::Open), 1.0);
-    assert_eq!(
-        overlay_progress(OverlayState::Opening { progress: -0.5 }),
-        0.0
-    );
-    assert_eq!(
-        overlay_progress(OverlayState::Opening { progress: 2.0 }),
-        1.0
-    );
-}
-
-#[test]
-fn animation_steps_never_skip_opening_or_closing() {
-    // Mirror the preview's `advance_overlay_animation()` policy: each
-    // tick must remain in (or graduate to) an adjacent state — never
-    // jump from Closed straight to Open or from Open straight to Closed.
-    let mut s = OverlayState::Closed;
-    s = s
-        .try_transition(OverlayState::Opening { progress: 0.0 })
-        .expect("Closed -> Opening(0.0) is the only legal transition out of Closed");
-    let mut steps = 0;
-    while steps < 100 {
-        match s {
-            OverlayState::Opening { progress } => {
-                let next = (progress + 0.15).min(1.0);
-                s = if next >= 1.0 {
-                    s.try_transition(OverlayState::Open).unwrap()
-                } else {
-                    s.try_transition(OverlayState::Opening { progress: next }).unwrap()
-                };
-            }
-            OverlayState::Open => break,
-            _ => unreachable!("unexpected state during opening: {s:?}"),
-        }
-        steps += 1;
-    }
-    assert_eq!(s, OverlayState::Open);
-
-    s = s
-        .try_transition(OverlayState::Closing { progress: 0.0 })
-        .expect("Open -> Closing(0.0) is the only legal transition out of Open");
-    steps = 0;
-    while steps < 100 {
-        match s {
-            OverlayState::Closing { progress } => {
-                let next = (progress + 0.15).min(1.0);
-                s = if next >= 1.0 {
-                    s.try_transition(OverlayState::Closed).unwrap()
-                } else {
-                    s.try_transition(OverlayState::Closing { progress: next })
-                        .unwrap()
-                };
-            }
-            OverlayState::Closed => break,
-            _ => unreachable!("unexpected state during closing: {s:?}"),
-        }
-        steps += 1;
-    }
-    assert_eq!(s, OverlayState::Closed);
 }

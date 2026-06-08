@@ -29,6 +29,7 @@ use overlay::chat_strip_height;
 /// any future consumers match by symbol rather than by re-typing the
 /// number.
 pub const HOME_BG_BASE_COLOR: egui::Color32 = egui::Color32::from_rgb(0x0a, 0x0a, 0x0a);
+pub const LIGHT_EARTH_BASE_COLOR: egui::Color32 = egui::Color32::from_rgb(0xff, 0xff, 0xff);
 
 fn main() -> eframe::Result<()> {
     let native_options = eframe::NativeOptions {
@@ -61,12 +62,18 @@ impl Default for CombinedPreviewApp {
 
 impl eframe::App for CombinedPreviewApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // ---- "Background layer": opaque #0a0a0a base ----
-        // The shipped surface paints a WebGL event-horizon shader on top
-        // of this base color; egui can't run that shader, so we render
-        // the base color alone.
+        // ---- "Background layer" ----
+        // Select light-earth base (#ffffff) or dark black-hole base (#0a0a0a)
+        let is_light_earth = std::env::var("ATOMOS_LIGHT_EARTH").is_ok()
+            || std::env::var("ATOMOS_THEME").map(|v| v.to_lowercase() == "light").unwrap_or(false);
+        let bg_color = if is_light_earth {
+            LIGHT_EARTH_BASE_COLOR
+        } else {
+            HOME_BG_BASE_COLOR
+        };
+
         egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.fill(HOME_BG_BASE_COLOR).inner_margin(0.0))
+            .frame(egui::Frame::NONE.fill(bg_color).inner_margin(0.0))
             .show(ctx, |_ui| {});
 
         // ---- "Top layer": chat input strip overlay ----

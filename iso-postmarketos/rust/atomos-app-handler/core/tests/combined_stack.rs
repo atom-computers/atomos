@@ -52,66 +52,37 @@ fn runtime_file_basenames_are_pairwise_distinct() {
 }
 
 #[test]
-fn switcher_default_layer_is_at_or_above_overview_chat_ui_default() {
-    // The switcher self-paints a #0a0a0a backdrop and must occlude both the
-    // running app AND the overview-chat-ui strip while open.
+fn handler_default_layer_is_at_or_above_overview_chat_ui_default() {
     let chat_default = bg::LayerTarget::from_name(chat::DEFAULT_LAYER_NAME)
         .expect("overview-chat-ui DEFAULT_LAYER_NAME must match a known LayerTarget variant");
-    let switcher_default = bg::LayerTarget::from_name(sw::DEFAULT_LAYER_NAME)
-        .expect("app-switcher DEFAULT_LAYER_NAME must match a known LayerTarget variant");
+    let handler_default = bg::LayerTarget::from_name(sw::DEFAULT_LAYER_NAME)
+        .expect("app-handler DEFAULT_LAYER_NAME must match a known LayerTarget variant");
     assert!(
-        switcher_default >= chat_default,
-        "app-switcher default layer {:?} ({}) must sit at or above overview-chat-ui default layer {:?} ({}) so the switcher backdrop occludes the chat strip while open",
-        switcher_default,
-        switcher_default.z_index(),
+        handler_default >= chat_default,
+        "app-handler default layer {:?} ({}) must sit at or above overview-chat-ui default layer {:?} ({})",
+        handler_default,
+        handler_default.z_index(),
         chat_default,
         chat_default.z_index(),
     );
 }
 
 #[test]
-fn switcher_default_layer_is_strictly_above_home_bg_default() {
-    let switcher_default = bg::LayerTarget::from_name(sw::DEFAULT_LAYER_NAME)
-        .expect("app-switcher DEFAULT_LAYER_NAME must match a known LayerTarget variant");
+fn handler_default_layer_is_strictly_above_home_bg_default() {
+    let handler_default = bg::LayerTarget::from_name(sw::DEFAULT_LAYER_NAME)
+        .expect("app-handler DEFAULT_LAYER_NAME must match a known LayerTarget variant");
     assert!(
-        switcher_default > bg::DEFAULT_LAYER,
-        "app-switcher default layer {:?} ({}) must sit strictly above home-bg default layer {:?} ({}) so the switcher renders above the wallpaper",
-        switcher_default,
-        switcher_default.z_index(),
+        handler_default > bg::DEFAULT_LAYER,
+        "app-handler default layer {:?} ({}) must sit strictly above home-bg default layer {:?} ({})",
+        handler_default,
+        handler_default.z_index(),
         bg::DEFAULT_LAYER,
         bg::DEFAULT_LAYER.z_index(),
     );
 }
 
 #[test]
-fn switcher_backdrop_matches_home_bg_base_color_byte_for_byte() {
-    // The user-visible contract for the switcher backdrop is "looks like
-    // atomos-home-bg, not the still of the running app". The cheapest way
-    // to assert this end-to-end without a screenshot pipeline is to pin
-    // both representations against each other byte-for-byte.
-    let bg_color_hex = "#0a0a0a"; // mirror of HOME_BG_BASE_COLOR / index.html body fill
-    assert_eq!(
-        sw::BACKDROP_BASE_COLOR_HEX,
-        bg_color_hex,
-        "app-switcher backdrop hex must match the documented home-bg #0a0a0a base color",
-    );
-    assert_eq!(
-        sw::BACKDROP_BASE_COLOR_RGB,
-        [0x0a, 0x0a, 0x0a],
-        "app-switcher backdrop rgb must decode the same #0a0a0a triplet",
-    );
-}
-
-#[test]
-fn lifecycle_actions_are_symmetric_with_home_bg() {
-    assert!(matches!(
-        sw::parse_lifecycle_action(&["--show".into()]),
-        sw::LifecycleAction::Show
-    ));
-    assert!(matches!(
-        bg::parse_lifecycle_action(Some("--show")),
-        bg::LifecycleAction::Show
-    ));
+fn lifecycle_actions_hide_and_run() {
     assert!(matches!(
         sw::parse_lifecycle_action(&["--hide".into()]),
         sw::LifecycleAction::Hide

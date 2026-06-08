@@ -85,9 +85,9 @@ done
 if [ -f /etc/atomos/app-handler-contract ]; then
     pass "/etc/atomos/app-handler-contract present"
     if grep -q "^app-handler-v1-launch-switcher-dbus-home$" /etc/atomos/app-handler-contract; then
-        pass "app-switcher hybrid lifecycle contract marker"
+        pass "app-handler lifecycle contract marker"
     else
-        warn "app-switcher hybrid lifecycle contract marker" "expected app-handler-v1-launch-switcher-dbus-home"
+        warn "app-handler lifecycle contract marker" "expected app-handler-v1-launch-switcher-dbus-home"
     fi
 else
     warn "/etc/atomos/app-handler-contract" "missing"
@@ -129,16 +129,7 @@ find_phosh_pid() {
     echo ""
 }
 
-header "Launcher lifecycle / signal bridge"
-if [ -x /usr/libexec/atomos-app-handler ]; then
-    for pat in action=show action=hide signal_show signal_hide "kill -USR1" "kill -USR2"; do
-        if grep -q "$pat" /usr/libexec/atomos-app-handler; then
-            pass "launcher has \"$pat\" path"
-        else
-            warn "launcher has \"$pat\" path" "missing from /usr/libexec/atomos-app-handler"
-        fi
-    done
-fi
+
 
 header "phosh process presence"
 phosh_pid="$(find_phosh_pid)"
@@ -173,10 +164,10 @@ done
 
 # ----- Process state -----
 header "Process / runtime state"
-APP_SWITCHER_PIDS="$(pgrep -f "/usr/local/bin/atomos-app-handler" 2>/dev/null || true)"
+APP_HANDLER_PIDS="$(pgrep -f "/usr/local/bin/atomos-app-handler" 2>/dev/null || true)"
 PHOSH_PID="$(find_phosh_pid)"
-if [ -n "$APP_SWITCHER_PIDS" ]; then
-    pass "atomos-app-handler running (handle bar)" "pid(s): $APP_SWITCHER_PIDS"
+if [ -n "$APP_HANDLER_PIDS" ]; then
+    pass "atomos-app-handler running (handle bar)" "pid(s): $APP_HANDLER_PIDS"
 else
     warn "atomos-app-handler running (handle bar)" "no process; the visible swipe-up bar will be missing"
 fi
@@ -439,24 +430,24 @@ fi
 
 # ----- Env var visibility -----
 header "Env var visibility (proc/<pid>/environ)"
-if [ -n "$APP_SWITCHER_PIDS" ]; then
-    AS_PID="$(echo "$APP_SWITCHER_PIDS" | head -n 1)"
+if [ -n "$APP_HANDLER_PIDS" ]; then
+    AS_PID="$(echo "$APP_HANDLER_PIDS" | head -n 1)"
     if [ -r "/proc/$AS_PID/environ" ]; then
         env_dump="$(tr "\000" "\n" < "/proc/$AS_PID/environ" | grep -E "^(WAYLAND_DISPLAY|XDG_RUNTIME_DIR|GDK_BACKEND|ATOMOS_APP_HANDLER_)" | tr "\n" " ")"
-        info "app-switcher env" "${env_dump:-<no relevant vars>}"
+        info "app-handler env" "${env_dump:-<no relevant vars>}"
         if echo "$env_dump" | grep -q "ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1"; then
-            pass "app-switcher sees ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1"
+            pass "app-handler sees ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1"
         else
-            warn "app-switcher sees ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1" "binary will exit early without presenting a surface"
+            warn "app-handler sees ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1" "binary will exit early without presenting a surface"
         fi
         if echo "$env_dump" | grep -q "WAYLAND_DISPLAY="; then
-            pass "app-switcher sees WAYLAND_DISPLAY"
+            pass "app-handler sees WAYLAND_DISPLAY"
         else
-            warn "app-switcher sees WAYLAND_DISPLAY" "binary cannot connect to the compositor"
+            warn "app-handler sees WAYLAND_DISPLAY" "binary cannot connect to the compositor"
         fi
     fi
 else
-    info "app-switcher env" "process not running; the launcher --show signal will start it"
+    info "app-handler env" "process not running"
 fi
 
 # ----- Phosh runtime env (single most common cause of "bar visible but
@@ -496,36 +487,18 @@ if [ -n "$PHOSH_PID" ] && [ -r "/proc/$PHOSH_PID/environ" ]; then
     fi
     if echo "$phosh_env" | grep -q "ATOMOS_APP_HANDLER_TAKES_OVER=1"; then
         pass "phosh sees ATOMOS_APP_HANDLER_TAKES_OVER=1" \
-            "PhoshOverview is hidden so the rust overlay owns the switcher surface"
+            "PhoshOverview is hidden so the handle bar owns the app surface"
         ATOMOS_PHOSH_TAKES_OVER=yes
     else
         warn "phosh sees ATOMOS_APP_HANDLER_TAKES_OVER=1" \
-            "MISSING from phosh environ -- PhoshOverview will paint its own switcher on top of the rust overlay when unfolded"
+            "MISSING from phosh environ -- PhoshOverview will paint its own overview on top of the handle bar when unfolded"
         ATOMOS_PHOSH_TAKES_OVER=no
     fi
 else
     info "phosh runtime env" "no phosh pid or /proc/<pid>/environ not readable; cannot confirm bottom-edge yield"
 fi
 
-# ----- Lifecycle hook evidence in the app-handler launcher log -----
-header "App-handler lifecycle evidence (launcher log)"
-saw_show=0
-saw_hide=0
-for log in /run/user/*/atomos-app-handler.log; do
-    [ -f "$log" ] || continue
-    if grep -q "action=show" "$log"; then saw_show=1; fi
-    if grep -q "action=hide" "$log"; then saw_hide=1; fi
-done
-if [ "$saw_show" = "1" ]; then
-    pass "launcher log records action=show"
-else
-    info "launcher log records action=show" "no --show event observed yet (unfold the home to fire it)"
-fi
-if [ "$saw_hide" = "1" ]; then
-    pass "launcher log records action=hide"
-else
-    info "launcher log records action=hide" "no --hide event observed yet (fold the home to fire it)"
-fi
+
 
 # ----- Disable marker -----
 header "Disable markers (launcher self-disable on rc=127)"
@@ -679,7 +652,7 @@ else
         fi
     elif [ "$open_outcome_count" -gt 0 ] && [ "$overlay_open_count" -eq 0 ]; then
         warn "swipe pipeline" \
-            "OpenOverlay outcome reached but the state machine rejected the open() transition — check OverlayState::try_transition"
+            "OpenOverlay outcome reached but the state machine rejected the open() transition"
     elif [ "$overlay_open_count" -gt 0 ]; then
         pass "swipe pipeline" "drag → threshold → open() observed end-to-end"
     else

@@ -30,8 +30,7 @@ pub use launch_visibility::{
 };
 pub use session::{
     derive_home_ipc, launcher_home_ipc_when_visibility_changes, home_target_name, HomeTarget,
-    PhoshHomeIpc, PhoshHomeShellState, ShellLifecycleAction, UiMode,
-    shell_lifecycle_action_for_home_state, shell_lifecycle_argv,
+    PhoshHomeIpc, PhoshHomeShellState, UiMode,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -68,10 +67,9 @@ impl LayerTarget {
 /// Layer-shell namespace; stable so phoc/phosh rules can target this surface.
 pub const LAYER_SHELL_NAMESPACE: &str = "atomos-app-handler";
 
-/// Both the bottom-edge handle surface and the full-screen switcher surface
-/// live on `Overlay` so the switcher fully occludes the running app and the
-/// gesture handle always wins the bottom-edge sequence ahead of phoc's own
-/// edge drag.
+/// Both the bottom-edge handle surface and the full-screen gesture surface
+/// live on `Overlay` so the gesture handle always wins the bottom-edge sequence
+/// ahead of phoc's own edge drag.
 pub const DEFAULT_LAYER: LayerTarget = LayerTarget::Overlay;
 pub const DEFAULT_LAYER_NAME: &str = "overlay";
 
@@ -98,17 +96,6 @@ pub const OVERLAY_CONTRACT_VERSION: &str =
 /// [`OVERLAY_CONTRACT_VERSION`] so final-verify catches half-upgraded images.
 pub const PHOSH_INTEGRATION_CONTRACT_BASENAME: &str = "phosh-integration-contract";
 pub const STACK_INTEGRATION_VERSION: &str = OVERLAY_CONTRACT_VERSION;
-
-/// Opaque backdrop hex painted by the switcher surface so the running app
-/// behind it is fully occluded. Stable so the visual hand-off to
-/// [`atomos-home-bg`](../../atomos-home-bg/) reads "this looks like the home
-/// background, not a still of the app".
-pub const BACKDROP_BASE_COLOR_HEX: &str = "#0a0a0a";
-
-/// RGB triplet matching `BACKDROP_BASE_COLOR_HEX`. Both representations exist
-/// because Cargo-side GTK CSS prefers `#rrggbb` strings while egui needs a
-/// `[u8; 3]` for `Color32::from_rgb`.
-pub const BACKDROP_BASE_COLOR_RGB: [u8; 3] = [0x0a, 0x0a, 0x0a];
 
 /// Defaults for the gesture knobs. Same numeric defaults as the legacy
 /// `atomos-swipe-bridge` (which only fired open at `dy >= MIN_UPWARD_PX`);
@@ -140,14 +127,12 @@ pub fn env_flag_enabled(value: &EnvResult) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LifecycleAction {
     Run,
-    Show,
     Hide,
     Launch { app_id: String },
 }
 
 pub fn parse_lifecycle_action(args: &[String]) -> LifecycleAction {
     match args.first().map(String::as_str) {
-        Some("--show") => LifecycleAction::Show,
         Some("--hide") => LifecycleAction::Hide,
         Some("launch") => LifecycleAction::Launch {
             app_id: args.get(1).cloned().unwrap_or_default(),
@@ -180,12 +165,10 @@ pub fn parse_lifecycle_action_from_argv() -> LifecycleAction {
 /// - Returns `0.0` for a downward / zero / non-finite drag.
 /// - Ramps linearly from `0.0` at `dy = 0` to `1.0` at
 ///   `dy = -open_threshold_px` so the fade peaks exactly when
-///   [`evaluate_swipe_up`] returns [`SwipeOutcome::OpenOverlay`].
-/// - Clamped at `1.0` for any further upward motion (the switcher
-///   has already opened by that point and the handle bar is hidden
-///   for the duration of the open state).
+///   [`evaluate_swipe_up`] returns [`SwipeOutcome::CloseApp`].
+/// - Clamped at `1.0` for any further upward motion.
 /// - Returns `0.0` when `open_threshold_px <= 0` so the
-///   "threshold == 0 disables the open path" test/debug knob does
+///   "threshold == 0 disables the close path" test/debug knob does
 ///   not also flash a full-screen black fade on every twitch.
 pub fn handle_drag_progress(dy: f64, cfg: &GestureConfig) -> f32 {
     if !dy.is_finite() || cfg.open_threshold_px <= 0.0 {
@@ -287,73 +270,26 @@ impl ToplevelEntry {
     }
 }
 
-/// Lifecycle of the switcher overlay. Progress values are clamped to
-/// `[0.0, 1.0]` so the GTK / egui front-ends can drive opacity / translation
-/// curves directly off them without re-clamping.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum OverlayState {
-    Closed,
-    Opening { progress: f32 },
-    Open,
-    Closing { progress: f32 },
+/// Outcome of a bottom-edge drag delta. The front-end calls this once per
+/// drag-update event; if the result is `CloseApp` it should close the
+/// foreground toplevel and stop polling further updates from the same gesture.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SwipeOutcome {
+    Ignore,
+    CloseApp,
 }
 
-impl Default for OverlayState {
-    fn default() -> Self {
-        OverlayState::Closed
+/// `dy` follows GTK's `GestureDrag` convention: negative = upward. Returns
+/// `CloseApp` once the upward magnitude reaches `open_threshold_px`.
+pub fn evaluate_swipe_up(dy: f64, cfg: &GestureConfig) -> SwipeOutcome {
+    let upward = -dy;
+    if upward.is_finite() && upward >= cfg.open_threshold_px && cfg.open_threshold_px > 0.0 {
+        SwipeOutcome::CloseApp
+    } else if upward.is_finite() && upward >= cfg.open_threshold_px && cfg.open_threshold_px == 0.0 {
+        SwipeOutcome::Ignore
+    } else {
+        SwipeOutcome::Ignore
     }
-}
-
-impl OverlayState {
-    /// True iff any pixel of the overlay (including any animated portion of
-    /// the backdrop) should be present. The switcher surface stays mapped
-    /// for the entire closing animation so it can fade out cleanly.
-    pub fn is_visible(self) -> bool {
-        !matches!(self, OverlayState::Closed)
-    }
-
-    /// True iff cards should accept input. We intentionally drop pointer
-    /// events during the animations so a half-swept overlay can't be
-    /// tap-activated.
-    pub fn is_interactive(self) -> bool {
-        matches!(self, OverlayState::Open)
-    }
-
-    /// Allowed transitions (validated by [`OverlayState::try_transition`]):
-    ///   Closed     -> Opening(0.0)
-    ///   Opening(_) -> Opening(p') (advance/retreat) | Open
-    ///   Open       -> Closing(0.0)
-    ///   Closing(_) -> Closing(p') (advance/retreat) | Closed
-    ///
-    /// All other transitions return `Err(InvalidTransition)`. Crucially,
-    /// `Closed -> Open` directly is rejected so the front-end always paints
-    /// at least one opening frame (and the headless test can assert that).
-    pub fn try_transition(self, next: OverlayState) -> Result<OverlayState, InvalidTransition> {
-        use OverlayState::*;
-        let ok = match (self, next) {
-            (Closed, Opening { progress }) if (0.0..=1.0).contains(&progress) => true,
-            (Opening { .. }, Opening { progress: p }) if (0.0..=1.0).contains(&p) => true,
-            (Opening { .. }, Open) => true,
-            (Open, Closing { progress }) if (0.0..=1.0).contains(&progress) => true,
-            (Closing { .. }, Closing { progress: p }) if (0.0..=1.0).contains(&p) => true,
-            (Closing { .. }, Closed) => true,
-            // Idempotent no-ops: useful when the front-end re-applies the
-            // current state on every frame.
-            (Closed, Closed) | (Open, Open) => true,
-            _ => false,
-        };
-        if ok {
-            Ok(next)
-        } else {
-            Err(InvalidTransition { from: self, to: next })
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct InvalidTransition {
-    pub from: OverlayState,
-    pub to: OverlayState,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -361,7 +297,7 @@ pub struct GestureConfig {
     /// Bottom-edge handle strip height in CSS pixels.
     pub handle_height_px: i32,
     /// Vertical (upward) delta in CSS pixels at which a bottom-edge drag
-    /// graduates from "ignore" to "open the switcher".
+    /// graduates from "ignore" to "close the foreground app".
     pub open_threshold_px: f64,
     /// Per-card vertical delta in CSS pixels at which a swipe-away closes
     /// the toplevel.
@@ -375,31 +311,6 @@ impl Default for GestureConfig {
             open_threshold_px: DEFAULT_OPEN_THRESHOLD_PX,
             dismiss_threshold_px: DEFAULT_DISMISS_THRESHOLD_PX,
         }
-    }
-}
-
-/// Outcome of a bottom-edge drag delta. The front-end calls this once per
-/// drag-update event; if the result is `OpenOverlay` it should trigger the
-/// state machine and stop polling further updates from the same gesture.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SwipeOutcome {
-    Ignore,
-    OpenOverlay,
-}
-
-/// `dy` follows GTK's `GestureDrag` convention: negative = upward. Returns
-/// `OpenOverlay` once the upward magnitude reaches `open_threshold_px`.
-pub fn evaluate_swipe_up(dy: f64, cfg: &GestureConfig) -> SwipeOutcome {
-    let upward = -dy;
-    if upward.is_finite() && upward >= cfg.open_threshold_px && cfg.open_threshold_px > 0.0 {
-        SwipeOutcome::OpenOverlay
-    } else if upward.is_finite() && upward >= cfg.open_threshold_px && cfg.open_threshold_px == 0.0 {
-        // Threshold == 0 disables the open path (test/debug knob), to avoid a
-        // class of misconfigurations where the overlay pops the moment a
-        // finger touches the bottom edge.
-        SwipeOutcome::Ignore
-    } else {
-        SwipeOutcome::Ignore
     }
 }
 
@@ -556,12 +467,6 @@ mod tests {
     }
 
     #[test]
-    fn backdrop_hex_matches_rgb_constant() {
-        assert_eq!(BACKDROP_BASE_COLOR_HEX, "#0a0a0a");
-        assert_eq!(BACKDROP_BASE_COLOR_RGB, [0x0a, 0x0a, 0x0a]);
-    }
-
-    #[test]
     fn z_index_is_wlr_layer_shell_order() {
         assert!(LayerTarget::Background.z_index() < LayerTarget::Bottom.z_index());
         assert!(LayerTarget::Bottom.z_index() < LayerTarget::Top.z_index());
@@ -608,7 +513,7 @@ mod tests {
     fn gtk_argv_strips_show_flag() {
         let argv = vec![
             "/usr/libexec/atomos-app-handler".to_string(),
-            "--show".to_string(),
+            "--hide".to_string(),
         ];
         assert_eq!(
             gtk_argv_for_run(&argv),
@@ -740,11 +645,6 @@ mod tests {
 
     #[test]
     fn handle_drag_progress_peaks_with_evaluate_swipe_up_outcome() {
-        // Sanity-check the egui-parity contract: at EXACTLY the dy that
-        // graduates evaluate_swipe_up to OpenOverlay, the fade must be
-        // fully opaque. This way the visible hand-off from "drag is
-        // ramping the app dimming" to "switcher backdrop took over"
-        // happens with no opacity discontinuity.
         for thr in [12.0_f64, 24.0, 48.0, 96.0, 240.0] {
             let cfg = GestureConfig {
                 handle_height_px: DEFAULT_HANDLE_HEIGHT_PX,
@@ -758,7 +658,7 @@ mod tests {
             );
             assert_eq!(
                 evaluate_swipe_up(dy_at_threshold, &cfg),
-                SwipeOutcome::OpenOverlay,
+                SwipeOutcome::CloseApp,
                 "evaluate_swipe_up must fire at the same dy the fade peaks",
             );
         }
@@ -769,10 +669,6 @@ mod tests {
         assert_eq!(parse_lifecycle_action(&[]), LifecycleAction::Run);
         assert_eq!(parse_lifecycle_action(&["".into()]), LifecycleAction::Run);
         assert_eq!(parse_lifecycle_action(&["foo".into()]), LifecycleAction::Run);
-        assert_eq!(
-            parse_lifecycle_action(&["--show".into()]),
-            LifecycleAction::Show
-        );
         assert_eq!(
             parse_lifecycle_action(&["--hide".into()]),
             LifecycleAction::Hide
@@ -819,70 +715,6 @@ mod tests {
     }
 
     #[test]
-    fn overlay_state_default_is_closed() {
-        assert_eq!(OverlayState::default(), OverlayState::Closed);
-    }
-
-    #[test]
-    fn overlay_state_visibility_flags() {
-        assert!(!OverlayState::Closed.is_visible());
-        assert!(OverlayState::Opening { progress: 0.5 }.is_visible());
-        assert!(OverlayState::Open.is_visible());
-        assert!(OverlayState::Closing { progress: 0.5 }.is_visible());
-
-        assert!(!OverlayState::Closed.is_interactive());
-        assert!(!OverlayState::Opening { progress: 0.99 }.is_interactive());
-        assert!(OverlayState::Open.is_interactive());
-        assert!(!OverlayState::Closing { progress: 0.01 }.is_interactive());
-    }
-
-    #[test]
-    fn overlay_state_canonical_open_sequence() {
-        let s = OverlayState::Closed;
-        let s = s.try_transition(OverlayState::Opening { progress: 0.0 }).unwrap();
-        let s = s.try_transition(OverlayState::Opening { progress: 0.5 }).unwrap();
-        let s = s.try_transition(OverlayState::Open).unwrap();
-        let s = s.try_transition(OverlayState::Closing { progress: 0.0 }).unwrap();
-        let s = s.try_transition(OverlayState::Closing { progress: 0.7 }).unwrap();
-        let s = s.try_transition(OverlayState::Closed).unwrap();
-        assert_eq!(s, OverlayState::Closed);
-    }
-
-    #[test]
-    fn overlay_state_rejects_skipping_opening_phase() {
-        let err = OverlayState::Closed
-            .try_transition(OverlayState::Open)
-            .unwrap_err();
-        assert_eq!(err.from, OverlayState::Closed);
-        assert_eq!(err.to, OverlayState::Open);
-    }
-
-    #[test]
-    fn overlay_state_rejects_skipping_closing_phase() {
-        OverlayState::Open
-            .try_transition(OverlayState::Closed)
-            .unwrap_err();
-    }
-
-    #[test]
-    fn overlay_state_rejects_out_of_range_progress() {
-        OverlayState::Closed
-            .try_transition(OverlayState::Opening { progress: -0.1 })
-            .unwrap_err();
-        OverlayState::Closed
-            .try_transition(OverlayState::Opening { progress: 1.5 })
-            .unwrap_err();
-    }
-
-    #[test]
-    fn overlay_state_idempotent_open_and_closed() {
-        OverlayState::Closed
-            .try_transition(OverlayState::Closed)
-            .unwrap();
-        OverlayState::Open.try_transition(OverlayState::Open).unwrap();
-    }
-
-    #[test]
     fn evaluate_swipe_up_ignores_downward_drag() {
         let cfg = GestureConfig::default();
         assert_eq!(evaluate_swipe_up(0.0, &cfg), SwipeOutcome::Ignore);
@@ -897,8 +729,8 @@ mod tests {
             dismiss_threshold_px: 120.0,
         };
         assert_eq!(evaluate_swipe_up(-47.9, &cfg), SwipeOutcome::Ignore);
-        assert_eq!(evaluate_swipe_up(-48.0, &cfg), SwipeOutcome::OpenOverlay);
-        assert_eq!(evaluate_swipe_up(-200.0, &cfg), SwipeOutcome::OpenOverlay);
+        assert_eq!(evaluate_swipe_up(-48.0, &cfg), SwipeOutcome::CloseApp);
+        assert_eq!(evaluate_swipe_up(-200.0, &cfg), SwipeOutcome::CloseApp);
     }
 
     #[test]
@@ -915,9 +747,6 @@ mod tests {
             open_threshold_px: 0.0,
             dismiss_threshold_px: 120.0,
         };
-        // Even a huge upward drag must not open when threshold is 0 — guards
-        // against a misconfigured env var making the overlay pop on every
-        // bottom-edge touch.
         assert_eq!(evaluate_swipe_up(-500.0, &cfg), SwipeOutcome::Ignore);
     }
 

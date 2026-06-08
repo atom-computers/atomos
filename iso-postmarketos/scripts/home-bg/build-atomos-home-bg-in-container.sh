@@ -142,7 +142,7 @@ apk add --no-interactive \
     build-base pkgconf \
     rust cargo \
     glib-dev gtk4.0-dev \
-    webkit2gtk-6.0-dev \
+    webkit2gtk-6.0-dev libadwaita-dev \
     cairo-dev pango-dev gdk-pixbuf-dev graphene-dev \
     wayland-dev libxkbcommon-dev >/dev/null
 

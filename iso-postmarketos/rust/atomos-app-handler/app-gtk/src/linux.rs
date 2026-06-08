@@ -1,6 +1,6 @@
 //! Linux implementation of `atomos-app-handler`.
 //!
-//! Three layer-shell surfaces live in the same process:
+//! Two layer-shell surfaces live in the same process:
 //!
 //!   - `handle_window` — bottom-anchored `Layer::Top` strip (24 px by
 //!     default) with `exclusive_zone = handle_height_px` so the foreground
@@ -9,28 +9,24 @@
 //!   - `fade_window` — full-screen `Layer::Overlay` (anchors L+R+T+B) that
 //!     stays transparent when idle. During a swipe-up drag it cross-fades
 //!     the foreground app content area (excluding the top bar and bottom
-//!     handle insets) to the switcher backdrop colour. The bottom strip
-//!     of this surface captures the gesture; going full-screen keeps the
-//!     wayland implicit pointer grab alive for the entire upward drag.
-//!   - `switcher_window` — full-screen surface anchored to all four edges,
-//!     hidden by default. Painted opaque `#0a0a0a` (the
-//!     `BACKDROP_BASE_COLOR_HEX` constant in the core crate) so the running
-//!     app behind us is fully occluded — the explicit visual requirement
-//!     for v1 is that the switcher looks like the home-bg surface, not a
-//!     still of the foreground app.
+//!     handle insets) to opaque. The bottom strip of this surface captures
+//!     the gesture; going full-screen keeps the wayland implicit pointer grab
+//!     alive for the entire upward drag.
+//!
+//! Swipe-up closes the foreground app. No switcher overlay is opened.
 //!
 //! All policy is composed in `atomos_app_handler::compose_runtime_config`;
 //! this file just wires policy → live widgets. Lifecycle events are logged
 //! with the `atomos-app-handler:` tag so the launcher's
 //! `$XDG_RUNTIME_DIR/atomos-app-handler.log` reads as a step-by-step trace
-//! of the gesture pipeline (the `diagnose-app-switcher.sh` script tails it).
+//! of the gesture pipeline.
 
 use atomos_app_handler::{
-    compose_runtime_config, derive_home_ipc, evaluate_swipe_up, gtk_argv_for_run_from_process_argv,
+    compose_runtime_config, evaluate_swipe_up, gtk_argv_for_run_from_process_argv,
     handle_drag_progress, launch::plan_launch, parse_lifecycle_action_from_argv,
-    should_show_handle, EnvInputs, GestureConfig, LaunchPlan, LifecycleAction, OverlayState,
-    PhoshHomeIpc, RuntimeConfig, SwipeOutcome, UiMode, BACKDROP_BASE_COLOR_HEX,
-    CHAT_UI_LAYER_AFTER_SUCCESSFUL_LAUNCH, LAYER_SHELL_NAMESPACE,
+    should_show_handle, EnvInputs, GestureConfig, LaunchPlan, LifecycleAction,
+    PhoshHomeIpc, RuntimeConfig, SwipeOutcome,
+    LAYER_SHELL_NAMESPACE,
 };
 use gtk::gio;
 use gtk::glib;
@@ -40,15 +36,13 @@ use std::cell::RefCell;
 use std::process::Command;
 use std::rc::Rc;
 
-mod backdrop;
-mod cards;
 mod handle;
 mod input_region;
 mod launch_exec;
 mod phosh_ipc;
+mod transparent;
 mod wayland;
 
-use cards::CardsController;
 use wayland::{ToplevelHandle, WaylandClient};
 
 /// One-line, syslog-friendly event log. The launcher script in
@@ -63,7 +57,6 @@ macro_rules! event {
 }
 
 const DEBUG_TINT_ENV: &str = "ATOMOS_APP_HANDLER_DEBUG_TINT";
-const OVERVIEW_CHAT_UI_LAUNCHER: &str = "/usr/libexec/atomos-overview-chat-ui";
 
 fn debug_tint_enabled() -> bool {
     matches!(std::env::var(DEBUG_TINT_ENV).as_deref(), Ok("1"))
@@ -134,13 +127,10 @@ pub fn run() -> anyhow::Result<()> {
     });
 
     // We've already consumed our private lifecycle flags (--start /
-    // --show / --hide / launch) via parse_lifecycle_action_from_argv.
+    // --hide / launch) via parse_lifecycle_action_from_argv.
     // Hand gtk only the program name; otherwise g_application_run's
-    // option parser sees `--start` (or `--show`), errors with
-    // `Unknown option --start`, and exits rc=1 — which is exactly what
-    // the launcher log captured when the autostart bar was missing on
-    // QEMU. `gtk_argv_for_run_from_process_argv` is the unit-tested
-    // policy in the core crate.
+    // option parser sees `--start` (or `--hide`), errors with
+    // `Unknown option --start`, and exits rc=1.
     let gtk_argv = gtk_argv_for_run_from_process_argv();
     event!("entering gtk::Application::run_with_args main loop argv={gtk_argv:?}");
     let exit_code = app.run_with_args(&gtk_argv);
@@ -155,15 +145,6 @@ fn run_launch_once(app_id: &str) -> anyhow::Result<()> {
 
     gtk::init().map_err(|e| anyhow::anyhow!("gtk init failed: {e}"))?;
 
-    let finish_launch = |label: &str| -> anyhow::Result<()> {
-        event!("{label}");
-        promote_overview_chat_ui_to_bottom_layer();
-        if let Err(err) = phosh_ipc::apply_home_ipc(PhoshHomeIpc::SetFolded) {
-            event!("launch: home fold ipc failed (continuing): {err}");
-        }
-        Ok(())
-    };
-
     if let Ok(client) = WaylandClient::spawn() {
         std::thread::sleep(std::time::Duration::from_millis(150));
         let entries: Vec<_> = client
@@ -177,98 +158,54 @@ fn run_launch_once(app_id: &str) -> anyhow::Result<()> {
             if let Ok(snapshot) = client.snapshots().try_recv() {
                 if let Some((_, handle)) = snapshot.iter().find(|(e, _)| e.id == toplevel_id) {
                     handle.activate();
-                    return finish_launch(&format!(
-                        "launch: activated existing toplevel id={toplevel_id}"
-                    ));
+                    event!("launch: activated existing toplevel id={toplevel_id}");
+                    return Ok(());
                 }
             }
         }
     }
 
     launch_exec::spawn_desktop_app(app_id).map_err(|e| anyhow::anyhow!(e))?;
-    finish_launch(&format!("launch: spawned new app id={app_id}"))
+    Ok(())
 }
 
-/// After any successful launch, move overview-chat-ui from wlr-layer-shell
-/// OVERLAY (app-grid sheet) to BOTTOM so the new xdg-toplevel paints above
-/// the chat strip. Phosh only re-syncs chat-ui layer on home *state* changes;
-/// SetFolded is a no-op when home is already folded, so this explicit
-/// promotion closes the gap where logs show [launch: spawned] but nothing
-/// appears on screen.
-fn promote_overview_chat_ui_to_bottom_layer() {
-    event!("launch: promoting overview-chat-ui to bottom layer");
-    let mut cmd = Command::new(OVERVIEW_CHAT_UI_LAUNCHER);
-    cmd.env(
-        "ATOMOS_OVERVIEW_CHAT_UI_LAYER",
-        CHAT_UI_LAYER_AFTER_SUCCESSFUL_LAUNCH,
-    );
-    for key in atomos_app_handler::DBUS_ACTIVATION_SESSION_ENV_VARS {
-        if let Ok(value) = std::env::var(key) {
-            cmd.env(key, value);
-        }
-    }
-    if let Ok(value) = std::env::var("DBUS_SESSION_BUS_ADDRESS") {
-        cmd.env("DBUS_SESSION_BUS_ADDRESS", value);
-    }
-    if let Err(err) = cmd.arg("--show").spawn() {
-        event!("launch: overview-chat-ui layer promotion failed: {err}");
-    }
-}
-
-/// Shared state between the handle/switcher windows and the wayland thread.
+/// Shared state between the handle/fade windows and the wayland thread.
 ///
-/// Egui-parity contract: the GTK binary owns only the bottom-edge handle
-/// strip and the full-screen switcher overlay (matching the egui preview
-/// 1:1). The app launcher / app grid is owned exclusively by
-/// `atomos-overview-chat-ui` — no GTK launcher window exists here.
-pub(crate) struct OverlayController {
-    pub(crate) state: RefCell<OverlayState>,
+/// Swipe-up closes the foreground app — no switcher overlay is opened.
+pub(crate) struct HandlerState {
     pub(crate) gestures: GestureConfig,
     pub(crate) handle_drag_dy: RefCell<f64>,
     /// `[0.0, 1.0]` fade-overlay alpha driven by the live `GestureDrag`
     /// accumulator. Painted by the handle canvas's draw function (see
     /// `linux/handle.rs::install_handle_paint`) so the running app fades
-    /// out as the user drags upward and the visible transition into the
-    /// switcher backdrop has no opacity discontinuity at the threshold.
-    /// Reset to 0.0 on drag_end, on `open()`, and on `close()` so a
+    /// out as the user drags upward. Reset to 0.0 on drag_end so a
     /// subsequent drag always starts from a fully transparent fade.
     pub(crate) handle_drag_progress: RefCell<f32>,
-    pub(crate) ui_mode: RefCell<UiMode>,
     pub(crate) toplevel_count: RefCell<usize>,
     pub(crate) first_run: RefCell<bool>,
-    pub(crate) switcher_window: RefCell<Option<gtk::ApplicationWindow>>,
     /// Visible handle chrome on `Layer::Bottom`, below the foreground app.
     pub(crate) handle_window: RefCell<Option<gtk::ApplicationWindow>>,
     /// Full-screen gesture + fade overlay above the foreground app.
     pub(crate) fade_window: RefCell<Option<gtk::ApplicationWindow>>,
-    pub(crate) cards: RefCell<Option<CardsController>>,
     pub(crate) snapshot: RefCell<Vec<(atomos_app_handler::ToplevelEntry, ToplevelHandle)>>,
     pub(crate) session_locked: std::cell::Cell<bool>,
     pub(crate) swipe_triggered: std::cell::Cell<bool>,
 }
 
-impl OverlayController {
+impl HandlerState {
     pub(crate) fn new(gestures: GestureConfig) -> Self {
         Self {
-            state: RefCell::new(OverlayState::Closed),
             gestures,
             handle_drag_dy: RefCell::new(0.0),
             handle_drag_progress: RefCell::new(0.0),
-            ui_mode: RefCell::new(UiMode::Idle),
             toplevel_count: RefCell::new(0),
             first_run: RefCell::new(true),
-            switcher_window: RefCell::new(None),
             handle_window: RefCell::new(None),
             fade_window: RefCell::new(None),
-            cards: RefCell::new(None),
             snapshot: RefCell::new(Vec::new()),
             session_locked: std::cell::Cell::new(false),
             swipe_triggered: std::cell::Cell::new(false),
         }
-    }
-
-    pub(crate) fn set_ui_mode(&self, mode: UiMode) {
-        *self.ui_mode.borrow_mut() = mode;
     }
 
     pub(crate) fn on_toplevel_count_changed(&self, new_count: usize) {
@@ -284,121 +221,19 @@ impl OverlayController {
         }
         *self.toplevel_count.borrow_mut() = new_count;
 
-        // Egui-parity: handle bar maps only when at least one app is
-        // open; on the home screen (count=0) atomos-overview-chat-ui is
-        // the only visible UI.
-        self.set_handle_surfaces_visible(should_show_handle(new_count));
-        event!(
-            "handle surfaces visible={} (toplevel_count {prev} -> {new_count})",
-            should_show_handle(new_count)
-        );
-
-        // If every app just closed, also tear the switcher overlay
-        // down — there's nothing left to switch to and the cards row
-        // would otherwise paint over the home screen.
-        if new_count == 0 && self.is_open() {
-            self.close();
-        }
-
-        let ipc = derive_home_ipc(prev, new_count, *self.ui_mode.borrow());
-        event!("toplevel_count {prev} -> {new_count} home_ipc={ipc:?}");
-        if let Err(err) = phosh_ipc::apply_home_ipc(ipc) {
-            event!("phosh home ipc failed: {err}");
-        }
-    }
-
-    pub(crate) fn open(&self) {
-        if self.session_locked.get() {
-            event!("overlay open: rejected because session is locked");
-            return;
-        }
-        let from = *self.state.borrow();
-        *self.ui_mode.borrow_mut() = UiMode::SwitcherOpen;
-        let next = from.try_transition(OverlayState::Opening { progress: 0.0 });
-        if let Ok(s) = next {
-            *self.state.borrow_mut() = s;
-            // Skip the egui-style frame-by-frame animation on device; the
-            // shell already cross-fades layer-shell surfaces. Snap to Open
-            // after one tick so cards become interactive without a long
-            // hand-rolled animation loop.
-            if let Ok(open) = self
-                .state
-                .borrow()
-                .try_transition(OverlayState::Open)
-            {
-                *self.state.borrow_mut() = open;
+        let visible = should_show_handle(new_count) && !self.session_locked.get();
+        for (name, win) in [
+            ("handle_window", self.handle_window.borrow()),
+            ("fade_window", self.fade_window.borrow()),
+        ] {
+            if let Some(win) = win.as_ref() {
+                win.set_visible(visible);
+                if visible {
+                    win.present();
+                }
+                event!("{name} visible={visible} (toplevel_count {prev} -> {new_count})");
             }
-            event!("overlay open from={from:?} to={:?}", *self.state.borrow());
-            if let Some(win) = self.switcher_window.borrow().as_ref() {
-                win.set_visible(true);
-                win.present();
-                event!("switcher_window present()");
-            } else {
-                event!("overlay open: switcher_window not yet built");
-            }
-            // Both the handle bar and the switcher live on `Layer::Overlay`,
-            // so within-layer z-order is implementation-defined. Hiding the
-            // handle bar guarantees the switcher's opaque backdrop is the
-            // topmost (and only) overlay surface for the duration of the
-            // open state — no chance of the handle's now-irrelevant strip
-            // painting over the cards. The handle is re-shown by `close()`
-            // when there is still an app foregrounded.
-            self.set_handle_surfaces_visible(false);
-            event!("handle surfaces hidden for switcher open state");
-            // Reset the drag fade so the next swipe-up starts from a fully
-            // transparent canvas (and so a stale 1.0 progress doesn't paint
-            // an opaque rectangle on top of the running app the moment the
-            // handle is re-shown by close()).
-            *self.handle_drag_progress.borrow_mut() = 0.0;
-            *self.handle_drag_dy.borrow_mut() = 0.0;
-        } else {
-            event!("overlay open: rejected transition from={from:?}");
         }
-    }
-
-    pub(crate) fn close(&self) {
-        let from = *self.state.borrow();
-        if matches!(from, OverlayState::Closed) {
-            return;
-        }
-        *self.ui_mode.borrow_mut() = UiMode::Idle;
-        if let Ok(s) = from.try_transition(OverlayState::Closing { progress: 0.0 }) {
-            *self.state.borrow_mut() = s;
-        }
-        if let Ok(closed) = self
-            .state
-            .borrow()
-            .try_transition(OverlayState::Closed)
-        {
-            *self.state.borrow_mut() = closed;
-        }
-        event!("overlay close from={from:?} to={:?}", *self.state.borrow());
-        if let Some(win) = self.switcher_window.borrow().as_ref() {
-            win.set_visible(false);
-        }
-        // Re-show the handle if there's still a foreground app for the
-        // user to swipe back into. `should_show_handle` is the same
-        // policy the toplevel-count drain uses, so the handle bar
-        // matches whatever a fresh snapshot would have decided.
-        let count = *self.toplevel_count.borrow();
-        if should_show_handle(count) {
-            self.set_handle_surfaces_visible(true);
-            event!(
-                "handle surfaces re-shown after switcher close (toplevel_count={count})"
-            );
-        }
-        *self.handle_drag_progress.borrow_mut() = 0.0;
-        *self.handle_drag_dy.borrow_mut() = 0.0;
-        if let Some(win) = self.fade_window.borrow().as_ref() {
-            input_region::set_input_region_height(win, self.gestures.handle_height_px);
-        }
-        if let Some(win) = self.handle_window.borrow().as_ref() {
-            win.set_opacity(1.0);
-        }
-    }
-
-    pub(crate) fn is_open(&self) -> bool {
-        matches!(*self.state.borrow(), OverlayState::Open)
     }
 
     fn set_handle_surfaces_visible(&self, visible: bool) {
@@ -418,7 +253,7 @@ impl OverlayController {
     }
 }
 
-fn build_ui(app: &gtk::Application, cfg: &RuntimeConfig, action: LifecycleAction) -> anyhow::Result<()> {
+fn build_ui(app: &gtk::Application, cfg: &RuntimeConfig, _action: LifecycleAction) -> anyhow::Result<()> {
     let layer_shell_ok = gtk4_layer_shell::is_supported();
     event!("gtk4_layer_shell::is_supported() = {layer_shell_ok}");
     if !layer_shell_ok {
@@ -430,17 +265,10 @@ fn build_ui(app: &gtk::Application, cfg: &RuntimeConfig, action: LifecycleAction
         return Ok(());
     }
 
-    backdrop::install_css(BACKDROP_BASE_COLOR_HEX);
-    event!("backdrop CSS installed (base={BACKDROP_BASE_COLOR_HEX})");
+    transparent::install_css();
 
-    let controller = Rc::new(OverlayController::new(cfg.gestures));
+    let state = Rc::new(HandlerState::new(cfg.gestures));
 
-    // The wayland client thread feeds the switcher window with the current
-    // toplevel list. We start it before building the windows so the first
-    // snapshot is ready by the time the user swipes up. If the connection
-    // fails (no Wayland session, missing protocol), we still present the
-    // surface — just with an empty card row. The switcher then reads as a
-    // "no running apps" state rather than crashing.
     let wayland = match WaylandClient::spawn() {
         Ok(client) => {
             event!("WaylandClient::spawn ok");
@@ -454,75 +282,36 @@ fn build_ui(app: &gtk::Application, cfg: &RuntimeConfig, action: LifecycleAction
         }
     };
 
-    let switcher_window = build_switcher_window(app, controller.clone(), wayland.as_ref());
-    *controller.switcher_window.borrow_mut() = Some(switcher_window);
-
-    // Egui-parity: the bottom-edge handle is *not* mapped on the home
-    // screen. It only appears when at least one Wayland toplevel exists
-    // (i.e. an app is in the foreground). Visibility is gated by
-    // `should_show_handle` from the wayland snapshot drain below; the
-    // surface itself is built up-front so `set_visible(true)` later is
-    // O(1).
-    let handle_window = build_handle_strip_window(app, controller.clone());
+    // The bottom-edge handle is *not* mapped on the home screen. It only
+    // appears when at least one Wayland toplevel exists (i.e. an app is in
+    // the foreground).
+    let handle_window = build_handle_strip_window(app, state.clone());
     handle_window.set_visible(false);
-    *controller.handle_window.borrow_mut() = Some(handle_window);
+    *state.handle_window.borrow_mut() = Some(handle_window);
     event!("handle_window built; hidden until first toplevel appears");
 
-    let fade_window = build_fade_window(app, controller.clone());
+    let fade_window = build_fade_window(app, state.clone());
     fade_window.set_visible(false);
-    *controller.fade_window.borrow_mut() = Some(fade_window);
+    *state.fade_window.borrow_mut() = Some(fade_window);
     event!("fade_window built; hidden until first toplevel appears");
 
-    if matches!(action, LifecycleAction::Show) {
-        event!("cold --show: opening switcher overlay immediately");
-        controller.open();
-    }
+    init_lock_tracking(state.clone());
 
-    // POSIX show/hide bridge: the launcher script signals SIGUSR1=show,
-    // SIGUSR2=hide on the pidfile-tracked process. The handlers run on
-    // the GTK main thread, so calling controller.open() / .close()
-    // straight from them is safe (no cross-thread state mutation).
-    install_lifecycle_signal_handlers(controller.clone());
-
-    init_lock_tracking(controller.clone());
-
-    // Drain wayland snapshots into the cards controller. We hold the
-    // future on the application so it lives as long as the app.
     if let Some(client) = wayland {
-        spawn_snapshot_drain(controller.clone(), client);
+        spawn_snapshot_drain(state.clone(), client);
     }
 
     Ok(())
 }
 
-/// Map SIGUSR1 -> open overlay, SIGUSR2 -> close overlay. The launcher
-/// script's `--show` / `--hide` actions send these signals to the
-/// pidfile-tracked process so phosh's lifecycle hooks toggle the overlay
-/// surface without restarting the handle-bar process.
-fn install_lifecycle_signal_handlers(controller: Rc<OverlayController>) {
-    let ctl_show = controller.clone();
-    glib::unix_signal_add_local(libc::SIGUSR1 as i32, move || {
-        event!("SIGUSR1 received; opening switcher overlay");
-        ctl_show.open();
-        glib::ControlFlow::Continue
-    });
-    let ctl_hide = controller;
-    glib::unix_signal_add_local(libc::SIGUSR2 as i32, move || {
-        event!("SIGUSR2 received; closing switcher overlay");
-        ctl_hide.close();
-        glib::ControlFlow::Continue
-    });
-    event!("installed SIGUSR1 (show) / SIGUSR2 (hide) lifecycle handlers");
-}
-
 fn build_handle_strip_window(
     app: &gtk::Application,
-    controller: Rc<OverlayController>,
+    state: Rc<HandlerState>,
 ) -> gtk::ApplicationWindow {
-    let handle_height_px = controller.gestures.handle_height_px;
+    let handle_height_px = state.gestures.handle_height_px;
     let win = gtk::ApplicationWindow::builder()
         .application(app)
-        .title("AtomOS App Switcher (handle)")
+        .title("AtomOS App Handler (handle)")
         .decorated(false)
         .build();
     win.set_can_focus(false);
@@ -569,9 +358,9 @@ fn build_handle_strip_window(
 
 fn build_fade_window(
     app: &gtk::Application,
-    controller: Rc<OverlayController>,
+    state: Rc<HandlerState>,
 ) -> gtk::ApplicationWindow {
-    let handle_height_px = controller.gestures.handle_height_px;
+    let handle_height_px = state.gestures.handle_height_px;
     let win = gtk::ApplicationWindow::builder()
         .application(app)
         .title("AtomOS App Switcher (gesture)")
@@ -594,8 +383,8 @@ fn build_fade_window(
     fade_canvas.set_can_target(true);
     fade_canvas.set_focusable(false);
 
-    let ctl_for_paint = controller.clone();
-    let ctl_for_dy = controller.clone();
+    let ctl_for_paint = state.clone();
+    let ctl_for_dy = state.clone();
     let debug_tint = debug_tint_enabled();
     if debug_tint {
         event!("debug-tint enabled on fade/gesture window");
@@ -617,7 +406,7 @@ fn build_fade_window(
     drag.set_propagation_phase(gtk::PropagationPhase::Capture);
     drag.set_exclusive(true);
 
-    let ctl_begin = controller.clone();
+    let ctl_begin = state.clone();
     let fade_canvas_for_begin = fade_canvas.clone();
     let root_for_begin = root.clone();
     let handle_h_begin = handle_height_px;
@@ -646,10 +435,10 @@ fn build_fade_window(
         event!("handle drag_begin sx={sx:.1} sy={sy:.1} claimed={claimed}");
     });
 
-    let ctl_update = controller.clone();
+    let ctl_update = state.clone();
     let fade_canvas_for_update = fade_canvas.clone();
     drag.connect_drag_update(move |_, ox, oy| {
-        if ctl_update.is_open() || ctl_update.swipe_triggered.get() {
+        if ctl_update.swipe_triggered.get() {
             return;
         }
         *ctl_update.handle_drag_dy.borrow_mut() = oy;
@@ -668,7 +457,7 @@ fn build_fade_window(
              outcome={outcome:?} threshold_px={}",
             ctl_update.gestures.open_threshold_px
         );
-        if matches!(outcome, SwipeOutcome::OpenOverlay) {
+        if matches!(outcome, SwipeOutcome::CloseApp) {
             ctl_update.swipe_triggered.set(true);
             
             // Find the active window from snapshot where entry.activated is true
@@ -690,7 +479,7 @@ fn build_fade_window(
         }
     });
 
-    let ctl_end = controller.clone();
+    let ctl_end = state.clone();
     let fade_canvas_for_end = fade_canvas.clone();
     drag.connect_drag_end(move |_, ox, oy| {
         let dy = *ctl_end.handle_drag_dy.borrow();
@@ -758,76 +547,11 @@ fn build_fade_window(
 
 
 
-fn build_switcher_window(
-    app: &gtk::Application,
-    controller: Rc<OverlayController>,
-    wayland: Option<&WaylandClient>,
-) -> gtk::ApplicationWindow {
-    let win = gtk::ApplicationWindow::builder()
-        .application(app)
-        .title("AtomOS App Switcher")
-        .decorated(false)
-        .build();
-    win.set_can_focus(true);
-
-    configure_layer_surface(&win, LayerSurfaceRole::Switcher, controller.gestures.handle_height_px);
-
-    let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    root.add_css_class("atomos-app-handler-root");
-    root.set_hexpand(true);
-    root.set_vexpand(true);
-
-    track_system_theme(&root);
-    track_system_theme(&win);
-
-    // Embed custom top bar at the very top of the switcher
-    let top_bar = atomos_top_bar_app_gtk::TopBarWidget::new();
-    root.append(&top_bar.widget);
-
-    // Cards row sits in the vertical center; a top spacer + bottom spacer
-    // keep it visually centered without committing to a fixed pixel height.
-    let top_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    top_spacer.set_vexpand(true);
-    root.append(&top_spacer);
-
-    let cards_controller = cards::CardsController::new(controller.clone(), wayland.cloned());
-    let cards_row = cards_controller.widget();
-    root.append(cards_row);
-    *controller.cards.borrow_mut() = Some(cards_controller);
-
-    let bottom_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    bottom_spacer.set_vexpand(true);
-    root.append(&bottom_spacer);
-
-    // Tap outside the card row closes the switcher. Mounted in the bubble
-    // phase so per-card click handlers take precedence.
-    let dismiss = gtk::GestureClick::new();
-    dismiss.set_button(0);
-    dismiss.set_propagation_phase(gtk::PropagationPhase::Bubble);
-    let ctl_for_dismiss = controller.clone();
-    dismiss.connect_released(move |_, _, _x, _y| {
-        if ctl_for_dismiss.is_open() {
-            event!("switcher backdrop tap; closing overlay");
-            ctl_for_dismiss.close();
-        }
-    });
-    root.add_controller(dismiss);
-
-    win.set_child(Some(&root));
-    win.set_visible(false);
-
-    win.connect_realize(|_| event!("switcher_window realize"));
-    win.connect_map(|_| event!("switcher_window map"));
-    win.connect_unmap(|_| event!("switcher_window unmap"));
-
-    win
-}
 
 #[derive(Debug, Clone, Copy)]
 enum LayerSurfaceRole {
     HandleStrip,
     GestureFade,
-    Switcher,
 }
 
 fn configure_layer_surface(
@@ -839,11 +563,10 @@ fn configure_layer_surface(
     let namespace = match role {
         LayerSurfaceRole::HandleStrip => format!("{LAYER_SHELL_NAMESPACE}.handle"),
         LayerSurfaceRole::GestureFade => format!("{LAYER_SHELL_NAMESPACE}.gesture"),
-        LayerSurfaceRole::Switcher => LAYER_SHELL_NAMESPACE.to_string(),
     };
     win.set_namespace(Some(namespace.as_str()));
     match role {
-        LayerSurfaceRole::HandleStrip | LayerSurfaceRole::GestureFade | LayerSurfaceRole::Switcher => {
+        LayerSurfaceRole::HandleStrip | LayerSurfaceRole::GestureFade => {
             win.set_layer(Layer::Overlay);
         }
     }
@@ -872,15 +595,6 @@ fn configure_layer_surface(
             win.set_exclusive_zone(-1);
             win.set_keyboard_mode(KeyboardMode::None);
         }
-        LayerSurfaceRole::Switcher => {
-            win.set_anchor(Edge::Left, true);
-            win.set_anchor(Edge::Right, true);
-            win.set_anchor(Edge::Top, true);
-            win.set_anchor(Edge::Bottom, true);
-            win.set_exclusive_zone(-1);
-            win.set_keyboard_mode(KeyboardMode::OnDemand);
-            apply_opaque_compositor_hint(win);
-        }
     }
 
     let layer_name = "overlay";
@@ -890,41 +604,14 @@ fn configure_layer_surface(
     );
 }
 
-/// The switcher surface is intentionally opaque — `set_opaque_region(NULL)`
-/// (a `None` argument) tells the compositor every pixel is opaque so it can
-/// skip blending and so the running app underneath is not visible. This
-/// inverts the [translucent hint that overview-chat-ui uses](https://github.com/atomos/iso-postmarketos/blob/main/rust/atomos-overview-chat-ui/app-gtk/src/overlay.rs).
-fn apply_opaque_compositor_hint(win: &gtk::ApplicationWindow) {
-    let apply = |w: &gtk::ApplicationWindow| -> bool {
-        let Some(surface) = w.surface() else {
-            return false;
-        };
-        // `None` argument means "entire surface is opaque".
-        surface.set_opaque_region(None);
-        event!("switcher surface marked fully opaque");
-        true
-    };
-    if apply(win) {
-        return;
-    }
-    let w = win.clone();
-    win.connect_map(move |_| {
-        if !apply(&w) {
-            event!("could not mark switcher surface opaque after map");
-        }
-    });
-}
 
-fn spawn_snapshot_drain(controller: Rc<OverlayController>, client: WaylandClient) {
+fn spawn_snapshot_drain(state: Rc<HandlerState>, client: WaylandClient) {
     let rx = client.snapshots();
     glib::spawn_future_local(async move {
         while let Ok(snapshot) = rx.recv().await {
             event!("snapshot received len={}", snapshot.len());
-            *controller.snapshot.borrow_mut() = snapshot.clone();
-            controller.on_toplevel_count_changed(snapshot.len());
-            if let Some(cards) = controller.cards.borrow().as_ref() {
-                cards.update_snapshot(snapshot);
-            }
+            *state.snapshot.borrow_mut() = snapshot.clone();
+            state.on_toplevel_count_changed(snapshot.len());
         }
         event!("snapshot drain loop ended (wayland channel closed)");
     });
@@ -948,7 +635,7 @@ fn track_system_theme<W: IsA<gtk::Widget>>(widget: &W) {
     }
 }
 
-fn init_lock_tracking(controller: Rc<OverlayController>) {
+fn init_lock_tracking(state: Rc<HandlerState>) {
     let conn = match gio::bus_get_sync(gio::BusType::Session, None::<&gio::Cancellable>) {
         Ok(c) => c,
         Err(e) => {
@@ -980,17 +667,15 @@ fn init_lock_tracking(controller: Rc<OverlayController>) {
     };
 
     let resolved_locked = initial_locked.unwrap_or(true);
-    controller.session_locked.set(resolved_locked);
+    state.session_locked.set(resolved_locked);
     if resolved_locked {
-        event!("lock tracking: started with locked state (or unresolved). Dismissing switcher and hiding handle surfaces.");
-        controller.close();
-        controller.set_handle_surfaces_visible(false);
+        event!("lock tracking: started with locked state (or unresolved). Hiding handle surfaces.");
+        state.set_handle_surfaces_visible(false);
     }
 
     if initial_locked.is_none() {
-        // Run a retry loop to query lock state once org.gnome.ScreenSaver becomes available.
         let conn_clone = conn.clone();
-        let ctl_clone = controller.clone();
+        let ctl_clone = state.clone();
         let mut retry_count = 0;
         glib::timeout_add_seconds_local(1, move || {
             retry_count += 1;
@@ -1013,7 +698,6 @@ fn init_lock_tracking(controller: Rc<OverlayController>) {
                         let count = *ctl_clone.toplevel_count.borrow();
                         ctl_clone.set_handle_surfaces_visible(should_show_handle(count));
                     } else {
-                        ctl_clone.close();
                         ctl_clone.set_handle_surfaces_visible(false);
                     }
                     glib::ControlFlow::Break
@@ -1033,7 +717,7 @@ fn init_lock_tracking(controller: Rc<OverlayController>) {
         });
     }
 
-    let ctl = controller.clone();
+    let ctl = state.clone();
     conn.signal_subscribe(
         Some("org.gnome.ScreenSaver"),
         Some("org.gnome.ScreenSaver"),
@@ -1046,8 +730,7 @@ fn init_lock_tracking(controller: Rc<OverlayController>) {
             event!("lock tracking: ActiveChanged received active={active}");
             ctl.session_locked.set(active);
             if active {
-                event!("lock tracking: screen locked; closing overlay and hiding handles");
-                ctl.close();
+                event!("lock tracking: screen locked; hiding handles");
                 ctl.set_handle_surfaces_visible(false);
             } else {
                 event!("lock tracking: screen unlocked");

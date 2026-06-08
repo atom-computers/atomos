@@ -1460,12 +1460,7 @@ echo "=== build-fairphone4: final verification ==="
             echo "--- atomos-app-handler hybrid lifecycle contract ---"
             check_f /target/etc/atomos/app-handler-contract
             check_grep "^app-handler-v1-launch-switcher-dbus-home$" /target/etc/atomos/app-handler-contract
-            check_grep "action=show"    /target/usr/libexec/atomos-app-handler
-            check_grep "action=hide"    /target/usr/libexec/atomos-app-handler
-            check_grep "signal_show"    /target/usr/libexec/atomos-app-handler
-            check_grep "signal_hide"    /target/usr/libexec/atomos-app-handler
-            check_grep "kill -USR1"     /target/usr/libexec/atomos-app-handler
-            check_grep "kill -USR2"     /target/usr/libexec/atomos-app-handler
+            
             check_f /target/etc/xdg/autostart/atomos-app-handler.desktop
             check_grep "Exec=/usr/libexec/atomos-app-handler --start" /target/etc/xdg/autostart/atomos-app-handler.desktop
         fi

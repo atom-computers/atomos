@@ -276,6 +276,7 @@ BASE_APK_PACKAGES=(
     wireplumber
     dconf
     bash
+    readline
     shadow
     util-linux
     util-linux-openrc
@@ -1610,15 +1611,7 @@ test -f "$IMAGE_PATH"
             # so a rust constant rename does not silently bypass the verify.
             check_f /target/etc/atomos/app-handler-contract
             check_grep "^app-handler-v1-launch-switcher-dbus-home$" /target/etc/atomos/app-handler-contract
-            check_grep "action=show" /target/usr/libexec/atomos-app-handler
-            check_grep "action=hide" /target/usr/libexec/atomos-app-handler
-            # Launcher must signal the autostarted handle process for --show / --hide
-            # rather than spawning a second binary, otherwise the always-visible
-            # swipe-up bar dies the moment the overlay is dismissed.
-            check_grep "signal_show" /target/usr/libexec/atomos-app-handler
-            check_grep "signal_hide" /target/usr/libexec/atomos-app-handler
-            check_grep "kill -USR1"  /target/usr/libexec/atomos-app-handler
-            check_grep "kill -USR2"  /target/usr/libexec/atomos-app-handler
+            
             # Handle-bar autostart MUST be present; without it there is no
             # visible swipe-up affordance at session start.
             check_f /target/etc/xdg/autostart/atomos-app-handler.desktop

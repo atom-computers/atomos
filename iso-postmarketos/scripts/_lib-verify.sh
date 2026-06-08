@@ -365,12 +365,7 @@ if [ "\${BUILD_APP_HANDLER:-1}" = "1" ]; then
         FAIL=1
     fi
     echo "--- atomos-app-handler hybrid lifecycle contract ---"
-    check_grep "action=show" /target/usr/libexec/atomos-app-handler
-    check_grep "action=hide" /target/usr/libexec/atomos-app-handler
-    check_grep "signal_show" /target/usr/libexec/atomos-app-handler
-    check_grep "signal_hide" /target/usr/libexec/atomos-app-handler
-    check_grep "kill -USR1"  /target/usr/libexec/atomos-app-handler
-    check_grep "kill -USR2"  /target/usr/libexec/atomos-app-handler
+    
     check_f /target/etc/xdg/autostart/atomos-app-handler.desktop
     check_grep "Exec=/usr/libexec/atomos-app-handler --start" /target/etc/xdg/autostart/atomos-app-handler.desktop
 fi

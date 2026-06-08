@@ -206,31 +206,6 @@ start_handle() {
     fi
 }
 
-# Signal the running handle process to (un)map the switcher overlay
-# surface. The binary installs glib unix-signal handlers for SIGUSR1 /
-# SIGUSR2 -- see rust/atomos-app-handler/app-gtk/src/linux.rs.
-# Falls back to (re)starting the handle process so even a cold session
-# converges: if `--show` arrives before the autostart fired we still end
-# up with a visible bar and the overlay open.
-signal_show() {
-    pid="$(running_pid || true)"
-    if [ -n "$pid" ]; then
-        kill -USR1 "$pid" 2>/dev/null || true
-        logger -t atomos-app-handler "show-signal pid=$pid"
-        return 0
-    fi
-    logger -t atomos-app-handler "show-signal: handle not running; starting now"
-    start_handle
-}
-
-signal_hide() {
-    pid="$(running_pid || true)"
-    if [ -n "$pid" ]; then
-        kill -USR2 "$pid" 2>/dev/null || true
-        logger -t atomos-app-handler "hide-signal pid=$pid"
-    fi
-}
-
 stop_handle() {
     pid="$(running_pid || true)"
     if [ -n "$pid" ]; then
@@ -244,15 +219,6 @@ case "${1:-}" in
         bind_phosh_session_env_if_missing
         logger -t atomos-app-handler "action=start wayland=${WAYLAND_DISPLAY:-<unset>}"
         start_handle
-        ;;
-    --show)
-        bind_phosh_session_env_if_missing
-        logger -t atomos-app-handler "action=show wayland=${WAYLAND_DISPLAY:-<unset>}"
-        signal_show
-        ;;
-    --hide)
-        logger -t atomos-app-handler "action=hide"
-        signal_hide
         ;;
     --stop)
         logger -t atomos-app-handler "action=stop"
@@ -368,14 +334,6 @@ install_into_root() {
     test -x "$root/usr/libexec/atomos-app-handler"
     grep -q "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" "$root/usr/libexec/atomos-app-handler"
     grep -q "atomos-app-handler.disabled"       "$root/usr/libexec/atomos-app-handler"
-    # Hybrid contract: the launcher must signal the autostarted handle
-    # process when phosh fires --show / --hide instead of spawning a
-    # second binary, otherwise the always-visible swipe bar dies the
-    # moment the overlay is dismissed.
-    grep -q "signal_show"  "$root/usr/libexec/atomos-app-handler"
-    grep -q "signal_hide"  "$root/usr/libexec/atomos-app-handler"
-    grep -q "kill -USR1"   "$root/usr/libexec/atomos-app-handler"
-    grep -q "kill -USR2"   "$root/usr/libexec/atomos-app-handler"
     test -f "$root/etc/atomos/app-handler-contract"
     test -f "$root/etc/atomos/phosh-integration-contract"
     grep -q "^$APP_HANDLER_CONTRACT_VERSION$" \
@@ -499,7 +457,7 @@ else
     bash "$PMB" "$PROFILE_ENV_SOURCE" chroot -r -- /bin/sh -eu -c "$REMOVE_AUTOSTART_CMD"
 fi
 
-VERIFY_CMD='test -x /usr/local/bin/atomos-app-handler && test -x /usr/bin/atomos-app-handler && test -x /usr/libexec/atomos-app-handler && grep -q "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" /usr/libexec/atomos-app-handler && grep -q "atomos-app-handler.disabled" /usr/libexec/atomos-app-handler && grep -q "signal_show" /usr/libexec/atomos-app-handler && grep -q "signal_hide" /usr/libexec/atomos-app-handler && grep -q "kill -USR1" /usr/libexec/atomos-app-handler && grep -q "kill -USR2" /usr/libexec/atomos-app-handler && test -f /etc/atomos/app-handler-contract && test -f /etc/atomos/phosh-integration-contract && grep -q "^'"$APP_HANDLER_CONTRACT_VERSION"'$" /etc/atomos/app-handler-contract && grep -q "^'"$APP_HANDLER_CONTRACT_VERSION"'$" /etc/atomos/phosh-integration-contract && test -f /etc/atomos/phosh-profile.env && grep -q "^ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1$" /etc/atomos/phosh-profile.env'
+VERIFY_CMD='test -x /usr/local/bin/atomos-app-handler && test -x /usr/bin/atomos-app-handler && test -x /usr/libexec/atomos-app-handler && grep -q "ATOMOS_APP_HANDLER_ENABLE_RUNTIME" /usr/libexec/atomos-app-handler && grep -q "atomos-app-handler.disabled" /usr/libexec/atomos-app-handler && test -f /etc/atomos/app-handler-contract && test -f /etc/atomos/phosh-integration-contract && grep -q "^'"$APP_HANDLER_CONTRACT_VERSION"'$" /etc/atomos/app-handler-contract && grep -q "^'"$APP_HANDLER_CONTRACT_VERSION"'$" /etc/atomos/phosh-integration-contract && test -f /etc/atomos/phosh-profile.env && grep -q "^ATOMOS_APP_HANDLER_ENABLE_RUNTIME=1$" /etc/atomos/phosh-profile.env'
 if [ -n "$AUTOSTART_TMP" ]; then
     VERIFY_CMD="$VERIFY_CMD"' && test -f /etc/xdg/autostart/atomos-app-handler.desktop && grep -q "Exec=/usr/libexec/atomos-app-handler --start" /etc/xdg/autostart/atomos-app-handler.desktop'
 else

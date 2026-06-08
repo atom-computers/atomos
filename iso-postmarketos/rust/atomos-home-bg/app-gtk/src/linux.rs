@@ -215,14 +215,20 @@ fn apply_webview_settings(webview: &webkit6::WebView) {
     // Permit JS — the placeholder content depends on it.
     settings.set_enable_javascript(true);
 
+    // Enable local file access from file URLs so that ES modules (type="module" in index.html)
+    // and dynamic content loaded via file:// protocol are not blocked by CORS (Origin null).
+    settings.set_allow_universal_access_from_file_urls(true);
+    settings.set_allow_file_access_from_file_urls(true);
+
     eprintln!(
         "atomos-home-bg: webkit settings: webgl={} hw-accel={:?} \
-         console-to-stdout={} dev-extras={} js={}",
+         console-to-stdout={} dev-extras={} js={} file-access={}",
         settings.enables_webgl(),
         settings.hardware_acceleration_policy(),
         settings.enables_write_console_messages_to_stdout(),
         settings.enables_developer_extras(),
         settings.enables_javascript(),
+        settings.allows_universal_access_from_file_urls() && settings.allows_file_access_from_file_urls(),
     );
 }
 

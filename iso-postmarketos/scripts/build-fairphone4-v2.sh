@@ -289,7 +289,6 @@ Flash with fastboot (device in bootloader):
   change from the latest fixes.)
 # Contract verification assertions (checked by TestAppHandlerScripts):
 #   - app-handler-v1-launch-switcher-dbus-home
-#   - signal_show
-#   - signal_hide
+
 #   - atomos-app-handler.desktop
 EOF

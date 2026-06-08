@@ -4,12 +4,11 @@
 //! maps targets onto `phosh_home_set_state()`.
 //!
 //! Pure functions here are the contract Phosh C (`home.c`) and GTK (`launcher.rs`)
-//! must follow — unit tests gate regressions such as sending `--show` on unlock.
+//! must follow.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UiMode {
     Idle,
-    SwitcherOpen,
     LauncherOpen,
 }
 
@@ -27,16 +26,6 @@ pub enum PhoshHomeShellState {
     Transition,
 }
 
-/// Libexec launcher actions driven from Phosh `atomos_phosh_sync_app_handler_lifecycle`.
-/// Must stay disjoint from [`crate::LifecycleAction::Show`] (SIGUSR1 opens the switcher).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ShellLifecycleAction {
-    /// Do not spawn the libexec wrapper for this home-state transition.
-    None,
-    /// `atomos-app-handler --hide` / SIGUSR2 — dismiss switcher overlay only.
-    HideSwitcherOverlay,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PhoshHomeIpc {
     None,
@@ -49,32 +38,10 @@ pub fn derive_home_ipc(prev_count: usize, new_count: usize, ui_mode: UiMode) -> 
     if new_count == 0 && prev_count > 0 {
         return PhoshHomeIpc::SetUnfolded;
     }
-    if new_count > 0
-        && prev_count == 0
-        && !matches!(ui_mode, UiMode::LauncherOpen | UiMode::SwitcherOpen)
-    {
+    if new_count > 0 && prev_count == 0 && !matches!(ui_mode, UiMode::LauncherOpen) {
         return PhoshHomeIpc::SetFolded;
     }
     PhoshHomeIpc::None
-}
-
-/// Phosh `home.c` must only hide the switcher when home folds — never `--show` on
-/// unfold (that covered the home UI right after unlock).
-pub fn shell_lifecycle_action_for_home_state(state: PhoshHomeShellState) -> ShellLifecycleAction {
-    match state {
-        PhoshHomeShellState::Folded => ShellLifecycleAction::HideSwitcherOverlay,
-        PhoshHomeShellState::Unfolded | PhoshHomeShellState::Transition => {
-            ShellLifecycleAction::None
-        }
-    }
-}
-
-/// Libexec argv fragment for [`ShellLifecycleAction`], if any.
-pub fn shell_lifecycle_argv(action: ShellLifecycleAction) -> Option<&'static str> {
-    match action {
-        ShellLifecycleAction::None => None,
-        ShellLifecycleAction::HideSwitcherOverlay => Some("--hide"),
-    }
 }
 
 /// D-Bus fold/unfold when the Rust launcher sheet opens or closes.
@@ -96,7 +63,6 @@ pub fn home_target_name(target: HomeTarget) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::LifecycleAction;
 
     #[test]
     fn unfold_when_last_toplevel_closes() {
@@ -115,66 +81,10 @@ mod tests {
     }
 
     #[test]
-    fn no_fold_while_switcher_open() {
-        assert_eq!(
-            derive_home_ipc(0, 1, UiMode::SwitcherOpen),
-            PhoshHomeIpc::None
-        );
-    }
-
-    #[test]
     fn no_fold_while_launcher_open() {
         assert_eq!(
             derive_home_ipc(0, 1, UiMode::LauncherOpen),
             PhoshHomeIpc::None
-        );
-    }
-
-    #[test]
-    fn phosh_unfold_must_not_hide_or_show_switcher_via_shell_lifecycle() {
-        assert_eq!(
-            shell_lifecycle_action_for_home_state(PhoshHomeShellState::Unfolded),
-            ShellLifecycleAction::None
-        );
-        assert_eq!(
-            shell_lifecycle_argv(shell_lifecycle_action_for_home_state(
-                PhoshHomeShellState::Unfolded
-            )),
-            None
-        );
-    }
-
-    #[test]
-    fn phosh_transition_must_not_show_switcher_via_shell_lifecycle() {
-        assert_eq!(
-            shell_lifecycle_action_for_home_state(PhoshHomeShellState::Transition),
-            ShellLifecycleAction::None
-        );
-    }
-
-    #[test]
-    fn phosh_fold_hides_switcher_overlay_only() {
-        assert_eq!(
-            shell_lifecycle_action_for_home_state(PhoshHomeShellState::Folded),
-            ShellLifecycleAction::HideSwitcherOverlay
-        );
-        assert_eq!(
-            shell_lifecycle_argv(ShellLifecycleAction::HideSwitcherOverlay),
-            Some("--hide")
-        );
-    }
-
-    #[test]
-    fn shell_lifecycle_hide_is_not_lifecycle_action_show() {
-        let argv = shell_lifecycle_argv(ShellLifecycleAction::HideSwitcherOverlay).unwrap();
-        assert_eq!(argv, "--hide");
-        assert_ne!(
-            crate::parse_lifecycle_action(&[argv.to_string()]),
-            LifecycleAction::Show
-        );
-        assert_eq!(
-            crate::parse_lifecycle_action(&["--show".into()]),
-            LifecycleAction::Show
         );
     }
 

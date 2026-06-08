@@ -76,16 +76,15 @@ fn handle_strip_has_event_probe_to_distinguish_wayland_from_gtk_failure() {
 
 #[test]
 fn swipe_threshold_closes_foreground_app_not_opens_switcher_overlay() {
-    // We now background/close the foreground app on swipe-up.
     let update_body = LINUX_RS
         .split("drag.connect_drag_update")
         .nth(1)
         .and_then(|tail| tail.split("drag.connect_drag_end").next())
         .unwrap_or("");
     assert!(
-        update_body.contains("SwipeOutcome::OpenOverlay") && update_body.contains("handle.close()"),
+        update_body.contains("SwipeOutcome::CloseApp") && update_body.contains("handle.close()"),
         "connect_drag_update must call handle.close() when evaluate_swipe_up \
-         returns OpenOverlay"
+         returns CloseApp"
     );
     assert!(
         !update_body.contains("ctl_update.open()"),
@@ -118,8 +117,8 @@ fn gesture_fade_layer_shell_anchors_top_for_full_screen_drag_survival() {
 #[test]
 fn handle_strip_sits_on_overlay_layer_above_foreground_app_to_push_keyboard() {
     assert!(
-        LINUX_RS.contains("LayerSurfaceRole::HandleStrip | LayerSurfaceRole::GestureFade | LayerSurfaceRole::Switcher => {"),
-        "configure_layer_surface must map HandleStrip to Layer::Overlay so the \
+        LINUX_RS.contains("LayerSurfaceRole::HandleStrip | LayerSurfaceRole::GestureFade => {"),
+        "configure_layer_surface must map HandleStrip and GestureFade to Layer::Overlay so the \
          visible handle sits on the Overlay layer and virtual keyboards respect exclusive_zone"
     );
     let anchor_branch = LINUX_RS
