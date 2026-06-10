@@ -1,0 +1,25 @@
+[package]
+name = "atomos-lifecycle"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+wayland-client = { version = "0.31", optional = true }
+wayland-protocols-wlr = { version = "0.3", features = ["client"], optional = true }
+zbus = { version = "4", default-features = false, features = ["tokio"], optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"], optional = true }
+nix = { version = "0.29", features = ["user"], optional = true }
+futures = { version = "0.3", optional = true }
+
+[features]
+default = []
+wayland = ["dep:wayland-client", "dep:wayland-protocols-wlr"]
+daemon = ["dep:zbus", "dep:tokio", "dep:nix", "dep:futures", "wayland"]
+
+[[bin]]
+name = "atomos-lifecycle"
+path = "src/main.rs"

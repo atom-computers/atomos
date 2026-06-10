@@ -29,7 +29,11 @@
 #include "background.h"
 #include "brightness-manager.h"
 #include "drag-surface.h"
-#include "atomos-phosh-home-dbus.h"
+
+/* PHOSH_TOP_BAR_HEIGHT was defined in top-panel.h; atomos-top-bar
+ * replaces PhoshTopPanel so we carry the constant locally. */
+#define PHOSH_TOP_BAR_HEIGHT 32
+
 #include "debug-control.h"
 #include "shell-priv.h"
 #include "app-tracker.h"
@@ -50,7 +54,7 @@
 #include "gnome-shell-manager.h"
 #include "gtk-mount-manager.h"
 #include "hks-info.h"
-#include "home.h"
+
 #include "idle-manager.h"
 #include "keyboard-events.h"
 #include "launcher-entry-manager.h"
@@ -93,8 +97,8 @@
 #include "style-manager.h"
 #include "suspend-manager.h"
 #include "system-prompter.h"
-#include "top-panel.h"
-#include "top-panel-bg.h"
+
+
 #include "torch-manager.h"
 #include "torch-info.h"
 #include "udev-manager.h"
@@ -116,8 +120,7 @@
  *
  * The shell singleton
  *
- * #PhoshShell is responsible for instantiating the GUI
- * parts of the shell#PhoshTopPanel, #PhoshHome,… and the managers that
+ * #PhoshShell is responsible for instantiating the managers that
  * interface with DBus #PhoshMonitorManager, #PhoshFeedbackManager, …
  * and coordinates between them.
  */
@@ -144,8 +147,6 @@ static guint signals[N_SIGNALS] = { 0 };
 static PhoshShellDebugFlags debug_flags;
 
 typedef struct {
-  PhoshDragSurface           *top_panel;
-  PhoshDragSurface           *home;
   gboolean                    overview_visible;
   GPtrArray                  *faders; /* for final fade out */
   GStrv log_domains;
@@ -202,7 +203,7 @@ typedef struct {
   PhoshMprisManager          *mpris_manager;
   PhoshBrightnessManager     *brightness_manager;
   PhoshDebugControl          *debug_control;
-  PhoshAtomosPhoshHomeDBus  *atomos_phosh_home_dbus;
+  
 
   /* sensors */
   PhoshSensorProxyManager    *sensor_proxy_manager;
@@ -236,59 +237,9 @@ G_DEFINE_TYPE_WITH_CODE (PhoshShell, phosh_shell, G_TYPE_OBJECT,
   )
 
 static void
-on_top_panel_activated (PhoshShell    *self,
-                        PhoshTopPanel *window)
-{
-  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
-
-  g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->top_panel));
-  phosh_top_panel_toggle_fold (PHOSH_TOP_PANEL (priv->top_panel));
-}
-
-
-static void
 update_top_level_layer (PhoshShell *self)
 {
-  PhoshShellStateFlags state;
-  PhoshShellPrivate *priv;
-  guint32 layer, current;
-  gboolean use_top_layer;
-
-  priv = phosh_shell_get_instance_private (self);
-
-  g_return_if_fail (PHOSH_IS_SHELL (self));
-  priv = phosh_shell_get_instance_private (self);
-
-  if (priv->top_panel == NULL)
-    return;
-
-  g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->top_panel));
-  state = phosh_shell_get_state (self);
-
-  /* When the proximity fader is on we want to remove the top-panel from the
-     overlay layer since it uses an exclusive zone and hence the fader is
-     drawn below that top-panel. This can be dropped once layer-shell allows
-     to specify the z-level */
-  use_top_layer = priv->proximity && phosh_proximity_has_fader (priv->proximity);
-  if (use_top_layer)
-    goto set_layer;
-
-  /* We want the top-bar on the lock screen */
-  use_top_layer = !phosh_shell_get_locked (self);
-  if (use_top_layer)
-    goto set_layer;
-
-  /* If there's a modal dialog make sure it can extend over the top-panel */
-  use_top_layer = !!(state & PHOSH_STATE_MODAL_SYSTEM_PROMPT);
-
- set_layer:
-  layer = use_top_layer ? ZWLR_LAYER_SHELL_V1_LAYER_TOP : ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY;
-  g_object_get (priv->top_panel, "layer", &current, NULL);
-  if (current == layer)
-    return;
-
-  g_debug ("Moving top-panel to %s layer", use_top_layer ? "top" : "overlay");
-  phosh_top_panel_set_layer (PHOSH_TOP_PANEL (priv->top_panel), layer);
+  /* PhoshTopPanel removed; atomos-top-bar manages its own layer */
 }
 
 
@@ -296,58 +247,6 @@ static void
 on_proximity_fader_changed (PhoshShell *self)
 {
   update_top_level_layer (self);
-}
-
-
-static void
-on_top_panel_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshTopPanel *top_panel)
-{
-  PhoshShellPrivate *priv;
-  PhoshTopPanelState state;
-
-  g_return_if_fail (PHOSH_IS_SHELL (self));
-  g_return_if_fail (PHOSH_IS_TOP_PANEL (top_panel));
-
-  priv = phosh_shell_get_instance_private (self);
-
-  state = phosh_top_panel_get_state (PHOSH_TOP_PANEL (priv->top_panel));
-  phosh_shell_set_state (self, PHOSH_STATE_SETTINGS, state == PHOSH_TOP_PANEL_STATE_UNFOLDED);
-}
-
-static void
-update_top_bar_transparency (PhoshShell *self)
-{
-  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
-  PhoshHomeState state;
-
-  if (!priv->top_panel)
-    return;
-
-  if (priv->locked) {
-    phosh_top_panel_set_bar_transparent (PHOSH_TOP_PANEL (priv->top_panel), TRUE);
-    return;
-  }
-
-  state = phosh_home_get_state (PHOSH_HOME (priv->home));
-  phosh_top_panel_set_bar_transparent (PHOSH_TOP_PANEL (priv->top_panel),
-                                       (state != PHOSH_HOME_STATE_FOLDED));
-}
-
-
-static void
-on_home_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshHome *home)
-{
-  PhoshShellPrivate *priv;
-  PhoshHomeState state;
-
-  g_return_if_fail (PHOSH_IS_SHELL (self));
-  g_return_if_fail (PHOSH_IS_HOME (home));
-  priv = phosh_shell_get_instance_private (self);
-
-  update_top_bar_transparency (self);
-
-  state = phosh_home_get_state (PHOSH_HOME (priv->home));
-  phosh_shell_set_state (self, PHOSH_STATE_OVERVIEW, state == PHOSH_HOME_STATE_UNFOLDED);
 }
 
 
@@ -368,15 +267,8 @@ on_primary_monitor_power_mode_changed (PhoshShell *self, GParamSpec *pspec, Phos
 static void
 on_primary_monitor_configured (PhoshShell *self, PhoshMonitor *monitor)
 {
-  PhoshShellPrivate *priv;
-  int height;
-
   g_return_if_fail (PHOSH_IS_SHELL (self));
   g_return_if_fail (PHOSH_IS_MONITOR (monitor));
-  priv = phosh_shell_get_instance_private (self);
-
-  phosh_shell_get_area (self, NULL, &height);
-  phosh_layer_surface_set_size (PHOSH_LAYER_SURFACE (priv->top_panel), -1, height);
 }
 
 
@@ -406,84 +298,15 @@ setup_primary_monitor_signal_handlers (PhoshShell *self)
 static void
 panels_create (PhoshShell *self)
 {
-  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
-  PhoshWayland *wl = phosh_wayland_get_default ();
-  PhoshMonitor *monitor;
-  PhoshAppGrid *app_grid;
-  guint32 top_layer;
-
-  monitor = phosh_shell_get_primary_monitor (self);
-  g_return_if_fail (monitor);
-
-  top_layer = priv->locked ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP;
-
-  /* Top panel */
-  priv->top_panel = PHOSH_DRAG_SURFACE (phosh_top_panel_new (
-                                          phosh_wayland_get_zwlr_layer_shell_v1 (wl),
-                                          phosh_wayland_get_zphoc_layer_shell_effects_v1 (wl),
-                                          monitor,
-                                          top_layer));
-  gtk_widget_set_visible (GTK_WIDGET (priv->top_panel), FALSE);
-
-  /* Home is created after the top-panel so it honors its exclusive zone */
-  priv->home = PHOSH_DRAG_SURFACE (phosh_home_new (phosh_wayland_get_zwlr_layer_shell_v1 (wl),
-                                                   phosh_wayland_get_zphoc_layer_shell_effects_v1 (wl),
-                                                   monitor));
-  /* AtomOS: org.atomos.PhoshHome D-Bus skeleton (atomos-phosh-home-dbus.c).
-   *
-   * The Rust atomos-app-handler launch path (run_launch_once) calls SetFolded
-   * over this interface to fold the home after launching an app from the
-   * chat-ui overview grid. Without the service the launch reaches gio spawn
-   * but then fails with GDBus ServiceUnknown, so the home never folds and the
-   * new window stays hidden behind the overview ("some apps do not open").
-   *
-   * This was previously gated OFF because phosh_atomos_phosh_home_dbus_new()
-   * segfaulted at construction: the G_DECLARE_FINAL_TYPE parent in
-   * atomos-phosh-home-dbus.h was GObject instead of PhoshDBusPhoshHomeSkeleton,
-   * so the synthesized class struct was sized for GObjectClass while the type
-   * registered against PHOSH_DBUS_TYPE_PHOSH_HOME_SKELETON — the type system
-   * then overran the undersized class buffer. With the parent corrected the
-   * constructor is safe, so enable by default. Set
-   * ATOMOS_PHOSH_ENABLE_HOME_DBUS=0 in /etc/atomos/phosh-profile.env to opt out
-   * (e.g. to bisect a regression).
-   */
-  priv->atomos_phosh_home_dbus = NULL;
-  if (g_strcmp0 (g_getenv ("ATOMOS_PHOSH_ENABLE_HOME_DBUS"), "0") != 0) {
-    priv->atomos_phosh_home_dbus = phosh_atomos_phosh_home_dbus_new (PHOSH_HOME (priv->home));
-  }
-  g_object_bind_property (self, "overview-visible", priv->home, "visible", G_BINDING_SYNC_CREATE);
-
-  g_signal_connect_swapped (priv->top_panel,
-                            "activated",
-                            G_CALLBACK (on_top_panel_activated),
-                            self);
-
-  g_signal_connect_swapped (priv->top_panel,
-                            "notify::state",
-                            G_CALLBACK (on_top_panel_state_changed),
-                            self);
-
-  g_signal_connect_swapped (priv->home,
-                            "notify::state",
-                            G_CALLBACK (on_home_state_changed),
-                            self);
-
-  app_grid = phosh_overview_get_app_grid (phosh_home_get_overview (PHOSH_HOME (priv->home)));
-  g_object_bind_property (priv->docked_manager,
-                          "enabled",
-                          app_grid,
-                          "filter-adaptive",
-                          G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
+  /* PhoshHome and PhoshTopPanel removed; atomos-home and atomos-top-bar
+   * are standalone layer-shell surfaces managed outside shell.c. */
 }
 
 
 static void
 panels_dispose (PhoshShell *self)
 {
-  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
-
-  g_clear_pointer (&priv->top_panel, phosh_cp_widget_destroy);
-  g_clear_pointer (&priv->home, phosh_cp_widget_destroy);
+  /* PhoshHome and PhoshTopPanel removed; nothing to dispose */
 }
 
 
@@ -501,11 +324,9 @@ set_locked (PhoshShell *self, gboolean locked)
 
   /* Hide settings on screen lock, otherwise the user just sees the settings when
      unblanking the screen which can be confusing */
-  if (priv->top_panel)
-    phosh_top_panel_fold (PHOSH_TOP_PANEL (priv->top_panel));
+  /* atomos-top-bar handles its own fold state */
 
   update_top_level_layer (self);
-  update_top_bar_transparency (self);
 }
 
 
@@ -619,7 +440,6 @@ phosh_shell_dispose (GObject *object)
 
   /* dispose managers in opposite order of declaration */
   g_clear_object (&priv->debug_control);
-  g_clear_object (&priv->atomos_phosh_home_dbus);
   g_clear_object (&priv->brightness_manager);
   g_clear_object (&priv->mpris_manager);
   g_clear_object (&priv->connectivity_manager);
@@ -698,11 +518,7 @@ on_num_toplevels_changed (PhoshShell           *self,
                           GParamSpec           *pspec,
                           PhoshToplevelManager *toplevel_manager)
 {
-  /* AtomOS: fold/unfold is driven by rust atomos-app-handler via
-   * org.atomos.PhoshHome D-Bus instead of reacting to toplevel count here. */
-  (void) self;
-  (void) pspec;
-  (void) toplevel_manager;
+  /* Home folding/unfolding is now handled by atomos-home via org.atomos.Home D-Bus */
 }
 
 
@@ -731,7 +547,6 @@ on_new_notification (PhoshShell         *self,
   /* Clear existing banner */
   g_clear_pointer (&priv->notification_banner, phosh_cp_widget_destroy);
   if (phosh_notify_manager_get_show_notification_banner (manager, notification) &&
-      phosh_top_panel_get_state (PHOSH_TOP_PANEL (priv->top_panel)) == PHOSH_TOP_PANEL_STATE_FOLDED &&
       !priv->locked) {
     priv->notification_banner = phosh_notification_banner_new (notification);
     g_signal_connect (priv->notification_banner,
@@ -756,13 +571,8 @@ on_pb_long_press (PhoshShell *self)
 static void
 on_notification_activated (PhoshShell *self)
 {
-  PhoshShellPrivate *priv;
-
   g_return_if_fail (PHOSH_IS_SHELL (self));
-
-  priv = phosh_shell_get_instance_private (self);
-
-  phosh_top_panel_fold (PHOSH_TOP_PANEL (priv->top_panel));
+  /* atomos-top-bar handles its own fold state */
 }
 
 
@@ -865,12 +675,9 @@ setup_idle_cb (PhoshShell *self)
     g_message ("Failed to connect to sensor-proxy: %s", err->message);
 
   priv->layout_manager = phosh_layout_manager_new ();
-  /* PhoshHome needs the background manager */
+  /* Background manager needed for layer surfaces */
   priv->background_manager = phosh_background_manager_new ();
   panels_create (self);
-
-  if (priv->atomos_phosh_home_dbus)
-    phosh_atomos_phosh_home_dbus_set_exported (priv->atomos_phosh_home_dbus, TRUE);
 
   g_signal_connect_object (priv->toplevel_manager,
                            "notify::num-toplevels",
@@ -1407,7 +1214,7 @@ phosh_shell_class_init (PhoshShellClass *klass)
   /**
    * PhoshShell:overview-visible:
    *
-   * Whether to display the `PhoshHome` (overview and home bar)
+   * Whether the overview is visible (managed by atomos-home)
    */
   props[PROP_OVERVIEW_VISIBLE] =
     g_param_spec_boolean ("overview-visible", "", "",
@@ -2585,12 +2392,9 @@ phosh_shell_is_session_active (PhoshShell *self)
 GdkAppLaunchContext*
 phosh_shell_get_app_launch_context (PhoshShell *self)
 {
-  PhoshShellPrivate *priv;
-
   g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
-  priv = phosh_shell_get_instance_private (self);
 
-  return gdk_display_get_app_launch_context (gtk_widget_get_display (GTK_WIDGET (priv->top_panel)));
+  return gdk_display_get_app_launch_context (gdk_display_get_default ());
 }
 
 /**

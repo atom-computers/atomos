@@ -38,10 +38,8 @@
 #define POWERBAR_ACTIVE_CLASS "p-active"
 #define POWERBAR_FAILED_CLASS "p-failed"
 #define ATOMOS_CHAT_SUBMIT_PATH "/usr/libexec/atomos-overview-chat-submit"
-#define ATOMOS_HOME_BG_LAUNCHER_PATH "/usr/libexec/atomos-home-bg"
 #define ATOMOS_APP_HANDLER_LAUNCHER_PATH "/usr/libexec/atomos-app-handler"
-#define ATOMOS_OVERVIEW_CHAT_UI_LAUNCHER_PATH "/usr/libexec/atomos-overview-chat-ui"
-#define ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE_ENV "ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE"
+#define ATOMOS_LIFECYCLE_PATH "/usr/local/bin/atomos-lifecycle"
 #define ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG_ENV "ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG"
 #define ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS_ENV "ATOMOS_OVERVIEW_CHAT_UI_DISABLE_CUSTOM_CSS"
 #define ATOMOS_PHOSH_HOME_TRACE_ENV "ATOMOS_PHOSH_HOME_TRACE"
@@ -242,122 +240,12 @@ atomos_phosh_background_disabled (void)
 }
 
 
-static void
-atomos_phosh_sync_home_bg_layer (PhoshHomeState state)
-{
-  const char *layer;
-  g_autofree char *cmd = NULL;
-  g_autoptr (GError) err = NULL;
-
-  if (!atomos_phosh_background_disabled ())
-    return;
-
-  if (!g_file_test (ATOMOS_HOME_BG_LAUNCHER_PATH, G_FILE_TEST_IS_EXECUTABLE))
-    return;
-
-  PhoshShell *shell = phosh_shell_get_default ();
-  if (shell && phosh_shell_get_locked (shell)) {
-    cmd = g_strdup_printf ("%s --hide", ATOMOS_HOME_BG_LAUNCHER_PATH);
-    if (!g_spawn_command_line_async (cmd, &err))
-      g_warning ("Failed to hide atomos-home-bg on lock: %s", err->message);
-    return;
-  }
-
-  switch (state) {
-  case PHOSH_HOME_STATE_UNFOLDED:
-    layer = "top";
-    break;
-  case PHOSH_HOME_STATE_FOLDED:
-    /* background sits below BOTTOM (chat-ui autostart / folded strip) so a
-     * later phosh --show restart does not paint WebKit over the chat surface. */
-    layer = "background";
-    break;
-  case PHOSH_HOME_STATE_TRANSITION:
-  default:
-    return;
-  }
-
-  cmd = g_strdup_printf ("ATOMOS_HOME_BG_LAYER=%s %s --show",
-                         layer,
-                         ATOMOS_HOME_BG_LAUNCHER_PATH);
-  if (!g_spawn_command_line_async (cmd, &err))
-    g_warning ("Failed to sync atomos-home-bg layer: %s", err->message);
-}
-
-
-/* Removed: atomos_phosh_sync_app_handler_lifecycle — the switcher overlay
- * has been gutted. Swipe-up now closes the foreground app directly without
- * opening an overlay surface, so there is no overlay to hide on fold. */
-
-
-/* Replacement for the deleted vendor phosh patches
- *   0003-atomos-overview-chat-ui-lifecycle.patch
- *   0004-atomos-overview-chat-ui-show-on-unfold.patch
- * which used to spawn /usr/libexec/atomos-overview-chat-ui --show on home
- * unfold (and --hide on fold). Without this hook the layer-shell chat
- * overlay never appears on the home screen even when its XDG autostart
- * .desktop is present, because phosh used to drive both startup AND
- * focus/dismiss.
- *
- * Layer split (mirrors atomos_phosh_sync_home_bg_layer): `overlay` while the
- * overview is unfolded so the chat strip sits above Phosh home (which is
- * itself a zwlr_layer_shell_v1 TOP surface — putting chat-ui on TOP as well
- * leaves it *under* phosh-home in practice and the home screen looks empty).
- * `bottom` while folded so the strip stays under xdg-toplevel apps. The
- * launcher restarts the GTK process on each --show so
- * ATOMOS_OVERVIEW_CHAT_UI_LAYER is applied.
- *
- * While the session is locked, chat-ui must not use the overlay layer: Phosh
- * places the lock surface on OVERLAY too, so an overlay chat strip paints on
- * top of the lock screen. Use --hide until unlock, then re-sync on unfold.
- *
- * Kill switch (for bisection): set ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE=1
- * to disable the spawn entirely. The launcher honours
- * ATOMOS_OVERVIEW_CHAT_UI_ENABLE_RUNTIME. */
-static void
-atomos_phosh_sync_overview_chat_ui_lifecycle (PhoshHomeState state)
-{
-  const char *env;
-  const char *layer;
-  g_autofree char *cmd = NULL;
-  g_autoptr (GError) err = NULL;
-  PhoshShell *shell;
-
-  env = g_getenv (ATOMOS_OVERVIEW_CHAT_UI_DISABLE_LIFECYCLE_ENV);
-  if (env && *env && g_strcmp0 (env, "0") != 0)
-    return;
-
-  if (!g_file_test (ATOMOS_OVERVIEW_CHAT_UI_LAUNCHER_PATH, G_FILE_TEST_IS_EXECUTABLE))
-    return;
-
-  shell = phosh_shell_get_default ();
-  if (shell && phosh_shell_get_locked (shell)) {
-    cmd = g_strdup_printf ("%s --hide", ATOMOS_OVERVIEW_CHAT_UI_LAUNCHER_PATH);
-    if (!g_spawn_command_line_async (cmd, &err))
-      g_warning ("Failed to hide atomos-overview-chat-ui on lock: %s", err->message);
-    return;
-  }
-
-  switch (state) {
-  case PHOSH_HOME_STATE_UNFOLDED:
-    /* wlr-layer-shell OVERLAY (3) is strictly above TOP (2). phosh-home is
-     * anchored on TOP, so chat-ui must use overlay to paint above it. */
-    layer = "overlay";
-    break;
-  case PHOSH_HOME_STATE_FOLDED:
-    layer = "bottom";
-    break;
-  case PHOSH_HOME_STATE_TRANSITION:
-  default:
-    return;
-  }
-
-  cmd = g_strdup_printf ("ATOMOS_OVERVIEW_CHAT_UI_LAYER=%s %s --show",
-                         layer,
-                         ATOMOS_OVERVIEW_CHAT_UI_LAUNCHER_PATH);
-  if (!g_spawn_command_line_async (cmd, &err))
-    g_warning ("Failed to sync atomos-overview-chat-ui layer: %s", err->message);
-}
+/* Removed: atomos_phosh_sync_home_bg_layer, atomos_phosh_sync_overview_chat_ui_lifecycle
+ * — lifecycle orchestration is now delegated to atomos-lifecycle via the
+ * lifecycle delegate function. These functions inlined env-var
+ * construction and direct g_spawn_async calls that have been replaced by
+ * the delegate which serialises state into ATOMOS_LIFECYCLE_* env vars
+ * and lets the Rust daemon compute the correct actions internally. */
 
 
 static gboolean
@@ -365,6 +253,74 @@ atomos_phosh_bottom_edge_drag_disabled (void)
 {
   const char *env = g_getenv (ATOMOS_PHOSH_DISABLE_BOTTOM_EDGE_DRAG_ENV);
   return env && *env && g_strcmp0 (env, "0") != 0;
+}
+
+
+/* Delegate lifecycle orchestration to atomos-lifecycle.
+ *
+ * The daemon reads ATOMOS_LIFECYCLE_* env vars to determine the current
+ * home state, lock state, and toplevel count, then computes the correct
+ * chat-ui and home-bg actions internally. This replaces the direct
+ * g_spawn_async calls that previously inlined the env-var construction.
+ *
+ * When ATOMOS_LIFECYCLE_ENABLE_RUNTIME is not set to "1", the daemon
+ * exits immediately and the fallback direct-spawn paths below are used
+ * instead (for images where the lifecycle binary is not yet installed).
+ */
+static void
+atomos_phosh_lifecycle_delegate (PhoshHome *self)
+{
+  g_autoptr (GError) err = NULL;
+  g_autofree char *drag_state_str = NULL;
+  g_autofree char *locked_str = NULL;
+  guint num_toplevels = 0;
+  PhoshShell *shell;
+  PhoshDragSurfaceState drag_state;
+  gboolean is_locked = FALSE;
+
+  if (!g_file_test (ATOMOS_LIFECYCLE_PATH, G_FILE_TEST_IS_EXECUTABLE))
+    return;
+
+  shell = phosh_shell_get_default ();
+  if (shell)
+    {
+      PhoshToplevelManager *toplevel_manager = phosh_shell_get_toplevel_manager (shell);
+      if (toplevel_manager)
+        num_toplevels = phosh_toplevel_manager_get_num_toplevels (toplevel_manager);
+      is_locked = phosh_shell_get_locked (shell);
+    }
+
+  drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
+
+  switch (drag_state)
+    {
+    case PHOSH_DRAG_SURFACE_STATE_UNFOLDED:
+      drag_state_str = g_strdup ("unfolded");
+      break;
+    case PHOSH_DRAG_SURFACE_STATE_FOLDED:
+      drag_state_str = g_strdup ("folded");
+      break;
+    case PHOSH_DRAG_SURFACE_STATE_DRAGGED:
+    default:
+      drag_state_str = g_strdup ("transition");
+      break;
+    }
+
+  locked_str = g_strdup (is_locked ? "1" : "0");
+
+  gchar *argv[] = { (gchar *) ATOMOS_LIFECYCLE_PATH, NULL };
+  gchar **envp = g_get_environ ();
+  envp = g_environ_setenv (envp, "ATOMOS_LIFECYCLE_ENABLE_RUNTIME", "1", TRUE);
+  envp = g_environ_setenv (envp, "ATOMOS_LIFECYCLE_DRAG_STATE", drag_state_str, TRUE);
+  envp = g_environ_setenv (envp, "ATOMOS_LIFECYCLE_LOCKED", locked_str, TRUE);
+  envp = g_environ_setenv (envp, "ATOMOS_LIFECYCLE_TOPLEVEL_COUNT",
+                           g_strdup_printf ("%u", num_toplevels), TRUE);
+
+  if (!g_spawn_async (NULL, argv, envp, G_SPAWN_SEARCH_PATH,
+                      NULL, NULL, NULL, &err))
+    g_warning ("Failed to delegate to atomos-lifecycle: %s", err->message);
+
+  g_strfreev (envp);
 }
 
 
@@ -381,8 +337,7 @@ static gboolean atomos_phosh_promote_chat_ui_when_unlocked_idle (gpointer user_d
 static void atomos_phosh_schedule_chat_ui_unlock_sync (PhoshHome *self);
 static void on_shell_locked_changed_atomos_chat_ui (PhoshHome *self);
 static gboolean atomos_phosh_rehide_chat_ui_while_locked_idle (gpointer user_data);
-static PhoshHomeState atomos_phosh_chat_ui_state_from_home (PhoshHome *self);
-static PhoshHomeState atomos_phosh_chat_ui_layer_state_for_home (PhoshHome *self);
+
 
 static gboolean
 mark_ui_stable_for_popups_timeout (gpointer data)
@@ -410,48 +365,9 @@ mark_ui_stable_for_popups_timeout (gpointer data)
    * the next fold) and swipe-down-to-fold appears broken. */
   update_drag_handle (self, FALSE);
 
-  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
+  atomos_phosh_lifecycle_delegate (self);
 
   return G_SOURCE_REMOVE;
-}
-
-static PhoshHomeState
-atomos_phosh_chat_ui_state_from_home (PhoshHome *self)
-{
-  PhoshDragSurfaceState drag_state;
-
-  g_return_val_if_fail (PHOSH_IS_HOME (self), PHOSH_HOME_STATE_FOLDED);
-
-  drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
-  if (drag_state == PHOSH_DRAG_SURFACE_STATE_UNFOLDED)
-    return PHOSH_HOME_STATE_UNFOLDED;
-  return PHOSH_HOME_STATE_FOLDED;
-}
-
-
-/* Folded phosh-home still covers layer=BOTTOM chat-ui. While unlocked and no
- * app toplevel is focused, treat folded home like overview for chat-ui layer. */
-static PhoshHomeState
-atomos_phosh_chat_ui_layer_state_for_home (PhoshHome *self)
-{
-  PhoshShell *shell = phosh_shell_get_default ();
-  PhoshHomeState state;
-
-  g_return_val_if_fail (PHOSH_IS_HOME (self), PHOSH_HOME_STATE_FOLDED);
-
-  state = atomos_phosh_chat_ui_state_from_home (self);
-  if (!shell || phosh_shell_get_locked (shell))
-    return state;
-
-  if (state == PHOSH_HOME_STATE_FOLDED) {
-    PhoshToplevelManager *toplevel_manager = phosh_shell_get_toplevel_manager (shell);
-
-    if (toplevel_manager &&
-        phosh_toplevel_manager_get_num_toplevels (toplevel_manager) == 0)
-      return PHOSH_HOME_STATE_UNFOLDED;
-  }
-
-  return state;
 }
 
 static void
@@ -1294,8 +1210,9 @@ atomos_phosh_promote_chat_ui_when_unlocked_idle (gpointer user_data)
   if (shell && phosh_shell_get_locked (shell))
     return G_SOURCE_REMOVE;
 
-  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
-  atomos_phosh_sync_home_bg_layer (self->state);
+  /* Use chat_ui_layer_state_for_home so chat-ui drops to BOTTOM when apps
+   * are open — unconditional UNFOLDED/OVERLAY paints above app windows. */
+  atomos_phosh_lifecycle_delegate (self);
   return G_SOURCE_REMOVE;
 }
 
@@ -1324,7 +1241,7 @@ atomos_phosh_sync_home_bg_after_map_idle (gpointer user_data)
 
   /* Use real drag/home state only — do not promote home-bg to top when chat-ui
    * is logically unfolded on a folded phosh-home bar. */
-  atomos_phosh_sync_home_bg_layer (atomos_phosh_chat_ui_state_from_home (self));
+  atomos_phosh_lifecycle_delegate (self);
   return G_SOURCE_REMOVE;
 }
 
@@ -1342,8 +1259,7 @@ atomos_phosh_sync_overview_chat_ui_after_map_idle (gpointer user_data)
   if (shell && phosh_shell_get_locked (shell))
     return G_SOURCE_REMOVE;
 
-  atomos_phosh_sync_overview_chat_ui_lifecycle (
-    atomos_phosh_chat_ui_layer_state_for_home (self));
+  atomos_phosh_lifecycle_delegate (self);
   return G_SOURCE_REMOVE;
 }
 
@@ -1354,15 +1270,15 @@ on_shell_locked_changed_atomos_chat_ui (PhoshHome *self)
   PhoshShell *shell = phosh_shell_get_default ();
 
   if (shell && phosh_shell_get_locked (shell)) {
-    atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_FOLDED);
-    atomos_phosh_sync_home_bg_layer (PHOSH_HOME_STATE_FOLDED);
+    atomos_phosh_lifecycle_delegate (self);
     return;
   }
 
   /* Synchronous promotion before queued idles so a prior map-idle cannot leave
-   * chat-ui killed without overlay --show (2nd-boot flash-then-wallpaper). */
-  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED);
-  atomos_phosh_sync_home_bg_layer (self->state);
+   * chat-ui killed without overlay --show (2nd-boot flash-then-wallpaper).
+   * Use chat_ui_layer_state_for_home so chat-ui drops to BOTTOM when apps are
+   * open — unconditional UNFOLDED/OVERLAY paints above app windows. */
+  atomos_phosh_lifecycle_delegate (self);
   atomos_phosh_schedule_chat_ui_unlock_sync (self);
 }
 
@@ -1376,7 +1292,7 @@ atomos_phosh_rehide_chat_ui_while_locked_idle (gpointer user_data)
   if (!shell || !phosh_shell_get_locked (shell))
     return G_SOURCE_REMOVE;
 
-  atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_FOLDED);
+  atomos_phosh_lifecycle_delegate (self);
   return G_SOURCE_REMOVE;
 }
 
@@ -1440,10 +1356,7 @@ on_drag_state_changed (PhoshHome *self)
 
   phosh_layer_surface_set_kbd_interactivity (PHOSH_LAYER_SURFACE (self), kbd_interactivity);
   update_drag_handle (self, TRUE);
-  atomos_phosh_sync_home_bg_layer (atomos_phosh_chat_ui_state_from_home (self));
-  if (self->state != PHOSH_HOME_STATE_TRANSITION)
-    atomos_phosh_sync_overview_chat_ui_lifecycle (
-      atomos_phosh_chat_ui_layer_state_for_home (self));
+  atomos_phosh_lifecycle_delegate (self);
 }
 
 
@@ -1565,7 +1478,7 @@ phosh_home_constructed (GObject *object)
     g_timeout_add (250, atomos_phosh_rehide_chat_ui_while_locked_idle, self);
     g_timeout_add_seconds (3, atomos_phosh_rehide_chat_ui_while_locked_idle, self);
   } else {
-    atomos_phosh_sync_home_bg_layer (PHOSH_HOME_STATE_FOLDED);
+    atomos_phosh_lifecycle_delegate (self);
     atomos_phosh_schedule_chat_ui_unlock_sync (self);
   }
 

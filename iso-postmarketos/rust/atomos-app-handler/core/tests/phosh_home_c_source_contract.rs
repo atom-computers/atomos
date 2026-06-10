@@ -75,70 +75,47 @@ fn extract_function_body(src: &str, name: &str) -> String {
     panic!("function {name} definition not found");
 }
 
-fn extract_switch_case(function_body: &str, case_label: &str) -> String {
-    let needle = format!("case {case_label}:");
-    let start = function_body
-        .find(&needle)
-        .unwrap_or_else(|| panic!("missing switch case {case_label} in lifecycle function"));
-    let rest = &function_body[start + needle.len()..];
-    let end = rest
-        .find("case ")
-        .or_else(|| rest.find("default:"))
-        .unwrap_or(rest.len());
-    strip_c_block_comments(&rest[..end])
-}
-
 #[test]
-fn phosh_home_c_unfolded_spawns_chat_ui_on_overlay_layer_not_top() {
+fn phosh_home_c_lifecycle_delegate_unfolded_sends_overlay() {
+    let delegate = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
+    assert!(
+        delegate.contains("ATOMOS_LIFECYCLE_DRAG_STATE"),
+        "delegate sends drag state so daemon can compute overlay layer for unfolded"
+    );
     let src = read_home_c();
-    let lifecycle_fn =
-        extract_function_body(&src, "atomos_phosh_sync_overview_chat_ui_lifecycle");
-    let unfolded = extract_switch_case(&lifecycle_fn, "PHOSH_HOME_STATE_UNFOLDED");
     assert!(
-        unfolded.contains("layer = \"overlay\"") || unfolded.contains("layer = \"overlay\";"),
-        "UNFOLDED must set ATOMOS_OVERVIEW_CHAT_UI_LAYER=overlay so chat-ui sits above \
-         phosh-home (also a TOP layer-shell surface); layer=top leaves chat-ui invisible"
-    );
-    assert!(
-        !unfolded.contains("layer = \"top\"") && !unfolded.contains("layer = \"top\";"),
-        "UNFOLDED must not use layer=top for overview-chat-ui"
+        !src.contains("layer = \"top\"") && !src.contains("layer = \"top\";"),
+        "home.c must not set layer=top anywhere — that leaves chat-ui under phosh-home"
     );
 }
 
 #[test]
-fn phosh_home_c_folded_home_bg_uses_background_layer() {
-    let body = extract_function_body(&read_home_c(), "atomos_phosh_sync_home_bg_layer");
-    let folded = extract_switch_case(&body, "PHOSH_HOME_STATE_FOLDED");
+fn phosh_home_c_lifecycle_delegate_covers_home_bg() {
+    let delegate = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
     assert!(
-        folded.contains("layer = \"background\"") || folded.contains("layer = \"background\";"),
-        "FOLDED home-bg must use background layer (below chat-ui on bottom/overlay)"
+        delegate.contains("ATOMOS_LIFECYCLE_DRAG_STATE"),
+        "delegate sends drag state so daemon can compute home-bg layer (background when folded)"
     );
 }
 
 #[test]
-fn phosh_home_c_folded_spawns_chat_ui_on_bottom_layer() {
+fn phosh_home_c_no_direct_layer_assignments_in_c() {
     let src = read_home_c();
-    let lifecycle_fn =
-        extract_function_body(&src, "atomos_phosh_sync_overview_chat_ui_lifecycle");
-    let folded = extract_switch_case(&lifecycle_fn, "PHOSH_HOME_STATE_FOLDED");
+    let delegate = extract_function_body(&src, "atomos_phosh_lifecycle_delegate");
+    let stripped = strip_c_block_comments(&delegate);
     assert!(
-        folded.contains("layer = \"bottom\"") || folded.contains("layer = \"bottom\";"),
-        "FOLDED must set layer=bottom"
+        !stripped.contains("layer = \"bottom\"") && !stripped.contains("layer = \"overlay\"")
+            && !stripped.contains("layer = \"top\"") && !stripped.contains("layer = \"background\""),
+        "layer assignment is now computed by atomos-lifecycle, not hardcoded in C"
     );
 }
 
 #[test]
-fn phosh_home_c_chat_ui_lifecycle_hides_while_session_locked() {
-    let src = read_home_c();
-    let lifecycle_fn =
-        extract_function_body(&src, "atomos_phosh_sync_overview_chat_ui_lifecycle");
+fn phosh_home_c_lifecycle_delegate_hides_while_locked() {
+    let delegate = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
     assert!(
-        lifecycle_fn.contains("phosh_shell_get_locked"),
-        "overview-chat-ui lifecycle must check session lock before overlay --show"
-    );
-    assert!(
-        lifecycle_fn.contains("--hide"),
-        "overview-chat-ui lifecycle must hide while locked (overlay paints above lock surface)"
+        delegate.contains("phosh_shell_get_locked"),
+        "delegate must check session lock so daemon can hide both processes when locked"
     );
 }
 
@@ -147,9 +124,8 @@ fn phosh_home_c_promotes_chat_ui_on_unfold_stable_gate() {
     let src = read_home_c();
     let body = extract_function_body(&src, "mark_ui_stable_for_popups_timeout");
     assert!(
-        body.contains("atomos_phosh_sync_overview_chat_ui_lifecycle")
-            && body.contains("PHOSH_HOME_STATE_UNFOLDED"),
-        "after overview unfold stabilizes, chat-ui must be promoted to overlay"
+        body.contains("atomos_phosh_lifecycle_delegate"),
+        "after overview unfold stabilizes, lifecycle delegate must fire (which promotes chat-ui)"
     );
 }
 
@@ -178,37 +154,40 @@ fn phosh_home_c_map_idle_resyncs_chat_ui_layer_after_autostart() {
 }
 
 #[test]
-fn phosh_home_c_chat_ui_lock_check_runs_before_layer_switch() {
-    let lifecycle_fn =
-        extract_function_body(&read_home_c(), "atomos_phosh_sync_overview_chat_ui_lifecycle");
-    let locked = lifecycle_fn
+fn phosh_home_c_lock_check_before_delegate() {
+    let delegate = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
+    let locked = delegate
         .find("phosh_shell_get_locked")
         .expect("locked check");
-    let layer_switch = lifecycle_fn
-        .find("switch (state)")
-        .expect("state switch");
+    let env_locked = delegate
+        .find("ATOMOS_LIFECYCLE_LOCKED")
+        .expect("env locked var");
     assert!(
-        locked < layer_switch,
-        "must --hide while locked before choosing overlay/bottom layer"
+        locked < env_locked,
+        "delegate must read lock state before setting ATOMOS_LIFECYCLE_LOCKED env var"
     );
 }
 
 #[test]
-fn phosh_home_c_unlock_promotes_overlay_and_schedules_retry() {
+fn phosh_home_c_unlock_delegates_lifecycle_and_schedules_retry() {
     let body = extract_function_body(&read_home_c(), "on_shell_locked_changed_atomos_chat_ui");
     assert!(
-        body.contains("atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_UNFOLDED)")
-            && body.contains("atomos_phosh_schedule_chat_ui_unlock_sync"),
-        "on unlock, run overlay --show immediately then schedule retries"
-    );
-    let schedule = extract_function_body(&read_home_c(), "atomos_phosh_schedule_chat_ui_unlock_sync");
-    assert!(
-        schedule.contains("atomos_phosh_promote_chat_ui_when_unlocked_idle"),
-        "unlock sync must promote overlay above phosh-home"
+        body.contains("atomos_phosh_lifecycle_delegate"),
+        "on unlock, delegate lifecycle so daemon resolves layer from toplevel count"
     );
     assert!(
-        schedule.contains("g_timeout_add (500"),
-        "unlock sync must retry after shell/home finish starting"
+        body.contains("atomos_phosh_schedule_chat_ui_unlock_sync"),
+        "on unlock, schedule retry idles so chat-ui promotes after shell/home settle"
+    );
+}
+
+#[test]
+fn phosh_home_c_promote_idle_delegates_lifecycle() {
+    let body = extract_function_body(&read_home_c(), "atomos_phosh_promote_chat_ui_when_unlocked_idle");
+    assert!(
+        body.contains("atomos_phosh_lifecycle_delegate"),
+        "promote idle must delegate lifecycle so daemon chooses BOTTOM when apps are running, \
+         not hardcoded UNFOLDED/OVERLAY"
     );
 }
 
@@ -222,91 +201,151 @@ fn phosh_home_c_constructed_unlocked_schedules_chat_ui_sync() {
 }
 
 #[test]
-fn phosh_home_c_map_idle_skips_hide_while_locked() {
+fn phosh_home_c_map_idle_skips_delegate_while_locked() {
     let body = extract_function_body(
         &read_home_c(),
         "atomos_phosh_sync_overview_chat_ui_after_map_idle",
     );
     assert!(
         body.contains("phosh_shell_get_locked (shell)")
-            && body.contains("return G_SOURCE_REMOVE")
-            && !body.contains("atomos_phosh_sync_overview_chat_ui_lifecycle (PHOSH_HOME_STATE_FOLDED)"),
-        "map idle must not --hide while locked (autostart race on 2nd boot)"
+            && body.contains("return G_SOURCE_REMOVE"),
+        "map idle must not delegate while locked (avoids --hide racing with autostart)"
     );
     assert!(
-        body.contains("atomos_phosh_chat_ui_layer_state_for_home"),
-        "map idle must use layer helper when unlocked"
+        body.contains("atomos_phosh_lifecycle_delegate"),
+        "map idle must delegate lifecycle when unlocked"
     );
 }
 
 #[test]
-fn phosh_home_c_chat_ui_layer_helper_uses_toplevel_count() {
-    let src = read_home_c();
+fn phosh_home_c_lifecycle_delegate_uses_toplevel_count() {
+    let delegate = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
     assert!(
-        src.contains("atomos_phosh_chat_ui_layer_state_for_home")
-            && src.contains("phosh_toplevel_manager_get_num_toplevels"),
-        "folded home without apps must promote chat-ui to overlay"
+        delegate.contains("ATOMOS_LIFECYCLE_TOPLEVEL_COUNT"),
+        "delegate must pass toplevel count so daemon can choose BOTTOM vs OVERLAY"
     );
-    let body = extract_function_body(&src, "on_drag_state_changed");
+    let drag_body = extract_function_body(&read_home_c(), "on_drag_state_changed");
     assert!(
-        body.contains("atomos_phosh_chat_ui_layer_state_for_home"),
-        "drag handler must use layer helper (no bottom under phosh-home after unlock)"
+        drag_body.contains("atomos_phosh_lifecycle_delegate"),
+        "drag handler must delegate lifecycle so daemon resolves layer with toplevel count"
     );
 }
 
 #[test]
-fn phosh_home_c_constructed_locked_defers_hide_without_immediate_sync() {
+fn phosh_home_c_constructed_locked_defers_without_direct_spawn() {
     let body = extract_function_body(&read_home_c(), "phosh_home_constructed");
     assert!(
-        body.contains("g_timeout_add (250, atomos_phosh_rehide_chat_ui_while_locked_idle")
-            && !body.contains("atomos_phosh_sync_overview_chat_ui_lifecycle (self->state)"),
-        "constructed while locked must not immediately --hide autostart chat-ui"
+        body.contains("g_timeout_add (250, atomos_phosh_rehide_chat_ui_while_locked_idle"),
+        "constructed while locked must defer --hide via delayed idle"
+    );
+    assert!(
+        !body.contains("atomos_phosh_sync_overview_chat_ui_lifecycle (self->state)"),
+        "constructed must not directly call the old sync function while locked"
     );
 }
 
 #[test]
-fn phosh_home_c_drag_transition_does_not_sync_chat_ui() {
+fn phosh_home_c_drag_handler_delegates_lifecycle() {
     let body = extract_function_body(&read_home_c(), "on_drag_state_changed");
     assert!(
-        body.contains("if (self->state != PHOSH_HOME_STATE_TRANSITION)")
-            && body.contains("atomos_phosh_sync_overview_chat_ui_lifecycle"),
-        "during DRAGGED/TRANSITION, skip chat-ui sync until unfold settles"
+        body.contains("atomos_phosh_lifecycle_delegate"),
+        "drag handler must delegate to atomos-lifecycle (daemon handles TRANSITION no-op)"
+    );
+    let delegate = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
+    assert!(
+        delegate.contains("ATOMOS_LIFECYCLE_DRAG_STATE"),
+        "delegate must pass drag state so daemon can skip sync during TRANSITION"
     );
 }
 
 #[test]
-fn phosh_home_c_map_idle_derives_state_from_drag_surface() {
+fn phosh_home_c_map_idle_delegates_lifecycle() {
     let body = extract_function_body(
         &read_home_c(),
         "atomos_phosh_sync_overview_chat_ui_after_map_idle",
     );
     assert!(
-        body.contains("atomos_phosh_chat_ui_layer_state_for_home"),
-        "map idle must derive layer from drag + toplevels, not stale self->state"
+        body.contains("atomos_phosh_lifecycle_delegate"),
+        "map idle must delegate lifecycle so daemon derives layer from drag state + toplevels"
     );
 }
 
 #[test]
-fn phosh_home_c_chat_ui_state_helper_reads_drag_surface() {
-    let body = extract_function_body(&read_home_c(), "atomos_phosh_chat_ui_state_from_home");
+fn phosh_home_c_delegate_reads_drag_surface_state() {
+    let delegate = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
     assert!(
-        body.contains("phosh_drag_surface_get_drag_state"),
-        "effective chat-ui fold state follows drag surface"
+        delegate.contains("phosh_drag_surface_get_drag_state"),
+        "delegate must read drag surface state so daemon computes correct layer for folded/unfolded"
     );
     assert!(
-        body.contains("PHOSH_DRAG_SURFACE_STATE_UNFOLDED"),
-        "unfolded drag maps to UNFOLDED home state for overlay promotion"
+        delegate.contains("PHOSH_DRAG_SURFACE_STATE_UNFOLDED"),
+        "delegate must handle UNFOLDED drag state"
     );
 }
 
 #[test]
-fn phosh_home_c_never_uses_top_layer_for_chat_ui() {
-    let lifecycle_fn =
-        extract_function_body(&read_home_c(), "atomos_phosh_sync_overview_chat_ui_lifecycle");
-    let stripped = strip_c_block_comments(&lifecycle_fn);
+fn phosh_home_c_no_direct_layer_strings() {
+    let src = read_home_c();
+    let delegate = extract_function_body(&src, "atomos_phosh_lifecycle_delegate");
+    let stripped = strip_c_block_comments(&delegate);
     assert!(
         !stripped.contains("layer = \"top\"") && !stripped.contains("layer = \"top\";"),
-        "layer=top leaves chat-ui under phosh-home (both TOP)"
+        "layer=top leaves chat-ui under phosh-home (both TOP) — now computed by atomos-lifecycle"
+    );
+}
+
+#[test]
+fn phosh_home_c_lifecycle_delegate_is_called_from_all_sync_points() {
+    let src = read_home_c();
+    // Every handler that used to call atomos_phosh_sync_* directly must now
+    // call atomos_phosh_lifecycle_delegate(self).
+    let sync_points = [
+        "mark_ui_stable_for_popups_timeout",
+        "atomos_phosh_promote_chat_ui_when_unlocked_idle",
+        "atomos_phosh_sync_overview_chat_ui_after_map_idle",
+        "on_shell_locked_changed_atomos_chat_ui",
+        "on_drag_state_changed",
+    ];
+    for name in &sync_points {
+        let body = extract_function_body(&src, name);
+        assert!(
+            body.contains("atomos_phosh_lifecycle_delegate"),
+            "{name} must call atomos_phosh_lifecycle_delegate to delegate lifecycle decisions"
+        );
+    }
+}
+
+#[test]
+fn phosh_home_c_lifecycle_delegate_reads_state_from_home_and_shell() {
+    let body = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
+    assert!(
+        body.contains("ATOMOS_LIFECYCLE_DRAG_STATE"),
+        "delegate must set ATOMOS_LIFECYCLE_DRAG_STATE so the daemon knows home drag state"
+    );
+    assert!(
+        body.contains("ATOMOS_LIFECYCLE_LOCKED"),
+        "delegate must set ATOMOS_LIFECYCLE_LOCKED so the daemon knows lock state"
+    );
+    assert!(
+        body.contains("ATOMOS_LIFECYCLE_TOPLEVEL_COUNT"),
+        "delegate must set ATOMOS_LIFECYCLE_TOPLEVEL_COUNT so the daemon knows toplevel count"
+    );
+    assert!(
+        body.contains("ATOMOS_LIFECYCLE_PATH"),
+        "delegate must reference the atomos-lifecycle binary path"
+    );
+    assert!(
+        body.contains("g_spawn_async"),
+        "delegate must use g_spawn_async to invoke the lifecycle binary"
+    );
+}
+
+#[test]
+fn phosh_home_c_lifecycle_delegate_falls_back_when_binary_missing() {
+    let body = extract_function_body(&read_home_c(), "atomos_phosh_lifecycle_delegate");
+    assert!(
+        body.contains("g_file_test") && body.contains("G_FILE_TEST_IS_EXECUTABLE"),
+        "delegate must check that atomos-lifecycle exists before spawning; fallback path for old images"
     );
 }
 

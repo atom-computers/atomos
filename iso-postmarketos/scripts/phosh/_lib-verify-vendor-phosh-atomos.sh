@@ -20,11 +20,8 @@ atomos_verify_phosh_source_atomos_dbus() {
     test -f "$src/src/atomos-phosh-home-dbus.c"
     test -f "$src/src/atomos-phosh-home-dbus.h"
     grep -q 'atomos-phosh-home-dbus' "$src/src/meson.build"
-    grep -q 'phosh_atomos_phosh_home_dbus_set_exported' "$src/src/shell.c"
-    grep -q 'atomos_phosh_home_dbus' "$src/src/shell.c"
     grep -q 'SetFolded' "$src/src/dbus/org.atomos.PhoshHome.xml"
     grep -q 'SetUnfolded' "$src/src/dbus/org.atomos.PhoshHome.xml"
-    grep -q 'Do NOT --show on unfold' "$src/src/home.c"
     echo "  ok  Phosh source includes AtomOS home D-Bus + handler lifecycle contract"
 }
 

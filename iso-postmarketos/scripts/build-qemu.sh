@@ -1252,6 +1252,32 @@ else
   echo "Skipping atomos-top-bar build (manifest missing or BUILD_TOP_BAR=0)."
 fi
 
+# Build atomos-lifecycle daemon (pure Rust, no GTK deps).
+if [ -f /work/iso-postmarketos/rust/atomos-lifecycle/Cargo.toml ]; then
+  echo "Building atomos-lifecycle (daemon mode)..."
+  cargo build --manifest-path /work/iso-postmarketos/rust/atomos-lifecycle/Cargo.toml \
+    --release \
+    --features daemon \
+    --bin atomos-lifecycle
+  test -x /cache/cargo-target/release/atomos-lifecycle
+  install -d /target/usr/local/bin /target/usr/bin
+  install -m 0755 /cache/cargo-target/release/atomos-lifecycle /target/usr/local/bin/atomos-lifecycle
+  ln -sf ../local/bin/atomos-lifecycle /target/usr/bin/atomos-lifecycle
+else
+  echo "Skipping atomos-lifecycle build (manifest missing)."
+fi
+
+# Build atomos-home (GTK4 layer-shell home surface).
+if [ "${BUILD_ATOMOS_HOME:-1}" = "1" ] && [ -f /work/iso-postmarketos/rust/atomos-home/app-gtk/Cargo.toml ]; then
+  echo "Building atomos-home..."
+  cargo build --manifest-path /work/iso-postmarketos/rust/atomos-home/app-gtk/Cargo.toml \
+    --release \
+    --bin atomos-home
+  test -x /cache/cargo-target/release/atomos-home
+else
+  echo "Skipping atomos-home build (manifest missing or BUILD_ATOMOS_HOME=0)."
+fi
+
 # Meson skips post-install glib-compile-schemas when DESTDIR is set ("Skipping custom install script..."),
 # so schemas staged under /target exist as .xml only and gschemas.compiled is missing or stale. The
 # initial rootfs build already ran glib-compile-schemas once before these installs; rerun after staged
@@ -1274,6 +1300,7 @@ glib-compile-schemas /target/usr/share/glib-2.0/schemas/
     -v "$MESON_CACHE_MOUNT:/cache" \
     -e BUILD_HOME_BG="$BUILD_HOME_BG" \
     -e BUILD_APP_HANDLER="$BUILD_APP_HANDLER" \
+    -e BUILD_ATOMOS_HOME="${BUILD_ATOMOS_HOME:-1}" \
     "$ALPINE_IMAGE" /bin/sh -c "$build_container_script"
 
 echo "=== build-qemu: apply direct-rootfs customizations ==="
@@ -1352,15 +1379,23 @@ fi
                 echo 'Skipping home-bg install helper (BUILD_HOME_BG=0).'
             fi
         fi
-        if [ -f /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh ]; then
-            if [ \"$BUILD_APP_HANDLER\" = \"1\" ]; then
+if [ -f /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh ]; then
+            if [ "$BUILD_APP_HANDLER" = "1" ]; then
                 ROOTFS_DIR=/target \
                     ATOMOS_APP_HANDLER_ENABLE_RUNTIME_DEFAULT=1 \
                     ATOMOS_APP_HANDLER_INSTALL_AUTOSTART=1 \
-                    atomos_bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh \"$PROFILE_ENV_CONTAINER\"
+                    atomos_bash /work/iso-postmarketos/scripts/app-handler/install-app-handler.sh "$PROFILE_ENV_CONTAINER"
             else
                 echo 'Skipping app-switcher install helper (BUILD_APP_HANDLER=0).'
             fi
+        fi
+        if [ -f /work/iso-postmarketos/scripts/lifecycle/install-lifecycle.sh ]; then
+            ROOTFS_DIR=/target \
+                atomos_bash /work/iso-postmarketos/scripts/lifecycle/install-lifecycle.sh "$PROFILE_ENV_CONTAINER"
+        fi
+        if [ -f /work/iso-postmarketos/scripts/home-surface/install-atomos-home.sh ]; then
+            ROOTFS_DIR=/target \
+                atomos_bash /work/iso-postmarketos/scripts/home-surface/install-atomos-home.sh "$PROFILE_ENV_CONTAINER"
         fi
         if [ -f /work/iso-postmarketos/data/wallpapers/gargantua-black.jpg ]; then
             mkdir -p /target/usr/share/backgrounds/gnome /target/usr/share/backgrounds/atomos /target/usr/share/backgrounds

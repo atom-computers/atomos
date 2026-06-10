@@ -1,16 +1,19 @@
-//! D-Bus calls into Phosh `org.atomos.PhoshHome` for fold/unfold.
+//! D-Bus calls into `org.atomos.Home` for fold/unfold.
+//!
+//! Replaces the old `org.atomos.PhoshHome` interface. The D-Bus name and
+//! path changed in Phase 3 but the methods remain the same.
 
-use atomos_app_handler::{PhoshHomeIpc, PHOSH_HOME_DBUS_NAME, PHOSH_HOME_DBUS_PATH};
+use atomos_app_handler::{HomeIpc, HOME_DBUS_NAME, HOME_DBUS_PATH};
 use gtk::gio;
 use gtk::glib::prelude::*;
 
-const DBUS_INTERFACE: &str = "org.atomos.PhoshHome";
+const DBUS_INTERFACE: &str = "org.atomos.Home";
 
-pub fn apply_home_ipc(ipc: PhoshHomeIpc) -> Result<(), String> {
+pub fn apply_home_ipc(ipc: HomeIpc) -> Result<(), String> {
     match ipc {
-        PhoshHomeIpc::None => Ok(()),
-        PhoshHomeIpc::SetFolded => call_void_method("SetFolded"),
-        PhoshHomeIpc::SetUnfolded => call_void_method("SetUnfolded"),
+        HomeIpc::None => Ok(()),
+        HomeIpc::SetFolded => call_void_method("SetFolded"),
+        HomeIpc::SetUnfolded => call_void_method("SetUnfolded"),
     }
 }
 
@@ -43,8 +46,8 @@ fn call_void_method(method: &str) -> Result<(), String> {
     let conn = gio::bus_get_sync(gio::BusType::Session, None::<&gio::Cancellable>)
         .map_err(|e| e.to_string())?;
     conn.call_sync(
-        Some(PHOSH_HOME_DBUS_NAME),
-        PHOSH_HOME_DBUS_PATH,
+        Some(HOME_DBUS_NAME),
+        HOME_DBUS_PATH,
         DBUS_INTERFACE,
         method,
         None,

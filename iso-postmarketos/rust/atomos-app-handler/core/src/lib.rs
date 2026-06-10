@@ -30,7 +30,7 @@ pub use launch_visibility::{
 };
 pub use session::{
     derive_home_ipc, launcher_home_ipc_when_visibility_changes, home_target_name, HomeTarget,
-    PhoshHomeIpc, PhoshHomeShellState, UiMode,
+    HomeIpc, HomeShellState, UiMode,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -83,9 +83,16 @@ pub const ENABLE_RUNTIME_ENV_LEGACY: &str = "ATOMOS_APP_SWITCHER_ENABLE_RUNTIME"
 /// `XDG_RUNTIME_DIR`.
 pub const RUNTIME_FILE_BASENAME: &str = "atomos-app-handler";
 
-/// D-Bus name/path for Phosh home fold/unfold IPC.
-pub const PHOSH_HOME_DBUS_NAME: &str = "org.atomos.PhoshHome";
-pub const PHOSH_HOME_DBUS_PATH: &str = "/org/atomos/PhoshHome";
+/// D-Bus name/path for atomos-home fold/unfold IPC.
+/// Changed from org.atomos.PhoshHome to org.atomos.Home in Phase 3.
+pub const HOME_DBUS_NAME: &str = "org.atomos.Home";
+pub const HOME_DBUS_PATH: &str = "/org/atomos/Home";
+
+/// Legacy names for backward compatibility — prefer HOME_DBUS_NAME/PATH.
+#[deprecated(note = "Use HOME_DBUS_NAME instead")]
+pub const PHOSH_HOME_DBUS_NAME: &str = HOME_DBUS_NAME;
+#[deprecated(note = "Use HOME_DBUS_PATH instead")]
+pub const PHOSH_HOME_DBUS_PATH: &str = HOME_DBUS_PATH;
 
 /// On-disk marker written by install-app-handler.sh to assert lifecycle wiring.
 pub const OVERLAY_CONTRACT_BASENAME: &str = "app-handler-contract";
@@ -833,5 +840,30 @@ mod tests {
         assert_eq!(LayerTarget::from_name("overlay"), Some(LayerTarget::Overlay));
         assert_eq!(LayerTarget::from_name("OVERLAY"), None, "case-sensitive");
         assert_eq!(LayerTarget::from_name(""), None);
+    }
+
+    #[test]
+    fn home_dbus_constants_match_org_atomos_home() {
+        assert_eq!(HOME_DBUS_NAME, "org.atomos.Home");
+        assert_eq!(HOME_DBUS_PATH, "/org/atomos/Home");
+    }
+
+    #[test]
+    fn home_ipc_dbus_method_names() {
+        assert_eq!(
+            format!("{:?}", session::HomeIpc::SetFolded),
+            "SetFolded"
+        );
+        assert_eq!(
+            format!("{:?}", session::HomeIpc::SetUnfolded),
+            "SetUnfolded"
+        );
+    }
+
+    #[test]
+    fn home_shell_state_string_values_match_drag_state() {
+        assert_eq!(session::HomeShellState::Folded.as_str(), "folded");
+        assert_eq!(session::HomeShellState::Unfolded.as_str(), "unfolded");
+        assert_eq!(session::HomeShellState::Transition.as_str(), "transition");
     }
 }

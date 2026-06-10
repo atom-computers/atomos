@@ -1,0 +1,140 @@
+/* atomos-home CSS — dark/light theme.
+ *
+ * Mirrors Phosh's ATOMOS_OVERVIEW_CHAT_UI_CSS and upstream phosh-home styling.
+ * The CSS widget name is set to "atomos-home" (not "phosh-home") so the
+ * selectors target our Rust GTK4 layer-shell surface.
+ */
+
+/* ===== Chat Entry ===== */
+box.atomos-chat-wrap {
+  padding: 12px;
+}
+
+entry.atomos-chat-input {
+  border-radius: 16px;
+  background: #121212;
+  color: #ffffff;
+  border: 1px solid #303132;
+  box-shadow: none;
+  padding: 10px 14px;
+}
+
+entry.atomos-chat-input:focus {
+  box-shadow: none;
+}
+
+/* ===== App Grid Dock Row ===== */
+atomos-home box.atomos-app-grid-row {
+  padding: 8px 12px 0 12px;
+}
+
+atomos-home button.atomos-dock-btn {
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 9999px;
+  padding: 0;
+  border: 1px solid #303132;
+}
+
+atomos-home button.atomos-dock-btn image {
+  -gtk-icon-size: 22px;
+}
+
+/* ===== Dark Theme ===== */
+atomos-home.atomos-dark button.atomos-dock-btn {
+  background: #121212;
+  color: #ffffff;
+}
+
+atomos-home.atomos-dark .atomos-app-sheet-wrap {
+  background-image: none;
+  background-color: alpha(#121212, 0.8);
+}
+
+atomos-home.atomos-dark .atomos-app-sheet {
+  background-image: none;
+  background-color: transparent;
+}
+
+/* ===== Light Theme ===== */
+atomos-home.atomos-light button.atomos-dock-btn {
+  background: #f2f2f2;
+  color: #121212;
+}
+
+atomos-home.atomos-light .atomos-app-sheet-wrap {
+  background-image: none;
+  background-color: alpha(#f2f2f2, 0.8);
+}
+
+atomos-home.atomos-light .atomos-app-sheet {
+  background-image: none;
+  background-color: transparent;
+}
+
+/* ===== App Sheet (rounded card for grid) ===== */
+atomos-home .atomos-app-sheet-wrap {
+  margin: 18px 12px 18px 12px;
+  border-radius: 40px;
+  border: 1px solid #303132;
+}
+
+atomos-home .atomos-app-sheet {
+  border-radius: 40px;
+}
+
+/* ===== App Tiles ===== */
+atomos-home button.atomos-app-tile {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  border: none;
+  box-shadow: none;
+}
+
+atomos-home button.atomos-app-tile:hover,
+atomos-home button.atomos-app-tile:active {
+  background: transparent;
+  box-shadow: none;
+}
+
+atomos-home label.atomos-app-label {
+  color: inherit;
+  font-size: 10px;
+}
+
+/* ===== Home Bar ===== */
+atomos-home .atomos-home-bar {
+  min-height: 15px;
+  background: transparent;
+}
+
+atomos-home .atomos-home-bar.p-solid {
+  background: #121212;
+}
+
+atomos-home.atomos-dark .atomos-home-bar.p-solid {
+  background: #121212;
+}
+
+atomos-home.atomos-light .atomos-home-bar.p-solid {
+  background: #f2f2f2;
+}
+
+/* ===== Powerbar (OSK toggle pill) ===== */
+atomos-home .atomos-powerbar {
+  min-width: 120px;
+  min-height: 4px;
+  border-radius: 2px;
+  background: #585858;
+}
+
+atomos-home.atomos-dark .atomos-powerbar {
+  background: #585858;
+}
+
+atomos-home.atomos-light .atomos-powerbar {
+  background: #b0b0b0;
+}

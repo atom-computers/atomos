@@ -25,7 +25,7 @@ use atomos_app_handler::{
     compose_runtime_config, evaluate_swipe_up, gtk_argv_for_run_from_process_argv,
     handle_drag_progress, launch::plan_launch, parse_lifecycle_action_from_argv,
     should_show_handle, EnvInputs, GestureConfig, LaunchPlan, LifecycleAction,
-    PhoshHomeIpc, RuntimeConfig, SwipeOutcome,
+    HomeIpc, RuntimeConfig, SwipeOutcome,
     LAYER_SHELL_NAMESPACE,
 };
 use gtk::gio;
@@ -39,7 +39,7 @@ use std::rc::Rc;
 mod handle;
 mod input_region;
 mod launch_exec;
-mod phosh_ipc;
+mod home_ipc;
 mod transparent;
 mod wayland;
 
@@ -472,7 +472,7 @@ fn build_fade_window(
                 event!("swipe-up threshold reached but no active application found in snapshot");
             }
 
-            phosh_ipc::close_osk_keyboard();
+            home_ipc::close_osk_keyboard();
             *ctl_update.handle_drag_dy.borrow_mut() = 0.0;
             *ctl_update.handle_drag_progress.borrow_mut() = 0.0;
             fade_canvas_for_update.queue_draw();
