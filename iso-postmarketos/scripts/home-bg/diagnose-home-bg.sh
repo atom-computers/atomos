@@ -39,7 +39,7 @@ if ! command -v ssh >/dev/null 2>&1 || ! command -v sshpass >/dev/null 2>&1; the
     exit 1
 fi
 
-SSH_PORT="${ATOMOS_DEVICE_SSH_PORT:-22}"
+SSH_PORT="${ATOMOS_DEVICE_SSH_PORT:-2222}"
 SSH_PASSWORD="${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-${PMOS_INSTALL_PASSWORD:-147147}}}"
 SSH_CMD=(sshpass -p "$SSH_PASSWORD" ssh -p "$SSH_PORT" \
     -o PreferredAuthentications=password \

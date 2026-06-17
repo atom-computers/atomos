@@ -1,0 +1,10 @@
+# Build output — run `node build.js` to regenerate
+
+# Node runtime (npm install to regenerate)
+/node_modules/
+
+# The entire React monorepo is NOT needed — esbuild resolves from node_modules
+/react/
+
+# OS artifacts
+.DS_Store

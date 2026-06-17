@@ -46,11 +46,17 @@ export default (canvas, opts) => {
     ...opts.context,
   }
 
+  console.log('cobe: canvas bbox=' + canvas.getBoundingClientRect().width + 'x' + canvas.getBoundingClientRect().height + ' dpr=' + (opts.devicePixelRatio || 1) + ' w=' + opts.width + ' h=' + opts.height)
+
   let gl = canvas.getContext('webgl2', contextOpts)
   const webgl2 = !!gl
   if (!gl) gl = canvas.getContext('webgl', contextOpts)
 
-  if (!gl) return { destroy: () => {}, update: () => {} }
+  if (!gl) {
+    console.error('cobe: WebGL context creation failed (webgl2 & webgl both null)')
+    return { destroy: () => {}, update: () => {} }
+  }
+  console.log('cobe: WebGL context=' + (webgl2 ? 'webgl2' : 'webgl') + ' instExt=' + (webgl2 ? 'native' : (gl.getExtension('ANGLE_instanced_arrays') ? 'ok' : 'missing')))
 
   const instExt = webgl2 ? null : gl.getExtension('ANGLE_instanced_arrays')
 
@@ -81,6 +87,7 @@ export default (canvas, opts) => {
   let offsetOpt = opts.offset || [0, 0]
   let scaleOpt = opts.scale || 1
   let markerElevation = opts.markerElevation ?? 0.05
+  const onRender = opts.onRender
 
   // Create shader programs
   const globeProgram = createProgram(gl, GLOBE_VERT, GLOBE_FRAG)
@@ -175,8 +182,8 @@ export default (canvas, opts) => {
   )
 
   // Load texture
-  const texture = gl.createTexture()
-  gl.bindTexture(gl.TEXTURE_2D, texture)
+  const globeTexture = gl.createTexture()
+  gl.bindTexture(gl.TEXTURE_2D, globeTexture)
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
@@ -194,15 +201,19 @@ export default (canvas, opts) => {
 
   const image = new Image()
   image.onload = () => {
-    gl.bindTexture(gl.TEXTURE_2D, texture)
+    console.log('cobe: texture loaded ' + image.width + 'x' + image.height)
+    gl.bindTexture(gl.TEXTURE_2D, globeTexture)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image)
     gl.generateMipmap(gl.TEXTURE_2D)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.bindTexture(gl.TEXTURE_2D, globeTexture)
     // Re-render so the land texture is visible immediately
     update({})
+  }
+  image.onerror = function (e) {
+    console.error('cobe: texture load FAILED', e)
   }
   image.src = __TEXTURE__
 
@@ -456,7 +467,7 @@ export default (canvas, opts) => {
 
     // Bind texture to unit 0
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.bindTexture(gl.TEXTURE_2D, globeTexture)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -605,11 +616,46 @@ export default (canvas, opts) => {
 
   // Initialize
   update({ markers, arcs })
+  var glErr = gl.getError()
+  if (glErr) console.error('cobe: initial render WebGL error 0x' + glErr.toString(16))
+  // Quick scan: sample center + a few points for non-white pixels
+  var px = new Uint8Array(4)
+  var points = [[canvas.width/2, canvas.height/2], [canvas.width*0.3, canvas.height*0.3], [canvas.width*0.7, canvas.height*0.7], [canvas.width*0.5, canvas.height*0.2], [canvas.width*0.5, canvas.height*0.8]]
+  var samples = []
+  for (var i = 0; i < points.length; i++) {
+    var mx = Math.round(points[i][0]), my = Math.round(points[i][1])
+    gl.readPixels(mx, my, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px)
+    samples.push(px[0] + ',' + px[1] + ',' + px[2] + ',' + px[3])
+  }
+  console.log('cobe: sample pixels=[' + samples.join(' / ') + ']')
+  console.log('cobe: render defaults mapSamples=' + mapSamples + ' mapBrightness=' + mapBrightness + ' mapBaseBrightness=' + mapBaseBrightness + ' baseColor=' + JSON.stringify(baseColor) + ' diffuse=' + diffuse + ' dark=' + dark + ' opacity=' + opacity + ' scale=' + scaleOpt)
+
+  // Animation loop — drives onRender each frame
+  let rafId = 0
+  if (onRender) {
+    var frameCount = 0
+    const state = {}
+    function frame() {
+      if (frameCount < 3) console.log('cobe: frame ' + (frameCount++) + ' phi=' + phi + ' theta=' + theta + ' mapSamples=' + mapSamples + ' mapBrightness=' + mapBrightness)
+      onRender(state)
+      update(state)
+      var glErr = gl.getError()
+      if (glErr && frameCount < 4) console.error('cobe: frame WebGL error 0x' + glErr.toString(16))
+      if (frameCount < 3) console.log('cobe: after-frame ' + (frameCount-1) + ' phi=' + phi + ' theta=' + theta)
+      rafId = requestAnimationFrame(frame)
+    }
+    rafId = requestAnimationFrame(frame)
+    console.log('cobe: RAF loop started')
+  } else {
+    console.log('cobe: no onRender — static render only')
+  }
 
   // Return public API
   return {
     update,
     destroy: () => {
+      if (rafId) cancelAnimationFrame(rafId)
+
       // Clean up WebGL resources
       gl.deleteBuffer(quadBuffer)
       gl.deleteBuffer(arcSegmentBuffer)

@@ -131,6 +131,8 @@ const buildBundle = async () => {
       bundle: true,
       minify: true,
       sourcemap: true,
+      format: "iife",
+      jsx: "automatic",
       outfile: "index.js",
       plugins: [cobeResolvePlugin],
     });

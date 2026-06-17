@@ -404,6 +404,7 @@
   }
 
   function init() {
+    console.log("event-horizon: init() entered, visibilityState=" + (document.visibilityState || "unset"));
     var canvas = document.getElementById("event-horizon");
     if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
       reportFailure(
@@ -412,6 +413,7 @@
       );
       return;
     }
+    console.log("event-horizon: canvas found, " + canvas.clientWidth + "x" + canvas.clientHeight + ", prefersReduced=" + prefersReduced);
 
     var prefersReduced =
       typeof window !== "undefined" &&
@@ -629,6 +631,8 @@
     resize();
     raf = requestAnimationFrame(render);
   }
+
+  console.log("event-horizon: script loaded, readyState=" + document.readyState);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

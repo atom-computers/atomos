@@ -24,6 +24,12 @@ fi
 # shellcheck source=/dev/null
 source "$PROFILE_ENV_SOURCE"
 
+# Auto-detect SSH and sudo passwords from the profile env.
+# Same pattern as hotfix-app-handler.sh — avoids re-typing on every run.
+SSH_PASSWORD="${SSH_PASSWORD:-${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-${PMOS_INSTALL_PASSWORD:-}}}}"
+
+REMOTE_SUDO_PASSWORD="${ATOMOS_HOME_BG_REMOTE_SUDO_PASSWORD:-${REMOTE_SUDO_PASSWORD:-${ATOMOS_APP_HANDLER_REMOTE_SUDO_PASSWORD:-$SSH_PASSWORD}}}"
+
 need_cmd() {
     command -v "$1" >/dev/null 2>&1 || {
         echo "ERROR: $1 is required." >&2
@@ -52,16 +58,15 @@ fi
 
 SSH_CMD=(ssh)
 SCP_CMD=(scp)
-SSH_PORT="${ATOMOS_DEVICE_SSH_PORT:-${SSH_PORT_FROM_TARGET:-22}}"
+SSH_PORT="${ATOMOS_DEVICE_SSH_PORT:-${SSH_PORT_FROM_TARGET:-2222}}"
 SSH_CONNECT_TIMEOUT="${ATOMOS_DEVICE_SSH_CONNECT_TIMEOUT:-10}"
 SSH_COMMON_OPTS=(
     -o ConnectTimeout="$SSH_CONNECT_TIMEOUT"
     -o ServerAliveInterval=5
     -o ServerAliveCountMax=2
 )
-if [ -n "${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-}}" ]; then
+if [ -n "${SSH_PASSWORD:-}" ]; then
     need_cmd sshpass
-    SSH_PASSWORD="${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-}}"
     SSH_AUTH_OPTS=(
         -p "$SSH_PORT"
         -o PreferredAuthentications=password
@@ -91,7 +96,6 @@ CONTENT_ONLY="${ATOMOS_HOME_BG_CONTENT_ONLY:-1}"
 
 REMOTE_TMP_DIR="${ATOMOS_HOME_BG_REMOTE_TMP:-/tmp/atomos-home-bg-hotfix.$$}"
 REMOTE_SUDO="${ATOMOS_HOME_BG_REMOTE_SUDO:-sudo}"
-REMOTE_SUDO_PASSWORD="${ATOMOS_HOME_BG_REMOTE_SUDO_PASSWORD:-${ATOMOS_DEVICE_SSHPASS:-${SSHPASS:-}}}"
 if [ "${ATOMOS_HOME_BG_RESTART_CMD+set}" = "set" ]; then
     REMOTE_RESTART_CMD="$ATOMOS_HOME_BG_RESTART_CMD"
 else
@@ -295,23 +299,30 @@ restart_home_bg_default() {
 
     phosh_pid=\$(pgrep phosh | head -n 1 || true)
     if [ -z "\$phosh_pid" ]; then
-        echo "No phosh session detected; skip auto-restart."
+        echo "No phosh session detected; restarting as fallback user 10000"
+        _run_as_user 10000
         return 0
     fi
 
     session_user=\$(ps -o user= -p "\$phosh_pid" 2>/dev/null | tr -d ' ' || true)
     if [ -z "\$session_user" ]; then
-        echo "Could not resolve phosh session user; skip auto-restart."
+        echo "Could not resolve phosh session user; restarting as fallback user 10000"
+        _run_as_user 10000
         return 0
     fi
 
     echo "Restarting atomos-home-bg as user \$session_user"
+    _run_as_user "\$session_user"
+}
+
+_run_as_user() {
+    _u="\$1"
     if command -v runuser >/dev/null 2>&1; then
-        runuser -u "\$session_user" -- /usr/libexec/atomos-home-bg --show || true
+        runuser -u "\$_u" -- /usr/libexec/atomos-home-bg --show || true
     elif command -v su >/dev/null 2>&1; then
-        su -s /bin/sh "\$session_user" -c "/usr/libexec/atomos-home-bg --show" || true
+        su -s /bin/sh "\$_u" -c "/usr/libexec/atomos-home-bg --show" || true
     else
-        echo "No runuser/su available for session-user restart; skipped."
+        echo "No runuser/su available; skipped."
     fi
 }
 

@@ -719,6 +719,12 @@ GREETD_CONFD
                  echo "PermitRootLogin no" >> /target/etc/ssh/sshd_config.d/50-postmarketos-ui-policy.conf
              fi
             install -Dm440 "$PBASE/rootfs-etc-sudoers" /target/etc/sudoers 2>/dev/null || true
+            # Passwordless sudo for the login user (avoids interactive prompts
+            # during hotfix scripts). The user still authenticates via SSH/doas.
+            cat > /target/etc/sudoers.d/10-wheel-nopasswd << 'ATOMOS_EOF'
+%wheel ALL=(ALL) NOPASSWD: ALL
+ATOMOS_EOF
+            chmod 440 /target/etc/sudoers.d/10-wheel-nopasswd
             install -Dm640 "$PBASE/rootfs-etc-doas.d-10-postmarketos.conf" \
                 /target/etc/doas.d/10-postmarketos.conf 2>/dev/null || true
             # Identity (postmarketOS). Alpine normally symlinks /etc/os-release; replace with pm file.
