@@ -10,7 +10,8 @@ Error generating stack: `+o.message+`
 void main() {
   gl_Position = vec4(aPosition, 0.0, 1.0);
 }
-`,Z0=`precision mediump float;
+`,Z0=`precision highp float;
+
 uniform vec2 uResolution;
 uniform vec2 offset;
 uniform vec2 rotation;        // (phi, theta)

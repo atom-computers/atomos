@@ -43,79 +43,59 @@ for f in /target/usr/share/mkinitfs/files/*.files \
     fi
 done
 
-# ---- stale dm cleanup in init_2nd.sh (FP4 super partition) -----------
-# init_2nd.sh calls setup_dynamic_partitions at line 31, BEFORE hooks
-# run at line 33. Hooks run too late -- make-dynpart-mappings has
-# already tripped on "Resource busy" by then. Inject the cleanup
-# directly into init_2nd.sh right before setup_dynamic_partitions.
-# dmsetup IS available here: init.sh already loaded initramfs-extra
-# (which includes /sbin/dmsetup) before exec'ing init_2nd.sh.
-init_2nd=/target/usr/share/initramfs/init_2nd.sh
-if [ -f "$init_2nd" ]; then
-    if grep -q "ATOMOS_DYN_PART_DM_CLEANUP_BEGIN" "$init_2nd"; then
-        echo "fixup: init_2nd.sh already has dm cleanup"
-    elif grep -q 'setup_dynamic_partitions' "$init_2nd"; then
-        cat > /tmp/dm-cleanup-2nd.snippet <<'DMSNIPPET'
-# ATOMOS_DYN_PART_DM_CLEANUP_BEGIN
-for _atomos_part in system system_ext product vendor odm vendor_dlkm system_dlkm odm_dlkm; do
-    for _atomos_slot in a b; do
-        _atomos_map="${_atomos_part}_${_atomos_slot}"
-        if [ -e "/dev/mapper/${_atomos_map}" ] && ! grep -q " /dev/mapper/${_atomos_map} " /proc/mounts 2>/dev/null; then
-            dmsetup remove -f "${_atomos_map}" 2>/dev/null || true
-        fi
-    done
-done || true
-# ATOMOS_DYN_PART_DM_CLEANUP_END
+# ---- subpartition dm cleanup snippet (FP4 super partition) ----------
+# Mirrors apply_mkinitfs_subpartition_dm_compat from d6405345 build-image.sh.
+# postmarketos-initramfs ships /usr/share/initramfs/init_functions.sh which
+# contains a "Mount subpartitions of $partition" block. On FP4 the kernel
+# remembers /dev/mapper/<part>_<slot> entries from previous boots; the
+# initramfs hook then trips over them with:
+#   udev[271]: conflicting device node '/dev/mapper/odm_a' found,
+#       link to '/dev/dm-4' will not be created
+# pmbootstrap's path patches the pmaports cache so the BUILT apk has the
+# cleanup snippet baked in. We can't patch the apk source (it's a binary
+# pull), so we patch the EXTRACTED file in /target before mkinitfs reads
+# it into the new initramfs cpio. Idempotent (marker comment guards
+# against double-insertion).
+init_functions=/target/usr/share/initramfs/init_functions.sh
+if [ -f "$init_functions" ]; then
+    if grep -q "ATOMOS_DYN_PART_DM_CLEANUP_BEGIN" "$init_functions"; then
+        echo "fixup: init_functions.sh already has dm cleanup snippet"
+    elif grep -q 'echo "Mount subpartitions of ' "$init_functions"; then
+        # Build the snippet in a temp file and inject it before the
+        # "Mount subpartitions of" echo. Single-quoted heredoc so the
+        # busybox-shell-isms ($_atomos_part etc.) survive verbatim.
+        cat > /tmp/dm-cleanup.snippet <<'DMSNIPPET'
+				# ATOMOS_DYN_PART_DM_CLEANUP_BEGIN
+				if command -v dmsetup >/dev/null 2>&1; then
+					for _atomos_part in system system_ext product vendor odm vendor_dlkm system_dlkm odm_dlkm; do
+						for _atomos_slot in a b; do
+							_atomos_map="${_atomos_part}_${_atomos_slot}"
+							if [ -e "/dev/mapper/${_atomos_map}" ] && ! grep -q " /dev/mapper/${_atomos_map} " /proc/mounts 2>/dev/null; then
+								dmsetup remove "${_atomos_map}" 2>/dev/null || dmsetup remove -f "${_atomos_map}" 2>/dev/null || true
+							fi
+						done
+					done
+				fi
+				# ATOMOS_DYN_PART_DM_CLEANUP_END
 DMSNIPPET
-        awk -v snippet_file=/tmp/dm-cleanup-2nd.snippet '
-            /^[[:space:]]*setup_dynamic_partitions/ && !inserted {
+        # Use awk for the insertion (sed is fiddly with multi-line content).
+        awk -v snippet_file=/tmp/dm-cleanup.snippet '
+            /^[[:space:]]*echo "Mount subpartitions of / && !inserted {
                 while ((getline line < snippet_file) > 0) print line
                 close(snippet_file)
                 inserted = 1
             }
             { print }
-        ' "$init_2nd" > "$init_2nd.new"
-        mv "$init_2nd.new" "$init_2nd"
-        chmod 0755 "$init_2nd"
-        echo "fixup: injected dm cleanup into $init_2nd before setup_dynamic_partitions"
-        rm -f /tmp/dm-cleanup-2nd.snippet
+        ' "$init_functions" > "$init_functions.new"
+        mv "$init_functions.new" "$init_functions"
+        chmod 0644 "$init_functions"
+        echo "fixup: injected dm cleanup snippet into $init_functions"
+        rm -f /tmp/dm-cleanup.snippet
     else
-        echo "fixup: WARN init_2nd.sh present but no setup_dynamic_partitions anchor" >&2
+        echo "fixup: WARN init_functions.sh present but no 'Mount subpartitions of' anchor; skipping dm cleanup patch" >&2
     fi
 else
-    echo "fixup: WARN $init_2nd missing -- postmarketos-initramfs may not be installed" >&2
-fi
-
-# Also install a hook as belt-and-braces (hooks run later but catch any
-# entries that re-appear between init_2nd.sh injection and mount).
-mkdir -p /target/usr/share/initramfs/hooks
-cat > /target/usr/share/initramfs/hooks/00-atomos-dm-cleanup.sh <<'HOOKSCRIPT'
-#!/bin/sh
-for _part in system system_ext product vendor odm vendor_dlkm system_dlkm odm_dlkm; do
-    for _slot in a b; do
-        _map="${_part}_${_slot}"
-        if [ -e "/dev/mapper/${_map}" ] && ! grep -q " /dev/mapper/${_map} " /proc/mounts 2>/dev/null; then
-            dmsetup remove -f "${_map}" 2>/dev/null || true
-        fi
-    done
-done || true
-HOOKSCRIPT
-chmod 0755 /target/usr/share/initramfs/hooks/00-atomos-dm-cleanup.sh
-cat > /target/usr/share/mkinitfs/files/30-atomos-dm-cleanup.files <<'HOOKFILES'
-usr/share/initramfs/hooks/00-atomos-dm-cleanup.sh
-HOOKFILES
-echo "fixup: installed 00-atomos-dm-cleanup.sh hook (belt-and-braces)"
-
-# Remove any prior text-injection in other files.
-init_functions=/target/usr/share/initramfs/init_functions.sh
-if [ -f "$init_functions" ] && grep -q "ATOMOS_DYN_PART_DM_CLEANUP_BEGIN" "$init_functions"; then
-    sed -i '/# ATOMOS_DYN_PART_DM_CLEANUP_BEGIN/,/# ATOMOS_DYN_PART_DM_CLEANUP_END/d' "$init_functions"
-    echo "fixup: removed stale dm injection from $init_functions"
-fi
-init_script=/target/usr/share/initramfs/init.sh
-if [ -f "$init_script" ] && grep -q "ATOMOS_DYN_PART_DM_CLEANUP_BEGIN" "$init_script"; then
-    sed -i '/# ATOMOS_DYN_PART_DM_CLEANUP_BEGIN/,/# ATOMOS_DYN_PART_DM_CLEANUP_END/d' "$init_script"
-    echo "fixup: removed stale dm injection from $init_script"
+    echo "fixup: WARN $init_functions missing -- postmarketos-initramfs may not be installed" >&2
 fi
 
 # ---- chroot bind mounts ------------------------------------------

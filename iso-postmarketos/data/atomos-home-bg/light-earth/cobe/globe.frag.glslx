@@ -1,4 +1,5 @@
 export void fragment();
+precision highp float;
 
 uniform vec2 uResolution;
 uniform vec2 offset;
