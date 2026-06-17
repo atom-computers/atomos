@@ -189,6 +189,8 @@ pub(crate) struct HandlerState {
     pub(crate) fade_window: RefCell<Option<gtk::ApplicationWindow>>,
     pub(crate) snapshot: RefCell<Vec<(atomos_app_handler::ToplevelEntry, ToplevelHandle)>>,
     pub(crate) session_locked: std::cell::Cell<bool>,
+    screen_saver_active: std::cell::Cell<bool>,
+    logind_locked: std::cell::Cell<bool>,
     pub(crate) swipe_triggered: std::cell::Cell<bool>,
 }
 
@@ -204,7 +206,20 @@ impl HandlerState {
             fade_window: RefCell::new(None),
             snapshot: RefCell::new(Vec::new()),
             session_locked: std::cell::Cell::new(false),
+            screen_saver_active: std::cell::Cell::new(false),
+            logind_locked: std::cell::Cell::new(false),
             swipe_triggered: std::cell::Cell::new(false),
+        }
+    }
+
+    fn recompute_session_locked(&self) {
+        let locked = self.screen_saver_active.get() || self.logind_locked.get();
+        self.session_locked.set(locked);
+        if locked {
+            self.set_handle_surfaces_visible(false);
+        } else {
+            let count = *self.toplevel_count.borrow();
+            self.set_handle_surfaces_visible(should_show_handle(count));
         }
     }
 
@@ -644,7 +659,7 @@ fn init_lock_tracking(state: Rc<HandlerState>) {
         }
     };
 
-    let initial_locked = match conn.call_sync(
+    let initial_active = match conn.call_sync(
         Some("org.gnome.ScreenSaver"),
         "/org/gnome/ScreenSaver",
         "org.gnome.ScreenSaver",
@@ -661,19 +676,16 @@ fn init_lock_tracking(state: Rc<HandlerState>) {
             Some(val)
         }
         Err(e) => {
-            event!("lock tracking: GetActive failed: {e}; assuming locked during startup/init");
+            event!("lock tracking: GetActive failed: {e}; assuming blanked during startup/init");
             None
         }
     };
 
-    let resolved_locked = initial_locked.unwrap_or(true);
-    state.session_locked.set(resolved_locked);
-    if resolved_locked {
-        event!("lock tracking: started with locked state (or unresolved). Hiding handle surfaces.");
-        state.set_handle_surfaces_visible(false);
-    }
+    let resolved_active = initial_active.unwrap_or(true);
+    state.screen_saver_active.set(resolved_active);
+    event!("lock tracking: screen saver active = {resolved_active}");
 
-    if initial_locked.is_none() {
+    if initial_active.is_none() {
         let conn_clone = conn.clone();
         let ctl_clone = state.clone();
         let mut retry_count = 0;
@@ -693,21 +705,13 @@ fn init_lock_tracking(state: Rc<HandlerState>) {
                 Ok(res) => {
                     let val = res.child_value(0).get::<bool>().unwrap_or(false);
                     event!("lock tracking retry: GetActive succeeded on retry {retry_count} returning {val}");
-                    ctl_clone.session_locked.set(val);
-                    if !val {
-                        let count = *ctl_clone.toplevel_count.borrow();
-                        ctl_clone.set_handle_surfaces_visible(should_show_handle(count));
-                    } else {
-                        ctl_clone.set_handle_surfaces_visible(false);
-                    }
+                    ctl_clone.screen_saver_active.set(val);
+                    ctl_clone.recompute_session_locked();
                     glib::ControlFlow::Break
                 }
                 Err(e) => {
                     if retry_count >= 15 {
-                        event!("lock tracking retry: failed 15 times: {e}; giving up and assuming unlocked");
-                        ctl_clone.session_locked.set(false);
-                        let count = *ctl_clone.toplevel_count.borrow();
-                        ctl_clone.set_handle_surfaces_visible(should_show_handle(count));
+                        event!("lock tracking retry: failed 15 times: {e}; giving up, screen saver state unknown");
                         glib::ControlFlow::Break
                     } else {
                         glib::ControlFlow::Continue
@@ -728,17 +732,79 @@ fn init_lock_tracking(state: Rc<HandlerState>) {
         move |_conn, _sender, _object_path, _interface, _signal, parameters| {
             let active = parameters.child_value(0).get::<bool>().unwrap_or(false);
             event!("lock tracking: ActiveChanged received active={active}");
-            ctl.session_locked.set(active);
-            if active {
-                event!("lock tracking: screen locked; hiding handles");
-                ctl.set_handle_surfaces_visible(false);
-            } else {
-                event!("lock tracking: screen unlocked");
-                let count = *ctl.toplevel_count.borrow();
-                ctl.set_handle_surfaces_visible(should_show_handle(count));
+            ctl.screen_saver_active.set(active);
+            ctl.recompute_session_locked();
+        },
+    );
+
+    init_logind_lock_tracking(state.clone());
+    state.recompute_session_locked();
+    event!("lock tracking: successfully initialized");
+}
+
+fn init_logind_lock_tracking(state: Rc<HandlerState>) {
+    let session_id = std::env::var("XDG_SESSION_ID").unwrap_or_default();
+    if session_id.is_empty() {
+        event!("lock tracking: no XDG_SESSION_ID, skipping logind lock tracking");
+        return;
+    }
+
+    let system_conn = match gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>) {
+        Ok(c) => c,
+        Err(e) => {
+            event!("lock tracking: failed to get system bus: {e}");
+            return;
+        }
+    };
+
+    let session_path = format!("/org/freedesktop/login1/session/_{}", session_id);
+
+    match system_conn.call_sync(
+        Some("org.freedesktop.login1"),
+        &session_path,
+        "org.freedesktop.DBus.Properties",
+        "Get",
+        Some(&glib::Variant::from(("org.freedesktop.login1.Session", "LockedHint"))),
+        None,
+        gio::DBusCallFlags::NONE,
+        2_000,
+        None::<&gio::Cancellable>,
+    ) {
+        Ok(res) => {
+            let locked = res.child_value(0).get::<bool>().unwrap_or(false);
+            event!("lock tracking: logind LockedHint = {locked}");
+            state.logind_locked.set(locked);
+        }
+        Err(e) => {
+            event!("lock tracking: failed to read logind LockedHint: {e}; session may not exist yet");
+        }
+    }
+
+    let ctl = state.clone();
+    system_conn.signal_subscribe(
+        Some("org.freedesktop.login1"),
+        Some("org.freedesktop.DBus.Properties"),
+        Some("PropertiesChanged"),
+        Some(&session_path),
+        Some("org.freedesktop.login1.Session"),
+        gio::DBusSignalFlags::NONE,
+        move |_conn, _sender, _object_path, _interface, _signal, parameters| {
+            let changed = parameters.child_value(1);
+            for i in 0..changed.n_children() {
+                let entry = changed.child_value(i);
+                let key = entry.child_value(0).get::<String>().unwrap_or_default();
+                if key == "LockedHint" {
+                    if let Some(val) = entry.child_value(1).get::<bool>() {
+                        event!("lock tracking: logind LockedHint changed to {val}");
+                        ctl.logind_locked.set(val);
+                        ctl.recompute_session_locked();
+                    }
+                    break;
+                }
             }
         },
     );
-    event!("lock tracking: successfully initialized");
+
+    event!("lock tracking: logind lock tracking initialized on session {session_path}");
 }
 

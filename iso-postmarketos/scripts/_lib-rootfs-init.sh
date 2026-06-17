@@ -149,6 +149,13 @@ if [ -d "$PM/$USB_MODED_PM" ]; then
     install -Dm755 "$PM/$USB_MODED_PM/rootfs-usr-bin-usb-moded-tethering-mode" /target/usr/bin/usb-moded-tethering-mode
     install -Dm755 "$PM/$USB_MODED_PM/rootfs-etc-init.d-usb-moded-developer-mode.initd" /target/etc/init.d/usb-moded-developer-mode
     install -Dm755 "$PM/$USB_MODED_PM/rootfs-etc-init.d-usb-moded-tethering-mode.initd" /target/etc/init.d/usb-moded-tethering-mode
+
+# Override usb-moded OpenRC init script with our patched version that loads
+# libcomposite (CONFIG_USB_LIBCOMPOSITE=m on qcom-sm6350; without it configfs
+# USB gadget entries are empty and the NCM interface never appears).
+if [ -f "/iso/pmaports/temp/usb-moded/usb-moded.initd" ]; then
+    install -Dm755 "/iso/pmaports/temp/usb-moded/usb-moded.initd" /target/etc/init.d/usb-moded
+fi
     install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-configfs.ini" /target/etc/usb-moded/configfs.ini
     install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-developer_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/developer_mode_openrc.ini
     install -Dm644 "$PM/$USB_MODED_PM/rootfs-etc-usb-moded-dyn-modes-tethering_mode_openrc.ini" /target/etc/usb-moded/dyn-modes/tethering_mode_openrc.ini
@@ -247,6 +254,11 @@ if [ "${ATOMOS_ENABLE_NFTABLES:-0}" = "1" ]; then
 else
     rm -f /target/etc/runlevels/default/nftables \
           /target/etc/runlevels/boot/nftables
+    # postmarketos-config-nftables-networkmanager (auto-installed via
+    # install_if) makes NM inject nftables rules directly via the kernel
+    # API -- independently of the OpenRC nftables service. The default
+    # zone drops all inbound traffic, silently blocking SSH on port 22.
+    rm -f /target/usr/lib/NetworkManager/conf.d/50-nftables.conf
     echo "init: nftables service not enabled in runlevel (ATOMOS_ENABLE_NFTABLES!=1)"
 fi
 

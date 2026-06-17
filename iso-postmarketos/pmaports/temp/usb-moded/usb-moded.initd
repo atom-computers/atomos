@@ -10,6 +10,7 @@ depend() {
 }
 
 start_pre() {
+        modprobe libcomposite 2>/dev/null || true
         mkdir -p "$configfs"
         mount -t configfs none "$configfs"
 }

@@ -114,6 +114,19 @@ if [ "${ATOMOS_ENABLE_NFTABLES:-0}" != "1" ]; then
     rm -f /target/etc/runlevels/default/nftables \
           /target/etc/runlevels/boot/nftables
 fi
+# postmarketos-config-nftables-networkmanager (auto-installed via
+# install_if when both networkmanager and postmarketos-config-nftables
+# are present) ships /usr/lib/NetworkManager/conf.d/50-nftables.conf
+# which sets firewall-backend=nftables. This causes NM to directly
+# inject nftables rules via the kernel API for every managed connection
+# (including the USB NCM gadget). The default zone drops all inbound
+# traffic, silently blocking SSH on port 22 -- even when the OpenRC
+# nftables service is not in any runlevel. Remove this drop-in so NM
+# leaves netfilter alone; the developer-mode firewall exceptions below
+# (ATOMOS_DEBUG_FIREWALL=1) handle nftables rules instead.
+if [ "${ATOMOS_ENABLE_NFTABLES:-0}" != "1" ]; then
+    rm -f /target/usr/lib/NetworkManager/conf.d/50-nftables.conf
+fi
 if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
     rm -f /target/etc/nftables.d/99_drop_log.nft
 fi
