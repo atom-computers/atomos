@@ -132,6 +132,11 @@ export default (canvas, opts) => {
     GLOBE_F_mapBaseBrightness,
     GLOBE_F_uTexture,
   ])
+  const globeUniformNames = [GLOBE_F_uResolution, GLOBE_F_rotation, GLOBE_F_dots, GLOBE_F_scale, GLOBE_F_offset, GLOBE_F_baseColor, GLOBE_F_glowColor, GLOBE_F_renderParams, GLOBE_F_mapBaseBrightness, GLOBE_F_uTexture]
+  globeUniformNames.forEach(function(name) {
+    if (globeUniforms[name] === null) console.error('cobe: globe uniform location NULL: ' + name)
+  })
+  if (gl.getError()) console.error('cobe: WebGL error after uniform lookup: 0x' + gl.getError().toString(16))
 
   // Marker uniforms
   const markerUniforms = getUniformLocations(gl, markerProgram, [
@@ -211,6 +216,17 @@ export default (canvas, opts) => {
     gl.bindTexture(gl.TEXTURE_2D, globeTexture)
     // Re-render so the land texture is visible immediately
     update({})
+    var postTexPx = new Uint8Array(4)
+    var postTexPts = [[canvas.width/2, canvas.height/2], [canvas.width*0.3, canvas.height*0.3], [canvas.width*0.7, canvas.height*0.7]]
+    var postTexSamples = []
+    for (var pti = 0; pti < postTexPts.length; pti++) {
+      var ptx = Math.round(postTexPts[pti][0]), pty = Math.round(postTexPts[pti][1])
+      gl.readPixels(ptx, pty, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, postTexPx)
+      postTexSamples.push(postTexPx[0] + ',' + postTexPx[1] + ',' + postTexPx[2] + ',' + postTexPx[3])
+    }
+    console.log('cobe: post-texture-load pixels=[' + postTexSamples.join(' / ') + ']')
+    var postTexErr = gl.getError()
+    if (postTexErr) console.error('cobe: post-texture WebGL error 0x' + postTexErr.toString(16))
   }
   image.onerror = function (e) {
     console.error('cobe: texture load FAILED', e)
@@ -470,6 +486,8 @@ export default (canvas, opts) => {
     gl.bindTexture(gl.TEXTURE_2D, globeTexture)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
+    var frameGlErr = gl.getError()
+    if (frameGlErr && perFrameErrorCount < 5) { console.error('cobe: frame globe-draw WebGL error 0x' + frameGlErr.toString(16)); perFrameErrorCount++ }
 
     // === Pass 2: Arcs ===
     if (arcProgram && validArcCount > 0) {
@@ -630,13 +648,28 @@ export default (canvas, opts) => {
   console.log('cobe: sample pixels=[' + samples.join(' / ') + ']')
   console.log('cobe: render defaults mapSamples=' + mapSamples + ' mapBrightness=' + mapBrightness + ' mapBaseBrightness=' + mapBaseBrightness + ' baseColor=' + JSON.stringify(baseColor) + ' diffuse=' + diffuse + ' dark=' + dark + ' opacity=' + opacity + ' scale=' + scaleOpt)
 
+  var perFrameErrorCount = 0
+
   // Animation loop — drives onRender each frame
   let rafId = 0
   if (onRender) {
     var frameCount = 0
     const state = {}
     function frame() {
-      if (frameCount < 3) console.log('cobe: frame ' + (frameCount++) + ' phi=' + phi + ' theta=' + theta + ' mapSamples=' + mapSamples + ' mapBrightness=' + mapBrightness)
+      if (frameCount < 3) {
+        console.log('cobe: frame ' + frameCount + ' phi=' + phi + ' theta=' + theta + ' mapSamples=' + mapSamples + ' mapBrightness=' + mapBrightness)
+        // Additional pixel sampling on first 3 frames to see if texture is being applied
+        var px2 = new Uint8Array(4)
+        var pts = [[canvas.width/2, canvas.height/2], [canvas.width*0.3, canvas.height*0.3], [canvas.width*0.7, canvas.height*0.7]]
+        var fSamples = []
+        for (var si = 0; si < pts.length; si++) {
+          var sx = Math.round(pts[si][0]), sy = Math.round(pts[si][1])
+          gl.readPixels(sx, sy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px2)
+          fSamples.push(px2[0] + ',' + px2[1] + ',' + px2[2] + ',' + px2[3])
+        }
+        console.log('cobe: frame-' + frameCount + ' pixels=[' + fSamples.join(' / ') + ']')
+        frameCount++
+      }
       onRender(state)
       update(state)
       var glErr = gl.getError()

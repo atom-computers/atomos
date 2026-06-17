@@ -35,7 +35,7 @@ mat3 rotate(float theta, float phi) {
 vec3 nearestFibonacciLattice(vec3 p, out float m) {
   p = p.xzy;
 
-  float k = max(2.0, floor(log2(sqrt5 * dots * PI * (1.0 - p.z * p.z)) * 0.72021));
+  float k = max(2.0, floor(log2(max(1e-10, sqrt5 * dots * PI * (1.0 - p.z * p.z))) * 0.72021));
 
   vec2 f = floor(pow(kPhi, k) / sqrt5 * vec2(1.0, kPhi) + 0.5);
   vec2 br1 = fract((f + 1.0) * (kPhi - 1.0)) * kTau - 3.883222;
