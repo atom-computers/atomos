@@ -292,13 +292,15 @@ handle_get_active (PhoshDBusScreenSaver  *skeleton,
                    GDBusMethodInvocation *invocation)
 {
   PhoshScreenSaverManager *self = PHOSH_SCREEN_SAVER_MANAGER (skeleton);
+  gboolean locked;
 
   g_return_val_if_fail (PHOSH_IS_SCREEN_SAVER_MANAGER (self), FALSE);
   g_return_val_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self->lockscreen_manager), FALSE);
 
-  g_debug ("DBus call GetActive: %d", self->active);
+  locked = phosh_lockscreen_manager_get_locked (self->lockscreen_manager);
+  g_debug ("DBus call GetActive: %d (locked: %d)", self->active, locked);
 
-  phosh_dbus_screen_saver_complete_get_active (skeleton, invocation, self->active);
+  phosh_dbus_screen_saver_complete_get_active (skeleton, invocation, self->active || locked);
 
   return TRUE;
 }
@@ -377,18 +379,20 @@ static void
 notify_active_changed (PhoshScreenSaverManager *self)
 {
   GDBusInterfaceSkeleton *skeleton;
+  gboolean active;
 
   g_return_if_fail (PHOSH_IS_SCREEN_SAVER_MANAGER (self));
 
   skeleton = G_DBUS_INTERFACE_SKELETON (self);
 
-  g_debug ("Signaling ActiveChanged: %d", self->active);
+  active = self->active || phosh_lockscreen_manager_get_locked (self->lockscreen_manager);
+  g_debug ("Signaling ActiveChanged: %d (blanked=%d)", active, self->active);
   g_dbus_connection_emit_signal (g_dbus_interface_skeleton_get_connection (skeleton),
                                  NULL,
                                  g_dbus_interface_skeleton_get_object_path (skeleton),
                                  SCREEN_SAVER_DBUS_NAME,
                                  "ActiveChanged",
-                                 g_variant_new ("(b)", self->active),
+                                 g_variant_new ("(b)", active),
                                  NULL);
   if (self->active) {
     g_debug ("Uninhibited logind suspend handling");
@@ -510,6 +514,7 @@ static void
 on_lockscreen_manager_locked_changed (PhoshScreenSaverManager *self)
 {
   gboolean locked;
+  GDBusInterfaceSkeleton *skeleton;
 
   g_return_if_fail (PHOSH_IS_SCREEN_SAVER_MANAGER (self));
 
@@ -522,10 +527,28 @@ on_lockscreen_manager_locked_changed (PhoshScreenSaverManager *self)
                                                    NULL);
   }
 
-  if (locked == TRUE)
+  skeleton = G_DBUS_INTERFACE_SKELETON (self);
+  if (locked) {
+    g_debug ("Signaling ActiveChanged: true (locked)");
+    g_dbus_connection_emit_signal (g_dbus_interface_skeleton_get_connection (skeleton),
+                                   NULL,
+                                   g_dbus_interface_skeleton_get_object_path (skeleton),
+                                   SCREEN_SAVER_DBUS_NAME,
+                                   "ActiveChanged",
+                                   g_variant_new ("(b)", TRUE),
+                                   NULL);
     return;
+  }
 
   unarm_lock_delay_timer (self, "unlock");
+  g_debug ("Signaling ActiveChanged: %d (unlocked)", self->active);
+  g_dbus_connection_emit_signal (g_dbus_interface_skeleton_get_connection (skeleton),
+                                 NULL,
+                                 g_dbus_interface_skeleton_get_object_path (skeleton),
+                                 SCREEN_SAVER_DBUS_NAME,
+                                 "ActiveChanged",
+                                 g_variant_new ("(b)", self->active),
+                                 NULL);
 }
 
 

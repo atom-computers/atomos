@@ -195,11 +195,13 @@ fn apply_webview_settings(webview: &webkit6::WebView) {
     // packaging variations turning WebGL off.
     settings.set_enable_webgl(true);
 
-    // Force GL even when WebKit's GPU heuristics would prefer
-    // non-accelerated mode (which silently disables WebGL). Without
-    // ALWAYS, software-only GL stacks (QEMU virt, headless Mesa) get
-    // classified as "unhealthy" and the GPU process never starts.
-    settings.set_hardware_acceleration_policy(webkit6::HardwareAccelerationPolicy::Always);
+    // Omit hardware-acceleration-policy so WebKit defaults to OnDemand.
+    // On software-only GL stacks (QEMU virt) this would classify the GPU
+    // as "unhealthy" and WebGL fails, so that target needs ALWAYS. On
+    // real hardware GPUs (Adreno 619 / FP4) OnDemand gives the compositor
+    // thread proper heuristics and requestAnimationFrame fires reliably.
+    // The QEMU launcher already sets LIBGL_ALWAYS_SOFTWARE=1, and the
+    // `Always` workaround can be conditionally enabled there if needed.
 
     // Forward `console.log` / `console.warn` / `console.error` from
     // event-horizon.js into stdout, which the launcher captures into

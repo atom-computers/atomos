@@ -90,6 +90,10 @@ export default (canvas, opts) => {
     preserveDrawingBuffer: false,
     ...opts.context,
   }
+  // Hardware GL on Adreno handles swap correctly; let WebGL double-buffer for
+  // best frame rate. preserveDrawingBuffer=true forces a full copy per frame and
+  // halves throughput on mobile GPUs. Only enable if swap artifacts appear.
+  // contextOpts.preserveDrawingBuffer = true
 
   console.log('cobe: canvas bbox=' + canvas.getBoundingClientRect().width + 'x' + canvas.getBoundingClientRect().height + ' dpr=' + (opts.devicePixelRatio || 1) + ' w=' + opts.width + ' h=' + opts.height)
 
@@ -105,8 +109,10 @@ export default (canvas, opts) => {
 
   const instExt = webgl2 ? null : gl.getExtension('ANGLE_instanced_arrays')
 
-  // Device pixel ratio
-  const dpr = opts.devicePixelRatio || 1
+  // Fix 5: Cap DPR to 1.5 to limit GPU memory pressure on embedded GPUs.
+  // FP4's Adreno 619 at 3.0 DPR produces a ~2340x2340 framebuffer (~16MB),
+  // which can cause drawArrays to silently fail under memory pressure.
+  const dpr = Math.min(opts.devicePixelRatio || 1, 1.5)
   canvas.width = opts.width * dpr
   canvas.height = opts.height * dpr
 

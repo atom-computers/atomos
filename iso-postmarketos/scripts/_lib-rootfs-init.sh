@@ -139,6 +139,14 @@ install_pm postmarketos-base-ui-gnome/10_postmarketos-green-accent.gschema.overr
 install_pm postmarketos-artwork/10_pmOS-wallpaper.gschema.override \
     /usr/share/glib-2.0/schemas/10_pmOS-wallpaper.gschema.override
 
+# gsd-keyboard reads org.gnome.desktop.input-sources and crashes with
+# g_variant_ref: assertion 'value != NULL' when no input sources are
+# configured. Provide a default (US keyboard) so the plugin doesn't trip.
+cat > /target/usr/share/glib-2.0/schemas/20_atomos-input-sources.gschema.override <<'KEYBOARD_GS'
+[org.gnome.desktop.input-sources]
+sources=[('xkb', 'us')]
+KEYBOARD_GS
+
 # Recompile gschema cache so overrides take effect at runtime.
 glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
 
@@ -258,7 +266,22 @@ else
     # install_if) makes NM inject nftables rules directly via the kernel
     # API -- independently of the OpenRC nftables service. The default
     # zone drops all inbound traffic, silently blocking SSH on port 22.
+    # Remove the vendor drop-in AND write a higher-priority override to
+    # /etc/ to be absolutely sure NM leaves netfilter alone.
     rm -f /target/usr/lib/NetworkManager/conf.d/50-nftables.conf
+    rm -f /target/etc/NetworkManager/conf.d/50-nftables.conf
+    mkdir -p /target/etc/NetworkManager/conf.d
+    cat > /target/etc/NetworkManager/conf.d/95-no-firewall.conf <<'NM_CONF'
+[main]
+firewall-backend=
+NM_CONF
+    # Neutralise nftables rules that might be loaded by any mechanism
+    # (init script, dispatcher, hotplug). Replace with an empty ruleset
+    # that flushes existing state and defaults to ACCEPT.
+    echo '#!/usr/sbin/nft -f' > /target/etc/nftables.nft
+    echo 'flush ruleset' >> /target/etc/nftables.nft
+    rm -rf /target/etc/nftables.d
+    mkdir -p /target/etc/nftables.d
     echo "init: nftables service not enabled in runlevel (ATOMOS_ENABLE_NFTABLES!=1)"
 fi
 

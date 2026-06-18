@@ -116,6 +116,41 @@ if command -v ccache >/dev/null 2>&1; then
     export CXX="ccache g++"
 fi
 
+# ---- gnome-settings-daemon (patched for gsd-xsettings startup fix) ------
+# Rebuild from source with startup-chain-fix so gsd-xsettings chains up to
+# GApplication::startup at the beginning, preventing the GLib-CRITICAL
+# assertion on FP4 hardware where X11 display init can fail.
+GSD_VER=50.1
+GSD_SRC_DIR=/tmp/gsd-src
+GSD_BUILD_DIR=/cache/gsd-build
+
+echo "Building patched gnome-settings-daemon ${GSD_VER}..."
+rm -rf "$GSD_SRC_DIR" "$GSD_BUILD_DIR"
+apk add --no-interactive \
+    alsa-lib-dev colord-dev cups-dev geoclue-dev geocode-glib-dev \
+    gcr4-dev gsettings-desktop-schemas-dev gtk+3.0-dev \
+    libcanberra-dev libgweather4-dev libnotify-dev libwacom-dev \
+    libxml2-utils wget >/dev/null 2>&1
+
+GSD_TARBALL=/tmp/gsd.tar.xz
+wget -q -O "$GSD_TARBALL" \
+    "https://download.gnome.org/sources/gnome-settings-daemon/${GSD_VER%.*}/gnome-settings-daemon-${GSD_VER}.tar.xz"
+mkdir -p "$GSD_SRC_DIR"
+xz -dc "$GSD_TARBALL" | tar -x -C "$GSD_SRC_DIR" --strip-components=1
+rm -f "$GSD_TARBALL"
+
+patch -d "$GSD_SRC_DIR" -p1 -N < /work/iso-postmarketos/vendor/aports/community/gnome-settings-daemon/desktop-files.patch
+patch -d "$GSD_SRC_DIR" -p1 -N < /work/iso-postmarketos/vendor/aports/community/gnome-settings-daemon/startup-chain-fix.patch
+
+PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+meson setup "$GSD_BUILD_DIR" "$GSD_SRC_DIR" \
+    --prefix=/usr --sysconfdir=/etc \
+    -Db_lto=true -Dsystemd=false -Dsystemd-units=true -Delogind=true
+ninja -C "$GSD_BUILD_DIR"
+DESTDIR=/target meson install -C "$GSD_BUILD_DIR" --no-rebuild
+rm -rf "$GSD_SRC_DIR" "$GSD_BUILD_DIR"
+echo "Patched gnome-settings-daemon installed."
+
 # ---- vendor phosh stack (ON by default in v2) --------------------------
 if [ "${USE_VENDOR_PHOSH:-1}" = "1" ]; then
     GMOBILE_DIR=/work/iso-postmarketos/vendor/phoc/subprojects/gmobile

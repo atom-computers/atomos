@@ -784,10 +784,15 @@ EOF
             install -Dm644 "$PM/postmarketos-ui-phosh/udiskie.desktop" \
                 /target/etc/xdg/autostart/udiskie.desktop
         fi
+        rm -f /target/etc/xdg/autostart/org.gnome.SettingsDaemon.XSettings.desktop
         if [ -f "$PM/postmarketos-base-ui-gnome/00_postmarketos-base-ui-gnome.gschema.override" ]; then
             install -Dm644 "$PM/postmarketos-base-ui-gnome/00_postmarketos-base-ui-gnome.gschema.override" \
                 /target/usr/share/glib-2.0/schemas/00_postmarketos-base-ui-gnome.gschema.override
         fi
+        cat > /target/usr/share/glib-2.0/schemas/20_atomos-input-sources.gschema.override <<'KEYBOARD_GS'
+[org.gnome.desktop.input-sources]
+sources=[('xkb', 'us')]
+KEYBOARD_GS
         # Recompile schemas so the gsettings overrides take effect.
         glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
 

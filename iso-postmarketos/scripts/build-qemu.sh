@@ -638,6 +638,7 @@ GREETD_CONFD
             install -Dm644 "$PM/postmarketos-ui-phosh/udiskie.desktop" \
                 /target/etc/xdg/autostart/udiskie.desktop
         fi
+        rm -f /target/etc/xdg/autostart/org.gnome.SettingsDaemon.XSettings.desktop
         if [ -f "$PM/postmarketos-base-ui-gnome/00_postmarketos-base-ui-gnome.gschema.override" ]; then
             install -Dm644 "$PM/postmarketos-base-ui-gnome/00_postmarketos-base-ui-gnome.gschema.override" \
                 /target/usr/share/glib-2.0/schemas/00_postmarketos-base-ui-gnome.gschema.override
@@ -751,6 +752,10 @@ ATOMOS_EOF
             install -Dm644 "$PM/postmarketos-qemu-common/wlr-no-hw-cursor.sh" \
                 /target/etc/profile.d/10-wlr-no-hw-cursor.sh
         fi
+        cat > /target/usr/share/glib-2.0/schemas/20_atomos-input-sources.gschema.override <<'KEYBOARD_GS'
+[org.gnome.desktop.input-sources]
+sources=[('xkb', 'us')]
+KEYBOARD_GS
         glib-compile-schemas /target/usr/share/glib-2.0/schemas/ 2>/dev/null || true
 
         # Create phoc.ini configuration for virtio-gpu output

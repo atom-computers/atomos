@@ -73,6 +73,22 @@ if [ "${BUILD_HOME_BG:-1}" = "1" ] \
         ATOMOS_HOME_BG_INSTALL_AUTOSTART=1 \
         atomos_bash /work/iso-postmarketos/scripts/home-bg/install-atomos-home-bg.sh \
         "$PROFILE_ENV_CONTAINER"
+    # Enable hardware GL on the Adreno 619 (home-bg launcher defaults to
+    # LIBGL_ALWAYS_SOFTWARE=1 / GSK_RENDERER=cairo). The cairo renderer
+    # keeps GTK off the GPU; LIBGL_ALWAYS_SOFTWARE=0 lets WebKit's
+    # compositor use the Adreno for WebGL.
+    # DMABUF: allow Wayland direct buffer sharing so frames reach the
+    # compositor without CPU copies (Fix 3).
+    if [ -f /target/etc/atomos/phosh-profile.env ]; then
+        if ! grep -q 'ATOMOS_HOME_BG_LIBGL_ALWAYS_SOFTWARE' /target/etc/atomos/phosh-profile.env; then
+            echo 'ATOMOS_HOME_BG_LIBGL_ALWAYS_SOFTWARE=0' >> /target/etc/atomos/phosh-profile.env
+            echo "  -> appended ATOMOS_HOME_BG_LIBGL_ALWAYS_SOFTWARE=0 (hardware GL on Adreno)"
+        fi
+        if ! grep -q 'WEBKIT_DISABLE_DMABUF_RENDERER' /target/etc/atomos/phosh-profile.env; then
+            echo 'WEBKIT_DISABLE_DMABUF_RENDERER=0' >> /target/etc/atomos/phosh-profile.env
+            echo "  -> appended WEBKIT_DISABLE_DMABUF_RENDERER=0 (DMABUF enabled)"
+        fi
+    fi
 fi
 
 if [ "${BUILD_APP_HANDLER:-1}" = "1" ] \
@@ -113,19 +129,24 @@ fi
 if [ "${ATOMOS_ENABLE_NFTABLES:-0}" != "1" ]; then
     rm -f /target/etc/runlevels/default/nftables \
           /target/etc/runlevels/boot/nftables
-fi
-# postmarketos-config-nftables-networkmanager (auto-installed via
-# install_if when both networkmanager and postmarketos-config-nftables
-# are present) ships /usr/lib/NetworkManager/conf.d/50-nftables.conf
-# which sets firewall-backend=nftables. This causes NM to directly
-# inject nftables rules via the kernel API for every managed connection
-# (including the USB NCM gadget). The default zone drops all inbound
-# traffic, silently blocking SSH on port 22 -- even when the OpenRC
-# nftables service is not in any runlevel. Remove this drop-in so NM
-# leaves netfilter alone; the developer-mode firewall exceptions below
-# (ATOMOS_DEBUG_FIREWALL=1) handle nftables rules instead.
-if [ "${ATOMOS_ENABLE_NFTABLES:-0}" != "1" ]; then
+    # postmarketos-config-nftables-networkmanager injects nftables rules via NM.
+    # Strip the vendor config AND write a higher-priority override to ensure NM
+    # does NOT touch netfilter, even if overlay installers re-trigger package
+    # post-install scripts that recreate the vendor drop-in.
     rm -f /target/usr/lib/NetworkManager/conf.d/50-nftables.conf
+    rm -f /target/etc/NetworkManager/conf.d/50-nftables.conf
+    mkdir -p /target/etc/NetworkManager/conf.d
+    cat > /target/etc/NetworkManager/conf.d/95-no-firewall.conf <<'NM_CONF'
+[main]
+firewall-backend=
+NM_CONF
+    # Replace /etc/nftables.nft with an empty ACCEPT-only ruleset so that
+    # even if something unexpectedly triggers the nftables init script at
+    # runtime, it won't block SSH on the USB NCM interface.
+    echo '#!/usr/sbin/nft -f' > /target/etc/nftables.nft
+    echo 'flush ruleset' >> /target/etc/nftables.nft
+    rm -rf /target/etc/nftables.d
+    mkdir -p /target/etc/nftables.d
 fi
 if [ "${ATOMOS_DEBUG_FIREWALL:-0}" = "1" ]; then
     rm -f /target/etc/nftables.d/99_drop_log.nft
