@@ -36,6 +36,8 @@ pub enum Access {
 ///
 /// # Fields
 ///
+/// - `label`: optional human-readable name for debugging and review.
+///
 /// - `program`: a region containing the process's executable code.
 ///   The kernel does not interpret this region — it is format-agnostic.
 ///   The hardware-specific execution layer decides how to instantiate
@@ -54,6 +56,8 @@ pub enum Access {
 ///   (unless explicitly granted via [`Kernel::grant`](crate::Kernel::grant)).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Process {
+    /// Optional human-readable label for debugging and review.
+    pub label: Option<alloc::string::String>,
     /// Region containing the process's program (format-agnostic).
     pub program: RegionId,
     /// Regions this process reads from. Subscribes to change notifications.

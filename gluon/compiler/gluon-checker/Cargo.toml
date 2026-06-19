@@ -1,0 +1,10 @@
+[package]
+name = "gluon-checker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+gluon-lexer = { path = "../gluon-lexer" }
+gluon-parser = { path = "../gluon-parser" }
+gluon-resolver = { path = "../gluon-resolver" }

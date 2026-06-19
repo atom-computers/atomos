@@ -44,21 +44,32 @@ pub enum MemoryTier {
 ///   (real + imaginary pairs) or density-matrix entries.
 /// - **Neural sensing**: the four components may be signal amplitude,
 ///   phase, coherence, and quality metrics.
+/// - **Touch input**: the four components may be (active, pressure,
+///   contact_id, reserved).
+/// - **Keyboard input**: the four u8 components may be (pressed,
+///   repeat_count, modifiers, reserved).
+/// - **DNA storage**: the four components may be the four nucleotide
+///   bases (A, T, G, C) encoded as presence flags or quality scores
+///   per base per position, or stored as `F32x4` for probabilistic
+///   base-calling (probability of each base at that position).
 ///
 /// The kernel does not impose any semantic interpretation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ElementFormat {
     /// 4 bytes per element: four unsigned 8-bit components.
     ///
-    /// Use this for **display** regions — the four components map to
-    /// color channels (the hardware driver defines which byte maps to
-    /// R, G, B, or A).
+    /// Use this for **display** regions (color channels, driver-defined
+    /// byte order), **keyboard input** regions (scancode state), and
+    /// **DNA storage** regions (discrete base-calling: A, T, G, C
+    /// encoded as per-base presence or quality scores).
     U8x4,
     /// 16 bytes per element: four 32-bit float components.
     ///
-    /// Use this for **quantum state** regions (real + imaginary pairs
-    /// or density-matrix entries) and **neural sensing** regions
-    /// (signal amplitude, phase, coherence, and quality per channel).
+    /// Use this for **quantum state** regions (complex amplitudes),
+    /// **neural sensing** regions (signal + metadata per channel),
+    /// **touch input** regions (active, pressure, contact_id), and
+    /// **DNA storage** regions (probabilistic base-calling: probability
+    /// of each of the four bases at that position).
     F32x4,
 }
 
@@ -79,7 +90,9 @@ impl ElementFormat {
 /// provides read/write access to raw bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RegionKind {
-    /// Unstructured bytes. The universal fallback.
+    /// Unstructured bytes. The universal fallback for data that does not
+    /// have a natural spatial interpretation — heap memory, GPU-optimized
+    /// buffers, linear storage, or any byte blob.
     Raw,
 
     /// An abstract N-dimensional volume of data with spatial and temporal
@@ -89,8 +102,16 @@ pub enum RegionKind {
     ///
     /// - **Display**: `z = 1`, `t` is the framebuffer generation.
     ///   The compositor writes pixel data each frame; the hardware scans out
-    ///   the current slice at `t = current_frame`. U8x4 is suitable for
-    ///   RGBA pixels.
+    ///   the current slice at `t = current_frame`.
+    ///
+    /// - **Touch input**: same `x × y` dimensions as the display region.
+    ///   Each element holds touch state at that coordinate: `(active, pressure,
+    ///   contact_id, reserved)` stored as `F32x4`. The hardware driver writes
+    ///   to this region; subscribing processes react to changes.
+    ///
+    /// - **Keyboard input**: `x = 256`, one element per scancode.
+    ///   Each element holds key state: `(pressed, repeat_count, modifiers,
+    ///   reserved)` stored as `U8x4`.
     ///
     /// - **Quantum state**: `x × y × z` is the spatial discretization of
     ///   a wavefunction or probability cloud. `t` indexes the observation
@@ -103,6 +124,15 @@ pub enum RegionKind {
     ///   Each element holds the measured signal at that spatial point
     ///   (voltage, field strength, blood-oxygen level, etc.) stored as
     ///   `F32x4` (signal + metadata/quality channels).
+    ///
+    /// - **DNA storage**: `x` is the sequence length (base positions),
+    ///   `y` is the strand or read index, `z` is the chromosome or sample
+    ///   index, and `t` is the sequencing generation or synthesis cycle.
+    ///   Each element holds the four-base encoding at that position.
+    ///   For discrete base-calling, use `U8x4` where each byte signals
+    ///   presence of A, T, G, or C. For probabilistic calling (e.g.
+    ///   nanopore or PacBio), use `F32x4` where each float is the
+    ///   confidence score for A, T, G, or C at that position.
     ///
     /// The kernel does not interpret the contents — it only knows the
     /// dimension bounds and element format so it can allocate the region.
@@ -124,14 +154,6 @@ pub enum RegionKind {
         /// The byte layout of each element in the spatial grid.
         format: ElementFormat,
     },
-
-    /// A stream of input events pushed into the region by hardware or
-    /// another process. Consumption is up to the reader.
-    InputStream,
-
-    /// A bidirectional stream of network data. The read end receives
-    /// incoming packets; the write end sends outgoing packets.
-    NetworkStream,
 }
 
 /// Access control flags for a region.
@@ -175,6 +197,8 @@ impl core::ops::BitOrAssign for RegionFlags {
 pub struct Region {
     /// The region's unique identifier.
     pub id: RegionId,
+    /// Optional human-readable label for debugging and review.
+    pub label: Option<alloc::string::String>,
     /// The kind of data this region holds.
     pub kind: RegionKind,
     /// Total allocated size in bytes.

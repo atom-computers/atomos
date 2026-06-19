@@ -30,10 +30,11 @@ architecture. It defines *what* operations exist, not *how* they are implemented
 ```rust
 pub struct Region {
     pub id: RegionId,
-    pub kind: RegionKind,     // Raw | Spatial { x, y, z, t, format } | InputStream | NetworkStream
+    pub label: Option<String>,   // human-readable name for debugging
+    pub kind: RegionKind,        // Raw | Spatial { x, y, z, t, format }
     pub size: usize,
-    pub tier: MemoryTier,     // ShortTerm | LongTerm
-    pub flags: RegionFlags,   // READ | WRITE | GROWABLE
+    pub tier: MemoryTier,        // ShortTerm | LongTerm
+    pub flags: RegionFlags,      // READ | WRITE | GROWABLE
 }
 ```
 
@@ -53,22 +54,26 @@ Spatial {
 }
 ```
 
-Three concrete implementation cases for the same abstraction:
+The same abstraction covers all spatial data, input and output alike:
 
 | Case | x × y × z | t | Format | Meaning of 4 components |
 |---|---|---|---|---|
 | **Display** | pixel grid, z=1 | frame counter | `U8x4` | color channels (driver-defined byte order) |
+| **Touch input** | matches display x×y, z=1 | input frame | `F32x4` | active, pressure, contact_id, reserved |
+| **Keyboard input** | 256 scancode slots, y=z=1 | input frame | `U8x4` | pressed, repeat_count, modifiers, reserved |
 | **Quantum state** | wavefunction discretization | observation timestep | `F32x4` | complex amplitudes or density-matrix entries |
 | **Neural sensing** | sensor channel grid | sampling frame | `F32x4` | signal amplitude, phase, coherence, quality |
+| **DNA storage** | sequence × strand × chromosome | synthesis cycle | `U8x4` or `F32x4` | A, T, G, C (discrete or probabilistic base-calling) |
 
 ### Process
 
 ```rust
 pub struct Process {
-    pub program: RegionId,    // format-agnostic: machine code, WASM, FPGA bitstream, ...
-    pub inputs: Vec<(RegionId, Access)>,   // subscribed to changes
-    pub outputs: Vec<(RegionId, Access)>,  // writes activate subscribers
-    pub private: Vec<RegionId>,            // internal state
+    pub label: Option<String>,               // human-readable name for debugging
+    pub program: RegionId,                   // format-agnostic: machine code, WASM, FPGA bitstream, ...
+    pub inputs: Vec<(RegionId, Access)>,     // subscribed to changes
+    pub outputs: Vec<(RegionId, Access)>,    // writes activate subscribers
+    pub private: Vec<RegionId>,              // internal state
 }
 ```
 
@@ -79,7 +84,7 @@ The complete set of primitives a process may call:
 ```rust
 pub trait Kernel {
     // Regions
-    fn create_region(&self, kind, size, tier) -> Result<RegionId, KernelError>;
+    fn create_region(&self, kind, size, tier, label) -> Result<RegionId, KernelError>;
     fn destroy_region(&self, id) -> Result<(), KernelError>;
     fn resize_region(&self, id, new_size) -> Result<(), KernelError>;
     fn set_tier(&self, id, tier) -> Result<(), KernelError>;     // migrate ShortTerm ↔ LongTerm
@@ -153,6 +158,6 @@ the spec without hardware.
 - [x] Mock implementation with reactive dataflow demo
 - [ ] AArch64 bare-metal implementation
 - [ ] Display driver (Spatial region → physical framebuffer)
-- [ ] Input driver (keyboard/touch → InputStream region)
+- [ ] Input driver (keyboard/touch → Spatial region)
 - [ ] Code loading (spawn processes from ELF/WASM regions)
 - [ ] Persistence layer (LongTerm tier backed by flash/storage)

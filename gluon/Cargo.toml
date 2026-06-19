@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "compiler/gluon-lexer",
+    "compiler/gluon-parser",
+    "compiler/gluon-resolver",
+    "compiler/gluon-checker",
+    "compiler/gluon-verify",
+    "compiler/gluon-temporal",
+    "compiler/gluon-codegen",
+    "compiler/gluon-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/atomcomputers/atomos"

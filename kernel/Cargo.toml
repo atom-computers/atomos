@@ -1,3 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["kernel-spec", "kernel-mock"]
+members = ["kernel-spec", "kernel-mock", "kernel-aarch64"]
+default-members = ["kernel-spec", "kernel-mock"]
+
+[profile.release]
+opt-level = "s"

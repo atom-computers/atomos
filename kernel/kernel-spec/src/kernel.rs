@@ -18,7 +18,15 @@ use crate::{Access, KernelError, MemoryTier, Process, ProcessId, Region, RegionI
 ///
 /// Regions are the universal data primitive — there are no files, no
 /// distinction between RAM and storage. Everything is a named, typed,
-/// tiered blob of bytes. See [`RegionKind`] and [`MemoryTier`].
+/// tiered blob of bytes of one of two kinds:
+///
+/// - [`RegionKind::Raw`] — unstructured bytes, the universal fallback.
+/// - [`RegionKind::Spatial`] — a structured (x, y, z, t) grid of typed
+///   elements. Used for displays, touch input, quantum states, and
+///   neural sensor grids alike.
+///
+/// The distinction between "input" and "output" does not exist in the
+/// type system — it is determined by which process holds write access.
 ///
 /// # Processes
 ///
@@ -36,6 +44,9 @@ pub trait Kernel {
     /// The kernel assigns a unique [`RegionId`] and reserves `size` bytes
     /// of backing storage in the requested tier.
     ///
+    /// `label` is an optional human-readable name to identify this region
+    /// in debug output and kernel introspection.
+    ///
     /// # Errors
     ///
     /// - `OutOfMemory` if the tier's backing storage is exhausted.
@@ -44,6 +55,7 @@ pub trait Kernel {
         kind: RegionKind,
         size: usize,
         tier: MemoryTier,
+        label: Option<&str>,
     ) -> Result<RegionId, KernelError>;
 
     /// Deallocate a region and release its backing storage.

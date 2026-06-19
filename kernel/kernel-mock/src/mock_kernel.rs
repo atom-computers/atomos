@@ -10,6 +10,7 @@ use kernel_spec::{
 type ProcessClosure = Box<dyn FnMut(&MockKernel)>;
 
 struct MockRegion {
+    label: Option<String>,
     kind: RegionKind,
     data: Vec<u8>,
     tier: MemoryTier,
@@ -128,6 +129,15 @@ impl MockKernel {
         };
         self.state.borrow_mut().current_pid = Some(pid);
 
+        {
+            let state = self.state.borrow();
+            if let Some(proc) = state.processes.get(&pid) {
+                if let Some(ref label) = proc.process.label {
+                    println!("[kernel] activate {}", label);
+                }
+            }
+        }
+
         if let Some(ref mut f) = closure_opt {
             f(self);
         }
@@ -157,6 +167,7 @@ impl Kernel for MockKernel {
         kind: RegionKind,
         size: usize,
         tier: MemoryTier,
+        label: Option<&str>,
     ) -> Result<RegionId, KernelError> {
         let mut state = self.state.borrow_mut();
         let id = RegionId(state.next_region_id);
@@ -174,6 +185,7 @@ impl Kernel for MockKernel {
         state.regions.insert(
             id,
             MockRegion {
+                label: label.map(|s| s.to_string()),
                 kind,
                 data: vec![0u8; size],
                 tier,
@@ -306,6 +318,7 @@ impl Kernel for MockKernel {
         let r = state.regions.get(&id).ok_or(KernelError::NotFound)?;
         Ok(Region {
             id,
+            label: r.label.clone(),
             kind: r.kind.clone(),
             size: r.data.len(),
             tier: r.tier,

@@ -1,0 +1,18 @@
+[package]
+name = "kernel-aarch64"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+kernel-spec = { path = "../kernel-spec" }
+aarch64-cpu = "11.1"
+tock-registers = "0.10"
+virtio-drivers = { path = "../virtio-drivers" }
+log = "0.4"
+
+[features]
+default = []
+
+[profile.release]
+opt-level = "s"
+debug = true

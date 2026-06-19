@@ -1,0 +1,15 @@
+[package]
+name = "gluon-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "gluon"
+path = "src/main.rs"
+
+[dependencies]
+gluon-lexer = { path = "../gluon-lexer" }
+gluon-parser = { path = "../gluon-parser" }
+gluon-resolver = { path = "../gluon-resolver" }
+gluon-checker = { path = "../gluon-checker" }

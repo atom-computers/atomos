@@ -1,0 +1,19 @@
+[package]
+name = "render"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["cpu"]
+cpu = []
+
+[dependencies]
+kernel-spec = { path = "../kernel/kernel-spec" }
+libm = "0.2"
+
+[dev-dependencies]
+kernel-mock = { path = "../kernel/kernel-mock" }
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
