@@ -44,6 +44,8 @@ qemu-system-aarch64 \
     -no-reboot \
     -device virtio-gpu-pci,xres=720,yres=1440 \
     -display cocoa,show-cursor=on \
+    -device virtio-keyboard-device \
+    -device virtio-tablet-device \
     -serial stdio \
     -kernel "$BIN" \
     2>&1

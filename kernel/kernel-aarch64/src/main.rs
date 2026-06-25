@@ -28,12 +28,8 @@ pub extern "C" fn kernel_main(fdt: *const u8) -> ! {
     logger::init();
     println!("kernel-aarch64 booted");
 
-    let ram_end = 0x4000_0000u64 + 128 * 1024 * 1024;
-    let page_alloc = memory::PageAlloc::new(ram_end);
-    page_alloc.init();
-    virtio_hal::init_dma_alloc(&page_alloc);
-
     let k = kernel::Aarch64Kernel::new();
+    virtio_hal::init_dma_alloc(k.page_allocator());
     k.quick_test();
 
     // Try PCI GPU first (works on macOS/Cocoa), fall back to MMIO
