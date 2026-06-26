@@ -20,6 +20,9 @@ pub enum KernelError {
     WouldBlock,
     /// The operation is not supported by this kernel implementation.
     NotSupported,
+    /// Manifest signature verification failed, or region ciphertext
+    /// failed AEAD authentication tag check.
+    IntegrityFailure,
 }
 
 impl fmt::Display for KernelError {
@@ -32,6 +35,7 @@ impl fmt::Display for KernelError {
             KernelError::AlreadyExists => write!(f, "already exists"),
             KernelError::WouldBlock => write!(f, "operation would block"),
             KernelError::NotSupported => write!(f, "not supported"),
+            KernelError::IntegrityFailure => write!(f, "integrity check failed"),
         }
     }
 }

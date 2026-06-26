@@ -12,6 +12,7 @@ log = "0.4"
 
 [features]
 default = []
+mte = []
 
 [profile.release]
 opt-level = "s"

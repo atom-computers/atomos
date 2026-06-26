@@ -1,4 +1,4 @@
-use kernel_spec::{Access, Kernel, MemoryTier, Process, RegionKind};
+use kernel_spec::{Access, Kernel, MemoryTier, Process, RegionKind, TrustDomain};
 
 use crate::MockKernel;
 
@@ -40,6 +40,8 @@ fn reactive_dataflow_demo() {
         inputs: vec![(shared, Access::ReadOnly)],
         outputs: vec![(tick, Access::ReadWrite)],
         private: vec![],
+        manifest_signature: None,
+        trust_domain: TrustDomain::User,
     };
 
     let process_a = Process {
@@ -48,6 +50,8 @@ fn reactive_dataflow_demo() {
         inputs: vec![(tick, Access::ReadOnly)],
         outputs: vec![(shared, Access::ReadWrite)],
         private: vec![],
+        manifest_signature: None,
+        trust_domain: TrustDomain::User,
     };
 
     let _ = kernel.spawn_with_closure(process_b, Box::new({

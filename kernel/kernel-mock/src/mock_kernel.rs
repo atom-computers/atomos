@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 
 use kernel_spec::{
     Access, Kernel, KernelError, MemoryTier, Process, ProcessId, Region, RegionFlags, RegionId,
-    RegionKind,
+    RegionKind, TrustDomain,
 };
 
 type ProcessClosure = Box<dyn FnMut(&MockKernel)>;
@@ -406,6 +406,36 @@ impl Kernel for MockKernel {
     }
 
     fn revoke(&self, _pid: ProcessId, _region: RegionId) -> Result<(), KernelError> {
+        Ok(())
+    }
+
+    fn rotate_region_key(&self, _id: RegionId) -> Result<(), KernelError> {
+        Ok(())
+    }
+
+    fn activate_process(&self, _pid: ProcessId) -> Result<(), KernelError> {
+        Ok(())
+    }
+
+    fn deactivate_process(&self, _pid: ProcessId) -> Result<(), KernelError> {
+        Ok(())
+    }
+
+    fn authorize_transfer(
+        &self,
+        _region: RegionId,
+        _from: TrustDomain,
+        _to: TrustDomain,
+        _vault_token: &[u8],
+    ) -> Result<(), KernelError> {
+        Ok(())
+    }
+
+    fn vault_sign(
+        &self,
+        _request_region: RegionId,
+        _response_region: RegionId,
+    ) -> Result<(), KernelError> {
         Ok(())
     }
 }

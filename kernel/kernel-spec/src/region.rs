@@ -170,6 +170,14 @@ impl RegionFlags {
     pub const WRITE: Self = RegionFlags { bits: 1 << 1 };
     /// The region can grow or shrink via [`Kernel::resize_region`](crate::Kernel::resize_region).
     pub const GROWABLE: Self = RegionFlags { bits: 1 << 2 };
+    /// Region contents are stored as AEAD ciphertext.
+    /// Reads and writes transparently encrypt/decrypt using per-process
+    /// derived keys. Without a key, reads return [`crate::KernelError::AccessDenied`].
+    pub const ENCRYPTED: Self = RegionFlags { bits: 1 << 3 };
+    /// Region is sealed after initial write; further writes are denied.
+    /// Used for code regions (Harvard architecture: instruction memory
+    /// is immutable after verification) and read-only data regions.
+    pub const IMMUTABLE: Self = RegionFlags { bits: 1 << 4 };
 
     pub fn contains(self, other: RegionFlags) -> bool {
         (self.bits & other.bits) == other.bits

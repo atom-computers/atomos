@@ -9,6 +9,7 @@ mod allocator;
 mod memory;
 mod region;
 mod kernel;
+mod mmu;
 mod fdt;
 mod virtio;
 mod virtio_hal;
@@ -16,6 +17,9 @@ mod gpu;
 mod pci;
 mod input;
 mod logger;
+
+#[cfg(feature = "mte")]
+mod mte;
 
 use core::arch::global_asm;
 use kernel_spec::Kernel;
@@ -32,35 +36,20 @@ pub extern "C" fn kernel_main(fdt: *const u8) -> ! {
     virtio_hal::init_dma_alloc(k.page_allocator());
     k.quick_test();
 
-    // Try PCI GPU first (works on macOS/Cocoa), fall back to MMIO
     let mut pci_gpu: Option<pci::PciGpu> = None;
     let mut gpu_opt: Option<gpu::GpuDriver> = None;
     let mut keyboard_opt: Option<input::InputDriver> = None;
     let mut tablet_opt: Option<input::InputDriver> = None;
 
-    // Find PCIe host bridge from FDT to get ECAM base
-    if let Some(reader) = fdt::FdtReader::new(fdt) {
-        reader.walk(&|name: &str, addr: u64, _size: u64| {
-            // Look for pci-host-ecam-generic or pci-host-cam-generic nodes
-            if name.contains("pci") {
-                crate::println!("  fdt: PCI node '{}' at 0x{:x}", name, addr);
-                pci::set_ecam_base(addr);
-            }
-        });
-    }
-
-    if pci::has_ecam() {
-        if let Some(pci) = pci::PciGpu::probe() {
-            crate::println!("gpu: PCI GPU found {}x{} fb=0x{:x}", pci.width, pci.height, pci.fb_ptr as usize);
-            pci_gpu = Some(pci);
-        }
-    }
-
+    // Probe virtio MMIO devices first (doesn't need PCI)
     if let Some(reader) = fdt::FdtReader::new(fdt) {
         let gpu_addr = core::cell::Cell::new(0u64);
         let input_addrs = core::cell::RefCell::new(alloc::vec::Vec::new());
 
-        reader.walk(&|_name: &str, addr: u64, _size: u64| {
+        reader.walk(&|name: &str, addr: u64, _size: u64| {
+            if name.contains("pci") {
+                return;
+            }
             if let Some(dev) = virtio::probe(addr) {
                 if dev.device_id == virtio::DEVICE_ID_GPU {
                     gpu_addr.set(addr);
@@ -71,13 +60,10 @@ pub extern "C" fn kernel_main(fdt: *const u8) -> ! {
             }
         });
 
-        // Only init MMIO GPU if PCI GPU not found
-        if pci_gpu.is_none() {
-            let ga = gpu_addr.get();
-            if ga != 0 {
-                if let Some(gpu) = gpu::GpuDriver::init(ga, 0x1000) {
-                    gpu_opt = Some(gpu);
-                }
+        let ga = gpu_addr.get();
+        if ga != 0 {
+            if let Some(gpu) = gpu::GpuDriver::init(ga, 0x1000) {
+                gpu_opt = Some(gpu);
             }
         }
 
@@ -97,6 +83,11 @@ pub extern "C" fn kernel_main(fdt: *const u8) -> ! {
             }
         }
     }
+
+    // PCI GPU probe disabled — use MMIO virtio-gpu (-device virtio-gpu-device).
+    // PCI requires ECAM at 0x4010000000 which triggers address size fault on
+    // QEMU virt with 128MB RAM. Re-enable when PA range is expanded.
+    let _ = &mut pci_gpu;
 
     // GPU contract tests
     if let Some(ref gpu) = gpu_opt {
@@ -170,6 +161,8 @@ fn run_e2e_test(k: &kernel::Aarch64Kernel, input: &input::InputDriver) {
             inputs: alloc::vec![(keyboard_region_id, kernel_spec::Access::ReadOnly)],
             outputs: alloc::vec![],
             private: alloc::vec![],
+            manifest_signature: None,
+            trust_domain: kernel_spec::TrustDomain::Kernel,
         })
         .expect("e2e: spawn subscriber");
 

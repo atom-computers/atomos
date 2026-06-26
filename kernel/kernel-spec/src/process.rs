@@ -27,6 +27,26 @@ pub enum Access {
     ReadWrite,
 }
 
+/// The trust domain a process executes in.
+///
+/// Determines page table isolation, execution privilege, and whether
+/// the process must carry a verifiable manifest signature.
+///
+/// Cross-domain data transfer requires explicit authorization via
+/// [`Kernel::authorize_transfer`](crate::Kernel::authorize_transfer).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrustDomain {
+    /// Kernel, Vault, and hardware driver processes.
+    /// Root of trust: full memory access, owns key material.
+    Kernel,
+    /// Signed and verified user processes.
+    /// Require a valid manifest signature at spawn.
+    User,
+    /// Unsigned, internet, third-party processes.
+    /// Minimal page table surface, no implicit access to any region.
+    Untrusted,
+}
+
 /// A process descriptor submitted to the kernel at spawn time.
 ///
 /// A process is a reactive computation: it activates when any of its
@@ -54,6 +74,13 @@ pub enum Access {
 /// - `private`: regions accessible only by this process.
 ///   Used for internal state. No other process can read or write them
 ///   (unless explicitly granted via [`Kernel::grant`](crate::Kernel::grant)).
+///
+/// - `manifest_signature`: optional Ed25519 signature over the manifest hash
+///   `H(program_hash || inputs || outputs || private || trust_domain)`.
+///   Required for `User`-domain processes. Verified at spawn time against
+///   the kernel's root verification key.
+///
+/// - `trust_domain`: the isolation domain this process executes in.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Process {
     /// Optional human-readable label for debugging and review.
@@ -66,4 +93,9 @@ pub struct Process {
     pub outputs: alloc::vec::Vec<(RegionId, Access)>,
     /// Regions private to this process (internal state).
     pub private: alloc::vec::Vec<RegionId>,
+    /// Optional signature over the manifest hash.
+    /// Required for `User` domain; ignored for `Untrusted`.
+    pub manifest_signature: Option<alloc::vec::Vec<u8>>,
+    /// The isolation domain this process executes in.
+    pub trust_domain: TrustDomain,
 }

@@ -176,6 +176,11 @@ impl RegionTable {
         })
     }
 
+    pub fn pages(&self, id: RegionId) -> Option<&[u64]> {
+        let idx = self.find(id.0)?;
+        Some(&self.regions[idx].1.pages)
+    }
+
     pub fn set_tier(&mut self, id: RegionId, tier: MemoryTier) -> Result<(), kernel_spec::KernelError> {
         let entry = self.find_mut(id.0).ok_or(kernel_spec::KernelError::NotFound)?;
         entry.tier = tier;

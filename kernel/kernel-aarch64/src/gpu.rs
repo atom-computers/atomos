@@ -179,9 +179,9 @@ impl<'a> GpuDriver<'a> {
                     && y < rect_y + rect_h;
                 if is_rect {
                     unsafe {
-                        *self.fb_ptr.add(off) = 0xFF;
-                        *self.fb_ptr.add(off + 1) = 0xFF;
-                        *self.fb_ptr.add(off + 2) = 0xFF;
+                        *self.fb_ptr.add(off) = 0x00;
+                        *self.fb_ptr.add(off + 1) = 0x00;
+                        *self.fb_ptr.add(off + 2) = 0x00;
                         *self.fb_ptr.add(off + 3) = 0xFF;
                     }
                 } else {

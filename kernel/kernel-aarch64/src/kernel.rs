@@ -5,16 +5,27 @@ use core::cell::RefCell;
 
 use kernel_spec::{
     Access, Kernel, KernelError, MemoryTier, Process, ProcessId, Region, RegionId, RegionKind,
+    TrustDomain, MappingType,
 };
 
 use crate::memory::PageAlloc;
+use crate::mmu::{self, ProcessPageTable};
 use crate::region::RegionTable;
 
 const RAM_SIZE: u64 = 128 * 1024 * 1024;
 const RAM_BASE: u64 = 0x4000_0000;
 
+// Process virtual address space layout
+const GRANULE: u64 = 4096;
+const STACK_VA: u64 = 0x0000_7FFF_F000;   // top of EL0 stack (grows down)
+const CODE_VA: u64 = 0x0000_0000_0000;     // program code base
+const DATA_VA_BASE: u64 = 0x0001_0000_0000; // input/output/private regions base
+const REGION_VA_STRIDE: u64 = 0x0001_0000;   // 64KB spacing between region mappings
+
 struct ProcEntry {
     _process: Process,
+    page_table: Option<ProcessPageTable>,
+    tags: Vec<(u64, u8)>,
 }
 
 struct Subscriptions {
@@ -32,8 +43,11 @@ struct KernelState {
     processes: Vec<(u64, ProcEntry)>,
     subscriptions: Subscriptions,
     next_pid: u64,
+    next_asid: u16,
     next_region_id: u64,
     current_pid: u64,
+    #[cfg(feature = "mte")]
+    mte: crate::mte::MteState,
 }
 
 pub struct Aarch64Kernel {
@@ -44,6 +58,25 @@ impl Aarch64Kernel {
     pub fn new() -> Self {
         let ram_end = RAM_BASE + RAM_SIZE;
         let page_alloc = PageAlloc::new(ram_end);
+        page_alloc.init();
+
+        let kernel_tables = mmu::KernelTables::init(&page_alloc, RAM_BASE, RAM_SIZE);
+        mmu::set_ttbr0(kernel_tables.ttbr0);
+
+        #[cfg(feature = "mte")]
+        let mte = {
+            let m = crate::mte::MteState::detect();
+            if m.is_enabled() {
+                crate::println!("mte: hardware support detected, enabling MTE");
+                m.init();
+            } else {
+                crate::println!("mte: no hardware support, MTE disabled");
+            }
+            m
+        };
+
+        mmu::enable_mmu();
+
         let kernel = Aarch64Kernel {
             state: RefCell::new(KernelState {
                 page_alloc,
@@ -56,14 +89,14 @@ impl Aarch64Kernel {
                     queued: Vec::new(),
                 },
                 next_pid: 1,
+                next_asid: 1,
                 next_region_id: 1,
                 current_pid: 0,
+                #[cfg(feature = "mte")]
+                mte,
             }),
         };
 
-        kernel.state.borrow_mut().page_alloc.init();
-
-        // Store page alloc reference for DMA/virtio use
         kernel
     }
 
@@ -275,6 +308,8 @@ impl Aarch64Kernel {
                 inputs: Vec::new(),
                 outputs: Vec::new(),
                 private: Vec::new(),
+                manifest_signature: None,
+                trust_domain: TrustDomain::Kernel,
             })
             .expect("spawn failed");
 
@@ -314,6 +349,8 @@ impl Aarch64Kernel {
                 inputs: Vec::new(),
                 outputs: Vec::new(),
                 private: Vec::new(),
+                manifest_signature: None,
+                trust_domain: TrustDomain::Kernel,
             })
             .expect("spawn failed");
 
@@ -389,6 +426,8 @@ impl Aarch64Kernel {
                 inputs: Vec::new(),
                 outputs: Vec::new(),
                 private: Vec::new(),
+                manifest_signature: None,
+                trust_domain: TrustDomain::Kernel,
             })
             .expect("spawn failed");
 
@@ -509,7 +548,11 @@ impl Kernel for Aarch64Kernel {
             add_sub(&mut state.subscriptions, pid, region.0);
         }
 
-        state.processes.push((pid, ProcEntry { _process: process.clone() }));
+        state.processes.push((pid, ProcEntry {
+            _process: process.clone(),
+            page_table: None,
+            tags: Vec::new(),
+        }));
         state.subscriptions.queue.push(pid);
         state.subscriptions.queued.push(pid);
 
@@ -573,6 +616,183 @@ impl Kernel for Aarch64Kernel {
     fn revoke(&self, _pid: ProcessId, _region: RegionId) -> Result<(), KernelError> {
         Ok(())
     }
+
+    fn rotate_region_key(&self, _id: RegionId) -> Result<(), KernelError> {
+        Ok(())
+    }
+
+    fn activate_process(&self, pid: ProcessId) -> Result<(), KernelError> {
+        let mut state = self.state.borrow_mut();
+
+        let idx = state.processes.iter()
+            .position(|(p, _)| *p == pid.0)
+            .ok_or(KernelError::NotFound)?;
+
+        if state.processes[idx].1.page_table.is_some() {
+            // Already created — just switch to it
+            let ttbr0 = state.processes[idx].1.page_table.as_ref().unwrap().ttbr0();
+            drop(state);
+            mmu::flush_tlb_el0();
+            mmu::set_ttbr0(ttbr0);
+            return Ok(());
+        }
+
+        // Create page table and map all authorized regions
+        let asid = state.next_asid;
+        state.next_asid = state.next_asid.wrapping_add(1);
+
+        let pa = &state.page_alloc as *const PageAlloc;
+        // Safety: we drop the borrow before using the pointer, and page_alloc
+        // lives as long as KernelState.
+        let page_alloc_ref = unsafe { &*pa };
+
+        let mut pt = ProcessPageTable::new(page_alloc_ref, asid);
+
+        let program_rid = state.processes[idx].1._process.program;
+        let input_regions: Vec<(RegionId, Access)> = state.processes[idx].1._process.inputs.clone();
+        let output_regions: Vec<(RegionId, Access)> = state.processes[idx].1._process.outputs.clone();
+        let private_regions: Vec<RegionId> = state.processes[idx].1._process.private.clone();
+
+        // Map program region (code — immutable after verification)
+        {
+            let (pa, count_ok) = {
+                let pages = state.regions.pages(program_rid)
+                    .ok_or(KernelError::NotFound)?;
+                (pages.first().copied().unwrap_or(0), pages.len())
+            };
+            if count_ok > 0 && pa != 0 {
+                let tag = tag_pages(&mut state, idx, program_rid.0, pa, count_ok);
+                let va = CODE_VA | ((tag as u64) << 56);
+                pt.map(page_alloc_ref, va, pa, count_ok,
+                       MappingType::Code, Access::ReadOnly);
+            }
+        }
+
+        // Map input regions (data, read-only)
+        let mut data_off = 0u64;
+        for &(region, _access) in &input_regions {
+            let (pa, count_ok) = {
+                let pages = state.regions.pages(region)
+                    .ok_or(KernelError::NotFound)?;
+                (pages.first().copied().unwrap_or(0), pages.len())
+            };
+            if count_ok > 0 && pa != 0 {
+                let tag = tag_pages(&mut state, idx, region.0, pa, count_ok);
+                let va = (DATA_VA_BASE + data_off * REGION_VA_STRIDE) | ((tag as u64) << 56);
+                pt.map(page_alloc_ref, va, pa, count_ok,
+                       MappingType::Data, Access::ReadOnly);
+            }
+            data_off += 1;
+        }
+
+        // Map output regions (data, read-write)
+        for &(region, _access) in &output_regions {
+            let (pa, count_ok) = {
+                let pages = state.regions.pages(region)
+                    .ok_or(KernelError::NotFound)?;
+                (pages.first().copied().unwrap_or(0), pages.len())
+            };
+            if count_ok > 0 && pa != 0 {
+                let tag = tag_pages(&mut state, idx, region.0, pa, count_ok);
+                let va = (DATA_VA_BASE + data_off * REGION_VA_STRIDE) | ((tag as u64) << 56);
+                pt.map(page_alloc_ref, va, pa, count_ok,
+                       MappingType::Data, Access::ReadWrite);
+            }
+            data_off += 1;
+        }
+
+        // Map private regions (data, read-write)
+        for &region in &private_regions {
+            let (pa, count_ok) = {
+                let pages = state.regions.pages(region)
+                    .ok_or(KernelError::NotFound)?;
+                (pages.first().copied().unwrap_or(0), pages.len())
+            };
+            if count_ok > 0 && pa != 0 {
+                let tag = tag_pages(&mut state, idx, region.0, pa, count_ok);
+                let va = (DATA_VA_BASE + data_off * REGION_VA_STRIDE) | ((tag as u64) << 56);
+                pt.map(page_alloc_ref, va, pa, count_ok,
+                       MappingType::Data, Access::ReadWrite);
+            }
+            data_off += 1;
+        }
+
+        // Map stack region (16 pages = 64KB, with guard page)
+        let stack_pages = state.page_alloc.alloc_pages(17);
+        if stack_pages == 0 {
+            return Err(KernelError::OutOfMemory);
+        }
+        let stack_tag = tag_pages(&mut state, idx, 0, stack_pages, 17);
+        // Page 0 = guard (unmapped via MappingType::Guard)
+        pt.map(page_alloc_ref, (STACK_VA - 16 * GRANULE) | ((stack_tag as u64) << 56),
+               stack_pages, 1, MappingType::Guard, Access::ReadOnly);
+        // Pages 1-16 = writable stack
+        pt.map(page_alloc_ref, (STACK_VA - 15 * GRANULE) | ((stack_tag as u64) << 56),
+               stack_pages + GRANULE, 16,
+               MappingType::Data, Access::ReadWrite);
+
+        let ttbr0 = pt.ttbr0();
+        state.processes[idx].1.page_table = Some(pt);
+        drop(state);
+
+        mmu::flush_tlb_el0();
+        mmu::set_ttbr0(ttbr0);
+        Ok(())
+    }
+
+    fn deactivate_process(&self, pid: ProcessId) -> Result<(), KernelError> {
+        #[cfg(feature = "mte")]
+        {
+            let mut state = self.state.borrow_mut();
+            if let Some(idx) = state.processes.iter().position(|(p, _)| *p == pid.0) {
+                let tags = core::mem::take(&mut state.processes[idx].1.tags);
+                for &(region_id, tag) in &tags {
+                    if let Some(pages) = state.regions.pages(RegionId(region_id)) {
+                        if !pages.is_empty() {
+                            state.mte.clear_tags(pages[0], pages.len());
+                        }
+                    }
+                    let _ = tag;
+                }
+            }
+        }
+        let _ = pid;
+
+        mmu::flush_tlb_el0();
+        Ok(())
+    }
+
+    fn authorize_transfer(
+        &self,
+        _region: RegionId,
+        _from: TrustDomain,
+        _to: TrustDomain,
+        _vault_token: &[u8],
+    ) -> Result<(), KernelError> {
+        Ok(())
+    }
+
+    fn vault_sign(
+        &self,
+        _request_region: RegionId,
+        _response_region: RegionId,
+    ) -> Result<(), KernelError> {
+        Ok(())
+    }
+}
+
+fn tag_pages(state: &mut KernelState, proc_idx: usize, region_id: u64, pa: u64, pages: usize) -> u8 {
+    #[cfg(feature = "mte")]
+    {
+        if state.mte.is_enabled() {
+            let tag = state.mte.alloc_tag();
+            state.mte.set_tags(pa, pages, tag);
+            state.processes[proc_idx].1.tags.push((region_id, tag));
+            return tag;
+        }
+    }
+    let _ = (state, proc_idx, region_id, pa, pages);
+    0
 }
 
 // Subscription helpers

@@ -1,4 +1,4 @@
-use crate::{Access, KernelError, MemoryTier, Process, ProcessId, Region, RegionId, RegionKind};
+use crate::{Access, KernelError, MemoryTier, Process, ProcessId, Region, RegionId, RegionKind, TrustDomain};
 
 /// The kernel interface — the complete set of primitives a process may call
 /// to interact with the system.
@@ -223,4 +223,71 @@ pub trait Kernel {
     ///
     /// - `NotFound` if the process or region does not exist.
     fn revoke(&self, pid: ProcessId, region: RegionId) -> Result<(), KernelError>;
+
+    /// Rotate the master encryption key for a region.
+    ///
+    /// Generates a new master key, re-encrypts all region pages,
+    /// derives new per-process keys for every process holding access,
+    /// and securely zeroes the old master key.
+    ///
+    /// Only valid for regions with [`crate::RegionFlags::ENCRYPTED`].
+    ///
+    /// # Errors
+    ///
+    /// - `NotFound` if the region does not exist.
+    /// - `NotSupported` if the region is not encrypted.
+    fn rotate_region_key(&self, id: RegionId) -> Result<(), KernelError>;
+
+    /// Map the process's authorized regions into its address space
+    /// and prepare it for execution.
+    ///
+    /// On hardware with MMU support, this loads the process's page tables
+    /// into TTBR0 and flushes stale TLB entries.
+    ///
+    /// # Errors
+    ///
+    /// - `NotFound` if the process does not exist.
+    fn activate_process(&self, pid: ProcessId) -> Result<(), KernelError>;
+
+    /// Flush the process's address space mappings and clear TTBR0.
+    ///
+    /// # Errors
+    ///
+    /// - `NotFound` if the process does not exist.
+    fn deactivate_process(&self, pid: ProcessId) -> Result<(), KernelError>;
+
+    /// Authorize cross-domain data transfer for a region.
+    ///
+    /// Required before granting a region from one [`TrustDomain`] to another.
+    /// The `vault_token` must be a valid signature from the Vault process
+    /// authorizing the specific (region, from_domain, to_domain) triple.
+    ///
+    /// # Errors
+    ///
+    /// - `NotFound` if the region does not exist.
+    /// - `AccessDenied` if the vault token is invalid or missing.
+    fn authorize_transfer(
+        &self,
+        region: RegionId,
+        from: TrustDomain,
+        to: TrustDomain,
+        vault_token: &[u8],
+    ) -> Result<(), KernelError>;
+
+    /// Request the Vault process to sign a payload.
+    ///
+    /// The request is written to `request_region` (a Vault inbox),
+    /// and the signed response is read from `response_region` (a Vault
+    /// outbox) once the Vault activates.
+    ///
+    /// # Errors
+    ///
+    /// - `NotFound` if either region does not exist.
+    /// - `AccessDenied` if the calling process lacks write access to
+    ///   `request_region` or read access to `response_region`.
+    fn vault_sign(
+        &self,
+        request_region: RegionId,
+        response_region: RegionId,
+    ) -> Result<(), KernelError>;
 }

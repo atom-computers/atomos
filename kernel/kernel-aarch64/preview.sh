@@ -42,7 +42,7 @@ qemu-system-aarch64 \
     -cpu cortex-a72 \
     -m 128M \
     -no-reboot \
-    -device virtio-gpu-pci,xres=720,yres=1440 \
+    -device virtio-gpu-device,xres=720,yres=1440 \
     -display cocoa,show-cursor=on \
     -device virtio-keyboard-device \
     -device virtio-tablet-device \

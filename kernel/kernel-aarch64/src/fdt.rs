@@ -111,21 +111,34 @@ impl FdtReader {
                                 let first = compat_str.split('\0').next().unwrap_or("");
                                 current_compat = Some(first);
                             }
-                            "reg" => {
-                                if len >= 16 {
-                                    let addr_hi =
-                                        read_u32(pos as *const u8) as u64;
-                                    let addr_lo =
-                                        read_u32((pos as *const u8).add(4)) as u64;
-                                    current_addr = (addr_hi << 32) | addr_lo;
+                    "reg" => {
+                        if len >= 16 {
+                            let cell0 =
+                                read_u32(pos as *const u8) as u64;
+                            let cell1 =
+                                read_u32((pos as *const u8).add(4)) as u64;
 
-                                    let size_hi =
-                                        read_u32((pos as *const u8).add(8)) as u64;
-                                    let size_lo =
-                                        read_u32((pos as *const u8).add(12)) as u64;
-                                    current_size = (size_hi << 32) | size_lo;
+                            current_addr = (cell0 << 32) | cell1;
+
+                            let size_hi =
+                                read_u32((pos as *const u8).add(8)) as u64;
+                            let size_lo =
+                                read_u32((pos as *const u8).add(12)) as u64;
+                            current_size = (size_hi << 32) | size_lo;
+
+                            // For PCI nodes, the reg encodes PCI config space, not
+                            // a physical address. Extract the ECAM base from the
+                            // node name (e.g. "pcie@10000000" → 0x10000000).
+                            if current_name.starts_with("pci") {
+                                if let Some(at_pos) = current_name.find('@') {
+                                    let addr_str = &current_name[at_pos + 1..];
+                                    if let Ok(parsed) = u64::from_str_radix(addr_str, 16) {
+                                        current_addr = parsed;
+                                    }
                                 }
                             }
+                        }
+                    }
                             _ => {}
                         }
 

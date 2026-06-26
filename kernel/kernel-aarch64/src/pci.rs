@@ -7,10 +7,8 @@ use virtio_drivers::transport::pci::{
 
 use crate::virtio_hal::VirtioHal;
 
-/// Fallback ECAM base on QEMU aarch64 `virt` machine.
 const ECAM_FALLBACK: usize = 0x3f000000;
 
-/// ECAM base discovered from FDT, or fallback.
 static mut ECAM_BASE: usize = 0;
 
 pub fn set_ecam_base(addr: u64) {
@@ -21,7 +19,6 @@ pub fn has_ecam() -> bool {
     unsafe { ECAM_BASE != 0 }
 }
 
-/// PCI variant of GPU driver using PciTransport.
 pub struct PciGpu {
     pub width: u32,
     pub height: u32,
@@ -31,7 +28,6 @@ pub struct PciGpu {
 }
 
 impl PciGpu {
-    /// Probe PCI bus for a virtio-gpu and initialize it.
     pub fn probe() -> Option<Self> {
         let ecam = unsafe {
             if ECAM_BASE != 0 { ECAM_BASE } else { ECAM_FALLBACK }
@@ -42,81 +38,87 @@ impl PciGpu {
         let cam = unsafe { MmioCam::new(ecam as *mut u8, Cam::Ecam) };
         crate::println!("  pci: creating PciRoot...");
         let mut pci_root = PciRoot::new(cam);
-        crate::println!("  pci: enumerating bus 0...");
+        crate::println!("  pci: enumerating buses 0..7...");
 
-        for (device_function, info) in pci_root.enumerate_bus(0) {
-            let Some(vt) = virtio_device_type(&info) else {
-                continue;
-            };
-            // Only interested in GPU devices
-            if vt != virtio_drivers::transport::DeviceType::GPU {
-                crate::println!("  pci: skipping {:?} at {}", vt, device_function);
-                continue;
-            }
-            crate::println!(
-                "  pci: found {} at {}",
-                info, device_function
-            );
-
-            allocate_bars(&mut pci_root, device_function);
-
-            let transport = match PciTransport::new::<VirtioHal, _>(
-                &mut pci_root,
-                device_function,
-            ) {
-                Ok(t) => t,
-                Err(_) => {
-                    crate::println!("  pci: PciTransport::new failed");
+        let mut total_devices = 0u32;
+        for bus in 0..8u8 {
+            let before = total_devices;
+            for (device_function, info) in pci_root.enumerate_bus(bus) {
+                total_devices += 1;
+                crate::println!(
+                    "  pci: bus{} dev{} vid=0x{:x} did=0x{:x} class=0x{:x}.0x{:x}",
+                    bus,
+                    device_function,
+                    info.vendor_id,
+                    info.device_id,
+                    info.class,
+                    info.subclass,
+                );
+                let Some(vt) = virtio_device_type(&info) else {
+                    crate::println!("    — not virtio");
+                    continue;
+                };
+                crate::println!("    virtio type {:?}", vt);
+                if vt != virtio_drivers::transport::DeviceType::GPU {
+                    crate::println!("    skipping (not GPU)");
                     continue;
                 }
-            };
 
-            crate::println!("  pci: creating VirtIOGpu...");
-            let mut gpu = match VirtIOGpu::new(transport) {
-                Ok(g) => g,
-                Err(_) => {
-                    crate::println!("  pci: VirtIOGpu::new failed");
-                    continue;
-                }
-            };
+                crate::println!("  pci: GPU found, allocating BARs...");
+                allocate_bars(&mut pci_root, device_function);
 
-            crate::println!("  pci: setting up framebuffer...");
-            let fb = match gpu.setup_framebuffer() {
-                Ok(fb) => fb,
-                Err(_) => {
-                    crate::println!("  pci: setup_framebuffer failed");
-                    continue;
-                }
-            };
-            let fb_size = fb.len();
-            crate::println!("  pci: framebuffer ready, {} bytes", fb_size);
-
-            let fb_ptr = fb.as_ptr() as *mut u8;
-            let fb_pixels = fb_size / 4;
-            let candidates = [(720, 1440u32), (1280, 800), (1024, 768), (1920, 1080)];
-            let (width, height) = candidates
-                .iter()
-                .find_map(|&(w, h)| {
-                    let min = w as usize * h as usize;
-                    let max = w as usize * (h as usize + 1);
-                    if min <= fb_pixels && fb_pixels < max {
-                        Some((w, h))
-                    } else {
-                        None
+                let transport = match PciTransport::new::<VirtioHal, _>(
+                    &mut pci_root, device_function,
+                ) {
+                    Ok(t) => t,
+                    Err(_) => {
+                        crate::println!("  pci: PciTransport::new failed");
+                        continue;
                     }
-                })
-                .unwrap_or((1024, (fb_pixels / 1024) as u32));
+                };
 
-            return Some(PciGpu {
-                width,
-                height,
-                fb_ptr,
-                fb_size,
-                gpu,
-            });
+                crate::println!("  pci: creating VirtIOGpu...");
+                let mut gpu = match VirtIOGpu::<VirtioHal, PciTransport>::new(transport) {
+                    Ok(g) => g,
+                    Err(_) => {
+                        crate::println!("  pci: VirtIOGpu::new failed");
+                        continue;
+                    }
+                };
+
+                crate::println!("  pci: setting up framebuffer...");
+                let fb = match gpu.setup_framebuffer() {
+                    Ok(fb) => fb,
+                    Err(_) => {
+                        crate::println!("  pci: setup_framebuffer failed");
+                        continue;
+                    }
+                };
+                let fb_size = fb.len();
+                crate::println!("  pci: framebuffer {} bytes OK", fb_size);
+
+                let fb_pixels = fb_size / 4;
+                let candidates = [(720, 1440u32), (1280, 800), (1024, 768), (1920, 1080)];
+                let (width, height) = candidates.iter()
+                    .find_map(|&(w, h)| {
+                        let min = w as usize * h as usize;
+                        let max = w as usize * (h as usize + 1);
+                        if min <= fb_pixels && fb_pixels < max { Some((w, h)) } else { None }
+                    })
+                    .unwrap_or((1024, (fb_pixels / 1024) as u32));
+
+                return Some(PciGpu {
+                    width, height,
+                    fb_ptr: fb.as_ptr() as *mut u8,
+                    fb_size, gpu,
+                });
+            }
+            if total_devices > before {
+                crate::println!("  pci: bus{} — {} devices", bus, total_devices - before);
+            }
         }
 
-        crate::println!("  pci: no GPU found");
+        crate::println!("  pci: {} total devices, no GPU", total_devices);
         None
     }
 
@@ -154,23 +156,19 @@ impl PciGpu {
                 }
             }
         }
-        // Memory barrier: ensure all fb writes visible to DMA
         core::sync::atomic::fence(core::sync::atomic::Ordering::SeqCst);
         self.flush();
-        // Busy-wait to give QEMU display backend time to render
         for _ in 0..50000000 {
             core::hint::spin_loop();
         }
-        // Memory barrier: ensure writes visible before re-flush
         core::sync::atomic::fence(core::sync::atomic::Ordering::SeqCst);
         self.flush();
     }
 }
 
 fn allocate_bars(root: &mut PciRoot<impl ConfigurationAccess>, device_function: DeviceFunction) {
-    // Separate allocators for 32-bit and 64-bit BARs
-    let mut next_32: u32 = 0x1000_0000; // MMIO32 window
-    let mut next_64: u64 = 0x80_0000_0000; // MMIO64 window
+    let mut next_32: u32 = 0x1000_0000;
+    let mut next_64: u64 = 0x80_0000_0000;
 
     for (bar_index, info) in root.bars(device_function).unwrap().into_iter().enumerate() {
         let Some(info) = info else { continue };
@@ -208,7 +206,6 @@ fn allocate_bars(root: &mut PciRoot<impl ConfigurationAccess>, device_function: 
         }
     }
 
-    // Enable bus mastering and memory space
     root.set_command(
         device_function,
         Command::IO_SPACE | Command::MEMORY_SPACE | Command::BUS_MASTER,
